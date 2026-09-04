@@ -270,12 +270,14 @@
             </main>
 
             <!-- Input Placeholder -->
-            <div class="shrink-0 p-4 pb-8 max-w-xl mx-auto w-full pointer-events-none opacity-50">
-                <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2">
-                    <input type="text" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold" disabled>
-                    <button class="w-8 h-8 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0" disabled>
-                        <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
-                    </button>
+            <div class="shrink-0 p-4 pb-8 w-full pointer-events-none opacity-50 relative z-30 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8]/80 to-transparent dark:from-[#04070F] dark:via-[#04070F]/80 dark:to-transparent">
+                <div class="max-w-xl mx-auto w-full">
+                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2">
+                        <input type="text" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold text-gray-400" disabled>
+                        <button class="w-8 h-8 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0" disabled>
+                            <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -634,7 +636,6 @@
                 localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
                 
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
-                document.getElementById('settings-profile-rank').textContent = `${appProfile.rank} • ${appProfile.gender === 'M' ? 'Male' : 'Female'}`;
                 
                 showMain();
             });
