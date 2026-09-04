@@ -116,6 +116,15 @@
             animation: float 4s ease-in-out infinite;
         }
 
+        @keyframes jump {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .animate-jump {
+            animation: jump 2s infinite;
+        }
+
         #sky-canvas {
             position: fixed;
             top: 0;
@@ -146,24 +155,31 @@
         <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
             <div class="h-[35%] flex items-center justify-center relative">
                 <div class="flex flex-col items-center">
-                    <div class="w-16 h-16 rounded-full bg-sia-gold flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.3)] mb-5 animate-float">
-                        <img src="icons/icon-192.png" class="w-10 h-10 brightness-0" alt="Plane">
+                    <div class="mb-5 animate-float">
+                        <img src="icons/icon-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
                     </div>
-                    <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">Singapore Airlines</span>
+                    <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
                 </div>
             </div>
-            <div class="h-[65%] relative z-10 w-full">
+            <div class="h-[65%] relative z-10 w-full backdrop-blur-sm">
                 <!-- Curve Separator -->
                 <div class="absolute -top-[40px] left-0 w-full h-[40px] overflow-hidden pointer-events-none">
                     <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
-                        <!-- Main Background -->
-                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8] dark:fill-[#080B14]" />
-                        <!-- Gold Border Line -->
-                        <path d="M0,40 Q50,-10 100,40" fill="none" stroke="#C9A227" stroke-width="2" vector-effect="non-scaling-stroke" class="opacity-80" />
+                        <defs>
+                            <linearGradient id="archGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#C9A227" stop-opacity="0" />
+                                <stop offset="50%" stop-color="#C9A227" stop-opacity="1" />
+                                <stop offset="100%" stop-color="#C9A227" stop-opacity="0" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Main Background (Transparent Glass) -->
+                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8]/90 dark:fill-[#080B14]/80" />
+                        <!-- Gold Border Line (Tapered) -->
+                        <path d="M0,40 Q50,-10 100,40" fill="none" stroke="url(#archGrad)" stroke-width="1.5" vector-effect="non-scaling-stroke" class="opacity-60" />
                     </svg>
                 </div>
                 <!-- Form Container -->
-                <div class="bg-[#F6F1E8] dark:bg-[#080B14] h-full w-full px-8 pt-2 pb-8 flex flex-col">
+                <div class="bg-[#F6F1E8]/90 dark:bg-[#080B14]/80 h-full w-full px-8 pt-2 pb-8 flex flex-col border-t border-white/5">
                     <div class="flex-grow overflow-y-auto max-w-sm mx-auto w-full flex flex-col">
                         <h2 class="text-2xl font-bold mb-8 text-center">Welcome aboard<span class="text-sia-gold">.</span></h2>
                         <div class="space-y-6 flex-grow">
@@ -174,7 +190,7 @@
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
                                     </div>
-                                    <input type="text" id="ob-name" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors" placeholder="Johnathan">
+                                    <input type="text" id="ob-name" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="e.g. Johnathan">
                                 </div>
                             </div>
                             <!-- Gender -->
@@ -387,10 +403,10 @@
                     y: Math.random() * height,
                     size: Math.random() * 1.5 + 0.5,
                     color: color,
-                    twinkleSpeed: Math.random() * 0.03 + 0.005,
+                    twinkleSpeed: Math.random() * 0.01 + 0.002, // even slower twinkle
                     twinkleAmp: Math.random() * 0.8 + 0.2,
                     driftX: 0,
-                    driftY: 0,
+                    driftY: Math.random() * 0.03 + 0.01, // extremely slow downward drift
                     phase: Math.random() * Math.PI * 2
                 });
             }
@@ -399,9 +415,9 @@
         function createShootingStar() {
             shootingStars.push({
                 x: Math.random() * width,
-                y: 0,
+                y: Math.random() * (height / 3), // starts higher but randomly inside the top third
                 length: Math.random() * 80 + 40,
-                speed: Math.random() * 3 + 2, // slower
+                speed: Math.random() * 1.5 + 0.5, // much slower
                 angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1),
                 opacity: 1
             });
@@ -628,7 +644,19 @@
 
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
             document.getElementById('btn-settings').addEventListener('click', openSettings);
-            document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = `
+                    <div class="flex items-start gap-3 mt-4">
+                        <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                            <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Bot">
+                        </div>
+                        <div class="glass-bubble p-3 rounded-2xl rounded-tl-none text-sm max-w-[80%] shadow-sm">
+                            <p id="chat-greeting">Welcome aboard, ${appProfile.rank} ${appProfile.name.split(' ')[0]}! How can I help you today?</p>
+                        </div>
+                    </div>
+                `;
+            });
             
             // Settings Events
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
@@ -731,8 +759,10 @@
             const btn = document.getElementById('ob-submit');
             if (tempProfile.name.trim() !== '' && tempProfile.gender !== '' && tempProfile.rank !== '') {
                 btn.removeAttribute('disabled');
+                btn.classList.add('animate-jump');
             } else {
                 btn.setAttribute('disabled', 'true');
+                btn.classList.remove('animate-jump');
             }
         }
 
