@@ -107,6 +107,15 @@
             box-shadow: 0 0 15px rgba(201, 162, 39, 0.3);
         }
 
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
         #sky-canvas {
             position: fixed;
             top: 0;
@@ -137,7 +146,7 @@
         <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
             <div class="h-[35%] flex items-center justify-center relative">
                 <div class="flex flex-col items-center">
-                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-sia-gold to-[#FDE073] flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.3)] mb-5">
+                    <div class="w-16 h-16 rounded-full bg-sia-gold flex items-center justify-center shadow-[0_0_30px_rgba(201,162,39,0.3)] mb-5 animate-float">
                         <img src="icons/icon-192.png" class="w-10 h-10 brightness-0" alt="Plane">
                     </div>
                     <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">Singapore Airlines</span>
@@ -147,7 +156,10 @@
                 <!-- Curve Separator -->
                 <div class="absolute -top-[40px] left-0 w-full h-[40px] overflow-hidden pointer-events-none">
                     <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
+                        <!-- Main Background -->
                         <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8] dark:fill-[#080B14]" />
+                        <!-- Gold Border Line -->
+                        <path d="M0,40 Q50,-10 100,40" fill="none" stroke="#C9A227" stroke-width="2" vector-effect="non-scaling-stroke" class="opacity-80" />
                     </svg>
                 </div>
                 <!-- Form Container -->
@@ -157,7 +169,7 @@
                         <div class="space-y-6 flex-grow">
                             <!-- Name -->
                             <div>
-                                <label class="block text-sm font-bold mb-2">Your Name</label>
+                                <label class="block text-sm font-bold mb-2">Name</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
@@ -178,7 +190,7 @@
                                 </div>
                             </div>
                             <!-- Rank -->
-                            <div id="ob-rank-container" class="opacity-50 pointer-events-none transition-opacity">
+                            <div id="ob-rank-container" class="opacity-50 pointer-events-none transition-opacity hidden">
                                 <label class="block text-sm font-bold mb-2">Rank</label>
                                 <div class="flex flex-wrap gap-2" id="ob-rank-list">
                                     <!-- Rendered via JS -->
@@ -190,7 +202,7 @@
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
                             <p class="text-[11px] text-center text-gray-500 mt-5 flex items-center justify-center gap-1.5 font-medium">
-                                <i data-lucide="lock" class="w-3 h-3"></i> Stored only on this device
+                                <i data-lucide="lock" class="w-3 h-3"></i> Data is stored locally on the device
                             </p>
                         </div>
                     </div>
@@ -568,12 +580,14 @@
                     document.querySelectorAll('.ob-gender-btn').forEach(b => {
                         b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
                         b.classList.add('ui-input', 'text-gray-400');
-                        b.querySelector('i').classList.remove('text-black');
+                        const icon = b.querySelector('svg') || b.querySelector('i');
+                        if(icon) icon.classList.remove('text-black');
                     });
                     const target = e.currentTarget;
                     target.classList.remove('ui-input', 'text-gray-400');
                     target.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    target.querySelector('i').classList.add('text-black');
+                    const icon = target.querySelector('svg') || target.querySelector('i');
+                    if(icon) icon.classList.add('text-black');
                     
                     tempProfile.gender = target.dataset.value;
                     tempProfile.rank = ''; // Reset rank
@@ -684,7 +698,7 @@
             const list = document.getElementById('ob-rank-list');
             list.innerHTML = '';
             
-            container.classList.remove('opacity-50', 'pointer-events-none');
+            container.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
             
             ranks[gender].forEach(r => {
                 const btn = document.createElement('button');
@@ -740,10 +754,11 @@
                 document.querySelectorAll('.ob-gender-btn').forEach(b => {
                     b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
                     b.classList.add('ui-input', 'text-gray-400');
-                    b.querySelector('i').classList.remove('text-black');
+                    const icon = b.querySelector('svg') || b.querySelector('i');
+                    if(icon) icon.classList.remove('text-black');
                 });
                 const rc = document.getElementById('ob-rank-container');
-                rc.classList.add('opacity-50', 'pointer-events-none');
+                rc.classList.add('hidden', 'opacity-50', 'pointer-events-none');
                 document.getElementById('ob-rank-list').innerHTML = '';
                 checkObSubmit();
             }
