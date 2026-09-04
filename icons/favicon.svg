@@ -22,7 +22,7 @@
     </linearGradient>
   </defs>
 
-  <g filter="url(#shadow)" transform="translate(10, 0)">
+  <g filter="url(#shadow)" transform="translate(64, 64) scale(0.75)">
     <!-- Right wing -->
     <polygon points="210,290 460,40 280,440" fill="url(#rightWing)" />
     
