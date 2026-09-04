@@ -1,44 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <!-- Filter for realistic 3D shadow -->
-    <filter id="drop-shadow" x="-20%" y="-20%" width="150%" height="150%">
-      <feDropShadow dx="5" dy="15" stdDeviation="12" flood-color="#04070F" flood-opacity="0.25"/>
-    </filter>
-
-    <!-- Gradients -->
-    <linearGradient id="rightWingTop" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E8C766"/>
-      <stop offset="100%" stop-color="#B28A17"/>
+    <!-- Right Wing (Top/Peeking) -->
+    <linearGradient id="rightWingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EAC14D"/>
+      <stop offset="100%" stop-color="#C29623"/>
     </linearGradient>
 
-    <linearGradient id="leftWing" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FDF0A6"/>
-      <stop offset="40%" stop-color="#F4D35E"/>
+    <!-- Left Wing (Main Face) -->
+    <linearGradient id="leftWingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE073"/>
+      <stop offset="40%" stop-color="#F2CB40"/>
       <stop offset="100%" stop-color="#C9A227"/>
     </linearGradient>
 
-    <linearGradient id="rightWingBottom" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#D4A71C"/>
-      <stop offset="100%" stop-color="#9C7710"/>
-    </linearGradient>
-
-    <linearGradient id="tailInner" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#8C680A"/>
-      <stop offset="100%" stop-color="#4F3A06"/>
+    <!-- Fuselage (Bottom Face) -->
+    <linearGradient id="fuseGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7C520E"/>
+      <stop offset="40%" stop-color="#9C7012"/>
+      <stop offset="100%" stop-color="#C9A227"/>
     </linearGradient>
   </defs>
 
-  <g filter="url(#drop-shadow)" transform="translate(10, -10)">
-    <!-- Right Wing (Top/Peeking) -->
-    <polygon points="40,240 460,60 260,70" fill="url(#rightWingTop)" />
-
-    <!-- Left wing (Main) -->
-    <polygon points="40,240 460,60 220,320" fill="url(#leftWing)" />
+  <g transform="translate(6, -6)">
+    <!-- Right Wing -->
+    <polygon points="10,160 180,60 490,260" fill="url(#rightWingGrad)" />
     
-    <!-- Right wing (bottom part) -->
-    <polygon points="40,240 220,320 280,450" fill="url(#rightWingBottom)" />
+    <!-- Left Wing -->
+    <polygon points="10,160 180,310 490,260" fill="url(#leftWingGrad)" />
     
-    <!-- Inner shadow / Fold -->
-    <polygon points="220,320 460,60 280,450" fill="url(#tailInner)" />
+    <!-- Fuselage -->
+    <polygon points="180,310 140,480 490,260" fill="url(#fuseGrad)" />
   </g>
 </svg>
