@@ -117,9 +117,181 @@
     <!-- Starry Sky Background -->
     <canvas id="sky-canvas"></canvas>
 
-    <div id="app" class="relative z-10 w-full h-full flex flex-col items-center justify-center min-h-screen">
-        <h1 class="text-2xl font-bold text-sia-gold">CrewAssist Setup</h1>
-        <p class="text-sm opacity-80 mt-2 text-center max-w-xs">PWA initialized. Moving to Next Steps.</p>
+    <div id="app-root" class="relative z-10 w-full h-full flex flex-col min-h-screen">
+        <!-- Onboarding View -->
+        <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
+            <div class="h-[40%] flex items-center justify-center relative">
+                <div class="flex flex-col items-center">
+                    <img src="icons/icon-192.png" class="w-20 h-20 drop-shadow-2xl animate-pulse" alt="Plane">
+                    <span class="text-xs uppercase tracking-[0.2em] mt-4 font-bold opacity-80 text-sia-gold">Singapore Airlines</span>
+                </div>
+            </div>
+            <div class="h-[60%] relative z-10 w-full">
+                <!-- Curve Separator -->
+                <div class="absolute -top-[40px] left-0 w-full h-[40px] overflow-hidden pointer-events-none">
+                    <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
+                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-white/30 dark:fill-[#0b1a3a]/40" />
+                        <path d="M0,40 Q50,0 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8] dark:fill-[#04070F]" />
+                    </svg>
+                </div>
+                <!-- Form Container -->
+                <div class="bg-[#F6F1E8] dark:bg-[#04070F] h-full w-full px-6 pt-4 pb-8 flex flex-col shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+                    <h2 class="text-2xl font-bold mb-6">Welcome aboard.</h2>
+                    <div class="space-y-5 flex-grow overflow-y-auto">
+                        <!-- Name -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Name</label>
+                            <input type="text" id="ob-name" class="w-full bg-white dark:bg-[#0b1a3a]/40 border border-gray-200 dark:border-white/10 rounded-full py-2.5 px-4 text-sm font-bold focus:outline-none focus:border-sia-gold transition-colors" placeholder="e.g. Jane Doe">
+                        </div>
+                        <!-- Gender -->
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Gender</label>
+                            <div class="flex gap-2">
+                                <button class="flex-1 py-2.5 px-4 rounded-full text-sm font-bold border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b1a3a]/40 text-gray-400 ob-gender-btn" data-value="M">Male</button>
+                                <button class="flex-1 py-2.5 px-4 rounded-full text-sm font-bold border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b1a3a]/40 text-gray-400 ob-gender-btn" data-value="F">Female</button>
+                            </div>
+                        </div>
+                        <!-- Rank -->
+                        <div id="ob-rank-container" class="opacity-50 pointer-events-none transition-opacity">
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Rank</label>
+                            <div class="flex flex-wrap gap-2" id="ob-rank-list">
+                                <!-- Rendered via JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 shrink-0">
+                        <button id="ob-submit" disabled class="w-full py-2.5 px-4 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black disabled:opacity-50 disabled:grayscale transition-all shadow-lg shadow-sia-gold/20">Let's Go</button>
+                        <p class="text-[10px] text-center text-gray-500 mt-4">Stored only on this device</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main View -->
+        <div id="main-view" class="fixed inset-0 z-10 flex flex-col hidden">
+            <!-- Header -->
+            <header class="glass-panel z-30 shrink-0 sticky top-0 w-full relative">
+                <div class="flex items-center justify-between px-4 py-3 max-w-xl mx-auto w-full">
+                    <!-- Left -->
+                    <div class="flex items-center gap-2 cursor-pointer select-none" id="header-brand">
+                        <div class="w-8 h-8 rounded-full bg-sia-gold flex items-center justify-center shadow-lg shadow-sia-gold/20">
+                            <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Logo">
+                        </div>
+                        <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1"></div>
+                    </div>
+                    <!-- Right -->
+                    <div class="flex items-center gap-1">
+                        <button id="btn-theme" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                            <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                        </button>
+                        <button id="btn-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="settings" class="w-5 h-5"></i>
+                        </button>
+                        <button id="btn-reset" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Batik Accent Line -->
+                <div class="h-1 w-full bg-gradient-to-r from-sia-batik via-sia-gold to-sia-batik opacity-80"></div>
+            </header>
+
+            <!-- Chat Area Placeholder -->
+            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full" id="chat-container">
+                <div class="flex items-start gap-3 mt-4">
+                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Bot">
+                    </div>
+                    <div class="glass-bubble p-3 rounded-2xl rounded-tl-none text-sm max-w-[80%] shadow-sm">
+                        <p id="chat-greeting">Welcome aboard!</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Input Placeholder -->
+            <div class="shrink-0 p-4 pb-8 max-w-xl mx-auto w-full pointer-events-none opacity-50">
+                <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2">
+                    <input type="text" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold" disabled>
+                    <button class="w-8 h-8 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0" disabled>
+                        <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cabin Shutter Animation Layer -->
+        <div id="cabin-shutter" class="fixed inset-x-0 top-0 h-0 bg-[#E5E0D8] dark:bg-[#1A1F2E] z-50 overflow-hidden flex items-end justify-center transition-all duration-500 ease-in-out shadow-2xl pointer-events-none">
+            <div class="w-full h-8 bg-[#D5D0C8] dark:bg-[#111520] rounded-b-xl flex items-center justify-center shadow-inner border-b border-black/10 dark:border-white/5">
+                <div class="w-16 h-1.5 rounded-full bg-black/20 dark:bg-white/20"></div>
+            </div>
+        </div>
+
+        <!-- Settings Bottom Sheet -->
+        <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col max-h-[85vh]">
+            <div class="w-full flex justify-center py-3 shrink-0">
+                <div class="w-12 h-1.5 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+            </div>
+            <div class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Settings</h3>
+                    <button id="btn-close-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Profile -->
+                <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                    <div>
+                        <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Profile</p>
+                        <p class="font-bold mt-1" id="settings-profile-name">Name</p>
+                        <p class="text-xs opacity-80 mt-0.5" id="settings-profile-rank">Rank • Gender</p>
+                    </div>
+                    <button id="btn-edit-profile" class="px-4 py-2 rounded-full text-sm font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
+                </div>
+
+                <!-- Preferences -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Preferences</p>
+                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm">
+                        <span class="text-sm font-bold">Auto-scroll Chat</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggle-autoscroll" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-300 dark:bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sia-gold"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Developer Section -->
+                <div id="settings-developer" class="hidden">
+                    <p class="text-[10px] text-red-500 font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
+                        <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
+                    </p>
+                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border border-red-500/20">
+                        <span class="text-sm font-bold">Modifiers & Values</span>
+                        <textarea id="dev-modifiers-json" class="w-full h-32 bg-black/5 dark:bg-black/50 border border-gray-300 dark:border-gray-600 rounded-xl p-3 text-xs font-mono focus:outline-none focus:border-sia-gold resize-none" placeholder="{}"></textarea>
+                        <div class="flex gap-2">
+                            <button id="btn-dev-save" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/20 hover:bg-green-500/20 transition-colors">Save</button>
+                            <button id="btn-dev-export" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors">Export</button>
+                            <button id="btn-dev-import" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-purple-500/10 text-purple-700 dark:text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors relative overflow-hidden">
+                                Import
+                                <input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
+                    <button id="btn-clear-data" class="w-full py-3 px-4 rounded-2xl text-sm font-bold bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -277,11 +449,34 @@
             requestAnimationFrame(animate);
         }
 
+        // State
+        let appProfile = null;
+        let appPrefs = { autoScroll: true };
+        let appDevMode = false;
+        let appModifiers = {};
+        
+        let tempProfile = { name: '', gender: '', rank: '' };
+        const ranks = {
+            M: ['Jr. FS', 'FS', 'LS', 'CS', 'IFM'],
+            F: ['Jr. FSS', 'FSS', 'LSS', 'CSS', 'IFM']
+        };
+
+        let devTapCount = 0;
+        let devTapTimeout;
+
+        // Elements
+        const elObView = document.getElementById('onboarding-view');
+        const elMainView = document.getElementById('main-view');
+        
         // Init
         document.addEventListener('DOMContentLoaded', () => {
             resize();
             animate();
             
+            initData();
+            initUI();
+            bindEvents();
+
             // Register Service Worker
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js')
@@ -289,6 +484,290 @@
                     .catch((err) => console.error('Service Worker Registration Failed', err));
             }
         });
+
+        function initData() {
+            try {
+                const storedProfile = localStorage.getItem('crewAssist.profile');
+                if (storedProfile) appProfile = JSON.parse(storedProfile);
+                
+                const storedPrefs = localStorage.getItem('crewAssist.prefs');
+                if (storedPrefs) appPrefs = JSON.parse(storedPrefs);
+                
+                appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
+                
+                const storedMods = localStorage.getItem('crewAssist.modifiers');
+                if (storedMods) appModifiers = JSON.parse(storedMods);
+                
+                const isLight = localStorage.getItem('crewAssist.theme') === 'light';
+                if (isLight) document.documentElement.classList.remove('dark');
+            } catch (e) { console.error('Storage error', e); }
+        }
+
+        function initUI() {
+            // Check if profile exists to skip onboarding
+            if (appProfile && appProfile.name && appProfile.gender && appProfile.rank) {
+                showMain();
+            } else {
+                showOnboarding();
+            }
+
+            // Settings Sheet Init
+            document.getElementById('toggle-autoscroll').checked = appPrefs.autoScroll;
+            if (appDevMode) {
+                document.getElementById('settings-developer').classList.remove('hidden');
+                document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+            }
+            if (appProfile) {
+                document.getElementById('settings-profile-name').textContent = appProfile.name;
+                document.getElementById('settings-profile-rank').textContent = `${appProfile.rank} • ${appProfile.gender === 'M' ? 'Male' : 'Female'}`;
+            }
+        }
+
+        function bindEvents() {
+            // Onboarding Events
+            document.getElementById('ob-name').addEventListener('input', (e) => {
+                tempProfile.name = e.target.value.trim();
+                checkObSubmit();
+            });
+
+            document.querySelectorAll('.ob-gender-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.ob-gender-btn').forEach(b => {
+                        b.classList.remove('border-sia-gold', 'text-sia-gold', 'bg-sia-gold/10');
+                        b.classList.add('border-gray-200', 'dark:border-white/10', 'text-gray-400');
+                    });
+                    e.target.classList.remove('border-gray-200', 'dark:border-white/10', 'text-gray-400');
+                    e.target.classList.add('border-sia-gold', 'text-sia-gold', 'bg-sia-gold/10');
+                    
+                    tempProfile.gender = e.target.dataset.value;
+                    tempProfile.rank = ''; // Reset rank
+                    renderRanks(tempProfile.gender);
+                    checkObSubmit();
+                });
+            });
+
+            document.getElementById('ob-submit').addEventListener('click', () => {
+                // Auto-capitalize Name
+                const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                tempProfile.name = nameParts.join(' ');
+                
+                appProfile = { ...tempProfile };
+                localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
+                
+                document.getElementById('settings-profile-name').textContent = appProfile.name;
+                document.getElementById('settings-profile-rank').textContent = `${appProfile.rank} • ${appProfile.gender === 'M' ? 'Male' : 'Female'}`;
+                
+                showMain();
+            });
+
+            // Header Events
+            document.getElementById('header-brand').addEventListener('click', () => {
+                devTapCount++;
+                clearTimeout(devTapTimeout);
+                devTapTimeout = setTimeout(() => { devTapCount = 0; }, 400);
+
+                if (devTapCount >= 10 && !appDevMode) {
+                    appDevMode = true;
+                    localStorage.setItem('crewAssist.devMode', 'true');
+                    document.getElementById('settings-developer').classList.remove('hidden');
+                    document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                    alert('Developer Mode Unlocked');
+                    devTapCount = 0;
+                }
+            });
+
+            document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
+            document.getElementById('btn-settings').addEventListener('click', openSettings);
+            document.getElementById('btn-reset').addEventListener('click', () => location.reload());
+            
+            // Settings Events
+            document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
+            document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
+            
+            document.getElementById('btn-edit-profile').addEventListener('click', () => {
+                closeSettings();
+                showOnboarding();
+            });
+
+            document.getElementById('toggle-autoscroll').addEventListener('change', (e) => {
+                appPrefs.autoScroll = e.target.checked;
+                localStorage.setItem('crewAssist.prefs', JSON.stringify(appPrefs));
+            });
+
+            document.getElementById('btn-clear-data').addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            });
+
+            // Developer Events
+            document.getElementById('btn-dev-save').addEventListener('click', () => {
+                try {
+                    const parsed = JSON.parse(document.getElementById('dev-modifiers-json').value);
+                    appModifiers = parsed;
+                    localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
+                    alert('Modifiers saved successfully.');
+                } catch (e) {
+                    alert('Invalid JSON format.');
+                }
+            });
+
+            document.getElementById('btn-dev-export').addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appModifiers, null, 2));
+                const anchor = document.createElement('a');
+                anchor.setAttribute("href", dataStr);
+                anchor.setAttribute("download", "crewassist-modifiers.json");
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+            });
+
+            document.getElementById('dev-file-import').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const parsed = JSON.parse(ev.target.result);
+                        appModifiers = parsed;
+                        document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                        localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
+                        alert('Modifiers imported successfully.');
+                    } catch (err) {
+                        alert('Error parsing imported file. Please ensure it is valid JSON.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // reset
+            });
+        }
+
+        function renderRanks(gender) {
+            const container = document.getElementById('ob-rank-container');
+            const list = document.getElementById('ob-rank-list');
+            list.innerHTML = '';
+            
+            container.classList.remove('opacity-50', 'pointer-events-none');
+            
+            ranks[gender].forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = 'py-2.5 px-4 rounded-full text-sm font-bold border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0b1a3a]/40 text-gray-400 transition-colors ob-rank-btn';
+                btn.textContent = r;
+                btn.dataset.value = r;
+                
+                if (tempProfile.rank === r) {
+                    btn.classList.remove('border-gray-200', 'dark:border-white/10', 'text-gray-400');
+                    btn.classList.add('border-sia-gold', 'text-sia-gold', 'bg-sia-gold/10');
+                }
+
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.ob-rank-btn').forEach(b => {
+                        b.classList.remove('border-sia-gold', 'text-sia-gold', 'bg-sia-gold/10');
+                        b.classList.add('border-gray-200', 'dark:border-white/10', 'text-gray-400');
+                    });
+                    btn.classList.remove('border-gray-200', 'dark:border-white/10', 'text-gray-400');
+                    btn.classList.add('border-sia-gold', 'text-sia-gold', 'bg-sia-gold/10');
+                    
+                    tempProfile.rank = r;
+                    checkObSubmit();
+                });
+                
+                list.appendChild(btn);
+            });
+        }
+
+        function checkObSubmit() {
+            const btn = document.getElementById('ob-submit');
+            if (tempProfile.name.trim() !== '' && tempProfile.gender !== '' && tempProfile.rank !== '') {
+                btn.removeAttribute('disabled');
+            } else {
+                btn.setAttribute('disabled', 'true');
+            }
+        }
+
+        function showOnboarding() {
+            elMainView.classList.add('hidden');
+            elObView.classList.remove('hidden');
+            // Pre-fill if editing
+            if (appProfile) {
+                tempProfile = { ...appProfile };
+                document.getElementById('ob-name').value = tempProfile.name;
+                if (tempProfile.gender) {
+                    document.querySelector(`.ob-gender-btn[data-value="${tempProfile.gender}"]`).click();
+                    // rank click simulated in renderRanks if matched, but let's re-render
+                    renderRanks(tempProfile.gender);
+                }
+            } else {
+                tempProfile = { name: '', gender: '', rank: '' };
+                document.getElementById('ob-name').value = '';
+                document.querySelectorAll('.ob-gender-btn').forEach(b => {
+                    b.classList.remove('border-sia-gold', 'text-sia-gold', 'bg-sia-gold/10');
+                    b.classList.add('border-gray-200', 'dark:border-white/10', 'text-gray-400');
+                });
+                const rc = document.getElementById('ob-rank-container');
+                rc.classList.add('opacity-50', 'pointer-events-none');
+                document.getElementById('ob-rank-list').innerHTML = '';
+                checkObSubmit();
+            }
+        }
+
+        function showMain() {
+            elObView.classList.add('hidden');
+            elMainView.classList.remove('hidden');
+            const firstName = appProfile.name.split(' ')[0];
+            document.getElementById('chat-greeting').textContent = `Welcome aboard, ${appProfile.rank} ${firstName}! How can I help you today?`;
+        }
+
+        function toggleThemeShutter() {
+            const shutter = document.getElementById('cabin-shutter');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Slide down
+            shutter.style.height = '100vh';
+            
+            setTimeout(() => {
+                if (isDark) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('crewAssist.theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('crewAssist.theme', 'dark');
+                }
+                
+                // Re-render lucide icons immediately for theme buttons if needed
+                // It's handled by CSS (hidden dark:block) so no JS needed
+                
+                setTimeout(() => {
+                    // Slide up
+                    shutter.style.height = '0';
+                }, 100);
+            }, 500); // Wait for slide down to finish
+        }
+
+        function openSettings() {
+            const backdrop = document.getElementById('settings-backdrop');
+            const sheet = document.getElementById('settings-sheet');
+            
+            backdrop.classList.remove('hidden');
+            // small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeSettings() {
+            const backdrop = document.getElementById('settings-backdrop');
+            const sheet = document.getElementById('settings-sheet');
+            
+            backdrop.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
         
     </script>
 </body>
