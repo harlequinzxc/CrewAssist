@@ -1,12 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="planeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#E8C766" />
-      <stop offset="100%" stop-color="#C9A227" />
+    <!-- Filter for realistic 3D shadow -->
+    <filter id="drop-shadow" x="-20%" y="-20%" width="150%" height="150%">
+      <feDropShadow dx="5" dy="15" stdDeviation="12" flood-color="#04070F" flood-opacity="0.25"/>
+    </filter>
+
+    <!-- Gradients -->
+    <linearGradient id="rightWingTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C766"/>
+      <stop offset="100%" stop-color="#B28A17"/>
+    </linearGradient>
+
+    <linearGradient id="leftWing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDF0A6"/>
+      <stop offset="40%" stop-color="#F4D35E"/>
+      <stop offset="100%" stop-color="#C9A227"/>
+    </linearGradient>
+
+    <linearGradient id="rightWingBottom" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A71C"/>
+      <stop offset="100%" stop-color="#9C7710"/>
+    </linearGradient>
+
+    <linearGradient id="tailInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8C680A"/>
+      <stop offset="100%" stop-color="#4F3A06"/>
     </linearGradient>
   </defs>
-  <g transform="rotate(-30, 256, 256)">
-    <path d="M460 256L60 120v90l240 46-240 46v90z" fill="url(#planeGrad)" />
-    <path d="M460 256l-160 46v90z" fill="#A8861F" />
+
+  <g filter="url(#drop-shadow)" transform="translate(10, -10)">
+    <!-- Right Wing (Top/Peeking) -->
+    <polygon points="40,240 460,60 260,70" fill="url(#rightWingTop)" />
+
+    <!-- Left wing (Main) -->
+    <polygon points="40,240 460,60 220,320" fill="url(#leftWing)" />
+    
+    <!-- Right wing (bottom part) -->
+    <polygon points="40,240 220,320 280,450" fill="url(#rightWingBottom)" />
+    
+    <!-- Inner shadow / Fold -->
+    <polygon points="220,320 460,60 280,450" fill="url(#tailInner)" />
   </g>
 </svg>
