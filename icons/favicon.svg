@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="planeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C766" />
+      <stop offset="100%" stop-color="#C9A227" />
+    </linearGradient>
+  </defs>
+  <g transform="rotate(-30, 256, 256)">
+    <path d="M460 256L60 120v90l240 46-240 46v90z" fill="url(#planeGrad)" />
+    <path d="M460 256l-160 46v90z" fill="#A8861F" />
+  </g>
+</svg>

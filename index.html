@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CrewAssist</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#04070F">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sia: {
+                            gold: '#C9A227',
+                            goldlt: '#E8C766',
+                            navy: '#0B1A3A',
+                            deep: '#04070F',
+                            batik: '#5B3E96'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"Space Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Variables (Default) */
+            --bg-color: #04070F;
+            --text-main: #FFFFFF;
+            --text-muted: #9CA3AF;
+            --glass-bg: rgba(11, 26, 58, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-bubble-bg: rgba(201, 162, 39, 0.15);
+            --glass-sheet-bg: rgba(4, 7, 15, 0.85);
+            --aurora-opacity: 1;
+        }
+
+        html:not(.dark) {
+            /* Light Mode Variables (Warm cream cabin) */
+            --bg-color: #F6F1E8;
+            --text-main: #111827;
+            --text-muted: #4B5563;
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-bubble-bg: rgba(201, 162, 39, 0.2);
+            --glass-sheet-bg: rgba(246, 241, 232, 0.9);
+            --aurora-opacity: 0.3; /* Subtle aurora in light mode */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow: hidden; /* Prevent scrolling on body, will scroll in containers */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphic Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-bubble {
+            background: var(--glass-bubble-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .glass-sheet {
+            background: var(--glass-sheet-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        #sky-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="antialiased w-full h-full min-h-screen flex flex-col">
+    <!-- Starry Sky Background -->
+    <canvas id="sky-canvas"></canvas>
+
+    <div id="app" class="relative z-10 w-full h-full flex flex-col items-center justify-center min-h-screen">
+        <h1 class="text-2xl font-bold text-sia-gold">CrewAssist Setup</h1>
+        <p class="text-sm opacity-80 mt-2 text-center max-w-xs">PWA initialized. Moving to Next Steps.</p>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        try {
+            lucide.createIcons();
+        } catch (e) {
+            console.error('Lucide icons error', e);
+        }
+
+        // Sky Canvas Animation
+        const canvas = document.getElementById('sky-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let stars = [];
+        let shootingStars = [];
+        let time = 0;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            initStars();
+        }
+
+        window.addEventListener('resize', resize);
+
+        function initStars() {
+            stars = [];
+            const numStars = Math.floor((width * height) / 3000); // 150-300 range usually
+            const actualNumStars = Math.max(150, Math.min(300, numStars));
+
+            for (let i = 0; i < actualNumStars; i++) {
+                const isGold = Math.random() < 0.18;
+                let color;
+                if (isGold) {
+                    color = '#C9A227';
+                } else {
+                    color = Math.random() < 0.2 ? '#A6C8FF' : '#FFFFFF';
+                }
+
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.5 + 0.5,
+                    color: color,
+                    twinkleSpeed: Math.random() * 0.05 + 0.01,
+                    twinkleAmp: Math.random() * 0.5 + 0.2,
+                    driftX: (Math.random() - 0.5) * 0.1,
+                    driftY: Math.random() * 0.2 + 0.05,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function createShootingStar() {
+            shootingStars.push({
+                x: Math.random() * width,
+                y: 0,
+                length: Math.random() * 80 + 40,
+                speed: Math.random() * 10 + 5,
+                angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1),
+                opacity: 1
+            });
+        }
+
+        function drawAurora() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (!isDark) return; // Aurora less visible or disabled in light mode
+
+            const breath = Math.sin(time * 0.02) * 0.2 + 0.8;
+            const opacity = 0.4 * breath;
+
+            // Batik Purple Aurora
+            const grd1 = ctx.createRadialGradient(width * 0.3, height * 0.7, 0, width * 0.3, height * 0.7, width * 0.6);
+            grd1.addColorStop(0, `rgba(91, 62, 150, ${opacity * 0.5})`);
+            grd1.addColorStop(1, 'rgba(91, 62, 150, 0)');
+            ctx.fillStyle = grd1;
+            ctx.fillRect(0, 0, width, height);
+
+            // Gold Aurora
+            const grd2 = ctx.createRadialGradient(width * 0.7, height * 0.3, 0, width * 0.7, height * 0.3, width * 0.5);
+            grd2.addColorStop(0, `rgba(201, 162, 39, ${opacity * 0.3})`);
+            grd2.addColorStop(1, 'rgba(201, 162, 39, 0)');
+            ctx.fillStyle = grd2;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            time++;
+
+            drawAurora();
+
+            // Draw Stars
+            stars.forEach(star => {
+                // Movement
+                star.x += star.driftX;
+                star.y += star.driftY;
+
+                // Wrap around
+                if (star.y > height) star.y = 0;
+                if (star.x > width) star.x = 0;
+                if (star.x < 0) star.x = width;
+
+                // Twinkle
+                const twinkle = Math.sin(time * star.twinkleSpeed + star.phase) * star.twinkleAmp;
+                const opacity = Math.max(0.2, 1 - twinkle);
+
+                ctx.globalAlpha = opacity;
+                ctx.fillStyle = star.color;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Shooting Stars
+            if (Math.random() < 0.005) { // Rare
+                createShootingStar();
+            }
+
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const ss = shootingStars[i];
+                
+                const grad = ctx.createLinearGradient(
+                    ss.x, ss.y, 
+                    ss.x - Math.cos(ss.angle) * ss.length, 
+                    ss.y - Math.sin(ss.angle) * ss.length
+                );
+                grad.addColorStop(0, `rgba(201, 162, 39, ${ss.opacity})`);
+                grad.addColorStop(1, 'rgba(201, 162, 39, 0)');
+
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(ss.x - Math.cos(ss.angle) * ss.length, ss.y - Math.sin(ss.angle) * ss.length);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ss.x += Math.cos(ss.angle) * ss.speed;
+                ss.y += Math.sin(ss.angle) * ss.speed;
+                ss.opacity -= 0.02;
+
+                if (ss.opacity <= 0 || ss.y > height || ss.x > width) {
+                    shootingStars.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            resize();
+            animate();
+            
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker Registered'))
+                    .catch((err) => console.error('Service Worker Registration Failed', err));
+            }
+        });
+        
+    </script>
+</body>
+</html>
