@@ -22,7 +22,8 @@
     </linearGradient>
   </defs>
 
-  <g filter="url(#shadow)" transform="translate(64, 64) scale(0.75)">
+  <!-- Scale significantly reduced to give a massive safe zone so mobile squircles never clip it -->
+  <g filter="url(#shadow)" transform="translate(115, 115) scale(0.55)">
     <!-- Right wing -->
     <polygon points="210,290 460,40 280,440" fill="url(#rightWing)" />
     
