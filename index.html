@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>CrewAssist</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#04070F">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        sia: {
+                            gold: '#C9A227',
+                            goldlt: '#E8C766',
+                            navy: '#0B1A3A',
+                            deep: '#04070F',
+                            batik: '#5B3E96'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        mono: ['"Space Mono"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            /* Dark Mode Variables */
+            --bg-color: #04070F;
+            --text-main: #FFFFFF;
+            --text-muted: #9CA3AF;
+            --glass-bg: rgba(11, 26, 58, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --glass-bubble-bg: rgba(201, 162, 39, 0.15);
+            --glass-sheet-bg: rgba(4, 7, 15, 0.95);
+            --aurora-opacity: 1;
+        }
+
+        html:not(.dark) {
+            /* Light Mode Variables */
+            --bg-color: #F6F1E8;
+            --text-main: #111827;
+            --text-muted: #4B5563;
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --glass-bubble-bg: rgba(201, 162, 39, 0.2);
+            --glass-sheet-bg: rgba(246, 241, 232, 0.95);
+            --aurora-opacity: 0.3;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Glassmorphic Utilities */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-bubble {
+            background: var(--glass-bubble-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .glass-sheet {
+            background: var(--glass-sheet-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+        }
+
+        /* Custom Glowing Elements */
+        .glow-gold {
+            box-shadow: 0 0 15px rgba(201, 162, 39, 0.3);
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-12px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes jump {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .animate-jump {
+            animation: jump 2s infinite;
+        }
+
+        #sky-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+        
+        /* Unified UI input styles */
+        .ui-input {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        html:not(.dark) .ui-input {
+            background: rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="antialiased w-full h-full min-h-screen flex flex-col">
+    <!-- Starry Sky Background -->
+    <canvas id="sky-canvas"></canvas>
+
+    <div id="app-root" class="relative z-10 w-full h-full flex flex-col min-h-screen">
+        <!-- Onboarding View -->
+        <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
+            <div class="h-[35%] flex items-center justify-center relative">
+                <div class="flex flex-col items-center">
+                    <div class="mb-5 animate-float">
+                        <img src="icons/icon-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
+                    </div>
+                    <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
+                </div>
+            </div>
+            <div class="h-[65%] relative z-10 w-full backdrop-blur-sm">
+                <!-- Curve Separator -->
+                <div class="absolute -top-[40px] left-0 w-full h-[40px] overflow-hidden pointer-events-none">
+                    <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
+                        <defs>
+                            <linearGradient id="archGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                <stop offset="0%" stop-color="#C9A227" stop-opacity="0" />
+                                <stop offset="50%" stop-color="#C9A227" stop-opacity="1" />
+                                <stop offset="100%" stop-color="#C9A227" stop-opacity="0" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Main Background (Transparent Glass) -->
+                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8]/90 dark:fill-[#080B14]/80" />
+                        <!-- Gold Border Line (Tapered) -->
+                        <path d="M0,40 Q50,-10 100,40" fill="none" stroke="url(#archGrad)" stroke-width="1.5" vector-effect="non-scaling-stroke" class="opacity-60" />
+                    </svg>
+                </div>
+                <!-- Form Container -->
+                <div class="bg-[#F6F1E8]/90 dark:bg-[#080B14]/80 h-full w-full px-8 pt-2 pb-8 flex flex-col">
+                    <div class="flex-grow overflow-y-auto max-w-sm mx-auto w-full flex flex-col">
+                        <h2 class="text-2xl font-bold mb-8 text-center">Welcome aboard<span class="text-sia-gold">.</span></h2>
+                        <div class="space-y-6 flex-grow">
+                            <!-- Name -->
+                            <div>
+                                <label class="block text-sm font-bold mb-2">Name</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                                    </div>
+                                    <input type="text" id="ob-name" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="e.g. Johnathan">
+                                </div>
+                            </div>
+                            <!-- Gender -->
+                            <div>
+                                <label class="block text-sm font-bold mb-2">Gender</label>
+                                <div class="flex gap-3">
+                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-400 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="M">
+                                        <i data-lucide="user" class="w-4 h-4"></i> Male
+                                    </button>
+                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-400 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="F">
+                                        <i data-lucide="user" class="w-4 h-4"></i> Female
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Rank -->
+                            <div id="ob-rank-container" class="opacity-50 pointer-events-none transition-opacity hidden">
+                                <label class="block text-sm font-bold mb-2">Rank</label>
+                                <div class="flex flex-wrap gap-2" id="ob-rank-list">
+                                    <!-- Rendered via JS -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-8 shrink-0 pb-4">
+                            <button id="ob-submit" disabled class="w-full py-3.5 px-4 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(201,162,39,0.2)] flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(201,162,39,0.4)]">
+                                Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                            </button>
+                            <p class="text-[11px] text-center text-gray-500 mt-5 flex items-center justify-center gap-1.5 font-medium">
+                                <i data-lucide="lock" class="w-3 h-3"></i> Data is stored locally on the device
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main View -->
+        <div id="main-view" class="fixed inset-0 z-10 flex flex-col hidden">
+            <!-- Header -->
+            <header class="glass-panel z-30 shrink-0 sticky top-0 w-full relative">
+                <div class="flex items-center justify-between px-4 py-3 w-full">
+                    <!-- Left -->
+                    <div class="flex items-center gap-2 cursor-pointer select-none" id="header-brand">
+                        <img src="icons/icon-192.png" class="w-8 h-8 drop-shadow-md" alt="Logo">
+                        <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
+                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1"></div>
+                    </div>
+                    <!-- Right -->
+                    <div class="flex items-center gap-2">
+                        <button id="btn-theme" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                            <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                            <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+                        </button>
+                        <button id="btn-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                            <i data-lucide="settings" class="w-5 h-5"></i>
+                        </button>
+                        <button id="btn-reset" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- Batik Accent Line -->
+                <div class="h-[2px] w-full bg-gradient-to-r from-sia-batik via-sia-gold to-sia-batik opacity-80"></div>
+            </header>
+
+            <!-- Chat Area Placeholder -->
+            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full" id="chat-container">
+                <div class="flex items-start gap-3 mt-4">
+                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Bot">
+                    </div>
+                    <div class="glass-bubble p-3 rounded-2xl rounded-tl-none text-sm max-w-[80%] shadow-sm">
+                        <p id="chat-greeting">Welcome aboard!</p>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Input Placeholder -->
+            <div class="shrink-0 p-4 pb-8 w-full pointer-events-none opacity-50 relative z-30 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8]/80 to-transparent dark:from-[#04070F] dark:via-[#04070F]/80 dark:to-transparent">
+                <div class="max-w-xl mx-auto w-full">
+                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2">
+                        <input type="text" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold text-gray-400" disabled>
+                        <button class="w-8 h-8 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0" disabled>
+                            <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cabin Shutter Animation Layer -->
+        <div id="cabin-shutter" class="fixed inset-x-0 top-0 h-0 bg-[#E5E0D8] dark:bg-[#1A1F2E] z-50 overflow-hidden flex items-end justify-center transition-all duration-500 ease-in-out shadow-2xl pointer-events-none">
+            <div class="w-full h-8 bg-[#D5D0C8] dark:bg-[#111520] rounded-b-xl flex items-center justify-center shadow-inner border-b border-black/10 dark:border-white/5">
+                <div class="w-16 h-1.5 rounded-full bg-black/20 dark:bg-white/20"></div>
+            </div>
+        </div>
+
+        <!-- Settings Bottom Sheet -->
+        <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col max-h-[calc(100dvh-64px)]">
+            <div class="w-full flex justify-center py-3 shrink-0">
+                <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+            </div>
+            <div class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">Settings</h3>
+                    <button id="btn-close-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                
+                <!-- Profile -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
+                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
+                                <i data-lucide="user-round" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
+                            </div>
+                            <p class="font-bold text-base" id="settings-profile-name">Johnathan</p>
+                        </div>
+                        <button id="btn-edit-profile" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
+                    </div>
+                </div>
+
+                <!-- Preferences -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Preferences</p>
+                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold">Auto-scroll Chat</span>
+                            <p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 font-medium">
+                                <i data-lucide="arrow-down-to-line" class="w-3 h-3"></i> Jump to newest message
+                            </p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggle-autoscroll" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-gray-300 dark:bg-[#1a2030] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sia-gold border border-black/10 dark:border-white/10"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Developer Section -->
+                <div id="settings-developer" class="hidden">
+                    <p class="text-[10px] text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
+                        <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
+                    </p>
+                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
+                        <span class="text-sm font-bold">Modifiers & Values</span>
+                        <textarea id="dev-modifiers-json" class="w-full h-32 bg-black/5 dark:bg-[#04070F] border border-gray-300 dark:border-gray-700/50 rounded-xl p-3 text-xs font-mono focus:outline-none focus:border-sia-gold resize-none" placeholder="{}"></textarea>
+                        <div class="flex gap-2">
+                            <button id="btn-dev-save" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-green-500/10 text-green-600 dark:text-[#4ade80] border border-green-500/20 hover:bg-green-500/20 transition-colors">Save</button>
+                            <button id="btn-dev-export" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-[#60a5fa] border border-blue-500/20 hover:bg-blue-500/20 transition-colors">Export</button>
+                            <button id="btn-dev-import" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-[#c084fc] border border-purple-500/20 hover:bg-purple-500/20 transition-colors relative overflow-hidden">
+                                Import
+                                <input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
+                    <button id="btn-clear-data" class="w-full py-3 px-4 rounded-2xl text-sm font-bold bg-red-500/10 text-red-600 dark:text-[#ff4c4c] border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        try {
+            lucide.createIcons();
+        } catch (e) {
+            console.error('Lucide icons error', e);
+        }
+
+        // Sky Canvas Animation
+        const canvas = document.getElementById('sky-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let stars = [];
+        let shootingStars = [];
+        let time = 0;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            initStars();
+        }
+
+        window.addEventListener('resize', resize);
+
+        function initStars() {
+            stars = [];
+            const numStars = Math.floor((width * height) / 3000); // 150-300 range usually
+            const actualNumStars = Math.max(150, Math.min(300, numStars));
+
+            for (let i = 0; i < actualNumStars; i++) {
+                const isGold = Math.random() < 0.18;
+                let color;
+                if (isGold) {
+                    color = '#C9A227';
+                } else {
+                    color = Math.random() < 0.2 ? '#A6C8FF' : '#FFFFFF';
+                }
+
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.5 + 0.5,
+                    color: color,
+                    twinkleSpeed: Math.random() * 0.01 + 0.002, // even slower twinkle
+                    twinkleAmp: Math.random() * 0.8 + 0.2,
+                    driftX: 0,
+                    driftY: Math.random() * 0.03 + 0.01, // extremely slow downward drift
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function createShootingStar() {
+            shootingStars.push({
+                x: Math.random() * width,
+                y: Math.random() * (height / 3), // starts higher but randomly inside the top third
+                length: Math.random() * 80 + 40,
+                speed: Math.random() * 1.5 + 0.5, // much slower
+                angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1),
+                opacity: 1
+            });
+        }
+
+        function drawAurora() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (!isDark) return; // Aurora less visible or disabled in light mode
+
+            const breath = Math.sin(time * 0.02) * 0.2 + 0.8;
+            const opacity = 0.4 * breath;
+
+            // Batik Purple Aurora
+            const grd1 = ctx.createRadialGradient(width * 0.3, height * 0.7, 0, width * 0.3, height * 0.7, width * 0.6);
+            grd1.addColorStop(0, `rgba(91, 62, 150, ${opacity * 0.5})`);
+            grd1.addColorStop(1, 'rgba(91, 62, 150, 0)');
+            ctx.fillStyle = grd1;
+            ctx.fillRect(0, 0, width, height);
+
+            // Gold Aurora
+            const grd2 = ctx.createRadialGradient(width * 0.7, height * 0.3, 0, width * 0.7, height * 0.3, width * 0.5);
+            grd2.addColorStop(0, `rgba(201, 162, 39, ${opacity * 0.3})`);
+            grd2.addColorStop(1, 'rgba(201, 162, 39, 0)');
+            ctx.fillStyle = grd2;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            if (!isDark) {
+                requestAnimationFrame(animate);
+                return;
+            }
+            
+            time++;
+
+            drawAurora();
+
+            // Draw Stars
+            stars.forEach(star => {
+                // Movement
+                star.x += star.driftX;
+                star.y += star.driftY;
+
+                // Wrap around
+                if (star.y > height) star.y = 0;
+                if (star.x > width) star.x = 0;
+                if (star.x < 0) star.x = width;
+
+                // Twinkle
+                const twinkle = Math.sin(time * star.twinkleSpeed + star.phase) * star.twinkleAmp;
+                const opacity = Math.max(0.2, 1 - twinkle);
+
+                ctx.globalAlpha = opacity;
+                ctx.fillStyle = star.color;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Shooting Stars
+            if (Math.random() < 0.005) { // Rare
+                createShootingStar();
+            }
+
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const ss = shootingStars[i];
+                
+                const grad = ctx.createLinearGradient(
+                    ss.x, ss.y, 
+                    ss.x - Math.cos(ss.angle) * ss.length, 
+                    ss.y - Math.sin(ss.angle) * ss.length
+                );
+                grad.addColorStop(0, `rgba(201, 162, 39, ${ss.opacity})`);
+                grad.addColorStop(1, 'rgba(201, 162, 39, 0)');
+
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(ss.x - Math.cos(ss.angle) * ss.length, ss.y - Math.sin(ss.angle) * ss.length);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ss.x += Math.cos(ss.angle) * ss.speed;
+                ss.y += Math.sin(ss.angle) * ss.speed;
+                ss.opacity -= 0.02;
+
+                if (ss.opacity <= 0 || ss.y > height || ss.x > width) {
+                    shootingStars.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // State
+        let appProfile = null;
+        let appPrefs = { autoScroll: true };
+        let appDevMode = false;
+        let appModifiers = {};
+        
+        let tempProfile = { name: '', gender: '', rank: '' };
+        const ranks = {
+            M: ['Jr. FS', 'FS', 'LS', 'CS', 'IFM'],
+            F: ['Jr. FSS', 'FSS', 'LSS', 'CSS', 'IFM']
+        };
+
+        let devTapCount = 0;
+        let devTapTimeout;
+
+        // Elements
+        const elObView = document.getElementById('onboarding-view');
+        const elMainView = document.getElementById('main-view');
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            resize();
+            animate();
+            
+            initData();
+            initUI();
+            bindEvents();
+
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker Registered'))
+                    .catch((err) => console.error('Service Worker Registration Failed', err));
+            }
+        });
+
+        function initData() {
+            try {
+                const storedProfile = localStorage.getItem('crewAssist.profile');
+                if (storedProfile) appProfile = JSON.parse(storedProfile);
+                
+                const storedPrefs = localStorage.getItem('crewAssist.prefs');
+                if (storedPrefs) appPrefs = JSON.parse(storedPrefs);
+                
+                appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
+                
+                const storedMods = localStorage.getItem('crewAssist.modifiers');
+                if (storedMods) appModifiers = JSON.parse(storedMods);
+                
+                const isLight = localStorage.getItem('crewAssist.theme') === 'light';
+                if (isLight) document.documentElement.classList.remove('dark');
+            } catch (e) { console.error('Storage error', e); }
+        }
+
+        function initUI() {
+            // Check if profile exists to skip onboarding
+            if (appProfile && appProfile.name && appProfile.gender && appProfile.rank) {
+                showMain();
+            } else {
+                showOnboarding();
+            }
+
+            // Settings Sheet Init
+            document.getElementById('toggle-autoscroll').checked = appPrefs.autoScroll;
+            if (appDevMode) {
+                document.getElementById('settings-developer').classList.remove('hidden');
+                document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+            }
+            if (appProfile) {
+                document.getElementById('settings-profile-name').textContent = appProfile.name;
+            }
+        }
+
+        function bindEvents() {
+            // Onboarding Events
+            document.getElementById('ob-name').addEventListener('input', (e) => {
+                tempProfile.name = e.target.value.trim();
+                checkObSubmit();
+            });
+
+            document.querySelectorAll('.ob-gender-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.ob-gender-btn').forEach(b => {
+                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                        b.classList.add('ui-input', 'text-gray-400');
+                        const icon = b.querySelector('svg') || b.querySelector('i');
+                        if(icon) icon.classList.remove('text-black');
+                    });
+                    const target = e.currentTarget;
+                    target.classList.remove('ui-input', 'text-gray-400');
+                    target.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                    const icon = target.querySelector('svg') || target.querySelector('i');
+                    if(icon) icon.classList.add('text-black');
+                    
+                    tempProfile.gender = target.dataset.value;
+                    tempProfile.rank = ''; // Reset rank
+                    renderRanks(tempProfile.gender);
+                    checkObSubmit();
+                });
+            });
+
+            document.getElementById('ob-submit').addEventListener('click', () => {
+                // Auto-capitalize Name
+                const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                tempProfile.name = nameParts.join(' ');
+                
+                appProfile = { ...tempProfile };
+                localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
+                
+                document.getElementById('settings-profile-name').textContent = appProfile.name;
+                
+                showMain();
+            });
+
+            // Header Events
+            document.getElementById('header-brand').addEventListener('click', () => {
+                devTapCount++;
+                clearTimeout(devTapTimeout);
+                devTapTimeout = setTimeout(() => { devTapCount = 0; }, 400);
+
+                if (devTapCount >= 10 && !appDevMode) {
+                    appDevMode = true;
+                    localStorage.setItem('crewAssist.devMode', 'true');
+                    document.getElementById('settings-developer').classList.remove('hidden');
+                    document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                    alert('Developer Mode Unlocked');
+                    devTapCount = 0;
+                }
+            });
+
+            document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
+            document.getElementById('btn-settings').addEventListener('click', openSettings);
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.innerHTML = `
+                    <div class="flex items-start gap-3 mt-4">
+                        <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                            <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Bot">
+                        </div>
+                        <div class="glass-bubble p-3 rounded-2xl rounded-tl-none text-sm max-w-[80%] shadow-sm">
+                            <p id="chat-greeting">Welcome aboard, ${appProfile.rank} ${appProfile.name.split(' ')[0]}! How can I help you today?</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Settings Events
+            document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
+            document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
+            
+            document.getElementById('btn-edit-profile').addEventListener('click', () => {
+                closeSettings();
+                showOnboarding();
+            });
+
+            document.getElementById('toggle-autoscroll').addEventListener('change', (e) => {
+                appPrefs.autoScroll = e.target.checked;
+                localStorage.setItem('crewAssist.prefs', JSON.stringify(appPrefs));
+            });
+
+            document.getElementById('btn-clear-data').addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            });
+
+            // Developer Events
+            document.getElementById('btn-dev-save').addEventListener('click', () => {
+                try {
+                    const parsed = JSON.parse(document.getElementById('dev-modifiers-json').value);
+                    appModifiers = parsed;
+                    localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
+                    alert('Modifiers saved successfully.');
+                } catch (e) {
+                    alert('Invalid JSON format.');
+                }
+            });
+
+            document.getElementById('btn-dev-export').addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appModifiers, null, 2));
+                const anchor = document.createElement('a');
+                anchor.setAttribute("href", dataStr);
+                anchor.setAttribute("download", "crewassist-modifiers.json");
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+            });
+
+            document.getElementById('dev-file-import').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const parsed = JSON.parse(ev.target.result);
+                        appModifiers = parsed;
+                        document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                        localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
+                        alert('Modifiers imported successfully.');
+                    } catch (err) {
+                        alert('Error parsing imported file. Please ensure it is valid JSON.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // reset
+            });
+        }
+
+        function renderRanks(gender) {
+            const container = document.getElementById('ob-rank-container');
+            const list = document.getElementById('ob-rank-list');
+            list.innerHTML = '';
+            
+            container.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+            
+            ranks[gender].forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = 'py-3 px-5 rounded-full text-sm font-bold ui-input text-gray-400 transition-all ob-rank-btn';
+                btn.textContent = r;
+                btn.dataset.value = r;
+                
+                if (tempProfile.rank === r) {
+                    btn.classList.remove('text-gray-400', 'ui-input');
+                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                }
+
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.ob-rank-btn').forEach(b => {
+                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                        b.classList.add('text-gray-400', 'ui-input');
+                    });
+                    btn.classList.remove('text-gray-400', 'ui-input');
+                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                    
+                    tempProfile.rank = r;
+                    checkObSubmit();
+                });
+                
+                list.appendChild(btn);
+            });
+        }
+
+        function checkObSubmit() {
+            const btn = document.getElementById('ob-submit');
+            if (tempProfile.name.trim() !== '' && tempProfile.gender !== '' && tempProfile.rank !== '') {
+                btn.removeAttribute('disabled');
+                btn.classList.add('animate-jump');
+            } else {
+                btn.setAttribute('disabled', 'true');
+                btn.classList.remove('animate-jump');
+            }
+        }
+
+        function showOnboarding() {
+            elMainView.classList.add('hidden');
+            elObView.classList.remove('hidden');
+            // Pre-fill if editing
+            if (appProfile) {
+                tempProfile = { ...appProfile };
+                document.getElementById('ob-name').value = tempProfile.name;
+                if (tempProfile.gender) {
+                    document.querySelector(`.ob-gender-btn[data-value="${tempProfile.gender}"]`).click();
+                    // rank click simulated in renderRanks if matched, but let's re-render
+                    renderRanks(tempProfile.gender);
+                }
+            } else {
+                tempProfile = { name: '', gender: '', rank: '' };
+                document.getElementById('ob-name').value = '';
+                document.querySelectorAll('.ob-gender-btn').forEach(b => {
+                    b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                    b.classList.add('ui-input', 'text-gray-400');
+                    const icon = b.querySelector('svg') || b.querySelector('i');
+                    if(icon) icon.classList.remove('text-black');
+                });
+                const rc = document.getElementById('ob-rank-container');
+                rc.classList.add('hidden', 'opacity-50', 'pointer-events-none');
+                document.getElementById('ob-rank-list').innerHTML = '';
+                checkObSubmit();
+            }
+        }
+
+        function showMain() {
+            elObView.classList.add('hidden');
+            elMainView.classList.remove('hidden');
+            const firstName = appProfile.name.split(' ')[0];
+            document.getElementById('chat-greeting').textContent = `Welcome aboard, ${appProfile.rank} ${firstName}! How can I help you today?`;
+        }
+
+        function toggleThemeShutter() {
+            const shutter = document.getElementById('cabin-shutter');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Slide down
+            shutter.style.height = '100vh';
+            
+            setTimeout(() => {
+                if (isDark) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('crewAssist.theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('crewAssist.theme', 'dark');
+                }
+                
+                // Re-render lucide icons immediately for theme buttons if needed
+                // It's handled by CSS (hidden dark:block) so no JS needed
+                
+                setTimeout(() => {
+                    // Slide up
+                    shutter.style.height = '0';
+                }, 100);
+            }, 500); // Wait for slide down to finish
+        }
+
+        function openSettings() {
+            const backdrop = document.getElementById('settings-backdrop');
+            const sheet = document.getElementById('settings-sheet');
+            
+            backdrop.classList.remove('hidden');
+            // small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeSettings() {
+            const backdrop = document.getElementById('settings-backdrop');
+            const sheet = document.getElementById('settings-sheet');
+            
+            backdrop.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+        
+    </script>
+</body>
+</html>
