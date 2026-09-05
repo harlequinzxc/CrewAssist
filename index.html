@@ -316,6 +316,7 @@
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
             <div class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
+                <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
                     <button id="btn-close-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
@@ -380,6 +381,23 @@
                         <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Results Overlay Sheet -->
+        <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="results-sheet" class="fixed inset-x-0 bottom-0 z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col max-h-[90vh]">
+            <div class="w-full flex justify-center py-3 shrink-0">
+                <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+            </div>
+            <div class="flex items-center justify-between px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5">
+                <h3 class="text-xl font-bold" id="results-title">Calculation Results</h3>
+                <button id="btn-close-results" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="px-6 py-6 overflow-y-auto max-w-xl mx-auto w-full space-y-6 flex-grow" id="results-content">
+                <!-- Injected via JS -->
             </div>
         </div>
     </div>
@@ -869,7 +887,7 @@
                 msgDiv.className = 'flex items-start gap-3 mt-4';
                 // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
                 msgDiv.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md animate-float" style="animation-duration: 3s;">
+                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
                         <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                     </div>
                     <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
@@ -935,18 +953,18 @@
         function analyzeIntent(text) {
             const lowerText = text.toLowerCase();
             
-            // NLP Intent Engine
+            // NLP Intent Engine based on LOGIC.md
             if (/menu|serving|onboard/.test(lowerText)) {
                 addMessage('bot', 'Opening Menu Lookup... *(Step 5 Feature)*');
             }
-            else if (/total|cop/.test(lowerText)) {
-                addMessage('bot', 'Opening COP Calculator for Both IFA & LMA... *(Step 4 Feature)*');
+            else if (/total|cop|both|allowance|calculate/.test(lowerText)) {
+                renderCalculatorCard('both');
             }
             else if (/lma|meal/.test(lowerText)) {
-                addMessage('bot', 'Opening LMA Calculator... *(Step 4 Feature)*');
+                renderCalculatorCard('lma');
             }
             else if (/ifa|flight/.test(lowerText)) {
-                addMessage('bot', 'Opening IFA Calculator... *(Step 4 Feature)*');
+                renderCalculatorCard('ifa');
             }
             else if (/print|printer/.test(lowerText)) {
                 addMessage('bot', 'Opening Menu Printer... *(Step 6 Feature)*');
@@ -1008,4 +1026,577 @@
         
     </script>
 </body>
-</html>
+</html>        // ==========================================
+        // STEP 4: CALCULATOR ENGINE & UI (Vanilla JS)
+        // ==========================================
+
+        const IFA_CONFIG = {
+            baseRates: { 'Jr. FS': 10, 'FS': 13.5, 'LS': 16, 'CS': 18.5, 'IFM': 23, 'Jr. FSS': 10, 'FSS': 13.5, 'LSS': 16, 'CSS': 18.5 },
+            sgBuffer: 2.5,
+            stationBuffer: 1.5,
+            paxingMultiplier: 0.75,
+            directUSMultiplier: 3.5,
+            turnaroundBonusAmount: 90.00
+        };
+
+        const IATA_TO_REGION = {
+            'SYD': 'Australia / New Zealand', 'MEL': 'Australia / New Zealand', 'BNE': 'Australia / New Zealand', 'PER': 'Australia / New Zealand', 'ADL': 'Australia / New Zealand', 'AKL': 'Australia / New Zealand', 'CHC': 'Australia / New Zealand',
+            'PEK': 'Orient', 'PVG': 'Orient', 'CAN': 'Orient', 'HKG': 'Orient', 'TPE': 'Orient', 'ICN': 'Orient',
+            'NRT': 'Japan', 'HND': 'Japan', 'KIX': 'Japan', 'NGO': 'Japan', 'FUK': 'Japan', 'CTS': 'Japan',
+            'JFK': 'North America', 'EWR': 'North America', 'LAX': 'North America', 'SFO': 'North America', 'SEA': 'North America', 'IAH': 'North America', 'YVR': 'North America',
+            'LHR': 'Europe', 'MAN': 'Europe', 'CDG': 'Europe', 'FRA': 'Europe', 'MUC': 'Europe', 'ZRH': 'Europe', 'AMS': 'Europe', 'CPH': 'Europe', 'FCO': 'Europe', 'MXP': 'Europe', 'IST': 'Europe', 'BCN': 'Europe',
+            'DXB': 'Middle East', 'DOH': 'Middle East', 'BAH': 'Middle East', 'MCT': 'Middle East', 'RUH': 'Middle East', 'JED': 'Middle East',
+            'JNB': 'South Africa', 'CPT': 'South Africa',
+            'DEL': 'South Asia', 'BOM': 'South Asia', 'BLR': 'South Asia', 'MAA': 'South Asia', 'CCU': 'South Asia', 'CMB': 'South Asia', 'DAC': 'South Asia', 'KTM': 'South Asia', 'MLE': 'South Asia',
+            'BKK': 'Southeast Asia', 'HKT': 'Southeast Asia', 'KUL': 'Southeast Asia', 'PEN': 'Southeast Asia', 'CGK': 'Southeast Asia', 'DPS': 'Southeast Asia', 'SGN': 'Southeast Asia', 'HAN': 'Southeast Asia', 'MNL': 'Southeast Asia', 'RGN': 'Southeast Asia', 'PNH': 'Southeast Asia'
+        };
+
+        const REGION_RATES = {
+            'Australia / New Zealand': { b: 50, l: 86, d: 111 },
+            'Orient': { b: 57, l: 100, d: 128 },
+            'North America': { b: 51, l: 90, d: 115 },
+            'Europe': { b: 53, l: 92, d: 119 },
+            'Japan': { b: 52, l: 92, d: 118 },
+            'Middle East': { b: 40, l: 70, d: 91 },
+            'South Africa': { b: 28, l: 50, d: 64 },
+            'South Asia': { b: 36, l: 64, d: 82 },
+            'Southeast Asia': { b: 31, l: 55, d: 70 }
+        };
+
+        let calcIdCounter = 0;
+
+        function renderCalculatorCard(mode) {
+            calcIdCounter++;
+            const id = 'calc-' + calcIdCounter;
+            
+            const chatContainer = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-start gap-3 mt-4 w-full';
+            
+            let ifaHtml = '';
+            let lmaHtml = '';
+
+            if (mode === 'ifa' || mode === 'both') {
+                ifaHtml = `
+                    <div class="mb-4" id="${id}-ifa-wrap">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> IFA Details</h4>
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <select id="${id}-flight-type" class="ui-input flex-1 rounded-xl py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none">
+                                <option value="Layover">Layover</option>
+                                <option value="Turnaround">Turnaround</option>
+                            </select>
+                            <select id="${id}-sector-count" class="ui-input flex-1 rounded-xl py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none">
+                                <option value="2">2 Sectors</option>
+                                <option value="4">4 Sectors</option>
+                            </select>
+                        </div>
+                        <div id="${id}-ifa-sectors" class="space-y-3"></div>
+                    </div>
+                `;
+            }
+
+            if (mode === 'lma' || mode === 'both') {
+                lmaHtml = `
+                    <div class="mb-4 ${mode === 'both' ? 'border-t border-black/5 dark:border-white/5 pt-4' : ''}" id="${id}-lma-wrap">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> LMA Details</h4>
+                        </div>
+                        <div class="space-y-3" id="${id}-lma-sectors"></div>
+                        <button id="${id}-btn-add-lma" class="w-full py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-500 mt-2 hover:border-sia-gold hover:text-sia-gold transition-colors">+ Add Layover Station</button>
+                    </div>
+                `;
+            }
+
+            msgDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                </div>
+                <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[calc(100%-44px)] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
+                        <h3 class="font-bold text-sm text-sia-gold">COP Allowance Calculator</h3>
+                    </div>
+                    ${ifaHtml}
+                    ${lmaHtml}
+                    <button id="${id}-btn-calc" class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black shadow-md hover:shadow-lg transition-all mt-2 active:scale-[0.98]">
+                        Calculate
+                    </button>
+                </div>
+            `;
+            
+            chatContainer.appendChild(msgDiv);
+            
+            // Wait a tick for DOM
+            setTimeout(() => {
+                lucide.createIcons();
+                bindCalculatorEvents(id, mode);
+                if (appPrefs.autoScroll) scrollToBottom();
+            }, 10);
+        }
+
+        function bindCalculatorEvents(id, mode) {
+            // IFA Binding
+            if (mode === 'ifa' || mode === 'both') {
+                const typeSel = document.getElementById(`${id}-flight-type`);
+                const cntSel = document.getElementById(`${id}-sector-count`);
+                
+                const renderIfaSectors = () => {
+                    const container = document.getElementById(`${id}-ifa-sectors`);
+                    const count = parseInt(cntSel.value);
+                    const isTurn = typeSel.value === 'Turnaround';
+                    const is4 = count === 4;
+
+                    // Visibility logic per 4.2
+                    const showUS = !isTurn && !is4;
+                    const showPax = !is4;
+
+                    let html = '';
+                    for (let i = 1; i <= count; i++) {
+                        let label = i % 2 !== 0 ? 'Outbound from SG' : 'Inbound to SG';
+                        if (is4 && !isTurn && i > 1) label = 'Station to Station';
+                        if (is4 && !isTurn && i === 4) label = 'Inbound to SG';
+
+                        html += `
+                            <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                                <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
+                                <input type="text" id="${id}-ifa-t${i}" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 focus:border-sia-gold outline-none time-input" placeholder="Flight Time (HH:MM)">
+                                
+                                <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
+                                    ${showUS ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
+                                    ${showPax ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-px${i}" class="accent-sia-gold"> Paxing</label>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html;
+                    bindTimeInputs();
+
+                    // Hide LMA if Turnaround
+                    if (mode === 'both') {
+                        const lmaWrap = document.getElementById(`${id}-lma-wrap`);
+                        if (isTurn) {
+                            lmaWrap.classList.add('hidden');
+                        } else {
+                            lmaWrap.classList.remove('hidden');
+                        }
+                    }
+                };
+
+                typeSel.addEventListener('change', renderIfaSectors);
+                cntSel.addEventListener('change', renderIfaSectors);
+                renderIfaSectors();
+            }
+
+            // LMA Binding
+            if (mode === 'lma' || mode === 'both') {
+                const container = document.getElementById(`${id}-lma-sectors`);
+                const btnAdd = document.getElementById(`${id}-btn-add-lma`);
+                let lmaCount = 0;
+
+                const addLmaSector = () => {
+                    lmaCount++;
+                    const idx = lmaCount;
+                    const div = document.createElement('div');
+                    div.className = 'p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 relative';
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    let defaultArr = today;
+                    let defaultDep = today;
+
+                    if (idx > 1) {
+                        // Cascading logic fallback (initial)
+                        const prevDep = document.getElementById(`${id}-lma-d${idx-1}`).value;
+                        if (prevDep) {
+                            const d = new Date(prevDep);
+                            d.setDate(d.getDate() + 1);
+                            defaultArr = d.toISOString().split('T')[0];
+                            d.setDate(d.getDate() + 1);
+                            defaultDep = d.toISOString().split('T')[0];
+                        }
+                    } else {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 2);
+                        defaultDep = d.toISOString().split('T')[0];
+                    }
+
+                    div.innerHTML = `
+                        ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+                        <div class="mb-3">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
+                            <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold uppercase focus:border-sia-gold outline-none" placeholder="e.g. LHR" maxlength="3">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
+                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                                <input type="text" id="${id}-lma-at${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none time-input" placeholder="HH:MM">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Dep Date</label>
+                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                                <input type="text" id="${id}-lma-dt${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none time-input" placeholder="HH:MM">
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                    lucide.createIcons();
+                    bindTimeInputs();
+                    
+                    if (idx === 3) btnAdd.classList.add('hidden'); // max 3
+                };
+
+                addLmaSector(); // Default 1st station
+
+                btnAdd.addEventListener('click', addLmaSector);
+
+                // Event delegation for cascading dates
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('date-cascade')) {
+                        const idx = parseInt(e.target.dataset.idx);
+                        const val = e.target.value;
+                        if (!val) return;
+                        
+                        let d = new Date(val + "T00:00:00");
+                        d.setDate(d.getDate() + 1);
+                        
+                        const dep = document.getElementById(`${id}-lma-d${idx}`);
+                        if (dep) dep.value = d.toISOString().split('T')[0];
+
+                        // Cascade forward if exists
+                        for (let j = idx + 1; j <= lmaCount; j++) {
+                            const arrNext = document.getElementById(`${id}-lma-a${j}`);
+                            const depNext = document.getElementById(`${id}-lma-d${j}`);
+                            if (arrNext && depNext) {
+                                d.setDate(d.getDate() + 1);
+                                arrNext.value = d.toISOString().split('T')[0];
+                                d.setDate(d.getDate() + 1);
+                                depNext.value = d.toISOString().split('T')[0];
+                            }
+                        }
+                    }
+                });
+
+                container.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.lma-remove-btn');
+                    if (btn) {
+                        btn.parentElement.remove();
+                        lmaCount--;
+                        btnAdd.classList.remove('hidden');
+                    }
+                });
+            }
+
+            document.getElementById(`${id}-btn-calc`).addEventListener('click', () => {
+                executeCalculation(id, mode);
+            });
+        }
+
+        function bindTimeInputs() {
+            document.querySelectorAll('.time-input').forEach(input => {
+                // remove old listeners if any by cloning
+                const newInp = input.cloneNode(true);
+                input.parentNode.replaceChild(newInp, input);
+                
+                newInp.addEventListener('input', (e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 4) val = val.slice(0, 4);
+                    if (val.length >= 3) {
+                        val = val.slice(0, 2) + ':' + val.slice(2);
+                    }
+                    e.target.value = val;
+                });
+            });
+        }
+
+        // --- MATH ENGINE (LOGIC.md) ---
+
+        function parseDuration(str) {
+            if (!str) return null;
+            const match = str.match(/^(\d{1,2}):?(\d{2})$/);
+            if (!match) return null;
+            const h = parseInt(match[1]);
+            const m = parseInt(match[2]);
+            if (m > 59) return null;
+            const hours = h + (m / 60);
+            return hours > 0 ? hours : null;
+        }
+
+        function getLayoverMultiplier(sdp) {
+            if (sdp <= 14) return 1.3;
+            if (sdp <= 18) return 2.5;
+            return 3.0;
+        }
+
+        function getTurnaroundMultiplier(totalSdp) {
+            if (totalSdp <= 12) return 1.3;
+            if (totalSdp <= 14) return 1.6;
+            if (totalSdp <= 18) return 2.5;
+            return 3.0;
+        }
+
+        function executeCalculation(id, mode) {
+            let ifaTotal = 0;
+            let lmaTotal = 0;
+            let ifaDetails = [];
+            let lmaDetails = [];
+            let isTurnaround = false;
+            
+            // IFA
+            if (mode === 'ifa' || mode === 'both') {
+                const type = document.getElementById(`${id}-flight-type`).value;
+                const count = parseInt(document.getElementById(`${id}-sector-count`).value);
+                isTurnaround = type === 'Turnaround';
+                const is4 = count === 4;
+
+                const rankRate = IFA_CONFIG.baseRates[appProfile.rank] || 13.5;
+                
+                // Determine SG logic per 2.1
+                const isSgArr = is4 
+                    ? (isTurnaround ? [true, false, true, false] : [true, false, false, false])
+                    : [true, false];
+                
+                let sectors = [];
+                let tripSdp = 0;
+
+                for (let i = 1; i <= count; i++) {
+                    const tInp = document.getElementById(`${id}-ifa-t${i}`);
+                    const usInp = document.getElementById(`${id}-ifa-us${i}`);
+                    const pxInp = document.getElementById(`${id}-ifa-px${i}`);
+                    
+                    const hours = parseDuration(tInp.value);
+                    if (hours !== null) {
+                        const buffer = isSgArr[i-1] ? IFA_CONFIG.sgBuffer : IFA_CONFIG.stationBuffer;
+                        const sdp = hours + buffer;
+                        const px = pxInp ? pxInp.checked : false;
+                        const us = usInp ? usInp.checked : false;
+                        
+                        sectors.push({ hours, sdp, paxing: px, directUs: us, isSg: isSgArr[i-1] });
+                        if (!px) tripSdp += sdp;
+                    } else {
+                        sectors.push(null);
+                    }
+                }
+
+                const sharedTurnMult = isTurnaround ? getTurnaroundMultiplier(tripSdp) : 0;
+                
+                sectors.forEach((sec, idx) => {
+                    if (!sec) return;
+                    
+                    let mult = 0;
+                    let logic = '';
+                    if (sec.paxing) {
+                        mult = IFA_CONFIG.paxingMultiplier;
+                        logic = 'Paxing Override (SDP ignored)';
+                    } else if (isTurnaround) {
+                        mult = sharedTurnMult;
+                        logic = `Turnaround Bracket (Total SDP ${tripSdp.toFixed(1)}h)`;
+                    } else if (sec.directUs) {
+                        mult = IFA_CONFIG.directUSMultiplier;
+                        logic = 'Direct US Override';
+                    } else {
+                        mult = getLayoverMultiplier(sec.sdp);
+                        logic = `Layover Bracket (SDP ${sec.sdp.toFixed(1)}h)`;
+                    }
+                    
+                    const allowance = sec.hours * rankRate * mult;
+                    ifaTotal += allowance;
+                    
+                    ifaDetails.push(`
+                        <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                            <div class="flex justify-between font-bold text-sm mb-1">
+                                <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
+                                <span>$${allowance.toFixed(2)}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 font-mono">${sec.hours.toFixed(2)}h × $${rankRate} × ${mult}x</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
+                        </div>
+                    `);
+                });
+
+                // Bonus
+                if (isTurnaround) {
+                    const bonusCount = is4 ? 2 : 1;
+                    const bonus = bonusCount * IFA_CONFIG.turnaroundBonusAmount;
+                    ifaTotal += bonus;
+                    ifaDetails.push(`
+                        <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                            <div class="flex justify-between font-bold text-sm">
+                                <span>Turnaround Bonus (${bonusCount}x)</span>
+                                <span>$${bonus.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `);
+                }
+            }
+
+            // LMA
+            if ((mode === 'lma' || mode === 'both') && !isTurnaround) {
+                // Find all active LMA blocks
+                const container = document.getElementById(`${id}-lma-sectors`);
+                const blocks = container.querySelectorAll('.ui-input.uppercase');
+                
+                blocks.forEach(inp => {
+                    const idxStr = inp.id.match(/\d+$/)[0];
+                    const iata = inp.value.trim().toUpperCase();
+                    const aDate = document.getElementById(`${id}-lma-a${idxStr}`).value;
+                    const aTime = document.getElementById(`${id}-lma-at${idxStr}`).value;
+                    const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
+                    const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
+
+                    if (!iata || !aDate || !dDate || !aTime || !dTime) return; // Incomplete
+
+                    const region = IATA_TO_REGION[iata];
+                    if (!region) {
+                        lmaDetails.push(`<div class="text-red-500 text-xs mb-2">Unknown region for ${iata}. Skipping.</div>`);
+                        return;
+                    }
+                    
+                    const rates = REGION_RATES[region];
+                    
+                    // Date math safely per 6.7
+                    const arrDt = new Date(aDate + 'T00:00:00');
+                    const depDt = new Date(dDate + 'T00:00:00');
+                    const msDiff = depDt.getTime() - arrDt.getTime();
+                    const daysDiff = Math.round(msDiff / (1000 * 60 * 60 * 24));
+                    
+                    if (daysDiff < 0) return;
+                    
+                    const parseMins = (t) => {
+                        const m = t.match(/^(\d{1,2}):(\d{2})$/);
+                        if (!m) return -1;
+                        return parseInt(m[1]) * 60 + parseInt(m[2]);
+                    };
+                    
+                    const arrMins = parseMins(aTime);
+                    const depMins = parseMins(dTime);
+                    if (arrMins < 0 || depMins < 0) return;
+
+                    // Windows
+                    const bEnd = 8*60+30; const bStart = 7*60+30;
+                    const lEnd = 13*60+30; const lStart = 12*60+30;
+                    const dEnd = 20*60+30; const dStart = 19*60+30;
+
+                    let bc=0, lc=0, dc=0;
+                    
+                    if (daysDiff === 0) {
+                        if (arrMins <= bEnd && depMins >= bStart) bc++;
+                        if (arrMins <= lEnd && depMins >= lStart) lc++;
+                        if (arrMins <= dEnd && depMins >= dStart) dc++;
+                    } else {
+                        // Arrival Day
+                        if (arrMins <= bEnd) bc++;
+                        if (arrMins <= lEnd) lc++;
+                        if (arrMins <= dEnd) dc++;
+                        // Inter
+                        if (daysDiff > 1) {
+                            bc += (daysDiff - 1);
+                            lc += (daysDiff - 1);
+                            dc += (daysDiff - 1);
+                        }
+                        // Dep Day
+                        if (depMins >= bStart) bc++;
+                        if (depMins >= lStart) lc++;
+                        if (depMins >= dStart) dc++;
+                    }
+
+                    const stationTotal = (bc * rates.b) + (lc * rates.l) + (dc * rates.d);
+                    lmaTotal += stationTotal;
+
+                    lmaDetails.push(`
+                        <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                            <div class="flex justify-between font-bold text-sm mb-2">
+                                <span>${iata} (${region})</span>
+                                <span>$${stationTotal.toFixed(2)}</span>
+                            </div>
+                            <div class="flex gap-2 text-xs font-bold text-gray-500">
+                                ${bc > 0 ? `<span class="bg-orange-500/20 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded">B x${bc}</span>` : ''}
+                                ${lc > 0 ? `<span class="bg-blue-500/20 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded">L x${lc}</span>` : ''}
+                                ${dc > 0 ? `<span class="bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded">D x${dc}</span>` : ''}
+                                ${bc===0&&lc===0&&dc===0 ? '<span>No meals eligible</span>' : ''}
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+
+            const grandTotal = ifaTotal + lmaTotal;
+            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround);
+        }
+
+        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround) {
+            const backdrop = document.getElementById('results-backdrop');
+            const sheet = document.getElementById('results-sheet');
+            const content = document.getElementById('results-content');
+            
+            let html = `
+                <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
+                    <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
+                    <p class="text-4xl font-bold font-mono">$${grandTotal.toFixed(2)}</p>
+                </div>
+            `;
+
+            if (ifaDetails.length > 0) {
+                html += `
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold">IFA Breakdown</h4>
+                            <span class="font-bold font-mono text-sia-gold">$${ifaTotal.toFixed(2)}</span>
+                        </div>
+                        ${ifaDetails.join('')}
+                    </div>
+                `;
+            }
+
+            if (isTurnaround) {
+                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>`;
+            } else if (lmaDetails.length > 0) {
+                html += `
+                    <div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold">LMA Breakdown</h4>
+                            <span class="font-bold font-mono text-sia-gold">$${lmaTotal.toFixed(2)}</span>
+                        </div>
+                        ${lmaDetails.join('')}
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+            
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+            
+            // Post result message to chat
+            let label = "Total IFA";
+            if (ifaTotal > 0 && lmaTotal > 0) label = "COP Allowance";
+            else if (lmaTotal > 0) label = "Total LMA";
+            
+            setTimeout(() => {
+                addMessage('bot', `Here is your calculated ${label}: **$${grandTotal.toFixed(2)}**`);
+            }, 600);
+        }
+
+        document.getElementById('btn-close-results').addEventListener('click', () => {
+            const backdrop = document.getElementById('results-backdrop');
+            const sheet = document.getElementById('results-sheet');
+            
+            backdrop.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        });
+
