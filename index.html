@@ -107,6 +107,18 @@
             box-shadow: 0 0 15px rgba(201, 162, 39, 0.3);
         }
 
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .mask-edge {
+            mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+        }
+
         @keyframes float {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-12px); }
@@ -255,27 +267,37 @@
                 <div class="h-[2px] w-full bg-gradient-to-r from-sia-batik via-sia-gold to-sia-batik opacity-80"></div>
             </header>
 
-            <!-- Chat Area Placeholder -->
-            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full" id="chat-container">
-                <div class="flex items-start gap-3 mt-4">
-                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Bot">
-                    </div>
-                    <div class="glass-bubble p-3 rounded-2xl rounded-tl-none text-sm max-w-[80%] shadow-sm">
-                        <p id="chat-greeting">Welcome aboard!</p>
-                    </div>
-                </div>
+            <!-- Chat Area -->
+            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full pb-36 no-scrollbar" id="chat-container">
+                <!-- Messages injected here via JS -->
             </main>
 
-            <!-- Input Placeholder -->
-            <div class="shrink-0 p-4 pb-8 w-full pointer-events-none opacity-50 relative z-30 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8]/80 to-transparent dark:from-[#04070F] dark:via-[#04070F]/80 dark:to-transparent">
-                <div class="max-w-xl mx-auto w-full">
-                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2">
-                        <input type="text" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold text-gray-400" disabled>
-                        <button class="w-8 h-8 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0" disabled>
+            <!-- Input Area -->
+            <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
+                <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
+                    
+                    <!-- Quick Action Chips -->
+                    <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge" id="chip-container">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="total">
+                            💰 Calculate total allowance
+                        </button>
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="menu">
+                            🍴 What are we serving onboard
+                        </button>
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="print">
+                            🖨️ Print the menu
+                        </button>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
+                        <input type="text" id="chat-input" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
+                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
                         </button>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -656,17 +678,7 @@
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
             document.getElementById('btn-settings').addEventListener('click', openSettings);
             document.getElementById('btn-reset').addEventListener('click', () => {
-                const chatContainer = document.getElementById('chat-container');
-                chatContainer.innerHTML = `
-                    <div class="flex items-start gap-3 mt-4">
-                        <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                            <img src="icons/icon-192.png" class="w-5 h-5 brightness-0" alt="Bot">
-                        </div>
-                        <div class="glass-bubble p-3 rounded-2xl rounded-tl-none text-sm max-w-[80%] shadow-sm">
-                            <p id="chat-greeting">Welcome aboard, ${appProfile.rank} ${appProfile.name.split(' ')[0]}! How can I help you today?</p>
-                        </div>
-                    </div>
-                `;
+                initChat();
             });
             
             // Settings Events
@@ -729,6 +741,24 @@
                 };
                 reader.readAsText(file);
                 e.target.value = ''; // reset
+            });
+            // Chat Events
+            document.getElementById('btn-send').addEventListener('click', () => {
+                const input = document.getElementById('chat-input');
+                processInput(input.value);
+            });
+
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    processInput(e.target.value);
+                }
+            });
+
+            document.querySelectorAll('.action-chip').forEach(chip => {
+                chip.addEventListener('click', (e) => {
+                    // Extract text (remove the emoji if you want, or just pass full text)
+                    processInput(e.target.innerText.trim());
+                });
             });
         }
 
@@ -808,8 +838,122 @@
         function showMain() {
             elObView.classList.add('hidden');
             elMainView.classList.remove('hidden');
+            initChat();
+        }
+
+        // --- Chat Logic ---
+
+        function getTimeGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Good morning';
+            if (hour < 18) return 'Good afternoon';
+            return 'Good evening';
+        }
+
+        function initChat() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+            
+            const greeting = getTimeGreeting();
             const firstName = appProfile.name.split(' ')[0];
-            document.getElementById('chat-greeting').textContent = `Welcome aboard, ${appProfile.rank} ${firstName}! How can I help you today?`;
+            const welcomeMsg = `${greeting}, ${appProfile.rank} ${firstName}! How can I help you today?`;
+            
+            addMessage('bot', welcomeMsg, false);
+        }
+
+        function addMessage(sender, text, animate = true) {
+            const chatContainer = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            
+            if (sender === 'bot') {
+                msgDiv.className = 'flex items-start gap-3 mt-4';
+                // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
+                msgDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md animate-float" style="animation-duration: 3s;">
+                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    </div>
+                    <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                msgDiv.className = 'flex items-start justify-end gap-3 mt-4';
+                msgDiv.innerHTML = `
+                    <div class="bg-gradient-to-r from-sia-goldlt to-sia-gold text-black p-3.5 rounded-2xl rounded-tr-none text-sm max-w-[85%] shadow-md leading-relaxed font-bold ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
+                        ${text}
+                    </div>
+                `;
+            }
+            
+            chatContainer.appendChild(msgDiv);
+            if (appPrefs.autoScroll) scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const chatContainer = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex items-start gap-3 mt-4';
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                </div>
+                <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
+                    <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                    <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0.15s;"></div>
+                    <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0.3s;"></div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            if (appPrefs.autoScroll) scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const ind = document.getElementById('typing-indicator');
+            if (ind) ind.remove();
+        }
+
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        }
+
+        function processInput(text) {
+            if (!text.trim()) return;
+            addMessage('user', text);
+            document.getElementById('chat-input').value = '';
+            
+            showTypingIndicator();
+            
+            // Artificial delay for "processing"
+            setTimeout(() => {
+                hideTypingIndicator();
+                analyzeIntent(text);
+            }, 600 + Math.random() * 400); // 600-1000ms delay
+        }
+
+        function analyzeIntent(text) {
+            const lowerText = text.toLowerCase();
+            
+            // NLP Intent Engine
+            if (/menu|serving|onboard/.test(lowerText)) {
+                addMessage('bot', 'Opening Menu Lookup... *(Step 5 Feature)*');
+            }
+            else if (/total|cop/.test(lowerText)) {
+                addMessage('bot', 'Opening COP Calculator for Both IFA & LMA... *(Step 4 Feature)*');
+            }
+            else if (/lma|meal/.test(lowerText)) {
+                addMessage('bot', 'Opening LMA Calculator... *(Step 4 Feature)*');
+            }
+            else if (/ifa|flight/.test(lowerText)) {
+                addMessage('bot', 'Opening IFA Calculator... *(Step 4 Feature)*');
+            }
+            else if (/print|printer/.test(lowerText)) {
+                addMessage('bot', 'Opening Menu Printer... *(Step 6 Feature)*');
+            }
+            else {
+                addMessage('bot', 'I didn\'t quite catch that. Could you try again, or tap one of the quick action chips below?');
+            }
         }
 
         function toggleThemeShutter() {
