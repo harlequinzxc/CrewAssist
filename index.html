@@ -1704,7 +1704,7 @@ function getRegionForAirport(code) {
                 ifaHtml = `
                     <div class="mb-4" id="${id}-ifa-wrap">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> </h4>
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> ${ifaHeader}</h4>
                         </div>
                         <div class="flex gap-2 mb-3 z-10 relative">
                             <!-- Flight Type Custom Dropdown -->
@@ -1745,7 +1745,7 @@ function getRegionForAirport(code) {
                 lmaHtml = `
                     <div class="mb-4 ${mode === 'both' ? 'border-t border-black/5 dark:border-white/5 pt-4' : ''}" id="${id}-lma-wrap">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> </h4>
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> ${lmaHeader}</h4>
                         </div>
                         <div class="space-y-3" id="${id}-lma-sectors"></div>
                         <button id="${id}-btn-add-lma" class="w-full py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-500 mt-2 hover:border-sia-gold hover:text-sia-gold transition-colors">+ Add Layover Station</button>
@@ -1759,7 +1759,7 @@ function getRegionForAirport(code) {
                 </div>
                 <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[calc(100%-44px)] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
-                        <h3 class="font-bold text-sm text-sia-gold"></h3>
+                        <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
                     ${ifaHtml}
                     ${lmaHtml}
@@ -1942,6 +1942,7 @@ function getRegionForAirport(code) {
                     setTimeout(() => {
                         div.classList.remove('max-h-0', 'opacity-0', 'scale-95');
                         div.classList.add('max-h-[500px]', 'opacity-100', 'scale-100');
+                        if (appPrefs.autoScroll) setTimeout(() => scrollToBottom(), 300);
                     }, 10);
                     bindTimeInputs(id);
                     
