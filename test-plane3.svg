@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="gradTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE073" />
+      <stop offset="100%" stop-color="#D6AD2A" />
+    </linearGradient>
+    <linearGradient id="gradLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D6AD2A" />
+      <stop offset="100%" stop-color="#B38E1F" />
+    </linearGradient>
+    <linearGradient id="gradBottom" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#9C7714" />
+      <stop offset="100%" stop-color="#70530A" />
+    </linearGradient>
+  </defs>
+
+  <g transform="rotate(-15, 256, 256)">
+    <!-- Main Right Wing (Top view) -->
+    <polygon points="460,50 280,430 200,260" fill="url(#gradTop)" />
+    
+    <!-- Main Left Wing -->
+    <polygon points="460,50 200,260 50,210" fill="url(#gradLeft)" />
+    
+    <!-- Tail Fold (Drops down from center) -->
+    <polygon points="200,260 280,430 210,340" fill="url(#gradBottom)" />
+  </g>
+</svg>
