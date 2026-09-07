@@ -1,29 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CrewAssist</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#04070F">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-    <link rel="apple-touch-icon" href="icons/logo-192.png">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -168,7 +143,7 @@
             <div class="h-[35%] flex items-center justify-center relative">
                 <div class="flex flex-col items-center">
                     <div class="mb-5 animate-float">
-                        <img src="icons/logo-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
+                        <img src="icons/icon-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
                     </div>
                     <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
                 </div>
@@ -245,7 +220,7 @@
                 <div class="flex items-center justify-between px-4 py-3 w-full">
                     <!-- Left -->
                     <div class="flex items-center gap-2 cursor-pointer select-none" id="header-brand">
-                        <img src="icons/logo-192.png" class="w-8 h-8 drop-shadow-md" alt="Logo">
+                        <img src="icons/icon-192.png" class="w-8 h-8 drop-shadow-md" alt="Logo">
                         <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
                         <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1"></div>
                     </div>
@@ -311,7 +286,7 @@
 
         <!-- Settings Bottom Sheet -->
         <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 top-[60px] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -386,7 +361,7 @@
 
         <!-- Results Overlay Sheet -->
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="results-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="results-sheet" class="fixed inset-x-0 bottom-0 top-[60px] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -890,7 +865,7 @@
                 // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
                 msgDiv.innerHTML = `
                     <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                        <img src="icons/logo-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                     </div>
                     <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
                         ${text}
@@ -916,7 +891,7 @@
             div.className = 'flex items-start gap-3 mt-4';
             div.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                    <img src="icons/logo-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                 </div>
                 <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
                     <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0s;"></div>
@@ -1755,7 +1730,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                    <img src="icons/logo-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                 </div>
                 <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[calc(100%-44px)] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
@@ -2012,34 +1987,30 @@ function getRegionForAirport(code) {
                     if (val.length === 3) {
                         formatted = val.slice(0, 1) + ':' + val.slice(1, 3);
                     } else if (val.length === 4) {
-                        let hi = parseInt(val.slice(0, 2));
-                        let mi = parseInt(val.slice(2, 4));
+                        formatted = val.slice(0, 2) + ':' + val.slice(2, 4);
+                    }
+
+                    let isValid = false;
+                    if (formatted.includes(':')) {
+                        let [h, m] = formatted.split(':');
+                        let hi = parseInt(h);
+                        let mi = parseInt(m);
                         
                         if (isLma) {
-                            if (hi > 23) hi = 23;
-                            if (mi > 59) mi = 59;
+                            if (hi > 23 || (hi === 23 && mi > 59) || hi >= 24) {
+                                hi = 23; mi = 59;
+                            } else if (mi > 59) mi = 59;
+                            formatted = hi.toString() + ':' + mi.toString().padStart(2, '0');
+                            isValid = true;
                         } else {
                             if (mi > 59) mi = 59;
+                            formatted = hi.toString() + ':' + mi.toString().padStart(2, '0');
+                            isValid = true;
                         }
-                        formatted = hi.toString().padStart(2, '0') + ':' + mi.toString().padStart(2, '0');
                     }
 
                     e.target.value = formatted;
-
-                    let isValid = false;
-                    if (formatted.length >= 4 && formatted.includes(':')) {
-                        let [h, m] = formatted.split(':');
-                        if (h !== '' && m !== '') {
-                            let hi = parseInt(h);
-                            let mi = parseInt(m);
-                            if (isLma) {
-                                isValid = (hi >= 0 && hi <= 23 && mi >= 0 && mi <= 59);
-                            } else {
-                                isValid = (mi >= 0 && mi <= 59);
-                            }
-                        }
-                    }
-
+                    
                     if (isValid) {
                         e.target.classList.remove('border-transparent', 'border-red-500', 'dark:border-white/10');
                         e.target.classList.add('border-green-500', 'dark:border-green-500');
@@ -2047,21 +2018,6 @@ function getRegionForAirport(code) {
                         e.target.classList.remove('border-green-500', 'dark:border-green-500', 'border-red-500');
                         e.target.classList.add('border-transparent', 'dark:border-white/10');
                     }
-                });
-
-                newInp.addEventListener('blur', (e) => {
-                    let val = e.target.value.replace(/\D/g, '');
-                    if (val.length === 3) {
-                        let hi = parseInt(val.slice(0, 1));
-                        let mi = parseInt(val.slice(1, 3));
-                        if (mi > 59) mi = 59;
-                        e.target.value = '0' + hi + ':' + mi.toString().padStart(2, '0');
-                    } else if (val.length === 1 || val.length === 2) {
-                        let hi = parseInt(val);
-                        if (isLma && hi > 23) hi = 23;
-                        e.target.value = hi.toString().padStart(2, '0') + ':00';
-                    }
-                    e.target.dispatchEvent(new Event('input'));
                 });
             });
 
@@ -2233,7 +2189,7 @@ function getRegionForAirport(code) {
                     const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
                     const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
 
-                    if (!iata || !aDate || !dDate || !aTime || !dTime ) {
+                    if (!iata || !aDate || !dDate || !aTime || !dTime || aTime.length < 5 || dTime.length < 5) {
                         lmaDetails.push('<div class="text-red-500 text-xs mb-2">Missing or incomplete fields for station ' + (iata || idxStr) + '. Skipping.</div>');
                         return;
                     }
@@ -2254,7 +2210,7 @@ function getRegionForAirport(code) {
                     if (daysDiff < 0) return;
                     
                     const parseMins = (t) => {
-                        const m = t.match(/^(\d{1,2}):(\d{2})$/);
+                        const m = t.match(/^(d{1,2}):(d{2})$/);
                         if (!m) return -1;
                         return parseInt(m[1]) * 60 + parseInt(m[2]);
                     };
@@ -2325,10 +2281,10 @@ function getRegionForAirport(code) {
             }
 
             const grandTotal = ifaTotal + lmaTotal;
-            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode);
+            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround);
         }
 
-        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode) {
+        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
@@ -2390,6 +2346,7 @@ function getRegionForAirport(code) {
             setTimeout(() => {
                 addMessage('bot', msg);
             }, 600);
+        }, 600);
         }
 
         document.getElementById('results-backdrop').addEventListener('click', () => {
@@ -2407,7 +2364,4 @@ function getRegionForAirport(code) {
                 backdrop.classList.add('hidden');
             }, 300);
         });
-    </script>
-</body>
-</html>
-
+    

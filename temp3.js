@@ -1,408 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CrewAssist</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#04070F">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-    <link rel="apple-touch-icon" href="icons/logo-192.png">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        sia: {
-                            gold: '#C9A227',
-                            goldlt: '#E8C766',
-                            navy: '#0B1A3A',
-                            deep: '#04070F',
-                            batik: '#5B3E96'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                        mono: ['"Space Mono"', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
-
-    <style>
-        :root {
-            /* Dark Mode Variables */
-            --bg-color: #04070F;
-            --text-main: #FFFFFF;
-            --text-muted: #9CA3AF;
-            --glass-bg: rgba(11, 26, 58, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.05);
-            --glass-bubble-bg: rgba(201, 162, 39, 0.15);
-            --glass-sheet-bg: rgba(4, 7, 15, 0.95);
-            --aurora-opacity: 1;
-        }
-
-        html:not(.dark) {
-            /* Light Mode Variables */
-            --bg-color: #F6F1E8;
-            --text-main: #111827;
-            --text-muted: #4B5563;
-            --glass-bg: rgba(255, 255, 255, 0.6);
-            --glass-border: rgba(0, 0, 0, 0.1);
-            --glass-bubble-bg: rgba(201, 162, 39, 0.2);
-            --glass-sheet-bg: rgba(246, 241, 232, 0.95);
-            --aurora-opacity: 0.3;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            transition: background-color 0.3s ease, color 0.3s ease;
-            overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Glassmorphic Utilities */
-        .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-        }
-
-        .glass-bubble {
-            background: var(--glass-bubble-bg);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border: 1px solid var(--glass-border);
-        }
-
-        .glass-sheet {
-            background: var(--glass-sheet-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-top: 1px solid var(--glass-border);
-        }
-
-        /* Custom Glowing Elements */
-        .glow-gold {
-            box-shadow: 0 0 15px rgba(201, 162, 39, 0.3);
-        }
-
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-        .mask-edge {
-            mask-image: linear-gradient(to right, black 85%, transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-12px); }
-            100% { transform: translateY(0px); }
-        }
-        .animate-float {
-            animation: float 4s ease-in-out infinite;
-        }
-
-        @keyframes jump {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
-        }
-        .animate-jump {
-            animation: jump 2s infinite;
-        }
-
-        #sky-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1;
-            pointer-events: none;
-        }
-        
-        /* Unified UI input styles */
-        .ui-input {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        html:not(.dark) .ui-input {
-            background: rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.1);
-        }
-    </style>
-</head>
-<body class="antialiased w-full h-full min-h-screen flex flex-col">
-    <!-- Starry Sky Background -->
-    <canvas id="sky-canvas"></canvas>
-
-    <div id="app-root" class="relative z-10 w-full h-full flex flex-col min-h-screen">
-        <!-- Onboarding View -->
-        <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
-            <div class="h-[35%] flex items-center justify-center relative">
-                <div class="flex flex-col items-center">
-                    <div class="mb-5 animate-float">
-                        <img src="icons/logo-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
-                    </div>
-                    <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
-                </div>
-            </div>
-            <div class="h-[65%] relative z-10 w-full backdrop-blur-sm">
-                <!-- Curve Separator -->
-                <div class="absolute -top-[40px] left-0 w-full h-[40px] overflow-hidden pointer-events-none">
-                    <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
-                        <defs>
-                            <linearGradient id="archGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#C9A227" stop-opacity="0" />
-                                <stop offset="50%" stop-color="#C9A227" stop-opacity="1" />
-                                <stop offset="100%" stop-color="#C9A227" stop-opacity="0" />
-                            </linearGradient>
-                        </defs>
-                        <!-- Main Background (Transparent Glass) -->
-                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8]/90 dark:fill-[#080B14]/80" />
-                        <!-- Gold Border Line (Tapered) -->
-                        <path d="M0,40 Q50,-10 100,40" fill="none" stroke="url(#archGrad)" stroke-width="1.5" vector-effect="non-scaling-stroke" class="opacity-60" />
-                    </svg>
-                </div>
-                <!-- Form Container -->
-                <div class="bg-[#F6F1E8]/90 dark:bg-[#080B14]/80 h-full w-full px-8 pt-2 pb-8 flex flex-col">
-                    <div class="flex-grow overflow-y-auto max-w-sm mx-auto w-full flex flex-col">
-                        <h2 class="text-2xl font-bold mb-8 text-center">Welcome aboard<span class="text-sia-gold">.</span></h2>
-                        <div class="space-y-6 flex-grow">
-                            <!-- Name -->
-                            <div>
-                                <label class="block text-sm font-bold mb-2">Name</label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
-                                    </div>
-                                    <input type="text" id="ob-name" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="e.g. Johnathan">
-                                </div>
-                            </div>
-                            <!-- Gender -->
-                            <div>
-                                <label class="block text-sm font-bold mb-2">Gender</label>
-                                <div class="flex gap-3">
-                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-400 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="M">
-                                        <i data-lucide="user" class="w-4 h-4"></i> Male
-                                    </button>
-                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-400 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="F">
-                                        <i data-lucide="user" class="w-4 h-4"></i> Female
-                                    </button>
-                                </div>
-                            </div>
-                            <!-- Rank -->
-                            <div id="ob-rank-container" class="opacity-0 max-h-0 overflow-hidden pointer-events-none transition-all duration-500">
-                                <label class="block text-sm font-bold mb-2">Rank</label>
-                                <div class="flex flex-wrap gap-2" id="ob-rank-list">
-                                    <!-- Rendered via JS -->
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-8 shrink-0 pb-4">
-                            <button id="ob-submit" disabled class="w-full py-3.5 px-4 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(201,162,39,0.2)] flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(201,162,39,0.4)]">
-                                Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                            </button>
-                            <p class="text-[11px] text-center text-gray-500 mt-5 flex items-center justify-center gap-1.5 font-medium">
-                                <i data-lucide="lock" class="w-3 h-3"></i> Data is stored locally on the device
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main View -->
-        <div id="main-view" class="fixed inset-0 z-10 flex flex-col hidden pt-[env(safe-area-inset-top,20px)]">
-            <!-- Header -->
-            <header class="glass-panel z-30 shrink-0 sticky top-0 w-full relative">
-                <div class="flex items-center justify-between px-4 py-3 w-full">
-                    <!-- Left -->
-                    <div class="flex items-center gap-2 cursor-pointer select-none" id="header-brand">
-                        <img src="icons/logo-192.png" class="w-8 h-8 drop-shadow-md" alt="Logo">
-                        <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
-                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1"></div>
-                    </div>
-                    <!-- Right -->
-                    <div class="flex items-center gap-2">
-                        <button id="btn-theme" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
-                            <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
-                            <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
-                        </button>
-                        <button id="btn-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
-                            <i data-lucide="settings" class="w-5 h-5"></i>
-                        </button>
-                        <button id="btn-reset" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
-                            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-                </div>
-                <!-- Batik Accent Line -->
-                <div class="h-[2px] w-full bg-gradient-to-r from-sia-batik via-sia-gold to-sia-batik opacity-80"></div>
-            </header>
-
-            <!-- Chat Area -->
-            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full pb-36 no-scrollbar" id="chat-container">
-                <!-- Messages injected here via JS -->
-            </main>
-
-            <!-- Input Area -->
-            <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
-                <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
-                    
-                    <!-- Quick Action Chips -->
-                    <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge" id="chip-container">
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="total">
-                            💰 Calculate total allowance
-                        </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="menu">
-                            🍴 What are we serving onboard
-                        </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="print">
-                            🖨️ Print the menu
-                        </button>
-                    </div>
-
-                    <!-- Chat Input -->
-                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
-                        <input type="text" id="chat-input" placeholder="Allowance, menu, print..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
-                            <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-
-        <!-- Cabin Shutter Animation Layer -->
-        <div id="cabin-shutter" class="fixed inset-x-0 top-0 h-0 bg-[#E5E0D8] dark:bg-[#1A1F2E] z-50 overflow-hidden flex items-end justify-center transition-all duration-500 ease-in-out shadow-2xl pointer-events-none">
-            <div class="w-full h-8 bg-[#D5D0C8] dark:bg-[#111520] rounded-b-xl flex items-center justify-center shadow-inner border-b border-black/10 dark:border-white/5">
-                <div class="w-16 h-1.5 rounded-full bg-black/20 dark:bg-white/20"></div>
-            </div>
-        </div>
-
-        <!-- Settings Bottom Sheet -->
-        <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
-            <div class="w-full flex justify-center py-3 shrink-0">
-                <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
-            </div>
-            <div class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
-                <!-- Settings Content... -->
-                <div class="flex items-center justify-between">
-                    <h3 class="text-xl font-bold">Settings</h3>
-                    <button id="btn-close-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-                
-                <!-- Profile -->
-                <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
-                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
-                                <i data-lucide="user-round" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
-                            </div>
-                            <p class="font-bold text-base" id="settings-profile-name">Johnathan</p>
-                        </div>
-                        <button id="btn-edit-profile" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
-                    </div>
-                </div>
-
-                <!-- Preferences -->
-                <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Preferences</p>
-                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold">Auto-scroll Chat</span>
-                            <p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 font-medium">
-                                <i data-lucide="arrow-down-to-line" class="w-3 h-3"></i> Jump to newest message
-                            </p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="toggle-autoscroll" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-gray-300 dark:bg-[#1a2030] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sia-gold border border-black/10 dark:border-white/10"></div>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Developer Section -->
-                <div id="settings-developer" class="hidden">
-                    <p class="text-[10px] text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
-                        <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
-                    </p>
-                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
-                        <span class="text-sm font-bold">Modifiers & Values</span>
-                        <textarea id="dev-modifiers-json" class="w-full h-32 bg-black/5 dark:bg-[#04070F] border border-gray-300 dark:border-gray-700/50 rounded-xl p-3 text-xs font-mono focus:outline-none focus:border-sia-gold resize-none" placeholder="{}"></textarea>
-                        <div class="flex gap-2">
-                            <button id="btn-dev-save" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-green-500/10 text-green-600 dark:text-[#4ade80] border border-green-500/20 hover:bg-green-500/20 transition-colors">Save</button>
-                            <button id="btn-dev-export" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-[#60a5fa] border border-blue-500/20 hover:bg-blue-500/20 transition-colors">Export</button>
-                            <button id="btn-dev-import" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-[#c084fc] border border-purple-500/20 hover:bg-purple-500/20 transition-colors relative overflow-hidden">
-                                Import
-                                <input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json">
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Data -->
-                <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
-                    <button id="btn-clear-data" class="w-full py-3 px-4 rounded-2xl text-sm font-bold bg-red-500/10 text-red-600 dark:text-[#ff4c4c] border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Results Overlay Sheet -->
-        <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="results-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
-            <div class="w-full flex justify-center py-3 shrink-0">
-                <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
-            </div>
-            <div class="flex items-center justify-between px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5">
-                <h3 class="text-xl font-bold" id="results-title">Summary</h3>
-                <button id="btn-close-results" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="px-6 py-6 overflow-y-auto max-w-xl mx-auto w-full space-y-6 flex-grow" id="results-content">
-                <!-- Injected via JS -->
-            </div>
-        </div>
-    </div>
-
-    <script>
         // Initialize Lucide Icons
         try {
             lucide.createIcons();
@@ -785,8 +381,7 @@
             const list = document.getElementById('ob-rank-list');
             list.innerHTML = '';
             
-            container.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
-            container.classList.add('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
+            container.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
             
             ranks[gender].forEach(r => {
                 const btn = document.createElement('button');
@@ -848,8 +443,7 @@
                     if(icon) icon.classList.remove('text-black');
                 });
                 const rc = document.getElementById('ob-rank-container');
-                rc.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-                rc.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
+                rc.classList.add('hidden', 'opacity-50', 'pointer-events-none');
                 document.getElementById('ob-rank-list').innerHTML = '';
                 checkObSubmit();
             }
@@ -890,7 +484,7 @@
                 // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
                 msgDiv.innerHTML = `
                     <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                        <img src="icons/logo-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                     </div>
                     <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
                         ${text}
@@ -916,7 +510,7 @@
             div.className = 'flex items-start gap-3 mt-4';
             div.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                    <img src="icons/logo-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                 </div>
                 <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
                     <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0s;"></div>
@@ -1680,23 +1274,6 @@ function getRegionForAirport(code) {
             const msgDiv = document.createElement('div');
             msgDiv.className = 'flex items-start gap-3 mt-4 w-full';
             
-            
-            let calcTitle = 'COP Allowance Calculator';
-            let ifaHeader = '';
-            let lmaHeader = '';
-
-            if (mode === 'ifa') {
-                calcTitle = 'IFA Calculator';
-                ifaHeader = 'Flight Details';
-            } else if (mode === 'lma') {
-                calcTitle = 'LMA Calculator';
-                lmaHeader = 'Flight Details';
-            } else if (mode === 'both') {
-                calcTitle = 'COP Allowance Calculator';
-                ifaHeader = 'Flight Details';
-                lmaHeader = 'Flight Details';
-            }
-
             let ifaHtml = '';
             let lmaHtml = '';
 
@@ -1704,37 +1281,17 @@ function getRegionForAirport(code) {
                 ifaHtml = `
                     <div class="mb-4" id="${id}-ifa-wrap">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> ${ifaHeader}</h4>
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> IFA Details</h4>
                         </div>
-                        <div class="flex gap-2 mb-3 z-10 relative">
-                            <!-- Flight Type Custom Dropdown -->
-                            <div class="flex-1 relative">
-                                <button type="button" id="${id}-flight-type-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                    <span id="${id}-flight-type-label">Layover</span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-flight-type-icon"></i>
-                                </button>
-                                <input type="hidden" id="${id}-flight-type" value="Layover">
-                                <div id="${id}-flight-type-menu" class="w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
-                                    <div class="p-1 flex flex-col gap-1">
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Layover', 'Layover')">Layover</button>
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Turnaround', 'Turnaround')">Turnaround</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Sector Count Custom Dropdown -->
-                            <div class="flex-1 relative">
-                                <button type="button" id="${id}-sector-count-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                    <span id="${id}-sector-count-label">2 Sectors</span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-sector-count-icon"></i>
-                                </button>
-                                <input type="hidden" id="${id}-sector-count" value="2">
-                                <div id="${id}-sector-count-menu" class="w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
-                                    <div class="p-1 flex flex-col gap-1">
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '2', '2 Sectors')">2 Sectors</button>
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '4', '4 Sectors')">4 Sectors</button>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="flex gap-2 mb-3">
+                            <select id="${id}-flight-type" class="ui-input flex-1 rounded-xl py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none">
+                                <option value="Layover">Layover</option>
+                                <option value="Turnaround">Turnaround</option>
+                            </select>
+                            <select id="${id}-sector-count" class="ui-input flex-1 rounded-xl py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none">
+                                <option value="2">2 Sectors</option>
+                                <option value="4">4 Sectors</option>
+                            </select>
                         </div>
                         <div id="${id}-ifa-sectors" class="space-y-3"></div>
                     </div>
@@ -1745,7 +1302,7 @@ function getRegionForAirport(code) {
                 lmaHtml = `
                     <div class="mb-4 ${mode === 'both' ? 'border-t border-black/5 dark:border-white/5 pt-4' : ''}" id="${id}-lma-wrap">
                         <div class="flex items-center justify-between mb-3">
-                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> ${lmaHeader}</h4>
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> LMA Details</h4>
                         </div>
                         <div class="space-y-3" id="${id}-lma-sectors"></div>
                         <button id="${id}-btn-add-lma" class="w-full py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-500 mt-2 hover:border-sia-gold hover:text-sia-gold transition-colors">+ Add Layover Station</button>
@@ -1755,11 +1312,11 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                    <img src="icons/logo-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                 </div>
                 <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[calc(100%-44px)] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
-                        <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
+                        <h3 class="font-bold text-sm text-sia-gold">COP Allowance Calculator</h3>
                     </div>
                     ${ifaHtml}
                     ${lmaHtml}
@@ -1779,49 +1336,7 @@ function getRegionForAirport(code) {
             }, 10);
         }
 
-                window.selectDropdown = function(id, type, value, labelText) {
-            document.getElementById(id + '-' + type).value = value;
-            document.getElementById(id + '-' + type + '-label').innerText = labelText;
-            
-            // Close menu
-            const menu = document.getElementById(id + '-' + type + '-menu');
-            const icon = document.getElementById(id + '-' + type + '-icon');
-            menu.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
-            menu.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-            icon.classList.remove('rotate-180');
-            
-            // Trigger change event to update sectors
-            const inp = document.getElementById(id + '-' + type);
-            inp.dispatchEvent(new Event('change'));
-        };
-
         function bindCalculatorEvents(id, mode) {
-            // Bind dropdown toggles
-            if (mode === 'ifa' || mode === 'both') {
-                ['flight-type', 'sector-count'].forEach(type => {
-                    const btn = document.getElementById(id + '-' + type + '-btn');
-                    if(btn) {
-                        btn.addEventListener('click', () => {
-                            const menu = document.getElementById(id + '-' + type + '-menu');
-                            const icon = document.getElementById(id + '-' + type + '-icon');
-                            const isClosed = menu.classList.contains('max-h-0');
-                            
-                            // Close others
-                            document.querySelectorAll('[id$="-menu"]').forEach(m => {
-                                m.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
-                                m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-                            });
-                            document.querySelectorAll('[id$="-icon"]').forEach(i => i.classList.remove('rotate-180'));
-                            
-                            if (isClosed) {
-                                menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
-                                menu.classList.add('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
-                                icon.classList.add('rotate-180');
-                            }
-                        });
-                    }
-                });
-            }
             // IFA Binding
             if (mode === 'ifa' || mode === 'both') {
                 const typeSel = document.getElementById(`${id}-flight-type`);
@@ -1884,7 +1399,7 @@ function getRegionForAirport(code) {
                     lmaCount++;
                     const idx = lmaCount;
                     const div = document.createElement('div');
-                    div.className = 'p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 relative overflow-hidden transition-all duration-500 max-h-0 opacity-0 scale-95';
+                    div.className = 'p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 relative';
                     
                     const today = new Date().toISOString().split('T')[0];
                     let defaultArr = today;
@@ -1939,11 +1454,6 @@ function getRegionForAirport(code) {
                     `;
                     container.appendChild(div);
                     lucide.createIcons();
-                    setTimeout(() => {
-                        div.classList.remove('max-h-0', 'opacity-0', 'scale-95');
-                        div.classList.add('max-h-[500px]', 'opacity-100', 'scale-100');
-                        if (appPrefs.autoScroll) setTimeout(() => scrollToBottom(), 300);
-                    }, 10);
                     bindTimeInputs(id);
                     
                     if (idx === 3) btnAdd.classList.add('hidden'); // max 3
@@ -1983,10 +1493,7 @@ function getRegionForAirport(code) {
                 container.addEventListener('click', (e) => {
                     const btn = e.target.closest('.lma-remove-btn');
                     if (btn) {
-                        const block = btn.parentElement;
-                        block.classList.remove('max-h-[500px]', 'opacity-100', 'scale-100');
-                        block.classList.add('max-h-0', 'opacity-0', 'scale-95');
-                        setTimeout(() => block.remove(), 500);
+                        btn.parentElement.remove();
                         lmaCount--;
                         btnAdd.classList.remove('hidden');
                     }
@@ -1998,107 +1505,36 @@ function getRegionForAirport(code) {
             });
         }
 
-        function bindTimeInputs() {
-            document.querySelectorAll('.ifa-time-input, .lma-time-input').forEach(input => {
+        function bindTimeInputs(id) {
+            document.querySelectorAll('.time-input').forEach(input => {
+                // remove old listeners if any by cloning
                 const newInp = input.cloneNode(true);
                 input.parentNode.replaceChild(newInp, input);
-                const isLma = newInp.classList.contains('lma-time-input');
-
+                
+                newInp.addEventListener('blur', (e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (!val) return;
+                    if (val.length === 3) {
+                        val = '0' + val; // e.g. 720 -> 0720
+                    } else if (val.length === 1 || val.length === 2) {
+                        val = val.padStart(2, '0') + '00';
+                    }
+                    if (val.length === 4) {
+                        val = val.slice(0, 2) + ':' + val.slice(2);
+                    }
+                    e.target.value = val;
+                });
+                
                 newInp.addEventListener('input', (e) => {
                     let val = e.target.value.replace(/\D/g, '');
                     if (val.length > 4) val = val.slice(0, 4);
-
-                    let formatted = val;
-                    if (val.length === 3) {
-                        formatted = val.slice(0, 1) + ':' + val.slice(1, 3);
-                    } else if (val.length === 4) {
-                        let hi = parseInt(val.slice(0, 2));
-                        let mi = parseInt(val.slice(2, 4));
-                        
-                        if (isLma) {
-                            if (hi > 23) hi = 23;
-                            if (mi > 59) mi = 59;
-                        } else {
-                            if (mi > 59) mi = 59;
-                        }
-                        formatted = hi.toString().padStart(2, '0') + ':' + mi.toString().padStart(2, '0');
-                    }
-
-                    e.target.value = formatted;
-
-                    let isValid = false;
-                    if (formatted.length >= 4 && formatted.includes(':')) {
-                        let [h, m] = formatted.split(':');
-                        if (h !== '' && m !== '') {
-                            let hi = parseInt(h);
-                            let mi = parseInt(m);
-                            if (isLma) {
-                                isValid = (hi >= 0 && hi <= 23 && mi >= 0 && mi <= 59);
-                            } else {
-                                isValid = (mi >= 0 && mi <= 59);
-                            }
-                        }
-                    }
-
-                    if (isValid) {
-                        e.target.classList.remove('border-transparent', 'border-red-500', 'dark:border-white/10');
-                        e.target.classList.add('border-green-500', 'dark:border-green-500');
-                    } else {
-                        e.target.classList.remove('border-green-500', 'dark:border-green-500', 'border-red-500');
-                        e.target.classList.add('border-transparent', 'dark:border-white/10');
-                    }
-                });
-
-                newInp.addEventListener('blur', (e) => {
-                    let val = e.target.value.replace(/\D/g, '');
-                    if (val.length === 3) {
-                        let hi = parseInt(val.slice(0, 1));
-                        let mi = parseInt(val.slice(1, 3));
-                        if (mi > 59) mi = 59;
-                        e.target.value = '0' + hi + ':' + mi.toString().padStart(2, '0');
-                    } else if (val.length === 1 || val.length === 2) {
-                        let hi = parseInt(val);
-                        if (isLma && hi > 23) hi = 23;
-                        e.target.value = hi.toString().padStart(2, '0') + ':00';
-                    }
-                    e.target.dispatchEvent(new Event('input'));
-                });
-            });
-
-            document.querySelectorAll('.lma-iata-input').forEach(input => {
-                const newInp = input.cloneNode(true);
-                input.parentNode.replaceChild(newInp, input);
-
-                newInp.addEventListener('input', (e) => {
-                    let val = e.target.value.trim().toUpperCase();
+                    // Don't format with colon until blur to allow easy typing like 0720
                     e.target.value = val;
-                    
-                    const container = e.target.closest('.relative');
-                    const checkIcon = container.querySelector('.absolute.right-3');
-                    const infoText = container.nextElementSibling;
-                    
-                    if (val.length === 3) {
-                        const airport = airports.find(a => a.code === val);
-                        if (airport) {
-                            e.target.classList.remove('border-red-500', 'border-transparent', 'dark:border-white/10', 'dark:border-red-500');
-                            e.target.classList.add('border-green-500', 'dark:border-green-500');
-                            if (checkIcon) checkIcon.classList.remove('hidden');
-                            if (infoText) infoText.innerHTML = '<span class="text-green-600 dark:text-green-400">' + airport.city + ', ' + airport.country + '</span>';
-                        } else {
-                            e.target.classList.remove('border-green-500', 'dark:border-green-500', 'border-transparent', 'dark:border-white/10');
-                            e.target.classList.add('border-red-500', 'dark:border-red-500');
-                            if (checkIcon) checkIcon.classList.add('hidden');
-                            if (infoText) infoText.innerHTML = '<span class="text-red-500">Unknown Station</span>';
-                        }
-                    } else {
-                        e.target.classList.remove('border-green-500', 'border-red-500', 'dark:border-green-500', 'dark:border-red-500');
-                        e.target.classList.add('border-transparent', 'dark:border-white/10');
-                        if (checkIcon) checkIcon.classList.add('hidden');
-                        if (infoText) infoText.innerHTML = '';
-                    }
                 });
             });
         }
+
+        // --- MATH ENGINE (LOGIC.md) ---
 
         function parseDuration(str) {
             if (!str) return null;
@@ -2233,10 +1669,7 @@ function getRegionForAirport(code) {
                     const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
                     const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
 
-                    if (!iata || !aDate || !dDate || !aTime || !dTime ) {
-                        lmaDetails.push('<div class="text-red-500 text-xs mb-2">Missing or incomplete fields for station ' + (iata || idxStr) + '. Skipping.</div>');
-                        return;
-                    }
+                    if (!iata || !aDate || !dDate || !aTime || !dTime) return; // Incomplete
 
                     const region = getRegionForAirport(iata);
                     if (!region) {
@@ -2254,7 +1687,7 @@ function getRegionForAirport(code) {
                     if (daysDiff < 0) return;
                     
                     const parseMins = (t) => {
-                        const m = t.match(/^(\d{1,2}):(\d{2})$/);
+                        const m = t.match(/^(d{1,2}):(d{2})$/);
                         if (!m) return -1;
                         return parseInt(m[1]) * 60 + parseInt(m[2]);
                     };
@@ -2325,10 +1758,10 @@ function getRegionForAirport(code) {
             }
 
             const grandTotal = ifaTotal + lmaTotal;
-            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode);
+            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround);
         }
 
-        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode) {
+        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
@@ -2375,20 +1808,12 @@ function getRegionForAirport(code) {
             }, 10);
             
             // Post result message to chat
-            let msg = '';
-            if (isTurnaround && mode === 'both') {
-                // If it was 'both' but it's turnaround, we only have IFA effectively.
-                msg = 'Your total COP Allowance is **$' + grandTotal.toFixed(2) + '**';
-            } else if (mode === 'ifa') {
-                msg = 'Your IFA is **$' + ifaTotal.toFixed(2) + '**';
-            } else if (mode === 'lma') {
-                msg = 'Your LMA is **$' + lmaTotal.toFixed(2) + '**';
-            } else {
-                msg = 'Your total COP Allowance is **$' + grandTotal.toFixed(2) + '**';
-            }
+            let label = "Total IFA";
+            if (ifaTotal > 0 && lmaTotal > 0) label = "COP Allowance";
+            else if (lmaTotal > 0) label = "Total LMA";
             
             setTimeout(() => {
-                addMessage('bot', msg);
+                addMessage('bot', `Here is your calculated ${label}: **$${grandTotal.toFixed(2)}**`);
             }, 600);
         }
 
@@ -2407,7 +1832,4 @@ function getRegionForAirport(code) {
                 backdrop.classList.add('hidden');
             }, 300);
         });
-    </script>
-</body>
-</html>
-
+    
