@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#04070F">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
-    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png?v=3">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -168,7 +168,7 @@
             <div class="h-[35%] flex items-center justify-center relative">
                 <div class="flex flex-col items-center">
                     <div class="mb-5 animate-float">
-                        <img src="icons/icon-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
+                        <img src="icons/icon-192.png?v=3" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
                     </div>
                     <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
                 </div>
@@ -239,13 +239,13 @@
         </div>
 
         <!-- Main View -->
-        <div id="main-view" class="fixed inset-0 z-10 flex flex-col hidden">
+        <div id="main-view" class="fixed inset-0 z-10 flex flex-col hidden pt-[env(safe-area-inset-top,20px)]">
             <!-- Header -->
             <header class="glass-panel z-30 shrink-0 sticky top-0 w-full relative">
                 <div class="flex items-center justify-between px-4 py-3 w-full">
                     <!-- Left -->
                     <div class="flex items-center gap-2 cursor-pointer select-none" id="header-brand">
-                        <img src="icons/icon-192.png" class="w-8 h-8 drop-shadow-md" alt="Logo">
+                        <img src="icons/icon-192.png?v=3" class="w-8 h-8 drop-shadow-md" alt="Logo">
                         <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
                         <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1"></div>
                     </div>
@@ -311,7 +311,7 @@
 
         <!-- Settings Bottom Sheet -->
         <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col max-h-[calc(100dvh-64px)]">
+        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -386,7 +386,7 @@
 
         <!-- Results Overlay Sheet -->
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="results-sheet" class="fixed inset-x-0 bottom-0 z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col max-h-[calc(100dvh-64px)]">
+        <div id="results-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -890,7 +890,7 @@
                 // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
                 msgDiv.innerHTML = `
                     <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                        <img src="icons/icon-192.png?v=3" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                     </div>
                     <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
                         ${text}
@@ -916,7 +916,7 @@
             div.className = 'flex items-start gap-3 mt-4';
             div.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    <img src="icons/icon-192.png?v=3" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                 </div>
                 <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
                     <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0s;"></div>
@@ -1755,7 +1755,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
-                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    <img src="icons/icon-192.png?v=3" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
                 </div>
                 <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[calc(100%-44px)] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
@@ -2025,11 +2025,11 @@ function getRegionForAirport(code) {
                             if (hi > 23 || (hi === 23 && mi > 59) || hi >= 24) {
                                 hi = 23; mi = 59;
                             } else if (mi > 59) mi = 59;
-                            formatted = hi.toString() + ':' + mi.toString().padStart(2, '0');
+                            formatted = hi.toString().padStart(2, '0') + ':' + mi.toString().padStart(2, '0');
                             isValid = true;
                         } else {
                             if (mi > 59) mi = 59;
-                            formatted = hi.toString() + ':' + mi.toString().padStart(2, '0');
+                            formatted = hi.toString().padStart(2, '0') + ':' + mi.toString().padStart(2, '0');
                             isValid = true;
                         }
                     }
@@ -2214,7 +2214,10 @@ function getRegionForAirport(code) {
                     const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
                     const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
 
-                    if (!iata || !aDate || !dDate || !aTime || !dTime) return; // Incomplete
+                    if (!iata || !aDate || !dDate || !aTime || !dTime ) {
+                        lmaDetails.push('<div class="text-red-500 text-xs mb-2">Missing or incomplete fields for station ' + (iata || idxStr) + '. Skipping.</div>');
+                        return;
+                    }
 
                     const region = getRegionForAirport(iata);
                     if (!region) {
@@ -2232,7 +2235,7 @@ function getRegionForAirport(code) {
                     if (daysDiff < 0) return;
                     
                     const parseMins = (t) => {
-                        const m = t.match(/^(d{1,2}):(d{2})$/);
+                        const m = t.match(/^(\d{1,2}):(\d{2})$/);
                         if (!m) return -1;
                         return parseInt(m[1]) * 60 + parseInt(m[2]);
                     };
@@ -2303,10 +2306,10 @@ function getRegionForAirport(code) {
             }
 
             const grandTotal = ifaTotal + lmaTotal;
-            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround);
+            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode);
         }
 
-        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround) {
+        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
@@ -2353,12 +2356,20 @@ function getRegionForAirport(code) {
             }, 10);
             
             // Post result message to chat
-            let label = "Total IFA";
-            if (ifaTotal > 0 && lmaTotal > 0) label = "COP Allowance";
-            else if (lmaTotal > 0) label = "Total LMA";
+            let msg = '';
+            if (isTurnaround && mode === 'both') {
+                // If it was 'both' but it's turnaround, we only have IFA effectively.
+                msg = 'Your total COP Allowance is **$' + grandTotal.toFixed(2) + '**';
+            } else if (mode === 'ifa') {
+                msg = 'Your IFA is **$' + ifaTotal.toFixed(2) + '**';
+            } else if (mode === 'lma') {
+                msg = 'Your LMA is **$' + lmaTotal.toFixed(2) + '**';
+            } else {
+                msg = 'Your total COP Allowance is **$' + grandTotal.toFixed(2) + '**';
+            }
             
             setTimeout(() => {
-                addMessage('bot', `Here is your calculated ${label}: **$${grandTotal.toFixed(2)}**`);
+                addMessage('bot', msg);
             }, 600);
         }
 
