@@ -398,6 +398,52 @@
                 <!-- Injected via JS -->
             </div>
         </div>
+
+        <!-- Menu Viewer Sheet -->
+        <div id="menu-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="menu-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+            <div class="w-full flex justify-center py-3 shrink-0">
+                <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+            </div>
+            <div class="flex items-center justify-between px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5">
+                <h3 class="text-xl font-bold">Inflight Menu</h3>
+                <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="px-6 py-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-6 flex-grow" id="menu-content">
+                
+                <!-- State 3: Menu Display -->
+                <div id="menu-state-3" class="hidden space-y-4">
+                    <div class="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
+                        <div>
+                            <div class="text-sm text-gray-500">Showing Menu for</div>
+                            <div class="font-bold" id="menu-display-header">SQ -- • Cabin</div>
+                        </div>
+                        
+                    </div>
+
+                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                        <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
+                    </div>
+
+                    <div id="menu-cabin-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide hidden"></div>
+
+                    <!-- Sectors Tabs -->
+                    <div id="menu-sectors-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+                    
+                    <!-- Sector Content -->
+                    <div id="menu-sector-content" class="space-y-6"></div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="menu-loading" class="hidden flex flex-col items-center justify-center py-12 space-y-4">
+                    <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
+                    <div class="text-sm font-semibold text-gray-500 animate-pulse">Loading Inflight Data...</div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <script>
@@ -951,7 +997,7 @@
             
             // NLP Intent Engine based on LOGIC.md
             if (/menu|serving|onboard/.test(lowerText)) {
-                addMessage('bot', 'Opening Menu Lookup... *(Step 5 Feature)*');
+                renderFlightVerificationCard('menu');
             }
             else if (/total|cop|both|allowance|calculate/.test(lowerText)) {
                 renderCalculatorCard('both');
@@ -962,8 +1008,8 @@
             else if (/ifa|flight/.test(lowerText)) {
                 renderCalculatorCard('ifa');
             }
-            else if (/print|printer/.test(lowerText)) {
-                addMessage('bot', 'Opening Menu Printer... *(Step 6 Feature)*');
+            else if (/print|printer|homework/.test(lowerText)) {
+                renderFlightVerificationCard('print');
             }
             else {
                 addMessage('bot', 'I didn\'t quite catch that. Could you try again, or tap one of the quick action chips below?');
@@ -1749,7 +1795,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -2421,8 +2467,6 @@ function getRegionForAirport(code) {
             }, 300);
         });
     </script>
-<<<<<<< HEAD
-=======
     <script>
         
 
@@ -2447,6 +2491,13 @@ function getRegionForAirport(code) {
 
             let headerText = mode === 'print' ? 'Menu Printer Lookup' : 'Inflight Menu Lookup';
             
+            // Add hidden input to store the mode
+            const hiddenMode = document.createElement('input');
+            hiddenMode.type = 'hidden';
+            hiddenMode.id = 'fv-mode-' + uniqueId;
+            hiddenMode.value = mode;
+            msgDiv.appendChild(hiddenMode);
+            
             msgDiv.innerHTML = `
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
                     <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
@@ -2458,22 +2509,23 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
                             <div class="flex items-center relative">
                                 <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
-                                <input type="text" id="fv-flight-${uniqueId}" oninput="handleFlightInput('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
+                                <input type="text" id="fv-flight-${uniqueId}" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
                             </div>
                         </div>
                         
-                        <div id="fv-date-area-${uniqueId}" class="hidden space-y-2 transition-all duration-300">
+                        <div id="fv-date-area-${uniqueId}" class="space-y-2 transition-all duration-300">
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
-                                <button onclick="handleDateSelect('${uniqueId}', '${localISOTime}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Today</button>
-                                <button onclick="handleDateSelect('${uniqueId}', '${tomorrowISOTime}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Tomorrow</button>
-                                <button onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Pick Date</button>
+                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Today</button>
+                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Tomorrow</button>
+                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Pick Date</button>
                             </div>
                             
                             <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
-                                <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" onchange="handleDateSelect('${uniqueId}', this.value)" class="ui-input w-full rounded-xl px-4 py-2.5 text-sm font-bold border border-transparent dark:border-white/10 outline-none">
+                                <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" onchange="setDateAndFetch('${uniqueId}', this.value, 'pick')" class="ui-input w-full rounded-xl px-4 py-2.5 text-sm font-bold border border-transparent dark:border-white/10 outline-none">
                             </div>
+                            <input type="hidden" id="fv-selected-date-${uniqueId}">
                         </div>
                         
                         <div id="fv-loading-${uniqueId}" class="hidden flex justify-center py-2">
@@ -2492,21 +2544,6 @@ function getRegionForAirport(code) {
             scrollToBottom();
         }
 
-        function handleFlightInput(id) {
-            const val = document.getElementById(`fv-flight-${id}`).value.trim().toUpperCase().replace(/\\s+/g, '');
-            const match = val.match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/);
-            const dateArea = document.getElementById(`fv-date-area-${id}`);
-            const actionArea = document.getElementById(`fv-action-area-${id}`);
-            
-            if (match) {
-                dateArea.classList.remove('hidden');
-            } else {
-                dateArea.classList.add('hidden');
-                actionArea.classList.add('hidden');
-                document.getElementById(`fv-loading-${id}`).classList.add('hidden');
-            }
-        }
-
         function showDatePickerUI(id) {
             document.getElementById(`fv-date-buttons-${id}`).classList.add('hidden');
             const pickerWrap = document.getElementById(`fv-date-picker-wrap-${id}`);
@@ -2518,23 +2555,48 @@ function getRegionForAirport(code) {
             }
         }
 
-        async function handleDateSelect(id, dateStr) {
-            if (!dateStr) return;
+        function setDateAndFetch(id, dateStr, source) {
+            document.getElementById(`fv-selected-date-${id}`).value = dateStr;
             
-            const dateArea = document.getElementById(`fv-date-area-${id}`);
-            const loading = document.getElementById(`fv-loading-${id}`);
-            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            if (source === 'today' || source === 'tomorrow') {
+                document.getElementById(`fv-btn-today-${id}`).classList.remove('bg-sia-gold', 'text-black');
+                document.getElementById(`fv-btn-tomorrow-${id}`).classList.remove('bg-sia-gold', 'text-black');
+                if (source === 'today') document.getElementById(`fv-btn-today-${id}`).classList.add('bg-sia-gold', 'text-black');
+                if (source === 'tomorrow') document.getElementById(`fv-btn-tomorrow-${id}`).classList.add('bg-sia-gold', 'text-black');
+            }
             
-            dateArea.classList.add('opacity-50', 'pointer-events-none');
-            loading.classList.remove('hidden');
-            actionArea.classList.add('hidden');
+            checkAutoFetch(id);
+        }
 
+        let fetchTimeout;
+        function checkAutoFetch(id) {
             const flightInput = document.getElementById(`fv-flight-${id}`);
-            let rawFlight = flightInput.value.trim().toUpperCase().replace(/\\s+/g, '');
-            const flightNumber = rawFlight.match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/)[1];
+            const dateInput = document.getElementById(`fv-selected-date-${id}`);
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            const loading = document.getElementById(`fv-loading-${id}`);
             
-            flightInput.dataset.selectedDate = dateStr;
+            let rawFlight = flightInput.value.trim().toUpperCase().replace(/\s+/g, '');
+            const match = rawFlight.match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
+            const dateStr = dateInput.value;
+            
+            if (match && dateStr) {
+                actionArea.classList.add('hidden');
+                loading.classList.remove('hidden');
+                
+                clearTimeout(fetchTimeout);
+                fetchTimeout = setTimeout(() => {
+                    executeFetchCabins(id, match[1], dateStr, document.getElementById('fv-mode-' + id).value);
+                }, 500);
+            } else {
+                actionArea.classList.add('hidden');
+                loading.classList.add('hidden');
+            }
+        }
 
+        async function executeFetchCabins(id, flightNumber, dateStr, mode) {
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            const loading = document.getElementById(`fv-loading-${id}`);
+            
             const payload = {
                 carrierId: "SQ",
                 flightNumber: flightNumber,
@@ -2551,12 +2613,14 @@ function getRegionForAirport(code) {
                 
                 const data = await res.json();
                 
+                loading.classList.add('hidden');
+                
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
                 if (data.statusCode === 101) {
-                    addMessage('bot', 'Flight not found. Menus are only published up to 8 days before departure.');
+                    addMessage('bot', 'Flight not found for this date. Menus are published up to 8 days before departure.');
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
                     currentMenuSearch.flightNumber = flightNumber;
@@ -2586,10 +2650,10 @@ function getRegionForAirport(code) {
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
+                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
-                            </button>
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
+                            </button>` : ''}
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
@@ -2597,10 +2661,7 @@ function getRegionForAirport(code) {
                     
                     actionArea.innerHTML = cabinHtml;
                     
-                    const firstCabin = actionArea.querySelector('button[data-cabin]');
-                    if (firstCabin) {
-                        firstCabin.classList.add('selected-cabin', 'bg-sia-gold', 'text-black', 'border-sia-gold');
-                    }
+                    // Default to unselected per user request
 
                     actionArea.classList.remove('hidden');
                     lucide.createIcons();
@@ -2609,14 +2670,12 @@ function getRegionForAirport(code) {
                     addMessage('bot', 'Unexpected response from SQ system.');
                 }
             } catch (err) {
+                loading.classList.add('hidden');
                 if (err.message === 'UPSTREAM_TIMEOUT') {
                     addMessage('bot', 'Request timed out. Please try again.');
                 } else {
                     addMessage('bot', 'Network error connecting to SQ system. Please try again.');
                 }
-            } finally {
-                dateArea.classList.remove('opacity-50', 'pointer-events-none');
-                loading.classList.add('hidden');
             }
         }
 
@@ -2632,8 +2691,8 @@ function getRegionForAirport(code) {
             const selectedCabins = Array.from(selectedBtns).map(b => b.getAttribute('data-cabin'));
             
             const flightInput = document.getElementById(`fv-flight-${id}`);
-            const flightNumber = flightInput.value.trim().toUpperCase().replace(/\\s+/g, '').match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/)[1];
-            const date = flightInput.dataset.selectedDate;
+            const flightNumber = flightInput.value.trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/)[1];
+            const date = document.getElementById(`fv-selected-date-${id}`).value;
             
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
@@ -2646,31 +2705,40 @@ function getRegionForAirport(code) {
         }
 
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
-
+            currentMenuSearch.selectedCabins = cabinClasses; // Array of selected cabins
+            
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             
-            document.getElementById('menu-verified-flight').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
-                    
-            const btnContainer = document.getElementById('cabin-buttons');
-            btnContainer.innerHTML = '';
+            document.getElementById('menu-display-header').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
             
-            const cabinNames = {
-                'FCL': 'First / Suites',
-                'JCL': 'Business Class',
-                'SCL': 'Premium Economy',
-                'YCL': 'Economy Class'
-            };
+            // Generate Cabin Tabs in Header if multiple
+            const cabinTabsContainer = document.getElementById('menu-cabin-tabs');
+            cabinTabsContainer.innerHTML = '';
             
-            cabinClasses.forEach(code => {
-                const btn = document.createElement('button');
-                btn.className = 'bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 font-semibold hover:border-sia-gold transition-colors';
-                btn.textContent = cabinNames[code] || code;
-                btn.onclick = () => loadMenu(code);
-                btnContainer.appendChild(btn);
-            });
+            const cabinNames = { 'FCL': 'First/Suites', 'JCL': 'Business', 'SCL': 'Premium Eco', 'YCL': 'Economy' };
             
-            showMenuState(2);
+            if (cabinClasses.length > 1) {
+                cabinTabsContainer.classList.remove('hidden');
+                cabinClasses.forEach((code, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = `px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${idx === 0 ? 'bg-sia-gold text-black' : 'bg-black/5 dark:bg-white/5'}`;
+                    btn.textContent = cabinNames[code] || code;
+                    btn.onclick = () => {
+                        Array.from(cabinTabsContainer.children).forEach(b => {
+                            b.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-black/5 dark:bg-white/5';
+                        });
+                        btn.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-sia-gold text-black';
+                        loadMenu(code);
+                    };
+                    cabinTabsContainer.appendChild(btn);
+                });
+            } else {
+                cabinTabsContainer.classList.add('hidden');
+            }
+            
+            // Load the first selected cabin
+            loadMenu(cabinClasses[0]);
             
             backdrop.classList.remove('hidden');
             setTimeout(() => {
@@ -2732,15 +2800,13 @@ function getRegionForAirport(code) {
         document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
         
         function showMenuState(state) {
-            document.getElementById('menu-state-1').classList.add('hidden');
-            document.getElementById('menu-state-2').classList.add('hidden');
-            document.getElementById('menu-state-3').classList.add('hidden');
-            document.getElementById('menu-loading').classList.add('hidden');
+            const st3 = document.getElementById('menu-state-3');
+            const ldg = document.getElementById('menu-loading');
+            if(st3) st3.classList.add('hidden');
+            if(ldg) ldg.classList.add('hidden');
             
-            if (state === 1) document.getElementById('menu-state-1').classList.remove('hidden');
-            else if (state === 2) document.getElementById('menu-state-2').classList.remove('hidden');
-            else if (state === 3) document.getElementById('menu-state-3').classList.remove('hidden');
-            else if (state === 'loading') document.getElementById('menu-loading').classList.remove('hidden');
+            if (state === 3 && st3) st3.classList.remove('hidden');
+            else if (state === 'loading' && ldg) ldg.classList.remove('hidden');
         }
         
         function showMenuError(msg) {
@@ -2754,68 +2820,8 @@ function getRegionForAirport(code) {
         }
         
         
-                
-                const data = await res.json();
-                
-                if (data.error) {
-                    throw new Error(data.error); // UPSTREAM_TIMEOUT, UPSTREAM_NETWORK
-                }
-                
-                if (data.statusCode === 101) {
-                    showMenuState(1);
-                    showMenuError('Flight not found. Menus are only published up to 8 days before departure.');
-                    return;
-                }
-                
-                if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
-                    // Success
-                    currentMenuSearch.flightNumber = flightNumber;
-                    currentMenuSearch.date = date;
-                    currentMenuSearch.cabins = data.cabinClasses;
-                    
-                    document.getElementById('menu-verified-flight').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
-                    
-                    const btnContainer = document.getElementById('cabin-buttons');
-                    btnContainer.innerHTML = '';
-                    
-                    const cabinNames = {
-                        'FCL': 'First / Suites',
-                        'JCL': 'Business Class',
-                        'SCL': 'Premium Economy',
-                        'YCL': 'Economy Class'
-                    };
-                    
-                    data.cabinClasses.forEach(code => {
-                        const btn = document.createElement('button');
-                        btn.className = 'bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 font-semibold hover:border-sia-gold transition-colors';
-                        btn.textContent = cabinNames[code] || code;
-                        btn.onclick = () => loadMenu(code);
-                        btnContainer.appendChild(btn);
-                    });
-                    
-                    showMenuState(2);
-                } else {
-                    showMenuState(1);
-                    showMenuError('Unexpected response from SQ system.');
-                }
-                
-            } catch (err) {
-                showMenuState(1);
-                if (err.message === 'UPSTREAM_TIMEOUT') {
-                    showMenuError('Request timed out. Please try again.');
-                } else {
-                    showMenuError('Network error connecting to SQ system. Please try again.');
-                }
-            }
-        });
         
-        document.getElementById('btn-change-flight').addEventListener('click', () => {
-            showMenuState(1);
-        });
         
-        document.getElementById('btn-change-cabin').addEventListener('click', () => {
-            showMenuState(2);
-        });
         
         async function loadMenu(cabinClass) {
             const cacheKey = `SQ${currentMenuSearch.flightNumber}:${currentMenuSearch.date}:${cabinClass}`;
@@ -3208,6 +3214,5 @@ function getRegionForAirport(code) {
         }
         
     </script>
->>>>>>> parent of 189d021 (Fix syntax error causing blank screen and restore icons)
 </body>
 </html>
