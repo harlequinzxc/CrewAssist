@@ -416,18 +416,48 @@
                 <!-- State 3: Menu Display -->
                 <div id="menu-state-3" class="hidden space-y-4">
                     
-
                     <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
                         <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
                     </div>
 
-                    <div id="menu-cabin-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide hidden"></div>
+                    <!-- Filter Dropdowns -->
+                    <div class="flex gap-2 relative z-20">
+                        <!-- Cabin Wrap -->
+                        <div class="flex-1 relative" id="menu-cabin-wrap">
+                            <button type="button" onclick="toggleMenuDropdown('cabin')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                <span id="menu-cabin-label">Cabin</span>
+                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-cabin-icon"></i>
+                            </button>
+                            <div id="menu-cabin-menu" class="absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                <div class="p-1 flex flex-col gap-1" id="menu-cabin-list"></div>
+                            </div>
+                        </div>
 
-                    <!-- Sectors Tabs -->
-                    <div id="menu-sectors-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+                        <!-- Sector Wrap -->
+                        <div class="flex-1 relative" id="menu-sector-wrap">
+                            <button type="button" onclick="toggleMenuDropdown('sector')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                <span id="menu-sector-label">Sector</span>
+                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-sector-icon"></i>
+                            </button>
+                            <div id="menu-sector-menu" class="absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                <div class="p-1 flex flex-col gap-1" id="menu-sector-list"></div>
+                            </div>
+                        </div>
+
+                        <!-- Culinary Wrap -->
+                        <div class="flex-1 relative" id="menu-culinary-wrap">
+                            <button type="button" onclick="toggleMenuDropdown('culinary')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                <span id="menu-culinary-label">Cuisine</span>
+                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-culinary-icon"></i>
+                            </button>
+                            <div id="menu-culinary-menu" class="absolute top-full left-0 w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                <div class="p-1 flex flex-col gap-1" id="menu-culinary-list"></div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <!-- Sector Content -->
-                    <div id="menu-sector-content" class="space-y-6"></div>
+                    <div id="menu-sector-content" class="space-y-6 relative z-10"></div>
                 </div>
 
                 <!-- Loading State -->
@@ -2769,15 +2799,26 @@ function getRegionForAirport(code) {
         }
 
         async function submitFlightVerification(id, actionType) {
-            const container = document.getElementById(`fv-cabins-container-${id}`);
-            const selectedBtns = container.querySelectorAll('.selected-cabin');
-            
-            if (selectedBtns.length === 0) {
+            const cabinContainer = document.getElementById(`fv-cabins-container-${id}`);
+            const selectedCabinBtns = cabinContainer.querySelectorAll('.selected-cabin');
+            if (selectedCabinBtns.length === 0) {
                 addMessage('bot', 'Please select at least one cabin.');
                 return;
             }
+            const selectedCabins = Array.from(selectedCabinBtns).map(b => b.getAttribute('data-cabin'));
             
-            const selectedCabins = Array.from(selectedBtns).map(b => b.getAttribute('data-cabin'));
+            // Collect sectors
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            const sectorContainer = document.getElementById(`fv-sectors-container-${id}`);
+            let selectedSectors = [];
+            if (sectorContainer) {
+                const selectedSectorBtns = sectorContainer.querySelectorAll('.selected-sector');
+                if (selectedSectorBtns.length > 0) {
+                    selectedSectors = Array.from(selectedSectorBtns).map(b => b.getAttribute('data-sector'));
+                }
+            } else if (actionArea && actionArea.dataset.singleSector) {
+                selectedSectors = [actionArea.dataset.singleSector];
+            }
             
             const flightInput = document.getElementById(`fv-flight-${id}`);
             const flightNumber = flightInput.value.trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/)[1];
@@ -2785,6 +2826,7 @@ function getRegionForAirport(code) {
             
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
+            currentMenuSearch.selectedSectors = selectedSectors;
             
             if (actionType === 'menu') {
                 openMenuViewerForCabins(flightNumber, date, selectedCabins);
@@ -2793,7 +2835,31 @@ function getRegionForAirport(code) {
             }
         }
 
-                function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+        
+        function toggleMenuDropdown(type) {
+            const menu = document.getElementById('menu-' + type + '-menu');
+            const icon = document.getElementById('menu-' + type + '-icon');
+            const isClosed = menu.classList.contains('max-h-0');
+            
+            // Close others
+            ['cabin', 'sector', 'culinary'].forEach(t => {
+                const m = document.getElementById('menu-' + t + '-menu');
+                const i = document.getElementById('menu-' + t + '-icon');
+                if (m && i) {
+                    m.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
+                    m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
+                    i.classList.remove('rotate-180');
+                }
+            });
+            
+            if (isClosed && menu && icon) {
+                menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
+                menu.classList.add('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
+                icon.classList.add('rotate-180');
+            }
+        }
+
+        function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
             currentMenuSearch.selectedCabins = cabinClasses;
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
