@@ -2597,14 +2597,14 @@ function getRegionForAirport(code) {
             const actionArea = document.getElementById(`fv-action-area-${id}`);
             const loading = document.getElementById(`fv-loading-${id}`);
             
-            const payload = {
-                carrierId: "SQ",
-                flightNumber: flightNumber,
-                flightDate: dateStr,
-                sessionId: crypto.randomUUID()
-            };
-            
             try {
+                const payload = {
+                    carrierId: "SQ",
+                    flightNumber: flightNumber,
+                    flightDate: dateStr,
+                    sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+                };
+
                 const res = await fetch('/api/sq', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -2847,15 +2847,15 @@ function getRegionForAirport(code) {
             
             showMenuState('loading');
             
-            const payload = {
-                carrierId: "SQ",
-                flightNumber: currentMenuSearch.flightNumber,
-                flightDate: currentMenuSearch.date,
-                cabinClass: cabinClass,
-                sessionId: crypto.randomUUID()
-            };
-            
             try {
+                const payload = {
+                    carrierId: "SQ",
+                    flightNumber: currentMenuSearch.flightNumber,
+                    flightDate: currentMenuSearch.date,
+                    cabinClass: cabinClass,
+                    sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+                };
+
                 const res = await fetch('/api/sq', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
