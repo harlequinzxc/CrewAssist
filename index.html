@@ -3182,10 +3182,10 @@ function getRegionForAirport(code) {
             `;
             container.innerHTML += wrapHtml;
             
-            const mealsWrap = document.getElementById('menu-cat-meals');
-            const drinksWrap = document.getElementById('menu-cat-drinks');
-            const snacksWrap = document.getElementById('menu-cat-snacks');
-            const amWrap = document.getElementById('menu-cat-amenities');
+            const mealsWrap = container.querySelector('#menu-cat-meals');
+            const drinksWrap = container.querySelector('#menu-cat-drinks');
+            const snacksWrap = container.querySelector('#menu-cat-snacks');
+            const amWrap = container.querySelector('#menu-cat-amenities');
             
             // Flags
             if (leg.isNoMenuPlanned) {
