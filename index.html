@@ -2491,15 +2491,9 @@ function getRegionForAirport(code) {
 
             let headerText = mode === 'print' ? 'Menu Printer Lookup' : 'Inflight Menu Lookup';
             
-            // Add hidden input to store the mode
-            const hiddenMode = document.createElement('input');
-            hiddenMode.type = 'hidden';
-            hiddenMode.id = 'fv-mode-' + uniqueId;
-            hiddenMode.value = mode;
-            msgDiv.appendChild(hiddenMode);
-            
             msgDiv.innerHTML = `
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
+                    <input type="hidden" id="fv-mode-${uniqueId}" value="${mode}">
                     <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
                         <i data-lucide="${mode === 'print' ? 'printer' : 'plane'}" class="w-5 h-5"></i> ${headerText}
                     </div>
