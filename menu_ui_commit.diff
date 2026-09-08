@@ -1,0 +1,67 @@
+commit 2648a875472fe1cc23c3449fd7545bdb242b9dbc
+Author: harlequinzxc <55795421+harlequinzxc@users.noreply.github.com>
+Date:   Tue Sep 8 07:03:42 2026 +0000
+
+    Final sync of dropdowns and UI hooks after git reversion
+    
+    Co-authored-by: arena-agent <297053741+arena-agent@users.noreply.github.com>
+
+diff --git a/index.html b/index.html
+index 7676655..28f0a1b 100644
+--- a/index.html
++++ b/index.html
+@@ -2800,39 +2800,36 @@ function getRegionForAirport(code) {
+         }
+ 
+         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+-            currentMenuSearch.selectedCabins = cabinClasses; // Array of selected cabins
+-            
++            currentMenuSearch.selectedCabins = cabinClasses;
+             const backdrop = document.getElementById('menu-backdrop');
+             const sheet = document.getElementById('menu-sheet');
+             
+-            document.getElementById('menu-display-header').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
+-            
+-            // Generate Cabin Tabs in Header if multiple
+-            const cabinTabsContainer = document.getElementById('menu-cabin-tabs');
+-            cabinTabsContainer.innerHTML = '';
++            const cabinWrap = document.getElementById('menu-cabin-wrap');
++            const cabinList = document.getElementById('menu-cabin-list');
++            const cabinLabel = document.getElementById('menu-cabin-label');
++            cabinList.innerHTML = '';
+             
+-            const cabinNames = { 'FCL': 'First/Suites', 'JCL': 'Business', 'SCL': 'Premium Eco', 'YCL': 'Economy' };
++            const cabinNames = { 'FCL': 'First', 'JCL': 'Business', 'SCL': 'Premium Eco', 'YCL': 'Economy' };
+             
+             if (cabinClasses.length > 1) {
+-                cabinTabsContainer.classList.remove('hidden');
+-                cabinClasses.forEach((code, idx) => {
++                cabinWrap.classList.remove('hidden');
++                cabinClasses.forEach(code => {
+                     const btn = document.createElement('button');
+-                    btn.className = `px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${idx === 0 ? 'bg-sia-gold text-black' : 'bg-black/5 dark:bg-white/5'}`;
++                    btn.type = 'button';
++                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
+                     btn.textContent = cabinNames[code] || code;
+                     btn.onclick = () => {
+-                        Array.from(cabinTabsContainer.children).forEach(b => {
+-                            b.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-black/5 dark:bg-white/5';
+-                        });
+-                        btn.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-sia-gold text-black';
++                        cabinLabel.textContent = cabinNames[code] || code;
++                        toggleMenuDropdown('cabin');
+                         loadMenu(code);
+                     };
+-                    cabinTabsContainer.appendChild(btn);
++                    cabinList.appendChild(btn);
+                 });
++                cabinLabel.textContent = cabinNames[cabinClasses[0]] || cabinClasses[0];
+             } else {
+-                cabinTabsContainer.classList.add('hidden');
++                cabinWrap.classList.add('hidden');
+             }
+             
+-            // Load the first selected cabin
+             loadMenu(cabinClasses[0]);
+             
+             backdrop.classList.remove('hidden');
