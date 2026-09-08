@@ -2492,7 +2492,7 @@ function getRegionForAirport(code) {
             let headerText = mode === 'print' ? 'Menu Printer Lookup' : 'Inflight Menu Lookup';
             
             msgDiv.innerHTML = `
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
+                <div class="bg-transparent border border-black/10 dark:border-white/10 p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
                     <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
                         <i data-lucide="${mode === 'print' ? 'printer' : 'plane'}" class="w-5 h-5"></i> ${headerText}
                     </div>
@@ -2510,9 +2510,9 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
-                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Today</button>
-                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Tomorrow</button>
-                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Pick Date</button>
+                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Today</button>
+                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Tomorrow</button>
+                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Pick Date</button>
                             </div>
                             
                             <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
@@ -2654,10 +2654,7 @@ function getRegionForAirport(code) {
                     
                     actionArea.innerHTML = cabinHtml;
                     
-                    const firstCabin = actionArea.querySelector('button[data-cabin]');
-                    if (firstCabin) {
-                        firstCabin.classList.add('selected-cabin', 'bg-sia-gold', 'text-black', 'border-sia-gold');
-                    }
+                    // Default to unselected per user request
 
                     actionArea.classList.remove('hidden');
                     lucide.createIcons();
