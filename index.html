@@ -2605,10 +2605,10 @@ function getRegionForAirport(code) {
                     sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
                 };
 
-                const res = await fetch('/api/sq', {
+                const res = await fetch('https://corsproxy.io/?https://cifp.auto.prod.c0.singaporeair.com/api/getcabin', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ endpoint: 'getcabin', payload })
+                    body: JSON.stringify(payload)
                 });
                 
                 const data = await res.json();
@@ -2674,6 +2674,7 @@ function getRegionForAirport(code) {
                 }
             } catch (err) {
                 loading.classList.add('hidden');
+                actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Fetch crashed: ' + String(err.message || err) + '</div>';
                 if (err.message === 'UPSTREAM_TIMEOUT') {
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Request timed out.</div>';
                 } else {
