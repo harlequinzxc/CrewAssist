@@ -2480,6 +2480,11 @@ function getRegionForAirport(code) {
             const today = new Date();
             const tzOffset = today.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
+            
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const tomorrowISOTime = (new Date(tomorrow.getTime() - tzOffset)).toISOString().split('T')[0];
+            
             const maxDate = new Date(today);
             maxDate.setDate(today.getDate() + 42);
             const maxLocalISOTime = (new Date(maxDate.getTime() - tzOffset)).toISOString().split('T')[0];
@@ -2495,24 +2500,32 @@ function getRegionForAirport(code) {
                     <div class="space-y-4">
                         <div class="relative">
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
-                            <div class="flex items-center">
-                                <span class="absolute left-3 text-gray-500 font-mono font-bold">SQ</span>
-                                <input type="text" id="fv-flight-${uniqueId}" class="w-full bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-sia-gold transition-colors font-mono font-bold" placeholder="e.g. 11">
+                            <div class="flex items-center relative">
+                                <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
+                                <input type="text" id="fv-flight-${uniqueId}" oninput="handleFlightInput('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
                             </div>
                         </div>
                         
-                        <div>
+                        <div id="fv-date-area-${uniqueId}" class="hidden space-y-2 transition-all duration-300">
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
-                            <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" value="${localISOTime}" class="w-full bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-sia-gold transition-colors font-mono">
+                            
+                            <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
+                                <button onclick="handleDateSelect('${uniqueId}', '${localISOTime}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Today</button>
+                                <button onclick="handleDateSelect('${uniqueId}', '${tomorrowISOTime}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Tomorrow</button>
+                                <button onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Pick Date</button>
+                            </div>
+                            
+                            <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
+                                <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" onchange="handleDateSelect('${uniqueId}', this.value)" class="ui-input w-full rounded-xl px-4 py-2.5 text-sm font-bold border border-transparent dark:border-white/10 outline-none">
+                            </div>
                         </div>
                         
-                        <div class="flex gap-2 pt-2">
-                            <button id="fv-btn-menu-${uniqueId}" onclick="submitFlightVerification('${uniqueId}', 'menu', this)" class="flex-1 ${mode === 'menu' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
-                                <i data-lucide="book-open" class="w-4 h-4"></i> Fetch Menu
-                            </button>
-                            <button id="fv-btn-print-${uniqueId}" onclick="submitFlightVerification('${uniqueId}', 'print', this)" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
-                                <i data-lucide="printer" class="w-4 h-4"></i> Print Menu
-                            </button>
+                        <div id="fv-loading-${uniqueId}" class="hidden flex justify-center py-2">
+                            <div class="w-6 h-6 border-2 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+
+                        <div id="fv-action-area-${uniqueId}" class="pt-2 space-y-3 hidden">
+                            <!-- Cabins and action buttons injected here -->
                         </div>
                     </div>
                 </div>
@@ -2523,36 +2536,53 @@ function getRegionForAirport(code) {
             scrollToBottom();
         }
 
-        async function submitFlightVerification(id, actionType, btnElement) {
-            const flightInput = document.getElementById(`fv-flight-${id}`);
-            const dateInput = document.getElementById(`fv-date-${id}`);
+        function handleFlightInput(id) {
+            const val = document.getElementById(`fv-flight-${id}`).value.trim().toUpperCase().replace(/\\s+/g, '');
+            const match = val.match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/);
+            const dateArea = document.getElementById(`fv-date-area-${id}`);
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
             
-            let rawFlight = flightInput.value.trim().toUpperCase();
-            const date = dateInput.value;
-            
-            rawFlight = rawFlight.replace(/\s+/g, '');
-            const match = rawFlight.match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
-            
-            if (!match) {
-                addMessage('bot', 'Invalid flight number format. Use digits only (e.g. 11 or SQ11).');
-                return;
+            if (match) {
+                dateArea.classList.remove('hidden');
+            } else {
+                dateArea.classList.add('hidden');
+                actionArea.classList.add('hidden');
+                document.getElementById(`fv-loading-${id}`).classList.add('hidden');
             }
-            
-            const flightNumber = match[1];
-            
-            if (!date) {
-                addMessage('bot', 'Please select a departure date.');
-                return;
-            }
+        }
 
-            const originalHtml = btnElement.innerHTML;
-            btnElement.innerHTML = `<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>`;
-            btnElement.disabled = true;
+        function showDatePickerUI(id) {
+            document.getElementById(`fv-date-buttons-${id}`).classList.add('hidden');
+            const pickerWrap = document.getElementById(`fv-date-picker-wrap-${id}`);
+            pickerWrap.classList.remove('hidden');
+            const picker = document.getElementById(`fv-date-${id}`);
+            picker.focus();
+            if(typeof picker.showPicker === 'function') {
+                try { picker.showPicker(); } catch(e){}
+            }
+        }
+
+        async function handleDateSelect(id, dateStr) {
+            if (!dateStr) return;
+            
+            const dateArea = document.getElementById(`fv-date-area-${id}`);
+            const loading = document.getElementById(`fv-loading-${id}`);
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            
+            dateArea.classList.add('opacity-50', 'pointer-events-none');
+            loading.classList.remove('hidden');
+            actionArea.classList.add('hidden');
+
+            const flightInput = document.getElementById(`fv-flight-${id}`);
+            let rawFlight = flightInput.value.trim().toUpperCase().replace(/\\s+/g, '');
+            const flightNumber = rawFlight.match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/)[1];
+            
+            flightInput.dataset.selectedDate = dateStr;
 
             const payload = {
                 carrierId: "SQ",
                 flightNumber: flightNumber,
-                flightDate: date,
+                flightDate: dateStr,
                 sessionId: crypto.randomUUID()
             };
             
@@ -2574,14 +2604,51 @@ function getRegionForAirport(code) {
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
                     currentMenuSearch.flightNumber = flightNumber;
-                    currentMenuSearch.date = date;
+                    currentMenuSearch.date = dateStr;
                     currentMenuSearch.cabins = data.cabinClasses;
                     
-                    if (actionType === 'menu') {
-                        openMenuViewerWithCabins(flightNumber, date, data.cabinClasses);
-                    } else if (actionType === 'print') {
-                        addMessage('bot', 'The Inflight Menu Printer feature is coming in Step 6.');
+                    let cabinHtml = `
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabins (${dateStr})</label>
+                            <div class="flex flex-wrap gap-2 mb-4" id="fv-cabins-container-${id}">
+                    `;
+                    
+                    const cabinNames = {
+                        'FCL': 'First/Suites',
+                        'JCL': 'Business',
+                        'SCL': 'Premium Eco',
+                        'YCL': 'Economy'
+                    };
+                    
+                    data.cabinClasses.forEach(code => {
+                        cabinHtml += `
+                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold');" data-cabin="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${cabinNames[code] || code}</button>
+                        `;
+                    });
+                    
+                    cabinHtml += `
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
+                                <i data-lucide="book-open" class="w-4 h-4"></i> Menu
+                            </button>
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i> Print
+                            </button>
+                        </div>
+                    `;
+                    
+                    actionArea.innerHTML = cabinHtml;
+                    
+                    const firstCabin = actionArea.querySelector('button[data-cabin]');
+                    if (firstCabin) {
+                        firstCabin.classList.add('selected-cabin', 'bg-sia-gold', 'text-black', 'border-sia-gold');
                     }
+
+                    actionArea.classList.remove('hidden');
+                    lucide.createIcons();
+                    scrollToBottom();
                 } else {
                     addMessage('bot', 'Unexpected response from SQ system.');
                 }
@@ -2592,13 +2659,38 @@ function getRegionForAirport(code) {
                     addMessage('bot', 'Network error connecting to SQ system. Please try again.');
                 }
             } finally {
-                btnElement.innerHTML = originalHtml;
-                btnElement.disabled = false;
-                lucide.createIcons();
+                dateArea.classList.remove('opacity-50', 'pointer-events-none');
+                loading.classList.add('hidden');
             }
         }
 
-        function openMenuViewerWithCabins(flightNumber, date, cabinClasses) {
+        async function submitFlightVerification(id, actionType) {
+            const container = document.getElementById(`fv-cabins-container-${id}`);
+            const selectedBtns = container.querySelectorAll('.selected-cabin');
+            
+            if (selectedBtns.length === 0) {
+                addMessage('bot', 'Please select at least one cabin.');
+                return;
+            }
+            
+            const selectedCabins = Array.from(selectedBtns).map(b => b.getAttribute('data-cabin'));
+            
+            const flightInput = document.getElementById(`fv-flight-${id}`);
+            const flightNumber = flightInput.value.trim().toUpperCase().replace(/\\s+/g, '').match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/)[1];
+            const date = flightInput.dataset.selectedDate;
+            
+            currentMenuSearch.flightNumber = flightNumber;
+            currentMenuSearch.date = date;
+            
+            if (actionType === 'menu') {
+                openMenuViewerForCabins(flightNumber, date, selectedCabins);
+            } else if (actionType === 'print') {
+                addMessage('bot', 'The Inflight Menu Printer feature is coming in Step 6.');
+            }
+        }
+
+        function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             
