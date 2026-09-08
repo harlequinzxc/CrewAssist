@@ -226,7 +226,7 @@
                             </div>
                         </div>
                         <div class="mt-8 shrink-0 pb-4">
-                            <button id="ob-submit" disabled class="w-full py-3.5 px-4 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(201,162,39,0.2)] flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(201,162,39,0.4)]">
+                            <button id="ob-submit" disabled class="w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold bg-sia-navy dark:bg-black text-sia-gold border border-sia-gold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
                             
@@ -336,20 +336,16 @@
                     </div>
                 </div>
 
-                <!-- Preferences -->
+                <!-- Feedback and Support -->
                 <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Preferences</p>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feedback and Support</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
-                            <span class="text-sm font-bold">Auto-scroll Chat</span>
-                            <p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 font-medium">
-                                <i data-lucide="arrow-down-to-line" class="w-3 h-3"></i> Jump to newest message
-                            </p>
+                            <span class="text-sm font-bold">Chat with the developer</span>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="toggle-autoscroll" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-gray-300 dark:bg-[#1a2030] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sia-gold border border-black/10 dark:border-white/10"></div>
-                        </label>
+                        <a href="https://t.me/harlequinzxc" target="_blank" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Telegram
+                        </a>
                     </div>
                 </div>
 
@@ -411,35 +407,68 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="px-6 py-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-6 flex-grow" id="menu-content">
+            <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full flex-grow relative" id="menu-content">
                 
                 <!-- State 3: Menu Display -->
-                <div id="menu-state-3" class="hidden space-y-4">
-                    <div class="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
-                        <div>
-                            <div class="text-sm text-gray-500">Showing Menu for</div>
-                            <div class="font-bold" id="menu-display-header">SQ -- • Cabin</div>
-                        </div>
-                        
-                    </div>
-
-                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                <div id="menu-state-3" class="hidden">
+                    
+                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 mb-4 rounded-lg border border-amber-500/20">
                         <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
                     </div>
 
-                    <div id="menu-cabin-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide hidden"></div>
+                    <div id="menu-hero-content" class="mb-4"></div>
+                    
+                    <!-- Sticky Header Container -->
+                    <div id="menu-sticky-header" class="sticky top-0 z-40 bg-[var(--glass-sheet-bg)] pb-2 -mx-6 px-6 shadow-[0_15px_15px_-15px_rgba(0,0,0,0.3)] transition-all duration-300" style="margin-top: -16px; padding-top: 16px;">
+                        <!-- Filter Dropdowns -->
+                        <div class="flex gap-2 relative z-20 items-start pt-2">
+                            <!-- Cabin Wrap -->
+                            <div class="flex-1 relative" id="menu-cabin-wrap">
+                                <button type="button" onclick="toggleMenuDropdown('cabin')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                    <span id="menu-cabin-label">Cabin</span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-cabin-icon"></i>
+                                </button>
+                                <div id="menu-cabin-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                    <div class="p-1 flex flex-col gap-1" id="menu-cabin-list"></div>
+                                </div>
+                            </div>
 
-                    <!-- Sectors Tabs -->
-                    <div id="menu-sectors-tabs" class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide"></div>
+                            <!-- Sector Wrap -->
+                            <div class="flex-1 relative" id="menu-sector-wrap">
+                                <button type="button" onclick="toggleMenuDropdown('sector')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                    <span id="menu-sector-label">Sector</span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-sector-icon"></i>
+                                </button>
+                                <div id="menu-sector-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                    <div class="p-1 flex flex-col gap-1" id="menu-sector-list"></div>
+                                </div>
+                            </div>
+
+                            <!-- Culinary Wrap -->
+                            <div class="flex-1 relative" id="menu-culinary-wrap">
+                                <button type="button" onclick="toggleMenuDropdown('culinary')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                    <span id="menu-culinary-label">Cuisine</span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-culinary-icon"></i>
+                                </button>
+                                <div id="menu-culinary-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                    <div class="p-1 flex flex-col gap-1" id="menu-culinary-list"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dynamic Pills & Tabs Injected Here -->
+                        <div id="menu-category-pills-wrap"></div>
+                        <div id="menu-meal-tabs-wrap"></div>
+                    </div>
                     
                     <!-- Sector Content -->
-                    <div id="menu-sector-content" class="space-y-6"></div>
+                    <div id="menu-sector-content" class="space-y-6 relative z-10"></div>
                 </div>
 
                 <!-- Loading State -->
                 <div id="menu-loading" class="hidden flex flex-col items-center justify-center py-12 space-y-4">
                     <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
-                    <div class="text-sm font-semibold text-gray-500 animate-pulse">Loading Inflight Data...</div>
+                    <div class="text-sm font-semibold text-gray-500 animate-pulse">Fetching menu from seat pocket...</div>
                 </div>
 
             </div>
@@ -975,7 +1004,15 @@
 
         function scrollToBottom() {
             const chatContainer = document.getElementById('chat-container');
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 10);
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 150);
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 500);
         }
 
         function processInput(text) {
@@ -1754,7 +1791,7 @@ function getRegionForAirport(code) {
                                     <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-flight-type-icon"></i>
                                 </button>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
-                                <div id="${id}-flight-type-menu" class="w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
+                                <div id="${id}-flight-type-menu" class="w-full mt-1 glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
                                     <div class="p-1 flex flex-col gap-1">
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Layover', 'Layover')">Layover</button>
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Turnaround', 'Turnaround')">Turnaround</button>
@@ -1768,7 +1805,7 @@ function getRegionForAirport(code) {
                                     <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-sector-count-icon"></i>
                                 </button>
                                 <input type="hidden" id="${id}-sector-count" value="2">
-                                <div id="${id}-sector-count-menu" class="w-full mt-1 bg-white dark:bg-[#0b1a3a] border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
+                                <div id="${id}-sector-count-menu" class="w-full mt-1 glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
                                     <div class="p-1 flex flex-col gap-1">
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '2', '2 Sectors')">2 Sectors</button>
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '4', '4 Sectors')">4 Sectors</button>
@@ -1801,7 +1838,7 @@ function getRegionForAirport(code) {
                     </div>
                     ${ifaHtml}
                     ${lmaHtml}
-                    <button id="${id}-btn-calc" class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black shadow-md hover:shadow-lg transition-all mt-2 active:scale-[0.98]">
+                    <button id="${id}-btn-calc" disabled class="w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none mt-2">
                         Calculate
                     </button>
                 </div>
@@ -2031,7 +2068,42 @@ function getRegionForAirport(code) {
                 });
             }
 
-            document.getElementById(`${id}-btn-calc`).addEventListener('click', () => {
+
+            // Validation logic
+            const validateInputs = () => {
+                let allFilled = true;
+                const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
+                if (!containerNode) return;
+                
+                const textInputs = containerNode.querySelectorAll('input[type="text"]');
+                textInputs.forEach(inp => {
+                    if (!inp.closest('.hidden') && !inp.closest('.max-h-0')) {
+                        if (inp.value.trim() === '') {
+                            allFilled = false;
+                        } else if (inp.classList.contains('ifa-time-input') || inp.classList.contains('lma-time-input')) {
+                            if (inp.value.length < 4) {
+                                allFilled = false;
+                            }
+                        }
+                    }
+                });
+                
+                const calcBtn = document.getElementById(`${id}-btn-calc`);
+                if (calcBtn) {
+                    calcBtn.disabled = !allFilled;
+                }
+            };
+
+            const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
+            if (containerNode) {
+                containerNode.addEventListener('input', validateInputs);
+                containerNode.addEventListener('change', validateInputs);
+                containerNode.addEventListener('click', () => setTimeout(validateInputs, 100)); // for add/remove buttons
+                setTimeout(validateInputs, 100);
+            }
+
+            document.getElementById(`${id}-btn-calc`).addEventListener('click', (e) => {
+                if (e.target.closest('button').disabled) return;
                 executeCalculation(id, mode);
             });
         }
@@ -2592,7 +2664,7 @@ function getRegionForAirport(code) {
             const loading = document.getElementById(`fv-loading-${id}`);
             
             try {
-                const payload = {
+                const payloadCabin = {
                     carrierId: "SQ",
                     flightNumber: flightNumber,
                     flightDate: dateStr,
@@ -2602,7 +2674,7 @@ function getRegionForAirport(code) {
                 const res = await fetch('/api/sq', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ endpoint: 'getcabin', payload })
+                    body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin })
                 });
                 
                 let data;
@@ -2612,62 +2684,118 @@ function getRegionForAirport(code) {
                     throw new Error("Vercel Edge Proxy failed to return JSON.");
                 }
                 
-                loading.classList.add('hidden');
-                
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
                 if (data.statusCode === 101) {
+                    loading.classList.add('hidden');
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Menus not published for this flight/date yet.</div>';
                     actionArea.classList.remove('hidden');
                     lucide.createIcons();
+                    return;
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
+                    
+                    // We need to fetch the menu for the first cabin to determine sectors
+                    const firstCabin = data.cabinClasses[0];
+                    const payloadMenu = {
+                        ...payloadCabin,
+                        cabinClass: firstCabin
+                    };
+                    
+                    const resMenu = await fetch('/api/sq', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint: 'menu', payload: payloadMenu })
+                    });
+                    
+                    let menuData;
+                    try {
+                        menuData = await resMenu.json();
+                    } catch(e) {
+                        throw new Error("Vercel Edge Proxy failed to return JSON for menu.");
+                    }
+                    
+                    loading.classList.add('hidden');
+                    
                     currentMenuSearch.flightNumber = flightNumber;
                     currentMenuSearch.date = dateStr;
                     currentMenuSearch.cabins = data.cabinClasses;
                     
-                    let cabinHtml = `
-                        <div>
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabins (${dateStr})</label>
+                    const legs = menuData.legs || [];
+                    const isMultiSector = legs.length > 1;
+                    
+                    let contentHtml = '';
+                    
+                    // 1. Sectors
+                    if (isMultiSector) {
+                        contentHtml += `
+                            <div id="fv-sectors-section-${id}">
+                                <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Sector/s</label>
+                                <div class="flex flex-wrap gap-2 mb-4" id="fv-sectors-container-${id}">
+                        `;
+                        legs.forEach(leg => {
+                            const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
+                            const label = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                            contentHtml += `
+                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${label}</button>
+                            `;
+                        });
+                        contentHtml += `
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    // 2. Cabins
+                    contentHtml += `
+                        <div id="fv-cabins-section-${id}" class="${isMultiSector ? 'hidden' : ''}">
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabin/s</label>
                             <div class="flex flex-wrap gap-2 mb-4" id="fv-cabins-container-${id}">
                     `;
                     
                     const cabinNames = {
                         'FCL': 'First/Suites',
                         'JCL': 'Business',
-                        'SCL': 'Premium Eco',
+                        'SCL': 'Premium Economy',
                         'YCL': 'Economy'
                     };
                     
                     data.cabinClasses.forEach(code => {
-                        cabinHtml += `
-                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold');" data-cabin="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${cabinNames[code] || code}</button>
+                        contentHtml += `
+                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold'); checkCabinsSelected('${id}');" data-cabin="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${cabinNames[code] || code}</button>
                         `;
                     });
-                    
-                    cabinHtml += `
+                    contentHtml += `
                             </div>
                         </div>
-                        <div class="flex gap-2">
-                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
+                    `;
+                    
+                    // 3. Actions
+                    contentHtml += `
+                        <div class="flex gap-2 ${isMultiSector ? 'hidden' : 'opacity-50 pointer-events-none'}" id="fv-actions-section-${id}">
+                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
                             </button>` : ''}
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
                     `;
                     
-                    actionArea.innerHTML = cabinHtml;
+                    actionArea.innerHTML = contentHtml;
                     
-                    // Default to unselected per user request
-
+                    // Save sectors in dataset for single-sector flights
+                    if (!isMultiSector && legs.length === 1) {
+                        actionArea.dataset.singleSector = legs[0].flightDetails.departureAirportCode + '-' + legs[0].flightDetails.arrivalAirportCode;
+                    }
+                    
                     actionArea.classList.remove('hidden');
                     lucide.createIcons();
                     scrollToBottom();
                 } else {
+                    loading.classList.add('hidden');
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Unexpected response from SQ system.</div>';
                     actionArea.classList.remove('hidden');
                 }
@@ -2682,17 +2810,66 @@ function getRegionForAirport(code) {
                 actionArea.classList.remove('hidden');
             }
         }
+        
+        function toggleSector(id, btn) {
+            btn.classList.toggle('selected-sector');
+            btn.classList.toggle('bg-sia-gold');
+            btn.classList.toggle('text-black');
+            btn.classList.toggle('border-sia-gold');
+            scrollToBottom();
+            
+            const container = document.getElementById(`fv-sectors-container-${id}`);
+            const selected = container.querySelectorAll('.selected-sector');
+            const cabinSec = document.getElementById(`fv-cabins-section-${id}`);
+            
+            if (selected.length > 0) {
+                cabinSec.classList.remove('hidden');
+            } else {
+                cabinSec.classList.add('hidden');
+                document.getElementById(`fv-actions-section-${id}`).classList.add('hidden');
+                // Deselect all cabins if sectors are 0
+                document.querySelectorAll(`#fv-cabins-container-${id} .selected-cabin`).forEach(c => {
+                    c.classList.remove('selected-cabin', 'bg-sia-gold', 'text-black', 'border-sia-gold');
+                });
+            }
+            checkCabinsSelected(id);
+        }
+        
+        function checkCabinsSelected(id) {
+            const cabinContainer = document.getElementById(`fv-cabins-container-${id}`);
+            const selected = cabinContainer.querySelectorAll('.selected-cabin');
+            const actions = document.getElementById(`fv-actions-section-${id}`);
+            
+            if (selected.length > 0) {
+                const wasHidden = actions.classList.contains('opacity-50');
+                actions.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+                if (wasHidden) scrollToBottom();
+            } else {
+                actions.classList.add('opacity-50', 'pointer-events-none');
+            }
+        }
 
         async function submitFlightVerification(id, actionType) {
-            const container = document.getElementById(`fv-cabins-container-${id}`);
-            const selectedBtns = container.querySelectorAll('.selected-cabin');
-            
-            if (selectedBtns.length === 0) {
+            const cabinContainer = document.getElementById(`fv-cabins-container-${id}`);
+            const selectedCabinBtns = cabinContainer.querySelectorAll('.selected-cabin');
+            if (selectedCabinBtns.length === 0) {
                 addMessage('bot', 'Please select at least one cabin.');
                 return;
             }
+            const selectedCabins = Array.from(selectedCabinBtns).map(b => b.getAttribute('data-cabin'));
             
-            const selectedCabins = Array.from(selectedBtns).map(b => b.getAttribute('data-cabin'));
+            // Collect sectors
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            const sectorContainer = document.getElementById(`fv-sectors-container-${id}`);
+            let selectedSectors = [];
+            if (sectorContainer) {
+                const selectedSectorBtns = sectorContainer.querySelectorAll('.selected-sector');
+                if (selectedSectorBtns.length > 0) {
+                    selectedSectors = Array.from(selectedSectorBtns).map(b => b.getAttribute('data-sector'));
+                }
+            } else if (actionArea && actionArea.dataset.singleSector) {
+                selectedSectors = [actionArea.dataset.singleSector];
+            }
             
             const flightInput = document.getElementById(`fv-flight-${id}`);
             const flightNumber = flightInput.value.trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/)[1];
@@ -2700,6 +2877,7 @@ function getRegionForAirport(code) {
             
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
+            currentMenuSearch.selectedSectors = selectedSectors;
             
             if (actionType === 'menu') {
                 openMenuViewerForCabins(flightNumber, date, selectedCabins);
@@ -2708,40 +2886,61 @@ function getRegionForAirport(code) {
             }
         }
 
-        function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
-            currentMenuSearch.selectedCabins = cabinClasses; // Array of selected cabins
+        
+        function toggleMenuDropdown(type) {
+            const menu = document.getElementById('menu-' + type + '-menu');
+            const icon = document.getElementById('menu-' + type + '-icon');
+            const isClosed = menu.classList.contains('max-h-0');
             
+            // Close others
+            ['cabin', 'sector', 'culinary'].forEach(t => {
+                const m = document.getElementById('menu-' + t + '-menu');
+                const i = document.getElementById('menu-' + t + '-icon');
+                if (m && i) {
+                    m.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
+                    m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
+                    i.classList.remove('rotate-180');
+                }
+            });
+            
+            if (isClosed && menu && icon) {
+                menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
+                menu.classList.add('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
+                icon.classList.add('rotate-180');
+            }
+        }
+
+        function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+            currentMenuSearch.selectedCabins = cabinClasses;
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             
-            document.getElementById('menu-display-header').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
+            const cabinWrap = document.getElementById('menu-cabin-wrap');
+            const cabinList = document.getElementById('menu-cabin-list');
+            const cabinLabel = document.getElementById('menu-cabin-label');
+            cabinList.innerHTML = '';
             
-            // Generate Cabin Tabs in Header if multiple
-            const cabinTabsContainer = document.getElementById('menu-cabin-tabs');
-            cabinTabsContainer.innerHTML = '';
-            
-            const cabinNames = { 'FCL': 'First/Suites', 'JCL': 'Business', 'SCL': 'Premium Eco', 'YCL': 'Economy' };
+            const cabinNames = { 'FCL': 'First', 'JCL': 'Business', 'SCL': 'Premium Economy', 'YCL': 'Economy' };
             
             if (cabinClasses.length > 1) {
-                cabinTabsContainer.classList.remove('hidden');
-                cabinClasses.forEach((code, idx) => {
+                cabinWrap.classList.remove('hidden');
+                cabinClasses.forEach(code => {
                     const btn = document.createElement('button');
-                    btn.className = `px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${idx === 0 ? 'bg-sia-gold text-black' : 'bg-black/5 dark:bg-white/5'}`;
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
                     btn.textContent = cabinNames[code] || code;
                     btn.onclick = () => {
-                        Array.from(cabinTabsContainer.children).forEach(b => {
-                            b.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-black/5 dark:bg-white/5';
-                        });
-                        btn.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-sia-gold text-black';
+                        cabinLabel.textContent = cabinNames[code] || code;
+                        toggleMenuDropdown('cabin');
                         loadMenu(code);
                     };
-                    cabinTabsContainer.appendChild(btn);
+                    cabinList.appendChild(btn);
                 });
+                cabinLabel.textContent = cabinNames[cabinClasses[0]] || cabinClasses[0];
             } else {
-                cabinTabsContainer.classList.add('hidden');
+                cabinWrap.classList.add('hidden');
             }
             
-            // Load the first selected cabin
             loadMenu(cabinClasses[0]);
             
             backdrop.classList.remove('hidden');
@@ -2881,7 +3080,7 @@ function getRegionForAirport(code) {
                     serveStaleCache(cacheKey, 'Menu data not found or unexpected format.');
                 }
             } catch (err) {
-                serveStaleCache(cacheKey, 'Network error while fetching menu. ' + (err.message === 'UPSTREAM_TIMEOUT' ? '(Timeout)' : ''));
+                serveStaleCache(cacheKey, 'Network error while fetching menu. Details: ' + String(err.message || err));
             }
         }
         
@@ -2934,30 +3133,44 @@ function getRegionForAirport(code) {
                 badge.classList.add('hidden');
             }
             
-            const headerTitle = document.getElementById('menu-display-header');
-            headerTitle.textContent = `SQ ${data.flightNumber} • ${data.cabinClass}`;
+            const sectorWrap = document.getElementById('menu-sector-wrap');
+            const sectorList = document.getElementById('menu-sector-list');
+            const sectorLabel = document.getElementById('menu-sector-label');
+            sectorList.innerHTML = '';
             
-            const tabsContainer = document.getElementById('menu-sectors-tabs');
-            tabsContainer.innerHTML = '';
-            
-            data.legs.forEach((leg, idx) => {
-                const btn = document.createElement('button');
-                btn.className = `px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${idx === 0 ? 'bg-sia-navy dark:bg-sia-gold text-white dark:text-black' : 'bg-black/5 dark:bg-white/5'}`;
-                btn.textContent = `${leg.flightDetails.departureAirportCode} ✈ ${leg.flightDetails.arrivalAirportCode}`;
-                btn.onclick = () => {
-                    // Update tab styles
-                    Array.from(tabsContainer.children).forEach(b => {
-                        b.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-black/5 dark:bg-white/5';
-                    });
-                    btn.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-sia-navy dark:bg-sia-gold text-white dark:text-black';
-                    renderSector(leg);
-                };
-                tabsContainer.appendChild(btn);
+            // Filter legs based on user selection in chat card
+            const filteredLegs = data.legs.filter(leg => {
+                if (!currentMenuSearch.selectedSectors || currentMenuSearch.selectedSectors.length === 0) return true;
+                const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
+                return currentMenuSearch.selectedSectors.includes(code);
             });
             
+            if (filteredLegs.length > 1) {
+                sectorWrap.classList.remove('hidden');
+                filteredLegs.forEach(leg => {
+                    const txt = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
+                    btn.textContent = txt;
+                    btn.onclick = () => {
+                        sectorLabel.textContent = txt;
+                        toggleMenuDropdown('sector');
+                        renderSector(leg);
+                    };
+                    sectorList.appendChild(btn);
+                });
+                sectorLabel.textContent = filteredLegs[0].flightDetails.departureAirportCode + ' ✈ ' + filteredLegs[0].flightDetails.arrivalAirportCode;
+            } else {
+                sectorWrap.classList.add('hidden');
+            }
+
+            // Culinary Dropdown reset (will be populated in renderSector if applicable)
+            document.getElementById('menu-culinary-wrap').classList.add('hidden');
+            
             showMenuState(3);
-            if (data.legs.length > 0) {
-                renderSector(data.legs[0]);
+            if (filteredLegs.length > 0) {
+                renderSector(filteredLegs[0]);
             }
         }
         
@@ -2965,82 +3178,189 @@ function getRegionForAirport(code) {
             const container = document.getElementById('menu-sector-content');
             container.innerHTML = '';
             
-            // 1. Flight Details Header
+            // 1. Flight Details Header (Redesigned Hero Card)
             const fd = leg.flightDetails;
             const dur = formatDuration(fd.departureUtcDate, fd.arrivalUtcDate);
             const dayShift = getDayShift(fd.departureLocalDate, fd.arrivalLocalDate);
             const depTime = fd.departureLocalDate.substring(11, 16);
             const arrTime = fd.arrivalLocalDate.substring(11, 16);
             
+            const dObj = new Date(currentMenuSearch.date + 'T00:00:00');
+            const dateDisplay = dObj.toLocaleDateString('en-GB', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'}).toUpperCase();
+            const topHeader = `SQ${currentMenuSearch.flightNumber} - ${dateDisplay}`;
+            
             const headerHtml = `
-                <div class="bg-black/5 dark:bg-white/5 rounded-2xl p-4 flex flex-col gap-3">
-                    <div class="flex justify-between items-center">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold font-mono">${depTime}</div>
-                            <div class="text-xs text-gray-500 font-semibold">${fd.departureAirportCode}</div>
+                <div class="bg-gradient-to-br from-sia-navy to-black dark:from-[#081021] dark:to-black text-white rounded-3xl p-5 relative overflow-hidden shadow-xl border border-white/10 mb-4">
+                    <div class="text-center text-[10px] uppercase tracking-[0.2em] font-bold text-sia-gold mb-5 opacity-90">
+                        ${topHeader}
+                    </div>
+                    <div class="flex justify-between items-start relative z-10">
+                        <!-- Left Zone: Origin -->
+                        <div class="flex flex-col flex-1 items-end text-right">
+                            <div class="text-3xl font-bold tracking-tight">${fd.departureAirportCode}</div>
+                            <div class="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
+                            <div class="text-2xl font-bold">${depTime}</div>
                         </div>
-                        <div class="flex flex-col items-center flex-grow px-4">
-                            <div class="text-xs text-gray-400 mb-1">${dur}</div>
-                            <div class="w-full relative flex items-center justify-center">
-                                <div class="w-full h-px bg-black/20 dark:bg-white/20"></div>
-                                <i data-lucide="plane" class="w-4 h-4 absolute text-sia-gold -rotate-90"></i>
+                        
+                        <!-- Center Zone: Dotted Arc + Plane + Duration -->
+                        <div class="flex flex-col items-center justify-center flex-[1.2] relative pt-2 px-2">
+                            <!-- Dotted Arc -->
+                            <div class="w-full h-12 absolute top-2 border-t-2 border-dotted border-white/20 rounded-[100%]"></div>
+                            <!-- Plane Icon centered exactly on arc apex -->
+                            <div class="absolute -top-1 text-sia-gold">
+                                <i data-lucide="plane" class="w-5 h-5 fill-current"></i>
+                            </div>
+                            <!-- Duration Pill -->
+                            <div class="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mt-10">
+                                ${dur}
                             </div>
                         </div>
-                        <div class="text-center relative">
-                            <div class="text-2xl font-bold font-mono">${arrTime} ${dayShift ? `<span class="absolute -top-1 -right-4 text-[10px] text-sia-gold font-bold">${dayShift}</span>` : ''}</div>
-                            <div class="text-xs text-gray-500 font-semibold">${fd.arrivalAirportCode}</div>
+                        
+                        <!-- Right Zone: Destination -->
+                        <div class="flex flex-col items-start flex-1 text-left">
+                            <div class="text-3xl font-bold tracking-tight">${fd.arrivalAirportCode}</div>
+                            <div class="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
+                            <div class="text-2xl font-bold relative">
+                                ${arrTime}
+                                ${dayShift ? `<span class="absolute -top-1 -right-6 text-[10px] text-sia-gold font-bold">${dayShift}</span>` : ''}
+                            </div>
                         </div>
-                    </div>
-                    <div class="flex justify-between text-xs text-gray-500">
-                        <span>${fd.departureCityName}</span>
-                        <span>${fd.arrivalCityName}</span>
                     </div>
                 </div>
             `;
-            container.innerHTML += headerHtml;
             
-            // Flags Banners
+            const hc = document.getElementById('menu-hero-content');
+            if (hc) hc.innerHTML = headerHtml;
+            else container.insertAdjacentHTML('beforeend', headerHtml);
+
+            const hasMeals = leg.menu && leg.menu.language && leg.menu.language.EN_UK && leg.menu.language.EN_UK.meals && leg.menu.language.EN_UK.meals.length > 0;
+            const hasDrinks = leg.beverage && leg.beverage.language && leg.beverage.language.EN_UK && leg.beverage.language.EN_UK.categories && leg.beverage.language.EN_UK.categories.length > 0;
+            const hasSnacks = leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories && leg.drySnack.category.subcategories.length > 0;
+            const hasAmenities = leg.amenities && leg.amenities.items && leg.amenities.items.length > 0;
+
+            // Culinary Dropdown check
+            let culinaryOptions = [];
+            if (hasMeals) {
+                const firstMeal = leg.menu.language.EN_UK.meals[0];
+                if (firstMeal && firstMeal.selectionDetails && firstMeal.selectionDetails.length > 1) {
+                    culinaryOptions = firstMeal.selectionDetails.map(sel => {
+                        let n = sel.name;
+                        if(n.toLowerCase().includes('international')) n = 'International';
+                        else n = 'Ethnic';
+                        return n;
+                    });
+                }
+            }
+
+            const culinaryWrap = document.getElementById('menu-culinary-wrap');
+            if (culinaryOptions.length > 0) {
+                const culinaryList = document.getElementById('menu-culinary-list');
+                const culinaryLabel = document.getElementById('menu-culinary-label');
+                culinaryList.innerHTML = '';
+                
+                let defaultIdx = 0;
+                culinaryOptions.forEach((opt, idx) => {
+                    if (opt === 'International') defaultIdx = idx;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
+                    btn.textContent = opt;
+                    btn.onclick = () => {
+                        culinaryLabel.textContent = opt;
+                        toggleMenuDropdown('culinary');
+                        switchCulinarySelection(idx);
+                    };
+                    culinaryList.appendChild(btn);
+                });
+                culinaryLabel.textContent = culinaryOptions[defaultIdx];
+                culinaryWrap.classList.remove('hidden');
+                
+                setTimeout(() => { switchCulinarySelection(defaultIdx); }, 10);
+            } else {
+                culinaryWrap.classList.add('hidden');
+            }
+
+            // 2. Category Pills (Centered + Icons)
+            const catPillsHtml = `
+                <div class="flex justify-center flex-wrap gap-2 py-1 mt-3">
+                    ${hasMeals ? `<button onclick="switchMenuCategory('meals', this)" class="menu-cat-pill selected px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-sia-gold text-black border border-sia-gold flex items-center gap-1.5 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i> Meals</button>` : ''}
+                    ${hasDrinks ? `<button onclick="switchMenuCategory('drinks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="glass-water" class="w-4 h-4"></i> Drinks</button>` : ''}
+                    ${hasSnacks ? `<button onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>` : ''}
+                    ${hasAmenities ? `<button onclick="switchMenuCategory('amenities', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i> Amenities</button>` : ''}
+                </div>
+            `;
+            
+            const pillWrap = document.getElementById('menu-category-pills-wrap');
+            if (pillWrap) {
+                pillWrap.innerHTML = catPillsHtml;
+            } else {
+                container.insertAdjacentHTML('beforeend', catPillsHtml);
+            }
+            
+            // Build wrappers
+            const wrapHtml = `
+                <div id="menu-cat-meals" class="menu-cat-section space-y-4"></div>
+                <div id="menu-cat-drinks" class="menu-cat-section hidden space-y-4"></div>
+                <div id="menu-cat-snacks" class="menu-cat-section hidden space-y-4"></div>
+                <div id="menu-cat-amenities" class="menu-cat-section hidden space-y-4"></div>
+            `;
+            container.insertAdjacentHTML('beforeend', wrapHtml);
+            
+            const mealsWrap = container.querySelector('#menu-cat-meals');
+            const drinksWrap = container.querySelector('#menu-cat-drinks');
+            const snacksWrap = container.querySelector('#menu-cat-snacks');
+            const amWrap = container.querySelector('#menu-cat-amenities');
+            
+            // Flags
             if (leg.isNoMenuPlanned) {
-                container.innerHTML += `<div class="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-xl text-sm border border-blue-500/20">Menu may change prior to departure.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-xl text-sm border border-blue-500/20">Menu may change prior to departure.</div>`);
             }
             if (leg.isSnackBag) {
-                container.innerHTML += `<div class="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-xl text-sm border border-purple-500/20">This sector operates a snack bag service instead of a full meal service.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-xl text-sm border border-purple-500/20">This sector operates a snack bag service instead of a full meal service.</div>`);
             }
-                if (leg.isBentoBox) {
-                container.innerHTML += `<div class="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-xl text-sm border border-orange-500/20">This sector operates a Bento Box service.</div>`;
+            if (leg.isBentoBox) {
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-xl text-sm border border-orange-500/20">This sector operates a Bento Box service.</div>`);
             }
             if (leg.isHawkerPromo) {
-                container.innerHTML += `<div class="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm border border-red-500/20">Special Hawker Promo Menu Available.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm border border-red-500/20">Special Hawker Promo Menu Available.</div>`);
             }
             if (leg.guestChef && leg.guestChef.header) {
-                container.innerHTML += `<div class="bg-sia-gold/10 text-sia-gold p-3 rounded-xl text-sm border border-sia-gold/20 font-semibold">${leg.guestChef.header}: ${leg.guestChef.message}</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-sia-gold/10 text-sia-gold p-3 rounded-xl text-sm border border-sia-gold/20 font-semibold">${leg.guestChef.header}: ${leg.guestChef.message}</div>`);
             }
-        
-            // 2. Meals
-            if (leg.menu && leg.menu.language && leg.menu.language.EN_UK && leg.menu.language.EN_UK.meals) {
+
+            // Meals
+            if (hasMeals) {
                 const meals = leg.menu.language.EN_UK.meals;
-                // Sort by mealServiceNumber if needed
                 
-                meals.forEach(meal => {
+                // Build Tabs (Centered)
+                let mealTabsHtml = '';
+                if (meals.length > 1) {
+                    mealTabsHtml = '<div class="flex justify-center gap-6 border-b border-black/10 dark:border-white/10 overflow-x-auto scrollbar-hide py-2 mt-2">';
+                    meals.forEach((meal, idx) => {
+                        mealTabsHtml += `<button onclick="switchMealTab('${idx}', this)" class="meal-tab-btn whitespace-nowrap pb-2 text-sm font-bold ${idx === 0 ? 'text-sia-gold border-b-2 border-sia-gold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'} transition-colors">${meal.mealServiceName}</button>`;
+                    });
+                    mealTabsHtml += '</div>';
+                }
+                const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
+                if (tabsWrap) {
+                    tabsWrap.innerHTML = mealTabsHtml;
+                } else {
+                    mealsWrap.insertAdjacentHTML('beforeend', mealTabsHtml);
+                }
+                
+                meals.forEach((meal, idx) => {
                     const mealDiv = document.createElement('div');
-                    mealDiv.className = 'space-y-4';
-                    
-                    let mealHeaderHtml = `
-                        <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10">
-                            <i data-lucide="utensils" class="w-5 h-5 text-sia-gold"></i>
-                            <h4 class="text-lg font-bold">${meal.mealServiceName}</h4>
-                        </div>
-                    `;
-                    mealDiv.innerHTML = mealHeaderHtml;
+                    mealDiv.className = `meal-tab-content space-y-4 ${idx === 0 ? '' : 'hidden'}`;
+                    mealDiv.id = `meal-content-${idx}`;
                     
                     if (meal.selectionDetails && meal.selectionDetails.length > 0) {
-                        // If parallel menus exist, we create a toggle or just render them consecutively with distinct headers
-                        meal.selectionDetails.forEach(selection => {
+                        meal.selectionDetails.forEach((selection, selIdx) => {
                             const selDiv = document.createElement('div');
-                            selDiv.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-4';
+                            // If culinary dropdown exists, hide non-matching culinary choices
+                            selDiv.className = `bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-4 culinary-section-${selIdx} ${selIdx === 0 ? '' : 'hidden'}`;
                             
                             if (meal.selectionDetails.length > 1) {
-                                selDiv.innerHTML += `<div class="font-bold text-sia-gold mb-2">${selection.name}</div>`;
+                                selDiv.innerHTML += `<div class="font-bold text-sia-gold mb-2 text-center hidden">${selection.name}</div>`;
                             }
                             
                             if (selection.mealCourses) {
@@ -3049,7 +3369,6 @@ function getRegionForAirport(code) {
                                     
                                     if (course.items) {
                                         course.items.forEach(item => {
-                                            // Icons
                                             let iconsHtml = '';
                                             if (item.icons && item.icons.length > 0) {
                                                 item.icons.forEach(icon => {
@@ -3058,14 +3377,11 @@ function getRegionForAirport(code) {
                                                     if (icon === 'ICP') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-600 text-[10px] font-bold">Chef</span>`;
                                                 });
                                             }
-                                            
-                                            // Image
                                             let imgHtml = '';
                                             if (item.imagePathIfeHigh) {
                                                 const imgUrl = item.imagePathIfeHigh.startsWith('http') ? item.imagePathIfeHigh : 'https://inflightmenu.singaporeair.com/' + item.imagePathIfeHigh;
                                                 imgHtml = `<img src="${imgUrl}" class="w-16 h-16 object-cover rounded-lg bg-black/10 shrink-0" alt="${item.name}" loading="lazy">`;
                                             }
-                                            
                                             courseHtml += `
                                                 <div class="flex gap-3 mb-3 last:mb-0">
                                                     ${imgHtml}
@@ -3083,26 +3399,16 @@ function getRegionForAirport(code) {
                             mealDiv.appendChild(selDiv);
                         });
                     }
-                    container.appendChild(mealDiv);
+                    mealsWrap.appendChild(mealDiv);
                 });
             }
-        
-            // 3. Beverages
-            if (leg.beverage && leg.beverage.language && leg.beverage.language.EN_UK && leg.beverage.language.EN_UK.categories) {
+
+            // Drinks
+            if (hasDrinks) {
                 const bevCats = leg.beverage.language.EN_UK.categories;
-                const bevDiv = document.createElement('div');
-                bevDiv.className = 'space-y-3';
-                bevDiv.innerHTML = `
-                    <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10 mt-6">
-                        <i data-lucide="wine" class="w-5 h-5 text-sia-gold"></i>
-                        <h4 class="text-lg font-bold">Beverages</h4>
-                    </div>
-                `;
-                
                 bevCats.forEach(cat => {
                     const catDiv = document.createElement('details');
-                    catDiv.className = 'group bg-white/30 dark:bg-black/30 rounded-xl border border-black/5 dark:border-white/5';
-                    
+                    catDiv.className = 'group bg-white/30 dark:bg-black/30 rounded-xl border border-black/5 dark:border-white/5 mt-3';
                     catDiv.innerHTML = `
                         <summary class="flex justify-between items-center font-bold cursor-pointer p-4 select-none">
                             ${cat.name}
@@ -3133,28 +3439,16 @@ function getRegionForAirport(code) {
                             }
                         });
                     }
-                    
                     catDiv.innerHTML += contentHtml + `</div>`;
-                    bevDiv.appendChild(catDiv);
+                    drinksWrap.appendChild(catDiv);
                 });
-                
-                container.appendChild(bevDiv);
             }
-        
-            // 4. Snacks
-            if (leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories) {
+
+            // Snacks
+            if (hasSnacks) {
                 const subs = leg.drySnack.category.subcategories;
-                const snackDiv = document.createElement('div');
-                snackDiv.className = 'space-y-3';
-                snackDiv.innerHTML = `
-                    <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10 mt-6">
-                        <i data-lucide="cookie" class="w-5 h-5 text-sia-gold"></i>
-                        <h4 class="text-lg font-bold">Snacks</h4>
-                    </div>
-                `;
-                
                 const snackWrapper = document.createElement('div');
-                snackWrapper.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-4';
+                snackWrapper.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-4 mt-3';
                 
                 if (leg.drySnack.header) {
                     snackWrapper.innerHTML += `<p class="text-xs text-gray-500 italic mb-3">${leg.drySnack.header}</p>`;
@@ -3174,24 +3468,13 @@ function getRegionForAirport(code) {
                         snackWrapper.innerHTML += `<div class="mb-4 last:mb-0">${html}</div>`;
                     }
                 });
-                
-                snackDiv.appendChild(snackWrapper);
-                container.appendChild(snackDiv);
+                snacksWrap.appendChild(snackWrapper);
             }
-        
-            // 5. Amenities
-            if (leg.amenities && leg.amenities.items && leg.amenities.items.length > 0) {
-                const amDiv = document.createElement('div');
-                amDiv.className = 'space-y-3';
-                amDiv.innerHTML = `
-                    <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10 mt-6">
-                        <i data-lucide="sparkles" class="w-5 h-5 text-sia-gold"></i>
-                        <h4 class="text-lg font-bold">Amenities</h4>
-                    </div>
-                `;
-                
+
+            // Amenities
+            if (hasAmenities) {
                 const amWrapper = document.createElement('div');
-                amWrapper.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-3';
+                amWrapper.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-3 mt-3';
                 
                 leg.amenities.items.forEach(item => {
                     let imgHtml = '';
@@ -3209,12 +3492,61 @@ function getRegionForAirport(code) {
                         </div>
                     `;
                 });
-                
-                amDiv.appendChild(amWrapper);
-                container.appendChild(amDiv);
+                amWrap.appendChild(amWrapper);
             }
             
             lucide.createIcons();
+        }
+        
+        function switchMenuCategory(cat, btnElement) {
+            document.querySelectorAll('.menu-cat-pill').forEach(btn => {
+                btn.classList.remove('bg-sia-gold', 'text-black', 'border-sia-gold');
+                btn.classList.add('bg-black/5', 'dark:bg-white/5', 'border-black/10', 'dark:border-white/10');
+            });
+            btnElement.classList.remove('bg-black/5', 'dark:bg-white/5', 'border-black/10', 'dark:border-white/10');
+            btnElement.classList.add('bg-sia-gold', 'text-black', 'border-sia-gold');
+            
+            document.querySelectorAll('.menu-cat-section').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('menu-cat-' + cat);
+            if(target) target.classList.remove('hidden');
+            
+            const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
+            if (tabsWrap) {
+                if (cat === 'meals') {
+                    tabsWrap.style.display = 'block';
+                } else {
+                    tabsWrap.style.display = 'none';
+                }
+            }
+        }
+        
+        function switchMealTab(idx, btnElement) {
+            document.querySelectorAll('.meal-tab-btn').forEach(btn => {
+                btn.classList.remove('text-sia-gold', 'border-b-2', 'border-sia-gold');
+                btn.classList.add('text-gray-500', 'hover:text-gray-700', 'dark:hover:text-gray-300');
+            });
+            btnElement.classList.remove('text-gray-500', 'hover:text-gray-700', 'dark:hover:text-gray-300');
+            btnElement.classList.add('text-sia-gold', 'border-b-2', 'border-sia-gold');
+            
+            document.querySelectorAll('.meal-tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('meal-content-' + idx);
+            if(target) target.classList.remove('hidden');
+            
+            const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
+            if (tabsWrap) {
+                if (cat === 'meals') {
+                    tabsWrap.style.display = 'block';
+                } else {
+                    tabsWrap.style.display = 'none';
+                }
+            }
+        }
+
+        function switchCulinarySelection(selIdx) {
+            // Hide all culinary sections across all meals
+            document.querySelectorAll('[class*="culinary-section-"]').forEach(el => el.classList.add('hidden'));
+            // Show only the selected one
+            document.querySelectorAll('.culinary-section-' + selIdx).forEach(el => el.classList.remove('hidden'));
         }
         
     </script>
