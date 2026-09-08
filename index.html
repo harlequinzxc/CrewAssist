@@ -411,51 +411,52 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-6 flex-grow" id="menu-content">
+            <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full flex-grow relative" id="menu-content">
                 
                 <!-- State 3: Menu Display -->
-                <div id="menu-state-3" class="hidden space-y-4">
+                <div id="menu-state-3" class="hidden">
                     
-                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 mb-4 rounded-lg border border-amber-500/20">
                         <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
                     </div>
 
                     <div id="menu-hero-content" class="mb-4"></div>
                     
                     <!-- Sticky Header Container -->
-                    <div id="menu-sticky-header" class="sticky top-0 z-40 bg-[var(--glass-sheet-bg)] pb-2 -mx-6 px-6 shadow-[0_15px_15px_-15px_rgba(0,0,0,0.3)] transition-all duration-300">
+                    <div id="menu-sticky-header" class="sticky top-0 z-40 bg-[var(--glass-sheet-bg)] pb-2 -mx-6 px-6 shadow-[0_15px_15px_-15px_rgba(0,0,0,0.3)] transition-all duration-300" style="margin-top: -16px; padding-top: 16px;">
                         <!-- Filter Dropdowns -->
                         <div class="flex gap-2 relative z-20 items-start pt-2">
-                        <!-- Cabin Wrap -->
-                        <div class="flex-1 relative" id="menu-cabin-wrap">
-                            <button type="button" onclick="toggleMenuDropdown('cabin')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                <span id="menu-cabin-label">Cabin</span>
-                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-cabin-icon"></i>
-                            </button>
-                            <div id="menu-cabin-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
-                                <div class="p-1 flex flex-col gap-1" id="menu-cabin-list"></div>
+                            <!-- Cabin Wrap -->
+                            <div class="flex-1 relative" id="menu-cabin-wrap">
+                                <button type="button" onclick="toggleMenuDropdown('cabin')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                    <span id="menu-cabin-label">Cabin</span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-cabin-icon"></i>
+                                </button>
+                                <div id="menu-cabin-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                    <div class="p-1 flex flex-col gap-1" id="menu-cabin-list"></div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Sector Wrap -->
-                        <div class="flex-1 relative" id="menu-sector-wrap">
-                            <button type="button" onclick="toggleMenuDropdown('sector')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                <span id="menu-sector-label">Sector</span>
-                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-sector-icon"></i>
-                            </button>
-                            <div id="menu-sector-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
-                                <div class="p-1 flex flex-col gap-1" id="menu-sector-list"></div>
+                            <!-- Sector Wrap -->
+                            <div class="flex-1 relative" id="menu-sector-wrap">
+                                <button type="button" onclick="toggleMenuDropdown('sector')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                    <span id="menu-sector-label">Sector</span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-sector-icon"></i>
+                                </button>
+                                <div id="menu-sector-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                    <div class="p-1 flex flex-col gap-1" id="menu-sector-list"></div>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Culinary Wrap -->
-                        <div class="flex-1 relative" id="menu-culinary-wrap">
-                            <button type="button" onclick="toggleMenuDropdown('culinary')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                <span id="menu-culinary-label">Cuisine</span>
-                                <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-culinary-icon"></i>
-                            </button>
-                            <div id="menu-culinary-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
-                                <div class="p-1 flex flex-col gap-1" id="menu-culinary-list"></div>
+                            <!-- Culinary Wrap -->
+                            <div class="flex-1 relative" id="menu-culinary-wrap">
+                                <button type="button" onclick="toggleMenuDropdown('culinary')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
+                                    <span id="menu-culinary-label">Cuisine</span>
+                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="menu-culinary-icon"></i>
+                                </button>
+                                <div id="menu-culinary-menu" class="w-full mt-1 relative glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-30">
+                                    <div class="p-1 flex flex-col gap-1" id="menu-culinary-list"></div>
+                                </div>
                             </div>
                         </div>
                         
@@ -1833,7 +1834,7 @@ function getRegionForAirport(code) {
                     </div>
                     ${ifaHtml}
                     ${lmaHtml}
-                    <button id="${id}-btn-calc" class="w-full py-3 mt-2 rounded-full text-xs font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95">
+                    <button id="${id}-btn-calc" disabled class="w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale mt-2">
                         Calculate
                     </button>
                 </div>
@@ -2735,10 +2736,10 @@ function getRegionForAirport(code) {
                     // 3. Actions
                     contentHtml += `
                         <div class="flex gap-2 ${isMultiSector ? 'hidden' : 'opacity-50 pointer-events-none'}" id="fv-actions-section-${id}">
-                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold font-bold rounded-full py-3 shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs uppercase tracking-widest">
+                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
                             </button>` : ''}
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg' : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-500'} font-bold rounded-full py-3 transition-transform active:scale-95 text-xs flex justify-center items-center gap-2 uppercase tracking-widest">
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg' : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-500'} font-bold rounded-full py-4 px-4 transition-transform active:scale-95 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
