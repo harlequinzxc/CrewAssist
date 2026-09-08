@@ -1008,7 +1008,7 @@
             else if (/ifa|flight/.test(lowerText)) {
                 renderCalculatorCard('ifa');
             }
-            else if (/print|printer/.test(lowerText)) {
+            else if (/print|printer|homework/.test(lowerText)) {
                 renderFlightVerificationCard('print');
             }
             else {
@@ -2491,6 +2491,13 @@ function getRegionForAirport(code) {
 
             let headerText = mode === 'print' ? 'Menu Printer Lookup' : 'Inflight Menu Lookup';
             
+            // Add hidden input to store the mode
+            const hiddenMode = document.createElement('input');
+            hiddenMode.type = 'hidden';
+            hiddenMode.id = 'fv-mode-' + uniqueId;
+            hiddenMode.value = mode;
+            msgDiv.appendChild(hiddenMode);
+            
             msgDiv.innerHTML = `
                 <div class="bg-transparent border border-black/10 dark:border-white/10 p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
                     <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
@@ -2578,7 +2585,7 @@ function getRegionForAirport(code) {
                 
                 clearTimeout(fetchTimeout);
                 fetchTimeout = setTimeout(() => {
-                    executeFetchCabins(id, match[1], dateStr);
+                    executeFetchCabins(id, match[1], dateStr, document.getElementById('fv-mode-' + id).value);
                 }, 500);
             } else {
                 actionArea.classList.add('hidden');
@@ -2586,7 +2593,7 @@ function getRegionForAirport(code) {
             }
         }
 
-        async function executeFetchCabins(id, flightNumber, dateStr) {
+        async function executeFetchCabins(id, flightNumber, dateStr, mode) {
             const actionArea = document.getElementById(`fv-action-area-${id}`);
             const loading = document.getElementById(`fv-loading-${id}`);
             
@@ -2643,10 +2650,10 @@ function getRegionForAirport(code) {
                             </div>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
+                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
-                            </button>
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
+                            </button>` : ''}
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
@@ -2698,31 +2705,40 @@ function getRegionForAirport(code) {
         }
 
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
-
+            currentMenuSearch.selectedCabins = cabinClasses; // Array of selected cabins
+            
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             
-            document.getElementById('menu-verified-flight').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
-                    
-            const btnContainer = document.getElementById('cabin-buttons');
-            btnContainer.innerHTML = '';
+            document.getElementById('menu-display-header').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
             
-            const cabinNames = {
-                'FCL': 'First / Suites',
-                'JCL': 'Business Class',
-                'SCL': 'Premium Economy',
-                'YCL': 'Economy Class'
-            };
+            // Generate Cabin Tabs in Header if multiple
+            const cabinTabsContainer = document.getElementById('menu-cabin-tabs');
+            cabinTabsContainer.innerHTML = '';
             
-            cabinClasses.forEach(code => {
-                const btn = document.createElement('button');
-                btn.className = 'bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 font-semibold hover:border-sia-gold transition-colors';
-                btn.textContent = cabinNames[code] || code;
-                btn.onclick = () => loadMenu(code);
-                btnContainer.appendChild(btn);
-            });
+            const cabinNames = { 'FCL': 'First/Suites', 'JCL': 'Business', 'SCL': 'Premium Eco', 'YCL': 'Economy' };
             
-            showMenuState(2);
+            if (cabinClasses.length > 1) {
+                cabinTabsContainer.classList.remove('hidden');
+                cabinClasses.forEach((code, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = `px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${idx === 0 ? 'bg-sia-gold text-black' : 'bg-black/5 dark:bg-white/5'}`;
+                    btn.textContent = cabinNames[code] || code;
+                    btn.onclick = () => {
+                        Array.from(cabinTabsContainer.children).forEach(b => {
+                            b.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-black/5 dark:bg-white/5';
+                        });
+                        btn.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-sia-gold text-black';
+                        loadMenu(code);
+                    };
+                    cabinTabsContainer.appendChild(btn);
+                });
+            } else {
+                cabinTabsContainer.classList.add('hidden');
+            }
+            
+            // Load the first selected cabin
+            loadMenu(cabinClasses[0]);
             
             backdrop.classList.remove('hidden');
             setTimeout(() => {
