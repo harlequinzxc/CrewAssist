@@ -2502,22 +2502,23 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
                             <div class="flex items-center relative">
                                 <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
-                                <input type="text" id="fv-flight-${uniqueId}" oninput="handleFlightInput('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
+                                <input type="text" id="fv-flight-${uniqueId}" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
                             </div>
                         </div>
                         
-                        <div id="fv-date-area-${uniqueId}" class="hidden space-y-2 transition-all duration-300">
+                        <div id="fv-date-area-${uniqueId}" class="space-y-2 transition-all duration-300">
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
-                                <button onclick="handleDateSelect('${uniqueId}', '${localISOTime}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Today</button>
-                                <button onclick="handleDateSelect('${uniqueId}', '${tomorrowISOTime}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Tomorrow</button>
-                                <button onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Pick Date</button>
+                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Today</button>
+                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Tomorrow</button>
+                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl py-2 text-xs font-bold hover:border-sia-gold transition-colors active:scale-95">Pick Date</button>
                             </div>
                             
                             <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
-                                <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" onchange="handleDateSelect('${uniqueId}', this.value)" class="ui-input w-full rounded-xl px-4 py-2.5 text-sm font-bold border border-transparent dark:border-white/10 outline-none">
+                                <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" onchange="setDateAndFetch('${uniqueId}', this.value, 'pick')" class="ui-input w-full rounded-xl px-4 py-2.5 text-sm font-bold border border-transparent dark:border-white/10 outline-none">
                             </div>
+                            <input type="hidden" id="fv-selected-date-${uniqueId}">
                         </div>
                         
                         <div id="fv-loading-${uniqueId}" class="hidden flex justify-center py-2">
@@ -2536,21 +2537,6 @@ function getRegionForAirport(code) {
             scrollToBottom();
         }
 
-        function handleFlightInput(id) {
-            const val = document.getElementById(`fv-flight-${id}`).value.trim().toUpperCase().replace(/\\s+/g, '');
-            const match = val.match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/);
-            const dateArea = document.getElementById(`fv-date-area-${id}`);
-            const actionArea = document.getElementById(`fv-action-area-${id}`);
-            
-            if (match) {
-                dateArea.classList.remove('hidden');
-            } else {
-                dateArea.classList.add('hidden');
-                actionArea.classList.add('hidden');
-                document.getElementById(`fv-loading-${id}`).classList.add('hidden');
-            }
-        }
-
         function showDatePickerUI(id) {
             document.getElementById(`fv-date-buttons-${id}`).classList.add('hidden');
             const pickerWrap = document.getElementById(`fv-date-picker-wrap-${id}`);
@@ -2562,23 +2548,48 @@ function getRegionForAirport(code) {
             }
         }
 
-        async function handleDateSelect(id, dateStr) {
-            if (!dateStr) return;
+        function setDateAndFetch(id, dateStr, source) {
+            document.getElementById(`fv-selected-date-${id}`).value = dateStr;
             
-            const dateArea = document.getElementById(`fv-date-area-${id}`);
-            const loading = document.getElementById(`fv-loading-${id}`);
-            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            if (source === 'today' || source === 'tomorrow') {
+                document.getElementById(`fv-btn-today-${id}`).classList.remove('bg-sia-gold', 'text-black');
+                document.getElementById(`fv-btn-tomorrow-${id}`).classList.remove('bg-sia-gold', 'text-black');
+                if (source === 'today') document.getElementById(`fv-btn-today-${id}`).classList.add('bg-sia-gold', 'text-black');
+                if (source === 'tomorrow') document.getElementById(`fv-btn-tomorrow-${id}`).classList.add('bg-sia-gold', 'text-black');
+            }
             
-            dateArea.classList.add('opacity-50', 'pointer-events-none');
-            loading.classList.remove('hidden');
-            actionArea.classList.add('hidden');
+            checkAutoFetch(id);
+        }
 
+        let fetchTimeout;
+        function checkAutoFetch(id) {
             const flightInput = document.getElementById(`fv-flight-${id}`);
-            let rawFlight = flightInput.value.trim().toUpperCase().replace(/\\s+/g, '');
-            const flightNumber = rawFlight.match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/)[1];
+            const dateInput = document.getElementById(`fv-selected-date-${id}`);
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            const loading = document.getElementById(`fv-loading-${id}`);
             
-            flightInput.dataset.selectedDate = dateStr;
+            let rawFlight = flightInput.value.trim().toUpperCase().replace(/\s+/g, '');
+            const match = rawFlight.match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
+            const dateStr = dateInput.value;
+            
+            if (match && dateStr) {
+                actionArea.classList.add('hidden');
+                loading.classList.remove('hidden');
+                
+                clearTimeout(fetchTimeout);
+                fetchTimeout = setTimeout(() => {
+                    executeFetchCabins(id, match[1], dateStr);
+                }, 500);
+            } else {
+                actionArea.classList.add('hidden');
+                loading.classList.add('hidden');
+            }
+        }
 
+        async function executeFetchCabins(id, flightNumber, dateStr) {
+            const actionArea = document.getElementById(`fv-action-area-${id}`);
+            const loading = document.getElementById(`fv-loading-${id}`);
+            
             const payload = {
                 carrierId: "SQ",
                 flightNumber: flightNumber,
@@ -2595,12 +2606,14 @@ function getRegionForAirport(code) {
                 
                 const data = await res.json();
                 
+                loading.classList.add('hidden');
+                
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
                 if (data.statusCode === 101) {
-                    addMessage('bot', 'Flight not found. Menus are only published up to 8 days before departure.');
+                    addMessage('bot', 'Flight not found for this date. Menus are published up to 8 days before departure.');
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
                     currentMenuSearch.flightNumber = flightNumber;
@@ -2653,14 +2666,12 @@ function getRegionForAirport(code) {
                     addMessage('bot', 'Unexpected response from SQ system.');
                 }
             } catch (err) {
+                loading.classList.add('hidden');
                 if (err.message === 'UPSTREAM_TIMEOUT') {
                     addMessage('bot', 'Request timed out. Please try again.');
                 } else {
                     addMessage('bot', 'Network error connecting to SQ system. Please try again.');
                 }
-            } finally {
-                dateArea.classList.remove('opacity-50', 'pointer-events-none');
-                loading.classList.add('hidden');
             }
         }
 
@@ -2676,8 +2687,8 @@ function getRegionForAirport(code) {
             const selectedCabins = Array.from(selectedBtns).map(b => b.getAttribute('data-cabin'));
             
             const flightInput = document.getElementById(`fv-flight-${id}`);
-            const flightNumber = flightInput.value.trim().toUpperCase().replace(/\\s+/g, '').match(/^(?:SQ|SIA)?0*(\\d{1,4})[A-Z]?$/)[1];
-            const date = flightInput.dataset.selectedDate;
+            const flightNumber = flightInput.value.trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/)[1];
+            const date = document.getElementById(`fv-selected-date-${id}`).value;
             
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
