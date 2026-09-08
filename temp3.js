@@ -1,0 +1,1835 @@
+
+        // Initialize Lucide Icons
+        try {
+            lucide.createIcons();
+        } catch (e) {
+            console.error('Lucide icons error', e);
+        }
+
+        // Sky Canvas Animation
+        const canvas = document.getElementById('sky-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let stars = [];
+        let shootingStars = [];
+        let time = 0;
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.scale(dpr, dpr);
+            initStars();
+        }
+
+        window.addEventListener('resize', resize);
+
+        function initStars() {
+            stars = [];
+            const numStars = Math.floor((width * height) / 3000); // 150-300 range usually
+            const actualNumStars = Math.max(150, Math.min(300, numStars));
+
+            for (let i = 0; i < actualNumStars; i++) {
+                const isGold = Math.random() < 0.18;
+                let color;
+                if (isGold) {
+                    color = '#C9A227';
+                } else {
+                    color = Math.random() < 0.2 ? '#A6C8FF' : '#FFFFFF';
+                }
+
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    size: Math.random() * 1.5 + 0.5,
+                    color: color,
+                    twinkleSpeed: Math.random() * 0.01 + 0.002, // even slower twinkle
+                    twinkleAmp: Math.random() * 0.8 + 0.2,
+                    driftX: 0,
+                    driftY: Math.random() * 0.03 + 0.01, // extremely slow downward drift
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function createShootingStar() {
+            shootingStars.push({
+                x: Math.random() * width,
+                y: Math.random() * (height / 3), // starts higher but randomly inside the top third
+                length: Math.random() * 80 + 40,
+                speed: Math.random() * 1.5 + 0.5, // much slower
+                angle: Math.PI / 4 + (Math.random() * 0.2 - 0.1),
+                opacity: 1
+            });
+        }
+
+        function drawAurora() {
+            const isDark = document.documentElement.classList.contains('dark');
+            if (!isDark) return; // Aurora less visible or disabled in light mode
+
+            const breath = Math.sin(time * 0.02) * 0.2 + 0.8;
+            const opacity = 0.4 * breath;
+
+            // Batik Purple Aurora
+            const grd1 = ctx.createRadialGradient(width * 0.3, height * 0.7, 0, width * 0.3, height * 0.7, width * 0.6);
+            grd1.addColorStop(0, `rgba(91, 62, 150, ${opacity * 0.5})`);
+            grd1.addColorStop(1, 'rgba(91, 62, 150, 0)');
+            ctx.fillStyle = grd1;
+            ctx.fillRect(0, 0, width, height);
+
+            // Gold Aurora
+            const grd2 = ctx.createRadialGradient(width * 0.7, height * 0.3, 0, width * 0.7, height * 0.3, width * 0.5);
+            grd2.addColorStop(0, `rgba(201, 162, 39, ${opacity * 0.3})`);
+            grd2.addColorStop(1, 'rgba(201, 162, 39, 0)');
+            ctx.fillStyle = grd2;
+            ctx.fillRect(0, 0, width, height);
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            const isDark = document.documentElement.classList.contains('dark');
+            if (!isDark) {
+                requestAnimationFrame(animate);
+                return;
+            }
+            
+            time++;
+
+            drawAurora();
+
+            // Draw Stars
+            stars.forEach(star => {
+                // Movement
+                star.x += star.driftX;
+                star.y += star.driftY;
+
+                // Wrap around
+                if (star.y > height) star.y = 0;
+                if (star.x > width) star.x = 0;
+                if (star.x < 0) star.x = width;
+
+                // Twinkle
+                const twinkle = Math.sin(time * star.twinkleSpeed + star.phase) * star.twinkleAmp;
+                const opacity = Math.max(0.2, 1 - twinkle);
+
+                ctx.globalAlpha = opacity;
+                ctx.fillStyle = star.color;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+
+            // Shooting Stars
+            if (Math.random() < 0.005) { // Rare
+                createShootingStar();
+            }
+
+            for (let i = shootingStars.length - 1; i >= 0; i--) {
+                const ss = shootingStars[i];
+                
+                const grad = ctx.createLinearGradient(
+                    ss.x, ss.y, 
+                    ss.x - Math.cos(ss.angle) * ss.length, 
+                    ss.y - Math.sin(ss.angle) * ss.length
+                );
+                grad.addColorStop(0, `rgba(201, 162, 39, ${ss.opacity})`);
+                grad.addColorStop(1, 'rgba(201, 162, 39, 0)');
+
+                ctx.beginPath();
+                ctx.moveTo(ss.x, ss.y);
+                ctx.lineTo(ss.x - Math.cos(ss.angle) * ss.length, ss.y - Math.sin(ss.angle) * ss.length);
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                ss.x += Math.cos(ss.angle) * ss.speed;
+                ss.y += Math.sin(ss.angle) * ss.speed;
+                ss.opacity -= 0.02;
+
+                if (ss.opacity <= 0 || ss.y > height || ss.x > width) {
+                    shootingStars.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // State
+        let appProfile = null;
+        let appPrefs = { autoScroll: true };
+        let appDevMode = false;
+        let appModifiers = {};
+        
+        let tempProfile = { name: '', gender: '', rank: '' };
+        const ranks = {
+            M: ['Jr. FS', 'FS', 'LS', 'CS', 'IFM'],
+            F: ['Jr. FSS', 'FSS', 'LSS', 'CSS', 'IFM']
+        };
+
+        let devTapCount = 0;
+        let devTapTimeout;
+
+        // Elements
+        const elObView = document.getElementById('onboarding-view');
+        const elMainView = document.getElementById('main-view');
+        
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            resize();
+            animate();
+            
+            initData();
+            initUI();
+            bindEvents();
+
+            // Register Service Worker
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(() => console.log('Service Worker Registered'))
+                    .catch((err) => console.error('Service Worker Registration Failed', err));
+            }
+        });
+
+        function initData() {
+            try {
+                const storedProfile = localStorage.getItem('crewAssist.profile');
+                if (storedProfile) appProfile = JSON.parse(storedProfile);
+                
+                const storedPrefs = localStorage.getItem('crewAssist.prefs');
+                if (storedPrefs) appPrefs = JSON.parse(storedPrefs);
+                
+                appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
+                
+                const storedMods = localStorage.getItem('crewAssist.modifiers');
+                if (storedMods) appModifiers = JSON.parse(storedMods);
+                
+                const isLight = localStorage.getItem('crewAssist.theme') === 'light';
+                if (isLight) document.documentElement.classList.remove('dark');
+            } catch (e) { console.error('Storage error', e); }
+        }
+
+        function initUI() {
+            // Check if profile exists to skip onboarding
+            if (appProfile && appProfile.name && appProfile.gender && appProfile.rank) {
+                showMain();
+            } else {
+                showOnboarding();
+            }
+
+            // Settings Sheet Init
+            document.getElementById('toggle-autoscroll').checked = appPrefs.autoScroll;
+            if (appDevMode) {
+                document.getElementById('settings-developer').classList.remove('hidden');
+                document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+            }
+            if (appProfile) {
+                document.getElementById('settings-profile-name').textContent = appProfile.name;
+            }
+        }
+
+        function bindEvents() {
+            // Onboarding Events
+            document.getElementById('ob-name').addEventListener('input', (e) => {
+                tempProfile.name = e.target.value.trim();
+                checkObSubmit();
+            });
+
+            document.querySelectorAll('.ob-gender-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.ob-gender-btn').forEach(b => {
+                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                        b.classList.add('ui-input', 'text-gray-400');
+                        const icon = b.querySelector('svg') || b.querySelector('i');
+                        if(icon) icon.classList.remove('text-black');
+                    });
+                    const target = e.currentTarget;
+                    target.classList.remove('ui-input', 'text-gray-400');
+                    target.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                    const icon = target.querySelector('svg') || target.querySelector('i');
+                    if(icon) icon.classList.add('text-black');
+                    
+                    tempProfile.gender = target.dataset.value;
+                    tempProfile.rank = ''; // Reset rank
+                    renderRanks(tempProfile.gender);
+                    checkObSubmit();
+                });
+            });
+
+            document.getElementById('ob-submit').addEventListener('click', () => {
+                // Auto-capitalize Name
+                const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                tempProfile.name = nameParts.join(' ');
+                
+                appProfile = { ...tempProfile };
+                localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
+                
+                document.getElementById('settings-profile-name').textContent = appProfile.name;
+                
+                showMain();
+            });
+
+            // Header Events
+            document.getElementById('header-brand').addEventListener('click', () => {
+                devTapCount++;
+                clearTimeout(devTapTimeout);
+                devTapTimeout = setTimeout(() => { devTapCount = 0; }, 400);
+
+                if (devTapCount >= 10 && !appDevMode) {
+                    appDevMode = true;
+                    localStorage.setItem('crewAssist.devMode', 'true');
+                    document.getElementById('settings-developer').classList.remove('hidden');
+                    document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                    alert('Developer Mode Unlocked');
+                    devTapCount = 0;
+                }
+            });
+
+            document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
+            document.getElementById('btn-settings').addEventListener('click', openSettings);
+            document.getElementById('btn-reset').addEventListener('click', () => {
+                initChat();
+            });
+            
+            // Settings Events
+            document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
+            document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
+            
+            document.getElementById('btn-edit-profile').addEventListener('click', () => {
+                closeSettings();
+                showOnboarding();
+            });
+
+            document.getElementById('toggle-autoscroll').addEventListener('change', (e) => {
+                appPrefs.autoScroll = e.target.checked;
+                localStorage.setItem('crewAssist.prefs', JSON.stringify(appPrefs));
+            });
+
+            document.getElementById('btn-clear-data').addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                    localStorage.clear();
+                    location.reload();
+                }
+            });
+
+            // Developer Events
+            document.getElementById('btn-dev-save').addEventListener('click', () => {
+                try {
+                    const parsed = JSON.parse(document.getElementById('dev-modifiers-json').value);
+                    appModifiers = parsed;
+                    localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
+                    alert('Modifiers saved successfully.');
+                } catch (e) {
+                    alert('Invalid JSON format.');
+                }
+            });
+
+            document.getElementById('btn-dev-export').addEventListener('click', () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appModifiers, null, 2));
+                const anchor = document.createElement('a');
+                anchor.setAttribute("href", dataStr);
+                anchor.setAttribute("download", "crewassist-modifiers.json");
+                document.body.appendChild(anchor);
+                anchor.click();
+                anchor.remove();
+            });
+
+            document.getElementById('dev-file-import').addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    try {
+                        const parsed = JSON.parse(ev.target.result);
+                        appModifiers = parsed;
+                        document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                        localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
+                        alert('Modifiers imported successfully.');
+                    } catch (err) {
+                        alert('Error parsing imported file. Please ensure it is valid JSON.');
+                    }
+                };
+                reader.readAsText(file);
+                e.target.value = ''; // reset
+            });
+            // Chat Events
+            document.getElementById('btn-send').addEventListener('click', () => {
+                const input = document.getElementById('chat-input');
+                processInput(input.value);
+            });
+
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    processInput(e.target.value);
+                }
+            });
+
+            document.querySelectorAll('.action-chip').forEach(chip => {
+                chip.addEventListener('click', (e) => {
+                    // Extract text (remove the emoji if you want, or just pass full text)
+                    processInput(e.target.innerText.trim());
+                });
+            });
+        }
+
+        function renderRanks(gender) {
+            const container = document.getElementById('ob-rank-container');
+            const list = document.getElementById('ob-rank-list');
+            list.innerHTML = '';
+            
+            container.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+            
+            ranks[gender].forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = 'py-3 px-5 rounded-full text-sm font-bold ui-input text-gray-400 transition-all ob-rank-btn';
+                btn.textContent = r;
+                btn.dataset.value = r;
+                
+                if (tempProfile.rank === r) {
+                    btn.classList.remove('text-gray-400', 'ui-input');
+                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                }
+
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.ob-rank-btn').forEach(b => {
+                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                        b.classList.add('text-gray-400', 'ui-input');
+                    });
+                    btn.classList.remove('text-gray-400', 'ui-input');
+                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                    
+                    tempProfile.rank = r;
+                    checkObSubmit();
+                });
+                
+                list.appendChild(btn);
+            });
+        }
+
+        function checkObSubmit() {
+            const btn = document.getElementById('ob-submit');
+            if (tempProfile.name.trim() !== '' && tempProfile.gender !== '' && tempProfile.rank !== '') {
+                btn.removeAttribute('disabled');
+                btn.classList.add('animate-jump');
+            } else {
+                btn.setAttribute('disabled', 'true');
+                btn.classList.remove('animate-jump');
+            }
+        }
+
+        function showOnboarding() {
+            elMainView.classList.add('hidden');
+            elObView.classList.remove('hidden');
+            // Pre-fill if editing
+            if (appProfile) {
+                tempProfile = { ...appProfile };
+                document.getElementById('ob-name').value = tempProfile.name;
+                if (tempProfile.gender) {
+                    document.querySelector(`.ob-gender-btn[data-value="${tempProfile.gender}"]`).click();
+                    // rank click simulated in renderRanks if matched, but let's re-render
+                    renderRanks(tempProfile.gender);
+                }
+            } else {
+                tempProfile = { name: '', gender: '', rank: '' };
+                document.getElementById('ob-name').value = '';
+                document.querySelectorAll('.ob-gender-btn').forEach(b => {
+                    b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+                    b.classList.add('ui-input', 'text-gray-400');
+                    const icon = b.querySelector('svg') || b.querySelector('i');
+                    if(icon) icon.classList.remove('text-black');
+                });
+                const rc = document.getElementById('ob-rank-container');
+                rc.classList.add('hidden', 'opacity-50', 'pointer-events-none');
+                document.getElementById('ob-rank-list').innerHTML = '';
+                checkObSubmit();
+            }
+        }
+
+        function showMain() {
+            elObView.classList.add('hidden');
+            elMainView.classList.remove('hidden');
+            initChat();
+        }
+
+        // --- Chat Logic ---
+
+        function getTimeGreeting() {
+            const hour = new Date().getHours();
+            if (hour < 12) return 'Good morning';
+            if (hour < 18) return 'Good afternoon';
+            return 'Good evening';
+        }
+
+        function initChat() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.innerHTML = '';
+            
+            const greeting = getTimeGreeting();
+            const firstName = appProfile.name.split(' ')[0];
+            const welcomeMsg = `${greeting}, ${appProfile.rank} ${firstName}! How can I help you today?`;
+            
+            addMessage('bot', welcomeMsg, false);
+        }
+
+        function addMessage(sender, text, animate = true) {
+            const chatContainer = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            
+            if (sender === 'bot') {
+                msgDiv.className = 'flex items-start gap-3 mt-4';
+                // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
+                msgDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                        <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                    </div>
+                    <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                msgDiv.className = 'flex items-start justify-end gap-3 mt-4';
+                msgDiv.innerHTML = `
+                    <div class="bg-gradient-to-r from-sia-goldlt to-sia-gold text-black p-3.5 rounded-2xl rounded-tr-none text-sm max-w-[85%] shadow-md leading-relaxed font-bold ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
+                        ${text}
+                    </div>
+                `;
+            }
+            
+            chatContainer.appendChild(msgDiv);
+            if (appPrefs.autoScroll) scrollToBottom();
+        }
+
+        function showTypingIndicator() {
+            const chatContainer = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex items-start gap-3 mt-4';
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                </div>
+                <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
+                    <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+                    <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0.15s;"></div>
+                    <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0.3s;"></div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            if (appPrefs.autoScroll) scrollToBottom();
+        }
+
+        function hideTypingIndicator() {
+            const ind = document.getElementById('typing-indicator');
+            if (ind) ind.remove();
+        }
+
+        function scrollToBottom() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        }
+
+        function processInput(text) {
+            if (!text.trim()) return;
+            addMessage('user', text);
+            document.getElementById('chat-input').value = '';
+            
+            showTypingIndicator();
+            
+            // Artificial delay for "processing"
+            setTimeout(() => {
+                hideTypingIndicator();
+                analyzeIntent(text);
+            }, 600 + Math.random() * 400); // 600-1000ms delay
+        }
+
+        function analyzeIntent(text) {
+            const lowerText = text.toLowerCase();
+            
+            // NLP Intent Engine based on LOGIC.md
+            if (/menu|serving|onboard/.test(lowerText)) {
+                addMessage('bot', 'Opening Menu Lookup... *(Step 5 Feature)*');
+            }
+            else if (/total|cop|both|allowance|calculate/.test(lowerText)) {
+                renderCalculatorCard('both');
+            }
+            else if (/lma|meal/.test(lowerText)) {
+                renderCalculatorCard('lma');
+            }
+            else if (/ifa|flight/.test(lowerText)) {
+                renderCalculatorCard('ifa');
+            }
+            else if (/print|printer/.test(lowerText)) {
+                addMessage('bot', 'Opening Menu Printer... *(Step 6 Feature)*');
+            }
+            else {
+                addMessage('bot', 'I didn\'t quite catch that. Could you try again, or tap one of the quick action chips below?');
+            }
+        }
+
+        function toggleThemeShutter() {
+            const shutter = document.getElementById('cabin-shutter');
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Slide down
+            shutter.style.height = '100vh';
+            
+            setTimeout(() => {
+                if (isDark) {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('crewAssist.theme', 'light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('crewAssist.theme', 'dark');
+                }
+                
+                // Re-render lucide icons immediately for theme buttons if needed
+                // It's handled by CSS (hidden dark:block) so no JS needed
+                
+                setTimeout(() => {
+                    // Slide up
+                    shutter.style.height = '0';
+                }, 100);
+            }, 500); // Wait for slide down to finish
+        }
+
+        function openSettings() {
+            const backdrop = document.getElementById('settings-backdrop');
+            const sheet = document.getElementById('settings-sheet');
+            
+            backdrop.classList.remove('hidden');
+            // small delay to allow display:block to apply before opacity transition
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+        function closeSettings() {
+            const backdrop = document.getElementById('settings-backdrop');
+            const sheet = document.getElementById('settings-sheet');
+            
+            backdrop.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+        
+        // ==========================================
+        // STEP 4: CALCULATOR ENGINE & UI (Vanilla JS)
+        // ==========================================
+
+        const IFA_CONFIG = {
+            baseRates: { 'Jr. FS': 10, 'FS': 13.5, 'LS': 16, 'CS': 18.5, 'IFM': 23, 'Jr. FSS': 10, 'FSS': 13.5, 'LSS': 16, 'CSS': 18.5 },
+            sgBuffer: 2.5,
+            stationBuffer: 1.5,
+            paxingMultiplier: 0.75,
+            directUSMultiplier: 3.5,
+            turnaroundBonusAmount: 90.00
+        };
+
+        
+const airports = [
+  // ===== AUSTRALIA / NEW ZEALAND =====
+  { code: "SYD", city: "Sydney", country: "Australia", countryCode: "AU" },
+  { code: "MEL", city: "Melbourne", country: "Australia", countryCode: "AU" },
+  { code: "BNE", city: "Brisbane", country: "Australia", countryCode: "AU" },
+  { code: "PER", city: "Perth", country: "Australia", countryCode: "AU" },
+  { code: "ADL", city: "Adelaide", country: "Australia", countryCode: "AU" },
+  { code: "CBR", city: "Canberra", country: "Australia", countryCode: "AU" },
+  { code: "OOL", city: "Gold Coast", country: "Australia", countryCode: "AU" },
+  { code: "CNS", city: "Cairns", country: "Australia", countryCode: "AU" },
+  { code: "HBA", city: "Hobart", country: "Australia", countryCode: "AU" },
+  { code: "DRW", city: "Darwin", country: "Australia", countryCode: "AU" },
+  { code: "TSV", city: "Townsville", country: "Australia", countryCode: "AU" },
+  { code: "ASP", city: "Alice Springs", country: "Australia", countryCode: "AU" },
+  { code: "LST", city: "Launceston", country: "Australia", countryCode: "AU" },
+  { code: "MCY", city: "Sunshine Coast", country: "Australia", countryCode: "AU" },
+  { code: "NTL", city: "Newcastle", country: "Australia", countryCode: "AU" },
+  { code: "AKL", city: "Auckland", country: "New Zealand", countryCode: "NZ" },
+  { code: "CHC", city: "Christchurch", country: "New Zealand", countryCode: "NZ" },
+  { code: "WLG", city: "Wellington", country: "New Zealand", countryCode: "NZ" },
+  { code: "ZQN", city: "Queenstown", country: "New Zealand", countryCode: "NZ" },
+  { code: "DUD", city: "Dunedin", country: "New Zealand", countryCode: "NZ" },
+  { code: "PMR", city: "Palmerston North", country: "New Zealand", countryCode: "NZ" },
+  { code: "NPE", city: "Napier", country: "New Zealand", countryCode: "NZ" },
+  { code: "HLZ", city: "Hamilton", country: "New Zealand", countryCode: "NZ" },
+  { code: "TRG", city: "Tauranga", country: "New Zealand", countryCode: "NZ" },
+  { code: "ROT", city: "Rotorua", country: "New Zealand", countryCode: "NZ" },
+
+  // ===== ORIENT (China, Taiwan, Hong Kong, Macau, Mongolia, South Korea) =====
+  { code: "PEK", city: "Beijing", country: "China", countryCode: "CN" },
+  { code: "PKX", city: "Beijing Daxing", country: "China", countryCode: "CN" },
+  { code: "PVG", city: "Shanghai Pudong", country: "China", countryCode: "CN" },
+  { code: "SHA", city: "Shanghai Hongqiao", country: "China", countryCode: "CN" },
+  { code: "CAN", city: "Guangzhou", country: "China", countryCode: "CN" },
+  { code: "SZX", city: "Shenzhen", country: "China", countryCode: "CN" },
+  { code: "CTU", city: "Chengdu", country: "China", countryCode: "CN" },
+  { code: "TFU", city: "Chengdu Tianfu", country: "China", countryCode: "CN" },
+  { code: "CKG", city: "Chongqing", country: "China", countryCode: "CN" },
+  { code: "KMG", city: "Kunming", country: "China", countryCode: "CN" },
+  { code: "XIY", city: "Xi'an", country: "China", countryCode: "CN" },
+  { code: "HGH", city: "Hangzhou", country: "China", countryCode: "CN" },
+  { code: "NKG", city: "Nanjing", country: "China", countryCode: "CN" },
+  { code: "WUH", city: "Wuhan", country: "China", countryCode: "CN" },
+  { code: "CSX", city: "Changsha", country: "China", countryCode: "CN" },
+  { code: "TSN", city: "Tianjin", country: "China", countryCode: "CN" },
+  { code: "DLC", city: "Dalian", country: "China", countryCode: "CN" },
+  { code: "SHE", city: "Shenyang", country: "China", countryCode: "CN" },
+  { code: "TAO", city: "Qingdao", country: "China", countryCode: "CN" },
+  { code: "XMN", city: "Xiamen", country: "China", countryCode: "CN" },
+  { code: "HRB", city: "Harbin", country: "China", countryCode: "CN" },
+  { code: "FOC", city: "Fuzhou", country: "China", countryCode: "CN" },
+  { code: "ZUH", city: "Zhuhai", country: "China", countryCode: "CN" },
+  { code: "NNG", city: "Nanning", country: "China", countryCode: "CN" },
+  { code: "CGO", city: "Zhengzhou", country: "China", countryCode: "CN" },
+  { code: "TNA", city: "Jinan", country: "China", countryCode: "CN" },
+  { code: "SYX", city: "Sanya", country: "China", countryCode: "CN" },
+  { code: "HAK", city: "Haikou", country: "China", countryCode: "CN" },
+  { code: "URC", city: "Urumqi", country: "China", countryCode: "CN" },
+  { code: "LHW", city: "Lanzhou", country: "China", countryCode: "CN" },
+  { code: "HET", city: "Hohhot", country: "China", countryCode: "CN" },
+  { code: "INC", city: "Yinchuan", country: "China", countryCode: "CN" },
+  { code: "XNN", city: "Xining", country: "China", countryCode: "CN" },
+  { code: "KWE", city: "Guiyang", country: "China", countryCode: "CN" },
+  { code: "WNZ", city: "Wenzhou", country: "China", countryCode: "CN" },
+  { code: "SWA", city: "Shantou", country: "China", countryCode: "CN" },
+  { code: "NGB", city: "Ningbo", country: "China", countryCode: "CN" },
+  { code: "TYN", city: "Taiyuan", country: "China", countryCode: "CN" },
+  { code: "CGQ", city: "Changchun", country: "China", countryCode: "CN" },
+  { code: "KHN", city: "Nanchang", country: "China", countryCode: "CN" },
+  { code: "HFE", city: "Hefei", country: "China", countryCode: "CN" },
+  { code: "LXA", city: "Lhasa", country: "China", countryCode: "CN" },
+  { code: "HKG", city: "Hong Kong", country: "Hong Kong", countryCode: "HK" },
+  { code: "MFM", city: "Macau", country: "Macau", countryCode: "MO" },
+  { code: "TPE", city: "Taipei Taoyuan", country: "Taiwan", countryCode: "TW" },
+  { code: "TSA", city: "Taipei Songshan", country: "Taiwan", countryCode: "TW" },
+  { code: "KHH", city: "Kaohsiung", country: "Taiwan", countryCode: "TW" },
+  { code: "RMQ", city: "Taichung", country: "Taiwan", countryCode: "TW" },
+  { code: "ICN", city: "Seoul Incheon", country: "South Korea", countryCode: "KR" },
+  { code: "GMP", city: "Seoul Gimpo", country: "South Korea", countryCode: "KR" },
+  { code: "PUS", city: "Busan", country: "South Korea", countryCode: "KR" },
+  { code: "CJU", city: "Jeju", country: "South Korea", countryCode: "KR" },
+  { code: "TAE", city: "Daegu", country: "South Korea", countryCode: "KR" },
+  { code: "CJJ", city: "Cheongju", country: "South Korea", countryCode: "KR" },
+  { code: "KWJ", city: "Gwangju", country: "South Korea", countryCode: "KR" },
+  { code: "ULN", city: "Ulaanbaatar", country: "Mongolia", countryCode: "MN" },
+
+  // ===== JAPAN =====
+  { code: "NRT", city: "Tokyo Narita", country: "Japan", countryCode: "JP" },
+  { code: "HND", city: "Tokyo Haneda", country: "Japan", countryCode: "JP" },
+  { code: "KIX", city: "Osaka Kansai", country: "Japan", countryCode: "JP" },
+  { code: "ITM", city: "Osaka Itami", country: "Japan", countryCode: "JP" },
+  { code: "NGO", city: "Nagoya Chubu", country: "Japan", countryCode: "JP" },
+  { code: "FUK", city: "Fukuoka", country: "Japan", countryCode: "JP" },
+  { code: "CTS", city: "Sapporo Chitose", country: "Japan", countryCode: "JP" },
+  { code: "OKA", city: "Okinawa Naha", country: "Japan", countryCode: "JP" },
+  { code: "KOJ", city: "Kagoshima", country: "Japan", countryCode: "JP" },
+  { code: "SDJ", city: "Sendai", country: "Japan", countryCode: "JP" },
+  { code: "HIJ", city: "Hiroshima", country: "Japan", countryCode: "JP" },
+  { code: "KMJ", city: "Kumamoto", country: "Japan", countryCode: "JP" },
+  { code: "NGS", city: "Nagasaki", country: "Japan", countryCode: "JP" },
+  { code: "OIT", city: "Oita", country: "Japan", countryCode: "JP" },
+  { code: "TAK", city: "Takamatsu", country: "Japan", countryCode: "JP" },
+  { code: "MYJ", city: "Matsuyama", country: "Japan", countryCode: "JP" },
+  { code: "KMQ", city: "Komatsu", country: "Japan", countryCode: "JP" },
+  { code: "AOJ", city: "Aomori", country: "Japan", countryCode: "JP" },
+  { code: "AKJ", city: "Asahikawa", country: "Japan", countryCode: "JP" },
+  { code: "KCZ", city: "Kochi", country: "Japan", countryCode: "JP" },
+
+  // ===== NORTH AMERICA (US, Canada, Mexico, Caribbean, Central & South America) =====
+  { code: "JFK", city: "New York JFK", country: "United States", countryCode: "US" },
+  { code: "LAX", city: "Los Angeles", country: "United States", countryCode: "US" },
+  { code: "ORD", city: "Chicago O'Hare", country: "United States", countryCode: "US" },
+  { code: "ATL", city: "Atlanta", country: "United States", countryCode: "US" },
+  { code: "DFW", city: "Dallas Fort Worth", country: "United States", countryCode: "US" },
+  { code: "DEN", city: "Denver", country: "United States", countryCode: "US" },
+  { code: "SFO", city: "San Francisco", country: "United States", countryCode: "US" },
+  { code: "SEA", city: "Seattle", country: "United States", countryCode: "US" },
+  { code: "LAS", city: "Las Vegas", country: "United States", countryCode: "US" },
+  { code: "MIA", city: "Miami", country: "United States", countryCode: "US" },
+  { code: "MCO", city: "Orlando", country: "United States", countryCode: "US" },
+  { code: "EWR", city: "Newark", country: "United States", countryCode: "US" },
+  { code: "BOS", city: "Boston", country: "United States", countryCode: "US" },
+  { code: "MSP", city: "Minneapolis", country: "United States", countryCode: "US" },
+  { code: "DTW", city: "Detroit", country: "United States", countryCode: "US" },
+  { code: "PHL", city: "Philadelphia", country: "United States", countryCode: "US" },
+  { code: "CLT", city: "Charlotte", country: "United States", countryCode: "US" },
+  { code: "PHX", city: "Phoenix", country: "United States", countryCode: "US" },
+  { code: "IAH", city: "Houston Intercontinental", country: "United States", countryCode: "US" },
+  { code: "HOU", city: "Houston Hobby", country: "United States", countryCode: "US" },
+  { code: "IAD", city: "Washington Dulles", country: "United States", countryCode: "US" },
+  { code: "DCA", city: "Washington Reagan", country: "United States", countryCode: "US" },
+  { code: "BWI", city: "Baltimore", country: "United States", countryCode: "US" },
+  { code: "SAN", city: "San Diego", country: "United States", countryCode: "US" },
+  { code: "TPA", city: "Tampa", country: "United States", countryCode: "US" },
+  { code: "SLC", city: "Salt Lake City", country: "United States", countryCode: "US" },
+  { code: "PDX", city: "Portland", country: "United States", countryCode: "US" },
+  { code: "STL", city: "St. Louis", country: "United States", countryCode: "US" },
+  { code: "AUS", city: "Austin", country: "United States", countryCode: "US" },
+  { code: "BNA", city: "Nashville", country: "United States", countryCode: "US" },
+  { code: "RDU", city: "Raleigh-Durham", country: "United States", countryCode: "US" },
+  { code: "SMF", city: "Sacramento", country: "United States", countryCode: "US" },
+  { code: "SJC", city: "San Jose", country: "United States", countryCode: "US" },
+  { code: "IND", city: "Indianapolis", country: "United States", countryCode: "US" },
+  { code: "MCI", city: "Kansas City", country: "United States", countryCode: "US" },
+  { code: "CMH", city: "Columbus", country: "United States", countryCode: "US" },
+  { code: "CLE", city: "Cleveland", country: "United States", countryCode: "US" },
+  { code: "PIT", city: "Pittsburgh", country: "United States", countryCode: "US" },
+  { code: "CVG", city: "Cincinnati", country: "United States", countryCode: "US" },
+  { code: "MSY", city: "New Orleans", country: "United States", countryCode: "US" },
+  { code: "MKE", city: "Milwaukee", country: "United States", countryCode: "US" },
+  { code: "OAK", city: "Oakland", country: "United States", countryCode: "US" },
+  { code: "JAX", city: "Jacksonville", country: "United States", countryCode: "US" },
+  { code: "RSW", city: "Fort Myers", country: "United States", countryCode: "US" },
+  { code: "FLL", city: "Fort Lauderdale", country: "United States", countryCode: "US" },
+  { code: "PBI", city: "West Palm Beach", country: "United States", countryCode: "US" },
+  { code: "ABQ", city: "Albuquerque", country: "United States", countryCode: "US" },
+  { code: "OMA", city: "Omaha", country: "United States", countryCode: "US" },
+  { code: "MEM", city: "Memphis", country: "United States", countryCode: "US" },
+  { code: "RNO", city: "Reno", country: "United States", countryCode: "US" },
+  { code: "SNA", city: "Santa Ana", country: "United States", countryCode: "US" },
+  { code: "BUF", city: "Buffalo", country: "United States", countryCode: "US" },
+  { code: "ANC", city: "Anchorage", country: "United States", countryCode: "US" },
+  { code: "HNL", city: "Honolulu", country: "United States", countryCode: "US" },
+  { code: "OGG", city: "Maui Kahului", country: "United States", countryCode: "US" },
+  { code: "LIH", city: "Lihue Kauai", country: "United States", countryCode: "US" },
+  { code: "KOA", city: "Kona", country: "United States", countryCode: "US" },
+  { code: "GUM", city: "Guam", country: "United States", countryCode: "US" },
+  { code: "YYZ", city: "Toronto Pearson", country: "Canada", countryCode: "CA" },
+  { code: "YVR", city: "Vancouver", country: "Canada", countryCode: "CA" },
+  { code: "YUL", city: "Montreal", country: "Canada", countryCode: "CA" },
+  { code: "YYC", city: "Calgary", country: "Canada", countryCode: "CA" },
+  { code: "YEG", city: "Edmonton", country: "Canada", countryCode: "CA" },
+  { code: "YOW", city: "Ottawa", country: "Canada", countryCode: "CA" },
+  { code: "YWG", city: "Winnipeg", country: "Canada", countryCode: "CA" },
+  { code: "YHZ", city: "Halifax", country: "Canada", countryCode: "CA" },
+  { code: "YQB", city: "Quebec City", country: "Canada", countryCode: "CA" },
+  { code: "YKA", city: "Kamloops", country: "Canada", countryCode: "CA" },
+  { code: "YXE", city: "Saskatoon", country: "Canada", countryCode: "CA" },
+  { code: "YQR", city: "Regina", country: "Canada", countryCode: "CA" },
+  { code: "YYJ", city: "Victoria", country: "Canada", countryCode: "CA" },
+  { code: "YLW", city: "Kelowna", country: "Canada", countryCode: "CA" },
+  { code: "MEX", city: "Mexico City", country: "Mexico", countryCode: "MX" },
+  { code: "CUN", city: "Cancun", country: "Mexico", countryCode: "MX" },
+  { code: "GDL", city: "Guadalajara", country: "Mexico", countryCode: "MX" },
+  { code: "MTY", city: "Monterrey", country: "Mexico", countryCode: "MX" },
+  { code: "TIJ", city: "Tijuana", country: "Mexico", countryCode: "MX" },
+  { code: "SJD", city: "San Jose del Cabo", country: "Mexico", countryCode: "MX" },
+  { code: "PVR", city: "Puerto Vallarta", country: "Mexico", countryCode: "MX" },
+  { code: "MID", city: "Merida", country: "Mexico", countryCode: "MX" },
+  { code: "GRU", city: "Sao Paulo Guarulhos", country: "Brazil", countryCode: "BR" },
+  { code: "GIG", city: "Rio de Janeiro", country: "Brazil", countryCode: "BR" },
+  { code: "BSB", city: "Brasilia", country: "Brazil", countryCode: "BR" },
+  { code: "CNF", city: "Belo Horizonte", country: "Brazil", countryCode: "BR" },
+  { code: "POA", city: "Porto Alegre", country: "Brazil", countryCode: "BR" },
+  { code: "SSA", city: "Salvador", country: "Brazil", countryCode: "BR" },
+  { code: "REC", city: "Recife", country: "Brazil", countryCode: "BR" },
+  { code: "FOR", city: "Fortaleza", country: "Brazil", countryCode: "BR" },
+  { code: "CWB", city: "Curitiba", country: "Brazil", countryCode: "BR" },
+  { code: "CGH", city: "Sao Paulo Congonhas", country: "Brazil", countryCode: "BR" },
+  { code: "VCP", city: "Campinas", country: "Brazil", countryCode: "BR" },
+  { code: "EZE", city: "Buenos Aires Ezeiza", country: "Argentina", countryCode: "AR" },
+  { code: "AEP", city: "Buenos Aires Aeroparque", country: "Argentina", countryCode: "AR" },
+  { code: "COR", city: "Cordoba", country: "Argentina", countryCode: "AR" },
+  { code: "MDZ", city: "Mendoza", country: "Argentina", countryCode: "AR" },
+  { code: "SCL", city: "Santiago", country: "Chile", countryCode: "CL" },
+  { code: "LIM", city: "Lima", country: "Peru", countryCode: "PE" },
+  { code: "CUZ", city: "Cusco", country: "Peru", countryCode: "PE" },
+  { code: "BOG", city: "Bogota", country: "Colombia", countryCode: "CO" },
+  { code: "MDE", city: "Medellin", country: "Colombia", countryCode: "CO" },
+  { code: "CTG", city: "Cartagena", country: "Colombia", countryCode: "CO" },
+  { code: "CLO", city: "Cali", country: "Colombia", countryCode: "CO" },
+  { code: "UIO", city: "Quito", country: "Ecuador", countryCode: "EC" },
+  { code: "GYE", city: "Guayaquil", country: "Ecuador", countryCode: "EC" },
+  { code: "CCS", city: "Caracas", country: "Venezuela", countryCode: "VE" },
+  { code: "MVD", city: "Montevideo", country: "Uruguay", countryCode: "UY" },
+  { code: "ASU", city: "Asuncion", country: "Paraguay", countryCode: "PY" },
+  { code: "LPB", city: "La Paz", country: "Bolivia", countryCode: "BO" },
+  { code: "VVI", city: "Santa Cruz", country: "Bolivia", countryCode: "BO" },
+  { code: "PTY", city: "Panama City", country: "Panama", countryCode: "PA" },
+  { code: "SJO", city: "San Jose", country: "Costa Rica", countryCode: "CR" },
+  { code: "SAL", city: "San Salvador", country: "El Salvador", countryCode: "SV" },
+  { code: "GUA", city: "Guatemala City", country: "Guatemala", countryCode: "GT" },
+  { code: "TGU", city: "Tegucigalpa", country: "Honduras", countryCode: "HN" },
+  { code: "MGA", city: "Managua", country: "Nicaragua", countryCode: "NI" },
+  { code: "BZE", city: "Belize City", country: "Belize", countryCode: "BZ" },
+  { code: "HAV", city: "Havana", country: "Cuba", countryCode: "CU" },
+  { code: "SDQ", city: "Santo Domingo", country: "Dominican Republic", countryCode: "DO" },
+  { code: "PUJ", city: "Punta Cana", country: "Dominican Republic", countryCode: "DO" },
+  { code: "SJU", city: "San Juan", country: "Puerto Rico", countryCode: "PR" },
+  { code: "KIN", city: "Kingston", country: "Jamaica", countryCode: "JM" },
+  { code: "MBJ", city: "Montego Bay", country: "Jamaica", countryCode: "JM" },
+  { code: "NAS", city: "Nassau", country: "Bahamas", countryCode: "BS" },
+  { code: "POS", city: "Port of Spain", country: "Trinidad and Tobago", countryCode: "TT" },
+  { code: "BGI", city: "Bridgetown", country: "Barbados", countryCode: "BB" },
+  { code: "AUA", city: "Aruba", country: "Aruba", countryCode: "AW" },
+  { code: "CUR", city: "Curacao", country: "Curacao", countryCode: "CW" },
+  { code: "PPT", city: "Papeete Tahiti", country: "French Polynesia", countryCode: "PF" },
+  { code: "NAN", city: "Nadi", country: "Fiji", countryCode: "FJ" },
+
+  // ===== EUROPE =====
+  { code: "LHR", city: "London Heathrow", country: "United Kingdom", countryCode: "GB" },
+  { code: "LGW", city: "London Gatwick", country: "United Kingdom", countryCode: "GB" },
+  { code: "STN", city: "London Stansted", country: "United Kingdom", countryCode: "GB" },
+  { code: "LTN", city: "London Luton", country: "United Kingdom", countryCode: "GB" },
+  { code: "LCY", city: "London City", country: "United Kingdom", countryCode: "GB" },
+  { code: "MAN", city: "Manchester", country: "United Kingdom", countryCode: "GB" },
+  { code: "EDI", city: "Edinburgh", country: "United Kingdom", countryCode: "GB" },
+  { code: "BHX", city: "Birmingham", country: "United Kingdom", countryCode: "GB" },
+  { code: "GLA", city: "Glasgow", country: "United Kingdom", countryCode: "GB" },
+  { code: "BRS", city: "Bristol", country: "United Kingdom", countryCode: "GB" },
+  { code: "NCL", city: "Newcastle", country: "United Kingdom", countryCode: "GB" },
+  { code: "BFS", city: "Belfast", country: "United Kingdom", countryCode: "GB" },
+  { code: "LPL", city: "Liverpool", country: "United Kingdom", countryCode: "GB" },
+  { code: "ABZ", city: "Aberdeen", country: "United Kingdom", countryCode: "GB" },
+  { code: "CDG", city: "Paris Charles de Gaulle", country: "France", countryCode: "FR" },
+  { code: "ORY", city: "Paris Orly", country: "France", countryCode: "FR" },
+  { code: "NCE", city: "Nice", country: "France", countryCode: "FR" },
+  { code: "LYS", city: "Lyon", country: "France", countryCode: "FR" },
+  { code: "MRS", city: "Marseille", country: "France", countryCode: "FR" },
+  { code: "TLS", city: "Toulouse", country: "France", countryCode: "FR" },
+  { code: "BOD", city: "Bordeaux", country: "France", countryCode: "FR" },
+  { code: "NTE", city: "Nantes", country: "France", countryCode: "FR" },
+  { code: "SXB", city: "Strasbourg", country: "France", countryCode: "FR" },
+  { code: "FRA", city: "Frankfurt", country: "Germany", countryCode: "DE" },
+  { code: "MUC", city: "Munich", country: "Germany", countryCode: "DE" },
+  { code: "BER", city: "Berlin Brandenburg", country: "Germany", countryCode: "DE" },
+  { code: "DUS", city: "Dusseldorf", country: "Germany", countryCode: "DE" },
+  { code: "HAM", city: "Hamburg", country: "Germany", countryCode: "DE" },
+  { code: "CGN", city: "Cologne", country: "Germany", countryCode: "DE" },
+  { code: "STR", city: "Stuttgart", country: "Germany", countryCode: "DE" },
+  { code: "HAJ", city: "Hannover", country: "Germany", countryCode: "DE" },
+  { code: "NUE", city: "Nuremberg", country: "Germany", countryCode: "DE" },
+  { code: "LEJ", city: "Leipzig", country: "Germany", countryCode: "DE" },
+  { code: "AMS", city: "Amsterdam Schiphol", country: "Netherlands", countryCode: "NL" },
+  { code: "EIN", city: "Eindhoven", country: "Netherlands", countryCode: "NL" },
+  { code: "RTM", city: "Rotterdam", country: "Netherlands", countryCode: "NL" },
+  { code: "MAD", city: "Madrid Barajas", country: "Spain", countryCode: "ES" },
+  { code: "BCN", city: "Barcelona", country: "Spain", countryCode: "ES" },
+  { code: "PMI", city: "Palma Mallorca", country: "Spain", countryCode: "ES" },
+  { code: "AGP", city: "Malaga", country: "Spain", countryCode: "ES" },
+  { code: "ALC", city: "Alicante", country: "Spain", countryCode: "ES" },
+  { code: "TFS", city: "Tenerife South", country: "Spain", countryCode: "ES" },
+  { code: "LPA", city: "Gran Canaria", country: "Spain", countryCode: "ES" },
+  { code: "IBZ", city: "Ibiza", country: "Spain", countryCode: "ES" },
+  { code: "SVQ", city: "Seville", country: "Spain", countryCode: "ES" },
+  { code: "VLC", city: "Valencia", country: "Spain", countryCode: "ES" },
+  { code: "BIO", city: "Bilbao", country: "Spain", countryCode: "ES" },
+  { code: "FCO", city: "Rome Fiumicino", country: "Italy", countryCode: "IT" },
+  { code: "MXP", city: "Milan Malpensa", country: "Italy", countryCode: "IT" },
+  { code: "LIN", city: "Milan Linate", country: "Italy", countryCode: "IT" },
+  { code: "VCE", city: "Venice", country: "Italy", countryCode: "IT" },
+  { code: "NAP", city: "Naples", country: "Italy", countryCode: "IT" },
+  { code: "FLR", city: "Florence", country: "Italy", countryCode: "IT" },
+  { code: "BLQ", city: "Bologna", country: "Italy", countryCode: "IT" },
+  { code: "PSA", city: "Pisa", country: "Italy", countryCode: "IT" },
+  { code: "CTA", city: "Catania", country: "Italy", countryCode: "IT" },
+  { code: "PMO", city: "Palermo", country: "Italy", countryCode: "IT" },
+  { code: "BGY", city: "Milan Bergamo", country: "Italy", countryCode: "IT" },
+  { code: "TRN", city: "Turin", country: "Italy", countryCode: "IT" },
+  { code: "LIS", city: "Lisbon", country: "Portugal", countryCode: "PT" },
+  { code: "OPO", city: "Porto", country: "Portugal", countryCode: "PT" },
+  { code: "FAO", city: "Faro", country: "Portugal", countryCode: "PT" },
+  { code: "FNC", city: "Funchal Madeira", country: "Portugal", countryCode: "PT" },
+  { code: "ZRH", city: "Zurich", country: "Switzerland", countryCode: "CH" },
+  { code: "GVA", city: "Geneva", country: "Switzerland", countryCode: "CH" },
+  { code: "BSL", city: "Basel", country: "Switzerland", countryCode: "CH" },
+  { code: "BRN", city: "Bern", country: "Switzerland", countryCode: "CH" },
+  { code: "VIE", city: "Vienna", country: "Austria", countryCode: "AT" },
+  { code: "SZG", city: "Salzburg", country: "Austria", countryCode: "AT" },
+  { code: "INN", city: "Innsbruck", country: "Austria", countryCode: "AT" },
+  { code: "GRZ", city: "Graz", country: "Austria", countryCode: "AT" },
+  { code: "BRU", city: "Brussels", country: "Belgium", countryCode: "BE" },
+  { code: "CRL", city: "Brussels Charleroi", country: "Belgium", countryCode: "BE" },
+  { code: "LUX", city: "Luxembourg", country: "Luxembourg", countryCode: "LU" },
+  { code: "DUB", city: "Dublin", country: "Ireland", countryCode: "IE" },
+  { code: "SNN", city: "Shannon", country: "Ireland", countryCode: "IE" },
+  { code: "ORK", city: "Cork", country: "Ireland", countryCode: "IE" },
+  { code: "CPH", city: "Copenhagen", country: "Denmark", countryCode: "DK" },
+  { code: "BLL", city: "Billund", country: "Denmark", countryCode: "DK" },
+  { code: "OSL", city: "Oslo Gardermoen", country: "Norway", countryCode: "NO" },
+  { code: "BGO", city: "Bergen", country: "Norway", countryCode: "NO" },
+  { code: "TRD", city: "Trondheim", country: "Norway", countryCode: "NO" },
+  { code: "SVG", city: "Stavanger", country: "Norway", countryCode: "NO" },
+  { code: "TOS", city: "Tromso", country: "Norway", countryCode: "NO" },
+  { code: "ARN", city: "Stockholm Arlanda", country: "Sweden", countryCode: "SE" },
+  { code: "GOT", city: "Gothenburg", country: "Sweden", countryCode: "SE" },
+  { code: "MMX", city: "Malmo", country: "Sweden", countryCode: "SE" },
+  { code: "HEL", city: "Helsinki", country: "Finland", countryCode: "FI" },
+  { code: "TMP", city: "Tampere", country: "Finland", countryCode: "FI" },
+  { code: "OUL", city: "Oulu", country: "Finland", countryCode: "FI" },
+  { code: "RVN", city: "Rovaniemi", country: "Finland", countryCode: "FI" },
+  { code: "KEF", city: "Reykjavik Keflavik", country: "Iceland", countryCode: "IS" },
+  { code: "ATH", city: "Athens", country: "Greece", countryCode: "GR" },
+  { code: "SKG", city: "Thessaloniki", country: "Greece", countryCode: "GR" },
+  { code: "HER", city: "Heraklion Crete", country: "Greece", countryCode: "GR" },
+  { code: "RHO", city: "Rhodes", country: "Greece", countryCode: "GR" },
+  { code: "CFU", city: "Corfu", country: "Greece", countryCode: "GR" },
+  { code: "JMK", city: "Mykonos", country: "Greece", countryCode: "GR" },
+  { code: "JTR", city: "Santorini", country: "Greece", countryCode: "GR" },
+  { code: "IST", city: "Istanbul", country: "Turkey", countryCode: "TR" },
+  { code: "SAW", city: "Istanbul Sabiha", country: "Turkey", countryCode: "TR" },
+  { code: "AYT", city: "Antalya", country: "Turkey", countryCode: "TR" },
+  { code: "ESB", city: "Ankara", country: "Turkey", countryCode: "TR" },
+  { code: "ADB", city: "Izmir", country: "Turkey", countryCode: "TR" },
+  { code: "DLM", city: "Dalaman", country: "Turkey", countryCode: "TR" },
+  { code: "TZX", city: "Trabzon", country: "Turkey", countryCode: "TR" },
+  { code: "WAW", city: "Warsaw Chopin", country: "Poland", countryCode: "PL" },
+  { code: "KRK", city: "Krakow", country: "Poland", countryCode: "PL" },
+  { code: "WRO", city: "Wroclaw", country: "Poland", countryCode: "PL" },
+  { code: "GDN", city: "Gdansk", country: "Poland", countryCode: "PL" },
+  { code: "KTW", city: "Katowice", country: "Poland", countryCode: "PL" },
+  { code: "POZ", city: "Poznan", country: "Poland", countryCode: "PL" },
+  { code: "PRG", city: "Prague", country: "Czech Republic", countryCode: "CZ" },
+  { code: "BUD", city: "Budapest", country: "Hungary", countryCode: "HU" },
+  { code: "OTP", city: "Bucharest", country: "Romania", countryCode: "RO" },
+  { code: "CLJ", city: "Cluj-Napoca", country: "Romania", countryCode: "RO" },
+  { code: "SOF", city: "Sofia", country: "Bulgaria", countryCode: "BG" },
+  { code: "VAR", city: "Varna", country: "Bulgaria", countryCode: "BG" },
+  { code: "BEG", city: "Belgrade", country: "Serbia", countryCode: "RS" },
+  { code: "ZAG", city: "Zagreb", country: "Croatia", countryCode: "HR" },
+  { code: "SPU", city: "Split", country: "Croatia", countryCode: "HR" },
+  { code: "DBV", city: "Dubrovnik", country: "Croatia", countryCode: "HR" },
+  { code: "LJU", city: "Ljubljana", country: "Slovenia", countryCode: "SI" },
+  { code: "SKP", city: "Skopje", country: "North Macedonia", countryCode: "MK" },
+  { code: "TIA", city: "Tirana", country: "Albania", countryCode: "AL" },
+  { code: "BTS", city: "Bratislava", country: "Slovakia", countryCode: "SK" },
+  { code: "TLL", city: "Tallinn", country: "Estonia", countryCode: "EE" },
+  { code: "RIX", city: "Riga", country: "Latvia", countryCode: "LV" },
+  { code: "VNO", city: "Vilnius", country: "Lithuania", countryCode: "LT" },
+  { code: "KBP", city: "Kyiv Boryspil", country: "Ukraine", countryCode: "UA" },
+  { code: "SVO", city: "Moscow Sheremetyevo", country: "Russia", countryCode: "RU" },
+  { code: "DME", city: "Moscow Domodedovo", country: "Russia", countryCode: "RU" },
+  { code: "VKO", city: "Moscow Vnukovo", country: "Russia", countryCode: "RU" },
+  { code: "LED", city: "St. Petersburg", country: "Russia", countryCode: "RU" },
+  { code: "AER", city: "Sochi", country: "Russia", countryCode: "RU" },
+  { code: "KZN", city: "Kazan", country: "Russia", countryCode: "RU" },
+  { code: "SVX", city: "Yekaterinburg", country: "Russia", countryCode: "RU" },
+  { code: "OVB", city: "Novosibirsk", country: "Russia", countryCode: "RU" },
+  { code: "VVO", city: "Vladivostok", country: "Russia", countryCode: "RU" },
+  { code: "IKT", city: "Irkutsk", country: "Russia", countryCode: "RU" },
+  { code: "KJA", city: "Krasnoyarsk", country: "Russia", countryCode: "RU" },
+  { code: "MRV", city: "Mineralnye Vody", country: "Russia", countryCode: "RU" },
+  { code: "ROV", city: "Rostov-on-Don", country: "Russia", countryCode: "RU" },
+  { code: "GEL", city: "Gelendzhik", country: "Russia", countryCode: "RU" },
+  { code: "TBS", city: "Tbilisi", country: "Georgia", countryCode: "GE" },
+  { code: "EVN", city: "Yerevan", country: "Armenia", countryCode: "AM" },
+  { code: "GYD", city: "Baku", country: "Azerbaijan", countryCode: "AZ" },
+  { code: "MLA", city: "Malta", country: "Malta", countryCode: "MT" },
+  { code: "LCA", city: "Larnaca", country: "Cyprus", countryCode: "CY" },
+  { code: "PFO", city: "Paphos", country: "Cyprus", countryCode: "CY" },
+
+  // ===== MIDDLE EAST =====
+  { code: "DXB", city: "Dubai", country: "United Arab Emirates", countryCode: "AE" },
+  { code: "AUH", city: "Abu Dhabi", country: "United Arab Emirates", countryCode: "AE" },
+  { code: "SHJ", city: "Sharjah", country: "United Arab Emirates", countryCode: "AE" },
+  { code: "DWC", city: "Dubai World Central", country: "United Arab Emirates", countryCode: "AE" },
+  { code: "RKT", city: "Ras Al Khaimah", country: "United Arab Emirates", countryCode: "AE" },
+  { code: "DOH", city: "Doha Hamad", country: "Qatar", countryCode: "QA" },
+  { code: "RUH", city: "Riyadh", country: "Saudi Arabia", countryCode: "SA" },
+  { code: "JED", city: "Jeddah", country: "Saudi Arabia", countryCode: "SA" },
+  { code: "DMM", city: "Dammam", country: "Saudi Arabia", countryCode: "SA" },
+  { code: "MED", city: "Medina", country: "Saudi Arabia", countryCode: "SA" },
+  { code: "BAH", city: "Bahrain", country: "Bahrain", countryCode: "BH" },
+  { code: "KWI", city: "Kuwait", country: "Kuwait", countryCode: "KW" },
+  { code: "MCT", city: "Muscat", country: "Oman", countryCode: "OM" },
+  { code: "SLL", city: "Salalah", country: "Oman", countryCode: "OM" },
+  { code: "AMM", city: "Amman", country: "Jordan", countryCode: "JO" },
+  { code: "AQJ", city: "Aqaba", country: "Jordan", countryCode: "JO" },
+  { code: "BEY", city: "Beirut", country: "Lebanon", countryCode: "LB" },
+  { code: "TLV", city: "Tel Aviv", country: "Israel", countryCode: "IL" },
+  { code: "CAI", city: "Cairo", country: "Egypt", countryCode: "EG" },
+  { code: "HRG", city: "Hurghada", country: "Egypt", countryCode: "EG" },
+  { code: "SSH", city: "Sharm El Sheikh", country: "Egypt", countryCode: "EG" },
+  { code: "LXR", city: "Luxor", country: "Egypt", countryCode: "EG" },
+  { code: "ALG", city: "Algiers", country: "Algeria", countryCode: "DZ" },
+  { code: "CMN", city: "Casablanca", country: "Morocco", countryCode: "MA" },
+  { code: "RAK", city: "Marrakech", country: "Morocco", countryCode: "MA" },
+  { code: "TNG", city: "Tangier", country: "Morocco", countryCode: "MA" },
+  { code: "FEZ", city: "Fez", country: "Morocco", countryCode: "MA" },
+  { code: "TUN", city: "Tunis", country: "Tunisia", countryCode: "TN" },
+  { code: "TIP", city: "Tripoli", country: "Libya", countryCode: "LY" },
+  { code: "BGW", city: "Baghdad", country: "Iraq", countryCode: "IQ" },
+  { code: "EBL", city: "Erbil", country: "Iraq", countryCode: "IQ" },
+  { code: "BSR", city: "Basra", country: "Iraq", countryCode: "IQ" },
+  { code: "IKA", city: "Tehran Imam Khomeini", country: "Iran", countryCode: "IR" },
+  { code: "THR", city: "Tehran Mehrabad", country: "Iran", countryCode: "IR" },
+  { code: "MHD", city: "Mashhad", country: "Iran", countryCode: "IR" },
+  { code: "SYZ", city: "Shiraz", country: "Iran", countryCode: "IR" },
+  { code: "IFN", city: "Isfahan", country: "Iran", countryCode: "IR" },
+  { code: "NJF", city: "Najaf", country: "Iraq", countryCode: "IQ" },
+  { code: "KRT", city: "Khartoum", country: "Sudan", countryCode: "SD" },
+  { code: "ADD", city: "Addis Ababa", country: "Ethiopia", countryCode: "ET" },
+
+  // ===== SOUTH AFRICA =====
+  { code: "JNB", city: "Johannesburg", country: "South Africa", countryCode: "ZA" },
+  { code: "CPT", city: "Cape Town", country: "South Africa", countryCode: "ZA" },
+  { code: "DUR", city: "Durban", country: "South Africa", countryCode: "ZA" },
+  { code: "PLZ", city: "Port Elizabeth", country: "South Africa", countryCode: "ZA" },
+  { code: "ELS", city: "East London", country: "South Africa", countryCode: "ZA" },
+  { code: "BFN", city: "Bloemfontein", country: "South Africa", countryCode: "ZA" },
+  { code: "GRJ", city: "George", country: "South Africa", countryCode: "ZA" },
+  { code: "NBO", city: "Nairobi", country: "Kenya", countryCode: "KE" },
+  { code: "MBA", city: "Mombasa", country: "Kenya", countryCode: "KE" },
+  { code: "LOS", city: "Lagos", country: "Nigeria", countryCode: "NG" },
+  { code: "ABV", city: "Abuja", country: "Nigeria", countryCode: "NG" },
+  { code: "PHC", city: "Port Harcourt", country: "Nigeria", countryCode: "NG" },
+  { code: "ACC", city: "Accra", country: "Ghana", countryCode: "GH" },
+  { code: "DAR", city: "Dar es Salaam", country: "Tanzania", countryCode: "TZ" },
+  { code: "JRO", city: "Kilimanjaro", country: "Tanzania", countryCode: "TZ" },
+  { code: "ZNZ", city: "Zanzibar", country: "Tanzania", countryCode: "TZ" },
+  { code: "EBB", city: "Entebbe", country: "Uganda", countryCode: "UG" },
+  { code: "MPM", city: "Maputo", country: "Mozambique", countryCode: "MZ" },
+  { code: "LLW", city: "Lilongwe", country: "Malawi", countryCode: "MW" },
+  { code: "HRE", city: "Harare", country: "Zimbabwe", countryCode: "ZW" },
+  { code: "VFA", city: "Victoria Falls", country: "Zimbabwe", countryCode: "ZW" },
+  { code: "LUN", city: "Lusaka", country: "Zambia", countryCode: "ZM" },
+  { code: "GBE", city: "Gaborone", country: "Botswana", countryCode: "BW" },
+  { code: "WDH", city: "Windhoek", country: "Namibia", countryCode: "NA" },
+  { code: "MRU", city: "Mauritius", country: "Mauritius", countryCode: "MU" },
+  { code: "TNR", city: "Antananarivo", country: "Madagascar", countryCode: "MG" },
+  { code: "SEZ", city: "Seychelles", country: "Seychelles", countryCode: "SC" },
+  { code: "DSS", city: "Dakar", country: "Senegal", countryCode: "SN" },
+  { code: "ABJ", city: "Abidjan", country: "Ivory Coast", countryCode: "CI" },
+  { code: "DKR", city: "Dakar", country: "Senegal", countryCode: "SN" },
+  { code: "ROB", city: "Monrovia", country: "Liberia", countryCode: "LR" },
+  { code: "DLA", city: "Douala", country: "Cameroon", countryCode: "CM" },
+  { code: "FIH", city: "Kinshasa", country: "DR Congo", countryCode: "CD" },
+  { code: "BZV", city: "Brazzaville", country: "Congo", countryCode: "CG" },
+  { code: "LBV", city: "Libreville", country: "Gabon", countryCode: "GA" },
+  { code: "RUN", city: "Saint-Denis Reunion", country: "Reunion", countryCode: "RE" },
+  { code: "KGL", city: "Kigali", country: "Rwanda", countryCode: "RW" },
+
+  // ===== SOUTH ASIA =====
+  { code: "DEL", city: "Delhi", country: "India", countryCode: "IN" },
+  { code: "BOM", city: "Mumbai", country: "India", countryCode: "IN" },
+  { code: "BLR", city: "Bengaluru", country: "India", countryCode: "IN" },
+  { code: "MAA", city: "Chennai", country: "India", countryCode: "IN" },
+  { code: "CCU", city: "Kolkata", country: "India", countryCode: "IN" },
+  { code: "HYD", city: "Hyderabad", country: "India", countryCode: "IN" },
+  { code: "COK", city: "Kochi", country: "India", countryCode: "IN" },
+  { code: "AMD", city: "Ahmedabad", country: "India", countryCode: "IN" },
+  { code: "PNQ", city: "Pune", country: "India", countryCode: "IN" },
+  { code: "GOI", city: "Goa", country: "India", countryCode: "IN" },
+  { code: "JAI", city: "Jaipur", country: "India", countryCode: "IN" },
+  { code: "LKO", city: "Lucknow", country: "India", countryCode: "IN" },
+  { code: "TRV", city: "Trivandrum", country: "India", countryCode: "IN" },
+  { code: "GAU", city: "Guwahati", country: "India", countryCode: "IN" },
+  { code: "NAG", city: "Nagpur", country: "India", countryCode: "IN" },
+  { code: "PAT", city: "Patna", country: "India", countryCode: "IN" },
+  { code: "VNS", city: "Varanasi", country: "India", countryCode: "IN" },
+  { code: "IXC", city: "Chandigarh", country: "India", countryCode: "IN" },
+  { code: "SXR", city: "Srinagar", country: "India", countryCode: "IN" },
+  { code: "IXB", city: "Bagdogra", country: "India", countryCode: "IN" },
+  { code: "BBI", city: "Bhubaneswar", country: "India", countryCode: "IN" },
+  { code: "IXR", city: "Ranchi", country: "India", countryCode: "IN" },
+  { code: "IDR", city: "Indore", country: "India", countryCode: "IN" },
+  { code: "VTZ", city: "Visakhapatnam", country: "India", countryCode: "IN" },
+  { code: "RPR", city: "Raipur", country: "India", countryCode: "IN" },
+  { code: "CCJ", city: "Calicut", country: "India", countryCode: "IN" },
+  { code: "CJB", city: "Coimbatore", country: "India", countryCode: "IN" },
+  { code: "TRZ", city: "Tiruchirappalli", country: "India", countryCode: "IN" },
+  { code: "MNG", city: "Mangalore", country: "India", countryCode: "IN" },
+  { code: "IXE", city: "Mangalore", country: "India", countryCode: "IN" },
+  { code: "UDR", city: "Udaipur", country: "India", countryCode: "IN" },
+  { code: "ISB", city: "Islamabad", country: "Pakistan", countryCode: "PK" },
+  { code: "KHI", city: "Karachi", country: "Pakistan", countryCode: "PK" },
+  { code: "LHE", city: "Lahore", country: "Pakistan", countryCode: "PK" },
+  { code: "PEW", city: "Peshawar", country: "Pakistan", countryCode: "PK" },
+  { code: "MUX", city: "Multan", country: "Pakistan", countryCode: "PK" },
+  { code: "SKT", city: "Sialkot", country: "Pakistan", countryCode: "PK" },
+  { code: "FSD", city: "Faisalabad", country: "Pakistan", countryCode: "PK" },
+  { code: "DAC", city: "Dhaka", country: "Bangladesh", countryCode: "BD" },
+  { code: "CGP", city: "Chittagong", country: "Bangladesh", countryCode: "BD" },
+  { code: "CMB", city: "Colombo", country: "Sri Lanka", countryCode: "LK" },
+  { code: "MLE", city: "Male", country: "Maldives", countryCode: "MV" },
+  { code: "KTM", city: "Kathmandu", country: "Nepal", countryCode: "NP" },
+  { code: "PBH", city: "Paro", country: "Bhutan", countryCode: "BT" },
+
+  // ===== SOUTHEAST ASIA =====
+  { code: "SIN", city: "Singapore Changi", country: "Singapore", countryCode: "SG" },
+  { code: "KUL", city: "Kuala Lumpur", country: "Malaysia", countryCode: "MY" },
+  { code: "PEN", city: "Penang", country: "Malaysia", countryCode: "MY" },
+  { code: "LGK", city: "Langkawi", country: "Malaysia", countryCode: "MY" },
+  { code: "BKI", city: "Kota Kinabalu", country: "Malaysia", countryCode: "MY" },
+  { code: "KCH", city: "Kuching", country: "Malaysia", countryCode: "MY" },
+  { code: "JHB", city: "Johor Bahru", country: "Malaysia", countryCode: "MY" },
+  { code: "SZB", city: "Subang", country: "Malaysia", countryCode: "MY" },
+  { code: "MYY", city: "Miri", country: "Malaysia", countryCode: "MY" },
+  { code: "IPH", city: "Ipoh", country: "Malaysia", countryCode: "MY" },
+  { code: "BKK", city: "Bangkok Suvarnabhumi", country: "Thailand", countryCode: "TH" },
+  { code: "DMK", city: "Bangkok Don Mueang", country: "Thailand", countryCode: "TH" },
+  { code: "HKT", city: "Phuket", country: "Thailand", countryCode: "TH" },
+  { code: "CNX", city: "Chiang Mai", country: "Thailand", countryCode: "TH" },
+  { code: "CEI", city: "Chiang Rai", country: "Thailand", countryCode: "TH" },
+  { code: "USM", city: "Koh Samui", country: "Thailand", countryCode: "TH" },
+  { code: "HDY", city: "Hat Yai", country: "Thailand", countryCode: "TH" },
+  { code: "KBV", city: "Krabi", country: "Thailand", countryCode: "TH" },
+  { code: "UTP", city: "Pattaya", country: "Thailand", countryCode: "TH" },
+  { code: "CGK", city: "Jakarta Soekarno-Hatta", country: "Indonesia", countryCode: "ID" },
+  { code: "DPS", city: "Bali Ngurah Rai", country: "Indonesia", countryCode: "ID" },
+  { code: "SUB", city: "Surabaya", country: "Indonesia", countryCode: "ID" },
+  { code: "UPG", city: "Makassar", country: "Indonesia", countryCode: "ID" },
+  { code: "KNO", city: "Medan Kualanamu", country: "Indonesia", countryCode: "ID" },
+  { code: "JOG", city: "Yogyakarta", country: "Indonesia", countryCode: "ID" },
+  { code: "BDO", city: "Bandung", country: "Indonesia", countryCode: "ID" },
+  { code: "SOC", city: "Solo", country: "Indonesia", countryCode: "ID" },
+  { code: "PLM", city: "Palembang", country: "Indonesia", countryCode: "ID" },
+  { code: "BPN", city: "Balikpapan", country: "Indonesia", countryCode: "ID" },
+  { code: "PDG", city: "Padang", country: "Indonesia", countryCode: "ID" },
+  { code: "PKU", city: "Pekanbaru", country: "Indonesia", countryCode: "ID" },
+  { code: "BTH", city: "Batam", country: "Indonesia", countryCode: "ID" },
+  { code: "LOP", city: "Lombok", country: "Indonesia", countryCode: "ID" },
+  { code: "MNL", city: "Manila", country: "Philippines", countryCode: "PH" },
+  { code: "CEB", city: "Cebu", country: "Philippines", countryCode: "PH" },
+  { code: "DVO", city: "Davao", country: "Philippines", countryCode: "PH" },
+  { code: "CRK", city: "Clark", country: "Philippines", countryCode: "PH" },
+  { code: "ILO", city: "Iloilo", country: "Philippines", countryCode: "PH" },
+  { code: "KLO", city: "Kalibo", country: "Philippines", countryCode: "PH" },
+  { code: "BCD", city: "Bacolod", country: "Philippines", countryCode: "PH" },
+  { code: "TAG", city: "Tagbilaran", country: "Philippines", countryCode: "PH" },
+  { code: "PPS", city: "Puerto Princesa", country: "Philippines", countryCode: "PH" },
+  { code: "SGN", city: "Ho Chi Minh City", country: "Vietnam", countryCode: "VN" },
+  { code: "HAN", city: "Hanoi", country: "Vietnam", countryCode: "VN" },
+  { code: "DAD", city: "Da Nang", country: "Vietnam", countryCode: "VN" },
+  { code: "CXR", city: "Nha Trang", country: "Vietnam", countryCode: "VN" },
+  { code: "PQC", city: "Phu Quoc", country: "Vietnam", countryCode: "VN" },
+  { code: "HUI", city: "Hue", country: "Vietnam", countryCode: "VN" },
+  { code: "HPH", city: "Hai Phong", country: "Vietnam", countryCode: "VN" },
+  { code: "VDO", city: "Van Don", country: "Vietnam", countryCode: "VN" },
+  { code: "RGN", city: "Yangon", country: "Myanmar", countryCode: "MM" },
+  { code: "MDL", city: "Mandalay", country: "Myanmar", countryCode: "MM" },
+  { code: "PNH", city: "Phnom Penh", country: "Cambodia", countryCode: "KH" },
+  { code: "REP", city: "Siem Reap", country: "Cambodia", countryCode: "KH" },
+  { code: "KTI", city: "Kratie", country: "Cambodia", countryCode: "KH" },
+  { code: "VTE", city: "Vientiane", country: "Laos", countryCode: "LA" },
+  { code: "LPQ", city: "Luang Prabang", country: "Laos", countryCode: "LA" },
+  { code: "BWN", city: "Bandar Seri Begawan", country: "Brunei", countryCode: "BN" },
+  { code: "DIL", city: "Dili", country: "Timor-Leste", countryCode: "TL" },
+
+  // ===== CENTRAL ASIA (mapped to Middle East) =====
+  { code: "TSE", city: "Astana", country: "Kazakhstan", countryCode: "KZ" },
+  { code: "ALA", city: "Almaty", country: "Kazakhstan", countryCode: "KZ" },
+  { code: "TAS", city: "Tashkent", country: "Uzbekistan", countryCode: "UZ" },
+  { code: "SKD", city: "Samarkand", country: "Uzbekistan", countryCode: "UZ" },
+  { code: "FRU", city: "Bishkek", country: "Kyrgyzstan", countryCode: "KG" },
+  { code: "DYU", city: "Dushanbe", country: "Tajikistan", countryCode: "TJ" },
+  { code: "ASB", city: "Ashgabat", country: "Turkmenistan", countryCode: "TM" },
+
+  // ===== PACIFIC ISLANDS (mapped to Australia/NZ) =====
+  { code: "APW", city: "Apia", country: "Samoa", countryCode: "WS" },
+  { code: "TBU", city: "Tongatapu", country: "Tonga", countryCode: "TO" },
+  { code: "SUV", city: "Suva", country: "Fiji", countryCode: "FJ" },
+  { code: "NOU", city: "Noumea", country: "New Caledonia", countryCode: "NC" },
+  { code: "VLI", city: "Port Vila", country: "Vanuatu", countryCode: "VU" },
+  { code: "HIR", city: "Honiara", country: "Solomon Islands", countryCode: "SB" },
+  { code: "POM", city: "Port Moresby", country: "Papua New Guinea", countryCode: "PG" },
+];
+
+const countryToRegion = {
+  AU: "Australia / New Zealand", NZ: "Australia / New Zealand",
+  CN: "Orient", HK: "Orient", MO: "Orient", TW: "Orient", KR: "Orient", MN: "Orient",
+  JP: "Japan",
+  US: "North America", CA: "North America", MX: "North America", BR: "North America", AR: "North America",
+  GB: "Europe", FR: "Europe", DE: "Europe", NL: "Europe", ES: "Europe", IT: "Europe", CH: "Europe", AT: "Europe", BE: "Europe", DK: "Europe", SE: "Europe", NO: "Europe", FI: "Europe", GR: "Europe", TR: "Europe", IE: "Europe", PL: "Europe",
+  AE: "Middle East", QA: "Middle East", SA: "Middle East", BH: "Middle East", KW: "Middle East", OM: "Middle East",
+  ZA: "South Africa",
+  IN: "South Asia", BD: "South Asia", LK: "South Asia", MV: "South Asia",
+  SG: "Southeast Asia", MY: "Southeast Asia", TH: "Southeast Asia", ID: "Southeast Asia", PH: "Southeast Asia", VN: "Southeast Asia", MM: "Southeast Asia", KH: "Southeast Asia"
+};
+
+
+function getRegionForAirport(code) {
+  const airport = airports.find((a) => a.code === code);
+  if (!airport) return null;
+  return countryToRegion[airport.countryCode] || null;
+}
+
+
+        const REGION_RATES = {
+            'Australia / New Zealand': { b: 50, l: 86, d: 111 },
+            'Orient': { b: 57, l: 100, d: 128 },
+            'North America': { b: 51, l: 90, d: 115 },
+            'Europe': { b: 53, l: 92, d: 119 },
+            'Japan': { b: 52, l: 92, d: 118 },
+            'Middle East': { b: 40, l: 70, d: 91 },
+            'South Africa': { b: 28, l: 50, d: 64 },
+            'South Asia': { b: 36, l: 64, d: 82 },
+            'Southeast Asia': { b: 31, l: 55, d: 70 }
+        };
+
+        let calcIdCounter = 0;
+
+        function renderCalculatorCard(mode) {
+            calcIdCounter++;
+            const id = 'calc-' + calcIdCounter;
+            
+            const chatContainer = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-start gap-3 mt-4 w-full';
+            
+            let ifaHtml = '';
+            let lmaHtml = '';
+
+            if (mode === 'ifa' || mode === 'both') {
+                ifaHtml = `
+                    <div class="mb-4" id="${id}-ifa-wrap">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> IFA Details</h4>
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <select id="${id}-flight-type" class="ui-input flex-1 rounded-xl py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none">
+                                <option value="Layover">Layover</option>
+                                <option value="Turnaround">Turnaround</option>
+                            </select>
+                            <select id="${id}-sector-count" class="ui-input flex-1 rounded-xl py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none">
+                                <option value="2">2 Sectors</option>
+                                <option value="4">4 Sectors</option>
+                            </select>
+                        </div>
+                        <div id="${id}-ifa-sectors" class="space-y-3"></div>
+                    </div>
+                `;
+            }
+
+            if (mode === 'lma' || mode === 'both') {
+                lmaHtml = `
+                    <div class="mb-4 ${mode === 'both' ? 'border-t border-black/5 dark:border-white/5 pt-4' : ''}" id="${id}-lma-wrap">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> LMA Details</h4>
+                        </div>
+                        <div class="space-y-3" id="${id}-lma-sectors"></div>
+                        <button id="${id}-btn-add-lma" class="w-full py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-500 mt-2 hover:border-sia-gold hover:text-sia-gold transition-colors">+ Add Layover Station</button>
+                    </div>
+                `;
+            }
+
+            msgDiv.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-sia-gold shrink-0 flex items-center justify-center shadow-md">
+                    <img src="icons/icon-192.png" class="w-5 h-5 brightness-0 drop-shadow-sm" alt="Bot">
+                </div>
+                <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[calc(100%-44px)] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
+                        <h3 class="font-bold text-sm text-sia-gold">COP Allowance Calculator</h3>
+                    </div>
+                    ${ifaHtml}
+                    ${lmaHtml}
+                    <button id="${id}-btn-calc" class="w-full py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black shadow-md hover:shadow-lg transition-all mt-2 active:scale-[0.98]">
+                        Calculate
+                    </button>
+                </div>
+            `;
+            
+            chatContainer.appendChild(msgDiv);
+            
+            // Wait a tick for DOM
+            setTimeout(() => {
+                lucide.createIcons();
+                bindCalculatorEvents(id, mode);
+                if (appPrefs.autoScroll) scrollToBottom();
+            }, 10);
+        }
+
+        function bindCalculatorEvents(id, mode) {
+            // IFA Binding
+            if (mode === 'ifa' || mode === 'both') {
+                const typeSel = document.getElementById(`${id}-flight-type`);
+                const cntSel = document.getElementById(`${id}-sector-count`);
+                
+                const renderIfaSectors = () => {
+                    const container = document.getElementById(`${id}-ifa-sectors`);
+                    const count = parseInt(cntSel.value);
+                    const isTurn = typeSel.value === 'Turnaround';
+                    const is4 = count === 4;
+
+                    // Visibility logic per 4.2
+                    const showUS = !isTurn && !is4;
+                    const showPax = !is4;
+
+                    let html = '';
+                    for (let i = 1; i <= count; i++) {
+                        let label = i % 2 !== 0 ? 'Outbound from SG' : 'Inbound to SG';
+                        if (is4 && !isTurn && i > 1) label = 'Station to Station';
+                        if (is4 && !isTurn && i === 4) label = 'Inbound to SG';
+
+                        html += `
+                            <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                                <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
+                                <input type="text" id="${id}-ifa-t${i}" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
+                                
+                                <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
+                                    ${showUS ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
+                                    ${showPax ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-px${i}" class="accent-sia-gold"> Paxing</label>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    container.innerHTML = html;
+                    bindTimeInputs(id);
+
+                    // Hide LMA if Turnaround
+                    if (mode === 'both') {
+                        const lmaWrap = document.getElementById(`${id}-lma-wrap`);
+                        if (isTurn) {
+                            lmaWrap.classList.add('hidden');
+                        } else {
+                            lmaWrap.classList.remove('hidden');
+                        }
+                    }
+                };
+
+                typeSel.addEventListener('change', renderIfaSectors);
+                cntSel.addEventListener('change', renderIfaSectors);
+                renderIfaSectors();
+            }
+
+            // LMA Binding
+            if (mode === 'lma' || mode === 'both') {
+                const container = document.getElementById(`${id}-lma-sectors`);
+                const btnAdd = document.getElementById(`${id}-btn-add-lma`);
+                let lmaCount = 0;
+
+                const addLmaSector = () => {
+                    lmaCount++;
+                    const idx = lmaCount;
+                    const div = document.createElement('div');
+                    div.className = 'p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 relative';
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    let defaultArr = today;
+                    let defaultDep = today;
+
+                    if (idx > 1) {
+                        // Cascading logic fallback (initial)
+                        const prevDep = document.getElementById(`${id}-lma-d${idx-1}`).value;
+                        if (prevDep) {
+                            const d = new Date(prevDep);
+                            d.setDate(d.getDate() + 1);
+                            defaultArr = d.toISOString().split('T')[0];
+                            d.setDate(d.getDate() + 1);
+                            defaultDep = d.toISOString().split('T')[0];
+                        }
+                    } else {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 2);
+                        defaultDep = d.toISOString().split('T')[0];
+                    }
+
+                    div.innerHTML = `
+                        ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+                        <div class="mb-3">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
+                            <div class="relative">
+                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
+                                <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
+                            </div>
+                            <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
+                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                                <input type="text" id="${id}-lma-at${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Dep Date</label>
+                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                                <input type="text" id="${id}-lma-dt${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                    lucide.createIcons();
+                    bindTimeInputs(id);
+                    
+                    if (idx === 3) btnAdd.classList.add('hidden'); // max 3
+                };
+
+                addLmaSector(); // Default 1st station
+
+                btnAdd.addEventListener('click', addLmaSector);
+
+                // Event delegation for cascading dates
+                container.addEventListener('change', (e) => {
+                    if (e.target.classList.contains('date-cascade')) {
+                        const idx = parseInt(e.target.dataset.idx);
+                        const val = e.target.value;
+                        if (!val) return;
+                        
+                        let d = new Date(val + "T00:00:00");
+                        d.setDate(d.getDate() + 1);
+                        
+                        const dep = document.getElementById(`${id}-lma-d${idx}`);
+                        if (dep) dep.value = d.toISOString().split('T')[0];
+
+                        // Cascade forward if exists
+                        for (let j = idx + 1; j <= lmaCount; j++) {
+                            const arrNext = document.getElementById(`${id}-lma-a${j}`);
+                            const depNext = document.getElementById(`${id}-lma-d${j}`);
+                            if (arrNext && depNext) {
+                                d.setDate(d.getDate() + 1);
+                                arrNext.value = d.toISOString().split('T')[0];
+                                d.setDate(d.getDate() + 1);
+                                depNext.value = d.toISOString().split('T')[0];
+                            }
+                        }
+                    }
+                });
+
+                container.addEventListener('click', (e) => {
+                    const btn = e.target.closest('.lma-remove-btn');
+                    if (btn) {
+                        btn.parentElement.remove();
+                        lmaCount--;
+                        btnAdd.classList.remove('hidden');
+                    }
+                });
+            }
+
+            document.getElementById(`${id}-btn-calc`).addEventListener('click', () => {
+                executeCalculation(id, mode);
+            });
+        }
+
+        function bindTimeInputs(id) {
+            document.querySelectorAll('.time-input').forEach(input => {
+                // remove old listeners if any by cloning
+                const newInp = input.cloneNode(true);
+                input.parentNode.replaceChild(newInp, input);
+                
+                newInp.addEventListener('blur', (e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (!val) return;
+                    if (val.length === 3) {
+                        val = '0' + val; // e.g. 720 -> 0720
+                    } else if (val.length === 1 || val.length === 2) {
+                        val = val.padStart(2, '0') + '00';
+                    }
+                    if (val.length === 4) {
+                        val = val.slice(0, 2) + ':' + val.slice(2);
+                    }
+                    e.target.value = val;
+                });
+                
+                newInp.addEventListener('input', (e) => {
+                    let val = e.target.value.replace(/\D/g, '');
+                    if (val.length > 4) val = val.slice(0, 4);
+                    // Don't format with colon until blur to allow easy typing like 0720
+                    e.target.value = val;
+                });
+            });
+        }
+
+        // --- MATH ENGINE (LOGIC.md) ---
+
+        function parseDuration(str) {
+            if (!str) return null;
+            const match = str.match(/^(\d{1,2}):?(\d{2})$/);
+            if (!match) return null;
+            const h = parseInt(match[1]);
+            const m = parseInt(match[2]);
+            if (m > 59) return null;
+            const hours = h + (m / 60);
+            return hours > 0 ? hours : null;
+        }
+
+        function getLayoverMultiplier(sdp) {
+            if (sdp <= 14) return 1.3;
+            if (sdp <= 18) return 2.5;
+            return 3.0;
+        }
+
+        function getTurnaroundMultiplier(totalSdp) {
+            if (totalSdp <= 12) return 1.3;
+            if (totalSdp <= 14) return 1.6;
+            if (totalSdp <= 18) return 2.5;
+            return 3.0;
+        }
+
+        function executeCalculation(id, mode) {
+            let ifaTotal = 0;
+            let lmaTotal = 0;
+            let ifaDetails = [];
+            let lmaDetails = [];
+            let isTurnaround = false;
+            
+            // IFA
+            if (mode === 'ifa' || mode === 'both') {
+                const type = document.getElementById(`${id}-flight-type`).value;
+                const count = parseInt(document.getElementById(`${id}-sector-count`).value);
+                isTurnaround = type === 'Turnaround';
+                const is4 = count === 4;
+
+                const rankRate = IFA_CONFIG.baseRates[appProfile.rank] || 13.5;
+                
+                // Determine SG logic per 2.1
+                const isSgArr = is4 
+                    ? (isTurnaround ? [true, false, true, false] : [true, false, false, false])
+                    : [true, false];
+                
+                let sectors = [];
+                let tripSdp = 0;
+
+                for (let i = 1; i <= count; i++) {
+                    const tInp = document.getElementById(`${id}-ifa-t${i}`);
+                    const usInp = document.getElementById(`${id}-ifa-us${i}`);
+                    const pxInp = document.getElementById(`${id}-ifa-px${i}`);
+                    
+                    const hours = parseDuration(tInp.value);
+                    if (hours !== null) {
+                        const buffer = isSgArr[i-1] ? IFA_CONFIG.sgBuffer : IFA_CONFIG.stationBuffer;
+                        const sdp = hours + buffer;
+                        const px = pxInp ? pxInp.checked : false;
+                        const us = usInp ? usInp.checked : false;
+                        
+                        sectors.push({ hours, sdp, paxing: px, directUs: us, isSg: isSgArr[i-1] });
+                        if (!px) tripSdp += sdp;
+                    } else {
+                        sectors.push(null);
+                    }
+                }
+
+                const sharedTurnMult = isTurnaround ? getTurnaroundMultiplier(tripSdp) : 0;
+                
+                sectors.forEach((sec, idx) => {
+                    if (!sec) return;
+                    
+                    let mult = 0;
+                    let logic = '';
+                    if (sec.paxing) {
+                        mult = IFA_CONFIG.paxingMultiplier;
+                        logic = 'Paxing Override (SDP ignored)';
+                    } else if (isTurnaround) {
+                        mult = sharedTurnMult;
+                        logic = `Turnaround Bracket (Total SDP ${tripSdp.toFixed(1)}h)`;
+                    } else if (sec.directUs) {
+                        mult = IFA_CONFIG.directUSMultiplier;
+                        logic = 'Direct US Override';
+                    } else {
+                        mult = getLayoverMultiplier(sec.sdp);
+                        logic = `Layover Bracket (SDP ${sec.sdp.toFixed(1)}h)`;
+                    }
+                    
+                    const allowance = sec.hours * rankRate * mult;
+                    ifaTotal += allowance;
+                    
+                    ifaDetails.push(`
+                        <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                            <div class="flex justify-between font-bold text-sm mb-1">
+                                <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
+                                <span>$${allowance.toFixed(2)}</span>
+                            </div>
+                            <p class="text-[10px] text-gray-500 font-mono">${sec.hours.toFixed(2)}h × $${rankRate} × ${mult}x</p>
+                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
+                        </div>
+                    `);
+                });
+
+                // Bonus
+                if (isTurnaround) {
+                    const bonusCount = is4 ? 2 : 1;
+                    const bonus = bonusCount * IFA_CONFIG.turnaroundBonusAmount;
+                    ifaTotal += bonus;
+                    ifaDetails.push(`
+                        <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                            <div class="flex justify-between font-bold text-sm">
+                                <span>Turnaround Bonus (${bonusCount}x)</span>
+                                <span>$${bonus.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `);
+                }
+            }
+
+            // LMA
+            if ((mode === 'lma' || mode === 'both') && !isTurnaround) {
+                // Find all active LMA blocks
+                const container = document.getElementById(`${id}-lma-sectors`);
+                const blocks = container.querySelectorAll('.ui-input.uppercase');
+                
+                blocks.forEach(inp => {
+                    const idxStr = inp.id.match(/\d+$/)[0];
+                    const iata = inp.value.trim().toUpperCase();
+                    const aDate = document.getElementById(`${id}-lma-a${idxStr}`).value;
+                    const aTime = document.getElementById(`${id}-lma-at${idxStr}`).value;
+                    const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
+                    const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
+
+                    if (!iata || !aDate || !dDate || !aTime || !dTime) return; // Incomplete
+
+                    const region = getRegionForAirport(iata);
+                    if (!region) {
+                        lmaDetails.push('<div class="text-red-500 text-xs mb-2">Unknown region for ' + iata + '. Skipping.</div>');
+                        return;
+                    }
+                    
+                    const rates = REGION_RATES[region];
+                    
+                    const arrDt = new Date(aDate + 'T00:00:00');
+                    const depDt = new Date(dDate + 'T00:00:00');
+                    const msDiff = depDt.getTime() - arrDt.getTime();
+                    const daysDiff = Math.round(msDiff / (1000 * 60 * 60 * 24));
+                    
+                    if (daysDiff < 0) return;
+                    
+                    const parseMins = (t) => {
+                        const m = t.match(/^(d{1,2}):(d{2})$/);
+                        if (!m) return -1;
+                        return parseInt(m[1]) * 60 + parseInt(m[2]);
+                    };
+                    
+                    const arrMins = parseMins(aTime);
+                    const depMins = parseMins(dTime);
+                    if (arrMins < 0 || depMins < 0) return;
+
+                    const bEnd = 8*60+30; const bStart = 7*60+30;
+                    const lEnd = 13*60+30; const lStart = 12*60+30;
+                    const dEnd = 20*60+30; const dStart = 19*60+30;
+
+                    let stationTotal = 0;
+                    let dayRows = [];
+                    
+                    for (let d = 0; d <= daysDiff; d++) {
+                        let currDt = new Date(arrDt.getTime() + d * 24*60*60*1000);
+                        let dateStr = currDt.toISOString().split('T')[0];
+                        let bc=0, lc=0, dc=0;
+                        
+                        if (daysDiff === 0) {
+                            if (arrMins <= bEnd && depMins >= bStart) bc++;
+                            if (arrMins <= lEnd && depMins >= lStart) lc++;
+                            if (arrMins <= dEnd && depMins >= dStart) dc++;
+                        } else if (d === 0) {
+                            if (arrMins <= bEnd) bc++;
+                            if (arrMins <= lEnd) lc++;
+                            if (arrMins <= dEnd) dc++;
+                        } else if (d === daysDiff) {
+                            if (depMins >= bStart) bc++;
+                            if (depMins >= lStart) lc++;
+                            if (depMins >= dStart) dc++;
+                        } else {
+                            bc++; lc++; dc++;
+                        }
+                        
+                        let dayCost = (bc*rates.b) + (lc*rates.l) + (dc*rates.d);
+                        stationTotal += dayCost;
+                        
+                        if (bc>0 || lc>0 || dc>0) {
+                            dayRows.push(`
+                                <div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
+                                    <span class="text-[11px] text-gray-600 dark:text-gray-400 font-mono">${dateStr}</span>
+                                    <div class="flex items-center gap-1.5">
+                                        ${bc > 0 ? '<span class="bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded text-[10px] font-bold">B</span>' : ''}
+                                        ${lc > 0 ? '<span class="bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>' : ''}
+                                        ${dc > 0 ? '<span class="bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-[10px] font-bold">D</span>' : ''}
+                                        <span class="ml-2 text-[11px] font-bold text-gray-800 dark:text-gray-200">${dayCost.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            `);
+                        }
+                    }
+                    lmaTotal += stationTotal;
+
+                    lmaDetails.push(`
+                        <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
+                            <div class="flex justify-between font-bold text-sm mb-2 border-b border-black/5 dark:border-white/5 pb-2">
+                                <span>${iata} (${region})</span>
+                                <span class="text-sia-gold">${stationTotal.toFixed(2)}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                ${dayRows.length > 0 ? dayRows.join('') : '<span class="text-xs text-gray-500">No meals eligible</span>'}
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+
+            const grandTotal = ifaTotal + lmaTotal;
+            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround);
+        }
+
+        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround) {
+            const backdrop = document.getElementById('results-backdrop');
+            const sheet = document.getElementById('results-sheet');
+            const content = document.getElementById('results-content');
+            
+            let html = `
+                <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
+                    <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
+                    <p class="text-4xl font-bold font-mono">$${grandTotal.toFixed(2)}</p>
+                </div>
+            `;
+
+            if (ifaDetails.length > 0) {
+                html += `
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold">IFA Breakdown</h4>
+                            <span class="font-bold font-mono text-sia-gold">$${ifaTotal.toFixed(2)}</span>
+                        </div>
+                        ${ifaDetails.join('')}
+                    </div>
+                `;
+            }
+
+            if (isTurnaround) {
+                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>`;
+            } else if (lmaDetails.length > 0) {
+                html += `
+                    <div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold">LMA Breakdown</h4>
+                            <span class="font-bold font-mono text-sia-gold">$${lmaTotal.toFixed(2)}</span>
+                        </div>
+                        ${lmaDetails.join('')}
+                    </div>
+                `;
+            }
+
+            content.innerHTML = html;
+            
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+            
+            // Post result message to chat
+            let label = "Total IFA";
+            if (ifaTotal > 0 && lmaTotal > 0) label = "COP Allowance";
+            else if (lmaTotal > 0) label = "Total LMA";
+            
+            setTimeout(() => {
+                addMessage('bot', `Here is your calculated ${label}: **$${grandTotal.toFixed(2)}**`);
+            }, 600);
+        }
+
+        document.getElementById('results-backdrop').addEventListener('click', () => {
+            document.getElementById('btn-close-results').click();
+        });
+
+        document.getElementById('btn-close-results').addEventListener('click', () => {
+            const backdrop = document.getElementById('results-backdrop');
+            const sheet = document.getElementById('results-sheet');
+            
+            backdrop.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        });
+    
