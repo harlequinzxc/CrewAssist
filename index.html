@@ -226,7 +226,7 @@
                             </div>
                         </div>
                         <div class="mt-8 shrink-0 pb-4">
-                            <button id="ob-submit" disabled class="w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold bg-sia-navy dark:bg-black text-sia-gold border border-sia-gold disabled:opacity-50 disabled:grayscale transition-all shadow-lg flex items-center justify-center gap-2 ">
+                            <button id="ob-submit" disabled class="w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold bg-sia-navy dark:bg-black text-sia-gold border border-sia-gold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
                             
@@ -336,20 +336,16 @@
                     </div>
                 </div>
 
-                <!-- Preferences -->
+                <!-- Feedback and Support -->
                 <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Preferences</p>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feedback and Support</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
-                            <span class="text-sm font-bold">Auto-scroll Chat</span>
-                            <p class="text-[10px] text-gray-500 mt-1 flex items-center gap-1 font-medium">
-                                <i data-lucide="arrow-down-to-line" class="w-3 h-3"></i> Jump to newest message
-                            </p>
+                            <span class="text-sm font-bold">Chat with the developer</span>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="toggle-autoscroll" class="sr-only peer" checked>
-                            <div class="w-11 h-6 bg-gray-300 dark:bg-[#1a2030] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sia-gold border border-black/10 dark:border-white/10"></div>
-                        </label>
+                        <a href="https://t.me/harlequinzxc" target="_blank" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Telegram
+                        </a>
                     </div>
                 </div>
 
@@ -1009,15 +1005,14 @@
         function scrollToBottom() {
             const chatContainer = document.getElementById('chat-container');
             setTimeout(() => {
-                requestAnimationFrame(() => {
-                    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
-                });
-            }, 50);
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 10);
             setTimeout(() => {
-                requestAnimationFrame(() => {
-                    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
-                });
-            }, 300);
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 150);
+            setTimeout(() => {
+                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            }, 500);
         }
 
         function processInput(text) {
@@ -1843,7 +1838,7 @@ function getRegionForAirport(code) {
                     </div>
                     ${ifaHtml}
                     ${lmaHtml}
-                    <button id="${id}-btn-calc" disabled class="w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale mt-2">
+                    <button id="${id}-btn-calc" disabled class="w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none mt-2">
                         Calculate
                     </button>
                 </div>
@@ -2073,7 +2068,42 @@ function getRegionForAirport(code) {
                 });
             }
 
-            document.getElementById(`${id}-btn-calc`).addEventListener('click', () => {
+
+            // Validation logic
+            const validateInputs = () => {
+                let allFilled = true;
+                const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
+                if (!containerNode) return;
+                
+                const textInputs = containerNode.querySelectorAll('input[type="text"]');
+                textInputs.forEach(inp => {
+                    if (!inp.closest('.hidden') && !inp.closest('.max-h-0')) {
+                        if (inp.value.trim() === '') {
+                            allFilled = false;
+                        } else if (inp.classList.contains('ifa-time-input') || inp.classList.contains('lma-time-input')) {
+                            if (inp.value.length < 4) {
+                                allFilled = false;
+                            }
+                        }
+                    }
+                });
+                
+                const calcBtn = document.getElementById(`${id}-btn-calc`);
+                if (calcBtn) {
+                    calcBtn.disabled = !allFilled;
+                }
+            };
+
+            const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
+            if (containerNode) {
+                containerNode.addEventListener('input', validateInputs);
+                containerNode.addEventListener('change', validateInputs);
+                containerNode.addEventListener('click', () => setTimeout(validateInputs, 100)); // for add/remove buttons
+                setTimeout(validateInputs, 100);
+            }
+
+            document.getElementById(`${id}-btn-calc`).addEventListener('click', (e) => {
+                if (e.target.closest('button').disabled) return;
                 executeCalculation(id, mode);
             });
         }
@@ -2745,10 +2775,10 @@ function getRegionForAirport(code) {
                     // 3. Actions
                     contentHtml += `
                         <div class="flex gap-2 ${isMultiSector ? 'hidden' : 'opacity-50 pointer-events-none'}" id="fv-actions-section-${id}">
-                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale">
+                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
                             </button>` : ''}
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale">
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
@@ -2811,7 +2841,9 @@ function getRegionForAirport(code) {
             const actions = document.getElementById(`fv-actions-section-${id}`);
             
             if (selected.length > 0) {
+                const wasHidden = actions.classList.contains('opacity-50');
                 actions.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
+                if (wasHidden) scrollToBottom();
             } else {
                 actions.classList.add('opacity-50', 'pointer-events-none');
             }
@@ -3251,14 +3283,19 @@ function getRegionForAirport(code) {
             // 2. Category Pills (Centered + Icons)
             const catPillsHtml = `
                 <div class="flex justify-center flex-wrap gap-2 py-1 mt-3">
-                    ${hasMeals ? `<button onclick="switchMenuCategory('meals', this)" class="menu-cat-pill selected px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-sia-gold text-black border border-sia-gold flex items-center gap-1.5 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i> Meals</button>` : ''}
-                    ${hasDrinks ? `<button onclick="switchMenuCategory('drinks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="glass-water" class="w-4 h-4"></i> Drinks</button>` : ''}
-                    ${hasSnacks ? `<button onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>` : ''}
-                    ${hasAmenities ? `<button onclick="switchMenuCategory('amenities', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i> Amenities</button>` : ''}
+                    ${hasMeals ? \`<button onclick="switchMenuCategory('meals', this)" class="menu-cat-pill selected px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-sia-gold text-black border border-sia-gold flex items-center gap-1.5 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i> Meals</button>\` : ''}
+                    ${hasDrinks ? \`<button onclick="switchMenuCategory('drinks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="glass-water" class="w-4 h-4"></i> Drinks</button>\` : ''}
+                    ${hasSnacks ? \`<button onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>\` : ''}
+                    ${hasAmenities ? \`<button onclick="switchMenuCategory('amenities', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i> Amenities</button>\` : ''}
                 </div>
             `;
             
-            container.insertAdjacentHTML('beforeend', catPillsHtml);
+            const pillWrap = document.getElementById('menu-category-pills-wrap');
+            if (pillWrap) {
+                pillWrap.innerHTML = catPillsHtml;
+            } else {
+                container.insertAdjacentHTML('beforeend', catPillsHtml);
+            }
             
             // Build wrappers
             const wrapHtml = `
@@ -3472,6 +3509,15 @@ function getRegionForAirport(code) {
             document.querySelectorAll('.menu-cat-section').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById('menu-cat-' + cat);
             if(target) target.classList.remove('hidden');
+            
+            const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
+            if (tabsWrap) {
+                if (cat === 'meals') {
+                    tabsWrap.style.display = 'block';
+                } else {
+                    tabsWrap.style.display = 'none';
+                }
+            }
         }
         
         function switchMealTab(idx, btnElement) {
@@ -3485,6 +3531,15 @@ function getRegionForAirport(code) {
             document.querySelectorAll('.meal-tab-content').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById('meal-content-' + idx);
             if(target) target.classList.remove('hidden');
+            
+            const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
+            if (tabsWrap) {
+                if (cat === 'meals') {
+                    tabsWrap.style.display = 'block';
+                } else {
+                    tabsWrap.style.display = 'none';
+                }
+            }
         }
 
         function switchCulinarySelection(selIdx) {
