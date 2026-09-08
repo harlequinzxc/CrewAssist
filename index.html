@@ -3303,37 +3303,6 @@ function getRegionForAirport(code) {
         let currentMealServices = [];
         const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
         
-        function openMenuViewer() {
-            const backdrop = document.getElementById('menu-backdrop');
-            const sheet = document.getElementById('menu-sheet');
-            
-            // Set date min/max
-            const dateInput = document.getElementById('menu-date');
-            const today = new Date();
-            const tzOffset = today.getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
-            dateInput.min = localISOTime;
-            dateInput.value = localISOTime;
-            
-            const maxDate = new Date(today);
-            maxDate.setDate(today.getDate() + 42); // +6 weeks
-            const maxLocalISOTime = (new Date(maxDate.getTime() - tzOffset)).toISOString().split('T')[0];
-            dateInput.max = maxLocalISOTime;
-        
-            document.getElementById('menu-flight').value = '';
-            
-            showMenuState(1);
-            
-            backdrop.classList.remove('hidden');
-            // small delay for transition
-            setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
-            }, 10);
-            
-            addMessage('bot', 'Opening Inflight Menu Viewer...', true);
-        }
-        
         function closeMenuViewer() {
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
@@ -3363,20 +3332,6 @@ function getRegionForAirport(code) {
             }
             else if (state === 'loading' && ldg) ldg.classList.remove('hidden');
         }
-        
-        function showMenuError(msg) {
-            const errDiv = document.getElementById('menu-error');
-            errDiv.innerHTML = msg;
-            errDiv.classList.remove('hidden');
-        }
-        
-        function hideMenuError() {
-            document.getElementById('menu-error').classList.add('hidden');
-        }
-        
-        
-        
-        
         
         async function loadMenu(cabinClass) {
             const cacheKey = `SQ${currentMenuSearch.flightNumber}:${currentMenuSearch.date}:${cabinClass}`;
