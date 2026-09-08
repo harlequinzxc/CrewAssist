@@ -181,6 +181,10 @@
             overflow-wrap: anywhere;
             word-break: break-word;
         }
+        .menu-desc-clip {
+            overflow: hidden;
+            transition: height 0.32s ease;
+        }
         #menu-dropdown-row {
             -ms-overflow-style: none;
             scrollbar-width: none;
@@ -3545,7 +3549,9 @@ function getRegionForAirport(code) {
             if (!description) return '';
             return `
                 <div class="menu-desc-wrap mt-1">
-                    <div class="menu-desc-text text-xs text-gray-500 leading-relaxed">${description}</div>
+                    <div class="menu-desc-clip">
+                        <div class="menu-desc-text text-xs text-gray-500 leading-relaxed">${description}</div>
+                    </div>
                     <button type="button" class="menu-desc-toggle hidden mt-1 text-[11px] font-bold text-sia-gold inline-flex items-center gap-0.5">
                         <span class="menu-desc-toggle-label">More</span>
                         <i data-lucide="chevron-down" class="menu-desc-chevron w-3 h-3"></i>
@@ -3572,26 +3578,38 @@ function getRegionForAirport(code) {
         function initMenuDescToggles() {
             const root = document.getElementById('menu-sector-content');
             if (!root) return;
-            root.querySelectorAll('.menu-desc-text').forEach(el => {
-                if (el.closest('.hidden')) return;
-                const btn = el.parentElement.querySelector('.menu-desc-toggle');
+            root.querySelectorAll('.menu-desc-wrap').forEach(wrap => {
+                if (wrap.closest('.hidden')) return;
+                const el = wrap.querySelector('.menu-desc-text');
+                const clip = wrap.querySelector('.menu-desc-clip');
+                const btn = wrap.querySelector('.menu-desc-toggle');
+                if (!el || !clip) return;
                 const expanded = el.dataset.expanded === '1';
-                el.classList.remove('line-clamp-2');
+                clip.style.transition = 'none';
+                clip.style.height = 'auto';
                 const cs = getComputedStyle(el);
                 let lh = parseFloat(cs.lineHeight);
                 if (!lh || isNaN(lh)) lh = (parseFloat(cs.fontSize) || 12) * 1.5;
-                const maxH = lh * 2 + 2;
-                if (el.scrollHeight > maxH) {
-                    if (!expanded) el.classList.add('line-clamp-2');
+                const collapsedH = Math.ceil(lh * 2);
+                const fullH = el.scrollHeight;
+                if (fullH > collapsedH + 2) {
+                    clip.dataset.fullH = String(fullH);
+                    clip.dataset.collapsedH = String(collapsedH);
+                    clip.style.height = (expanded ? fullH : collapsedH) + 'px';
                     if (btn) {
                         btn.classList.remove('hidden');
                         btn.dataset.open = expanded ? '1' : '0';
                         const lab = btn.querySelector('.menu-desc-toggle-label');
                         if (lab) lab.textContent = expanded ? 'Less' : 'More';
                     }
-                } else if (btn) {
-                    btn.classList.add('hidden');
+                } else {
+                    delete clip.dataset.fullH;
+                    delete clip.dataset.collapsedH;
+                    clip.style.height = 'auto';
+                    if (btn) btn.classList.add('hidden');
                 }
+                void clip.offsetHeight;
+                clip.style.transition = '';
             });
         }
 
@@ -3623,31 +3641,17 @@ function getRegionForAirport(code) {
         }
 
         function menuPlainItems(items) {
-            let html = '';
-            let bullets = [];
-            const flush = () => {
-                if (!bullets.length) return;
-                html += `<ul class="list-disc pl-[1.15rem] space-y-1.5 mb-3 last:mb-0 text-sm font-semibold marker:text-sia-gold">` +
-                    bullets.map(n => `<li class="pl-0.5 leading-snug">${n}</li>`).join('') + `</ul>`;
-                bullets = [];
-            };
-            (items || []).forEach(item => {
-                const name = item.name || item.itemName || '';
-                const desc = (item.description || item.itemDescription || '').trim();
-                if (!desc) {
-                    bullets.push(name);
-                } else {
-                    flush();
-                    html += menuItemRow(name, desc, '', '');
-                }
-            });
-            flush();
-            return html;
+            return menuBulletList(items, 'name', 'description');
         }
 
         function menuBulletList(items, nameKey, descKey) {
             let html = `<ul class="list-disc pl-[1.15rem] space-y-2 text-sm font-semibold marker:text-sia-gold">`;
             (items || []).forEach(item => {
+                if (item == null || item === '') return;
+                if (typeof item === 'string') {
+                    html += `<li class="pl-0.5 leading-snug">${item}</li>`;
+                    return;
+                }
                 const name = (nameKey ? item[nameKey] : null) || item.name || item.itemName || '';
                 const desc = (descKey ? item[descKey] : null) || item.description || item.itemDescription || '';
                 html += `<li class="pl-0.5 leading-snug">${name}${desc ? menuDescBlock(desc) : ''}</li>`;
@@ -3673,13 +3677,42 @@ function getRegionForAirport(code) {
             const wrap = btn.closest('.menu-desc-wrap');
             if (!wrap) return;
             const el = wrap.querySelector('.menu-desc-text');
-            if (!el) return;
+            const clip = wrap.querySelector('.menu-desc-clip');
+            if (!el || !clip) return;
             const expanded = el.dataset.expanded === '1';
-            el.dataset.expanded = expanded ? '0' : '1';
-            el.classList.toggle('line-clamp-2', expanded);
-            btn.dataset.open = expanded ? '0' : '1';
-            const lab = btn.querySelector('.menu-desc-toggle-label');
-            if (lab) lab.textContent = expanded ? 'More' : 'Less';
+            const collapsedH = parseFloat(clip.dataset.collapsedH);
+            if (!collapsedH) return;
+            if (clip._descEnd) {
+                clip.removeEventListener('transitionend', clip._descEnd);
+                clip._descEnd = null;
+            }
+            if (expanded) {
+                clip.style.height = clip.scrollHeight + 'px';
+                void clip.offsetHeight;
+                clip.style.height = collapsedH + 'px';
+                el.dataset.expanded = '0';
+                btn.dataset.open = '0';
+                const lab = btn.querySelector('.menu-desc-toggle-label');
+                if (lab) lab.textContent = 'More';
+            } else {
+                const fullH = el.scrollHeight;
+                clip.dataset.fullH = String(fullH);
+                clip.style.height = collapsedH + 'px';
+                void clip.offsetHeight;
+                clip.style.height = fullH + 'px';
+                el.dataset.expanded = '1';
+                btn.dataset.open = '1';
+                const lab = btn.querySelector('.menu-desc-toggle-label');
+                if (lab) lab.textContent = 'Less';
+                const onEnd = (ev) => {
+                    if (ev.propertyName !== 'height') return;
+                    clip.removeEventListener('transitionend', onEnd);
+                    clip._descEnd = null;
+                    if (el.dataset.expanded === '1') clip.style.height = 'auto';
+                };
+                clip._descEnd = onEnd;
+                clip.addEventListener('transitionend', onEnd);
+            }
         });
         window.addEventListener('resize', scheduleMenuDescToggles);
 
@@ -3920,10 +3953,32 @@ function getRegionForAirport(code) {
                     catDiv.className = 'space-y-4 mt-3 first:mt-0';
                     let html = menuSectionTitle(cat.name);
                     const types = [];
+                    const catSnackish = /snack|delectable/i.test(cat.name || '');
                     (cat.subcategories || []).forEach(sub => {
                         const specs = sub.specialities || [];
                         const namedSpecs = specs.filter(s => s && s.name);
-                        if (namedSpecs.length) {
+                        const snackish = catSnackish || /snack|delectable/i.test(sub.name || '');
+                        const specsLookLikeItems = namedSpecs.length > 0 && namedSpecs.every(s => !s.items || s.items.length <= 1);
+                        if (snackish || specsLookLikeItems) {
+                            const items = [];
+                            specs.forEach(spec => {
+                                if (spec.items && spec.items.length) {
+                                    spec.items.forEach(it => {
+                                        items.push({
+                                            name: it.name || spec.name || '',
+                                            description: it.description || it.itemDescription || ''
+                                        });
+                                    });
+                                } else if (spec.name) {
+                                    items.push({
+                                        name: spec.name,
+                                        description: spec.description || spec.itemDescription || ''
+                                    });
+                                }
+                            });
+                            (sub.items || []).forEach(it => items.push(it));
+                            types.push({ name: sub.name || '', items });
+                        } else if (namedSpecs.length) {
                             specs.forEach(spec => {
                                 types.push({ name: spec.name || sub.name || '', items: spec.items || [] });
                             });
