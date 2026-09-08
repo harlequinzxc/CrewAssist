@@ -2421,5 +2421,701 @@ function getRegionForAirport(code) {
             }, 300);
         });
     </script>
+<<<<<<< HEAD
+=======
+    <script>
+        
+
+        function renderFlightVerificationCard(mode) {
+            const chatContainer = document.getElementById('chat-container');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-start gap-3 mt-4 w-full';
+            
+            const uniqueId = Date.now();
+            
+            const today = new Date();
+            const tzOffset = today.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
+            const maxDate = new Date(today);
+            maxDate.setDate(today.getDate() + 42);
+            const maxLocalISOTime = (new Date(maxDate.getTime() - tzOffset)).toISOString().split('T')[0];
+
+            let headerText = mode === 'print' ? 'Menu Printer Lookup' : 'Inflight Menu Lookup';
+            
+            msgDiv.innerHTML = `
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
+                    <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
+                        <i data-lucide="${mode === 'print' ? 'printer' : 'plane'}" class="w-5 h-5"></i> ${headerText}
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="relative">
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
+                            <div class="flex items-center">
+                                <span class="absolute left-3 text-gray-500 font-mono font-bold">SQ</span>
+                                <input type="text" id="fv-flight-${uniqueId}" class="w-full bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-sia-gold transition-colors font-mono font-bold" placeholder="e.g. 11">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
+                            <input type="date" id="fv-date-${uniqueId}" min="${localISOTime}" max="${maxLocalISOTime}" value="${localISOTime}" class="w-full bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 focus:outline-none focus:border-sia-gold transition-colors font-mono">
+                        </div>
+                        
+                        <div class="flex gap-2 pt-2">
+                            <button id="fv-btn-menu-${uniqueId}" onclick="submitFlightVerification('${uniqueId}', 'menu', this)" class="flex-1 ${mode === 'menu' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
+                                <i data-lucide="book-open" class="w-4 h-4"></i> Fetch Menu
+                            </button>
+                            <button id="fv-btn-print-${uniqueId}" onclick="submitFlightVerification('${uniqueId}', 'print', this)" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
+                                <i data-lucide="printer" class="w-4 h-4"></i> Print Menu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            chatContainer.appendChild(msgDiv);
+            lucide.createIcons();
+            scrollToBottom();
+        }
+
+        async function submitFlightVerification(id, actionType, btnElement) {
+            const flightInput = document.getElementById(`fv-flight-${id}`);
+            const dateInput = document.getElementById(`fv-date-${id}`);
+            
+            let rawFlight = flightInput.value.trim().toUpperCase();
+            const date = dateInput.value;
+            
+            rawFlight = rawFlight.replace(/\s+/g, '');
+            const match = rawFlight.match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
+            
+            if (!match) {
+                addMessage('bot', 'Invalid flight number format. Use digits only (e.g. 11 or SQ11).');
+                return;
+            }
+            
+            const flightNumber = match[1];
+            
+            if (!date) {
+                addMessage('bot', 'Please select a departure date.');
+                return;
+            }
+
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML = `<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>`;
+            btnElement.disabled = true;
+
+            const payload = {
+                carrierId: "SQ",
+                flightNumber: flightNumber,
+                flightDate: date,
+                sessionId: crypto.randomUUID()
+            };
+            
+            try {
+                const res = await fetch('/api/sq', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: 'getcabin', payload })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (data.statusCode === 101) {
+                    addMessage('bot', 'Flight not found. Menus are only published up to 8 days before departure.');
+                }
+                else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
+                    currentMenuSearch.flightNumber = flightNumber;
+                    currentMenuSearch.date = date;
+                    currentMenuSearch.cabins = data.cabinClasses;
+                    
+                    if (actionType === 'menu') {
+                        openMenuViewerWithCabins(flightNumber, date, data.cabinClasses);
+                    } else if (actionType === 'print') {
+                        addMessage('bot', 'The Inflight Menu Printer feature is coming in Step 6.');
+                    }
+                } else {
+                    addMessage('bot', 'Unexpected response from SQ system.');
+                }
+            } catch (err) {
+                if (err.message === 'UPSTREAM_TIMEOUT') {
+                    addMessage('bot', 'Request timed out. Please try again.');
+                } else {
+                    addMessage('bot', 'Network error connecting to SQ system. Please try again.');
+                }
+            } finally {
+                btnElement.innerHTML = originalHtml;
+                btnElement.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        function openMenuViewerWithCabins(flightNumber, date, cabinClasses) {
+            const backdrop = document.getElementById('menu-backdrop');
+            const sheet = document.getElementById('menu-sheet');
+            
+            document.getElementById('menu-verified-flight').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
+                    
+            const btnContainer = document.getElementById('cabin-buttons');
+            btnContainer.innerHTML = '';
+            
+            const cabinNames = {
+                'FCL': 'First / Suites',
+                'JCL': 'Business Class',
+                'SCL': 'Premium Economy',
+                'YCL': 'Economy Class'
+            };
+            
+            cabinClasses.forEach(code => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 font-semibold hover:border-sia-gold transition-colors';
+                btn.textContent = cabinNames[code] || code;
+                btn.onclick = () => loadMenu(code);
+                btnContainer.appendChild(btn);
+            });
+            
+            showMenuState(2);
+            
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+        }
+
+
+// Inflight Menu Viewer Logic (Step 5)
+        
+        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '' };
+        const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
+        
+        function openMenuViewer() {
+            const backdrop = document.getElementById('menu-backdrop');
+            const sheet = document.getElementById('menu-sheet');
+            
+            // Set date min/max
+            const dateInput = document.getElementById('menu-date');
+            const today = new Date();
+            const tzOffset = today.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
+            dateInput.min = localISOTime;
+            dateInput.value = localISOTime;
+            
+            const maxDate = new Date(today);
+            maxDate.setDate(today.getDate() + 42); // +6 weeks
+            const maxLocalISOTime = (new Date(maxDate.getTime() - tzOffset)).toISOString().split('T')[0];
+            dateInput.max = maxLocalISOTime;
+        
+            document.getElementById('menu-flight').value = '';
+            
+            showMenuState(1);
+            
+            backdrop.classList.remove('hidden');
+            // small delay for transition
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+            
+            addMessage('bot', 'Opening Inflight Menu Viewer...', true);
+        }
+        
+        function closeMenuViewer() {
+            const backdrop = document.getElementById('menu-backdrop');
+            const sheet = document.getElementById('menu-sheet');
+            
+            backdrop.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300);
+        }
+        
+        document.getElementById('menu-backdrop').addEventListener('click', closeMenuViewer);
+        document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
+        
+        function showMenuState(state) {
+            document.getElementById('menu-state-1').classList.add('hidden');
+            document.getElementById('menu-state-2').classList.add('hidden');
+            document.getElementById('menu-state-3').classList.add('hidden');
+            document.getElementById('menu-loading').classList.add('hidden');
+            
+            if (state === 1) document.getElementById('menu-state-1').classList.remove('hidden');
+            else if (state === 2) document.getElementById('menu-state-2').classList.remove('hidden');
+            else if (state === 3) document.getElementById('menu-state-3').classList.remove('hidden');
+            else if (state === 'loading') document.getElementById('menu-loading').classList.remove('hidden');
+        }
+        
+        function showMenuError(msg) {
+            const errDiv = document.getElementById('menu-error');
+            errDiv.innerHTML = msg;
+            errDiv.classList.remove('hidden');
+        }
+        
+        function hideMenuError() {
+            document.getElementById('menu-error').classList.add('hidden');
+        }
+        
+        
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    throw new Error(data.error); // UPSTREAM_TIMEOUT, UPSTREAM_NETWORK
+                }
+                
+                if (data.statusCode === 101) {
+                    showMenuState(1);
+                    showMenuError('Flight not found. Menus are only published up to 8 days before departure.');
+                    return;
+                }
+                
+                if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
+                    // Success
+                    currentMenuSearch.flightNumber = flightNumber;
+                    currentMenuSearch.date = date;
+                    currentMenuSearch.cabins = data.cabinClasses;
+                    
+                    document.getElementById('menu-verified-flight').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
+                    
+                    const btnContainer = document.getElementById('cabin-buttons');
+                    btnContainer.innerHTML = '';
+                    
+                    const cabinNames = {
+                        'FCL': 'First / Suites',
+                        'JCL': 'Business Class',
+                        'SCL': 'Premium Economy',
+                        'YCL': 'Economy Class'
+                    };
+                    
+                    data.cabinClasses.forEach(code => {
+                        const btn = document.createElement('button');
+                        btn.className = 'bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 font-semibold hover:border-sia-gold transition-colors';
+                        btn.textContent = cabinNames[code] || code;
+                        btn.onclick = () => loadMenu(code);
+                        btnContainer.appendChild(btn);
+                    });
+                    
+                    showMenuState(2);
+                } else {
+                    showMenuState(1);
+                    showMenuError('Unexpected response from SQ system.');
+                }
+                
+            } catch (err) {
+                showMenuState(1);
+                if (err.message === 'UPSTREAM_TIMEOUT') {
+                    showMenuError('Request timed out. Please try again.');
+                } else {
+                    showMenuError('Network error connecting to SQ system. Please try again.');
+                }
+            }
+        });
+        
+        document.getElementById('btn-change-flight').addEventListener('click', () => {
+            showMenuState(1);
+        });
+        
+        document.getElementById('btn-change-cabin').addEventListener('click', () => {
+            showMenuState(2);
+        });
+        
+        async function loadMenu(cabinClass) {
+            const cacheKey = `SQ${currentMenuSearch.flightNumber}:${currentMenuSearch.date}:${cabinClass}`;
+            currentMenuSearch.selectedCabin = cabinClass;
+            
+            // Check Cache
+            const cachedStr = localStorage.getItem(cacheKey);
+            if (cachedStr) {
+                try {
+                    const cachedData = JSON.parse(cachedStr);
+                    if (Date.now() - cachedData.timestamp < SQ_CACHE_TTL) {
+                        renderMenu(cachedData.data, false);
+                        return;
+                    }
+                } catch (e) {
+                    localStorage.removeItem(cacheKey);
+                }
+            }
+            
+            showMenuState('loading');
+            
+            const payload = {
+                carrierId: "SQ",
+                flightNumber: currentMenuSearch.flightNumber,
+                flightDate: currentMenuSearch.date,
+                cabinClass: cabinClass,
+                sessionId: crypto.randomUUID()
+            };
+            
+            try {
+                const res = await fetch('/api/sq', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ endpoint: 'menu', payload })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (data.statusCode === 200 && data.legs) {
+                    // Save to cache
+                    localStorage.setItem(cacheKey, JSON.stringify({
+                        timestamp: Date.now(),
+                        data: data
+                    }));
+                    
+                    renderMenu(data, false);
+                } else {
+                    // Handle error or serve stale
+                    serveStaleCache(cacheKey, 'Menu data not found or unexpected format.');
+                }
+            } catch (err) {
+                serveStaleCache(cacheKey, 'Network error while fetching menu. ' + (err.message === 'UPSTREAM_TIMEOUT' ? '(Timeout)' : ''));
+            }
+        }
+        
+        function serveStaleCache(key, errMsg) {
+            const cachedStr = localStorage.getItem(key);
+            if (cachedStr) {
+                try {
+                    const cachedData = JSON.parse(cachedStr);
+                    renderMenu(cachedData.data, true);
+                } catch (e) {
+                    showMenuState(2);
+                    alert(errMsg);
+                }
+            } else {
+                showMenuState(2);
+                alert(errMsg + ' No offline copy available.');
+            }
+        }
+        
+        function formatDuration(depUtc, arrUtc) {
+            if (!depUtc || !arrUtc) return '';
+            // Format: "2026-08-29 21:20:00"
+            const d1 = new Date(depUtc.replace(' ', 'T') + 'Z');
+            const d2 = new Date(arrUtc.replace(' ', 'T') + 'Z');
+            let diffMs = d2 - d1;
+            if (diffMs < 0) diffMs = 0;
+            
+            const hrs = Math.floor(diffMs / 3600000);
+            const mins = Math.floor((diffMs % 3600000) / 60000);
+            return `${hrs}h ${mins}m`;
+        }
+        
+        function getDayShift(depLocal, arrLocal) {
+            // Format: "2026-08-29 14:20:00"
+            const depDate = depLocal.split(' ')[0];
+            const arrDate = arrLocal.split(' ')[0];
+            
+            const d1 = new Date(depDate);
+            const d2 = new Date(arrDate);
+            
+            const shift = Math.round((d2 - d1) / 86400000);
+            return shift > 0 ? `+${shift}d` : '';
+        }
+        
+        function renderMenu(data, isStale) {
+            const badge = document.getElementById('menu-offline-badge');
+            if (isStale) {
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+            
+            const headerTitle = document.getElementById('menu-display-header');
+            headerTitle.textContent = `SQ ${data.flightNumber} • ${data.cabinClass}`;
+            
+            const tabsContainer = document.getElementById('menu-sectors-tabs');
+            tabsContainer.innerHTML = '';
+            
+            data.legs.forEach((leg, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors ${idx === 0 ? 'bg-sia-navy dark:bg-sia-gold text-white dark:text-black' : 'bg-black/5 dark:bg-white/5'}`;
+                btn.textContent = `${leg.flightDetails.departureAirportCode} ✈ ${leg.flightDetails.arrivalAirportCode}`;
+                btn.onclick = () => {
+                    // Update tab styles
+                    Array.from(tabsContainer.children).forEach(b => {
+                        b.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-black/5 dark:bg-white/5';
+                    });
+                    btn.className = 'px-4 py-2 rounded-full whitespace-nowrap text-sm font-semibold transition-colors bg-sia-navy dark:bg-sia-gold text-white dark:text-black';
+                    renderSector(leg);
+                };
+                tabsContainer.appendChild(btn);
+            });
+            
+            showMenuState(3);
+            if (data.legs.length > 0) {
+                renderSector(data.legs[0]);
+            }
+        }
+        
+        function renderSector(leg) {
+            const container = document.getElementById('menu-sector-content');
+            container.innerHTML = '';
+            
+            // 1. Flight Details Header
+            const fd = leg.flightDetails;
+            const dur = formatDuration(fd.departureUtcDate, fd.arrivalUtcDate);
+            const dayShift = getDayShift(fd.departureLocalDate, fd.arrivalLocalDate);
+            const depTime = fd.departureLocalDate.substring(11, 16);
+            const arrTime = fd.arrivalLocalDate.substring(11, 16);
+            
+            const headerHtml = `
+                <div class="bg-black/5 dark:bg-white/5 rounded-2xl p-4 flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold font-mono">${depTime}</div>
+                            <div class="text-xs text-gray-500 font-semibold">${fd.departureAirportCode}</div>
+                        </div>
+                        <div class="flex flex-col items-center flex-grow px-4">
+                            <div class="text-xs text-gray-400 mb-1">${dur}</div>
+                            <div class="w-full relative flex items-center justify-center">
+                                <div class="w-full h-px bg-black/20 dark:bg-white/20"></div>
+                                <i data-lucide="plane" class="w-4 h-4 absolute text-sia-gold -rotate-90"></i>
+                            </div>
+                        </div>
+                        <div class="text-center relative">
+                            <div class="text-2xl font-bold font-mono">${arrTime} ${dayShift ? `<span class="absolute -top-1 -right-4 text-[10px] text-sia-gold font-bold">${dayShift}</span>` : ''}</div>
+                            <div class="text-xs text-gray-500 font-semibold">${fd.arrivalAirportCode}</div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span>${fd.departureCityName}</span>
+                        <span>${fd.arrivalCityName}</span>
+                    </div>
+                </div>
+            `;
+            container.innerHTML += headerHtml;
+            
+            // Flags Banners
+            if (leg.isNoMenuPlanned) {
+                container.innerHTML += `<div class="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-xl text-sm border border-blue-500/20">Menu may change prior to departure.</div>`;
+            }
+            if (leg.isSnackBag) {
+                container.innerHTML += `<div class="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-xl text-sm border border-purple-500/20">This sector operates a snack bag service instead of a full meal service.</div>`;
+            }
+                if (leg.isBentoBox) {
+                container.innerHTML += `<div class="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-xl text-sm border border-orange-500/20">This sector operates a Bento Box service.</div>`;
+            }
+            if (leg.isHawkerPromo) {
+                container.innerHTML += `<div class="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm border border-red-500/20">Special Hawker Promo Menu Available.</div>`;
+            }
+            if (leg.guestChef && leg.guestChef.header) {
+                container.innerHTML += `<div class="bg-sia-gold/10 text-sia-gold p-3 rounded-xl text-sm border border-sia-gold/20 font-semibold">${leg.guestChef.header}: ${leg.guestChef.message}</div>`;
+            }
+        
+            // 2. Meals
+            if (leg.menu && leg.menu.language && leg.menu.language.EN_UK && leg.menu.language.EN_UK.meals) {
+                const meals = leg.menu.language.EN_UK.meals;
+                // Sort by mealServiceNumber if needed
+                
+                meals.forEach(meal => {
+                    const mealDiv = document.createElement('div');
+                    mealDiv.className = 'space-y-4';
+                    
+                    let mealHeaderHtml = `
+                        <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10">
+                            <i data-lucide="utensils" class="w-5 h-5 text-sia-gold"></i>
+                            <h4 class="text-lg font-bold">${meal.mealServiceName}</h4>
+                        </div>
+                    `;
+                    mealDiv.innerHTML = mealHeaderHtml;
+                    
+                    if (meal.selectionDetails && meal.selectionDetails.length > 0) {
+                        // If parallel menus exist, we create a toggle or just render them consecutively with distinct headers
+                        meal.selectionDetails.forEach(selection => {
+                            const selDiv = document.createElement('div');
+                            selDiv.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-4';
+                            
+                            if (meal.selectionDetails.length > 1) {
+                                selDiv.innerHTML += `<div class="font-bold text-sia-gold mb-2">${selection.name}</div>`;
+                            }
+                            
+                            if (selection.mealCourses) {
+                                selection.mealCourses.forEach(course => {
+                                    let courseHtml = `<div class="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-2">${course.category} ${course.maxSequence > 1 ? `(Choose ${course.maxSequence})` : ''}</div>`;
+                                    
+                                    if (course.items) {
+                                        course.items.forEach(item => {
+                                            // Icons
+                                            let iconsHtml = '';
+                                            if (item.icons && item.icons.length > 0) {
+                                                item.icons.forEach(icon => {
+                                                    if (icon === 'VGT') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-green-500/20 text-green-600 text-[10px] font-bold">V</span>`;
+                                                    if (icon === 'WLSGD') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-600 text-[10px] font-bold">Wellness</span>`;
+                                                    if (icon === 'ICP') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-600 text-[10px] font-bold">Chef</span>`;
+                                                });
+                                            }
+                                            
+                                            // Image
+                                            let imgHtml = '';
+                                            if (item.imagePathIfeHigh) {
+                                                const imgUrl = item.imagePathIfeHigh.startsWith('http') ? item.imagePathIfeHigh : 'https://inflightmenu.singaporeair.com/' + item.imagePathIfeHigh;
+                                                imgHtml = `<img src="${imgUrl}" class="w-16 h-16 object-cover rounded-lg bg-black/10 shrink-0" alt="${item.name}" loading="lazy">`;
+                                            }
+                                            
+                                            courseHtml += `
+                                                <div class="flex gap-3 mb-3 last:mb-0">
+                                                    ${imgHtml}
+                                                    <div>
+                                                        <div class="font-semibold text-sm leading-tight flex flex-wrap gap-2 items-center">${item.name} ${iconsHtml}</div>
+                                                        ${item.description ? `<div class="text-xs text-gray-500 mt-1">${item.description}</div>` : ''}
+                                                    </div>
+                                                </div>
+                                            `;
+                                        });
+                                    }
+                                    selDiv.innerHTML += `<div class="mb-4 last:mb-0">${courseHtml}</div>`;
+                                });
+                            }
+                            mealDiv.appendChild(selDiv);
+                        });
+                    }
+                    container.appendChild(mealDiv);
+                });
+            }
+        
+            // 3. Beverages
+            if (leg.beverage && leg.beverage.language && leg.beverage.language.EN_UK && leg.beverage.language.EN_UK.categories) {
+                const bevCats = leg.beverage.language.EN_UK.categories;
+                const bevDiv = document.createElement('div');
+                bevDiv.className = 'space-y-3';
+                bevDiv.innerHTML = `
+                    <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10 mt-6">
+                        <i data-lucide="wine" class="w-5 h-5 text-sia-gold"></i>
+                        <h4 class="text-lg font-bold">Beverages</h4>
+                    </div>
+                `;
+                
+                bevCats.forEach(cat => {
+                    const catDiv = document.createElement('details');
+                    catDiv.className = 'group bg-white/30 dark:bg-black/30 rounded-xl border border-black/5 dark:border-white/5';
+                    
+                    catDiv.innerHTML = `
+                        <summary class="flex justify-between items-center font-bold cursor-pointer p-4 select-none">
+                            ${cat.name}
+                            <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180"></i>
+                        </summary>
+                        <div class="px-4 pb-4 space-y-4 pt-1 border-t border-black/5 dark:border-white/5 group-open:block hidden">
+                    `;
+                    
+                    let contentHtml = '';
+                    if (cat.subcategories) {
+                        cat.subcategories.forEach(sub => {
+                            if (sub.name) {
+                                contentHtml += `<div class="text-sm font-semibold text-sia-gold mb-2 mt-3 first:mt-0">${sub.name}</div>`;
+                            }
+                            if (sub.specialities) {
+                                sub.specialities.forEach(spec => {
+                                    if (spec.items) {
+                                        spec.items.forEach(item => {
+                                            contentHtml += `
+                                                <div class="mb-2 last:mb-0">
+                                                    <div class="text-sm font-semibold">${item.name}</div>
+                                                    ${item.description ? `<div class="text-xs text-gray-500">${item.description}</div>` : ''}
+                                                </div>
+                                            `;
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    catDiv.innerHTML += contentHtml + `</div>`;
+                    bevDiv.appendChild(catDiv);
+                });
+                
+                container.appendChild(bevDiv);
+            }
+        
+            // 4. Snacks
+            if (leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories) {
+                const subs = leg.drySnack.category.subcategories;
+                const snackDiv = document.createElement('div');
+                snackDiv.className = 'space-y-3';
+                snackDiv.innerHTML = `
+                    <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10 mt-6">
+                        <i data-lucide="cookie" class="w-5 h-5 text-sia-gold"></i>
+                        <h4 class="text-lg font-bold">Snacks</h4>
+                    </div>
+                `;
+                
+                const snackWrapper = document.createElement('div');
+                snackWrapper.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-4';
+                
+                if (leg.drySnack.header) {
+                    snackWrapper.innerHTML += `<p class="text-xs text-gray-500 italic mb-3">${leg.drySnack.header}</p>`;
+                }
+                
+                subs.forEach(sub => {
+                    if (sub.items && sub.items.length > 0) {
+                        let html = `<div class="text-sm font-semibold text-sia-gold mb-2">${sub.name}</div>`;
+                        sub.items.forEach(item => {
+                            html += `
+                                <div class="mb-2 last:mb-0 text-sm">
+                                    ${item.name}
+                                    ${item.description ? `<span class="text-xs text-gray-500"> — ${item.description}</span>` : ''}
+                                </div>
+                            `;
+                        });
+                        snackWrapper.innerHTML += `<div class="mb-4 last:mb-0">${html}</div>`;
+                    }
+                });
+                
+                snackDiv.appendChild(snackWrapper);
+                container.appendChild(snackDiv);
+            }
+        
+            // 5. Amenities
+            if (leg.amenities && leg.amenities.items && leg.amenities.items.length > 0) {
+                const amDiv = document.createElement('div');
+                amDiv.className = 'space-y-3';
+                amDiv.innerHTML = `
+                    <div class="flex items-center gap-2 pb-2 border-b border-black/10 dark:border-white/10 mt-6">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-sia-gold"></i>
+                        <h4 class="text-lg font-bold">Amenities</h4>
+                    </div>
+                `;
+                
+                const amWrapper = document.createElement('div');
+                amWrapper.className = 'bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 space-y-3';
+                
+                leg.amenities.items.forEach(item => {
+                    let imgHtml = '';
+                    if (item.imagePath) {
+                        const imgUrl = item.imagePath.startsWith('http') ? item.imagePath : 'https://inflightmenu.singaporeair.com/' + item.imagePath;
+                        imgHtml = `<img src="${imgUrl}" class="w-12 h-12 object-contain rounded-lg shrink-0" alt="${item.itemName}" loading="lazy">`;
+                    }
+                    amWrapper.innerHTML += `
+                        <div class="flex gap-3 items-center">
+                            ${imgHtml}
+                            <div>
+                                <div class="text-sm font-semibold">${item.itemName}</div>
+                                ${item.itemDescription ? `<div class="text-xs text-gray-500">${item.itemDescription}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                amDiv.appendChild(amWrapper);
+                container.appendChild(amDiv);
+            }
+            
+            lucide.createIcons();
+        }
+        
+    </script>
+>>>>>>> parent of 189d021 (Fix syntax error causing blank screen and restore icons)
 </body>
 </html>
