@@ -1008,7 +1008,16 @@
 
         function scrollToBottom() {
             const chatContainer = document.getElementById('chat-container');
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+                });
+            }, 50);
+            setTimeout(() => {
+                requestAnimationFrame(() => {
+                    chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+                });
+            }, 300);
         }
 
         function processInput(text) {
@@ -2739,7 +2748,7 @@ function getRegionForAirport(code) {
                             ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
                             </button>` : ''}
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg' : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-500'} font-bold rounded-full py-4 px-4 transition-transform active:scale-95 text-sm flex justify-center items-center gap-2 uppercase tracking-widest">
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
@@ -3287,12 +3296,20 @@ function getRegionForAirport(code) {
                 const meals = leg.menu.language.EN_UK.meals;
                 
                 // Build Tabs (Centered)
-                let mealTabsHtml = '<div class="flex justify-center gap-6 border-b border-black/10 dark:border-white/10 overflow-x-auto scrollbar-hide py-2 mt-4">';
-                meals.forEach((meal, idx) => {
-                    mealTabsHtml += `<button onclick="switchMealTab('${idx}', this)" class="meal-tab-btn whitespace-nowrap pb-2 text-sm font-bold ${idx === 0 ? 'text-sia-gold border-b-2 border-sia-gold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'} transition-colors">${meal.mealServiceName}</button>`;
-                });
-                mealTabsHtml += '</div>';
-                mealsWrap.insertAdjacentHTML('beforeend', mealTabsHtml);
+                let mealTabsHtml = '';
+                if (meals.length > 1) {
+                    mealTabsHtml = '<div class="flex justify-center gap-6 border-b border-black/10 dark:border-white/10 overflow-x-auto scrollbar-hide py-2 mt-2">';
+                    meals.forEach((meal, idx) => {
+                        mealTabsHtml += `<button onclick="switchMealTab('${idx}', this)" class="meal-tab-btn whitespace-nowrap pb-2 text-sm font-bold ${idx === 0 ? 'text-sia-gold border-b-2 border-sia-gold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'} transition-colors">${meal.mealServiceName}</button>`;
+                    });
+                    mealTabsHtml += '</div>';
+                }
+                const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
+                if (tabsWrap) {
+                    tabsWrap.innerHTML = mealTabsHtml;
+                } else {
+                    mealsWrap.insertAdjacentHTML('beforeend', mealTabsHtml);
+                }
                 
                 meals.forEach((meal, idx) => {
                     const mealDiv = document.createElement('div');
