@@ -195,6 +195,19 @@
         .menu-segmented::-webkit-scrollbar {
             display: none;
         }
+        @keyframes menu-anim-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: none; }
+        }
+        .menu-anim-in {
+            animation: menu-anim-in 0.28s ease-out;
+        }
+        .menu-desc-chevron {
+            transition: transform 0.3s ease;
+        }
+        .menu-desc-toggle[data-open="1"] .menu-desc-chevron {
+            transform: rotate(180deg);
+        }
 
         /* Step 6: Inflight Menu Printer */
         .print-document {
@@ -2076,7 +2089,7 @@ function getRegionForAirport(code) {
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> ${ifaHeader}</h4>
                         </div>
-                        <div class="flex gap-2 mb-3 z-10 relative">
+                        <div class="flex gap-2 mb-3 z-30 relative">
                             <!-- Flight Type Custom Dropdown -->
                             <div class="flex-1 relative">
                                 <button type="button" id="${id}-flight-type-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
@@ -2084,7 +2097,7 @@ function getRegionForAirport(code) {
                                     <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-flight-type-icon"></i>
                                 </button>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
-                                <div id="${id}-flight-type-menu" class="w-full mt-1 glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
+                                <div id="${id}-flight-type-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
                                     <div class="p-1 flex flex-col gap-1">
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Layover', 'Layover')">Layover</button>
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Turnaround', 'Turnaround')">Turnaround</button>
@@ -2098,7 +2111,7 @@ function getRegionForAirport(code) {
                                     <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-sector-count-icon"></i>
                                 </button>
                                 <input type="hidden" id="${id}-sector-count" value="2">
-                                <div id="${id}-sector-count-menu" class="w-full mt-1 glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden max-h-0 opacity-0 pointer-events-none transition-all duration-500 z-20 relative">
+                                <div id="${id}-sector-count-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
                                     <div class="p-1 flex flex-col gap-1">
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '2', '2 Sectors')">2 Sectors</button>
                                         <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '4', '4 Sectors')">4 Sectors</button>
@@ -2154,7 +2167,7 @@ function getRegionForAirport(code) {
             // Close menu
             const menu = document.getElementById(id + '-' + type + '-menu');
             const icon = document.getElementById(id + '-' + type + '-icon');
-            menu.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
+            menu.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
             menu.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
             icon.classList.remove('rotate-180');
             
@@ -2174,16 +2187,20 @@ function getRegionForAirport(code) {
                             const icon = document.getElementById(id + '-' + type + '-icon');
                             const isClosed = menu.classList.contains('max-h-0');
                             
-                            // Close others
-                            document.querySelectorAll('[id$="-menu"]').forEach(m => {
-                                m.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
-                                m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
+                            // Close others in this calculator only
+                            ['flight-type', 'sector-count'].forEach(t => {
+                                const m = document.getElementById(id + '-' + t + '-menu');
+                                const i = document.getElementById(id + '-' + t + '-icon');
+                                if (m) {
+                                    m.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
+                                    m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
+                                }
+                                if (i) i.classList.remove('rotate-180');
                             });
-                            document.querySelectorAll('[id$="-icon"]').forEach(i => i.classList.remove('rotate-180'));
                             
                             if (isClosed) {
                                 menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
-                                menu.classList.add('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
+                                menu.classList.add('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
                                 icon.classList.add('rotate-180');
                             }
                         });
@@ -2934,11 +2951,11 @@ function getRegionForAirport(code) {
             if (source === 'today' || source === 'tomorrow' || source === 'pick') {
                 selectDatePill(id, source);
             }
-            checkAutoFetch(id);
+            checkAutoFetch(id, true);
         }
 
         let fetchTimeout;
-        function checkAutoFetch(id) {
+        function checkAutoFetch(id, immediate) {
             const flightInput = document.getElementById(`fv-flight-${id}`);
             const dateInput = document.getElementById(`fv-selected-date-${id}`);
             const actionArea = document.getElementById(`fv-action-area-${id}`);
@@ -2953,9 +2970,9 @@ function getRegionForAirport(code) {
                 loading.classList.remove('hidden');
                 
                 clearTimeout(fetchTimeout);
-                fetchTimeout = setTimeout(() => {
-                    executeFetchCabins(id, match[1], dateStr, document.getElementById('fv-mode-' + id).value);
-                }, 500);
+                const run = () => executeFetchCabins(id, match[1], dateStr, document.getElementById('fv-mode-' + id).value);
+                if (immediate) run();
+                else fetchTimeout = setTimeout(run, 500);
             } else {
                 actionArea.classList.add('hidden');
                 loading.classList.add('hidden');
@@ -2974,17 +2991,25 @@ function getRegionForAirport(code) {
                     sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
                 };
 
-                const res = await fetch('/api/sq', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin })
-                });
+                const guessCabin = 'JCL';
+                const payloadMenuGuess = { ...payloadCabin, cabinClass: guessCabin };
+                const sqOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+                const [res, resMenuGuess] = await Promise.all([
+                    fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin }) }),
+                    fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'menu', payload: payloadMenuGuess }) })
+                ]);
                 
                 let data;
                 try {
                     data = await res.json();
                 } catch(e) {
                     throw new Error("Vercel Edge Proxy failed to return JSON.");
+                }
+                let menuGuess = null;
+                try {
+                    menuGuess = await resMenuGuess.json();
+                } catch (e) {
+                    menuGuess = null;
                 }
                 
                 if (data.error) {
@@ -3000,24 +3025,30 @@ function getRegionForAirport(code) {
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
                     
-                    // We need to fetch the menu for the first cabin to determine sectors
+                    // Legs are flight-level; menu was fetched in parallel with JCL.
                     const firstCabin = data.cabinClasses[0];
-                    const payloadMenu = {
-                        ...payloadCabin,
-                        cabinClass: firstCabin
-                    };
-                    
-                    const resMenu = await fetch('/api/sq', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ endpoint: 'menu', payload: payloadMenu })
-                    });
-                    
-                    let menuData;
-                    try {
-                        menuData = await resMenu.json();
-                    } catch(e) {
-                        throw new Error("Vercel Edge Proxy failed to return JSON for menu.");
+                    let menuData = (menuGuess && menuGuess.statusCode === 200 && menuGuess.legs) ? menuGuess : null;
+                    const menuCabin = data.cabinClasses.includes(guessCabin) ? guessCabin : firstCabin;
+                    if (!menuData || menuCabin !== guessCabin) {
+                        const payloadMenu = { ...payloadCabin, cabinClass: menuCabin };
+                        const resMenu = await fetch('/api/sq', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ endpoint: 'menu', payload: payloadMenu })
+                        });
+                        try {
+                            menuData = await resMenu.json();
+                        } catch(e) {
+                            throw new Error("Vercel Edge Proxy failed to return JSON for menu.");
+                        }
+                    }
+                    if (menuData && menuData.statusCode === 200 && menuData.legs) {
+                        try {
+                            localStorage.setItem(
+                                `SQ${flightNumber}:${dateStr}:${menuCabin}`,
+                                JSON.stringify({ timestamp: Date.now(), data: menuData })
+                            );
+                        } catch (e) {}
                     }
                     
                     loading.classList.add('hidden');
@@ -3515,7 +3546,10 @@ function getRegionForAirport(code) {
             return `
                 <div class="menu-desc-wrap mt-1">
                     <div class="menu-desc-text text-xs text-gray-500 leading-relaxed">${description}</div>
-                    <button type="button" class="menu-desc-toggle hidden mt-1 text-[11px] font-bold text-sia-gold">More</button>
+                    <button type="button" class="menu-desc-toggle hidden mt-1 text-[11px] font-bold text-sia-gold inline-flex items-center gap-0.5">
+                        <span class="menu-desc-toggle-label">More</span>
+                        <i data-lucide="chevron-down" class="menu-desc-chevron w-3 h-3"></i>
+                    </button>
                 </div>
             `;
         }
@@ -3551,7 +3585,9 @@ function getRegionForAirport(code) {
                     if (!expanded) el.classList.add('line-clamp-2');
                     if (btn) {
                         btn.classList.remove('hidden');
-                        btn.textContent = expanded ? 'Less' : 'More';
+                        btn.dataset.open = expanded ? '1' : '0';
+                        const lab = btn.querySelector('.menu-desc-toggle-label');
+                        if (lab) lab.textContent = expanded ? 'Less' : 'More';
                     }
                 } else if (btn) {
                     btn.classList.add('hidden');
@@ -3586,6 +3622,51 @@ function getRegionForAirport(code) {
             return `<div class="bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5">${inner}</div>`;
         }
 
+        function menuPlainItems(items) {
+            let html = '';
+            let bullets = [];
+            const flush = () => {
+                if (!bullets.length) return;
+                html += `<ul class="list-disc pl-[1.15rem] space-y-1.5 mb-3 last:mb-0 text-sm font-semibold marker:text-sia-gold">` +
+                    bullets.map(n => `<li class="pl-0.5 leading-snug">${n}</li>`).join('') + `</ul>`;
+                bullets = [];
+            };
+            (items || []).forEach(item => {
+                const name = item.name || item.itemName || '';
+                const desc = (item.description || item.itemDescription || '').trim();
+                if (!desc) {
+                    bullets.push(name);
+                } else {
+                    flush();
+                    html += menuItemRow(name, desc, '', '');
+                }
+            });
+            flush();
+            return html;
+        }
+
+        function menuBulletList(items, nameKey, descKey) {
+            let html = `<ul class="list-disc pl-[1.15rem] space-y-2 text-sm font-semibold marker:text-sia-gold">`;
+            (items || []).forEach(item => {
+                const name = (nameKey ? item[nameKey] : null) || item.name || item.itemName || '';
+                const desc = (descKey ? item[descKey] : null) || item.description || item.itemDescription || '';
+                html += `<li class="pl-0.5 leading-snug">${name}${desc ? menuDescBlock(desc) : ''}</li>`;
+            });
+            html += `</ul>`;
+            return html;
+        }
+
+        function playMenuContentAnim(el) {
+            if (!el) {
+                el = document.querySelector('#menu-sector-content .menu-cat-section:not(.hidden)') ||
+                    document.getElementById('menu-sector-content');
+            }
+            if (!el) return;
+            el.classList.remove('menu-anim-in');
+            void el.offsetWidth;
+            el.classList.add('menu-anim-in');
+        }
+
         document.addEventListener('click', function (e) {
             const btn = e.target.closest && e.target.closest('.menu-desc-toggle');
             if (!btn) return;
@@ -3596,7 +3677,9 @@ function getRegionForAirport(code) {
             const expanded = el.dataset.expanded === '1';
             el.dataset.expanded = expanded ? '0' : '1';
             el.classList.toggle('line-clamp-2', expanded);
-            btn.textContent = expanded ? 'More' : 'Less';
+            btn.dataset.open = expanded ? '0' : '1';
+            const lab = btn.querySelector('.menu-desc-toggle-label');
+            if (lab) lab.textContent = expanded ? 'More' : 'Less';
         });
         window.addEventListener('resize', scheduleMenuDescToggles);
 
@@ -3852,9 +3935,7 @@ function getRegionForAirport(code) {
                     types.forEach(type => {
                         if (!type.name && !(type.items && type.items.length)) return;
                         let inner = type.name ? menuHairlineTitle(type.name) : '';
-                        (type.items || []).forEach(item => {
-                            inner += menuItemRow(item.name, item.description, '', '');
-                        });
+                        inner += menuPlainItems(type.items || []);
                         html += menuCourseCard(inner);
                     });
                     catDiv.innerHTML = html;
@@ -3873,9 +3954,7 @@ function getRegionForAirport(code) {
                     if (!sub.items || !sub.items.length) return;
                     const title = sub.name || (namedSubs.length ? '' : 'Snacks');
                     let inner = title ? menuHairlineTitle(title) : menuHairlineTitle('Snacks');
-                    sub.items.forEach(item => {
-                        inner += menuItemRow(item.name, item.description, '', '');
-                    });
+                    inner += menuPlainItems(sub.items);
                     snacksWrap.insertAdjacentHTML('beforeend', menuCourseCard(inner));
                 });
             } else {
@@ -3884,17 +3963,14 @@ function getRegionForAirport(code) {
 
             // Amenities
             if (hasAmenities) {
-                let inner = '';
-                leg.amenities.items.forEach(item => {
-                    inner += menuItemRow(item.itemName, item.itemDescription, '', menuImageUrl(item.imagePath));
-                });
-                amWrap.insertAdjacentHTML('beforeend', menuCourseCard(inner));
+                amWrap.insertAdjacentHTML('beforeend', menuCourseCard(menuBulletList(leg.amenities.items, 'itemName', 'itemDescription')));
             }
             
             applyMenuViewState();
             scrollMenuToTop();
             lucide.createIcons();
             scheduleMenuDescToggles();
+            playMenuContentAnim(document.getElementById('menu-sector-content'));
         }
 
         function scrollMenuToTop() {
@@ -3958,7 +4034,10 @@ function getRegionForAirport(code) {
                 }
             }
             updateMealServiceTitle();
-            if (!opts.skipScroll) scrollMenuToTop();
+            if (!opts.skipScroll) {
+                scrollMenuToTop();
+                playMenuContentAnim(target);
+            }
             scheduleMenuDescToggles();
         }
         
@@ -3977,6 +4056,10 @@ function getRegionForAirport(code) {
             if(target) target.classList.remove('hidden');
             updateMealServiceTitle();
             scheduleMenuDescToggles();
+            if (!opts.skipScroll) {
+                scrollMenuToTop();
+                playMenuContentAnim(target || document.getElementById('menu-cat-meals'));
+            }
         }
 
         function switchCulinarySelection(selIdx) {
@@ -3985,6 +4068,7 @@ function getRegionForAirport(code) {
             // Show only the selected one
             document.querySelectorAll('.culinary-section-' + selIdx).forEach(el => el.classList.remove('hidden'));
             scheduleMenuDescToggles();
+            playMenuContentAnim(document.querySelector('.culinary-section-' + selIdx + ':not(.hidden)'));
         }
 
         // ==========================================
