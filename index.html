@@ -415,13 +415,7 @@
                 
                 <!-- State 3: Menu Display -->
                 <div id="menu-state-3" class="hidden space-y-4">
-                    <div class="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
-                        <div>
-                            <div class="text-sm text-gray-500">Showing Menu for</div>
-                            <div class="font-bold" id="menu-display-header">SQ -- • Cabin</div>
-                        </div>
-                        
-                    </div>
+                    
 
                     <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
                         <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
@@ -2799,7 +2793,7 @@ function getRegionForAirport(code) {
             }
         }
 
-        function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+                function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
             currentMenuSearch.selectedCabins = cabinClasses;
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
