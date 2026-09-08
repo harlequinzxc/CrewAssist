@@ -2719,61 +2719,6 @@ function getRegionForAirport(code) {
         }
         
         
-                
-                const data = await res.json();
-                
-                if (data.error) {
-                    throw new Error(data.error); // UPSTREAM_TIMEOUT, UPSTREAM_NETWORK
-                }
-                
-                if (data.statusCode === 101) {
-                    showMenuState(1);
-                    showMenuError('Flight not found. Menus are only published up to 8 days before departure.');
-                    return;
-                }
-                
-                if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
-                    // Success
-                    currentMenuSearch.flightNumber = flightNumber;
-                    currentMenuSearch.date = date;
-                    currentMenuSearch.cabins = data.cabinClasses;
-                    
-                    document.getElementById('menu-verified-flight').textContent = `SQ ${flightNumber.padStart(4, '0')} • ${date}`;
-                    
-                    const btnContainer = document.getElementById('cabin-buttons');
-                    btnContainer.innerHTML = '';
-                    
-                    const cabinNames = {
-                        'FCL': 'First / Suites',
-                        'JCL': 'Business Class',
-                        'SCL': 'Premium Economy',
-                        'YCL': 'Economy Class'
-                    };
-                    
-                    data.cabinClasses.forEach(code => {
-                        const btn = document.createElement('button');
-                        btn.className = 'bg-white/50 dark:bg-black/20 border border-black/10 dark:border-white/10 rounded-xl px-4 py-3 font-semibold hover:border-sia-gold transition-colors';
-                        btn.textContent = cabinNames[code] || code;
-                        btn.onclick = () => loadMenu(code);
-                        btnContainer.appendChild(btn);
-                    });
-                    
-                    showMenuState(2);
-                } else {
-                    showMenuState(1);
-                    showMenuError('Unexpected response from SQ system.');
-                }
-                
-            } catch (err) {
-                showMenuState(1);
-                if (err.message === 'UPSTREAM_TIMEOUT') {
-                    showMenuError('Request timed out. Please try again.');
-                } else {
-                    showMenuError('Network error connecting to SQ system. Please try again.');
-                }
-            }
-        });
-        
         document.getElementById('btn-change-flight').addEventListener('click', () => {
             showMenuState(1);
         });
