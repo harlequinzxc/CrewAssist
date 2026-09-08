@@ -482,6 +482,9 @@
             <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
                 <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
+                    <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="absolute right-0 -top-11 z-30 w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
+                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                    </button>
                     
                     <!-- Quick Action Chips -->
                     <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge" id="chip-container">
@@ -667,6 +670,9 @@
                     </div>
 
                     <div id="menu-hero-content" class="mb-4"></div>
+                    <div id="menu-meal-service-title" class="hidden text-center mb-6">
+                        <h4 id="menu-meal-service-label" class="text-lg font-bold tracking-[0.18em] uppercase text-sia-navy dark:text-sia-gold"></h4>
+                    </div>
                     
                     <!-- Sector Content -->
                     <div id="menu-sector-content" class="space-y-6 relative z-10"></div>
@@ -1085,6 +1091,12 @@
                     processInput(e.target.innerText.trim());
                 });
             });
+
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.addEventListener('scroll', updateScrollBottomBtn, { passive: true });
+            document.getElementById('btn-scroll-bottom').addEventListener('click', () => {
+                jumpChatToBottom();
+            });
         }
 
         function renderRanks(gender) {
@@ -1236,16 +1248,43 @@
             if (ind) ind.remove();
         }
 
+        function isChatNearBottom() {
+            const el = document.getElementById('chat-container');
+            if (!el) return true;
+            return (el.scrollHeight - el.scrollTop - el.clientHeight) < 72;
+        }
+
+        function updateScrollBottomBtn() {
+            const btn = document.getElementById('btn-scroll-bottom');
+            if (!btn) return;
+            const show = !isChatNearBottom();
+            if (show) {
+                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+            } else {
+                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+            }
+        }
+
+        function jumpChatToBottom() {
+            const chatContainer = document.getElementById('chat-container');
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
+        }
+
         function scrollToBottom() {
             const chatContainer = document.getElementById('chat-container');
             setTimeout(() => {
                 chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+                updateScrollBottomBtn();
             }, 10);
             setTimeout(() => {
                 chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+                updateScrollBottomBtn();
             }, 150);
             setTimeout(() => {
                 chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+                updateScrollBottomBtn();
             }, 500);
         }
 
@@ -3187,6 +3226,8 @@ function getRegionForAirport(code) {
                 cabinWrap.classList.add('hidden');
             }
             
+            menuViewState = { category: 'meals', mealTab: 0 };
+            currentMealServices = [];
             loadMenu(cabinClasses[0]);
             
             backdrop.classList.remove('hidden');
@@ -3200,6 +3241,8 @@ function getRegionForAirport(code) {
 // Inflight Menu Viewer Logic (Step 5)
         
         let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '' };
+        let menuViewState = { category: 'meals', mealTab: 0 };
+        let currentMealServices = [];
         const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
         
         function openMenuViewer() {
@@ -3520,6 +3563,7 @@ function getRegionForAirport(code) {
                         culinaryLabel.textContent = opt;
                         toggleMenuDropdown('culinary');
                         switchCulinarySelection(idx);
+                        scrollMenuToTop();
                     };
                     culinaryList.appendChild(btn);
                 });
@@ -3534,10 +3578,10 @@ function getRegionForAirport(code) {
             // 2. Category Pills (Centered + Icons)
             const catPillsHtml = `
                 <div class="flex justify-center flex-wrap gap-2 py-1 mt-3">
-                    ${hasMeals ? `<button onclick="switchMenuCategory('meals', this)" class="menu-cat-pill selected px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-sia-gold text-black border border-sia-gold flex items-center gap-1.5 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i> Meals</button>` : ''}
-                    ${hasDrinks ? `<button onclick="switchMenuCategory('drinks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="glass-water" class="w-4 h-4"></i> Drinks</button>` : ''}
-                    <button onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>
-                    ${hasAmenities ? `<button onclick="switchMenuCategory('amenities', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i> Amenities</button>` : ''}
+                    ${hasMeals ? `<button data-cat="meals" onclick="switchMenuCategory('meals', this)" class="menu-cat-pill selected px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-sia-gold text-black border border-sia-gold flex items-center gap-1.5 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i> Meals</button>` : ''}
+                    ${hasDrinks ? `<button data-cat="drinks" onclick="switchMenuCategory('drinks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="glass-water" class="w-4 h-4"></i> Drinks</button>` : ''}
+                    <button data-cat="snacks" onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>
+                    ${hasAmenities ? `<button data-cat="amenities" onclick="switchMenuCategory('amenities', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i> Amenities</button>` : ''}
                 </div>
             `;
             
@@ -3580,8 +3624,14 @@ function getRegionForAirport(code) {
             }
 
             // Meals
+            currentMealServices = [];
+            if (!hasMeals) {
+                const tabsWrapClear = document.getElementById('menu-meal-tabs-wrap');
+                if (tabsWrapClear) tabsWrapClear.innerHTML = '';
+            }
             if (hasMeals) {
                 const meals = leg.menu.language.EN_UK.meals;
+                currentMealServices = meals.map(m => m.mealServiceName || 'Meal');
                 
                 // Build Tabs (Centered)
                 let mealTabsHtml = '';
@@ -3616,7 +3666,20 @@ function getRegionForAirport(code) {
                             
                             if (selection.mealCourses) {
                                 selection.mealCourses.forEach(course => {
-                                    let courseHtml = `<div class="text-sm font-semibold uppercase tracking-widest text-gray-500 mb-2">${course.category} ${course.maxSequence > 1 ? `(Choose ${course.maxSequence})` : ''}</div>`;
+                                    const dishCount = (course.items || []).length;
+                                    const choiceLine = dishCount >= 2
+                                        ? `<div class="italic text-xs text-gray-500 dark:text-gray-400 text-center">Choose one of ${dishCount}</div>`
+                                        : '';
+                                    let courseHtml = `
+                                        <div class="flex flex-col gap-1 mb-3">
+                                            <div class="flex items-center gap-4">
+                                                <div class="flex-1 h-px bg-sia-gold/50"></div>
+                                                <div class="text-sm font-semibold tracking-[0.18em] uppercase text-sia-navy dark:text-sia-gold text-center px-1">${course.category}</div>
+                                                <div class="flex-1 h-px bg-sia-gold/50"></div>
+                                            </div>
+                                            ${choiceLine}
+                                        </div>
+                                    `;
                                     
                                     if (course.items) {
                                         course.items.forEach(item => {
@@ -3748,10 +3811,52 @@ function getRegionForAirport(code) {
                 amWrap.appendChild(amWrapper);
             }
             
+            applyMenuViewState();
+            scrollMenuToTop();
             lucide.createIcons();
         }
+
+        function scrollMenuToTop() {
+            const el = document.getElementById('menu-content');
+            if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function updateMealServiceTitle() {
+            const wrap = document.getElementById('menu-meal-service-title');
+            const label = document.getElementById('menu-meal-service-label');
+            if (!wrap || !label) return;
+            const name = currentMealServices[menuViewState.mealTab] || currentMealServices[0];
+            if (name && menuViewState.category === 'meals') {
+                label.textContent = name;
+                wrap.classList.remove('hidden');
+            } else {
+                wrap.classList.add('hidden');
+            }
+        }
+
+        function applyMenuViewState() {
+            const pills = Array.from(document.querySelectorAll('.menu-cat-pill'));
+            let pill = pills.find(p => p.getAttribute('data-cat') === menuViewState.category);
+            if (!pill && pills.length) {
+                pill = pills[0];
+                menuViewState.category = pill.getAttribute('data-cat') || 'meals';
+            }
+            if (pill) switchMenuCategory(menuViewState.category, pill, { skipScroll: true });
+
+            const tabBtns = document.querySelectorAll('.meal-tab-btn');
+            if (tabBtns.length) {
+                const idx = Math.min(menuViewState.mealTab || 0, tabBtns.length - 1);
+                menuViewState.mealTab = idx;
+                switchMealTab(idx, tabBtns[idx], { skipScroll: true });
+            } else if (!currentMealServices.length) {
+                menuViewState.mealTab = 0;
+            }
+            updateMealServiceTitle();
+        }
         
-        function switchMenuCategory(cat, btnElement) {
+        function switchMenuCategory(cat, btnElement, opts) {
+            opts = opts || {};
+            menuViewState.category = cat;
             document.querySelectorAll('.menu-cat-pill').forEach(btn => {
                 btn.classList.remove('bg-sia-gold', 'text-black', 'border-sia-gold');
                 btn.classList.add('bg-black/5', 'dark:bg-white/5', 'border-black/10', 'dark:border-white/10');
@@ -3771,9 +3876,13 @@ function getRegionForAirport(code) {
                     tabsWrap.style.display = 'none';
                 }
             }
+            updateMealServiceTitle();
+            if (!opts.skipScroll) scrollMenuToTop();
         }
         
-        function switchMealTab(idx, btnElement) {
+        function switchMealTab(idx, btnElement, opts) {
+            opts = opts || {};
+            menuViewState.mealTab = parseInt(idx, 10) || 0;
             document.querySelectorAll('.meal-tab-btn').forEach(btn => {
                 btn.classList.remove('text-sia-gold', 'border-b-2', 'border-sia-gold');
                 btn.classList.add('text-gray-500', 'hover:text-gray-700', 'dark:hover:text-gray-300');
@@ -3784,6 +3893,7 @@ function getRegionForAirport(code) {
             document.querySelectorAll('.meal-tab-content').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById('meal-content-' + idx);
             if(target) target.classList.remove('hidden');
+            updateMealServiceTitle();
         }
 
         function switchCulinarySelection(selIdx) {
