@@ -2620,7 +2620,9 @@ function getRegionForAirport(code) {
                 }
                 
                 if (data.statusCode === 101) {
-                    addMessage('bot', 'Flight not found for this date. Menus are published up to 8 days before departure.');
+                    actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Menus not published for this flight/date yet.</div>';
+                    actionArea.classList.remove('hidden');
+                    lucide.createIcons();
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
                     currentMenuSearch.flightNumber = flightNumber;
@@ -2667,15 +2669,17 @@ function getRegionForAirport(code) {
                     lucide.createIcons();
                     scrollToBottom();
                 } else {
-                    addMessage('bot', 'Unexpected response from SQ system.');
+                    actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Unexpected response from SQ system.</div>';
+                    actionArea.classList.remove('hidden');
                 }
             } catch (err) {
                 loading.classList.add('hidden');
                 if (err.message === 'UPSTREAM_TIMEOUT') {
-                    addMessage('bot', 'Request timed out. Please try again.');
+                    actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Request timed out.</div>';
                 } else {
-                    addMessage('bot', 'Network error connecting to SQ system. Please try again.');
+                    actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Network error connecting to SQ system.</div>';
                 }
+                actionArea.classList.remove('hidden');
             }
         }
 
