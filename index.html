@@ -1795,7 +1795,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-panel p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -2499,7 +2499,7 @@ function getRegionForAirport(code) {
             msgDiv.appendChild(hiddenMode);
             
             msgDiv.innerHTML = `
-                <div class="bg-transparent border border-black/10 dark:border-white/10 p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
                     <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
                         <i data-lucide="${mode === 'print' ? 'printer' : 'plane'}" class="w-5 h-5"></i> ${headerText}
                     </div>
