@@ -3423,6 +3423,32 @@ function getRegionForAirport(code) {
             lucide.createIcons();
         }
         
+        function switchMenuCategory(cat, btnElement) {
+            document.querySelectorAll('.menu-cat-pill').forEach(btn => {
+                btn.classList.remove('bg-sia-gold', 'text-black', 'border-sia-gold');
+                btn.classList.add('bg-black/5', 'dark:bg-white/5', 'border-black/10', 'dark:border-white/10');
+            });
+            btnElement.classList.remove('bg-black/5', 'dark:bg-white/5', 'border-black/10', 'dark:border-white/10');
+            btnElement.classList.add('bg-sia-gold', 'text-black', 'border-sia-gold');
+            
+            document.querySelectorAll('.menu-cat-section').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('menu-cat-' + cat);
+            if(target) target.classList.remove('hidden');
+        }
+        
+        function switchMealTab(idx, btnElement) {
+            document.querySelectorAll('.meal-tab-btn').forEach(btn => {
+                btn.classList.remove('text-sia-gold', 'border-b-2', 'border-sia-gold');
+                btn.classList.add('text-gray-500', 'hover:text-gray-700', 'dark:hover:text-gray-300');
+            });
+            btnElement.classList.remove('text-gray-500', 'hover:text-gray-700', 'dark:hover:text-gray-300');
+            btnElement.classList.add('text-sia-gold', 'border-b-2', 'border-sia-gold');
+            
+            document.querySelectorAll('.meal-tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('meal-content-' + idx);
+            if(target) target.classList.remove('hidden');
+        }
+
         function switchCulinarySelection(selIdx) {
             // Hide all culinary sections across all meals
             document.querySelectorAll('[class*="culinary-section-"]').forEach(el => el.classList.add('hidden'));
