@@ -3121,7 +3121,7 @@ function getRegionForAirport(code) {
                 </div>
             `;
             
-            container.innerHTML += headerHtml;
+            container.insertAdjacentHTML('beforeend', headerHtml);
 
             const hasMeals = leg.menu && leg.menu.language && leg.menu.language.EN_UK && leg.menu.language.EN_UK.meals && leg.menu.language.EN_UK.meals.length > 0;
             const hasDrinks = leg.beverage && leg.beverage.language && leg.beverage.language.EN_UK && leg.beverage.language.EN_UK.categories && leg.beverage.language.EN_UK.categories.length > 0;
@@ -3171,7 +3171,7 @@ function getRegionForAirport(code) {
                 </div>
             `;
             
-            container.innerHTML += catPillsHtml;
+            container.insertAdjacentHTML('beforeend', catPillsHtml);
             
             // Build wrappers
             const wrapHtml = `
@@ -3180,7 +3180,7 @@ function getRegionForAirport(code) {
                 <div id="menu-cat-snacks" class="menu-cat-section hidden space-y-4"></div>
                 <div id="menu-cat-amenities" class="menu-cat-section hidden space-y-4"></div>
             `;
-            container.innerHTML += wrapHtml;
+            container.insertAdjacentHTML('beforeend', wrapHtml);
             
             const mealsWrap = container.querySelector('#menu-cat-meals');
             const drinksWrap = container.querySelector('#menu-cat-drinks');
@@ -3189,19 +3189,19 @@ function getRegionForAirport(code) {
             
             // Flags
             if (leg.isNoMenuPlanned) {
-                mealsWrap.innerHTML += `<div class="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-xl text-sm border border-blue-500/20">Menu may change prior to departure.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-xl text-sm border border-blue-500/20">Menu may change prior to departure.</div>`);
             }
             if (leg.isSnackBag) {
-                mealsWrap.innerHTML += `<div class="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-xl text-sm border border-purple-500/20">This sector operates a snack bag service instead of a full meal service.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-purple-500/10 text-purple-600 dark:text-purple-400 p-3 rounded-xl text-sm border border-purple-500/20">This sector operates a snack bag service instead of a full meal service.</div>`);
             }
             if (leg.isBentoBox) {
-                mealsWrap.innerHTML += `<div class="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-xl text-sm border border-orange-500/20">This sector operates a Bento Box service.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-orange-500/10 text-orange-600 dark:text-orange-400 p-3 rounded-xl text-sm border border-orange-500/20">This sector operates a Bento Box service.</div>`);
             }
             if (leg.isHawkerPromo) {
-                mealsWrap.innerHTML += `<div class="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm border border-red-500/20">Special Hawker Promo Menu Available.</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-red-500/10 text-red-600 dark:text-red-400 p-3 rounded-xl text-sm border border-red-500/20">Special Hawker Promo Menu Available.</div>`);
             }
             if (leg.guestChef && leg.guestChef.header) {
-                mealsWrap.innerHTML += `<div class="bg-sia-gold/10 text-sia-gold p-3 rounded-xl text-sm border border-sia-gold/20 font-semibold">${leg.guestChef.header}: ${leg.guestChef.message}</div>`;
+                mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-sia-gold/10 text-sia-gold p-3 rounded-xl text-sm border border-sia-gold/20 font-semibold">${leg.guestChef.header}: ${leg.guestChef.message}</div>`);
             }
 
             // Meals
@@ -3214,7 +3214,7 @@ function getRegionForAirport(code) {
                     mealTabsHtml += `<button onclick="switchMealTab('${idx}', this)" class="meal-tab-btn whitespace-nowrap pb-2 text-sm font-bold ${idx === 0 ? 'text-sia-gold border-b-2 border-sia-gold' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'} transition-colors">${meal.mealServiceName}</button>`;
                 });
                 mealTabsHtml += '</div>';
-                mealsWrap.innerHTML += mealTabsHtml;
+                mealsWrap.insertAdjacentHTML('beforeend', mealTabsHtml);
                 
                 meals.forEach((meal, idx) => {
                     const mealDiv = document.createElement('div');
