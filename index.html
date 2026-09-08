@@ -226,7 +226,7 @@
                             </div>
                         </div>
                         <div class="mt-8 shrink-0 pb-4">
-                            <button id="ob-submit" disabled class="w-full py-3.5 px-4 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black disabled:opacity-50 disabled:grayscale transition-all shadow-[0_0_20px_rgba(201,162,39,0.2)] flex items-center justify-center gap-2 hover:shadow-[0_0_25px_rgba(201,162,39,0.4)]">
+                            <button id="ob-submit" disabled class="w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold bg-sia-navy dark:bg-black text-sia-gold border border-sia-gold disabled:opacity-50 disabled:grayscale transition-all shadow-lg flex items-center justify-center gap-2 hover:bg-sia-gold hover:text-black dark:hover:bg-sia-gold dark:hover:text-black">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
                             
@@ -411,7 +411,7 @@
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="px-6 py-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-6 flex-grow" id="menu-content">
+            <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full space-y-6 flex-grow" id="menu-content">
                 
                 <!-- State 3: Menu Display -->
                 <div id="menu-state-3" class="hidden space-y-4">
@@ -421,8 +421,11 @@
                     </div>
 
                     <div id="menu-hero-content" class="mb-4"></div>
-                    <!-- Filter Dropdowns -->
-                    <div class="flex gap-2 relative z-20 items-start">
+                    
+                    <!-- Sticky Header Container -->
+                    <div id="menu-sticky-header" class="sticky top-0 z-40 bg-[var(--glass-sheet-bg)] pb-2 -mx-6 px-6 shadow-[0_15px_15px_-15px_rgba(0,0,0,0.3)] transition-all duration-300">
+                        <!-- Filter Dropdowns -->
+                        <div class="flex gap-2 relative z-20 items-start pt-2">
                         <!-- Cabin Wrap -->
                         <div class="flex-1 relative" id="menu-cabin-wrap">
                             <button type="button" onclick="toggleMenuDropdown('cabin')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
@@ -455,6 +458,10 @@
                                 <div class="p-1 flex flex-col gap-1" id="menu-culinary-list"></div>
                             </div>
                         </div>
+                        
+                        <!-- Dynamic Pills & Tabs Injected Here -->
+                        <div id="menu-category-pills-wrap"></div>
+                        <div id="menu-meal-tabs-wrap"></div>
                     </div>
                     
                     <!-- Sector Content -->
@@ -464,7 +471,7 @@
                 <!-- Loading State -->
                 <div id="menu-loading" class="hidden flex flex-col items-center justify-center py-12 space-y-4">
                     <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
-                    <div class="text-sm font-semibold text-gray-500 animate-pulse">Loading Inflight Data...</div>
+                    <div class="text-sm font-semibold text-gray-500 animate-pulse">Fetching menu from seat pocket...</div>
                 </div>
 
             </div>
@@ -2728,10 +2735,10 @@ function getRegionForAirport(code) {
                     // 3. Actions
                     contentHtml += `
                         <div class="flex gap-2 ${isMultiSector ? 'hidden' : 'opacity-50 pointer-events-none'}" id="fv-actions-section-${id}">
-                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-sia-gold dark:text-black text-white font-bold rounded-xl py-2.5 shadow-sm flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs">
+                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold font-bold rounded-full py-3 shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 text-xs uppercase tracking-widest">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Menu
                             </button>` : ''}
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-sia-gold dark:text-black text-white' : 'bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10'} font-bold rounded-xl py-2.5 shadow-sm transition-transform active:scale-95 text-xs flex justify-center items-center gap-2">
+                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 ${mode === 'print' ? 'bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg' : 'bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-500'} font-bold rounded-full py-3 transition-transform active:scale-95 text-xs flex justify-center items-center gap-2 uppercase tracking-widest">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>
                         </div>
@@ -3196,8 +3203,8 @@ function getRegionForAirport(code) {
                 if (firstMeal && firstMeal.selectionDetails && firstMeal.selectionDetails.length > 1) {
                     culinaryOptions = firstMeal.selectionDetails.map(sel => {
                         let n = sel.name;
-                        if(n.toLowerCase().includes('international menu')) n = 'International';
-                        else if(n.toLowerCase().includes('ethnic menu')) n = 'Ethnic';
+                        if(n.toLowerCase().includes('international')) n = 'International';
+                        else n = 'Ethnic';
                         return n;
                     });
                 }
