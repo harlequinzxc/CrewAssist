@@ -157,6 +157,26 @@
             border: 1px solid rgba(0,0,0,0.1);
         }
 
+        /* Number / date fields match IFA·LMA·COP inputs */
+        input,
+        input[type="date"],
+        input[type="text"],
+        input[type="time"] {
+            font-family: "Plus Jakarta Sans", sans-serif !important;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Gold CTA — light cream/navy, dark navy/gold */
+        .cta-gold {
+            background: #FFFFFF;
+            color: #0B1A3A;
+            border: 1px solid #C9A227;
+        }
+        html.dark .cta-gold {
+            background: #0b1a3a;
+            color: #C9A227;
+        }
+
         /* Step 6: Inflight Menu Printer */
         .print-document {
             background: #FBF7F0;
@@ -414,7 +434,7 @@
                             </div>
                         </div>
                         <div class="mt-8 shrink-0 pb-4">
-                            <button id="ob-submit" disabled class="w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold bg-sia-navy dark:bg-black text-sia-gold border border-sia-gold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
+                            <button id="ob-submit" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
                             
@@ -589,27 +609,16 @@
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
-            <div class="flex items-center justify-between px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5">
+            <div class="flex items-center justify-between px-6 pb-3 shrink-0">
                 <h3 class="text-xl font-bold">Inflight Menu</h3>
                 <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full flex-grow relative" id="menu-content">
-                
-                <!-- State 3: Menu Display -->
-                <div id="menu-state-3" class="hidden">
-                    
-                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 mb-4 rounded-lg border border-amber-500/20">
-                        <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
-                    </div>
-
-                    <div id="menu-hero-content" class="mb-4"></div>
-                    
-                    <!-- Sticky Header Container -->
-                    <div id="menu-sticky-header" class="sticky top-0 z-40 bg-[var(--glass-sheet-bg)] pb-2 -mx-6 px-6 shadow-[0_15px_15px_-15px_rgba(0,0,0,0.3)] transition-all duration-300" style="margin-top: -16px; padding-top: 16px;">
+            <!-- Filters sit flush under the title (no scroll gap) -->
+            <div id="menu-sticky-header" class="hidden shrink-0 px-6 pb-2 max-w-2xl mx-auto w-full border-b border-black/5 dark:border-white/5">
                         <!-- Filter Dropdowns -->
-                        <div class="flex gap-2 relative z-20 items-start pt-2">
+                        <div class="flex gap-2 relative z-20 items-start">
                             <!-- Cabin Wrap -->
                             <div class="flex-1 relative" id="menu-cabin-wrap">
                                 <button type="button" onclick="toggleMenuDropdown('cabin')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
@@ -647,7 +656,17 @@
                         <!-- Dynamic Pills & Tabs Injected Here -->
                         <div id="menu-category-pills-wrap"></div>
                         <div id="menu-meal-tabs-wrap"></div>
+            </div>
+            <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full flex-grow relative" id="menu-content">
+                
+                <!-- State 3: Menu Display -->
+                <div id="menu-state-3" class="hidden">
+                    
+                    <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 mb-4 rounded-lg border border-amber-500/20">
+                        <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
                     </div>
+
+                    <div id="menu-hero-content" class="mb-4"></div>
                     
                     <!-- Sector Content -->
                     <div id="menu-sector-content" class="space-y-6 relative z-10"></div>
@@ -689,7 +708,7 @@
                 <div id="print-document-wrap"></div>
             </div>
             <div class="px-6 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] shrink-0 border-t border-black/5 dark:border-white/5 max-w-2xl mx-auto w-full no-print">
-                <button id="btn-do-print" disabled class="w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
+                <button id="btn-do-print" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                     <i data-lucide="printer" class="w-4 h-4"></i> Print / Save PDF
                 </button>
             </div>
@@ -1248,7 +1267,11 @@
             const lowerText = text.toLowerCase();
             
             // NLP Intent Engine based on LOGIC.md
-            if (/menu|serving|onboard/.test(lowerText)) {
+            // Print before menu so "Print the menu" does not open the viewer lookup.
+            if (/print|printer|homework/.test(lowerText)) {
+                renderFlightVerificationCard('print');
+            }
+            else if (/menu|serving|onboard/.test(lowerText)) {
                 renderFlightVerificationCard('menu');
             }
             else if (/total|cop|both|allowance|calculate/.test(lowerText)) {
@@ -1259,9 +1282,6 @@
             }
             else if (/ifa|flight/.test(lowerText)) {
                 renderCalculatorCard('ifa');
-            }
-            else if (/print|printer|homework/.test(lowerText)) {
-                renderFlightVerificationCard('print');
             }
             else {
                 addMessage('bot', 'I didn\'t quite catch that. Could you try again, or tap one of the quick action chips below?');
@@ -2053,7 +2073,7 @@ function getRegionForAirport(code) {
                     </div>
                     ${ifaHtml}
                     ${lmaHtml}
-                    <button id="${id}-btn-calc" disabled class="w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none mt-2">
+                    <button id="${id}-btn-calc" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none mt-2">
                         Calculate
                     </button>
                 </div>
@@ -2523,7 +2543,7 @@ function getRegionForAirport(code) {
                                 <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
                                 <span>$${allowance.toFixed(2)}</span>
                             </div>
-                            <p class="text-[10px] text-gray-500 font-mono">${sec.hours.toFixed(2)}h × $${rankRate} × ${mult}x</p>
+                            <p class="text-[10px] text-gray-500">${sec.hours.toFixed(2)}h × $${rankRate} × ${mult}x</p>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
                         </div>
                     `);
@@ -2626,7 +2646,7 @@ function getRegionForAirport(code) {
                         if (bc>0 || lc>0 || dc>0) {
                             dayRows.push(`
                                 <div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
-                                    <span class="text-[11px] text-gray-600 dark:text-gray-400 font-mono">${dateStr}</span>
+                                    <span class="text-[11px] text-gray-600 dark:text-gray-400">${dateStr}</span>
                                     <div class="flex items-center gap-1.5">
                                         ${bc > 0 ? '<span class="bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded text-[10px] font-bold">B</span>' : ''}
                                         ${lc > 0 ? '<span class="bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>' : ''}
@@ -2683,7 +2703,7 @@ function getRegionForAirport(code) {
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
-                    <p class="text-4xl font-bold font-mono">$${grandTotal.toFixed(2)}</p>
+                    <p class="text-4xl font-bold">$${grandTotal.toFixed(2)}</p>
                 </div>
             `;
 
@@ -2692,7 +2712,7 @@ function getRegionForAirport(code) {
                     <div>
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="font-bold">IFA Breakdown</h4>
-                            <span class="font-bold font-mono text-sia-gold">$${ifaTotal.toFixed(2)}</span>
+                            <span class="font-bold text-sia-gold">$${ifaTotal.toFixed(2)}</span>
                         </div>
                         ${ifaDetails.join('')}
                     </div>
@@ -2706,7 +2726,7 @@ function getRegionForAirport(code) {
                     <div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="font-bold">LMA Breakdown</h4>
-                            <span class="font-bold font-mono text-sia-gold">$${lmaTotal.toFixed(2)}</span>
+                            <span class="font-bold text-sia-gold">$${lmaTotal.toFixed(2)}</span>
                         </div>
                         ${lmaDetails.join('')}
                     </div>
@@ -2798,9 +2818,9 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
-                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Today</button>
-                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Tomorrow</button>
-                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 bg-transparent border border-black/10 dark:border-white/10 rounded-lg py-2 text-xs font-bold transition-colors active:scale-95">Pick Date</button>
+                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors active:scale-95">Today</button>
+                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors active:scale-95">Tomorrow</button>
+                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors active:scale-95">Pick Date</button>
                             </div>
                             
                             <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
@@ -2836,16 +2856,26 @@ function getRegionForAirport(code) {
             }
         }
 
+        function clearDatePillSelection(id) {
+            ['today', 'tomorrow', 'pick'].forEach((key) => {
+                const btn = document.getElementById(`fv-btn-${key}-${id}`);
+                if (!btn) return;
+                btn.classList.remove('bg-sia-gold', 'text-black', 'border-sia-gold', 'selected-date');
+            });
+        }
+
+        function selectDatePill(id, key) {
+            clearDatePillSelection(id);
+            const btn = document.getElementById(`fv-btn-${key}-${id}`);
+            if (!btn) return;
+            btn.classList.add('bg-sia-gold', 'text-black', 'border-sia-gold', 'selected-date');
+        }
+
         function setDateAndFetch(id, dateStr, source) {
             document.getElementById(`fv-selected-date-${id}`).value = dateStr;
-            
-            if (source === 'today' || source === 'tomorrow') {
-                document.getElementById(`fv-btn-today-${id}`).classList.remove('bg-sia-gold', 'text-black');
-                document.getElementById(`fv-btn-tomorrow-${id}`).classList.remove('bg-sia-gold', 'text-black');
-                if (source === 'today') document.getElementById(`fv-btn-today-${id}`).classList.add('bg-sia-gold', 'text-black');
-                if (source === 'tomorrow') document.getElementById(`fv-btn-tomorrow-${id}`).classList.add('bg-sia-gold', 'text-black');
+            if (source === 'today' || source === 'tomorrow' || source === 'pick') {
+                selectDatePill(id, source);
             }
-            
             checkAutoFetch(id);
         }
 
@@ -2990,12 +3020,13 @@ function getRegionForAirport(code) {
                     // 3. Actions
                     contentHtml += `
                         <div class="flex gap-2 ${isMultiSector ? 'hidden' : 'opacity-50 pointer-events-none'}" id="fv-actions-section-${id}">
-                            ${mode === 'menu' ? `<button onclick="submitFlightVerification('${id}', 'menu')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
-                                <i data-lucide="book-open" class="w-4 h-4"></i> Menu
-                            </button>` : ''}
-                            <button onclick="submitFlightVerification('${id}', 'print')" class="flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest bg-sia-navy dark:bg-[#0b1a3a] text-sia-gold border border-sia-gold shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
+                            ${mode === 'print'
+                                ? `<button onclick="submitFlightVerification('${id}', 'print')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
-                            </button>
+                            </button>`
+                                : `<button onclick="submitFlightVerification('${id}', 'menu')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
+                                <i data-lucide="book-open" class="w-4 h-4"></i> Menu
+                            </button>`}
                         </div>
                     `;
                     
@@ -3220,10 +3251,15 @@ function getRegionForAirport(code) {
         function showMenuState(state) {
             const st3 = document.getElementById('menu-state-3');
             const ldg = document.getElementById('menu-loading');
+            const sticky = document.getElementById('menu-sticky-header');
             if(st3) st3.classList.add('hidden');
             if(ldg) ldg.classList.add('hidden');
+            if(sticky) sticky.classList.add('hidden');
             
-            if (state === 3 && st3) st3.classList.remove('hidden');
+            if (state === 3 && st3) {
+                st3.classList.remove('hidden');
+                if (sticky) sticky.classList.remove('hidden');
+            }
             else if (state === 'loading' && ldg) ldg.classList.remove('hidden');
         }
         
@@ -3405,7 +3441,7 @@ function getRegionForAirport(code) {
             const topHeader = `SQ${currentMenuSearch.flightNumber} - ${dateDisplay}`;
             
             const headerHtml = `
-                <div class="bg-gradient-to-br from-sia-navy to-black dark:from-[#081021] dark:to-black text-white rounded-3xl p-5 relative overflow-hidden shadow-xl border border-white/10 mb-4">
+                <div class="bg-gradient-to-br from-[#F3E6C8] to-[#FBF7F0] text-sia-navy dark:from-[#081021] dark:to-black dark:text-white rounded-3xl p-5 relative overflow-hidden shadow-xl border border-sia-gold/30 dark:border-white/10 mb-4">
                     <div class="text-center text-[10px] uppercase tracking-[0.2em] font-bold text-sia-gold mb-5 opacity-90">
                         ${topHeader}
                     </div>
@@ -3413,20 +3449,20 @@ function getRegionForAirport(code) {
                         <!-- Left Zone: Origin -->
                         <div class="flex flex-col flex-1 items-end text-right">
                             <div class="text-3xl font-bold tracking-tight">${fd.departureAirportCode}</div>
-                            <div class="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
+                            <div class="text-[10px] uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
                             <div class="text-2xl font-bold">${depTime}</div>
                         </div>
                         
                         <!-- Center Zone: Dotted Arc + Plane + Duration -->
                         <div class="flex flex-col items-center justify-center flex-[1.2] relative pt-2 px-2">
                             <!-- Dotted Arc -->
-                            <div class="w-full h-12 absolute top-2 border-t-2 border-dotted border-white/20 rounded-[100%]"></div>
+                            <div class="w-full h-12 absolute top-2 border-t-2 border-dotted border-sia-navy/20 dark:border-white/20 rounded-[100%]"></div>
                             <!-- Plane Icon centered exactly on arc apex -->
                             <div class="absolute -top-1 text-sia-gold">
                                 <i data-lucide="plane" class="w-5 h-5 fill-current"></i>
                             </div>
                             <!-- Duration Pill -->
-                            <div class="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mt-10">
+                            <div class="bg-sia-navy/5 dark:bg-white/10 backdrop-blur-md border border-sia-navy/10 dark:border-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mt-10">
                                 ${dur}
                             </div>
                         </div>
@@ -3434,7 +3470,7 @@ function getRegionForAirport(code) {
                         <!-- Right Zone: Destination -->
                         <div class="flex flex-col items-start flex-1 text-left">
                             <div class="text-3xl font-bold tracking-tight">${fd.arrivalAirportCode}</div>
-                            <div class="text-[10px] uppercase tracking-[0.2em] text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
+                            <div class="text-[10px] uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
                             <div class="text-2xl font-bold relative">
                                 ${arrTime}
                                 ${dayShift ? `<span class="absolute -top-1 -right-6 text-[10px] text-sia-gold font-bold">${dayShift}</span>` : ''}
@@ -3500,7 +3536,7 @@ function getRegionForAirport(code) {
                 <div class="flex justify-center flex-wrap gap-2 py-1 mt-3">
                     ${hasMeals ? `<button onclick="switchMenuCategory('meals', this)" class="menu-cat-pill selected px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-sia-gold text-black border border-sia-gold flex items-center gap-1.5 shrink-0"><i data-lucide="utensils" class="w-4 h-4"></i> Meals</button>` : ''}
                     ${hasDrinks ? `<button onclick="switchMenuCategory('drinks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="glass-water" class="w-4 h-4"></i> Drinks</button>` : ''}
-                    ${hasSnacks ? `<button onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>` : ''}
+                    <button onclick="switchMenuCategory('snacks', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="cookie" class="w-4 h-4"></i> Snacks</button>
                     ${hasAmenities ? `<button onclick="switchMenuCategory('amenities', this)" class="menu-cat-pill px-3 py-2 rounded-xl text-xs font-bold transition-colors bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 flex items-center gap-1.5 shrink-0"><i data-lucide="sparkles" class="w-4 h-4"></i> Amenities</button>` : ''}
                 </div>
             `;
@@ -3659,7 +3695,7 @@ function getRegionForAirport(code) {
                 });
             }
 
-            // Snacks
+            // Snacks — always present; empty copy when none published
             if (hasSnacks) {
                 const subs = leg.drySnack.category.subcategories;
                 const snackWrapper = document.createElement('div');
@@ -3684,6 +3720,8 @@ function getRegionForAirport(code) {
                     }
                 });
                 snacksWrap.appendChild(snackWrapper);
+            } else {
+                snacksWrap.insertAdjacentHTML('beforeend', `<div class="bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5 mt-3 text-sm text-gray-500 font-semibold text-center">No snacks available on this flight.</div>`);
             }
 
             // Amenities
