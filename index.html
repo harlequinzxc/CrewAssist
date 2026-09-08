@@ -2972,7 +2972,7 @@ function getRegionForAirport(code) {
                     serveStaleCache(cacheKey, 'Menu data not found or unexpected format.');
                 }
             } catch (err) {
-                serveStaleCache(cacheKey, 'Network error while fetching menu. ' + (err.message === 'UPSTREAM_TIMEOUT' ? '(Timeout)' : ''));
+                serveStaleCache(cacheKey, 'Network error while fetching menu. Details: ' + String(err.message || err));
             }
         }
         
