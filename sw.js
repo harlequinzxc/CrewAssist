@@ -1,9 +1,9 @@
-const CACHE_NAME = 'crewassist-v18';
+const CACHE_NAME = 'crewassist-v19';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
-    './icons/favicon.svg',
+    './icons/favicon.png',
     './icons/logo-192.png',
     './icons/logo-512.png'
 ];
