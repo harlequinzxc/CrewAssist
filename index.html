@@ -454,7 +454,7 @@
                     <div class="animate-float">
                         <img src="icons/logo-512.png" class="w-32 h-32 drop-shadow-2xl" alt="Plane">
                     </div>
-                    <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
+                    <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
                 </div>
             </div>
             <div class="h-[65%] relative z-10 w-full backdrop-blur-sm">
@@ -1097,7 +1097,10 @@
             document.getElementById('app-dialog-ok').addEventListener('click', () => closeAppDialog(true));
             document.getElementById('app-dialog-cancel').addEventListener('click', () => closeAppDialog(false));
             document.getElementById('app-dialog-backdrop').addEventListener('click', (e) => {
-                if (e.target.id === 'app-dialog-backdrop') closeAppDialog(false);
+                if (e.target.id !== 'app-dialog-backdrop') return;
+                const cancel = document.getElementById('app-dialog-cancel');
+                const twoButtons = cancel && !cancel.classList.contains('hidden');
+                if (twoButtons) closeAppDialog(false);
             });
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && appDialogResolver) closeAppDialog(false);
@@ -2642,11 +2645,18 @@ function getRegionForAirport(code) {
             if (!str) return null;
             const match = str.match(/^(\d{1,2}):?(\d{2})$/);
             if (!match) return null;
-            const h = parseInt(match[1]);
-            const m = parseInt(match[2]);
+            const h = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
             if (m > 59) return null;
             const hours = h + (m / 60);
             return hours > 0 ? hours : null;
+        }
+
+        function formatHoursHM(decimalHours) {
+            const totalMinutes = Math.round(Number(decimalHours) * 60);
+            const hh = Math.floor(totalMinutes / 60);
+            const mm = totalMinutes % 60;
+            return hh + 'H ' + String(mm).padStart(2, '0') + 'M';
         }
 
         function getLayoverMultiplier(sdp) {
@@ -2718,13 +2728,13 @@ function getRegionForAirport(code) {
                         logic = 'Paxing Override (SDP ignored)';
                     } else if (isTurnaround) {
                         mult = sharedTurnMult;
-                        logic = `Turnaround Bracket (Total SDP ${tripSdp.toFixed(1)}h)`;
+                        logic = `Turnaround Bracket (Total SDP ${formatHoursHM(tripSdp)})`;
                     } else if (sec.directUs) {
                         mult = IFA_CONFIG.directUSMultiplier;
                         logic = 'Direct US Override';
                     } else {
                         mult = getLayoverMultiplier(sec.sdp);
-                        logic = `Layover Bracket (SDP ${sec.sdp.toFixed(1)}h)`;
+                        logic = `Layover Bracket (SDP ${formatHoursHM(sec.sdp)})`;
                     }
                     
                     const allowance = sec.hours * rankRate * mult;
@@ -2736,7 +2746,7 @@ function getRegionForAirport(code) {
                                 <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
                                 <span>$${allowance.toFixed(2)}</span>
                             </div>
-                            <p class="text-[10px] text-gray-500">${sec.hours.toFixed(2)}h × $${rankRate} × ${mult}x</p>
+                            <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
                         </div>
                     `);
