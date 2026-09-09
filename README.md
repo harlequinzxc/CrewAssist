@@ -18,7 +18,8 @@
 - `api/sq.js`: Vercel Edge proxy used to safely fetch data from the SIA datacenter without triggering WAF blocks or CORS errors.
 - `LOGIC.md`: The source-of-truth document mapping out the exact formulas and rules for the COP Calculator.
 - `icons/`: Directory containing the minimalist gold paper-plane SVG and generated PNGs.
-- `PROMPT.md`: AI Agent handoff context file.
+- `README.md`: - Project overview, goal, and target audience. Tech stack, libraries, and tools used. Step-by-step setup and running instructions. Overview of the file/folder structure.
+- `HANDOVER.md`: AI Agent handoff context file.
 
 ## Setup & Running
 1. Clone the repository.
