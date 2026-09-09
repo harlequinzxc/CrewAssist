@@ -73,6 +73,8 @@
             transition: background-color 0.3s ease, color 0.3s ease;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum" 1, "lnum" 1;
         }
 
         /* Glassmorphic Utilities */
@@ -953,9 +955,21 @@
 
             // Register Service Worker
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(() => console.log('Service Worker Registered'))
+                navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' })
+                    .then((reg) => {
+                        const ping = () => reg.update();
+                        ping();
+                        document.addEventListener('visibilitychange', () => {
+                            if (document.visibilityState === 'visible') ping();
+                        });
+                    })
                     .catch((err) => console.error('Service Worker Registration Failed', err));
+                let swRefreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (swRefreshing) return;
+                    swRefreshing = true;
+                    window.location.reload();
+                });
             }
         });
 
@@ -2787,7 +2801,7 @@ function getRegionForAirport(code) {
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
-                    <p class="text-4xl font-bold">$${grandTotal.toFixed(2)}</p>
+                    <p class="text-4xl font-bold tabular-nums">$${grandTotal.toFixed(2)}</p>
                 </div>
             `;
 
@@ -3868,7 +3882,7 @@ function getRegionForAirport(code) {
                         <div class="flex flex-col flex-1 items-end text-right">
                             <div class="text-3xl font-bold tracking-tight">${fd.departureAirportCode}</div>
                             <div class="text-[10px] uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
-                            <div class="text-2xl font-bold">${depTime}</div>
+                            <div class="text-2xl font-bold tabular-nums">${depTime}</div>
                         </div>
                         
                         <!-- Center Zone: Dotted Arc + Plane + Duration -->
@@ -3889,7 +3903,7 @@ function getRegionForAirport(code) {
                         <div class="flex flex-col items-start flex-1 text-left">
                             <div class="text-3xl font-bold tracking-tight">${fd.arrivalAirportCode}</div>
                             <div class="text-[10px] uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
-                            <div class="text-2xl font-bold relative">
+                            <div class="text-2xl font-bold tabular-nums relative">
                                 ${arrTime}
                                 ${dayShift ? `<span class="absolute -top-1 -right-6 text-[10px] text-sia-gold font-bold">${dayShift}</span>` : ''}
                             </div>
