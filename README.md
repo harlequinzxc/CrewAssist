@@ -11,7 +11,7 @@
 - **Frontend:** HTML5, CSS3, vanilla JavaScript, Tailwind CSS (CDN), Lucide Icons.
 - **Backend / proxy:** Node.js Vercel serverless function (`api/sq.js`) for `getcabin` and `menu`.
 - **Data:** Airport IATA list and regions inlined in `index.html`.
-- **Architecture:** PWA (service worker `crewassist-v9`, web manifest) for install and cache.
+- **Architecture:** PWA (service worker `crewassist-v10`, web manifest) for install and cache.
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.

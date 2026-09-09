@@ -3591,12 +3591,46 @@ function getRegionForAirport(code) {
             return path.startsWith('http') ? path : 'https://inflightmenu.singaporeair.com/' + path;
         }
 
+        function menuItemMediaUrl(item) {
+            if (!item || typeof item === 'string') return '';
+            return menuImageUrl(
+                item.imagePathIfeHigh || item.imagePathIfeLow || item.imagePath || item.image || ''
+            );
+        }
+
         function menuCourseCard(inner) {
             return `<div class="bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5">${inner}</div>`;
         }
 
         function menuPlainItems(items) {
-            return menuBulletList(items, 'name', 'description');
+            let html = '';
+            let bullets = [];
+            const flush = () => {
+                if (!bullets.length) return;
+                html += menuBulletList(bullets, 'name', 'description');
+                bullets = [];
+            };
+            (items || []).forEach(item => {
+                if (item == null || item === '') return;
+                if (typeof item === 'string') {
+                    bullets.push(item);
+                    return;
+                }
+                const img = menuItemMediaUrl(item);
+                if (img) {
+                    flush();
+                    html += menuItemRow(
+                        item.name || item.itemName || '',
+                        item.description || item.itemDescription || '',
+                        '',
+                        img
+                    );
+                } else {
+                    bullets.push(item);
+                }
+            });
+            flush();
+            return html;
         }
 
         function menuBulletList(items, nameKey, descKey) {
@@ -3920,14 +3954,20 @@ function getRegionForAirport(code) {
                                 if (spec.items && spec.items.length) {
                                     spec.items.forEach(it => {
                                         items.push({
+                                            ...it,
                                             name: it.name || spec.name || '',
-                                            description: it.description || it.itemDescription || ''
+                                            description: it.description || it.itemDescription || '',
+                                            imagePathIfeHigh: it.imagePathIfeHigh || spec.imagePathIfeHigh || sub.imagePathIfeHigh,
+                                            imagePath: it.imagePath || spec.imagePath || sub.imagePath
                                         });
                                     });
                                 } else if (spec.name) {
                                     items.push({
+                                        ...spec,
                                         name: spec.name,
-                                        description: spec.description || spec.itemDescription || ''
+                                        description: spec.description || spec.itemDescription || '',
+                                        imagePathIfeHigh: spec.imagePathIfeHigh || sub.imagePathIfeHigh,
+                                        imagePath: spec.imagePath || sub.imagePath
                                     });
                                 }
                             });

@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v9` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v10` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
@@ -16,7 +16,7 @@ Latest app cache: `crewassist-v9` (`sw.js`). Branch work for this line of UI liv
   - `menuViewState` remembers category and meal tab across cabin / sector / cuisine changes; those changes and meal-service tabs scroll the overlay to top.
   - Centered meal-service title under the route hero.
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
-  - Drinks: no accordion. Category title on top; types (e.g. Champagne, White) between hairlines.
+  - Drinks: no accordion. Category title on top; types (e.g. Champagne, White) between hairlines. Items with `imagePathIfeHigh` / `imagePath` render as a horizontal thumb + text (`items-start`); items without images stay bullets.
   - Snacks category: hairline sections; single-line items as bullets.
   - Amenities: no images; bullet list.
   - Descriptions longer than 2 lines: More/Less with rotating chevron and height animation. Imaged meal items stay horizontal (`items-start`).
@@ -36,7 +36,7 @@ Latest app cache: `crewassist-v9` (`sw.js`). Branch work for this line of UI liv
 
 - **DOM injection:** Do not use `container.innerHTML += ...` for complex dynamic trees (menu loops). It re-parses the subtree, drops listeners, and yields `null` on mobile. Use `insertAdjacentHTML('beforeend', ...)` or `document.createElement`.
 - **Unique-string patches:** Prefer Python unique-string replace on `index.html` over brittle search/replace in the 200KB file. Avoid `print(...)` with escaped quotes in those scripts (parse errors abort the whole patch).
-- **Vercel proxy:** SQ WAF is aggressive. Keep `api/sq.js` as a JSON proxy (`getcabin` / `menu` only). Plain browser fetch to the datacenter fails.
+- **Vercel proxy:** SQ WAF is aggressive. The live app still `POST`s `/api/sq` (`getcabin` / `menu` only). `api/getcabin.ts`, `api/menu.ts`, and `api/cabins.ts` are extra routes with upstream-then-flagship fallback and document beverage `imagePathIfeHigh`; do not replace `/api/sq` without changing the frontend contract. They use `@vercel/node` (Node), not edge.
 - **Design system:** Glass (`glass-bubble`, `glass-sheet`). Palette: SIA Navy `#0B1A3A`, Charcoal, SIA Gold `#C9A227`. Mobile-first iOS styling.
 - **Cache:** Bump `CACHE_NAME` in `sw.js` when `index.html` (or other cached assets) change.
 - **Continuity:** After every commit, update `README.md` and `HANDOVER.md` to match the build. Ask for review before starting the next slice of work.
