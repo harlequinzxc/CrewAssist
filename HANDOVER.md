@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v15` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v17` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
@@ -17,6 +17,7 @@ Latest app cache: `crewassist-v15` (`sw.js`). Branch work for this line of UI li
   - Centered meal-service title under the route hero.
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
   - Items without a photo are gold bullets. Sections with 2+ items get a hairline between rows. Tap a thumbnail for a blurred full-screen lightbox (`#menu-lightbox`).
+  - If a dish/bread has no image on this sector, reuse a same-name photo from another sector of the same menu (`imageByName`).
   - Meals: course images inherit from item/course/selection; `footnote` appended to copy; `breadDetails` rendered as Bakery & Warm Breads when present.
   - Snacks category: hairline sections; single-line items as bullets.
   - Amenities: no images; bullet list.
