@@ -2287,7 +2287,7 @@ function getRegionForAirport(code) {
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
-                                <input type="text" id="${id}-ifa-t${i}" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
+                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
                                 <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
                                     ${showUS ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
@@ -2364,7 +2364,7 @@ function getRegionForAirport(code) {
                             </div>
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
-                                <input type="text" id="${id}-lma-at${idx}" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                                <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 min-w-0">
@@ -2374,7 +2374,7 @@ function getRegionForAirport(code) {
                             </div>
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
-                                <input type="text" id="${id}-lma-dt${idx}" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                                <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
                     `;
@@ -2941,7 +2941,7 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
                             <div class="flex items-center relative">
                                 <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
-                                <input type="text" id="fv-flight-${uniqueId}" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
+                                <input type="text" id="fv-flight-${uniqueId}" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
                             </div>
                         </div>
                         
@@ -3146,7 +3146,7 @@ function getRegionForAirport(code) {
                             const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
                             const label = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
                             contentHtml += `
-                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${label}</button>
+                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${label}</button>
                             `;
                         });
                         contentHtml += `
@@ -3171,7 +3171,7 @@ function getRegionForAirport(code) {
                     
                     data.cabinClasses.forEach(code => {
                         contentHtml += `
-                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold'); checkCabinsSelected('${id}');" data-cabin="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${cabinNames[code] || code}</button>
+                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold'); checkCabinsSelected('${id}');" data-cabin="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${cabinNames[code] || code}</button>
                         `;
                     });
                     contentHtml += `
@@ -4017,11 +4017,16 @@ function getRegionForAirport(code) {
             if (hasMeals) {
                 const firstMeal = menuEn.meals[0];
                 if (firstMeal && firstMeal.selectionDetails && firstMeal.selectionDetails.length > 1) {
-                    culinaryOptions = firstMeal.selectionDetails.map(sel => {
+                    culinaryOptions = firstMeal.selectionDetails.map((sel, idx) => {
                         let n = sel.name;
-                        if(n.toLowerCase().includes('international')) n = 'International';
+                        if (n && n.toLowerCase().includes('international')) n = 'International';
                         else n = 'Ethnic';
-                        return n;
+                        return { name: n, idx: idx };
+                    });
+                    culinaryOptions.sort((a, b) => {
+                        if (a.name === 'International' && b.name !== 'International') return -1;
+                        if (b.name === 'International' && a.name !== 'International') return 1;
+                        return a.idx - b.idx;
                     });
                 }
             }
@@ -4032,22 +4037,26 @@ function getRegionForAirport(code) {
                 const culinaryLabel = document.getElementById('menu-culinary-label');
                 culinaryList.innerHTML = '';
                 
-                let defaultIdx = 0;
-                culinaryOptions.forEach((opt, idx) => {
-                    if (opt === 'International') defaultIdx = idx;
+                let defaultIdx = culinaryOptions[0] ? culinaryOptions[0].idx : 0;
+                let defaultName = culinaryOptions[0] ? culinaryOptions[0].name : 'Culinary';
+                culinaryOptions.forEach((opt) => {
+                    if (opt.name === 'International') {
+                        defaultIdx = opt.idx;
+                        defaultName = opt.name;
+                    }
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
-                    btn.textContent = opt;
+                    btn.textContent = opt.name;
                     btn.onclick = () => {
-                        culinaryLabel.textContent = opt;
+                        culinaryLabel.textContent = opt.name;
                         toggleMenuDropdown('culinary');
-                        switchCulinarySelection(idx);
+                        switchCulinarySelection(opt.idx);
                         scrollMenuToTop();
                     };
                     culinaryList.appendChild(btn);
                 });
-                culinaryLabel.textContent = culinaryOptions[defaultIdx];
+                culinaryLabel.textContent = defaultName;
                 culinaryWrap.classList.remove('hidden');
                 
                 setTimeout(() => { switchCulinarySelection(defaultIdx); }, 10);
