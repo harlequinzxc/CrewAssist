@@ -3,7 +3,7 @@
 ## Features & Goals
 - **Chatbot interface:** NLP-style intent matching for quick commands (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`). Jump-to-latest control matches the send button and only shows when the thread is not at the bottom.
 - **COP / IFA / LMA calculator:** Day-by-day engine for layover and turnaround allowances from `LOGIC.md`. IFA flight-type and sector-count menus are glass overlays (same pattern as the inflight menu sheet).
-- **Inflight menu viewer:** Live data from `inflightmenu.singaporeair.com` via the Vercel proxy. Chat flight + date lookup, then a glassmorphic overlay: route hero, cabin / sector / cuisine dropdowns, segmented Meals · Drinks · Snacks · Amenities bar, meal-service title, editorial course cards, drinks/snacks hairlines, amenities as bullets, More/Less on long copy.
+- **Inflight menu viewer:** Live data from `inflightmenu.singaporeair.com` via the Vercel proxy. Chat flight + date lookup, then a glassmorphic overlay: route hero, cabin / sector / cuisine dropdowns, segmented Meals · Drinks · Snacks · Amenities bar, meal-service title, editorial course cards, drinks/snacks hairlines, drink thumbs when SQ sends `imagePathIfeHigh`, amenities as bullets, More/Less on long copy.
 - **Inflight menu printer (on hold):** Compact homework-style `window.print()` from the Print chip. Default is compact meals only (no drinks, amenities, or images) until work resumes.
 - **Design system:** SIA Navy, Charcoal, and Gold; glassmorphic bubbles and bottom sheets; animated starry sky; iOS-first layout.
 
