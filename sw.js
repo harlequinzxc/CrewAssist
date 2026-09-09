@@ -1,11 +1,14 @@
-const CACHE_NAME = 'crewassist-v25';
+const CACHE_NAME = 'crewassist-v27';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
     './icons/favicon.png',
     './icons/logo-192.png',
-    './icons/logo-512.png'
+    './icons/logo-512.png',
+    './icons/app-icon-180.png',
+    './icons/app-icon-192.png',
+    './icons/app-icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
