@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v11` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v12` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
@@ -16,13 +16,14 @@ Latest app cache: `crewassist-v11` (`sw.js`). Branch work for this line of UI li
   - `menuViewState` remembers category and meal tab across cabin / sector / cuisine changes; those changes and meal-service tabs scroll the overlay to top.
   - Centered meal-service title under the route hero.
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
-  - Drinks: no accordion. Category title on top; types (e.g. Champagne, White) between hairlines. Items with `imagePathIfeHigh` / `imagePath` render as a horizontal thumb + text (`items-start`); items without images stay bullets.
+  - Drinks: no accordion. Category title on top; types between hairlines. Images resolve via `extractSqImageUrl` (item → speciality → subcategory → category; High/Medium/Low/`imagePath`/thumbs). No image → bullets.
+  - Meals: course images inherit from item/course/selection; `footnote` appended to copy; `breadDetails` rendered as Bakery & Warm Breads when present.
   - Snacks category: hairline sections; single-line items as bullets.
   - Amenities: no images; bullet list.
   - Descriptions longer than 2 lines: More/Less with rotating chevron and height animation. Imaged meal items stay horizontal (`items-start`).
   - Category / tab / cuisine / sector changes fade content in.
 - **Chat jump-to-latest:** `#btn-scroll-bottom`, same size as send, just above chips; shown only when not at bottom; hide at bottom; both controls animate.
-- **Flight lookup speed:** Date tap fetches immediately (the 500ms debounce is only for typing the flight number). `getcabin` and a speculative JCL `menu` request run in parallel so sectors are not gated on a second sequential call. Cabins after sector select stay instant (already in the DOM).
+- **Flight lookup speed:** Date tap fetches immediately (the 500ms debounce is only for typing the flight number). `getcabin` and a speculative JCL `menu` run in parallel. If `getcabin` returns `legs`, sectors render from those and menu caches in the background. Otherwise we still wait on menu for sector codes. FCL label is Suites vs First from aircraft type (`380`/`388`).
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed from settings; `initUI()` no longer reads it, so gender buttons work.
 - **CTAs:** Gold-bordered pills (navy/gold). Calculate stays disabled until required fields are filled.
 - **Repo cleanup:** Scratch `check*` / `temp*` / `fix*` / `test-plane*` files gone; airports inlined; unused `api/cabins.ts`, `api/getcabin.ts`, `api/menu.ts` removed (app never called them). Dead CSS (`.glow-gold`, `--aurora-opacity`, `--text-muted`) and unused DOM ids (`chip-container`, `btn-dev-import`) removed. Dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) already gone.

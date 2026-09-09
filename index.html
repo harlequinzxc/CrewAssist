@@ -3024,26 +3024,39 @@ function getRegionForAirport(code) {
                     const firstCabin = data.cabinClasses[0];
                     let menuData = (menuGuess && menuGuess.statusCode === 200 && menuGuess.legs) ? menuGuess : null;
                     const menuCabin = data.cabinClasses.includes(guessCabin) ? guessCabin : firstCabin;
-                    if (!menuData || menuCabin !== guessCabin) {
-                        const payloadMenu = { ...payloadCabin, cabinClass: menuCabin };
-                        const resMenu = await fetch('/api/sq', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ endpoint: 'menu', payload: payloadMenu })
-                        });
-                        try {
-                            menuData = await resMenu.json();
-                        } catch(e) {
-                            throw new Error("Vercel Edge Proxy failed to return JSON for menu.");
+                    const cabinLegs = (Array.isArray(data.legs) ? data.legs : []).filter(l =>
+                        l && l.flightDetails && l.flightDetails.departureAirportCode && l.flightDetails.arrivalAirportCode
+                    );
+                    const cacheMenu = (payload) => {
+                        if (payload && payload.statusCode === 200 && payload.legs) {
+                            try {
+                                localStorage.setItem(
+                                    `SQ${flightNumber}:${dateStr}:${menuCabin}`,
+                                    JSON.stringify({ timestamp: Date.now(), data: payload })
+                                );
+                            } catch (e) {}
                         }
-                    }
-                    if (menuData && menuData.statusCode === 200 && menuData.legs) {
-                        try {
-                            localStorage.setItem(
-                                `SQ${flightNumber}:${dateStr}:${menuCabin}`,
-                                JSON.stringify({ timestamp: Date.now(), data: menuData })
-                            );
-                        } catch (e) {}
+                    };
+                    const fetchMenuIfNeeded = async () => {
+                        if (!menuData || menuCabin !== guessCabin) {
+                            const payloadMenu = { ...payloadCabin, cabinClass: menuCabin };
+                            const resMenu = await fetch('/api/sq', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ endpoint: 'menu', payload: payloadMenu })
+                            });
+                            try {
+                                menuData = await resMenu.json();
+                            } catch (e) {
+                                throw new Error("Vercel Edge Proxy failed to return JSON for menu.");
+                            }
+                        }
+                        cacheMenu(menuData);
+                    };
+                    if (cabinLegs.length) {
+                        fetchMenuIfNeeded().catch(() => {});
+                    } else {
+                        await fetchMenuIfNeeded();
                     }
                     
                     loading.classList.add('hidden');
@@ -3051,8 +3064,12 @@ function getRegionForAirport(code) {
                     currentMenuSearch.flightNumber = flightNumber;
                     currentMenuSearch.date = dateStr;
                     currentMenuSearch.cabins = data.cabinClasses;
+                    currentMenuSearch.aircraftType = data.aircraftType || data.aircraft || '';
                     
-                    const legs = menuData.legs || [];
+                    const menuLegs = (menuData && Array.isArray(menuData.legs)) ? menuData.legs.filter(l =>
+                        l && l.flightDetails && l.flightDetails.departureAirportCode
+                    ) : [];
+                    const legs = cabinLegs.length ? cabinLegs : menuLegs;
                     const isMultiSector = legs.length > 1;
                     
                     let contentHtml = '';
@@ -3085,7 +3102,7 @@ function getRegionForAirport(code) {
                     `;
                     
                     const cabinNames = {
-                        'FCL': 'First/Suites',
+                        'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
                         'JCL': 'Business',
                         'SCL': 'Premium Economy',
                         'YCL': 'Economy'
@@ -3254,7 +3271,12 @@ function getRegionForAirport(code) {
             const cabinLabel = document.getElementById('menu-cabin-label');
             cabinList.innerHTML = '';
             
-            const cabinNames = { 'FCL': 'First', 'JCL': 'Business', 'SCL': 'Premium Economy', 'YCL': 'Economy' };
+            const cabinNames = {
+                'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
+                'JCL': 'Business',
+                'SCL': 'Premium Economy',
+                'YCL': 'Economy'
+            };
             
             if (cabinClasses.length > 1) {
                 cabinWrap.classList.remove('hidden');
@@ -3577,16 +3599,86 @@ function getRegionForAirport(code) {
             return iconsHtml;
         }
 
+        function extractSqImageUrl() {
+            const base = 'https://inflightmenu.singaporeair.com/assets/';
+            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img'];
+            const fromString = (s) => {
+                if (!s || typeof s !== 'string') return '';
+                const clean = s.trim();
+                if (!clean || clean === 'null' || clean === 'undefined') return '';
+                if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
+                if (clean.startsWith('//')) return 'https:' + clean;
+                return base + clean.replace(/^\/+/, '');
+            };
+            for (let i = 0; i < arguments.length; i++) {
+                const src = arguments[i];
+                if (!src) continue;
+                if (typeof src === 'string') {
+                    const u = fromString(src);
+                    if (u) return u;
+                    continue;
+                }
+                if (typeof src === 'object') {
+                    for (let f = 0; f < fields.length; f++) {
+                        const u = fromString(src[fields[f]]);
+                        if (u) return u;
+                    }
+                }
+            }
+            return '';
+        }
+
         function menuImageUrl(path) {
-            if (!path) return '';
-            return path.startsWith('http') ? path : 'https://inflightmenu.singaporeair.com/' + path;
+            return extractSqImageUrl(path);
         }
 
         function menuItemMediaUrl(item) {
-            if (!item || typeof item === 'string') return '';
-            return menuImageUrl(
-                item.imagePathIfeHigh || item.imagePathIfeLow || item.imagePath || item.image || ''
-            );
+            return extractSqImageUrl(item);
+        }
+
+        function cleanMenuText(str) {
+            if (!str || typeof str !== 'string') return '';
+            return str.replace(/<[^>]*>/g, '')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function extractEnUkBlock(obj, keyPrefix) {
+            if (!obj || typeof obj !== 'object') return null;
+            if (obj[keyPrefix + '.language.EN_UK']) return obj[keyPrefix + '.language.EN_UK'];
+            const root = obj[keyPrefix];
+            if (!root || typeof root !== 'object') return null;
+            const lang = root.language || root.languages;
+            if (lang && typeof lang === 'object') {
+                return lang.EN_UK || lang.en_UK || lang.EN || lang.en || lang;
+            }
+            return root;
+        }
+
+        function menuCabinLabel(code, aircraftType) {
+            const ac = String(aircraftType || (currentMenuSearch && currentMenuSearch.aircraftType) || '');
+            if (code === 'FCL') return /380|388|A380/i.test(ac) ? 'Suites' : 'First';
+            const map = { JCL: 'Business', SCL: 'Premium Economy', YCL: 'Economy' };
+            return map[code] || code;
+        }
+
+        function menuBevItem(it, spec, sub, cat) {
+            if (!it || typeof it === 'string') {
+                const name = cleanMenuText(it);
+                return name ? { name: name, description: '', _img: extractSqImageUrl(spec, sub, cat) } : null;
+            }
+            const name = cleanMenuText(it.name || it.title || it.itemName || '');
+            if (!name) return null;
+            return {
+                name: name,
+                description: cleanMenuText(it.description || it.vintage || it.region || it.itemDescription || it.desc || ''),
+                _img: extractSqImageUrl(it, spec, sub, cat)
+            };
         }
 
         function menuCourseCard(inner) {
@@ -3607,12 +3699,12 @@ function getRegionForAirport(code) {
                     bullets.push(item);
                     return;
                 }
-                const img = menuItemMediaUrl(item);
+                const img = item._img || extractSqImageUrl(item);
                 if (img) {
                     flush();
                     html += menuItemRow(
-                        item.name || item.itemName || '',
-                        item.description || item.itemDescription || '',
+                        cleanMenuText(item.name || item.itemName || ''),
+                        cleanMenuText(item.description || item.itemDescription || ''),
                         '',
                         img
                     );
@@ -3755,15 +3847,17 @@ function getRegionForAirport(code) {
             if (hc) hc.innerHTML = headerHtml;
             else container.insertAdjacentHTML('beforeend', headerHtml);
 
-            const hasMeals = leg.menu && leg.menu.language && leg.menu.language.EN_UK && leg.menu.language.EN_UK.meals && leg.menu.language.EN_UK.meals.length > 0;
-            const hasDrinks = leg.beverage && leg.beverage.language && leg.beverage.language.EN_UK && leg.beverage.language.EN_UK.categories && leg.beverage.language.EN_UK.categories.length > 0;
+            const menuEn = extractEnUkBlock(leg, 'menu');
+            const bevEn = extractEnUkBlock(leg, 'beverage');
+            const hasMeals = !!(menuEn && Array.isArray(menuEn.meals) && menuEn.meals.length);
+            const hasDrinks = !!(bevEn && Array.isArray(bevEn.categories) && bevEn.categories.length);
             const hasSnacks = leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories && leg.drySnack.category.subcategories.length > 0;
             const hasAmenities = leg.amenities && leg.amenities.items && leg.amenities.items.length > 0;
 
             // Culinary Dropdown check
             let culinaryOptions = [];
             if (hasMeals) {
-                const firstMeal = leg.menu.language.EN_UK.meals[0];
+                const firstMeal = menuEn.meals[0];
                 if (firstMeal && firstMeal.selectionDetails && firstMeal.selectionDetails.length > 1) {
                     culinaryOptions = firstMeal.selectionDetails.map(sel => {
                         let n = sel.name;
@@ -3863,7 +3957,7 @@ function getRegionForAirport(code) {
                 if (tabsWrapClear) tabsWrapClear.innerHTML = '';
             }
             if (hasMeals) {
-                const meals = leg.menu.language.EN_UK.meals;
+                const meals = menuEn.meals;
                 currentMealServices = meals.map(m => m.mealServiceName || 'Meal');
                 
                 // Build Tabs (Centered)
@@ -3907,16 +4001,29 @@ function getRegionForAirport(code) {
                                     
                                     if (course.items) {
                                         course.items.forEach(item => {
+                                            const desc = [item.description, item.footnote].filter(Boolean).map(cleanMenuText).filter(Boolean).join(' ');
                                             courseHtml += menuItemRow(
-                                                item.name,
-                                                item.description,
+                                                cleanMenuText(item.name || item.title || item.itemName || ''),
+                                                desc,
                                                 menuItemIcons(item),
-                                                menuImageUrl(item.imagePathIfeHigh)
+                                                extractSqImageUrl(item, course, selection)
                                             );
                                         });
                                     }
                                     selDiv.innerHTML += menuCourseCard(courseHtml);
                                 });
+                            }
+                            const breads = (Array.isArray(selection.breadDetails) && selection.breadDetails.length)
+                                ? selection.breadDetails
+                                : ((selIdx === 0 && Array.isArray(meal.breadDetails)) ? meal.breadDetails : []);
+                            if (breads.length) {
+                                let breadHtml = menuHairlineTitle('Bakery & Warm Breads');
+                                breads.forEach(b => {
+                                    const title = cleanMenuText(b.name || b.title || b.itemName || '');
+                                    if (!title) return;
+                                    breadHtml += menuItemRow(title, cleanMenuText(b.description || ''), '', extractSqImageUrl(b, selection, meal));
+                                });
+                                selDiv.innerHTML += menuCourseCard(breadHtml);
                             }
                             mealDiv.appendChild(selDiv);
                         });
@@ -3927,50 +4034,58 @@ function getRegionForAirport(code) {
 
             // Drinks — no accordion; category title on top, types between hairlines
             if (hasDrinks) {
-                const bevCats = leg.beverage.language.EN_UK.categories;
+                const bevCats = bevEn.categories;
                 bevCats.forEach(cat => {
                     const catDiv = document.createElement('div');
                     catDiv.className = 'space-y-4 mt-3 first:mt-0';
-                    let html = menuSectionTitle(cat.name);
+                    let html = menuSectionTitle(cleanMenuText(cat.name));
                     const types = [];
                     const catSnackish = /snack|delectable/i.test(cat.name || '');
-                    (cat.subcategories || []).forEach(sub => {
-                        const specs = sub.specialities || [];
-                        const namedSpecs = specs.filter(s => s && s.name);
+                    const subs = (cat.subcategories && cat.subcategories.length) ? cat.subcategories : [cat];
+                    subs.forEach(sub => {
+                        const specs = (sub.specialities && sub.specialities.length) ? sub.specialities : [sub];
+                        const namedSpecs = specs.filter(s => s && s.name && s !== sub && s !== cat);
                         const snackish = catSnackish || /snack|delectable/i.test(sub.name || '');
                         const specsLookLikeItems = namedSpecs.length > 0 && namedSpecs.every(s => !s.items || s.items.length <= 1);
                         if (snackish || specsLookLikeItems) {
                             const items = [];
                             specs.forEach(spec => {
-                                if (spec.items && spec.items.length) {
-                                    spec.items.forEach(it => {
-                                        items.push({
-                                            ...it,
-                                            name: it.name || spec.name || '',
-                                            description: it.description || it.itemDescription || '',
-                                            imagePathIfeHigh: it.imagePathIfeHigh || spec.imagePathIfeHigh || sub.imagePathIfeHigh,
-                                            imagePath: it.imagePath || spec.imagePath || sub.imagePath
-                                        });
+                                const raw = Array.isArray(spec.items) ? spec.items : [];
+                                if (raw.length) {
+                                    raw.forEach(it => {
+                                        const row = menuBevItem(it, spec, sub, cat);
+                                        if (row) items.push(row);
                                     });
-                                } else if (spec.name) {
-                                    items.push({
-                                        ...spec,
-                                        name: spec.name,
-                                        description: spec.description || spec.itemDescription || '',
-                                        imagePathIfeHigh: spec.imagePathIfeHigh || sub.imagePathIfeHigh,
-                                        imagePath: spec.imagePath || sub.imagePath
-                                    });
+                                } else if (spec && spec.name && spec !== sub) {
+                                    const row = menuBevItem(spec, sub, cat);
+                                    if (row) items.push(row);
                                 }
                             });
-                            (sub.items || []).forEach(it => items.push(it));
-                            types.push({ name: sub.name || '', items });
+                            (sub.items || []).forEach(it => {
+                                const row = menuBevItem(it, sub, cat);
+                                if (row) items.push(row);
+                            });
+                            const typeName = cleanMenuText(sub.name || '');
+                            const catName = cleanMenuText(cat.name || '');
+                            types.push({ name: (typeName && typeName.toLowerCase() !== catName.toLowerCase()) ? typeName : '', items: items });
                         } else if (namedSpecs.length) {
                             specs.forEach(spec => {
-                                types.push({ name: spec.name || sub.name || '', items: spec.items || [] });
+                                const items = (spec.items || []).map(it => menuBevItem(it, spec, sub, cat)).filter(Boolean);
+                                types.push({ name: cleanMenuText(spec.name || sub.name || ''), items: items });
                             });
                         } else {
-                            const items = specs.flatMap(s => (s && s.items) || []).concat(sub.items || []);
-                            types.push({ name: sub.name || '', items });
+                            const items = [];
+                            specs.forEach(spec => {
+                                (spec.items || []).forEach(it => {
+                                    const row = menuBevItem(it, spec, sub, cat);
+                                    if (row) items.push(row);
+                                });
+                            });
+                            (sub.items || []).forEach(it => {
+                                const row = menuBevItem(it, sub, cat);
+                                if (row) items.push(row);
+                            });
+                            types.push({ name: cleanMenuText(sub.name || ''), items: items });
                         }
                     });
                     types.forEach(type => {
