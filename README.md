@@ -11,11 +11,11 @@
 - **Frontend:** HTML5, CSS3, vanilla JavaScript, Tailwind CSS (CDN), Lucide Icons.
 - **Backend / proxy:** Node.js Vercel serverless function (`api/sq.js`) for `getcabin` and `menu`.
 - **Data:** Airport IATA list and regions inlined in `index.html`.
-- **Architecture:** PWA (service worker `crewassist-v21`, web manifest) for install and cache.
+- **Architecture:** PWA (service worker `crewassist-v22`, web manifest) for install and cache.
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
-- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v21`).
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v22`).
 - `api/sq.js` — JSON proxy to the SIA inflight-menu API (avoids CORS / WAF issues).
 - `LOGIC.md` — Source of truth for COP / IFA / LMA formulas and rules.
 - `icons/` — Gold folded paper-plane mark (`favicon.png`, `logo-192.png`, `logo-512.png`).
