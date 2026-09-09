@@ -114,6 +114,12 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        #btn-send svg {
+            display: block;
+            margin: 0;
+            width: 1rem;
+            height: 1rem;
+        }
         #menu-meal-tabs-wrap,
         #menu-category-pills-wrap {
             overflow-x: auto;
@@ -444,9 +450,9 @@
         <!-- Onboarding View -->
         <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
             <div class="h-[35%] flex items-center justify-center relative">
-                <div class="flex flex-col items-center">
-                    <div class="mb-5 animate-float">
-                        <img src="icons/logo-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
+                <div class="flex flex-col items-center gap-1">
+                    <div class="animate-float">
+                        <img src="icons/logo-512.png" class="w-32 h-32 drop-shadow-2xl" alt="Plane">
                     </div>
                     <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
                 </div>
@@ -572,8 +578,8 @@
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
                         <input type="text" id="chat-input" placeholder="IFA, LMA, COP, Menu, Print" class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
-                            <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
+                            <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
 
@@ -680,6 +686,16 @@
         <div id="menu-lightbox" class="fixed inset-0 z-[80] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <button type="button" id="menu-lightbox-dismiss" class="absolute inset-0 w-full h-full cursor-zoom-out" aria-label="Close image"></button>
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
+        </div>
+
+        <div id="app-dialog-backdrop" class="fixed inset-0 z-[90] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
+            <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 border border-sia-gold/20 shadow-2xl" onclick="event.stopPropagation()">
+                <p id="app-dialog-msg" class="text-sm font-bold text-center leading-relaxed mb-5"></p>
+                <div class="flex gap-2">
+                    <button type="button" id="app-dialog-cancel" class="hidden flex-1 h-11 rounded-full text-sm font-bold ui-input">Cancel</button>
+                    <button type="button" id="app-dialog-ok" class="flex-1 h-11 rounded-full text-sm font-bold cta-gold">OK</button>
+                </div>
+            </div>
         </div>
 
         <!-- Menu Viewer Sheet -->
@@ -1042,7 +1058,51 @@
             }
         }
 
+        let appDialogResolver = null;
+
+        function closeAppDialog(val) {
+            const backdrop = document.getElementById('app-dialog-backdrop');
+            const resolve = appDialogResolver;
+            appDialogResolver = null;
+            if (backdrop) {
+                backdrop.classList.add('opacity-0');
+                setTimeout(() => backdrop.classList.add('hidden'), 200);
+            }
+            if (resolve) resolve(!!val);
+        }
+
+        function showAppDialog(message, isConfirm) {
+            return new Promise((resolve) => {
+                const backdrop = document.getElementById('app-dialog-backdrop');
+                const msg = document.getElementById('app-dialog-msg');
+                const cancel = document.getElementById('app-dialog-cancel');
+                if (!backdrop || !msg || !cancel) {
+                    resolve(!isConfirm);
+                    return;
+                }
+                if (appDialogResolver) appDialogResolver(false);
+                appDialogResolver = resolve;
+                msg.textContent = message;
+                if (isConfirm) cancel.classList.remove('hidden');
+                else cancel.classList.add('hidden');
+                backdrop.classList.remove('hidden');
+                requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
+            });
+        }
+
+        function appAlert(message) { return showAppDialog(message, false); }
+        function appConfirm(message) { return showAppDialog(message, true); }
+
         function bindEvents() {
+            document.getElementById('app-dialog-ok').addEventListener('click', () => closeAppDialog(true));
+            document.getElementById('app-dialog-cancel').addEventListener('click', () => closeAppDialog(false));
+            document.getElementById('app-dialog-backdrop').addEventListener('click', (e) => {
+                if (e.target.id === 'app-dialog-backdrop') closeAppDialog(false);
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && appDialogResolver) closeAppDialog(false);
+            });
+
             // Onboarding Events
             document.getElementById('ob-name').addEventListener('input', (e) => {
                 tempProfile.name = e.target.value.trim();
@@ -1094,7 +1154,7 @@
                     localStorage.setItem('crewAssist.devMode', 'true');
                     document.getElementById('settings-developer').classList.remove('hidden');
                     document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
-                    alert('Developer Mode Unlocked');
+                    appAlert('Developer Mode Unlocked');
                     devTapCount = 0;
                 }
             });
@@ -1115,10 +1175,12 @@
             });
 
             document.getElementById('btn-clear-data').addEventListener('click', () => {
-                if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                    localStorage.clear();
-                    location.reload();
-                }
+                appConfirm('Are you sure you want to clear all data? This cannot be undone.').then((ok) => {
+                    if (ok) {
+                        localStorage.clear();
+                        location.reload();
+                    }
+                });
             });
 
             // Developer Events
@@ -1127,9 +1189,9 @@
                     const parsed = JSON.parse(document.getElementById('dev-modifiers-json').value);
                     appModifiers = parsed;
                     localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
-                    alert('Modifiers saved successfully.');
+                    appAlert('Modifiers saved successfully.');
                 } catch (e) {
-                    alert('Invalid JSON format.');
+                    appAlert('Invalid JSON format.');
                 }
             });
 
@@ -1153,9 +1215,9 @@
                         appModifiers = parsed;
                         document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
                         localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
-                        alert('Modifiers imported successfully.');
+                        appAlert('Modifiers imported successfully.');
                     } catch (err) {
-                        alert('Error parsing imported file. Please ensure it is valid JSON.');
+                        appAlert('Error parsing imported file. Please ensure it is valid JSON.');
                     }
                 };
                 reader.readAsText(file);
@@ -3513,11 +3575,11 @@ function getRegionForAirport(code) {
                     renderMenu(cachedData.data, true);
                 } catch (e) {
                     showMenuState(2);
-                    alert(errMsg);
+                    appAlert(errMsg);
                 }
             } else {
                 showMenuState(2);
-                alert(errMsg + ' No offline copy available.');
+                appAlert(errMsg + ' No offline copy available.');
             }
         }
         
