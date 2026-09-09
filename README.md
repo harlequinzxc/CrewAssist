@@ -1,28 +1,29 @@
-**CrewAssist** is a Progressive Web App (PWA) designed exclusively for Singapore Airlines (SIA) cabin crew. It provides an intuitive, chatbot-style mobile-first interface to streamline daily inflight and layover calculations, as well as providing rapid access to the digital inflight menus.
+**CrewAssist** is a Progressive Web App (PWA) for Singapore Airlines (SIA) cabin crew. It is a mobile-first, chatbot-style assistant for inflight and layover calculations, plus live digital inflight menus.
 
 ## Features & Goals
-- **Chatbot Interface:** NLP-style intent matching for quick commands (e.g., typing "menu", "total", "LMA").
-- **COP/LMA/IFA Calculator:** Complex, day-by-day calculation engine to accurately determine crew layover and turnaround allowances based on SIA logic.
-- **Inflight Menu Viewer:** Fetches live data from the `inflightmenu.singaporeair.com` API, bypassing CORS via a custom Vercel proxy, and parses the nested JSON into a beautiful, glassmorphic UI overlay with Hero Cards, Dropdowns, and categorical meal/drink tabs.
-- **Design System:** Strictly adheres to SIA's brand identity (Navy, Charcoal, Gold accents, Batik-inspired lines) featuring a reactive animated starry night sky background and smooth modal bottom-sheets.
+- **Chatbot interface:** NLP-style intent matching for quick commands (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`). Jump-to-latest control matches the send button and only shows when the thread is not at the bottom.
+- **COP / IFA / LMA calculator:** Day-by-day engine for layover and turnaround allowances from `LOGIC.md`. IFA flight-type and sector-count menus are glass overlays (same pattern as the inflight menu sheet).
+- **Inflight menu viewer:** Live data from `inflightmenu.singaporeair.com` via the Vercel proxy. Chat flight + date lookup, then a glassmorphic overlay: route hero, cabin / sector / cuisine dropdowns, segmented Meals · Drinks · Snacks · Amenities bar, meal-service title, editorial course cards, drinks/snacks hairlines, amenities as bullets, More/Less on long copy.
+- **Inflight menu printer (on hold):** Compact homework-style `window.print()` from the Print chip. Default is compact meals only (no drinks, amenities, or images) until work resumes.
+- **Design system:** SIA Navy, Charcoal, and Gold; glassmorphic bubbles and bottom sheets; animated starry sky; iOS-first layout.
 
 ## Tech Stack
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript, Tailwind CSS (via CDN), Lucide Icons.
-- **Backend / Proxy:** Node.js, Vercel Serverless Edge Functions (`api/sq.js`).
-- **Data:** Local embedded arrays for Airport IATA data/regions.
-- **Architecture:** Standard Progressive Web App (Service Worker, Manifest) for offline-capable installation.
+- **Frontend:** HTML5, CSS3, vanilla JavaScript, Tailwind CSS (CDN), Lucide Icons.
+- **Backend / proxy:** Node.js Vercel serverless function (`api/sq.js`) for `getcabin` and `menu`.
+- **Data:** Airport IATA list and regions inlined in `index.html`.
+- **Architecture:** PWA (service worker `crewassist-v9`, web manifest) for install and cache.
 
 ## File Structure
-- `index.html`: The core application containing all UI templates, modal overlays, the chat interface, and vanilla JS logic.
-- `manifest.json` & `sw.js`: PWA configuration for installation and caching.
-- `api/sq.js`: Vercel Edge proxy used to safely fetch data from the SIA datacenter without triggering WAF blocks or CORS errors.
-- `LOGIC.md`: The source-of-truth document mapping out the exact formulas and rules for the COP Calculator.
-- `icons/`: Directory containing the minimalist gold paper-plane SVG and generated PNGs.
-- `README.md`: - Project overview, goal, and target audience. Tech stack, libraries, and tools used. Step-by-step setup and running instructions. Overview of the file/folder structure.
-- `HANDOVER.md`: AI Agent handoff context file.
+- `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v9`).
+- `api/sq.js` — JSON proxy to the SIA inflight-menu API (avoids CORS / WAF issues).
+- `LOGIC.md` — Source of truth for COP / IFA / LMA formulas and rules.
+- `icons/` — Gold paper-plane favicon SVG plus `logo-192.png` / `logo-512.png`.
+- `README.md` — Overview, stack, setup, and tree.
+- `HANDOVER.md` — AI-agent handoff: current build, open work, and constraints.
 
 ## Setup & Running
 1. Clone the repository.
-2. For frontend work, run a local web server (e.g., `npx http-server` or `python3 -m http.server`) in the root directory.
-3. For proxy testing, install the Vercel CLI (`npm i -g vercel`) and run `vercel dev` to simulate the Edge environment.
-4. Load the app in a mobile viewport simulator for accurate UI rendering.
+2. Frontend only: serve the root (e.g. `npx http-server` or `python3 -m http.server`).
+3. Proxy / live menus: Vercel CLI (`npm i -g vercel`) then `vercel dev`.
+4. Use a mobile viewport (or a phone) — the UI is built mobile-first.
