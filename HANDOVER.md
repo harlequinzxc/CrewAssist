@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v10` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v11` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
@@ -25,7 +25,7 @@ Latest app cache: `crewassist-v10` (`sw.js`). Branch work for this line of UI li
 - **Flight lookup speed:** Date tap fetches immediately (the 500ms debounce is only for typing the flight number). `getcabin` and a speculative JCL `menu` request run in parallel so sectors are not gated on a second sequential call. Cabins after sector select stay instant (already in the DOM).
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed from settings; `initUI()` no longer reads it, so gender buttons work.
 - **CTAs:** Gold-bordered pills (navy/gold). Calculate stays disabled until required fields are filled.
-- **Repo cleanup:** Removed scratch `check*` / `temp*` / `fix*` / `test-plane*` files, unused `airports.js` / `airports.ts` (list is inlined), duplicate `icons/icon-*.png`, and dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) that targeted removed DOM.
+- **Repo cleanup:** Scratch `check*` / `temp*` / `fix*` / `test-plane*` files gone; airports inlined; unused `api/cabins.ts`, `api/getcabin.ts`, `api/menu.ts` removed (app never called them). Dead CSS (`.glow-gold`, `--aurora-opacity`, `--text-muted`) and unused DOM ids (`chip-container`, `btn-dev-import`) removed. Dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) already gone.
 
 ## In-Progress / Known Gaps
 
