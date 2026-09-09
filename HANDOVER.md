@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v12` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v13` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 

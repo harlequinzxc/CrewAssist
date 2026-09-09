@@ -3530,7 +3530,7 @@ function getRegionForAirport(code) {
 
         function menuItemRow(name, description, iconsHtml, imageUrl) {
             const img = imageUrl
-                ? `<img src="${imageUrl}" class="w-16 h-16 object-cover rounded-lg bg-black/10 shrink-0" alt="" loading="lazy">`
+                ? `<img src="${imageUrl}" class="w-16 h-16 object-cover rounded-lg bg-black/10 shrink-0" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
                 : '';
             return `
                 <div class="flex gap-3 items-start mb-3 last:mb-0">
@@ -3600,15 +3600,16 @@ function getRegionForAirport(code) {
         }
 
         function extractSqImageUrl() {
-            const base = 'https://inflightmenu.singaporeair.com/assets/';
-            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img'];
+            const origin = 'https://inflightmenu.singaporeair.com';
+            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img'];
             const fromString = (s) => {
                 if (!s || typeof s !== 'string') return '';
                 const clean = s.trim();
                 if (!clean || clean === 'null' || clean === 'undefined') return '';
                 if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
                 if (clean.startsWith('//')) return 'https:' + clean;
-                return base + clean.replace(/^\/+/, '');
+                if (clean.startsWith('/')) return origin + clean;
+                return origin + '/' + clean;
             };
             for (let i = 0; i < arguments.length; i++) {
                 const src = arguments[i];
