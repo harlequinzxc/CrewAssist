@@ -4,7 +4,7 @@
 - **Chatbot interface:** NLP-style intent matching for quick commands (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`). Jump-to-latest control matches the send button and only shows when the thread is not at the bottom.
 - **COP / IFA / LMA calculator:** Day-by-day engine for layover and turnaround allowances from `LOGIC.md`. IFA flight-type and sector-count menus are glass overlays (same pattern as the inflight menu sheet).
 - **Inflight menu viewer:** Live data from `inflightmenu.singaporeair.com` via the Vercel proxy. Chat flight + date lookup, then a glassmorphic overlay: route hero, cabin / sector / cuisine dropdowns, segmented Meals · Drinks · Snacks · Amenities bar, meal-service title, editorial course cards, drinks/snacks hairlines, drink thumbs when SQ sends `imagePathIfeHigh`, amenities as bullets, More/Less on long copy.
-- **Inflight menu printer (on hold):** Compact homework-style `window.print()` from the Print chip. Default is compact meals only (no drinks, amenities, or images) until work resumes.
+- **Inflight menu printer:** Full-screen overlay from the Print chip. Numbered sector sheets, Elegant or Compact layout, A4 or A6, zoom, greyscale, descriptions, in-app edit, export PNG / JPEG / Word. First-pass sheet layouts from the crew UI shots; dedicated restaurant/compact menu art still to follow.
 - **Design system:** SIA Navy, Charcoal, and Gold; glassmorphic bubbles and bottom sheets; animated starry sky; iOS-first layout.
 
 ## Tech Stack
@@ -15,7 +15,7 @@
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
-- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v27`).
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v28`).
 - `api/sq.js` — JSON proxy to the SIA inflight-menu API (avoids CORS / WAF issues).
 - `LOGIC.md` — Source of truth for COP / IFA / LMA formulas and rules.
 - `icons/` — Transparent dart for in-app (`logo-192.png`, `logo-512.png`); navy + gold PWA icons (`app-icon-180/192/512.png`).

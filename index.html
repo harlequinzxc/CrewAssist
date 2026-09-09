@@ -8,7 +8,7 @@
     <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#04070F">
+    <meta name="theme-color" content="#0B1A3A">
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="icons/favicon.png">
     <link rel="apple-touch-icon" href="icons/app-icon-180.png">
@@ -16,7 +16,7 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -253,192 +253,86 @@
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
         }
 
-        /* Step 6: Inflight Menu Printer */
-        .print-document {
-            background: #FBF7F0;
-            color: #1A1A1A;
-            border-radius: 16px;
-            padding: 20px 18px 24px;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.25);
-            border: 1px solid rgba(201, 162, 39, 0.35);
+        /* Inflight Menu Printer */
+        #print-overlay { color-scheme: dark; }
+        #print-paper-wrap { transform-origin: top center; }
+        .print-paper {
+            background: #fff;
+            color: #111;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+            overflow: hidden;
+            position: relative;
         }
-        .print-masthead {
-            text-align: center;
-            border-bottom: 1.5px solid #C9A227;
-            padding-bottom: 12px;
-            margin-bottom: 4px;
+        .print-paper.print-a4 { width: 210mm; min-height: 297mm; }
+        .print-paper.print-a6 { width: 105mm; min-height: 148mm; }
+        .print-paper.print-grey {
+            filter: grayscale(1);
         }
-        .print-brand {
-            font-size: 9px;
-            letter-spacing: 0.28em;
-            font-weight: 700;
-            color: #C9A227;
-            text-transform: uppercase;
+        .print-sheet-inner { padding: 10mm 11mm 12mm; }
+        .print-a6 .print-sheet-inner { padding: 6mm 6.5mm 7mm; }
+
+        .pe-head { text-align: center; border-bottom: 1px solid #C9A227; padding-bottom: 6px; margin-bottom: 10px; }
+        .pe-kicker { font-size: 8px; letter-spacing: 0.32em; font-weight: 700; color: #C9A227; text-transform: uppercase; }
+        .pe-title { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 22px; font-weight: 600; color: #0B1A3A; letter-spacing: 0.04em; margin-top: 2px; }
+        .pe-meta { font-size: 9px; color: #6B7280; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
+        .pe-cabin { text-align: center; font-size: 10px; letter-spacing: 0.28em; font-weight: 700; color: #0B1A3A; text-transform: uppercase; margin: 12px 0 8px; }
+        .pe-svc { display: flex; align-items: center; gap: 8px; margin: 10px 0 6px; }
+        .pe-svc span { font-size: 10px; letter-spacing: 0.2em; font-weight: 700; text-transform: uppercase; color: #0B1A3A; white-space: nowrap; }
+        .pe-svc::before, .pe-svc::after { content: ""; flex: 1; height: 1px; background: #C9A227; }
+        .pe-course { font-size: 9px; letter-spacing: 0.18em; font-weight: 700; text-transform: uppercase; color: #8A7040; margin: 8px 0 2px; text-align: center; }
+        .pe-dish { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 13px; font-weight: 600; color: #111; text-align: center; line-height: 1.25; }
+        .pe-desc { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 10.5px; font-style: italic; color: #5B5B5B; text-align: center; line-height: 1.3; margin: 1px 0 4px; }
+        .pe-note { font-size: 8px; color: #9CA3AF; text-align: center; margin-top: 8px; }
+        .pe-delect { margin-top: 8px; }
+        .pe-delect .pe-dish { font-size: 12px; }
+
+        .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; }
+        .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
+        .pc-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #111; padding-bottom: 2px; margin-bottom: 4px; }
+        .pc-sq { font-size: 13px; font-weight: 800; letter-spacing: 0.04em; }
+        .pc-date { font-size: 10px; font-weight: 700; }
+        .pc-cabin { font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; margin: 5px 0 2px; border-bottom: 1px solid #111; }
+        .pc-svc { font-size: 8px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #374151; margin: 3px 0 1px; }
+        .pc-row { font-size: 8.5px; line-height: 1.2; font-weight: 600; text-transform: uppercase; }
+        .pc-row s { text-decoration: line-through; color: #9CA3AF; }
+        .pc-course { color: #6B7280; font-weight: 800; }
+        .pc-bev { font-size: 8px; text-transform: uppercase; font-weight: 600; line-height: 1.15; }
+        .pc-gap { height: 3px; }
+
+        .print-edit-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 12px; }
+        .print-edit-card input, .print-edit-card textarea {
+            width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px; color: #fff; font-size: 12px; padding: 8px 10px; outline: none;
         }
-        .print-flight {
-            font-size: 15px;
-            font-weight: 700;
-            margin-top: 6px;
-            color: #0B1A3A;
-            letter-spacing: 0.02em;
-        }
-        .print-sub {
-            font-size: 11px;
-            font-weight: 600;
-            color: #6B7280;
-            margin-top: 4px;
-        }
-        .print-cabin-title {
-            background: #0B1A3A;
-            color: #C9A227;
-            font-size: 11px;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            font-weight: 700;
-            text-align: center;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin: 18px 0 12px;
-        }
-        .print-route {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            gap: 8px;
-            font-weight: 700;
-            font-size: 13px;
-            color: #0B1A3A;
-            padding-bottom: 8px;
-            border-bottom: 1px dotted rgba(11,26,58,0.25);
-            margin-bottom: 10px;
-        }
-        .print-meal-name {
-            font-size: 12px;
-            font-weight: 700;
-            color: #C9A227;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            margin: 14px 0 6px;
-        }
-        .print-culinary-name {
-            font-size: 11px;
-            font-weight: 700;
-            color: #5B3E96;
-            margin: 8px 0 4px;
-        }
-        .print-course-block {
-            break-inside: avoid;
-            page-break-inside: avoid;
-        }
-        .print-course-name {
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: #6B7280;
-            margin: 8px 0 2px;
-        }
-        .print-item {
-            font-size: 12.5px;
-            font-weight: 600;
-            line-height: 1.35;
-            padding: 1.5px 0;
-            color: #111827;
-        }
-        .print-item-desc {
-            font-size: 10.5px;
-            font-weight: 400;
-            color: #6B7280;
-            line-height: 1.35;
-            margin-bottom: 2px;
-        }
-        .print-badge {
-            display: inline-block;
-            font-size: 9px;
-            font-weight: 700;
-            padding: 1px 5px;
-            border-radius: 4px;
-            margin-left: 4px;
-            vertical-align: middle;
-        }
-        .print-badge-v { background: #D1FAE5; color: #047857; }
-        .print-badge-w { background: #DBEAFE; color: #1D4ED8; }
-        .print-badge-c { background: #EDE9FE; color: #6D28D9; }
-        .print-flag {
-            font-size: 11px;
-            padding: 8px 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-weight: 600;
-        }
-        .print-footer {
-            margin-top: 20px;
-            padding-top: 10px;
-            border-top: 1.5px solid #C9A227;
-            text-align: center;
-            font-size: 9px;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            color: #6B7280;
-            font-weight: 700;
-        }
-        .print-snack-name {
-            font-size: 11px;
-            font-weight: 700;
-            color: #5B3E96;
-            margin: 8px 0 2px;
-        }
+        .print-edit-card textarea { min-height: 56px; resize: vertical; }
 
         @media print {
-            @page { margin: 10mm 12mm; }
+            @page { margin: 8mm; }
             html, body {
                 background: #fff !important;
                 color: #111 !important;
                 overflow: visible !important;
                 height: auto !important;
             }
-            #sky-canvas,
-            #print-backdrop,
-            .no-print {
-                display: none !important;
-            }
-            #app-root > *:not(#print-sheet) {
-                display: none !important;
-            }
-            #print-sheet {
+            #sky-canvas, .no-print { display: none !important; }
+            #app-root > *:not(#print-overlay) { display: none !important; }
+            #print-overlay {
                 position: static !important;
-                transform: none !important;
-                inset: auto !important;
-                top: auto !important;
-                height: auto !important;
-                max-height: none !important;
-                overflow: visible !important;
-                background: #fff !important;
-                backdrop-filter: none !important;
-                -webkit-backdrop-filter: none !important;
-                border: none !important;
-                border-radius: 0 !important;
                 display: block !important;
-                box-shadow: none !important;
-            }
-            #print-content {
-                overflow: visible !important;
-                padding: 0 !important;
-                max-width: none !important;
-                width: 100% !important;
-            }
-            .print-document {
-                box-shadow: none !important;
-                border: none !important;
-                border-radius: 0 !important;
-                padding: 0 !important;
                 background: #fff !important;
+                color: #111 !important;
+                inset: auto !important;
+                height: auto !important;
+                overflow: visible !important;
             }
-            .print-cabin-title,
-            .print-badge {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+            #print-stage { overflow: visible !important; padding: 0 !important; }
+            #print-paper-wrap { transform: none !important; }
+            .print-paper {
+                box-shadow: none !important;
+                width: 100% !important;
+                min-height: 0 !important;
             }
+            .print-paper.print-grey { filter: grayscale(1); }
         }
     </style>
 </head>
@@ -779,36 +673,59 @@
             </div>
         </div>
 
-        <!-- Menu Printer Sheet (Step 6) -->
-        <div id="print-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="print-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
-            <div class="w-full flex justify-center py-3 shrink-0 no-print">
-                <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
-            </div>
-            <div class="flex items-center justify-between px-6 pb-3 shrink-0 no-print">
-                <h3 class="text-xl font-bold">Menu Printer</h3>
-                <button id="btn-close-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5 no-print">
-                <div class="flex bg-black/5 dark:bg-white/5 rounded-full p-1 max-w-[240px]">
-                    <button type="button" id="print-mode-compact" class="flex-1 py-1.5 rounded-full text-[11px] font-bold bg-sia-gold text-black">Compact</button>
-                    <button type="button" id="print-mode-detailed" class="flex-1 py-1.5 rounded-full text-[11px] font-bold text-gray-500">Detailed</button>
+        <!-- Menu Printer -->
+        <div id="print-overlay" class="fixed inset-0 z-[60] hidden flex flex-col bg-[#04070F] text-white">
+            <div class="shrink-0 pt-[max(10px,env(safe-area-inset-top))] px-3 pb-2 no-print">
+                <div class="flex items-center gap-2">
+                    <button type="button" id="btn-close-print" class="w-10 h-10 rounded-full bg-white/10 border border-white/10 flex items-center justify-center shrink-0">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex-1 min-w-0">
+                        <div id="print-title" class="font-bold text-sm truncate">Menu Printer</div>
+                        <div id="print-subtitle" class="text-[10px] text-white/50 truncate"></div>
+                    </div>
+                    <div class="relative shrink-0">
+                        <button type="button" id="print-btn-export" class="h-10 px-5 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black">Export</button>
+                        <div id="print-export-menu" class="hidden absolute right-0 top-full mt-2 w-44 glass-bubble rounded-2xl border border-sia-gold/20 overflow-hidden z-10 p-1">
+                            <button type="button" data-export="png" class="w-full text-left px-3 py-2.5 text-xs font-bold rounded-xl hover:bg-white/10">PNG image</button>
+                            <button type="button" data-export="jpeg" class="w-full text-left px-3 py-2.5 text-xs font-bold rounded-xl hover:bg-white/10">JPEG image</button>
+                            <button type="button" data-export="word" class="w-full text-left px-3 py-2.5 text-xs font-bold rounded-xl hover:bg-white/10">Word document</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="print-sector-row" class="flex gap-2 overflow-x-auto mt-3"></div>
+                <div class="flex gap-2 overflow-x-auto mt-3 items-center">
+                    <div class="flex bg-white/8 rounded-full p-0.5 shrink-0 border border-white/10">
+                        <button type="button" id="print-layout-elegant" class="px-3 h-8 rounded-full text-[11px] font-bold bg-sia-gold text-black">Elegant</button>
+                        <button type="button" id="print-layout-compact" class="px-3 h-8 rounded-full text-[11px] font-bold text-white/60">Compact</button>
+                    </div>
+                    <div class="flex bg-white/8 rounded-full p-0.5 shrink-0 border border-white/10">
+                        <button type="button" id="print-paper-a4" class="px-3 h-8 rounded-full text-[11px] font-bold bg-sia-gold text-black">A4</button>
+                        <button type="button" id="print-paper-a6" class="px-3 h-8 rounded-full text-[11px] font-bold text-white/60">A6</button>
+                    </div>
+                    <div class="flex items-center gap-1 shrink-0 text-[11px] font-bold">
+                        <button type="button" id="print-zoom-out" class="w-8 h-8 rounded-full bg-white/8 border border-white/10">A−</button>
+                        <span id="print-zoom-label" class="w-10 text-center text-white/80">100%</span>
+                        <button type="button" id="print-zoom-in" class="w-8 h-8 rounded-full bg-white/8 border border-white/10">A+</button>
+                    </div>
+                </div>
+                <div class="flex gap-2 overflow-x-auto mt-2">
+                    <button type="button" id="print-opt-grey" class="h-8 px-3 rounded-full text-[11px] font-bold border border-white/15 text-white/70 shrink-0">Greyscale</button>
+                    <button type="button" id="print-opt-desc" class="h-8 px-3 rounded-full text-[11px] font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
+                </div>
+                <div class="flex mt-3 bg-white/8 rounded-full p-0.5 border border-white/10">
+                    <button type="button" id="print-tab-sheet" class="flex-1 h-9 rounded-full text-xs font-bold bg-sia-gold text-black">Menu sheet</button>
+                    <button type="button" id="print-tab-edit" class="flex-1 h-9 rounded-full text-xs font-bold text-white/70">Edit content</button>
                 </div>
             </div>
-            <div class="px-4 pt-4 pb-4 overflow-y-auto max-w-2xl mx-auto w-full flex-grow relative" id="print-content">
-                <div id="print-loading" class="hidden flex flex-col items-center justify-center py-12 space-y-4 no-print">
+            <div id="print-stage" class="flex-1 overflow-auto px-3 pb-[max(16px,env(safe-area-inset-bottom))]">
+                <div id="print-loading" class="hidden flex flex-col items-center justify-center py-16 space-y-4 no-print">
                     <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
-                    <div class="text-sm font-semibold text-gray-500 animate-pulse">Preparing print document...</div>
+                    <div class="text-sm font-semibold text-white/50">Preparing menu sheet…</div>
                 </div>
-                <div id="print-error" class="hidden text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
-                <div id="print-document-wrap"></div>
-            </div>
-            <div class="px-6 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] shrink-0 border-t border-black/5 dark:border-white/5 max-w-2xl mx-auto w-full no-print">
-                <button id="btn-do-print" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
-                    <i data-lucide="printer" class="w-4 h-4"></i> Print / Save PDF
-                </button>
+                <div id="print-error" class="hidden text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
+                <div id="print-paper-wrap" class="flex justify-center py-3"></div>
+                <div id="print-edit-wrap" class="hidden max-w-xl mx-auto py-3 space-y-3"></div>
             </div>
         </div>
     </div>
@@ -4469,19 +4386,23 @@ function getRegionForAirport(code) {
         }
 
         // ==========================================
-        // STEP 6: INFLIGHT MENU PRINTER
+        // INFLIGHT MENU PRINTER
         // ==========================================
 
-        const PRINT_CABIN_NAMES = {
-            'FCL': 'First / Suites',
-            'JCL': 'Business',
-            'SCL': 'Premium Economy',
-            'YCL': 'Economy'
-        };
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
-        let printDetailed = false;
+        const PRINT_ALLERGENS = ['salmon', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal'];
         let lastPrintBundles = null;
         let lastPrintStale = false;
+        let printState = {
+            layout: 'elegant',
+            paper: 'a4',
+            zoom: 100,
+            greyscale: false,
+            descriptions: true,
+            tab: 'sheet',
+            sectorIdx: 0,
+            model: null
+        };
 
         function escapePrintHtml(str) {
             if (str == null || str === '') return '';
@@ -4502,46 +4423,33 @@ function getRegionForAirport(code) {
             return name;
         }
 
-        function printDietBadges(icons) {
-            if (!icons || !icons.length) return '';
-            let html = '';
-            if (icons.includes('VGT')) html += '<span class="print-badge print-badge-v">V</span>';
-            if (icons.includes('WLSGD')) html += '<span class="print-badge print-badge-w">Wellness</span>';
-            if (icons.includes('ICP')) html += '<span class="print-badge print-badge-c">Chef</span>';
-            return html;
+        function printCabinTitle(code) {
+            return menuCabinLabel(code, currentMenuSearch.aircraftType);
         }
 
         function closeMenuPrinter() {
-            const backdrop = document.getElementById('print-backdrop');
-            const sheet = document.getElementById('print-sheet');
-            backdrop.classList.add('opacity-0');
-            sheet.classList.add('translate-y-full');
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
+            const overlay = document.getElementById('print-overlay');
+            const menu = document.getElementById('print-export-menu');
+            if (menu) menu.classList.add('hidden');
+            if (overlay) overlay.classList.add('hidden');
         }
 
         function openPrintSheetChrome() {
-            const backdrop = document.getElementById('print-backdrop');
-            const sheet = document.getElementById('print-sheet');
-            backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
-            }, 10);
+            const overlay = document.getElementById('print-overlay');
+            overlay.classList.remove('hidden');
             lucide.createIcons();
         }
 
         function setPrintLoading(isLoading) {
             const loading = document.getElementById('print-loading');
             const err = document.getElementById('print-error');
-            const wrap = document.getElementById('print-document-wrap');
-            const btn = document.getElementById('btn-do-print');
+            const wrap = document.getElementById('print-paper-wrap');
+            const edit = document.getElementById('print-edit-wrap');
             err.classList.add('hidden');
             if (isLoading) {
                 loading.classList.remove('hidden');
                 wrap.innerHTML = '';
-                btn.disabled = true;
+                edit.innerHTML = '';
             } else {
                 loading.classList.add('hidden');
             }
@@ -4550,11 +4458,9 @@ function getRegionForAirport(code) {
         function showPrintError(msg) {
             const loading = document.getElementById('print-loading');
             const err = document.getElementById('print-error');
-            const btn = document.getElementById('btn-do-print');
             loading.classList.add('hidden');
             err.textContent = msg;
             err.classList.remove('hidden');
-            btn.disabled = true;
         }
 
         async function fetchMenuForPrinter(flightNumber, date, cabinClass) {
@@ -4620,132 +4526,460 @@ function getRegionForAirport(code) {
             });
         }
 
-        function buildPrintMealHtml(meal) {
-            const selections = meal.selectionDetails || [];
-            if (!selections.length) {
-                return `<div class="print-item" style="font-weight:500;color:#6B7280;">No meal items published.</div>`;
+        function printItemFromRaw(it) {
+            if (!it) return null;
+            if (typeof it === 'string') {
+                const name = cleanMenuText(it);
+                return name ? { name: name, desc: '' } : null;
             }
-            const showCulinary = selections.length > 1;
-            return selections.map((selection) => {
-                const culinaryLabel = showCulinary
-                    ? `<div class="print-culinary-name">${escapePrintHtml(shortenCulinaryName(selection.name))}</div>`
-                    : '';
-                const courses = (selection.mealCourses || []).map((course) => {
-                    const choose = course.maxSequence > 1 ? ` (Choose ${course.maxSequence})` : '';
-                    const items = (course.items || []).map((item) => {
-                        const desc = (printDetailed && item.description)
-                            ? `<div class="print-item-desc">${escapePrintHtml(item.description)}</div>`
-                            : '';
-                        return `<div class="print-item">${escapePrintHtml(item.name)}${printDietBadges(item.icons)}</div>${desc}`;
-                    }).join('');
-                    return `<div class="print-course-block"><div class="print-course-name">${escapePrintHtml(course.category)}${choose}</div>${items}</div>`;
-                }).join('');
-                return `${culinaryLabel}${courses}`;
+            const name = cleanMenuText(it.name || it.title || it.itemName || '');
+            if (!name) return null;
+            const desc = cleanMenuText(it.description || it.itemDescription || it.vintage || it.region || it.desc || '');
+            const footnote = cleanMenuText(it.footnote || '');
+            return { name: name, desc: [desc, footnote].filter(Boolean).join(' ') };
+        }
+
+        function printCourseLabel(raw) {
+            const l = String(raw || '').toLowerCase();
+            if (/appet|starter|salad|canap/.test(l)) return 'Appetizer';
+            if (/main|entr[eé]e|entree/.test(l)) return 'Main Course';
+            if (/dessert|sweet|pudding/.test(l)) return 'Dessert';
+            if (/baker|bread/.test(l)) return 'From The Bakery';
+            if (/praline|chocolate/.test(l)) return 'Pralines';
+            if (/light|snack|delect/.test(l)) return 'Light Bites';
+            return cleanMenuText(raw || 'Course');
+        }
+
+        function printCompactCourse(label) {
+            const l = String(label || '').toLowerCase();
+            if (/appet/.test(l)) return 'APP';
+            if (/main/.test(l)) return 'MAIN';
+            if (/dessert/.test(l)) return 'DESSERT';
+            if (/baker/.test(l)) return 'FROM THE BAKERY';
+            if (/praline/.test(l)) return 'PRALINES';
+            if (/light/.test(l)) return 'LIGHT BITES';
+            if (/champagn/.test(l)) return 'CHAMPAGNE';
+            if (/white/.test(l)) return 'WHITE';
+            if (/red/.test(l)) return 'RED';
+            return String(label || '').toUpperCase();
+        }
+
+        function printIsDelectable(name) {
+            return /delectable|snack|light bite/i.test(name || '');
+        }
+
+        function collectPrintDrinks(leg) {
+            const bevEn = extractEnUkBlock(leg, 'beverage');
+            const groups = [];
+            ((bevEn && bevEn.categories) || []).forEach((cat) => {
+                const catName = cleanMenuText(cat.name || '');
+                if (/snack|delectable/i.test(catName)) return;
+                const subs = (cat.subcategories && cat.subcategories.length) ? cat.subcategories : [cat];
+                subs.forEach((sub) => {
+                    const specs = (sub.specialities && sub.specialities.length) ? sub.specialities : [sub];
+                    const items = [];
+                    specs.forEach((spec) => {
+                        const raw = Array.isArray(spec.items) ? spec.items : [];
+                        if (raw.length) raw.forEach((it) => { const row = printItemFromRaw(it); if (row) items.push(row); });
+                        else if (spec && spec.name && spec !== sub) {
+                            const row = printItemFromRaw(spec);
+                            if (row) items.push(row);
+                        }
+                    });
+                    (sub.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) items.push(row); });
+                    const typeName = cleanMenuText(sub.name || catName);
+                    if (items.length) groups.push({ name: typeName, items: items });
+                });
+            });
+            return groups;
+        }
+
+        function collectPrintSnacks(leg) {
+            const items = [];
+            const subs = leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories;
+            (subs || []).forEach((sub) => {
+                (sub.items || []).forEach((it) => {
+                    const row = printItemFromRaw(it);
+                    if (row) items.push(row);
+                });
+            });
+            return items;
+        }
+
+        function collectPrintMeals(leg) {
+            const menuEn = extractEnUkBlock(leg, 'menu');
+            const meals = (menuEn && menuEn.meals) || [];
+            const services = [];
+            const delectables = [];
+            meals.forEach((meal) => {
+                const svcName = cleanMenuText(meal.mealServiceName || 'Meal');
+                if (printIsDelectable(svcName)) {
+                    (meal.selectionDetails || []).forEach((sel) => {
+                        (sel.mealCourses || []).forEach((course) => {
+                            (course.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) delectables.push(row); });
+                        });
+                    });
+                    return;
+                }
+                const courses = [];
+                (meal.selectionDetails || []).forEach((sel, selIdx) => {
+                    const culinary = shortenCulinaryName(sel.name);
+                    (sel.mealCourses || []).forEach((course) => {
+                        const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
+                        if (!items.length) return;
+                        courses.push({
+                            label: printCourseLabel(course.category),
+                            culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
+                            items: items
+                        });
+                    });
+                    const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
+                        ? sel.breadDetails
+                        : ((selIdx === 0 && Array.isArray(meal.breadDetails)) ? meal.breadDetails : []);
+                    const breadItems = (breads || []).map(printItemFromRaw).filter(Boolean);
+                    if (breadItems.length) {
+                        courses.push({ label: 'From The Bakery', culinary: '', items: breadItems });
+                    }
+                });
+                services.push({ name: svcName, courses: courses });
+            });
+            collectPrintSnacks(leg).forEach((it) => delectables.push(it));
+            return { services: services, delectables: delectables };
+        }
+
+        function buildPrintModel(bundles) {
+            const sectorsMap = new Map();
+            bundles.forEach((bundle) => {
+                indexMenuImages(bundle.data);
+                filterPrintLegs(bundle.data.legs || []).forEach((leg) => {
+                    const fd = leg.flightDetails || {};
+                    const code = (fd.departureAirportCode || '') + '-' + (fd.arrivalAirportCode || '');
+                    if (!sectorsMap.has(code)) {
+                        sectorsMap.set(code, {
+                            code: code,
+                            dep: fd.departureAirportCode || '',
+                            arr: fd.arrivalAirportCode || '',
+                            cabins: []
+                        });
+                    }
+                    const parsed = collectPrintMeals(leg);
+                    sectorsMap.get(code).cabins.push({
+                        code: bundle.cabinClass,
+                        name: printCabinTitle(bundle.cabinClass),
+                        services: parsed.services,
+                        delectables: parsed.delectables,
+                        drinks: collectPrintDrinks(leg)
+                    });
+                });
+            });
+            const sectors = Array.from(sectorsMap.values());
+            sectors.forEach((sec) => {
+                sec.cabins.sort((a, b) => {
+                    const ia = PRINT_CABIN_ORDER.indexOf(a.code);
+                    const ib = PRINT_CABIN_ORDER.indexOf(b.code);
+                    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+                });
+            });
+            const dObj = new Date(currentMenuSearch.date + 'T00:00:00');
+            const dateLong = dObj.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase();
+            const dd = String(dObj.getDate()).padStart(2, '0');
+            const mm = String(dObj.getMonth() + 1).padStart(2, '0');
+            const yy = String(dObj.getFullYear()).slice(-2);
+            return {
+                flight: String(currentMenuSearch.flightNumber || ''),
+                dateLong: dateLong,
+                dateShort: dd + mm + yy,
+                cabinCodes: (currentMenuSearch.selectedCabins || []).map((c) => c).sort((a, b) => PRINT_CABIN_ORDER.indexOf(a) - PRINT_CABIN_ORDER.indexOf(b)),
+                stale: lastPrintStale,
+                sectors: sectors
+            };
+        }
+
+        function printStrikeAllergens(name) {
+            const words = String(name || '').split(/(\s+)/);
+            return words.map((w) => {
+                const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                if (PRINT_ALLERGENS.indexOf(core) !== -1) return '<s>' + escapePrintHtml(w) + '</s>';
+                return escapePrintHtml(w);
             }).join('');
         }
 
-        function buildPrintSnacksHtml(leg) {
-            const subs = leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories;
-            if (!subs || !subs.length) return '';
-            let html = `<div class="print-meal-name">Snacks</div>`;
-            if (leg.drySnack.header) {
-                html += `<div class="print-item-desc" style="margin-bottom:6px;">${escapePrintHtml(leg.drySnack.header)}</div>`;
-            }
-            subs.forEach((sub) => {
-                if (!sub.items || !sub.items.length) return;
-                html += `<div class="print-snack-name">${escapePrintHtml(sub.name)}</div>`;
-                sub.items.forEach((item) => {
-                    html += `<div class="print-item">${escapePrintHtml(item.name)}</div>`;
-                });
-            });
-            return html;
+        function currentPrintSector() {
+            const model = printState.model;
+            if (!model || !model.sectors.length) return null;
+            return model.sectors[Math.min(printState.sectorIdx, model.sectors.length - 1)];
         }
 
-        function buildPrintFlagsHtml(leg) {
-            let html = '';
-            if (leg.isNoMenuPlanned) {
-                html += `<div class="print-flag" style="background:#DBEAFE;color:#1D4ED8;">Menu may change prior to departure.</div>`;
-            }
-            if (leg.isSnackBag) {
-                html += `<div class="print-flag" style="background:#F3E8FF;color:#7C3AED;">This sector operates a snack bag service instead of a full meal service.</div>`;
-            }
-            if (leg.isBentoBox) {
-                html += `<div class="print-flag" style="background:#FFEDD5;color:#C2410C;">This sector operates a Bento Box service.</div>`;
-            }
-            if (leg.isHawkerPromo) {
-                html += `<div class="print-flag" style="background:#FEE2E2;color:#B91C1C;">Special Hawker Promo Menu Available.</div>`;
-            }
-            if (leg.guestChef && leg.guestChef.header) {
-                html += `<div class="print-flag" style="background:#FEF3C7;color:#92400E;">${escapePrintHtml(leg.guestChef.header)}: ${escapePrintHtml(leg.guestChef.message || '')}</div>`;
-            }
-            return html;
-        }
-
-        function buildPrintDocumentHtml(bundles, isAnyStale) {
-            const dObj = new Date(currentMenuSearch.date + 'T00:00:00');
-            const dateDisplay = dObj.toLocaleDateString('en-GB', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric'
-            });
-            const staleNote = isAnyStale
-                ? `<div class="print-sub" style="color:#B45309;">Offline copy • may be outdated</div>`
-                : '';
-
-            let body = '';
-            bundles.forEach((bundle) => {
-                const legs = filterPrintLegs(bundle.data.legs || []);
-                body += `<div class="print-cabin-title">${escapePrintHtml(bundle.cabinName)}</div>`;
-                if (!legs.length) {
-                    body += `<div class="print-item" style="font-weight:500;color:#6B7280;margin-bottom:12px;">No sectors available for this cabin.</div>`;
-                    return;
-                }
-                legs.forEach((leg) => {
-                    const fd = leg.flightDetails || {};
-                    const dur = formatDuration(fd.departureUtcDate, fd.arrivalUtcDate);
-                    const dayShift = getDayShift(fd.departureLocalDate, fd.arrivalLocalDate);
-                    body += `<div class="print-route"><span>${escapePrintHtml(fd.departureAirportCode)} ✈ ${escapePrintHtml(fd.arrivalAirportCode)}</span><span style="font-size:11px;font-weight:600;color:#6B7280;">${escapePrintHtml(dur)}${dayShift ? ' · ' + dayShift : ''}</span></div>`;
-                    body += buildPrintFlagsHtml(leg);
-
-                    const meals = leg.menu && leg.menu.language && leg.menu.language.EN_UK && leg.menu.language.EN_UK.meals;
-                    if (meals && meals.length) {
-                        meals.forEach((meal) => {
-                            body += `<div class="print-meal-name">${escapePrintHtml(meal.mealServiceName || 'Meal')}</div>`;
-                            body += buildPrintMealHtml(meal);
+        function renderElegantSheet(model, sector) {
+            const cabinsLine = (model.cabinCodes || []).join(' · ');
+            let html = '<div class="print-sheet-inner">';
+            html += `<div class="pe-head">
+                <div class="pe-kicker">Singapore Airlines</div>
+                <div class="pe-title">Inflight Menu</div>
+                <div class="pe-meta">SQ ${escapePrintHtml(model.flight)} · ${escapePrintHtml(model.dateLong)}${cabinsLine ? ' · ' + escapePrintHtml(cabinsLine) : ''}</div>
+            </div>`;
+            (sector.cabins || []).forEach((cabin) => {
+                html += `<div class="pe-cabin">${escapePrintHtml(cabin.name)} Class</div>`;
+                (cabin.services || []).forEach((svc) => {
+                    html += `<div class="pe-svc"><span>${escapePrintHtml(svc.name)}${sector.code ? ' · ' + escapePrintHtml(sector.code) : ''}</span></div>`;
+                    (svc.courses || []).forEach((course) => {
+                        html += `<div class="pe-course">${escapePrintHtml(course.label)}</div>`;
+                        (course.items || []).forEach((it) => {
+                            const dish = course.culinary ? it.name + ' · ' + course.culinary : it.name;
+                            html += `<div class="pe-dish">${escapePrintHtml(dish)}</div>`;
+                            if (printState.descriptions && it.desc) html += `<div class="pe-desc">${escapePrintHtml(it.desc)}</div>`;
                         });
-                    } else if (!leg.isSnackBag) {
-                        body += `<div class="print-item" style="font-weight:500;color:#6B7280;">No meal service published for this sector.</div>`;
-                    }
-                    body += buildPrintSnacksHtml(leg);
+                    });
+                });
+                if (cabin.delectables && cabin.delectables.length) {
+                    html += `<div class="pe-svc"><span>Delectables</span></div><div class="pe-delect">`;
+                    cabin.delectables.forEach((it) => {
+                        html += `<div class="pe-dish">${escapePrintHtml(it.name)}</div>`;
+                    });
+                    html += '</div>';
+                }
+            });
+            html += '<div class="pe-note">Crew homework · operational use only</div></div>';
+            return html;
+        }
+
+        function renderCompactSheet(model, sector) {
+            let html = '<div class="pc-inner">';
+            html += `<div class="pc-head"><span class="pc-sq">SQ${escapePrintHtml(model.flight)}</span><span class="pc-date">${escapePrintHtml(model.dateShort)}</span></div>`;
+            (sector.cabins || []).forEach((cabin) => {
+                html += `<div class="pc-cabin">${escapePrintHtml(cabin.code)}</div>`;
+                (cabin.services || []).forEach((svc) => {
+                    html += `<div class="pc-svc">${escapePrintHtml(svc.name)}</div>`;
+                    (svc.courses || []).forEach((course) => {
+                        const key = printCompactCourse(course.label);
+                        const names = (course.items || []).map((it) => printStrikeAllergens(it.name)).join(' / ');
+                        html += `<div class="pc-row"><span class="pc-course">${escapePrintHtml(key)}</span> ${names}</div>`;
+                    });
+                });
+                if (cabin.delectables && cabin.delectables.length) {
+                    html += `<div class="pc-svc">DELECTABLES</div>`;
+                    html += `<div class="pc-row">${cabin.delectables.map((it) => printStrikeAllergens(it.name)).join(' / ')}</div>`;
+                }
+                const drinks = cabin.drinks || [];
+                if (drinks.length) {
+                    html += `<div class="pc-gap"></div>`;
+                    drinks.forEach((g) => {
+                        const key = printCompactCourse(g.name);
+                        const names = (g.items || []).map((it) => escapePrintHtml(it.name)).join(', ');
+                        html += `<div class="pc-bev"><span class="pc-course">${escapePrintHtml(key)}</span> ${names}</div>`;
+                    });
+                }
+            });
+            html += '</div>';
+            return html;
+        }
+
+        function applyPrintChrome() {
+            const model = printState.model;
+            const n = model && model.sectors ? model.sectors.length : 0;
+            const title = document.getElementById('print-title');
+            const sub = document.getElementById('print-subtitle');
+            if (title) title.textContent = 'SQ ' + (model ? model.flight : '') + ' · ' + n + ' sheet' + (n === 1 ? '' : 's');
+            const sector = currentPrintSector();
+            if (sub) {
+                const route = sector ? (sector.dep + ' → ' + sector.arr) : '';
+                sub.textContent = (model ? model.dateLong : '') + (route ? ' · ' + route : '');
+            }
+            const row = document.getElementById('print-sector-row');
+            if (row) {
+                row.innerHTML = '';
+                if (n > 1) {
+                    (model.sectors || []).forEach((sec, idx) => {
+                        const on = idx === printState.sectorIdx;
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'h-8 px-3 rounded-full text-[11px] font-bold shrink-0 border ' + (on
+                            ? 'bg-sia-gold text-black border-sia-gold'
+                            : 'bg-white/8 text-white/80 border-white/15');
+                        btn.textContent = String(idx + 1);
+                        btn.addEventListener('click', () => {
+                            printState.sectorIdx = idx;
+                            renderPrintView();
+                        });
+                        row.appendChild(btn);
+                    });
+                }
+            }
+            const setSeg = (onId, offId, on) => {
+                const a = document.getElementById(onId);
+                const b = document.getElementById(offId);
+                if (!a || !b) return;
+                if (on) {
+                    a.classList.add('bg-sia-gold', 'text-black');
+                    a.classList.remove('text-white/60');
+                    b.classList.remove('bg-sia-gold', 'text-black');
+                    b.classList.add('text-white/60');
+                } else {
+                    b.classList.add('bg-sia-gold', 'text-black');
+                    b.classList.remove('text-white/60');
+                    a.classList.remove('bg-sia-gold', 'text-black');
+                    a.classList.add('text-white/60');
+                }
+            };
+            setSeg('print-layout-elegant', 'print-layout-compact', printState.layout === 'elegant');
+            setSeg('print-paper-a4', 'print-paper-a6', printState.paper === 'a4');
+            const grey = document.getElementById('print-opt-grey');
+            if (grey) {
+                grey.textContent = printState.greyscale ? '✓ Greyscale' : 'Greyscale';
+                grey.classList.toggle('bg-sia-gold', printState.greyscale);
+                grey.classList.toggle('text-black', printState.greyscale);
+                grey.classList.toggle('border-sia-gold', printState.greyscale);
+                grey.classList.toggle('text-white/70', !printState.greyscale);
+            }
+            const desc = document.getElementById('print-opt-desc');
+            if (desc) {
+                desc.textContent = printState.descriptions ? '✓ Descriptions' : 'Descriptions';
+                desc.classList.toggle('bg-sia-gold', printState.descriptions);
+                desc.classList.toggle('text-black', printState.descriptions);
+                desc.classList.toggle('border-sia-gold', printState.descriptions);
+                desc.classList.toggle('text-white/70', !printState.descriptions);
+            }
+            const tabSheet = document.getElementById('print-tab-sheet');
+            const tabEdit = document.getElementById('print-tab-edit');
+            const sheetOn = printState.tab === 'sheet';
+            if (tabSheet && tabEdit) {
+                tabSheet.classList.toggle('bg-sia-gold', sheetOn);
+                tabSheet.classList.toggle('text-black', sheetOn);
+                tabSheet.classList.toggle('text-white/70', !sheetOn);
+                tabEdit.classList.toggle('bg-sia-gold', !sheetOn);
+                tabEdit.classList.toggle('text-black', !sheetOn);
+                tabEdit.classList.toggle('text-white/70', sheetOn);
+            }
+            const zoomLab = document.getElementById('print-zoom-label');
+            if (zoomLab) zoomLab.textContent = printState.zoom + '%';
+        }
+
+        function renderPrintSheet() {
+            const wrap = document.getElementById('print-paper-wrap');
+            const edit = document.getElementById('print-edit-wrap');
+            wrap.classList.remove('hidden');
+            edit.classList.add('hidden');
+            const model = printState.model;
+            const sector = currentPrintSector();
+            if (!model || !sector) {
+                wrap.innerHTML = '';
+                return;
+            }
+            const paper = document.createElement('div');
+            paper.id = 'print-paper';
+            paper.className = 'print-paper print-' + printState.paper + (printState.greyscale ? ' print-grey' : '');
+            paper.innerHTML = printState.layout === 'compact'
+                ? renderCompactSheet(model, sector)
+                : renderElegantSheet(model, sector);
+            wrap.innerHTML = '';
+            wrap.appendChild(paper);
+            applyPrintZoom();
+        }
+
+        function applyPrintZoom() {
+            const wrap = document.getElementById('print-paper-wrap');
+            const paper = document.getElementById('print-paper');
+            if (!wrap || !paper) return;
+            paper.style.transform = 'none';
+            wrap.style.width = '';
+            wrap.style.height = '';
+            const stage = document.getElementById('print-stage');
+            const avail = Math.max(120, (stage ? stage.clientWidth : wrap.clientWidth) - 24);
+            const naturalW = paper.offsetWidth || 1;
+            const naturalH = paper.offsetHeight || 1;
+            const fit = Math.min(1, avail / naturalW);
+            const scale = fit * (printState.zoom / 100);
+            wrap.style.width = (naturalW * scale) + 'px';
+            wrap.style.height = (naturalH * scale) + 'px';
+            wrap.style.overflow = 'hidden';
+            paper.style.transformOrigin = 'top left';
+            paper.style.transform = 'scale(' + scale + ')';
+        }
+
+        function renderPrintEdit() {
+            const wrap = document.getElementById('print-paper-wrap');
+            const edit = document.getElementById('print-edit-wrap');
+            wrap.classList.add('hidden');
+            edit.classList.remove('hidden');
+            const sector = currentPrintSector();
+            if (!sector) { edit.innerHTML = ''; return; }
+            const frag = document.createDocumentFragment();
+            (sector.cabins || []).forEach((cabin, ci) => {
+                const h = document.createElement('div');
+                h.className = 'text-[10px] font-bold uppercase tracking-widest text-sia-gold px-1';
+                h.textContent = cabin.name;
+                frag.appendChild(h);
+                (cabin.services || []).forEach((svc, si) => {
+                    (svc.courses || []).forEach((course, oi) => {
+                        (course.items || []).forEach((it, ii) => {
+                            const card = document.createElement('div');
+                            card.className = 'print-edit-card space-y-2';
+                            const lab = document.createElement('div');
+                            lab.className = 'text-[10px] font-bold text-white/50 uppercase tracking-wider';
+                            lab.textContent = svc.name + ' · ' + course.label;
+                            const nameInp = document.createElement('input');
+                            nameInp.value = it.name || '';
+                            nameInp.addEventListener('input', () => { it.name = nameInp.value; });
+                            const descInp = document.createElement('textarea');
+                            descInp.value = it.desc || '';
+                            descInp.addEventListener('input', () => { it.desc = descInp.value; });
+                            card.appendChild(lab);
+                            card.appendChild(nameInp);
+                            card.appendChild(descInp);
+                            frag.appendChild(card);
+                        });
+                    });
+                });
+                (cabin.delectables || []).forEach((it) => {
+                    const card = document.createElement('div');
+                    card.className = 'print-edit-card space-y-2';
+                    const lab = document.createElement('div');
+                    lab.className = 'text-[10px] font-bold text-white/50 uppercase tracking-wider';
+                    lab.textContent = 'Delectables';
+                    const nameInp = document.createElement('input');
+                    nameInp.value = it.name || '';
+                    nameInp.addEventListener('input', () => { it.name = nameInp.value; });
+                    card.appendChild(lab);
+                    card.appendChild(nameInp);
+                    frag.appendChild(card);
+                });
+                (cabin.drinks || []).forEach((g) => {
+                    (g.items || []).forEach((it) => {
+                        const card = document.createElement('div');
+                        card.className = 'print-edit-card space-y-2';
+                        const lab = document.createElement('div');
+                        lab.className = 'text-[10px] font-bold text-white/50 uppercase tracking-wider';
+                        lab.textContent = g.name;
+                        const nameInp = document.createElement('input');
+                        nameInp.value = it.name || '';
+                        nameInp.addEventListener('input', () => { it.name = nameInp.value; });
+                        card.appendChild(lab);
+                        card.appendChild(nameInp);
+                        frag.appendChild(card);
+                    });
                 });
             });
+            edit.innerHTML = '';
+            edit.appendChild(frag);
+        }
 
-            return `
-                <div id="print-document" class="print-document">
-                    <div class="print-masthead">
-                        <div class="print-brand">CrewAssist · Inflight Menu</div>
-                        <div class="print-flight">SQ${escapePrintHtml(currentMenuSearch.flightNumber)} · ${escapePrintHtml(dateDisplay)}</div>
-                        ${staleNote}
-                    </div>
-                    ${body}
-                    <div class="print-footer">Crew homework · For operational use only</div>
-                </div>
-            `;
+        function renderPrintView() {
+            applyPrintChrome();
+            if (printState.tab === 'edit') renderPrintEdit();
+            else renderPrintSheet();
         }
 
         async function openMenuPrinter(flightNumber, date, cabinClasses) {
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
             currentMenuSearch.selectedCabins = cabinClasses;
-
-            const btn = document.getElementById('btn-do-print');
-            btn.disabled = true;
-            document.getElementById('print-document-wrap').innerHTML = '';
-            document.getElementById('print-error').classList.add('hidden');
+            printState.sectorIdx = 0;
+            printState.tab = 'sheet';
+            printState.model = null;
             setPrintLoading(true);
             openPrintSheetChrome();
-            addMessage('bot', 'Preparing your inflight menu for print...', true);
+            applyPrintChrome();
+            addMessage('bot', 'Preparing your inflight menu sheet...', true);
 
             const ordered = [...cabinClasses].sort((a, b) => {
                 const ia = PRINT_CABIN_ORDER.indexOf(a);
@@ -4758,53 +4992,139 @@ function getRegionForAirport(code) {
                     const result = await fetchMenuForPrinter(flightNumber, date, code);
                     return {
                         cabinClass: code,
-                        cabinName: PRINT_CABIN_NAMES[code] || code,
+                        cabinName: printCabinTitle(code),
                         data: result.data,
                         isStale: result.isStale
                     };
                 }));
-                const isAnyStale = results.some((r) => r.isStale);
                 lastPrintBundles = results;
-                lastPrintStale = isAnyStale;
-                document.getElementById('print-document-wrap').innerHTML = buildPrintDocumentHtml(results, isAnyStale);
+                lastPrintStale = results.some((r) => r.isStale);
+                printState.model = buildPrintModel(results);
                 setPrintLoading(false);
-                btn.disabled = false;
+                renderPrintView();
                 lucide.createIcons();
             } catch (err) {
-                showPrintError('Could not prepare the print document. ' + String(err.message || err));
-                addMessage('bot', 'I couldn\'t prepare the menu printer. Please try again.');
+                showPrintError('Could not prepare the menu sheet. ' + String(err.message || err));
+                addMessage('bot', "I couldn't prepare the menu printer. Please try again.");
             }
         }
 
-        function setPrintMode(detailed) {
-            printDetailed = detailed;
-            const compactBtn = document.getElementById('print-mode-compact');
-            const detailedBtn = document.getElementById('print-mode-detailed');
-            if (detailed) {
-                detailedBtn.classList.add('bg-sia-gold', 'text-black');
-                detailedBtn.classList.remove('text-gray-500');
-                compactBtn.classList.remove('bg-sia-gold', 'text-black');
-                compactBtn.classList.add('text-gray-500');
-            } else {
-                compactBtn.classList.add('bg-sia-gold', 'text-black');
-                compactBtn.classList.remove('text-gray-500');
-                detailedBtn.classList.remove('bg-sia-gold', 'text-black');
-                detailedBtn.classList.add('text-gray-500');
+        function printFileBase() {
+            const m = printState.model;
+            const s = currentPrintSector();
+            return 'SQ' + (m ? m.flight : '') + '_' + (s ? s.code : '') + '_' + printState.layout;
+        }
+
+        function downloadBlob(blob, filename) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
+        }
+
+        async function ensureHtml2Canvas() {
+            if (window.html2canvas) return;
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Could not load image exporter'));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function exportPrintImage(type) {
+            const wasEdit = printState.tab === 'edit';
+            if (wasEdit) {
+                printState.tab = 'sheet';
+                renderPrintView();
             }
-            if (lastPrintBundles) {
-                document.getElementById('print-document-wrap').innerHTML = buildPrintDocumentHtml(lastPrintBundles, lastPrintStale);
+            const paper = document.getElementById('print-paper');
+            if (!paper) {
+                await appAlert('Nothing to export yet.');
+                return;
+            }
+            const prevTransform = paper.style.transform;
+            try {
+                await ensureHtml2Canvas();
+                paper.style.transform = 'none';
+                const canvas = await window.html2canvas(paper, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true
+                });
+                const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png';
+                const ext = type === 'jpeg' ? 'jpg' : 'png';
+                await new Promise((resolve) => {
+                    canvas.toBlob((blob) => {
+                        if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
+                        resolve();
+                    }, mime, 0.92);
+                });
+            } catch (err) {
+                await appAlert('Could not export image. ' + String(err.message || err));
+            } finally {
+                paper.style.transform = prevTransform;
             }
         }
 
-        document.getElementById('print-backdrop').addEventListener('click', closeMenuPrinter);
-        document.getElementById('btn-close-print').addEventListener('click', closeMenuPrinter);
-        document.getElementById('print-mode-compact').addEventListener('click', () => setPrintMode(false));
-        document.getElementById('print-mode-detailed').addEventListener('click', () => setPrintMode(true));
-        document.getElementById('btn-do-print').addEventListener('click', () => {
-            if (document.getElementById('btn-do-print').disabled) return;
-            setTimeout(() => window.print(), 50);
-        });
-        
+        function exportPrintWord() {
+            const paper = document.getElementById('print-paper');
+            if (!paper) {
+                appAlert('Nothing to export yet.');
+                return;
+            }
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Menu</title></head><body>' + paper.innerHTML + '</body></html>';
+            downloadBlob(new Blob(['\ufeff' + html], { type: 'application/msword' }), printFileBase() + '.doc');
+        }
+
+        function bindPrintUi() {
+            const overlay = document.getElementById('print-overlay');
+            if (!overlay || overlay.dataset.bound === '1') return;
+            overlay.dataset.bound = '1';
+            document.getElementById('btn-close-print').addEventListener('click', closeMenuPrinter);
+            document.getElementById('print-layout-elegant').addEventListener('click', () => { printState.layout = 'elegant'; renderPrintView(); });
+            document.getElementById('print-layout-compact').addEventListener('click', () => { printState.layout = 'compact'; renderPrintView(); });
+            document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(); });
+            document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(); });
+            document.getElementById('print-zoom-out').addEventListener('click', () => {
+                printState.zoom = Math.max(70, printState.zoom - 10);
+                renderPrintView();
+            });
+            document.getElementById('print-zoom-in').addEventListener('click', () => {
+                printState.zoom = Math.min(140, printState.zoom + 10);
+                renderPrintView();
+            });
+            document.getElementById('print-opt-grey').addEventListener('click', () => { printState.greyscale = !printState.greyscale; renderPrintView(); });
+            document.getElementById('print-opt-desc').addEventListener('click', () => { printState.descriptions = !printState.descriptions; renderPrintView(); });
+            document.getElementById('print-tab-sheet').addEventListener('click', () => { printState.tab = 'sheet'; renderPrintView(); });
+            document.getElementById('print-tab-edit').addEventListener('click', () => { printState.tab = 'edit'; renderPrintView(); });
+            const expBtn = document.getElementById('print-btn-export');
+            const expMenu = document.getElementById('print-export-menu');
+            expBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                expMenu.classList.toggle('hidden');
+            });
+            expMenu.addEventListener('click', async (e) => {
+                const btn = e.target.closest('[data-export]');
+                if (!btn) return;
+                expMenu.classList.add('hidden');
+                const kind = btn.getAttribute('data-export');
+                if (kind === 'word') exportPrintWord();
+                else await exportPrintImage(kind);
+            });
+            document.addEventListener('click', (e) => {
+                if (!expMenu.classList.contains('hidden') && !e.target.closest('#print-btn-export') && !e.target.closest('#print-export-menu')) {
+                    expMenu.classList.add('hidden');
+                }
+            });
+            window.addEventListener('resize', () => {
+                if (!document.getElementById('print-overlay').classList.contains('hidden')) applyPrintZoom();
+            });
+        }
+        bindPrintUi();
     </script>
 </body>
 </html>
