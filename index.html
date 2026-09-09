@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#04070F">
     <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
+    <link rel="icon" type="image/png" href="icons/favicon.png">
     <link rel="apple-touch-icon" href="icons/logo-192.png">
 
     <!-- Google Fonts -->
@@ -113,6 +113,12 @@
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+        #btn-send svg {
+            display: block;
+            margin: 0;
+            width: 1rem;
+            height: 1rem;
         }
         #menu-meal-tabs-wrap,
         #menu-category-pills-wrap {
@@ -444,11 +450,11 @@
         <!-- Onboarding View -->
         <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
             <div class="h-[35%] flex items-center justify-center relative">
-                <div class="flex flex-col items-center">
-                    <div class="mb-5 animate-float">
-                        <img src="icons/logo-192.png" class="w-16 h-16 drop-shadow-2xl" alt="Plane">
+                <div class="flex flex-col items-center gap-1">
+                    <div class="animate-float">
+                        <img src="icons/logo-512.png" class="w-32 h-32 drop-shadow-2xl" alt="Plane">
                     </div>
-                    <span class="text-[10px] uppercase tracking-[0.25em] font-bold text-sia-gold">CrewAssist&trade;</span>
+                    <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
                 </div>
             </div>
             <div class="h-[65%] relative z-10 w-full backdrop-blur-sm">
@@ -572,8 +578,8 @@
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
                         <input type="text" id="chat-input" placeholder="IFA, LMA, COP, Menu, Print" class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
-                            <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
+                            <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
 
@@ -680,6 +686,16 @@
         <div id="menu-lightbox" class="fixed inset-0 z-[80] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <button type="button" id="menu-lightbox-dismiss" class="absolute inset-0 w-full h-full cursor-zoom-out" aria-label="Close image"></button>
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
+        </div>
+
+        <div id="app-dialog-backdrop" class="fixed inset-0 z-[90] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
+            <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 border border-sia-gold/20 shadow-2xl" onclick="event.stopPropagation()">
+                <p id="app-dialog-msg" class="text-sm font-bold text-center leading-relaxed mb-5"></p>
+                <div class="flex gap-2">
+                    <button type="button" id="app-dialog-cancel" class="hidden flex-1 h-11 rounded-full text-sm font-bold ui-input">Cancel</button>
+                    <button type="button" id="app-dialog-ok" class="flex-1 h-11 rounded-full text-sm font-bold cta-gold">OK</button>
+                </div>
+            </div>
         </div>
 
         <!-- Menu Viewer Sheet -->
@@ -1042,7 +1058,54 @@
             }
         }
 
+        let appDialogResolver = null;
+
+        function closeAppDialog(val) {
+            const backdrop = document.getElementById('app-dialog-backdrop');
+            const resolve = appDialogResolver;
+            appDialogResolver = null;
+            if (backdrop) {
+                backdrop.classList.add('opacity-0');
+                setTimeout(() => backdrop.classList.add('hidden'), 200);
+            }
+            if (resolve) resolve(!!val);
+        }
+
+        function showAppDialog(message, isConfirm) {
+            return new Promise((resolve) => {
+                const backdrop = document.getElementById('app-dialog-backdrop');
+                const msg = document.getElementById('app-dialog-msg');
+                const cancel = document.getElementById('app-dialog-cancel');
+                if (!backdrop || !msg || !cancel) {
+                    resolve(!isConfirm);
+                    return;
+                }
+                if (appDialogResolver) appDialogResolver(false);
+                appDialogResolver = resolve;
+                msg.textContent = message;
+                if (isConfirm) cancel.classList.remove('hidden');
+                else cancel.classList.add('hidden');
+                backdrop.classList.remove('hidden');
+                requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
+            });
+        }
+
+        function appAlert(message) { return showAppDialog(message, false); }
+        function appConfirm(message) { return showAppDialog(message, true); }
+
         function bindEvents() {
+            document.getElementById('app-dialog-ok').addEventListener('click', () => closeAppDialog(true));
+            document.getElementById('app-dialog-cancel').addEventListener('click', () => closeAppDialog(false));
+            document.getElementById('app-dialog-backdrop').addEventListener('click', (e) => {
+                if (e.target.id !== 'app-dialog-backdrop') return;
+                const cancel = document.getElementById('app-dialog-cancel');
+                const twoButtons = cancel && !cancel.classList.contains('hidden');
+                if (twoButtons) closeAppDialog(false);
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && appDialogResolver) closeAppDialog(false);
+            });
+
             // Onboarding Events
             document.getElementById('ob-name').addEventListener('input', (e) => {
                 tempProfile.name = e.target.value.trim();
@@ -1094,7 +1157,7 @@
                     localStorage.setItem('crewAssist.devMode', 'true');
                     document.getElementById('settings-developer').classList.remove('hidden');
                     document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
-                    alert('Developer Mode Unlocked');
+                    appAlert('Developer Mode Unlocked');
                     devTapCount = 0;
                 }
             });
@@ -1115,10 +1178,12 @@
             });
 
             document.getElementById('btn-clear-data').addEventListener('click', () => {
-                if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-                    localStorage.clear();
-                    location.reload();
-                }
+                appConfirm('Are you sure you want to clear all data? This cannot be undone.').then((ok) => {
+                    if (ok) {
+                        localStorage.clear();
+                        location.reload();
+                    }
+                });
             });
 
             // Developer Events
@@ -1127,9 +1192,9 @@
                     const parsed = JSON.parse(document.getElementById('dev-modifiers-json').value);
                     appModifiers = parsed;
                     localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
-                    alert('Modifiers saved successfully.');
+                    appAlert('Modifiers saved successfully.');
                 } catch (e) {
-                    alert('Invalid JSON format.');
+                    appAlert('Invalid JSON format.');
                 }
             });
 
@@ -1153,9 +1218,9 @@
                         appModifiers = parsed;
                         document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
                         localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
-                        alert('Modifiers imported successfully.');
+                        appAlert('Modifiers imported successfully.');
                     } catch (err) {
-                        alert('Error parsing imported file. Please ensure it is valid JSON.');
+                        appAlert('Error parsing imported file. Please ensure it is valid JSON.');
                     }
                 };
                 reader.readAsText(file);
@@ -2287,7 +2352,7 @@ function getRegionForAirport(code) {
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
-                                <input type="text" id="${id}-ifa-t${i}" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
+                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
                                 <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
                                     ${showUS ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
@@ -2364,7 +2429,7 @@ function getRegionForAirport(code) {
                             </div>
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
-                                <input type="text" id="${id}-lma-at${idx}" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                                <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 min-w-0">
@@ -2374,7 +2439,7 @@ function getRegionForAirport(code) {
                             </div>
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
-                                <input type="text" id="${id}-lma-dt${idx}" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                                <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
                     `;
@@ -2580,11 +2645,18 @@ function getRegionForAirport(code) {
             if (!str) return null;
             const match = str.match(/^(\d{1,2}):?(\d{2})$/);
             if (!match) return null;
-            const h = parseInt(match[1]);
-            const m = parseInt(match[2]);
+            const h = parseInt(match[1], 10);
+            const m = parseInt(match[2], 10);
             if (m > 59) return null;
             const hours = h + (m / 60);
             return hours > 0 ? hours : null;
+        }
+
+        function formatHoursHM(decimalHours) {
+            const totalMinutes = Math.round(Number(decimalHours) * 60);
+            const hh = Math.floor(totalMinutes / 60);
+            const mm = totalMinutes % 60;
+            return hh + 'H ' + String(mm).padStart(2, '0') + 'M';
         }
 
         function getLayoverMultiplier(sdp) {
@@ -2656,13 +2728,13 @@ function getRegionForAirport(code) {
                         logic = 'Paxing Override (SDP ignored)';
                     } else if (isTurnaround) {
                         mult = sharedTurnMult;
-                        logic = `Turnaround Bracket (Total SDP ${tripSdp.toFixed(1)}h)`;
+                        logic = `Turnaround Bracket (Total SDP ${formatHoursHM(tripSdp)})`;
                     } else if (sec.directUs) {
                         mult = IFA_CONFIG.directUSMultiplier;
                         logic = 'Direct US Override';
                     } else {
                         mult = getLayoverMultiplier(sec.sdp);
-                        logic = `Layover Bracket (SDP ${sec.sdp.toFixed(1)}h)`;
+                        logic = `Layover Bracket (SDP ${formatHoursHM(sec.sdp)})`;
                     }
                     
                     const allowance = sec.hours * rankRate * mult;
@@ -2674,7 +2746,7 @@ function getRegionForAirport(code) {
                                 <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
                                 <span>$${allowance.toFixed(2)}</span>
                             </div>
-                            <p class="text-[10px] text-gray-500">${sec.hours.toFixed(2)}h × $${rankRate} × ${mult}x</p>
+                            <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
                         </div>
                     `);
@@ -2941,7 +3013,7 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
                             <div class="flex items-center relative">
                                 <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
-                                <input type="text" id="fv-flight-${uniqueId}" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
+                                <input type="text" id="fv-flight-${uniqueId}" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
                             </div>
                         </div>
                         
@@ -3146,7 +3218,7 @@ function getRegionForAirport(code) {
                             const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
                             const label = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
                             contentHtml += `
-                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${label}</button>
+                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${label}</button>
                             `;
                         });
                         contentHtml += `
@@ -3171,7 +3243,7 @@ function getRegionForAirport(code) {
                     
                     data.cabinClasses.forEach(code => {
                         contentHtml += `
-                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold'); checkCabinsSelected('${id}');" data-cabin="${code}" class="border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors">${cabinNames[code] || code}</button>
+                            <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold'); checkCabinsSelected('${id}');" data-cabin="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${cabinNames[code] || code}</button>
                         `;
                     });
                     contentHtml += `
@@ -3513,11 +3585,11 @@ function getRegionForAirport(code) {
                     renderMenu(cachedData.data, true);
                 } catch (e) {
                     showMenuState(2);
-                    alert(errMsg);
+                    appAlert(errMsg);
                 }
             } else {
                 showMenuState(2);
-                alert(errMsg + ' No offline copy available.');
+                appAlert(errMsg + ' No offline copy available.');
             }
         }
         
@@ -4017,11 +4089,16 @@ function getRegionForAirport(code) {
             if (hasMeals) {
                 const firstMeal = menuEn.meals[0];
                 if (firstMeal && firstMeal.selectionDetails && firstMeal.selectionDetails.length > 1) {
-                    culinaryOptions = firstMeal.selectionDetails.map(sel => {
+                    culinaryOptions = firstMeal.selectionDetails.map((sel, idx) => {
                         let n = sel.name;
-                        if(n.toLowerCase().includes('international')) n = 'International';
+                        if (n && n.toLowerCase().includes('international')) n = 'International';
                         else n = 'Ethnic';
-                        return n;
+                        return { name: n, idx: idx };
+                    });
+                    culinaryOptions.sort((a, b) => {
+                        if (a.name === 'International' && b.name !== 'International') return -1;
+                        if (b.name === 'International' && a.name !== 'International') return 1;
+                        return a.idx - b.idx;
                     });
                 }
             }
@@ -4032,22 +4109,26 @@ function getRegionForAirport(code) {
                 const culinaryLabel = document.getElementById('menu-culinary-label');
                 culinaryList.innerHTML = '';
                 
-                let defaultIdx = 0;
-                culinaryOptions.forEach((opt, idx) => {
-                    if (opt === 'International') defaultIdx = idx;
+                let defaultIdx = culinaryOptions[0] ? culinaryOptions[0].idx : 0;
+                let defaultName = culinaryOptions[0] ? culinaryOptions[0].name : 'Culinary';
+                culinaryOptions.forEach((opt) => {
+                    if (opt.name === 'International') {
+                        defaultIdx = opt.idx;
+                        defaultName = opt.name;
+                    }
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
-                    btn.textContent = opt;
+                    btn.textContent = opt.name;
                     btn.onclick = () => {
-                        culinaryLabel.textContent = opt;
+                        culinaryLabel.textContent = opt.name;
                         toggleMenuDropdown('culinary');
-                        switchCulinarySelection(idx);
+                        switchCulinarySelection(opt.idx);
                         scrollMenuToTop();
                     };
                     culinaryList.appendChild(btn);
                 });
-                culinaryLabel.textContent = culinaryOptions[defaultIdx];
+                culinaryLabel.textContent = defaultName;
                 culinaryWrap.classList.remove('hidden');
                 
                 setTimeout(() => { switchCulinarySelection(defaultIdx); }, 10);
