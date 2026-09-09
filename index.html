@@ -114,7 +114,6 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
-        #menu-dropdown-row,
         #menu-meal-tabs-wrap,
         #menu-category-pills-wrap {
             overflow-x: auto;
@@ -158,6 +157,11 @@
         .ui-input {
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.1);
+            height: 2.75rem;
+            min-height: 2.75rem;
+            box-sizing: border-box;
+            min-width: 0;
+            max-width: 100%;
         }
         html:not(.dark) .ui-input {
             background: rgba(0,0,0,0.03);
@@ -171,6 +175,21 @@
         input[type="time"] {
             font-family: "Plus Jakarta Sans", sans-serif !important;
             font-variant-numeric: tabular-nums;
+        }
+        input[type="date"] {
+            -webkit-appearance: none;
+            appearance: none;
+            overflow: hidden;
+        }
+        input[type="date"]::-webkit-date-and-time-value {
+            text-align: left;
+            min-height: 1.25rem;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            margin: 0;
+            padding: 0;
+            width: 1rem;
+            height: 1rem;
         }
 
         /* Gold CTA — light cream/navy, dark navy/gold */
@@ -2338,24 +2357,24 @@ function getRegionForAirport(code) {
                             </div>
                             <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2 mb-2">
-                            <div>
+                        <div class="grid grid-cols-2 gap-2 mb-2 min-w-0">
+                            <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
-                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
+                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg px-3 text-sm font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
-                                <input type="text" id="${id}-lma-at${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                                <input type="text" id="${id}-lma-at${idx}" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
+                        <div class="grid grid-cols-2 gap-2 min-w-0">
+                            <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Dep Date</label>
-                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
+                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg px-3 text-sm font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
                             </div>
-                            <div>
+                            <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
-                                <input type="text" id="${id}-lma-dt${idx}" class="ui-input w-full rounded-lg py-2 px-3 text-xs font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                                <input type="text" id="${id}-lma-dt${idx}" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
                     `;
@@ -2930,9 +2949,9 @@ function getRegionForAirport(code) {
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
-                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors active:scale-95">Today</button>
-                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors active:scale-95">Tomorrow</button>
-                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 border border-black/10 dark:border-white/10 rounded-lg px-3 py-1.5 text-xs font-bold transition-colors active:scale-95">Pick Date</button>
+                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Today</button>
+                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Tomorrow</button>
+                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Pick Date</button>
                             </div>
                             
                             <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
@@ -3296,11 +3315,13 @@ function getRegionForAirport(code) {
             if (isClosed && menu && icon) {
                 if (row) {
                     row.classList.remove('overflow-x-auto', 'overflow-y-hidden');
+                    row.style.overflow = 'visible';
                 }
                 menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
                 menu.classList.add('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
                 icon.classList.add('rotate-180');
             } else if (row) {
+                row.style.overflow = '';
                 row.classList.add('overflow-x-auto', 'overflow-y-hidden');
             }
         }
