@@ -203,6 +203,14 @@
         .menu-desc-toggle[data-open="1"] .menu-desc-chevron {
             transform: rotate(180deg);
         }
+        #menu-lightbox {
+            background: rgba(4, 7, 15, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        #menu-lightbox img {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+        }
 
         /* Step 6: Inflight Menu Printer */
         .print-document {
@@ -631,6 +639,12 @@
             <div class="px-6 py-6 overflow-y-auto max-w-xl mx-auto w-full space-y-6 flex-grow" id="results-content">
                 <!-- Injected via JS -->
             </div>
+        </div>
+
+        <!-- Menu image lightbox -->
+        <div id="menu-lightbox" class="fixed inset-0 z-[80] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6" role="dialog" aria-modal="true">
+            <button type="button" id="menu-lightbox-dismiss" class="absolute inset-0 w-full h-full cursor-zoom-out" aria-label="Close image"></button>
+            <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
         </div>
 
         <!-- Menu Viewer Sheet -->
@@ -3319,6 +3333,7 @@ function getRegionForAirport(code) {
         function closeMenuViewer() {
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
+            closeMenuLightbox();
             
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
@@ -3327,6 +3342,41 @@ function getRegionForAirport(code) {
                 backdrop.classList.add('hidden');
             }, 300);
         }
+
+        function openMenuLightbox(url) {
+            if (!url) return;
+            const box = document.getElementById('menu-lightbox');
+            const img = document.getElementById('menu-lightbox-img');
+            if (!box || !img) return;
+            img.src = url;
+            box.classList.remove('hidden');
+            requestAnimationFrame(() => box.classList.remove('opacity-0'));
+        }
+
+        function closeMenuLightbox() {
+            const box = document.getElementById('menu-lightbox');
+            const img = document.getElementById('menu-lightbox-img');
+            if (!box) return;
+            box.classList.add('opacity-0');
+            setTimeout(() => {
+                box.classList.add('hidden');
+                if (img) img.removeAttribute('src');
+            }, 280);
+        }
+
+        document.addEventListener('click', function (e) {
+            const thumb = e.target.closest && e.target.closest('.menu-thumb');
+            if (thumb) {
+                e.preventDefault();
+                e.stopPropagation();
+                openMenuLightbox(thumb.getAttribute('data-full'));
+                return;
+            }
+            if (e.target && e.target.id === 'menu-lightbox-dismiss') closeMenuLightbox();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeMenuLightbox();
+        });
         
         document.getElementById('menu-backdrop').addEventListener('click', closeMenuViewer);
         document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
@@ -3530,10 +3580,21 @@ function getRegionForAirport(code) {
 
         function menuItemRow(name, description, iconsHtml, imageUrl) {
             const img = imageUrl
-                ? `<img src="${imageUrl}" class="w-16 h-16 object-cover rounded-lg bg-black/10 shrink-0" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">`
+                ? `<button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${imageUrl}" aria-label="View photo">
+                        <img src="${imageUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.menu-thumb').replaceWith('')">
+                   </button>`
                 : '';
+            if (!imageUrl) {
+                return `
+                    <div class="pl-4 relative">
+                        <span class="absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold"></span>
+                        <div class="font-semibold text-sm leading-snug">${name || ''} ${iconsHtml || ''}</div>
+                        ${menuDescBlock(description)}
+                    </div>
+                `;
+            }
             return `
-                <div class="flex gap-3 items-start mb-3 last:mb-0">
+                <div class="flex gap-3 items-start">
                     ${img}
                     <div class="min-w-0 flex-1">
                         <div class="font-semibold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
@@ -3686,51 +3747,44 @@ function getRegionForAirport(code) {
             return `<div class="bg-white/30 dark:bg-black/30 rounded-xl p-4 border border-black/5 dark:border-white/5">${inner}</div>`;
         }
 
+        function menuItemsWrap(parts) {
+            if (!parts.length) return '';
+            if (parts.length === 1) return parts[0];
+            return `<div class="divide-y divide-black/10 dark:divide-white/10">${parts.map(p => `<div class="py-3 first:pt-0 last:pb-0">${p}</div>`).join('')}</div>`;
+        }
+
         function menuPlainItems(items) {
-            let html = '';
-            let bullets = [];
-            const flush = () => {
-                if (!bullets.length) return;
-                html += menuBulletList(bullets, 'name', 'description');
-                bullets = [];
-            };
+            const parts = [];
             (items || []).forEach(item => {
                 if (item == null || item === '') return;
                 if (typeof item === 'string') {
-                    bullets.push(item);
+                    parts.push(menuItemRow(item, '', '', ''));
                     return;
                 }
                 const img = item._img || extractSqImageUrl(item);
-                if (img) {
-                    flush();
-                    html += menuItemRow(
-                        cleanMenuText(item.name || item.itemName || ''),
-                        cleanMenuText(item.description || item.itemDescription || ''),
-                        '',
-                        img
-                    );
-                } else {
-                    bullets.push(item);
-                }
+                parts.push(menuItemRow(
+                    cleanMenuText(item.name || item.itemName || ''),
+                    cleanMenuText(item.description || item.itemDescription || ''),
+                    item.iconsHtml || '',
+                    img
+                ));
             });
-            flush();
-            return html;
+            return menuItemsWrap(parts);
         }
 
         function menuBulletList(items, nameKey, descKey) {
-            let html = `<ul class="list-disc pl-[1.15rem] space-y-2 text-sm font-semibold marker:text-sia-gold">`;
+            const parts = [];
             (items || []).forEach(item => {
                 if (item == null || item === '') return;
                 if (typeof item === 'string') {
-                    html += `<li class="pl-0.5 leading-snug">${item}</li>`;
+                    parts.push(menuItemRow(item, '', '', ''));
                     return;
                 }
                 const name = (nameKey ? item[nameKey] : null) || item.name || item.itemName || '';
                 const desc = (descKey ? item[descKey] : null) || item.description || item.itemDescription || '';
-                html += `<li class="pl-0.5 leading-snug">${name}${desc ? menuDescBlock(desc) : ''}</li>`;
+                parts.push(menuItemRow(cleanMenuText(name), cleanMenuText(desc), '', ''));
             });
-            html += `</ul>`;
-            return html;
+            return menuItemsWrap(parts);
         }
 
         function playMenuContentAnim(el) {
@@ -4001,15 +4055,17 @@ function getRegionForAirport(code) {
                                     let courseHtml = menuHairlineTitle(course.category, choiceLine);
                                     
                                     if (course.items) {
+                                        const dishParts = [];
                                         course.items.forEach(item => {
                                             const desc = [item.description, item.footnote].filter(Boolean).map(cleanMenuText).filter(Boolean).join(' ');
-                                            courseHtml += menuItemRow(
+                                            dishParts.push(menuItemRow(
                                                 cleanMenuText(item.name || item.title || item.itemName || ''),
                                                 desc,
                                                 menuItemIcons(item),
                                                 extractSqImageUrl(item, course, selection)
-                                            );
+                                            ));
                                         });
+                                        courseHtml += menuItemsWrap(dishParts);
                                     }
                                     selDiv.innerHTML += menuCourseCard(courseHtml);
                                 });
@@ -4019,11 +4075,13 @@ function getRegionForAirport(code) {
                                 : ((selIdx === 0 && Array.isArray(meal.breadDetails)) ? meal.breadDetails : []);
                             if (breads.length) {
                                 let breadHtml = menuHairlineTitle('Bakery & Warm Breads');
+                                const breadParts = [];
                                 breads.forEach(b => {
                                     const title = cleanMenuText(b.name || b.title || b.itemName || '');
                                     if (!title) return;
-                                    breadHtml += menuItemRow(title, cleanMenuText(b.description || ''), '', extractSqImageUrl(b, selection, meal));
+                                    breadParts.push(menuItemRow(title, cleanMenuText(b.description || ''), '', extractSqImageUrl(b, selection, meal)));
                                 });
+                                breadHtml += menuItemsWrap(breadParts);
                                 selDiv.innerHTML += menuCourseCard(breadHtml);
                             }
                             mealDiv.appendChild(selDiv);
