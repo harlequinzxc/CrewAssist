@@ -429,7 +429,7 @@
                             <button id="ob-submit" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
-                            
+                            <p id="app-semver" class="mt-4 text-[10px] tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none"></p>
                         </div>
                     </div>
                 </div>
@@ -917,6 +917,8 @@
             requestAnimationFrame(animate);
         }
 
+        const APP_VERSION = '1.4.0';
+
         // State
         let appProfile = null;
         let appPrefs = { autoScroll: true };
@@ -999,6 +1001,8 @@
             if (appProfile) {
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
             }
+            const semver = document.getElementById('app-semver');
+            if (semver) semver.textContent = 'v' + APP_VERSION;
         }
 
         let appDialogResolver = null;
@@ -1328,6 +1332,7 @@
             const kids = Array.from(chatContainer.children);
             hideTypingIndicator();
             botSpeakQueue = Promise.resolve();
+            lastBubbleReady = Promise.resolve();
             const greet = () => {
                 const greeting = getTimeGreeting();
                 const firstName = appProfile.name.split(' ')[0];
@@ -1362,6 +1367,7 @@
             }
             
             chatContainer.appendChild(msgDiv);
+            noteBubbleShown();
             if (appPrefs.autoScroll) scrollToBottom();
         }
 
@@ -1389,9 +1395,19 @@
         }
 
         let botSpeakQueue = Promise.resolve();
+        let lastBubbleReady = Promise.resolve();
+        const CHAT_ANIM_MS = 320;
+        const CHAT_GAP_MS = 500;
+
+        function noteBubbleShown() {
+            lastBubbleReady = new Promise((resolve) => {
+                setTimeout(resolve, CHAT_ANIM_MS + CHAT_GAP_MS);
+            });
+            return lastBubbleReady;
+        }
 
         function enqueueBot(fn) {
-            botSpeakQueue = botSpeakQueue.then(() => new Promise((resolve) => {
+            botSpeakQueue = botSpeakQueue.then(() => lastBubbleReady).then(() => new Promise((resolve) => {
                 showTypingIndicator();
                 setTimeout(() => {
                     Promise.resolve(hideTypingIndicator()).then(() => {
@@ -2272,6 +2288,7 @@ function getRegionForAirport(code) {
             `;
             
             chatContainer.appendChild(msgDiv);
+            noteBubbleShown();
             
             // Wait a tick for DOM
             setTimeout(() => {
@@ -3045,6 +3062,7 @@ function getRegionForAirport(code) {
             `;
             
             chatContainer.appendChild(msgDiv);
+            noteBubbleShown();
             lucide.createIcons();
             scrollToBottom();
         }
