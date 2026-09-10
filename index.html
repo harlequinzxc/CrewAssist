@@ -917,7 +917,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.1';
+        const APP_VERSION = '1.4.2';
 
         // State
         let appProfile = null;
@@ -3723,9 +3723,10 @@ function getRegionForAirport(code) {
         }
 
         function menuItemRow(name, description, iconsHtml, imageUrl) {
-            const img = imageUrl
-                ? `<button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${imageUrl}" aria-label="View photo">
-                        <img src="${imageUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.menu-thumb').replaceWith('')">
+            const safeUrl = imageUrl ? String(imageUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;') : '';
+            const img = safeUrl
+                ? `<button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${safeUrl}" aria-label="View photo">
+                        <img src="${safeUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="menuThumbFallback(this)">
                    </button>`
                 : '';
             if (!imageUrl) {
@@ -3806,7 +3807,8 @@ function getRegionForAirport(code) {
 
         function extractSqImageUrl() {
             const origin = 'https://inflightmenu.singaporeair.com';
-            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img'];
+            const skip = { items: 1, mealCourses: 1, selectionDetails: 1, subcategories: 1, specialities: 1, meals: 1, categories: 1, icons: 1, breadDetails: 1, children: 1, legs: 1 };
+            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img', 'ifeImage', 'dishImage', 'media'];
             const fromString = (s) => {
                 if (!s || typeof s !== 'string') return '';
                 const clean = s.trim();
@@ -3816,22 +3818,58 @@ function getRegionForAirport(code) {
                 if (clean.startsWith('/')) return origin + clean;
                 return origin + '/' + clean;
             };
-            for (let i = 0; i < arguments.length; i++) {
-                const src = arguments[i];
-                if (!src) continue;
-                if (typeof src === 'string') {
-                    const u = fromString(src);
-                    if (u) return u;
-                    continue;
-                }
-                if (typeof src === 'object') {
-                    for (let f = 0; f < fields.length; f++) {
-                        const u = fromString(src[fields[f]]);
+            const fromAny = (v, depth, loose) => {
+                if (v == null || depth > 5) return '';
+                if (typeof v === 'string') return loose ? fromString(v) : '';
+                if (typeof v !== 'object') return '';
+                if (Array.isArray(v)) {
+                    for (let i = 0; i < v.length; i++) {
+                        const u = fromAny(v[i], depth + 1, false);
                         if (u) return u;
                     }
+                    return '';
                 }
+                for (let f = 0; f < fields.length; f++) {
+                    if (v[fields[f]] == null) continue;
+                    const u = fromAny(v[fields[f]], depth + 1, true);
+                    if (u) return u;
+                }
+                const keys = Object.keys(v);
+                for (let i = 0; i < keys.length; i++) {
+                    const k = keys[i];
+                    if (skip[k]) continue;
+                    const kn = k.replace(/[^a-z0-9]/gi, '').toLowerCase();
+                    if (!/(image|img|thumb|photo|picture|ife)/.test(kn)) continue;
+                    const u = fromAny(v[k], depth + 1, true);
+                    if (u) return u;
+                }
+                return '';
+            };
+            for (let i = 0; i < arguments.length; i++) {
+                const u = fromAny(arguments[i], 0, typeof arguments[i] === 'string');
+                if (u) return u;
             }
             return '';
+        }
+
+        function menuThumbFallback(img) {
+            if (!img) return;
+            const thumb = img.closest('.menu-thumb');
+            const src = img.getAttribute('src') || '';
+            const origin = 'https://inflightmenu.singaporeair.com';
+            const assets = origin + '/assets';
+            const step = img.dataset.fb || '0';
+            if (step === '0' && src.indexOf(origin + '/') === 0 && src.indexOf(assets + '/') !== 0) {
+                img.dataset.fb = '1';
+                img.src = assets + src.slice(origin.length);
+                return;
+            }
+            if (step === '1' && src.indexOf(assets + '/') === 0) {
+                img.dataset.fb = '2';
+                img.src = origin + src.slice(assets.length);
+                return;
+            }
+            if (thumb) thumb.replaceWith('');
         }
 
         function menuImageUrl(path) {
@@ -3969,12 +4007,6 @@ function getRegionForAirport(code) {
 
         function isLightBitesName(name) {
             return /light\s*bite/i.test(name || '');
-        }
-
-        function isSnackBulletRow(mealName, courseName, itemName) {
-            if (isLightBitesName(courseName) || isLightBitesName(mealName) || isLightBitesName(itemName)) return false;
-            if (/snack/i.test(courseName || '')) return true;
-            return /muffin|cookie|cracker|pretzel|\bnuts\b|crisps|chips/i.test(itemName || '');
         }
 
         function menuSnackBullets(items) {
@@ -4291,12 +4323,11 @@ function getRegionForAirport(code) {
                                         course.items.forEach(item => {
                                             const desc = [item.description, item.footnote].filter(Boolean).map(cleanMenuText).filter(Boolean).join(' ');
                                             const dishName = cleanMenuText(item.name || item.title || item.itemName || '');
-                                            const asBullet = isSnackBulletRow(meal.mealServiceName, course.category, dishName);
                                             dishParts.push(menuItemRow(
                                                 dishName,
                                                 desc,
-                                                asBullet ? '' : menuItemIcons(item),
-                                                asBullet ? '' : resolveMenuImage(item, course, selection)
+                                                menuItemIcons(item),
+                                                resolveMenuImage(item, course, selection)
                                             ));
                                         });
                                         courseHtml += menuItemsWrap(dishParts);
