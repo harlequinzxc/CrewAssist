@@ -917,7 +917,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.2';
+        const APP_VERSION = '1.4.5';
 
         // State
         let appProfile = null;
@@ -3457,7 +3457,6 @@ function getRegionForAirport(code) {
             menuViewState = { category: 'meals', mealTab: 0 };
             currentMealServices = [];
             loadMenu(cabinClasses[0]);
-            
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
@@ -3471,6 +3470,7 @@ function getRegionForAirport(code) {
         let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '' };
         let menuViewState = { category: 'meals', mealTab: 0 };
         let currentMealServices = [];
+        let menuLoadGen = 0;
         const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
         
         function closeMenuViewer() {
@@ -3542,23 +3542,31 @@ function getRegionForAirport(code) {
         async function loadMenu(cabinClass) {
             const cacheKey = `SQ${currentMenuSearch.flightNumber}:${currentMenuSearch.date}:${cabinClass}`;
             currentMenuSearch.selectedCabin = cabinClass;
-            
-            // Check Cache
+            const gen = ++menuLoadGen;
+            const stillMine = () => gen === menuLoadGen && currentMenuSearch.selectedCabin === cabinClass;
+
+            let cachedData = null;
             const cachedStr = localStorage.getItem(cacheKey);
             if (cachedStr) {
                 try {
-                    const cachedData = JSON.parse(cachedStr);
-                    if (Date.now() - cachedData.timestamp < SQ_CACHE_TTL) {
-                        renderMenu(cachedData.data, false);
-                        return;
+                    const parsed = JSON.parse(cachedStr);
+                    if (Date.now() - parsed.timestamp < SQ_CACHE_TTL && parsed.data) {
+                        cachedData = parsed.data;
                     }
                 } catch (e) {
                     localStorage.removeItem(cacheKey);
                 }
             }
-            
+
+            if (cachedData) {
+                if (!stillMine()) return;
+                renderMenu(cachedData, false);
+                return;
+            }
+
             showMenuState('loading');
-            
+            if (!stillMine()) return;
+
             try {
                 const payload = {
                     carrierId: "SQ",
@@ -3575,24 +3583,24 @@ function getRegionForAirport(code) {
                 });
                 
                 const data = await res.json();
+                if (!stillMine()) return;
                 
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
                 if (data.statusCode === 200 && data.legs) {
-                    // Save to cache
                     localStorage.setItem(cacheKey, JSON.stringify({
                         timestamp: Date.now(),
                         data: data
                     }));
-                    
+                    if (!stillMine()) return;
                     renderMenu(data, false);
                 } else {
-                    // Handle error or serve stale
                     serveStaleCache(cacheKey, 'Menu data not found or unexpected format.');
                 }
             } catch (err) {
+                if (!stillMine()) return;
                 serveStaleCache(cacheKey, 'Network error while fetching menu. Details: ' + String(err.message || err));
             }
         }
@@ -3724,23 +3732,20 @@ function getRegionForAirport(code) {
 
         function menuItemRow(name, description, iconsHtml, imageUrl) {
             const safeUrl = imageUrl ? String(imageUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;') : '';
-            const img = safeUrl
-                ? `<button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${safeUrl}" aria-label="View photo">
-                        <img src="${safeUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="menuThumbFallback(this)">
-                   </button>`
-                : '';
-            if (!imageUrl) {
+            if (!safeUrl) {
                 return `
-                    <div class="pl-4 relative">
-                        <span class="absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold"></span>
+                    <div class="menu-dish pl-4 relative">
+                        <span class="menu-dish-bullet absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold"></span>
                         <div class="font-semibold text-sm leading-snug">${name || ''} ${iconsHtml || ''}</div>
                         ${menuDescBlock(description)}
                     </div>
                 `;
             }
             return `
-                <div class="flex gap-3 items-start">
-                    ${img}
+                <div class="menu-dish flex gap-3 items-start">
+                    <button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${safeUrl}" aria-label="View photo">
+                        <img src="${safeUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="menuThumbToBullet(this)">
+                    </button>
                     <div class="min-w-0 flex-1">
                         <div class="font-semibold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
                         ${menuDescBlock(description)}
@@ -3807,8 +3812,7 @@ function getRegionForAirport(code) {
 
         function extractSqImageUrl() {
             const origin = 'https://inflightmenu.singaporeair.com';
-            const skip = { items: 1, mealCourses: 1, selectionDetails: 1, subcategories: 1, specialities: 1, meals: 1, categories: 1, icons: 1, breadDetails: 1, children: 1, legs: 1 };
-            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img', 'ifeImage', 'dishImage', 'media'];
+            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img'];
             const fromString = (s) => {
                 if (!s || typeof s !== 'string') return '';
                 const clean = s.trim();
@@ -3818,58 +3822,35 @@ function getRegionForAirport(code) {
                 if (clean.startsWith('/')) return origin + clean;
                 return origin + '/' + clean;
             };
-            const fromAny = (v, depth, loose) => {
-                if (v == null || depth > 5) return '';
-                if (typeof v === 'string') return loose ? fromString(v) : '';
-                if (typeof v !== 'object') return '';
-                if (Array.isArray(v)) {
-                    for (let i = 0; i < v.length; i++) {
-                        const u = fromAny(v[i], depth + 1, false);
+            for (let i = 0; i < arguments.length; i++) {
+                const src = arguments[i];
+                if (!src) continue;
+                if (typeof src === 'string') {
+                    const u = fromString(src);
+                    if (u) return u;
+                    continue;
+                }
+                if (typeof src === 'object') {
+                    for (let f = 0; f < fields.length; f++) {
+                        const u = fromString(src[fields[f]]);
                         if (u) return u;
                     }
-                    return '';
                 }
-                for (let f = 0; f < fields.length; f++) {
-                    if (v[fields[f]] == null) continue;
-                    const u = fromAny(v[fields[f]], depth + 1, true);
-                    if (u) return u;
-                }
-                const keys = Object.keys(v);
-                for (let i = 0; i < keys.length; i++) {
-                    const k = keys[i];
-                    if (skip[k]) continue;
-                    const kn = k.replace(/[^a-z0-9]/gi, '').toLowerCase();
-                    if (!/(image|img|thumb|photo|picture|ife)/.test(kn)) continue;
-                    const u = fromAny(v[k], depth + 1, true);
-                    if (u) return u;
-                }
-                return '';
-            };
-            for (let i = 0; i < arguments.length; i++) {
-                const u = fromAny(arguments[i], 0, typeof arguments[i] === 'string');
-                if (u) return u;
             }
             return '';
         }
 
-        function menuThumbFallback(img) {
-            if (!img) return;
+        function menuThumbToBullet(img) {
+            const dish = img && img.closest('.menu-dish');
+            if (!dish) return;
             const thumb = img.closest('.menu-thumb');
-            const src = img.getAttribute('src') || '';
-            const origin = 'https://inflightmenu.singaporeair.com';
-            const assets = origin + '/assets';
-            const step = img.dataset.fb || '0';
-            if (step === '0' && src.indexOf(origin + '/') === 0 && src.indexOf(assets + '/') !== 0) {
-                img.dataset.fb = '1';
-                img.src = assets + src.slice(origin.length);
-                return;
+            if (thumb) thumb.remove();
+            dish.className = 'menu-dish pl-4 relative';
+            if (!dish.querySelector('.menu-dish-bullet')) {
+                const dot = document.createElement('span');
+                dot.className = 'menu-dish-bullet absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold';
+                dish.insertBefore(dot, dish.firstChild);
             }
-            if (step === '1' && src.indexOf(assets + '/') === 0) {
-                img.dataset.fb = '2';
-                img.src = origin + src.slice(assets.length);
-                return;
-            }
-            if (thumb) thumb.replaceWith('');
         }
 
         function menuImageUrl(path) {
@@ -4307,7 +4288,7 @@ function getRegionForAirport(code) {
                             selDiv.className = `space-y-4 culinary-section-${selIdx} ${selIdx === 0 ? '' : 'hidden'}`;
                             
                             if (meal.selectionDetails.length > 1) {
-                                selDiv.innerHTML += `<div class="font-bold text-sia-gold mb-2 text-center hidden">${selection.name}</div>`;
+                                selDiv.insertAdjacentHTML('beforeend', `<div class="font-bold text-sia-gold mb-2 text-center hidden">${selection.name}</div>`);
                             }
                             
                             if (selection.mealCourses) {
@@ -4332,7 +4313,7 @@ function getRegionForAirport(code) {
                                         });
                                         courseHtml += menuItemsWrap(dishParts);
                                     }
-                                    selDiv.innerHTML += menuCourseCard(courseHtml);
+                                    selDiv.insertAdjacentHTML('beforeend', menuCourseCard(courseHtml));
                                 });
                             }
                             const breads = (Array.isArray(selection.breadDetails) && selection.breadDetails.length)
@@ -4347,7 +4328,7 @@ function getRegionForAirport(code) {
                                     breadParts.push(menuItemRow(title, cleanMenuText(b.description || ''), '', resolveMenuImage(b, selection, meal)));
                                 });
                                 breadHtml += menuItemsWrap(breadParts);
-                                selDiv.innerHTML += menuCourseCard(breadHtml);
+                                selDiv.insertAdjacentHTML('beforeend', menuCourseCard(breadHtml));
                             }
                             mealDiv.appendChild(selDiv);
                         });
