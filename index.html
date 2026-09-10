@@ -238,6 +238,21 @@
         .menu-anim-in {
             animation: menu-anim-in 0.28s ease-out;
         }
+        @keyframes chat-anim-in {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: none; }
+        }
+        @keyframes chat-anim-out {
+            from { opacity: 1; transform: none; }
+            to { opacity: 0; transform: translateY(-8px); }
+        }
+        .chat-anim-in {
+            animation: chat-anim-in 0.32s ease-out both;
+        }
+        .chat-anim-out {
+            animation: chat-anim-out 0.24s ease-in both;
+            pointer-events: none;
+        }
         .menu-desc-chevron {
             transition: transform 0.3s ease;
         }
@@ -1259,15 +1274,58 @@
             return 'Good evening';
         }
 
+        function playChatAnim(el) {
+            if (!el) return;
+            el.classList.remove('chat-anim-in');
+            void el.offsetWidth;
+            el.classList.add('chat-anim-in');
+        }
+
+        function animateChatRemove(el) {
+            return new Promise((resolve) => {
+                if (!el || !el.parentNode) {
+                    resolve();
+                    return;
+                }
+                const cs = getComputedStyle(el);
+                el.style.overflow = 'hidden';
+                el.style.height = el.offsetHeight + 'px';
+                el.style.marginTop = cs.marginTop;
+                el.style.marginBottom = cs.marginBottom;
+                el.style.opacity = '1';
+                void el.offsetHeight;
+                el.style.transition = 'opacity 0.28s ease, transform 0.28s ease, height 0.28s ease, margin 0.28s ease';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(-8px)';
+                el.style.height = '0px';
+                el.style.marginTop = '0px';
+                el.style.marginBottom = '0px';
+                let done = false;
+                const finish = () => {
+                    if (done) return;
+                    done = true;
+                    if (el.parentNode) el.remove();
+                    resolve();
+                };
+                el.addEventListener('transitionend', finish, { once: true });
+                setTimeout(finish, 340);
+            });
+        }
+
         function initChat() {
             const chatContainer = document.getElementById('chat-container');
-            chatContainer.innerHTML = '';
-            
-            const greeting = getTimeGreeting();
-            const firstName = appProfile.name.split(' ')[0];
-            const welcomeMsg = `${greeting}, ${appProfile.rank} ${firstName}! How can I help you today?`;
-            
-            addMessage('bot', welcomeMsg, true);
+            const kids = Array.from(chatContainer.children);
+            const greet = () => {
+                const greeting = getTimeGreeting();
+                const firstName = appProfile.name.split(' ')[0];
+                const welcomeMsg = `${greeting}, ${appProfile.rank} ${firstName}! How can I help you today?`;
+                addMessage('bot', welcomeMsg, true);
+            };
+            if (!kids.length) {
+                greet();
+                return;
+            }
+            Promise.all(kids.map(animateChatRemove)).then(greet);
         }
 
         function addMessage(sender, text, animate = true) {
@@ -1275,18 +1333,16 @@
             const msgDiv = document.createElement('div');
             
             if (sender === 'bot') {
-                msgDiv.className = 'flex items-start gap-3 mt-4';
-                // Note: using img for bot icon to bypass lucide rendering issues inside dynamically injected content
+                msgDiv.className = 'flex items-start gap-3 mt-4' + (animate ? ' chat-anim-in' : '');
                 msgDiv.innerHTML = `
-                    
-                    <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
+                    <div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm max-w-[85%] shadow-sm leading-relaxed">
                         ${text}
                     </div>
                 `;
             } else {
-                msgDiv.className = 'flex items-start justify-end gap-3 mt-4';
+                msgDiv.className = 'flex items-start justify-end gap-3 mt-4' + (animate ? ' chat-anim-in' : '');
                 msgDiv.innerHTML = `
-                    <div class="bg-gradient-to-r from-sia-goldlt to-sia-gold text-black p-3.5 rounded-2xl rounded-tr-none text-sm max-w-[85%] shadow-md leading-relaxed font-bold ${animate ? 'animate-[pulse_0.3s_ease-out_1]' : ''}">
+                    <div class="bg-gradient-to-r from-sia-goldlt to-sia-gold text-black p-3.5 rounded-2xl rounded-tr-none text-sm max-w-[85%] shadow-md leading-relaxed font-bold">
                         ${text}
                     </div>
                 `;
@@ -1300,9 +1356,8 @@
             const chatContainer = document.getElementById('chat-container');
             const div = document.createElement('div');
             div.id = 'typing-indicator';
-            div.className = 'flex items-start gap-3 mt-4';
+            div.className = 'flex items-start gap-3 mt-4 chat-anim-in';
             div.innerHTML = `
-                
                 <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
                     <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0s;"></div>
                     <div class="w-1.5 h-1.5 bg-sia-gold rounded-full animate-bounce" style="animation-delay: 0.15s;"></div>
@@ -1315,7 +1370,9 @@
 
         function hideTypingIndicator() {
             const ind = document.getElementById('typing-indicator');
-            if (ind) ind.remove();
+            if (!ind) return Promise.resolve();
+            ind.removeAttribute('id');
+            return animateChatRemove(ind);
         }
 
         function isChatNearBottom() {
@@ -1367,9 +1424,8 @@
             
             // Artificial delay for "processing"
             setTimeout(() => {
-                hideTypingIndicator();
-                analyzeIntent(text);
-            }, 600 + Math.random() * 400); // 600-1000ms delay
+                Promise.resolve(hideTypingIndicator()).then(() => analyzeIntent(text));
+            }, 600 + Math.random() * 400);
         }
 
         function analyzeIntent(text) {
@@ -2099,7 +2155,7 @@ function getRegionForAirport(code) {
             
             const chatContainer = document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
-            msgDiv.className = 'flex items-start gap-3 mt-4 w-full';
+            msgDiv.className = 'flex items-start gap-3 mt-4 w-full chat-anim-in';
             
             
             let calcTitle = 'COP Allowance Calculator';
@@ -2176,7 +2232,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5 animate-[pulse_0.3s_ease-out_1]">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -2279,6 +2335,7 @@ function getRegionForAirport(code) {
                         `;
                     }
                     container.innerHTML = html;
+                    playChatAnim(container);
                     bindTimeInputs(id);
 
                     // Hide LMA if Turnaround
@@ -2900,7 +2957,7 @@ function getRegionForAirport(code) {
         function renderFlightVerificationCard(mode) {
             const chatContainer = document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
-            msgDiv.className = 'flex items-start gap-3 mt-4 w-full';
+            msgDiv.className = 'flex items-start gap-3 mt-4 w-full chat-anim-in';
             
             const uniqueId = Date.now();
             
@@ -2919,10 +2976,10 @@ function getRegionForAirport(code) {
             let headerText = 'Inflight Menu';
             
             msgDiv.innerHTML = `
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">
                     <input type="hidden" id="fv-mode-${uniqueId}" value="${mode}">
                     <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
-                        <i data-lucide="${mode === 'print' ? 'printer' : 'plane'}" class="w-5 h-5"></i> ${headerText}
+                        <i data-lucide="plane" class="w-5 h-5"></i> ${headerText}
                     </div>
                     
                     <div class="space-y-4">
@@ -2969,6 +3026,7 @@ function getRegionForAirport(code) {
             document.getElementById(`fv-date-buttons-${id}`).classList.add('hidden');
             const pickerWrap = document.getElementById(`fv-date-picker-wrap-${id}`);
             pickerWrap.classList.remove('hidden');
+            playChatAnim(pickerWrap);
             const picker = document.getElementById(`fv-date-${id}`);
             picker.focus();
             if(typeof picker.showPicker === 'function') {
@@ -3013,6 +3071,7 @@ function getRegionForAirport(code) {
             if (match && dateStr) {
                 actionArea.classList.add('hidden');
                 loading.classList.remove('hidden');
+                playChatAnim(loading);
                 
                 clearTimeout(fetchTimeout);
                 const run = () => executeFetchCabins(id, match[1], dateStr, document.getElementById('fv-mode-' + id).value);
@@ -3065,6 +3124,7 @@ function getRegionForAirport(code) {
                     loading.classList.add('hidden');
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Menus not published for this flight/date yet.</div>';
                     actionArea.classList.remove('hidden');
+                    playChatAnim(actionArea);
                     lucide.createIcons();
                     return;
                 }
@@ -3173,7 +3233,7 @@ function getRegionForAirport(code) {
                         <div class="flex gap-2 opacity-50 pointer-events-none" id="fv-actions-section-${id}">
                             ${mode === 'print'
                                 ? `<button onclick="submitFlightVerification('${id}', 'print')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
-                                <i data-lucide="printer" class="w-4 h-4"></i> Print
+                                <i data-lucide="book-open" class="w-4 h-4"></i> Fetch menu
                             </button>`
                                 : `<button onclick="submitFlightVerification('${id}', 'menu')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Fetch menu
@@ -3189,12 +3249,14 @@ function getRegionForAirport(code) {
                     }
                     
                     actionArea.classList.remove('hidden');
+                    playChatAnim(actionArea);
                     lucide.createIcons();
                     scrollToBottom();
                 } else {
                     loading.classList.add('hidden');
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Unexpected response from SQ system.</div>';
                     actionArea.classList.remove('hidden');
+                    playChatAnim(actionArea);
                 }
             } catch (err) {
                 loading.classList.add('hidden');
@@ -3205,6 +3267,7 @@ function getRegionForAirport(code) {
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Network error connecting to SQ system.</div>';
                 }
                 actionArea.classList.remove('hidden');
+                    playChatAnim(actionArea);
             }
         }
         
@@ -4439,6 +4502,7 @@ function getRegionForAirport(code) {
             err.classList.add('hidden');
             if (isLoading) {
                 loading.classList.remove('hidden');
+                playChatAnim(loading);
                 wrap.innerHTML = '';
                 edit.innerHTML = '';
             } else {
