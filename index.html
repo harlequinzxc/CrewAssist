@@ -917,7 +917,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.4';
+        const APP_VERSION = '1.4.5';
 
         // State
         let appProfile = null;
@@ -3456,12 +3456,11 @@ function getRegionForAirport(code) {
             
             menuViewState = { category: 'meals', mealTab: 0 };
             currentMealServices = [];
-            showMenuState('loading');
+            loadMenu(cabinClasses[0]);
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
                 sheet.classList.remove('translate-y-full');
-                loadMenu(cabinClasses[0]);
             }, 10);
         }
 
@@ -3559,14 +3558,14 @@ function getRegionForAirport(code) {
                 }
             }
 
-            showMenuState('loading');
-            await new Promise(r => setTimeout(r, 220));
-            if (!stillMine()) return;
-
             if (cachedData) {
+                if (!stillMine()) return;
                 renderMenu(cachedData, false);
                 return;
             }
+
+            showMenuState('loading');
+            if (!stillMine()) return;
 
             try {
                 const payload = {
@@ -3745,7 +3744,7 @@ function getRegionForAirport(code) {
             return `
                 <div class="menu-dish flex gap-3 items-start">
                     <button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${safeUrl}" aria-label="View photo">
-                        <img data-src="${safeUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" decoding="async" referrerpolicy="no-referrer">
+                        <img src="${safeUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="menuThumbToBullet(this)">
                     </button>
                     <div class="min-w-0 flex-1">
                         <div class="font-semibold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
@@ -3813,7 +3812,7 @@ function getRegionForAirport(code) {
 
         function extractSqImageUrl() {
             const origin = 'https://inflightmenu.singaporeair.com';
-            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img', 'ifeImage', 'dishImage', 'media', 'url', 'path', 'src', '_path', 'high', 'medium', 'low', 'publishUrl', 'fileReference'];
+            const fields = ['imagePathIfeHigh', 'imagePathIfeMedium', 'imagePathIfeLow', 'imagePathIfe', 'imagePath', 'imageUrl', 'image', 'highResImage', 'thumbnailUrl', 'thumbnail', '_img'];
             const fromString = (s) => {
                 if (!s || typeof s !== 'string') return '';
                 const clean = s.trim();
@@ -3823,27 +3822,20 @@ function getRegionForAirport(code) {
                 if (clean.startsWith('/')) return origin + clean;
                 return origin + '/' + clean;
             };
-            const fromValue = (v, depth) => {
-                if (v == null || depth > 4) return '';
-                if (typeof v === 'string') return fromString(v);
-                if (typeof v !== 'object') return '';
-                if (Array.isArray(v)) {
-                    for (let i = 0; i < v.length; i++) {
-                        const u = fromValue(v[i], depth + 1);
+            for (let i = 0; i < arguments.length; i++) {
+                const src = arguments[i];
+                if (!src) continue;
+                if (typeof src === 'string') {
+                    const u = fromString(src);
+                    if (u) return u;
+                    continue;
+                }
+                if (typeof src === 'object') {
+                    for (let f = 0; f < fields.length; f++) {
+                        const u = fromString(src[fields[f]]);
                         if (u) return u;
                     }
-                    return '';
                 }
-                for (let f = 0; f < fields.length; f++) {
-                    if (v[fields[f]] == null) continue;
-                    const u = fromValue(v[fields[f]], depth + 1);
-                    if (u) return u;
-                }
-                return '';
-            };
-            for (let i = 0; i < arguments.length; i++) {
-                const u = fromValue(arguments[i], 0);
-                if (u) return u;
             }
             return '';
         }
@@ -3859,19 +3851,6 @@ function getRegionForAirport(code) {
                 dot.className = 'menu-dish-bullet absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold';
                 dish.insertBefore(dot, dish.firstChild);
             }
-        }
-
-        function revealMenuImages(root) {
-            const scope = (root && root.querySelectorAll) ? root : document.getElementById('menu-sector-content');
-            if (!scope) return;
-            scope.querySelectorAll('.menu-thumb img[data-src]').forEach(img => {
-                if (img.closest('.hidden')) return;
-                const url = img.getAttribute('data-src');
-                if (!url) return;
-                if (img.getAttribute('src') === url) return;
-                img.onerror = function () { menuThumbToBullet(img); };
-                img.src = url;
-            });
         }
 
         function menuImageUrl(path) {
@@ -4451,7 +4430,6 @@ function getRegionForAirport(code) {
             lucide.createIcons();
             scheduleMenuDescToggles();
             playMenuContentAnim(document.getElementById('menu-sector-content'));
-            requestAnimationFrame(() => revealMenuImages());
         }
 
         function scrollMenuToTop() {
@@ -4520,7 +4498,6 @@ function getRegionForAirport(code) {
                 playMenuContentAnim(target);
             }
             scheduleMenuDescToggles();
-            revealMenuImages(target);
         }
         
         function switchMealTab(idx, btnElement, opts) {
@@ -4538,7 +4515,6 @@ function getRegionForAirport(code) {
             if(target) target.classList.remove('hidden');
             updateMealServiceTitle();
             scheduleMenuDescToggles();
-            revealMenuImages(target);
             if (!opts.skipScroll) {
                 scrollMenuToTop();
                 playMenuContentAnim(target || document.getElementById('menu-cat-meals'));
@@ -4552,7 +4528,6 @@ function getRegionForAirport(code) {
             document.querySelectorAll('.culinary-section-' + selIdx).forEach(el => el.classList.remove('hidden'));
             scheduleMenuDescToggles();
             playMenuContentAnim(document.querySelector('.culinary-section-' + selIdx + ':not(.hidden)'));
-            revealMenuImages(document.querySelector('.culinary-section-' + selIdx + ':not(.hidden)'));
         }
 
         // ==========================================

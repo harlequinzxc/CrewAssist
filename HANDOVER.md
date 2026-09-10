@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v37` (`sw.js`). App SemVer: **1.4.4** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v38` (`sw.js`). App SemVer: **1.4.5** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.4` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.5` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -15,7 +15,7 @@ Latest app cache: `crewassist-v37` (`sw.js`). App SemVer: **1.4.4** (`APP_VERSIO
   - Category control: single segmented bar (Meals / Drinks / Snacks / Amenities), no wrapping pills.
   - `menuViewState` remembers category and meal tab across cabin / sector / cuisine changes; those changes and meal-service tabs scroll the overlay to top.
   - Centered meal-service title under the route hero. Meal-service tabs are centered horizontally.
-  - Meal courses always resolve photos (`resolveMenuImage`). No placeholder images: missing or 404 SQ thumbs become gold bullets (`menuThumbToBullet`). Cabin swaps always show loading first so cached cabins still paint thumbs. Snacks tab and snack/delectable drink groups stay bullets (`menuSnackBullets`). Light Bites keep photos (`isLightBitesName`).
+  - Meal photos use the pre-Delectables extractor (`imagePathIfeHigh`… as strings, origin + path) and set `src` on the thumb immediately. No placeholders. No SQ image field → gold bullet; 404 thumb → bullet. Snacks tab and snack drinks stay bullets. Light Bites keep photos.
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
   - Items without a photo are gold bullets. Sections with 2+ items get a hairline between rows. Tap a thumbnail for a blurred full-screen lightbox (`#menu-lightbox`).
   - If a dish/bread has no image on this sector, reuse a same-name photo from another sector of the same menu (`imageByName`).
