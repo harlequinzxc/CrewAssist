@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v28` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v32` (`sw.js`). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
@@ -14,7 +14,8 @@ Latest app cache: `crewassist-v28` (`sw.js`). Branch work for this line of UI li
   - Dropdowns: one row, horizontal scroll if narrow; menus overlay content.
   - Category control: single segmented bar (Meals / Drinks / Snacks / Amenities), no wrapping pills.
   - `menuViewState` remembers category and meal tab across cabin / sector / cuisine changes; those changes and meal-service tabs scroll the overlay to top.
-  - Centered meal-service title under the route hero.
+  - Centered meal-service title under the route hero. Meal-service tabs are centered horizontally.
+  - Delectables meal service and snack/delectable drink groups render as gold bullets (`menuSnackBullets`), including Assorted muffins — no thumbnails. Light Bites under Delectables keep photos (`isLightBitesName`).
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
   - Items without a photo are gold bullets. Sections with 2+ items get a hairline between rows. Tap a thumbnail for a blurred full-screen lightbox (`#menu-lightbox`).
   - If a dish/bread has no image on this sector, reuse a same-name photo from another sector of the same menu (`imageByName`).
@@ -24,15 +25,17 @@ Latest app cache: `crewassist-v28` (`sw.js`). Branch work for this line of UI li
   - Descriptions longer than 2 lines: More/Less with rotating chevron and height animation. Imaged meal items stay horizontal (`items-start`).
   - Category / tab / cuisine / sector changes fade content in.
 - **Chat jump-to-latest:** `#btn-scroll-bottom`, same size as send, just above chips; shown only when not at bottom; hide at bottom; both controls animate.
-- **Flight lookup speed:** Date tap fetches immediately (the 500ms debounce is only for typing the flight number). `getcabin` and a speculative JCL `menu` run in parallel. If `getcabin` returns `legs`, sectors render from those and menu caches in the background. Otherwise we still wait on menu for sector codes. FCL label is Suites vs First from aircraft type (`380`/`388`).
+- **Flight lookup:** Chat card title is Inflight Menu (menu and print), both with the plane icon. Fetch menu CTA: book icon for viewer, printer icon for print. After Fetch menu, bot lines: “Fetching menu from seat pocket” then “Here is the menu”. After a date, sector pills (if multi-sector) and cabin pills show together with Fetch menu (greyed until ≥1 sector when shown and ≥1 cabin). Date tap fetches immediately (the 500ms debounce is only for typing the flight number). `getcabin` and a speculative JCL `menu` run in parallel. If `getcabin` returns `legs`, sectors render from those and menu caches in the background. Otherwise we still wait on menu for sector codes. FCL label is Suites vs First from aircraft type (`380`/`388`).
+- **Chat motion:** `.chat-anim-in` / `animateChatRemove` on messages, typing, calculator and lookup cards; lookup action area, loading, date picker, and IFA sector blocks also animate in. Reset fades existing rows out before the greeting. `enqueueBot` / `addBotMessage` show typing before every bot line, calculator, and inflight lookup. Welcome is two bubbles (`{greeting}, {rank} {name}!` then `How can I help you today?`). Fetch menu: “Fetching menu from seat pocket.” then overlay + “Here is the menu.”
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed from settings; `initUI()` no longer reads it, so gender buttons work.
 - **CTAs:** Gold-bordered pills (navy/gold). Calculate stays disabled until required fields are filled.
 - **Repo cleanup:** Scratch `check*` / `temp*` / `fix*` / `test-plane*` files gone; airports inlined; unused `api/cabins.ts`, `api/getcabin.ts`, `api/menu.ts` removed (app never called them). Dead CSS (`.glow-gold`, `--aurora-opacity`, `--text-muted`) and unused DOM ids (`chip-container`, `btn-dev-import`) removed. Dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) already gone.
+- **Step 6 inflight menu printer:** Full-screen `#print-overlay` (not a bottom sheet). Chrome: back, `SQ n · N sheets`, date/route, gold Export, numbered sector pills, Elegant/Compact, A4/A6, zoom, Greyscale, Descriptions, Menu sheet / Edit content. Elegant = restaurant-style one page (Cormorant Garamond, no cursive). Compact = tight all-caps APP/MAIN/DESSERT with protein strikethrough + beverages. Export PNG/JPEG (`html2canvas` CDN) and Word (HTML `.doc`). Edit writes back into `printState.model`. Do not call SQ from the browser.
 
 ## In-Progress / Known Gaps
 
 - **Delectables → Snacks bullets (open):** Items such as “Assorted muffins” still do not render as a bullet list. SQ nests this under beverage `Delectables`; flattening heuristics have not matched the live payload (sandbox cannot call the SQ API). Do not treat these as meal course cards. Need a live JSON snippet or screenshot of the Drinks → Delectables → Snacks block.
-- **Step 6 inflight menu printer (on hold):** Print chip → lookup → `openMenuPrinter` → compact `window.print()`. Default compact, meals only — do not add drinks/amenities/images or lock Step 6 unless asked.
+- **Printer sheet art:** Overlay chrome matches the crew UI shots. Elegant/compact **menu** typography and packing still first-pass — wait for the dedicated restaurant / compact menu references before locking layout.
 
 ## Key Architecture Decisions & Constraints
 
@@ -42,3 +45,4 @@ Latest app cache: `crewassist-v28` (`sw.js`). Branch work for this line of UI li
 - **Design system:** Glass (`glass-bubble`, `glass-sheet`). Palette: SIA Navy `#0B1A3A`, Charcoal, SIA Gold `#C9A227`. Mobile-first iOS styling.
 - **Cache:** Bump `CACHE_NAME` in `sw.js` when `index.html` (or other cached assets) change.
 - **Continuity:** After every commit, update `README.md` and `HANDOVER.md` to match the build. Ask for review before starting the next slice of work.
+- **Sandbox drift:** This environment can silently check out old `main` (`a70877c`) with mass deletions. Recover with `git fetch origin arena/01a0819d-crewassist` + `git reset --hard FETCH_HEAD`. Only push to the arena branch. Merging arena → main in GitHub Desktop is correct.
