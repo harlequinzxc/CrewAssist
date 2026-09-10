@@ -2916,7 +2916,7 @@ function getRegionForAirport(code) {
             maxDate.setDate(today.getDate() + 42);
             const maxLocalISOTime = (new Date(maxDate.getTime() - tzOffset)).toISOString().split('T')[0];
 
-            let headerText = mode === 'print' ? 'Menu Printer Lookup' : 'Inflight Menu Lookup';
+            let headerText = 'Inflight Menu';
             
             msgDiv.innerHTML = `
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm animate-[pulse_0.3s_ease-out_1]">
@@ -3146,7 +3146,7 @@ function getRegionForAirport(code) {
                     
                     // 2. Cabins
                     contentHtml += `
-                        <div id="fv-cabins-section-${id}" class="${isMultiSector ? 'hidden' : ''}">
+                        <div id="fv-cabins-section-${id}">
                             <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabin/s</label>
                             <div class="flex flex-wrap gap-2 mb-4" id="fv-cabins-container-${id}">
                     `;
@@ -3170,13 +3170,13 @@ function getRegionForAirport(code) {
                     
                     // 3. Actions
                     contentHtml += `
-                        <div class="flex gap-2 ${isMultiSector ? 'hidden' : 'opacity-50 pointer-events-none'}" id="fv-actions-section-${id}">
+                        <div class="flex gap-2 opacity-50 pointer-events-none" id="fv-actions-section-${id}">
                             ${mode === 'print'
                                 ? `<button onclick="submitFlightVerification('${id}', 'print')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Print
                             </button>`
                                 : `<button onclick="submitFlightVerification('${id}', 'menu')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
-                                <i data-lucide="book-open" class="w-4 h-4"></i> Menu
+                                <i data-lucide="book-open" class="w-4 h-4"></i> Fetch menu
                             </button>`}
                         </div>
                     `;
@@ -3213,35 +3213,24 @@ function getRegionForAirport(code) {
             btn.classList.toggle('bg-sia-gold');
             btn.classList.toggle('text-black');
             btn.classList.toggle('border-sia-gold');
-            scrollToBottom();
-            
-            const container = document.getElementById(`fv-sectors-container-${id}`);
-            const selected = container.querySelectorAll('.selected-sector');
-            const cabinSec = document.getElementById(`fv-cabins-section-${id}`);
-            
-            if (selected.length > 0) {
-                cabinSec.classList.remove('hidden');
-            } else {
-                cabinSec.classList.add('hidden');
-                document.getElementById(`fv-actions-section-${id}`).classList.add('hidden');
-                // Deselect all cabins if sectors are 0
-                document.querySelectorAll(`#fv-cabins-container-${id} .selected-cabin`).forEach(c => {
-                    c.classList.remove('selected-cabin', 'bg-sia-gold', 'text-black', 'border-sia-gold');
-                });
-            }
             checkCabinsSelected(id);
         }
         
         function checkCabinsSelected(id) {
             const cabinContainer = document.getElementById(`fv-cabins-container-${id}`);
-            const selected = cabinContainer.querySelectorAll('.selected-cabin');
+            const selectedCabins = cabinContainer ? cabinContainer.querySelectorAll('.selected-cabin') : [];
+            const sectorContainer = document.getElementById(`fv-sectors-container-${id}`);
+            const needSector = !!sectorContainer;
+            const selectedSectors = needSector ? sectorContainer.querySelectorAll('.selected-sector') : [];
             const actions = document.getElementById(`fv-actions-section-${id}`);
-            
-            if (selected.length > 0) {
-                const wasHidden = actions.classList.contains('opacity-50');
+            if (!actions) return;
+            const ready = selectedCabins.length > 0 && (!needSector || selectedSectors.length > 0);
+            if (ready) {
+                const wasGrey = actions.classList.contains('opacity-50');
                 actions.classList.remove('hidden', 'opacity-50', 'pointer-events-none');
-                if (wasHidden) scrollToBottom();
+                if (wasGrey) scrollToBottom();
             } else {
+                actions.classList.remove('hidden');
                 actions.classList.add('opacity-50', 'pointer-events-none');
             }
         }
@@ -3261,9 +3250,11 @@ function getRegionForAirport(code) {
             let selectedSectors = [];
             if (sectorContainer) {
                 const selectedSectorBtns = sectorContainer.querySelectorAll('.selected-sector');
-                if (selectedSectorBtns.length > 0) {
-                    selectedSectors = Array.from(selectedSectorBtns).map(b => b.getAttribute('data-sector'));
+                if (selectedSectorBtns.length === 0) {
+                    addMessage('bot', 'Please select at least one sector.');
+                    return;
                 }
+                selectedSectors = Array.from(selectedSectorBtns).map(b => b.getAttribute('data-sector'));
             } else if (actionArea && actionArea.dataset.singleSector) {
                 selectedSectors = [actionArea.dataset.singleSector];
             }
