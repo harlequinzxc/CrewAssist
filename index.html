@@ -917,7 +917,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.0';
+        const APP_VERSION = '1.4.1';
 
         // State
         let appProfile = null;
@@ -3971,6 +3971,12 @@ function getRegionForAirport(code) {
             return /light\s*bite/i.test(name || '');
         }
 
+        function isSnackBulletRow(mealName, courseName, itemName) {
+            if (isLightBitesName(courseName) || isLightBitesName(mealName) || isLightBitesName(itemName)) return false;
+            if (/snack/i.test(courseName || '')) return true;
+            return /muffin|cookie|cracker|pretzel|\bnuts\b|crisps|chips/i.test(itemName || '');
+        }
+
         function menuSnackBullets(items) {
             const parts = [];
             (items || []).forEach(item => {
@@ -4261,7 +4267,6 @@ function getRegionForAirport(code) {
                     const mealDiv = document.createElement('div');
                     mealDiv.className = `meal-tab-content space-y-4 ${idx === 0 ? '' : 'hidden'}`;
                     mealDiv.id = `meal-content-${idx}`;
-                    const snackMeal = /delectable|snack/i.test(meal.mealServiceName || '');
                     
                     if (meal.selectionDetails && meal.selectionDetails.length > 0) {
                         meal.selectionDetails.forEach((selection, selIdx) => {
@@ -4285,9 +4290,10 @@ function getRegionForAirport(code) {
                                         const dishParts = [];
                                         course.items.forEach(item => {
                                             const desc = [item.description, item.footnote].filter(Boolean).map(cleanMenuText).filter(Boolean).join(' ');
-                                            const asBullet = snackMeal && !isLightBitesName(course.category);
+                                            const dishName = cleanMenuText(item.name || item.title || item.itemName || '');
+                                            const asBullet = isSnackBulletRow(meal.mealServiceName, course.category, dishName);
                                             dishParts.push(menuItemRow(
-                                                cleanMenuText(item.name || item.title || item.itemName || ''),
+                                                dishName,
                                                 desc,
                                                 asBullet ? '' : menuItemIcons(item),
                                                 asBullet ? '' : resolveMenuImage(item, course, selection)
@@ -4354,7 +4360,7 @@ function getRegionForAirport(code) {
                             });
                             const typeName = cleanMenuText(sub.name || '');
                             const catName = cleanMenuText(cat.name || '');
-                            types.push({ name: (typeName && typeName.toLowerCase() !== catName.toLowerCase()) ? typeName : '', items: items, snack: true });
+                            types.push({ name: (typeName && typeName.toLowerCase() !== catName.toLowerCase()) ? typeName : '', items: items, snack: !!snackish });
                         } else if (namedSpecs.length) {
                             specs.forEach(spec => {
                                 const items = (spec.items || []).map(it => menuBevItem(it, spec, sub, cat)).filter(Boolean);
