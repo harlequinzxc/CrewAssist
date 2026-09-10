@@ -1,6 +1,6 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v38` (`sw.js`). App SemVer: **1.4.5** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v39` (`sw.js`). App SemVer: **1.4.6** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
@@ -15,7 +15,7 @@ Latest app cache: `crewassist-v38` (`sw.js`). App SemVer: **1.4.5** (`APP_VERSIO
   - Category control: single segmented bar (Meals / Drinks / Snacks / Amenities), no wrapping pills.
   - `menuViewState` remembers category and meal tab across cabin / sector / cuisine changes; those changes and meal-service tabs scroll the overlay to top.
   - Centered meal-service title under the route hero. Meal-service tabs are centered horizontally.
-  - Meal photos use the pre-Delectables extractor (`imagePathIfeHigh`… as strings, origin + path) and set `src` on the thumb immediately. No placeholders. No SQ image field → gold bullet; 404 thumb → bullet. Snacks tab and snack drinks stay bullets. Light Bites keep photos.
+  - Meal photos: `imagePathIfeHigh` if SQ linked it (~9%), else construct `fabs/IFE/INFM/<cabin>/HIGH|LOW/<id>_<cabin>.png` from dish `id` (`photoCandidates` / `menuThumbNext`). Missing CDN objects return HTML 200 so `onerror` walks the list; if none decode as an image, gold bullet. No placeholders. Snacks tab and snack drinks stay bullets. Light Bites keep photos. `API_REFERENCE.md` is the SQ field map.
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
   - Items without a photo are gold bullets. Sections with 2+ items get a hairline between rows. Tap a thumbnail for a blurred full-screen lightbox (`#menu-lightbox`).
   - If a dish/bread has no image on this sector, reuse a same-name photo from another sector of the same menu (`imageByName`).
