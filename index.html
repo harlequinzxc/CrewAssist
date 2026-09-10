@@ -917,7 +917,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.5';
+        const APP_VERSION = '1.4.6';
 
         // State
         let appProfile = null;
@@ -3731,8 +3731,9 @@ function getRegionForAirport(code) {
         }
 
         function menuItemRow(name, description, iconsHtml, imageUrl) {
-            const safeUrl = imageUrl ? String(imageUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;') : '';
-            if (!safeUrl) {
+            const cands = Array.isArray(imageUrl) ? imageUrl.filter(Boolean) : (imageUrl ? [imageUrl] : []);
+            const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            if (!cands.length) {
                 return `
                     <div class="menu-dish pl-4 relative">
                         <span class="menu-dish-bullet absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold"></span>
@@ -3741,10 +3742,12 @@ function getRegionForAirport(code) {
                     </div>
                 `;
             }
+            const first = esc(cands[0]);
+            const dataCands = esc(cands.join('\n'));
             return `
                 <div class="menu-dish flex gap-3 items-start">
-                    <button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${safeUrl}" aria-label="View photo">
-                        <img src="${safeUrl}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="menuThumbToBullet(this)">
+                    <button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${first}" aria-label="View photo">
+                        <img src="${first}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" data-cands="${dataCands}" data-ci="0" onerror="menuThumbNext(this)">
                     </button>
                     <div class="min-w-0 flex-1">
                         <div class="font-semibold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
@@ -3819,8 +3822,8 @@ function getRegionForAirport(code) {
                 if (!clean || clean === 'null' || clean === 'undefined') return '';
                 if (clean.startsWith('http://') || clean.startsWith('https://')) return clean;
                 if (clean.startsWith('//')) return 'https:' + clean;
-                if (clean.startsWith('/')) return origin + clean;
-                return origin + '/' + clean;
+                const path = clean.startsWith('/') ? clean : '/' + clean;
+                return origin + encodeURI(path);
             };
             for (let i = 0; i < arguments.length; i++) {
                 const src = arguments[i];
@@ -3851,6 +3854,51 @@ function getRegionForAirport(code) {
                 dot.className = 'menu-dish-bullet absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold';
                 dish.insertBefore(dot, dish.firstChild);
             }
+        }
+
+        function menuThumbNext(img) {
+            const cands = (img.getAttribute('data-cands') || '').split('\n').filter(Boolean);
+            let i = parseInt(img.getAttribute('data-ci') || '0', 10) + 1;
+            if (i < cands.length) {
+                img.setAttribute('data-ci', String(i));
+                img.src = cands[i];
+                const thumb = img.closest('.menu-thumb');
+                if (thumb) thumb.setAttribute('data-full', cands[i]);
+                return;
+            }
+            menuThumbToBullet(img);
+        }
+
+        function dishIfePhotoUrls(item) {
+            const id = String((item && (item.id || item.itemId)) || '');
+            const m = id.match(/^([A-Z]{2}\d{6}(?:-\d{3})?)(?:-v\d+)?(?:-([A-Z]{3}))?$/i);
+            if (!m) return [];
+            const base = m[1];
+            const cabin = (m[2] || (currentMenuSearch && currentMenuSearch.selectedCabin) || '').toUpperCase();
+            if (!cabin) return [];
+            const origin = 'https://inflightmenu.singaporeair.com';
+            return [
+                origin + '/fabs/IFE/INFM/' + cabin + '/HIGH/' + base + '_' + cabin + '.png',
+                origin + '/fabs/IFE/INFM/' + cabin + '/LOW/' + base + '_' + cabin + '.png'
+            ];
+        }
+
+        function photoCandidates(item) {
+            const parents = Array.prototype.slice.call(arguments, 1);
+            const list = [];
+            const add = (u) => {
+                const abs = extractSqImageUrl(u);
+                if (abs && list.indexOf(abs) === -1) list.push(abs);
+            };
+            add(extractSqImageUrl.apply(null, [item].concat(parents)));
+            if (item && typeof item === 'object') {
+                dishIfePhotoUrls(item).forEach(add);
+            }
+            const key = menuImageKey(item && (item.name || item.title || item.itemName));
+            if (currentMenuSearch.imageByName && key && currentMenuSearch.imageByName[key]) {
+                add(currentMenuSearch.imageByName[key]);
+            }
+            return list;
         }
 
         function menuImageUrl(path) {
@@ -3902,7 +3950,8 @@ function getRegionForAirport(code) {
             return {
                 name: name,
                 description: cleanMenuText(it.description || it.vintage || it.region || it.itemDescription || it.desc || ''),
-                _img: resolveMenuImage(it, spec, sub, cat)
+                _img: resolveMenuImage(it, spec, sub, cat),
+                _imgCands: photoCandidates(it, spec, sub, cat)
             };
         }
 
@@ -3950,11 +3999,8 @@ function getRegionForAirport(code) {
         }
 
         function resolveMenuImage(item) {
-            const parents = Array.prototype.slice.call(arguments, 1);
-            let url = extractSqImageUrl.apply(null, [item].concat(parents));
-            if (url) return url;
-            const key = menuImageKey(item && (item.name || item.title || item.itemName));
-            return (currentMenuSearch.imageByName && key && currentMenuSearch.imageByName[key]) || '';
+            const cands = photoCandidates.apply(null, arguments);
+            return (cands && cands[0]) || '';
         }
 
         function menuCourseCard(inner) {
@@ -3975,7 +4021,7 @@ function getRegionForAirport(code) {
                     parts.push(menuItemRow(item, '', '', ''));
                     return;
                 }
-                const img = item._img || resolveMenuImage(item);
+                const img = item._imgCands || (item._img ? [item._img] : photoCandidates(item));
                 parts.push(menuItemRow(
                     cleanMenuText(item.name || item.itemName || ''),
                     cleanMenuText(item.description || item.itemDescription || ''),
@@ -4308,7 +4354,7 @@ function getRegionForAirport(code) {
                                                 dishName,
                                                 desc,
                                                 menuItemIcons(item),
-                                                resolveMenuImage(item, course, selection)
+                                                photoCandidates(item, course, selection)
                                             ));
                                         });
                                         courseHtml += menuItemsWrap(dishParts);
@@ -4325,7 +4371,7 @@ function getRegionForAirport(code) {
                                 breads.forEach(b => {
                                     const title = cleanMenuText(b.name || b.title || b.itemName || '');
                                     if (!title) return;
-                                    breadParts.push(menuItemRow(title, cleanMenuText(b.description || ''), '', resolveMenuImage(b, selection, meal)));
+                                    breadParts.push(menuItemRow(title, cleanMenuText(b.description || ''), '', photoCandidates(b, selection, meal)));
                                 });
                                 breadHtml += menuItemsWrap(breadParts);
                                 selDiv.insertAdjacentHTML('beforeend', menuCourseCard(breadHtml));
