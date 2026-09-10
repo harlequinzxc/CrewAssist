@@ -1326,11 +1326,13 @@
         function initChat() {
             const chatContainer = document.getElementById('chat-container');
             const kids = Array.from(chatContainer.children);
+            hideTypingIndicator();
+            botSpeakQueue = Promise.resolve();
             const greet = () => {
                 const greeting = getTimeGreeting();
                 const firstName = appProfile.name.split(' ')[0];
-                const welcomeMsg = `${greeting}, ${appProfile.rank} ${firstName}! How can I help you today?`;
-                addMessage('bot', welcomeMsg, true);
+                addBotMessage(greeting + ', ' + appProfile.rank + ' ' + firstName + '!');
+                addBotMessage('How can I help you today?');
             };
             if (!kids.length) {
                 greet();
@@ -1386,6 +1388,25 @@
             return animateChatRemove(ind);
         }
 
+        let botSpeakQueue = Promise.resolve();
+
+        function enqueueBot(fn) {
+            botSpeakQueue = botSpeakQueue.then(() => new Promise((resolve) => {
+                showTypingIndicator();
+                setTimeout(() => {
+                    Promise.resolve(hideTypingIndicator()).then(() => {
+                        try { fn(); } catch (err) { console.error(err); }
+                        resolve();
+                    });
+                }, 550 + Math.random() * 350);
+            }));
+            return botSpeakQueue;
+        }
+
+        function addBotMessage(text) {
+            return enqueueBot(() => addMessage('bot', text, true));
+        }
+
         function isChatNearBottom() {
             const el = document.getElementById('chat-container');
             if (!el) return true;
@@ -1431,12 +1452,7 @@
             addMessage('user', text);
             document.getElementById('chat-input').value = '';
             
-            showTypingIndicator();
-            
-            // Artificial delay for "processing"
-            setTimeout(() => {
-                Promise.resolve(hideTypingIndicator()).then(() => analyzeIntent(text));
-            }, 600 + Math.random() * 400);
+            enqueueBot(() => analyzeIntent(text));
         }
 
         function analyzeIntent(text) {
@@ -2942,7 +2958,7 @@ function getRegionForAirport(code) {
             }
             
             setTimeout(() => {
-                addMessage('bot', msg);
+                addBotMessage(msg);
             }, 600);
         }
 
@@ -3313,7 +3329,7 @@ function getRegionForAirport(code) {
             const cabinContainer = document.getElementById(`fv-cabins-container-${id}`);
             const selectedCabinBtns = cabinContainer.querySelectorAll('.selected-cabin');
             if (selectedCabinBtns.length === 0) {
-                addMessage('bot', 'Please select at least one cabin.');
+                addBotMessage('Please select at least one cabin.');
                 return;
             }
             const selectedCabins = Array.from(selectedCabinBtns).map(b => b.getAttribute('data-cabin'));
@@ -3325,7 +3341,7 @@ function getRegionForAirport(code) {
             if (sectorContainer) {
                 const selectedSectorBtns = sectorContainer.querySelectorAll('.selected-sector');
                 if (selectedSectorBtns.length === 0) {
-                    addMessage('bot', 'Please select at least one sector.');
+                    addBotMessage('Please select at least one sector.');
                     return;
                 }
                 selectedSectors = Array.from(selectedSectorBtns).map(b => b.getAttribute('data-sector'));
@@ -3341,13 +3357,15 @@ function getRegionForAirport(code) {
             currentMenuSearch.date = date;
             currentMenuSearch.selectedSectors = selectedSectors;
             
-            addMessage('bot', 'Fetching menu from seat pocket');
-            if (actionType === 'menu') {
-                openMenuViewerForCabins(flightNumber, date, selectedCabins);
-            } else if (actionType === 'print') {
-                openMenuPrinter(flightNumber, date, selectedCabins);
-            }
-            setTimeout(() => addMessage('bot', 'Here is the menu'), 320);
+            addBotMessage('Fetching menu from seat pocket.');
+            enqueueBot(() => {
+                if (actionType === 'menu') {
+                    openMenuViewerForCabins(flightNumber, date, selectedCabins);
+                } else if (actionType === 'print') {
+                    openMenuPrinter(flightNumber, date, selectedCabins);
+                }
+                addMessage('bot', 'Here is the menu.');
+            });
         }
 
         
@@ -3931,6 +3949,10 @@ function getRegionForAirport(code) {
             return menuItemsWrap(parts);
         }
 
+        function isLightBitesName(name) {
+            return /light\s*bite/i.test(name || '');
+        }
+
         function menuSnackBullets(items) {
             const parts = [];
             (items || []).forEach(item => {
@@ -4245,11 +4267,12 @@ function getRegionForAirport(code) {
                                         const dishParts = [];
                                         course.items.forEach(item => {
                                             const desc = [item.description, item.footnote].filter(Boolean).map(cleanMenuText).filter(Boolean).join(' ');
+                                            const asBullet = snackMeal && !isLightBitesName(course.category);
                                             dishParts.push(menuItemRow(
                                                 cleanMenuText(item.name || item.title || item.itemName || ''),
                                                 desc,
-                                                snackMeal ? '' : menuItemIcons(item),
-                                                snackMeal ? '' : resolveMenuImage(item, course, selection)
+                                                asBullet ? '' : menuItemIcons(item),
+                                                asBullet ? '' : resolveMenuImage(item, course, selection)
                                             ));
                                         });
                                         courseHtml += menuItemsWrap(dishParts);
@@ -4337,7 +4360,7 @@ function getRegionForAirport(code) {
                     types.forEach(type => {
                         if (!type.name && !(type.items && type.items.length)) return;
                         let inner = type.name ? menuHairlineTitle(type.name) : '';
-                        inner += (type.snack || catSnackish) ? menuSnackBullets(type.items || []) : menuPlainItems(type.items || []);
+                        inner += ((type.snack || catSnackish) && !isLightBitesName(type.name)) ? menuSnackBullets(type.items || []) : menuPlainItems(type.items || []);
                         html += menuCourseCard(inner);
                     });
                     catDiv.innerHTML = html;
@@ -5102,7 +5125,7 @@ function getRegionForAirport(code) {
                 lucide.createIcons();
             } catch (err) {
                 showPrintError('Could not prepare the menu sheet. ' + String(err.message || err));
-                addMessage('bot', "I couldn't prepare the menu printer. Please try again.");
+                addBotMessage("I couldn't prepare the menu printer. Please try again.");
             }
         }
 
