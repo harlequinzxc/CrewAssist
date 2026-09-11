@@ -282,31 +282,50 @@
         .print-paper.print-grey {
             filter: grayscale(1);
         }
-        .print-sheet-inner { padding: 9mm 11mm 11mm; }
-        .print-a6 .print-sheet-inner { padding: 5.5mm 6mm 6.5mm; }
+        .print-sheet-inner { padding: 13mm 14mm 14mm; font-family: "Plus Jakarta Sans", sans-serif; color: #171d2b; }
+        .print-a6 .print-sheet-inner { padding: 7mm 7.5mm 8mm; }
 
-        .pe-head { text-align: center; font-size: 8.5px; letter-spacing: 0.14em; font-weight: 600; color: #6B7280; text-transform: uppercase; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #E4D5A0; }
-        .pe-band { text-align: center; font-size: 9px; letter-spacing: 0.42em; font-weight: 700; color: #0B1A3A; text-transform: uppercase; margin: 12px 0 8px; }
-        .pe-svc-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; border-top: 1px solid #C9A227; border-bottom: 1px solid #C9A227; padding: 6px 0 5px; margin: 8px 0 8px; }
-        .pe-route { font-size: 7px; letter-spacing: 0.16em; font-weight: 700; color: #C9A227; text-transform: uppercase; line-height: 1.35; }
-        .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 20px; font-weight: 600; color: #0B1A3A; text-align: center; line-height: 1.05; }
-        .pe-svc-cabin { font-size: 7px; letter-spacing: 0.16em; font-weight: 700; color: #C9A227; text-transform: uppercase; text-align: right; padding-bottom: 3px; }
-        .pe-cui { text-align: center; font-size: 8.5px; letter-spacing: 0.08em; font-weight: 600; color: #8A7040; margin: 2px 0 8px; }
-        .pe-row { display: grid; grid-template-columns: 28mm 1fr; gap: 10px; align-items: start; margin: 0 0 7px; }
-        .pe-course { font-size: 8px; letter-spacing: 0.14em; font-weight: 700; text-transform: uppercase; color: #C9A227; padding-top: 3px; }
+        .pe-head { text-align: center; font-size: 8.5px; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: #9a7b2d; margin-bottom: 0; }
+        .pe-dia { display: inline-block; font-size: 5px; color: #c9b06a; letter-spacing: 0; margin: 0 0.4em; vertical-align: 1px; }
+        .pe-band { display: flex; align-items: center; gap: 10px; margin: 7mm 0 4mm; }
+        .pe-band-line { flex: 1; height: 1px; background: rgba(22,41,78,0.18); }
+        .pe-band-txt { font-size: 9.5px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #16294e; white-space: nowrap; }
+        .pe-svc-wrap { margin: 4mm 0 2mm; }
+        .pe-svc-head { display: grid; grid-template-columns: 22mm 1px 1fr; column-gap: 3.5mm; align-items: center; }
+        .pe-route { font-size: 8.5px; font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: #3c465c; text-align: right; line-height: 1.45; }
+        .pe-vrule { width: 1px; align-self: stretch; background: #16294e; }
+        .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 24px; font-weight: 600; color: #16294e; line-height: 1.1; }
+        .pe-svc-rule { height: 0.7mm; background: #16294e; margin: 2mm 0 3.5mm 25.5mm; }
+        .pe-cui { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 15px; font-weight: 600; color: #16294e; margin: 1.5mm 0 2.5mm 34.5mm; }
+        .pe-cui-sub { font-family: "Plus Jakarta Sans", sans-serif; font-size: 8.5px; font-style: italic; font-weight: 400; color: #6b7280; margin: -1.5mm 0 2.5mm 34.5mm; }
+        .pe-row { display: grid; grid-template-columns: 26mm 9mm 1fr; align-items: start; padding: 1.7mm 0; }
+        .pe-label { text-align: right; padding-right: 4.5mm; }
+        .pe-course { font-size: 10.5px; font-style: italic; font-weight: 500; color: #2b3245; line-height: 1.25; letter-spacing: 0; text-transform: none; padding-top: 0; }
+        .pe-choose { font-size: 7.5px; font-style: normal; font-weight: 500; color: #9aa3b5; letter-spacing: 0.04em; margin-top: 1px; }
+        .pe-mark { display: flex; justify-content: center; padding-top: 2.5px; }
+        .pe-ring { width: 2.4mm; height: 2.4mm; border: 0.4mm solid #16294e; border-radius: 50%; background: #fff; box-sizing: border-box; display: block; }
         .pe-dishes { min-width: 0; }
-        .pe-dish { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 12.5px; font-weight: 600; color: #1A1A1A; line-height: 1.25; text-align: left; }
-        .pe-desc { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 9.5px; font-style: italic; color: #5C5C5C; line-height: 1.32; margin: 1px 0 5px; text-align: left; }
-        .pe-bev-cat { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 11.5px; font-weight: 600; color: #0B1A3A; margin: 5px 0 2px; }
-        .pe-note { font-size: 7.5px; color: #9CA3AF; text-align: center; margin-top: 12px; letter-spacing: 0.04em; }
-        .pe-leaf { width: 9px; height: 9px; margin-left: 4px; vertical-align: -1px; display: inline-block; }
-        .print-a6 .pe-head { font-size: 7px; }
-        .print-a6 .pe-band { font-size: 7.5px; letter-spacing: 0.28em; }
-        .print-a6 .pe-svc-name { font-size: 14px; }
-        .print-a6 .pe-dish { font-size: 10.5px; }
-        .print-a6 .pe-desc { font-size: 8px; }
-        .print-a6 .pe-row { grid-template-columns: 18mm 1fr; gap: 5px; margin-bottom: 5px; }
-        .print-a6 .pe-course { font-size: 6.5px; }
+        .pe-dish { font-family: "Plus Jakarta Sans", sans-serif; font-size: 11.5px; font-weight: 700; color: #171d2b; letter-spacing: 0.01em; line-height: 1.3; text-align: left; }
+        .pe-desc { font-family: "Plus Jakarta Sans", sans-serif; font-size: 9.5px; font-style: italic; font-weight: 400; color: #5a6377; line-height: 1.45; margin: 0.5mm 0 2.4mm; text-align: left; }
+        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: 9.5px; font-weight: 700; color: #16294e; letter-spacing: 0.04em; text-transform: uppercase; margin: 1.6mm 0 1mm; }
+        .pe-plain { font-size: 9.5px; font-weight: 500; color: #232a3a; line-height: 1.4; margin: 0 0 0.8mm; }
+        .pe-plain-slate { color: #3c465c; }
+        .pe-foot { margin-top: 10mm; text-align: center; font-size: 8px; color: #9aa3b5; letter-spacing: 0.04em; }
+        .pe-foot-rule { height: 1px; background: rgba(22,41,78,0.15); margin-bottom: 3mm; }
+        .print-a6 .pe-head { font-size: 6.5px; letter-spacing: 0.18em; }
+        .print-a6 .pe-band { margin: 4mm 0 2.5mm; }
+        .print-a6 .pe-band-txt { font-size: 7px; letter-spacing: 0.16em; }
+        .print-a6 .pe-svc-head { grid-template-columns: 14mm 1px 1fr; column-gap: 2mm; }
+        .print-a6 .pe-route { font-size: 6px; }
+        .print-a6 .pe-svc-name { font-size: 15px; }
+        .print-a6 .pe-svc-rule { margin-left: 16mm; }
+        .print-a6 .pe-cui { font-size: 11px; margin-left: 20mm; }
+        .print-a6 .pe-row { grid-template-columns: 16mm 6mm 1fr; padding: 1mm 0; }
+        .print-a6 .pe-course { font-size: 8px; }
+        .print-a6 .pe-dish { font-size: 9px; }
+        .print-a6 .pe-desc { font-size: 7.5px; margin-bottom: 1.4mm; }
+        .print-a6 .pe-choose { font-size: 6px; }
+        .print-a6 .pe-ring { width: 1.8mm; height: 1.8mm; border-width: 0.3mm; }
 
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
@@ -925,7 +944,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.8';
+        const APP_VERSION = '1.4.9';
 
         // State
         let appProfile = null;
@@ -4744,10 +4763,12 @@ function getRegionForAirport(code) {
             }
             const name = cleanMenuText(it.name || it.title || it.itemName || '');
             if (!name) return null;
-            const desc = cleanMenuText(it.description || it.itemDescription || it.vintage || it.region || it.desc || '');
+            const desc = cleanMenuText(it.description || it.itemDescription || it.desc || '');
             const footnote = cleanMenuText(it.footnote || '');
+            const vintage = cleanMenuText(it.vintage || '');
+            const region = cleanMenuText(it.region || '');
             const veg = !!(it.icons && it.icons.indexOf && it.icons.indexOf('VGT') !== -1);
-            return { name: name, desc: [desc, footnote].filter(Boolean).join(' '), veg: veg };
+            return { name: name, desc: [desc, footnote].filter(Boolean).join(' '), vintage: vintage, region: region, veg: veg };
         }
 
         function printCourseLabel(raw) {
@@ -4926,17 +4947,28 @@ function getRegionForAirport(code) {
             return String(name || code || '').toUpperCase();
         }
 
-        function printElegantVeg(it) {
-            return (it && it.veg)
-                ? '<svg class="pe-leaf" viewBox="0 0 12 12" aria-hidden="true"><path fill="#3A7A48" d="M10.4 1.6c-3.2.6-6.4 3.4-7 6.8 2 .2 4.2-1.2 5.6-3.1-.8 2.2-2.6 3.8-5 4.4 2.4.8 5.2-.6 6.6-3.4.8-1.6.6-3.5-.2-4.7z"/></svg>'
-                : '';
+        function printElegantWineLine(it) {
+            const name = (it && it.name) || '';
+            const vintage = (it && it.vintage) || '';
+            const region = (it && it.region) || '';
+            let line = name;
+            if (vintage && !/^\d{4}/.test(name)) line = vintage + ' ' + name;
+            if (region && line.indexOf(region) === -1) line += ', ' + region;
+            return line;
         }
 
         function renderElegantDish(it) {
             if (!it || !it.name) return '';
-            let html = `<div class="pe-dish">${escapePrintHtml(it.name)}${printElegantVeg(it)}</div>`;
+            let html = `<div class="pe-dish">${escapePrintHtml(it.name)}</div>`;
             if (printState.descriptions && it.desc) html += `<div class="pe-desc">${escapePrintHtml(it.desc)}</div>`;
             return html;
+        }
+
+        function renderElegantRow(label, inner, chooseN) {
+            const hint = (chooseN && chooseN >= 2)
+                ? `<div class="pe-choose">Choose one of ${chooseN}</div>`
+                : '';
+            return `<div class="pe-row"><div class="pe-label"><div class="pe-course">${escapePrintHtml(label || '')}</div>${hint}</div><div class="pe-mark"><span class="pe-ring"></span></div><div class="pe-dishes">${inner}</div></div>`;
         }
 
         function renderElegantCourses(courses) {
@@ -4952,9 +4984,16 @@ function getRegionForAirport(code) {
             groups.forEach((g) => {
                 if (g.culinary) html += `<div class="pe-cui">${escapePrintHtml(g.culinary)} Menu</div>`;
                 g.courses.forEach((course) => {
-                    html += `<div class="pe-row"><div class="pe-course">${escapePrintHtml(course.label)}</div><div class="pe-dishes">`;
-                    (course.items || []).forEach((it) => { html += renderElegantDish(it); });
-                    html += '</div></div>';
+                    const items = course.items || [];
+                    const n = items.length;
+                    const plain = items.length && items.every((it) => !it.desc);
+                    let inner = '';
+                    if (plain) {
+                        items.forEach((it) => { inner += `<div class="pe-plain pe-plain-slate">${escapePrintHtml(it.name)}</div>`; });
+                    } else {
+                        items.forEach((it) => { inner += renderElegantDish(it); });
+                    }
+                    html += renderElegantRow(course.label, inner, plain ? 0 : n);
                 });
             });
             return html;
@@ -4962,24 +5001,25 @@ function getRegionForAirport(code) {
 
         function renderElegantDrinks(groups) {
             if (!groups || !groups.length) return '';
-            let html = '<div class="pe-row"><div class="pe-course">Beverages</div><div class="pe-dishes">';
+            let inner = '';
             groups.forEach((g) => {
-                if (g.name) html += `<div class="pe-bev-cat">${escapePrintHtml(g.name)}</div>`;
-                (g.items || []).forEach((it) => { html += renderElegantDish(it); });
+                if (g.name) inner += `<div class="pe-bev-cat">${escapePrintHtml(String(g.name).toUpperCase())}</div>`;
+                (g.items || []).forEach((it) => {
+                    inner += `<div class="pe-plain">${escapePrintHtml(printElegantWineLine(it))}</div>`;
+                });
             });
-            html += '</div></div>';
-            return html;
+            return renderElegantRow('Beverages', inner, 0);
         }
 
         function renderElegantSheet(model, sector) {
-            const cabinsLine = (model.cabinCodes || []).join(', ');
+            const cabinsLine = (model.cabinCodes || []).join(' · ');
             const depCity = String(sector.depCity || sector.dep || '').toUpperCase();
             const arrCity = String(sector.arrCity || sector.arr || '').toUpperCase();
             let html = '<div class="print-sheet-inner">';
-            html += `<div class="pe-head">SQ ${escapePrintHtml(model.flight)} · ${escapePrintHtml(model.dateLong)}${cabinsLine ? ' · ' + escapePrintHtml(cabinsLine) : ''}</div>`;
+            html += `<div class="pe-head">SQ ${escapePrintHtml(model.flight)} <span class="pe-dia">◆</span> ${escapePrintHtml(model.dateLong)}${cabinsLine ? ' <span class="pe-dia">◆</span> ' + escapePrintHtml(cabinsLine) : ''}</div>`;
             (sector.cabins || []).forEach((cabin) => {
                 const band = printElegantCabinBand(cabin.code, cabin.name);
-                html += `<div class="pe-band">${escapePrintHtml(band)}</div>`;
+                html += `<div class="pe-band"><span class="pe-band-line"></span><span class="pe-band-txt">${escapePrintHtml(band)}</span><span class="pe-band-line"></span></div>`;
                 const plated = [];
                 const extra = [];
                 (cabin.services || []).forEach((svc) => {
@@ -4987,11 +5027,11 @@ function getRegionForAirport(code) {
                     else plated.push(svc);
                 });
                 const paintSvc = (svc) => {
-                    html += `<div class="pe-svc-head">
+                    html += `<div class="pe-svc-wrap"><div class="pe-svc-head">
                         <div class="pe-route">${escapePrintHtml(depCity)}<br>TO ${escapePrintHtml(arrCity)}</div>
+                        <div class="pe-vrule"></div>
                         <div class="pe-svc-name">${escapePrintHtml(svc.name)}</div>
-                        <div class="pe-svc-cabin">${escapePrintHtml(band)}</div>
-                    </div>`;
+                    </div><div class="pe-svc-rule"></div></div>`;
                     html += renderElegantCourses(svc.courses);
                 };
                 plated.forEach((svc, idx) => {
@@ -5001,7 +5041,7 @@ function getRegionForAirport(code) {
                 extra.forEach(paintSvc);
                 if (!plated.length) html += renderElegantDrinks(cabin.drinks);
             });
-            html += '<div class="pe-note">Generated by CrewAssist</div></div>';
+            html += '<div class="pe-foot"><div class="pe-foot-rule"></div>Menu content © Singapore Airlines · Compiled with CrewAssist — an unofficial crew tool</div></div>';
             return html;
         }
 
