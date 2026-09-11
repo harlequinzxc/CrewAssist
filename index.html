@@ -282,23 +282,31 @@
         .print-paper.print-grey {
             filter: grayscale(1);
         }
-        .print-sheet-inner { padding: 10mm 11mm 12mm; }
-        .print-a6 .print-sheet-inner { padding: 6mm 6.5mm 7mm; }
+        .print-sheet-inner { padding: 9mm 11mm 11mm; }
+        .print-a6 .print-sheet-inner { padding: 5.5mm 6mm 6.5mm; }
 
-        .pe-head { text-align: center; border-bottom: 1px solid #C9A227; padding-bottom: 6px; margin-bottom: 10px; }
-        .pe-kicker { font-size: 8px; letter-spacing: 0.32em; font-weight: 700; color: #C9A227; text-transform: uppercase; }
-        .pe-title { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 22px; font-weight: 600; color: #0B1A3A; letter-spacing: 0.04em; margin-top: 2px; }
-        .pe-meta { font-size: 9px; color: #6B7280; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px; }
-        .pe-cabin { text-align: center; font-size: 10px; letter-spacing: 0.28em; font-weight: 700; color: #0B1A3A; text-transform: uppercase; margin: 12px 0 8px; }
-        .pe-svc { display: flex; align-items: center; gap: 8px; margin: 10px 0 6px; }
-        .pe-svc span { font-size: 10px; letter-spacing: 0.2em; font-weight: 700; text-transform: uppercase; color: #0B1A3A; white-space: nowrap; }
-        .pe-svc::before, .pe-svc::after { content: ""; flex: 1; height: 1px; background: #C9A227; }
-        .pe-course { font-size: 9px; letter-spacing: 0.18em; font-weight: 700; text-transform: uppercase; color: #8A7040; margin: 8px 0 2px; text-align: center; }
-        .pe-dish { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 13px; font-weight: 600; color: #111; text-align: center; line-height: 1.25; }
-        .pe-desc { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 10.5px; font-style: italic; color: #5B5B5B; text-align: center; line-height: 1.3; margin: 1px 0 4px; }
-        .pe-note { font-size: 8px; color: #9CA3AF; text-align: center; margin-top: 8px; }
-        .pe-delect { margin-top: 8px; }
-        .pe-delect .pe-dish { font-size: 12px; }
+        .pe-head { text-align: center; font-size: 8.5px; letter-spacing: 0.14em; font-weight: 600; color: #6B7280; text-transform: uppercase; padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid #E4D5A0; }
+        .pe-band { text-align: center; font-size: 9px; letter-spacing: 0.42em; font-weight: 700; color: #0B1A3A; text-transform: uppercase; margin: 12px 0 8px; }
+        .pe-svc-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 8px; border-top: 1px solid #C9A227; border-bottom: 1px solid #C9A227; padding: 6px 0 5px; margin: 8px 0 8px; }
+        .pe-route { font-size: 7px; letter-spacing: 0.16em; font-weight: 700; color: #C9A227; text-transform: uppercase; line-height: 1.35; }
+        .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 20px; font-weight: 600; color: #0B1A3A; text-align: center; line-height: 1.05; }
+        .pe-svc-cabin { font-size: 7px; letter-spacing: 0.16em; font-weight: 700; color: #C9A227; text-transform: uppercase; text-align: right; padding-bottom: 3px; }
+        .pe-cui { text-align: center; font-size: 8.5px; letter-spacing: 0.08em; font-weight: 600; color: #8A7040; margin: 2px 0 8px; }
+        .pe-row { display: grid; grid-template-columns: 28mm 1fr; gap: 10px; align-items: start; margin: 0 0 7px; }
+        .pe-course { font-size: 8px; letter-spacing: 0.14em; font-weight: 700; text-transform: uppercase; color: #C9A227; padding-top: 3px; }
+        .pe-dishes { min-width: 0; }
+        .pe-dish { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 12.5px; font-weight: 600; color: #1A1A1A; line-height: 1.25; text-align: left; }
+        .pe-desc { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 9.5px; font-style: italic; color: #5C5C5C; line-height: 1.32; margin: 1px 0 5px; text-align: left; }
+        .pe-bev-cat { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: 11.5px; font-weight: 600; color: #0B1A3A; margin: 5px 0 2px; }
+        .pe-note { font-size: 7.5px; color: #9CA3AF; text-align: center; margin-top: 12px; letter-spacing: 0.04em; }
+        .pe-leaf { width: 9px; height: 9px; margin-left: 4px; vertical-align: -1px; display: inline-block; }
+        .print-a6 .pe-head { font-size: 7px; }
+        .print-a6 .pe-band { font-size: 7.5px; letter-spacing: 0.28em; }
+        .print-a6 .pe-svc-name { font-size: 14px; }
+        .print-a6 .pe-dish { font-size: 10.5px; }
+        .print-a6 .pe-desc { font-size: 8px; }
+        .print-a6 .pe-row { grid-template-columns: 18mm 1fr; gap: 5px; margin-bottom: 5px; }
+        .print-a6 .pe-course { font-size: 6.5px; }
 
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
@@ -917,7 +925,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.7';
+        const APP_VERSION = '1.4.8';
 
         // State
         let appProfile = null;
@@ -4738,7 +4746,8 @@ function getRegionForAirport(code) {
             if (!name) return null;
             const desc = cleanMenuText(it.description || it.itemDescription || it.vintage || it.region || it.desc || '');
             const footnote = cleanMenuText(it.footnote || '');
-            return { name: name, desc: [desc, footnote].filter(Boolean).join(' ') };
+            const veg = !!(it.icons && it.icons.indexOf && it.icons.indexOf('VGT') !== -1);
+            return { name: name, desc: [desc, footnote].filter(Boolean).join(' '), veg: veg };
         }
 
         function printCourseLabel(raw) {
@@ -4747,8 +4756,8 @@ function getRegionForAirport(code) {
             if (/main|entr[eé]e|entree/.test(l)) return 'Main Course';
             if (/dessert|sweet|pudding/.test(l)) return 'Dessert';
             if (/baker|bread/.test(l)) return 'From The Bakery';
-            if (/praline|chocolate/.test(l)) return 'Pralines';
-            if (/light|snack|delect/.test(l)) return 'Light Bites';
+            if (/praline/.test(l)) return 'Praline';
+            if (/light\s*bite/.test(l)) return 'Light Bite';
             return cleanMenuText(raw || 'Course');
         }
 
@@ -4815,14 +4824,6 @@ function getRegionForAirport(code) {
             const delectables = [];
             meals.forEach((meal) => {
                 const svcName = cleanMenuText(meal.mealServiceName || 'Meal');
-                if (printIsDelectable(svcName)) {
-                    (meal.selectionDetails || []).forEach((sel) => {
-                        (sel.mealCourses || []).forEach((course) => {
-                            (course.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) delectables.push(row); });
-                        });
-                    });
-                    return;
-                }
                 const courses = [];
                 (meal.selectionDetails || []).forEach((sel, selIdx) => {
                     const culinary = shortenCulinaryName(sel.name);
@@ -4844,6 +4845,9 @@ function getRegionForAirport(code) {
                     }
                 });
                 services.push({ name: svcName, courses: courses });
+                if (printIsDelectable(svcName)) {
+                    courses.forEach((c) => (c.items || []).forEach((row) => delectables.push(row)));
+                }
             });
             collectPrintSnacks(leg).forEach((it) => delectables.push(it));
             return { services: services, delectables: delectables };
@@ -4861,6 +4865,8 @@ function getRegionForAirport(code) {
                             code: code,
                             dep: fd.departureAirportCode || '',
                             arr: fd.arrivalAirportCode || '',
+                            depCity: fd.departureCityName || fd.departureAirportCode || '',
+                            arrCity: fd.arrivalCityName || fd.arrivalAirportCode || '',
                             cabins: []
                         });
                     }
@@ -4912,36 +4918,90 @@ function getRegionForAirport(code) {
             return model.sectors[Math.min(printState.sectorIdx, model.sectors.length - 1)];
         }
 
-        function renderElegantSheet(model, sector) {
-            const cabinsLine = (model.cabinCodes || []).join(' · ');
-            let html = '<div class="print-sheet-inner">';
-            html += `<div class="pe-head">
-                <div class="pe-kicker">Singapore Airlines</div>
-                <div class="pe-title">Inflight Menu</div>
-                <div class="pe-meta">SQ ${escapePrintHtml(model.flight)} · ${escapePrintHtml(model.dateLong)}${cabinsLine ? ' · ' + escapePrintHtml(cabinsLine) : ''}</div>
-            </div>`;
-            (sector.cabins || []).forEach((cabin) => {
-                html += `<div class="pe-cabin">${escapePrintHtml(cabin.name)} Class</div>`;
-                (cabin.services || []).forEach((svc) => {
-                    html += `<div class="pe-svc"><span>${escapePrintHtml(svc.name)}${sector.code ? ' · ' + escapePrintHtml(sector.code) : ''}</span></div>`;
-                    (svc.courses || []).forEach((course) => {
-                        html += `<div class="pe-course">${escapePrintHtml(course.label)}</div>`;
-                        (course.items || []).forEach((it) => {
-                            const dish = course.culinary ? it.name + ' · ' + course.culinary : it.name;
-                            html += `<div class="pe-dish">${escapePrintHtml(dish)}</div>`;
-                            if (printState.descriptions && it.desc) html += `<div class="pe-desc">${escapePrintHtml(it.desc)}</div>`;
-                        });
-                    });
-                });
-                if (cabin.delectables && cabin.delectables.length) {
-                    html += `<div class="pe-svc"><span>Delectables</span></div><div class="pe-delect">`;
-                    cabin.delectables.forEach((it) => {
-                        html += `<div class="pe-dish">${escapePrintHtml(it.name)}</div>`;
-                    });
-                    html += '</div>';
+        function printElegantCabinBand(code, name) {
+            if (code === 'JCL') return 'BUSINESS CLASS';
+            if (code === 'YCL') return 'ECONOMY CLASS';
+            if (code === 'SCL') return 'PREMIUM ECONOMY';
+            if (code === 'FCL') return /suite/i.test(name || '') ? 'SUITES' : 'FIRST CLASS';
+            return String(name || code || '').toUpperCase();
+        }
+
+        function printElegantVeg(it) {
+            return (it && it.veg)
+                ? '<svg class="pe-leaf" viewBox="0 0 12 12" aria-hidden="true"><path fill="#3A7A48" d="M10.4 1.6c-3.2.6-6.4 3.4-7 6.8 2 .2 4.2-1.2 5.6-3.1-.8 2.2-2.6 3.8-5 4.4 2.4.8 5.2-.6 6.6-3.4.8-1.6.6-3.5-.2-4.7z"/></svg>'
+                : '';
+        }
+
+        function renderElegantDish(it) {
+            if (!it || !it.name) return '';
+            let html = `<div class="pe-dish">${escapePrintHtml(it.name)}${printElegantVeg(it)}</div>`;
+            if (printState.descriptions && it.desc) html += `<div class="pe-desc">${escapePrintHtml(it.desc)}</div>`;
+            return html;
+        }
+
+        function renderElegantCourses(courses) {
+            let html = '';
+            const groups = [];
+            (courses || []).forEach((course) => {
+                const key = course.culinary || '';
+                if (!groups.length || groups[groups.length - 1].culinary !== key) {
+                    groups.push({ culinary: key, courses: [] });
                 }
+                groups[groups.length - 1].courses.push(course);
             });
-            html += '<div class="pe-note">Crew homework · operational use only</div></div>';
+            groups.forEach((g) => {
+                if (g.culinary) html += `<div class="pe-cui">${escapePrintHtml(g.culinary)} Menu</div>`;
+                g.courses.forEach((course) => {
+                    html += `<div class="pe-row"><div class="pe-course">${escapePrintHtml(course.label)}</div><div class="pe-dishes">`;
+                    (course.items || []).forEach((it) => { html += renderElegantDish(it); });
+                    html += '</div></div>';
+                });
+            });
+            return html;
+        }
+
+        function renderElegantDrinks(groups) {
+            if (!groups || !groups.length) return '';
+            let html = '<div class="pe-row"><div class="pe-course">Beverages</div><div class="pe-dishes">';
+            groups.forEach((g) => {
+                if (g.name) html += `<div class="pe-bev-cat">${escapePrintHtml(g.name)}</div>`;
+                (g.items || []).forEach((it) => { html += renderElegantDish(it); });
+            });
+            html += '</div></div>';
+            return html;
+        }
+
+        function renderElegantSheet(model, sector) {
+            const cabinsLine = (model.cabinCodes || []).join(', ');
+            const depCity = String(sector.depCity || sector.dep || '').toUpperCase();
+            const arrCity = String(sector.arrCity || sector.arr || '').toUpperCase();
+            let html = '<div class="print-sheet-inner">';
+            html += `<div class="pe-head">SQ ${escapePrintHtml(model.flight)} · ${escapePrintHtml(model.dateLong)}${cabinsLine ? ' · ' + escapePrintHtml(cabinsLine) : ''}</div>`;
+            (sector.cabins || []).forEach((cabin) => {
+                const band = printElegantCabinBand(cabin.code, cabin.name);
+                html += `<div class="pe-band">${escapePrintHtml(band)}</div>`;
+                const plated = [];
+                const extra = [];
+                (cabin.services || []).forEach((svc) => {
+                    if (printIsDelectable(svc.name)) extra.push(svc);
+                    else plated.push(svc);
+                });
+                const paintSvc = (svc) => {
+                    html += `<div class="pe-svc-head">
+                        <div class="pe-route">${escapePrintHtml(depCity)}<br>TO ${escapePrintHtml(arrCity)}</div>
+                        <div class="pe-svc-name">${escapePrintHtml(svc.name)}</div>
+                        <div class="pe-svc-cabin">${escapePrintHtml(band)}</div>
+                    </div>`;
+                    html += renderElegantCourses(svc.courses);
+                };
+                plated.forEach((svc, idx) => {
+                    paintSvc(svc);
+                    if (idx === plated.length - 1) html += renderElegantDrinks(cabin.drinks);
+                });
+                extra.forEach(paintSvc);
+                if (!plated.length) html += renderElegantDrinks(cabin.drinks);
+            });
+            html += '<div class="pe-note">Generated by CrewAssist</div></div>';
             return html;
         }
 
@@ -4951,6 +5011,7 @@ function getRegionForAirport(code) {
             (sector.cabins || []).forEach((cabin) => {
                 html += `<div class="pc-cabin">${escapePrintHtml(cabin.code)}</div>`;
                 (cabin.services || []).forEach((svc) => {
+                    if (printIsDelectable(svc.name)) return;
                     html += `<div class="pc-svc">${escapePrintHtml(svc.name)}</div>`;
                     (svc.courses || []).forEach((course) => {
                         const key = printCompactCourse(course.label);

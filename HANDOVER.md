@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v40` (`sw.js`). App SemVer: **1.4.7** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v41` (`sw.js`). App SemVer: **1.4.8** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.7` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.8` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -30,11 +30,11 @@ Latest app cache: `crewassist-v40` (`sw.js`). App SemVer: **1.4.7** (`APP_VERSIO
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed from settings; `initUI()` no longer reads it, so gender buttons work.
 - **CTAs:** Gold-bordered pills (navy/gold). Calculate stays disabled until required fields are filled.
 - **Repo cleanup:** Scratch `check*` / `temp*` / `fix*` / `test-plane*` files gone; airports inlined; unused `api/cabins.ts`, `api/getcabin.ts`, `api/menu.ts` removed (app never called them). Dead CSS (`.glow-gold`, `--aurora-opacity`, `--text-muted`) and unused DOM ids (`chip-container`, `btn-dev-import`) removed. Dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) already gone.
-- **Step 6 inflight menu printer:** Same slide-up glass sheet as the menu viewer (`#print-backdrop` + `#print-overlay` `translate-y-full`). Handle, title, Export, X. Chrome: `SQ n · N sheets`, date/route, numbered sector pills, Elegant/Compact, A4/A6, zoom, Greyscale, Descriptions, Menu sheet / Edit content. Elegant = restaurant-style one page (Cormorant Garamond, no cursive). Compact = tight all-caps APP/MAIN/DESSERT with protein strikethrough + beverages. Export PNG/JPEG (`html2canvas` CDN) and Word (HTML `.doc`). Edit writes back into `printState.model`. Do not call SQ from the browser.
+- **Step 6 inflight menu printer:** Same slide-up glass sheet as the menu viewer. Chrome unchanged. **Elegant** matches the restaurant reference: masthead `SQ n · date · cabins`; cabin band (BUSINESS CLASS / …); service row with city pair (left), Cormorant service name (center), cabin (right); gold course labels in a left column, serif dish + italic desc on the right; `International Menu` culinary line; Delectables kept as a meal service (Light Bite, etc.); beverages under the last plated service; VGT leaf; no placeholders. Compact still homework all-caps with protein strikethrough. Export PNG/JPEG/Word. Do not call SQ from the browser.
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Overlay chrome matches the crew UI shots. Elegant/compact **menu** typography and packing still first-pass — wait for the dedicated restaurant / compact menu references before locking layout.
+- **Printer sheet art:** Elegant restyled from the restaurant reference (v1.4.8). Compact homework layout still first-pass — wait for a dedicated compact reference before locking it.
 
 ## Key Architecture Decisions & Constraints
 
