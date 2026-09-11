@@ -294,10 +294,15 @@
             position: relative;
             --print-type: 1;
         }
-        .print-paper.print-a4,
-        .print-paper.print-a6 { width: 100%; max-width: 100%; min-height: 0; box-sizing: border-box; }
+        .print-paper.print-a4 { width: 210mm; min-height: 297mm; box-sizing: border-box; }
+        .print-paper.print-a6 { width: 105mm; min-height: 148mm; box-sizing: border-box; }
         .print-paper.print-export-a4 { width: 210mm !important; max-width: 210mm !important; min-height: 297mm !important; }
         .print-paper.print-export-a6 { width: 105mm !important; max-width: 105mm !important; min-height: 148mm !important; }
+        .print-sector-num {
+            width: 1.35rem; height: 1.35rem; border-radius: 999px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800; line-height: 1; flex-shrink: 0; border: 1.5px solid currentColor;
+        }
         .print-paper.print-grey {
             filter: grayscale(1);
         }
@@ -757,7 +762,7 @@
 
         <!-- Menu Printer -->
         <div id="print-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="print-overlay" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="print-overlay" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col overflow-hidden">
             <div class="w-full flex justify-center py-3 shrink-0 no-print">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -811,7 +816,7 @@
                 </div>
                 <div id="print-error" class="hidden text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
                 <div id="print-paper-scroll" class="flex-1 min-h-0 overflow-auto">
-                    <div id="print-paper-wrap" class="flex justify-center py-3 w-full"></div>
+                    <div id="print-paper-wrap" class="py-3 mx-auto"></div>
                 </div>
                 <div id="print-edit-scroll" class="hidden flex-1 min-h-0 overflow-auto">
                     <div id="print-edit-wrap" class="max-w-xl mx-auto py-3 space-y-3"></div>
@@ -981,7 +986,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.11';
+        const APP_VERSION = '1.4.13';
 
         // State
         let appProfile = null;
@@ -4855,6 +4860,18 @@ function getRegionForAirport(code) {
             return /delectable|snack|light bite/i.test(name || '');
         }
 
+        function printIsLightBite(label) {
+            return /light\s*bite/i.test(label || '');
+        }
+
+        function printDrinkShownByDefault(name) {
+            const l = String(name || '').toLowerCase();
+            if (/champagn/.test(l)) return true;
+            if (/\bwhite\b/.test(l)) return true;
+            if (/\bred\b/.test(l) && !/red bull/.test(l)) return true;
+            return false;
+        }
+
         function printDrinkGroupLabel() {
             const parts = [];
             for (let i = 0; i < arguments.length; i++) {
@@ -4890,14 +4907,14 @@ function getRegionForAirport(code) {
                         namedSpecs.forEach((spec) => {
                             const items = takeItems(spec);
                             const label = printDrinkGroupLabel(catName, sub.name, spec.name);
-                            if (items.length) groups.push({ name: label, items: items });
+                            if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
                         });
                     } else {
                         const items = [];
                         specs.forEach((spec) => takeItems(spec).forEach((row) => items.push(row)));
                         (sub.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) items.push(row); });
                         const label = printDrinkGroupLabel(catName, sub.name);
-                        if (items.length) groups.push({ name: label, items: items });
+                        if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
                     }
                 });
             });
@@ -4910,7 +4927,7 @@ function getRegionForAirport(code) {
             (subs || []).forEach((sub) => {
                 (sub.items || []).forEach((it) => {
                     const row = printItemFromRaw(it);
-                    if (row) items.push(row);
+                    if (row) { row.hidden = true; items.push(row); }
                 });
             });
             return items;
@@ -4929,10 +4946,12 @@ function getRegionForAirport(code) {
                     (sel.mealCourses || []).forEach((course) => {
                         const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
                         if (!items.length) return;
+                        const label = printCourseLabel(course.category);
                         courses.push({
-                            label: printCourseLabel(course.category),
+                            label: label,
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
-                            items: items
+                            items: items,
+                            hidden: printIsDelectable(svcName) && !printIsLightBite(label)
                         });
                     });
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
@@ -4945,7 +4964,10 @@ function getRegionForAirport(code) {
                 });
                 services.push({ name: svcName, courses: courses });
                 if (printIsDelectable(svcName)) {
-                    courses.forEach((c) => (c.items || []).forEach((row) => delectables.push(row)));
+                    courses.forEach((c) => (c.items || []).forEach((row) => {
+                        if (c.hidden) row.hidden = true;
+                        delectables.push(row);
+                    }));
                 }
             });
             collectPrintSnacks(leg).forEach((it) => delectables.push(it));
@@ -5197,14 +5219,20 @@ function getRegionForAirport(code) {
                         const on = idx === printState.sectorIdx;
                         const btn = document.createElement('button');
                         btn.type = 'button';
-                        btn.className = 'h-9 px-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap ' + (on
+                        btn.className = 'h-9 pl-1.5 pr-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap inline-flex items-center gap-1.5 ' + (on
                             ? 'border-sia-gold text-sia-gold bg-transparent'
                             : 'bg-black/5 dark:bg-white/5 text-gray-500 border-black/10 dark:border-white/10');
+                        const num = document.createElement('span');
+                        num.className = 'print-sector-num' + (on ? ' bg-sia-gold text-black border-sia-gold' : '');
+                        num.textContent = String(idx + 1);
+                        const lab = document.createElement('span');
                         const route = (sec.dep || '') + ' → ' + (sec.arr || '');
-                        btn.textContent = (idx + 1) + (route.trim() !== '→' ? ' ' + route : '');
+                        lab.textContent = route.trim() === '→' ? '' : route;
+                        btn.appendChild(num);
+                        if (lab.textContent) btn.appendChild(lab);
                         btn.addEventListener('click', () => {
                             printState.sectorIdx = idx;
-                            renderPrintView();
+                            renderPrintView(true);
                         });
                         row.appendChild(btn);
                     });
@@ -5291,16 +5319,24 @@ function getRegionForAirport(code) {
             if (!wrap || !paper) return;
             paper.classList.remove('print-export-a4', 'print-export-a6');
             paper.style.setProperty('--print-type', String(printState.zoom / 100));
+            paper.style.width = '';
+            paper.style.maxWidth = '';
+            paper.style.minHeight = '';
             paper.style.transform = 'none';
-            paper.style.width = '100%';
-            paper.style.maxWidth = '100%';
-            wrap.style.width = '100%';
+            wrap.style.width = '';
             wrap.style.height = '';
-            wrap.style.overflow = 'visible';
-            wrap.style.display = 'flex';
-            wrap.style.justifyContent = 'center';
-            const w = paper.clientWidth || wrap.clientWidth || 1;
-            paper.style.minHeight = Math.round(w * 297 / 210) + 'px';
+            wrap.style.overflow = 'hidden';
+            wrap.style.marginLeft = 'auto';
+            wrap.style.marginRight = 'auto';
+            const scroll = document.getElementById('print-paper-scroll');
+            const avail = Math.max(120, (scroll ? scroll.clientWidth : wrap.parentElement.clientWidth) - 8);
+            const naturalW = paper.offsetWidth || 1;
+            const naturalH = paper.offsetHeight || 1;
+            const fit = avail / naturalW;
+            wrap.style.width = (naturalW * fit) + 'px';
+            wrap.style.height = (naturalH * fit) + 'px';
+            paper.style.transformOrigin = 'top left';
+            paper.style.transform = 'scale(' + fit + ')';
         }
 
         function printEditToggle(obj, row) {
@@ -5488,10 +5524,20 @@ function getRegionForAirport(code) {
             try { lucide.createIcons(); } catch (e) {}
         }
 
-        function renderPrintView() {
+        function resetPrintPreviewScroll() {
+            ['print-paper-scroll', 'print-stage', 'print-overlay'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.scrollTop = 0;
+            });
+        }
+
+        function renderPrintView(resetPreviewScroll) {
             applyPrintChrome();
             if (printState.tab === 'edit') renderPrintEdit();
-            else renderPrintSheet();
+            else {
+                renderPrintSheet();
+                if (resetPreviewScroll) resetPrintPreviewScroll();
+            }
         }
 
         async function openMenuPrinter(flightNumber, date, cabinClasses) {
@@ -5628,7 +5674,7 @@ function getRegionForAirport(code) {
                 } else {
                     printState.layout = 'elegant';
                 }
-                renderPrintView();
+                renderPrintView(true);
             });
             document.getElementById('print-layout-compact').addEventListener('click', () => {
                 if (printState.layout !== 'compact') {
@@ -5637,10 +5683,10 @@ function getRegionForAirport(code) {
                 } else {
                     printState.layout = 'compact';
                 }
-                renderPrintView();
+                renderPrintView(true);
             });
-            document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(); });
-            document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(); });
+            document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(true); });
+            document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(true); });
             document.getElementById('print-zoom-out').addEventListener('click', () => {
                 printState.zoom = Math.max(70, printState.zoom - 10);
                 renderPrintView();
