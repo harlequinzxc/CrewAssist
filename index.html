@@ -294,10 +294,15 @@
             position: relative;
             --print-type: 1;
         }
-        .print-paper.print-a4,
-        .print-paper.print-a6 { width: 100%; max-width: 100%; min-height: 0; box-sizing: border-box; }
+        .print-paper.print-a4 { width: 210mm; min-height: 297mm; box-sizing: border-box; }
+        .print-paper.print-a6 { width: 105mm; min-height: 148mm; box-sizing: border-box; }
         .print-paper.print-export-a4 { width: 210mm !important; max-width: 210mm !important; min-height: 297mm !important; }
         .print-paper.print-export-a6 { width: 105mm !important; max-width: 105mm !important; min-height: 148mm !important; }
+        .print-sector-num {
+            width: 1.35rem; height: 1.35rem; border-radius: 999px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 800; line-height: 1; flex-shrink: 0; border: 1.5px solid currentColor;
+        }
         .print-paper.print-grey {
             filter: grayscale(1);
         }
@@ -811,7 +816,7 @@
                 </div>
                 <div id="print-error" class="hidden text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
                 <div id="print-paper-scroll" class="flex-1 min-h-0 overflow-auto">
-                    <div id="print-paper-wrap" class="flex justify-center py-3 w-full"></div>
+                    <div id="print-paper-wrap" class="py-3 mx-auto"></div>
                 </div>
                 <div id="print-edit-scroll" class="hidden flex-1 min-h-0 overflow-auto">
                     <div id="print-edit-wrap" class="max-w-xl mx-auto py-3 space-y-3"></div>
@@ -981,7 +986,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.11';
+        const APP_VERSION = '1.4.12';
 
         // State
         let appProfile = null;
@@ -5197,11 +5202,17 @@ function getRegionForAirport(code) {
                         const on = idx === printState.sectorIdx;
                         const btn = document.createElement('button');
                         btn.type = 'button';
-                        btn.className = 'h-9 px-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap ' + (on
+                        btn.className = 'h-9 pl-1.5 pr-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap inline-flex items-center gap-1.5 ' + (on
                             ? 'border-sia-gold text-sia-gold bg-transparent'
                             : 'bg-black/5 dark:bg-white/5 text-gray-500 border-black/10 dark:border-white/10');
+                        const num = document.createElement('span');
+                        num.className = 'print-sector-num' + (on ? ' bg-sia-gold text-black border-sia-gold' : '');
+                        num.textContent = String(idx + 1);
+                        const lab = document.createElement('span');
                         const route = (sec.dep || '') + ' → ' + (sec.arr || '');
-                        btn.textContent = (idx + 1) + (route.trim() !== '→' ? ' ' + route : '');
+                        lab.textContent = route.trim() === '→' ? '' : route;
+                        btn.appendChild(num);
+                        if (lab.textContent) btn.appendChild(lab);
                         btn.addEventListener('click', () => {
                             printState.sectorIdx = idx;
                             renderPrintView();
@@ -5291,16 +5302,24 @@ function getRegionForAirport(code) {
             if (!wrap || !paper) return;
             paper.classList.remove('print-export-a4', 'print-export-a6');
             paper.style.setProperty('--print-type', String(printState.zoom / 100));
+            paper.style.width = '';
+            paper.style.maxWidth = '';
+            paper.style.minHeight = '';
             paper.style.transform = 'none';
-            paper.style.width = '100%';
-            paper.style.maxWidth = '100%';
-            wrap.style.width = '100%';
+            wrap.style.width = '';
             wrap.style.height = '';
-            wrap.style.overflow = 'visible';
-            wrap.style.display = 'flex';
-            wrap.style.justifyContent = 'center';
-            const w = paper.clientWidth || wrap.clientWidth || 1;
-            paper.style.minHeight = Math.round(w * 297 / 210) + 'px';
+            wrap.style.overflow = 'hidden';
+            wrap.style.marginLeft = 'auto';
+            wrap.style.marginRight = 'auto';
+            const scroll = document.getElementById('print-paper-scroll');
+            const avail = Math.max(120, (scroll ? scroll.clientWidth : wrap.parentElement.clientWidth) - 8);
+            const naturalW = paper.offsetWidth || 1;
+            const naturalH = paper.offsetHeight || 1;
+            const fit = avail / naturalW;
+            wrap.style.width = (naturalW * fit) + 'px';
+            wrap.style.height = (naturalH * fit) + 'px';
+            paper.style.transformOrigin = 'top left';
+            paper.style.transform = 'scale(' + fit + ')';
         }
 
         function printEditToggle(obj, row) {
