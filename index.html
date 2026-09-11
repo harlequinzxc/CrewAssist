@@ -130,6 +130,22 @@
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
+        html.chat-busy #chat-input,
+        html.chat-busy #btn-send,
+        html.chat-busy .action-chip {
+            pointer-events: none;
+            opacity: 0.45;
+        }
+        html.chat-busy #chat-container button,
+        html.chat-busy #chat-container input,
+        html.chat-busy #chat-container select,
+        html.chat-busy #chat-container textarea {
+            pointer-events: none;
+        }
+        html.chat-busy #btn-scroll-bottom {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+        }
 
         @keyframes float {
             0% { transform: translateY(0px); }
@@ -278,8 +294,10 @@
             position: relative;
             --print-type: 1;
         }
-        .print-paper.print-a4 { width: 210mm; min-height: 297mm; }
-        .print-paper.print-a6 { width: 105mm; min-height: 148mm; }
+        .print-paper.print-a4,
+        .print-paper.print-a6 { width: 100%; max-width: 100%; min-height: 0; box-sizing: border-box; }
+        .print-paper.print-export-a4 { width: 210mm !important; max-width: 210mm !important; min-height: 297mm !important; }
+        .print-paper.print-export-a6 { width: 105mm !important; max-width: 105mm !important; min-height: 148mm !important; }
         .print-paper.print-grey {
             filter: grayscale(1);
         }
@@ -287,6 +305,7 @@
         .print-a6 .print-sheet-inner { padding: 7mm 7.5mm 8mm; }
 
         .pe-head { text-align: center; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: #9a7b2d; margin-bottom: 0; }
+        .pe-note { text-align: center; font-size: calc(8px * var(--print-type, 1)); font-style: italic; color: #5a6377; margin: 2mm 0 0; }
         .pe-dia { display: inline-block; font-size: calc(5px * var(--print-type, 1)); color: #c9b06a; letter-spacing: 0; margin: 0 0.4em; vertical-align: 1px; }
         .pe-band { display: flex; align-items: center; gap: 10px; margin: 7mm 0 4mm; }
         .pe-band-line { flex: 1; height: 1px; background: rgba(22,41,78,0.18); }
@@ -309,7 +328,7 @@
         .pe-dish { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; letter-spacing: 0.01em; line-height: 1.3; text-align: left; }
         .pe-desc { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-style: italic; font-weight: 400; color: #5a6377; line-height: 1.45; margin: 0.5mm 0 2.4mm; text-align: left; }
         .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: #16294e; letter-spacing: 0.04em; text-transform: uppercase; margin: 1.6mm 0 1mm; }
-        .pe-plain { font-size: calc(9.5px * var(--print-type, 1)); font-weight: 500; color: #232a3a; line-height: 1.4; margin: 0 0 0.8mm; }
+        .pe-plain { font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; line-height: 1.4; margin: 0 0 0.8mm; }
         .pe-plain-slate { color: #3c465c; }
         .pe-foot { margin-top: 10mm; text-align: center; font-size: calc(8px * var(--print-type, 1)); color: #9aa3b5; letter-spacing: 0.04em; }
         .pe-foot-rule { height: 1px; background: rgba(22,41,78,0.15); margin-bottom: 3mm; }
@@ -345,12 +364,22 @@
         .print-edit-card.is-hidden { opacity: 0.45; }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
+        .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
+        .print-edit-badge { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+        .print-edit-lab { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
+        .print-edit-field { display: block; margin-top: 8px; }
+        .print-edit-svc { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(201,162,39,0.18); }
+        .print-edit-course { margin-top: 8px; padding-left: 10px; border-left: 2px solid rgba(201,162,39,0.55); }
+        .print-edit-item { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; }
+        .print-edit-dot { width: 6px; height: 6px; border-radius: 999px; background: #C9A227; margin-top: 11px; flex-shrink: 0; }
+        .print-edit-x { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #C9A227; flex-shrink: 0; }
+        .print-edit-title { font-size: 14px; font-weight: 700; background: transparent; border: none; color: inherit; min-width: 0; flex: 1; outline: none; }
         html.dark .print-edit-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
-        .print-edit-card input, .print-edit-card textarea {
+        .print-edit-card input:not(.print-edit-title), .print-edit-card textarea {
             width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12);
             border-radius: 10px; color: inherit; font-size: 12px; padding: 8px 10px; outline: none;
         }
-        html.dark .print-edit-card input, html.dark .print-edit-card textarea {
+        html.dark .print-edit-card input:not(.print-edit-title), html.dark .print-edit-card textarea {
             border-color: rgba(255,255,255,0.12);
         }
         .print-edit-card textarea { min-height: 56px; resize: vertical; }
@@ -754,20 +783,20 @@
                 <div class="mt-3 -mx-6 px-6 mask-edge">
                 <div class="flex gap-2 overflow-x-auto no-scrollbar items-center pr-8">
                     <div class="flex bg-black/5 dark:bg-white/5 rounded-full p-0.5 shrink-0 border border-black/10 dark:border-white/10">
-                        <button type="button" id="print-layout-elegant" class="px-3 h-8 rounded-full text-[11px] font-bold bg-sia-gold text-black">Elegant</button>
-                        <button type="button" id="print-layout-compact" class="px-3 h-8 rounded-full text-[11px] font-bold text-gray-500">Compact</button>
+                        <button type="button" id="print-layout-elegant" class="px-3 h-9 rounded-full text-xs font-bold bg-sia-gold text-black">Elegant</button>
+                        <button type="button" id="print-layout-compact" class="px-3 h-9 rounded-full text-xs font-bold text-gray-500">Compact</button>
                     </div>
                     <div class="flex bg-black/5 dark:bg-white/5 rounded-full p-0.5 shrink-0 border border-black/10 dark:border-white/10">
-                        <button type="button" id="print-paper-a4" class="px-3 h-8 rounded-full text-[11px] font-bold bg-sia-gold text-black">A4</button>
-                        <button type="button" id="print-paper-a6" class="px-3 h-8 rounded-full text-[11px] font-bold text-gray-500">A6</button>
+                        <button type="button" id="print-paper-a4" class="px-3 h-9 rounded-full text-xs font-bold bg-sia-gold text-black">A4</button>
+                        <button type="button" id="print-paper-a6" class="px-3 h-9 rounded-full text-xs font-bold text-gray-500">A6</button>
                     </div>
-                    <div class="flex items-center gap-1 shrink-0 text-[11px] font-bold">
-                        <button type="button" id="print-zoom-out" class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A−</button>
+                    <div class="flex items-center gap-1 shrink-0 text-xs font-bold">
+                        <button type="button" id="print-zoom-out" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A−</button>
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
-                        <button type="button" id="print-zoom-in" class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A+</button>
+                        <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A+</button>
                     </div>
-                    <button type="button" id="print-opt-grey" class="h-8 px-3 rounded-full text-[11px] font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
-                    <button type="button" id="print-opt-desc" class="h-8 px-3 rounded-full text-[11px] font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
+                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
+                    <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
                 </div>
                 </div>
                 <div class="flex mt-3 bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/10 dark:border-white/10">
@@ -775,14 +804,18 @@
                     <button type="button" id="print-tab-edit" class="flex-1 h-9 rounded-full text-xs font-bold text-gray-500">Edit content</button>
                 </div>
             </div>
-            <div id="print-stage" class="flex-1 overflow-auto px-3 pb-[max(16px,env(safe-area-inset-bottom))]">
+            <div id="print-stage" class="flex-1 min-h-0 flex flex-col px-3 pb-[max(16px,env(safe-area-inset-bottom))]">
                 <div id="print-loading" class="hidden flex flex-col items-center justify-center py-16 space-y-4 no-print">
                     <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
                     <div class="text-sm font-semibold text-gray-500">Preparing menu sheet…</div>
                 </div>
                 <div id="print-error" class="hidden text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
-                <div id="print-paper-wrap" class="flex justify-center py-3"></div>
-                <div id="print-edit-wrap" class="hidden max-w-xl mx-auto py-3 space-y-3"></div>
+                <div id="print-paper-scroll" class="flex-1 min-h-0 overflow-auto">
+                    <div id="print-paper-wrap" class="flex justify-center py-3 w-full"></div>
+                </div>
+                <div id="print-edit-scroll" class="hidden flex-1 min-h-0 overflow-auto">
+                    <div id="print-edit-wrap" class="max-w-xl mx-auto py-3 space-y-3"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -948,7 +981,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.10';
+        const APP_VERSION = '1.4.11';
 
         // State
         let appProfile = null;
@@ -1206,20 +1239,22 @@
             });
             // Chat Events
             document.getElementById('btn-send').addEventListener('click', () => {
+                if (isChatBusy()) return;
                 const input = document.getElementById('chat-input');
                 processInput(input.value);
             });
 
             document.getElementById('chat-input').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
+                    if (isChatBusy()) { e.preventDefault(); return; }
                     processInput(e.target.value);
                 }
             });
 
             document.querySelectorAll('.action-chip').forEach(chip => {
                 chip.addEventListener('click', (e) => {
-                    // Extract text (remove the emoji if you want, or just pass full text)
-                    processInput(e.target.innerText.trim());
+                    if (isChatBusy()) return;
+                    processInput(e.currentTarget.innerText.trim());
                 });
             });
 
@@ -1364,6 +1399,8 @@
             hideTypingIndicator();
             botSpeakQueue = Promise.resolve();
             lastBubbleReady = Promise.resolve();
+            chatLockGen = 0;
+            setChatBusy(true);
             const greet = () => {
                 const greeting = getTimeGreeting();
                 const firstName = appProfile.name.split(' ')[0];
@@ -1429,6 +1466,15 @@
         let lastBubbleReady = Promise.resolve();
         const CHAT_ANIM_MS = 320;
         const CHAT_GAP_MS = 500;
+        let chatLockGen = 0;
+
+        function isChatBusy() {
+            return document.documentElement.classList.contains('chat-busy');
+        }
+
+        function setChatBusy(on) {
+            document.documentElement.classList.toggle('chat-busy', !!on);
+        }
 
         function noteBubbleShown() {
             lastBubbleReady = new Promise((resolve) => {
@@ -1438,6 +1484,8 @@
         }
 
         function enqueueBot(fn) {
+            const gen = ++chatLockGen;
+            setChatBusy(true);
             botSpeakQueue = botSpeakQueue.then(() => lastBubbleReady).then(() => new Promise((resolve) => {
                 showTypingIndicator();
                 setTimeout(() => {
@@ -1446,7 +1494,9 @@
                         resolve();
                     });
                 }, 550 + Math.random() * 350);
-            }));
+            })).then(() => lastBubbleReady).then(() => {
+                if (gen === chatLockGen) setChatBusy(false);
+            });
             return botSpeakQueue;
         }
 
@@ -1495,10 +1545,11 @@
         }
 
         function processInput(text) {
-            if (!text.trim()) return;
+            if (isChatBusy()) return;
+            if (!text || !String(text).trim()) return;
+            setChatBusy(true);
             addMessage('user', text);
             document.getElementById('chat-input').value = '';
-            
             enqueueBot(() => analyzeIntent(text));
         }
 
@@ -3768,7 +3819,7 @@ function getRegionForAirport(code) {
                 return `
                     <div class="menu-dish pl-4 relative">
                         <span class="menu-dish-bullet absolute left-0 top-[0.45rem] w-1.5 h-1.5 rounded-full bg-sia-gold"></span>
-                        <div class="font-semibold text-sm leading-snug">${name || ''} ${iconsHtml || ''}</div>
+                        <div class="font-bold text-sm leading-snug">${name || ''} ${iconsHtml || ''}</div>
                         ${menuDescBlock(description)}
                     </div>
                 `;
@@ -3781,7 +3832,7 @@ function getRegionForAirport(code) {
                         <img src="${first}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" data-cands="${dataCands}" data-ci="0" onerror="menuThumbNext(this)">
                     </button>
                     <div class="min-w-0 flex-1">
-                        <div class="font-semibold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
+                        <div class="font-bold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
                         ${menuDescBlock(description)}
                     </div>
                 </div>
@@ -4945,6 +4996,8 @@ function getRegionForAirport(code) {
                 flight: String(currentMenuSearch.flightNumber || ''),
                 dateLong: dateLong,
                 dateShort: dd + mm + yy,
+                note: '',
+                footer: 'Menu content © Singapore Airlines · Compiled with CrewAssist — an unofficial crew tool',
                 cabinCodes: (currentMenuSearch.selectedCabins || []).map((c) => c).sort((a, b) => PRINT_CABIN_ORDER.indexOf(a) - PRINT_CABIN_ORDER.indexOf(b)),
                 stale: lastPrintStale,
                 sectors: sectors
@@ -5082,7 +5135,8 @@ function getRegionForAirport(code) {
                 });
                 html += renderElegantDrinks(cabin.drinks);
             });
-            html += '<div class="pe-foot"><div class="pe-foot-rule"></div>Menu content © Singapore Airlines · Compiled with CrewAssist — an unofficial crew tool</div></div>';
+            if (model.note) html += `<div class="pe-note">${escapePrintHtml(model.note)}</div>`;
+            html += '<div class="pe-foot"><div class="pe-foot-rule"></div>' + escapePrintHtml(model.footer || 'Menu content © Singapore Airlines · Compiled with CrewAssist — an unofficial crew tool') + '</div></div>';
             return html;
         }
 
@@ -5143,7 +5197,7 @@ function getRegionForAirport(code) {
                         const on = idx === printState.sectorIdx;
                         const btn = document.createElement('button');
                         btn.type = 'button';
-                        btn.className = 'h-8 px-3 rounded-full text-[11px] font-bold shrink-0 border whitespace-nowrap ' + (on
+                        btn.className = 'h-9 px-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap ' + (on
                             ? 'border-sia-gold text-sia-gold bg-transparent'
                             : 'bg-black/5 dark:bg-white/5 text-gray-500 border-black/10 dark:border-white/10');
                         const route = (sec.dep || '') + ' → ' + (sec.arr || '');
@@ -5207,9 +5261,11 @@ function getRegionForAirport(code) {
 
         function renderPrintSheet() {
             const wrap = document.getElementById('print-paper-wrap');
-            const edit = document.getElementById('print-edit-wrap');
+            const paperScroll = document.getElementById('print-paper-scroll');
+            const editScroll = document.getElementById('print-edit-scroll');
+            if (paperScroll) paperScroll.classList.remove('hidden');
+            if (editScroll) editScroll.classList.add('hidden');
             wrap.classList.remove('hidden');
-            edit.classList.add('hidden');
             const model = printState.model;
             const sector = currentPrintSector();
             if (!model || !sector) {
@@ -5233,23 +5289,21 @@ function getRegionForAirport(code) {
             const label = document.getElementById('print-zoom-label');
             if (label) label.textContent = String(printState.zoom) + '%';
             if (!wrap || !paper) return;
+            paper.classList.remove('print-export-a4', 'print-export-a6');
             paper.style.setProperty('--print-type', String(printState.zoom / 100));
             paper.style.transform = 'none';
-            wrap.style.width = '';
+            paper.style.width = '100%';
+            paper.style.maxWidth = '100%';
+            wrap.style.width = '100%';
             wrap.style.height = '';
-            const stage = document.getElementById('print-stage');
-            const avail = Math.max(120, (stage ? stage.clientWidth : wrap.parentElement.clientWidth) - 24);
-            const naturalW = paper.offsetWidth || 1;
-            const naturalH = paper.offsetHeight || 1;
-            const fit = avail / naturalW;
-            wrap.style.width = (naturalW * fit) + 'px';
-            wrap.style.height = (naturalH * fit) + 'px';
-            wrap.style.overflow = 'hidden';
-            paper.style.transformOrigin = 'top left';
-            paper.style.transform = 'scale(' + fit + ')';
+            wrap.style.overflow = 'visible';
+            wrap.style.display = 'flex';
+            wrap.style.justifyContent = 'center';
+            const w = paper.clientWidth || wrap.clientWidth || 1;
+            paper.style.minHeight = Math.round(w * 297 / 210) + 'px';
         }
 
-        function printEditToggle(obj, label) {
+        function printEditToggle(obj, row) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'print-edit-eye';
@@ -5258,85 +5312,180 @@ function getRegionForAirport(code) {
             btn.addEventListener('click', () => {
                 obj.hidden = !obj.hidden;
                 sync();
-                const card = btn.closest('.print-edit-card, .print-edit-block');
-                if (card) card.classList.toggle('is-hidden', !!obj.hidden);
+                if (row) row.classList.toggle('is-hidden', !!obj.hidden);
             });
             return btn;
         }
 
-        function printEditBlock(title, obj) {
-            const wrap = document.createElement('div');
-            wrap.className = 'print-edit-block' + (obj && obj.hidden ? ' is-hidden' : '');
-            const head = document.createElement('div');
-            head.className = 'print-edit-head mb-2';
-            const h = document.createElement('div');
-            h.className = 'text-[10px] font-bold uppercase tracking-widest text-sia-gold px-1';
-            h.textContent = title;
-            head.appendChild(h);
-            if (obj) head.appendChild(printEditToggle(obj));
-            wrap.appendChild(head);
+        function printEditX(obj, row) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'print-edit-x';
+            const icon = document.createElement('i');
+            icon.setAttribute('data-lucide', 'x');
+            icon.className = 'w-3.5 h-3.5';
+            btn.appendChild(icon);
+            btn.addEventListener('click', () => {
+                obj.hidden = !obj.hidden;
+                if (row) row.classList.toggle('is-hidden', !!obj.hidden);
+            });
+            return btn;
+        }
+
+        function printEditField(label, value, onInput, multiline) {
+            const wrap = document.createElement('label');
+            wrap.className = 'print-edit-field';
+            const lab = document.createElement('span');
+            lab.className = 'print-edit-lab';
+            lab.textContent = label;
+            const inp = document.createElement(multiline ? 'textarea' : 'input');
+            inp.value = value || '';
+            inp.addEventListener('input', () => onInput(inp.value));
+            wrap.appendChild(lab);
+            wrap.appendChild(inp);
             return wrap;
         }
 
-        function printEditItemCard(label, it) {
-            const card = document.createElement('div');
-            card.className = 'print-edit-card space-y-2' + (it.hidden ? ' is-hidden' : '');
-            const head = document.createElement('div');
-            head.className = 'print-edit-head';
-            const lab = document.createElement('div');
-            lab.className = 'text-[10px] font-bold text-gray-500 uppercase tracking-wider';
-            lab.textContent = label;
-            head.appendChild(lab);
-            head.appendChild(printEditToggle(it));
-            card.appendChild(head);
+        function printEditItemRow(it) {
+            const row = document.createElement('div');
+            row.className = 'print-edit-item' + (it.hidden ? ' is-hidden' : '');
+            const dot = document.createElement('span');
+            dot.className = 'print-edit-dot';
+            row.appendChild(dot);
+            const fields = document.createElement('div');
+            fields.className = 'flex-1 min-w-0 space-y-2';
             const nameInp = document.createElement('input');
             nameInp.value = it.name || '';
             nameInp.addEventListener('input', () => { it.name = nameInp.value; });
-            card.appendChild(nameInp);
+            fields.appendChild(nameInp);
             if ('desc' in it) {
                 const descInp = document.createElement('textarea');
                 descInp.value = it.desc || '';
+                descInp.placeholder = 'Description';
                 descInp.addEventListener('input', () => { it.desc = descInp.value; });
-                card.appendChild(descInp);
+                fields.appendChild(descInp);
             }
-            return card;
+            row.appendChild(fields);
+            row.appendChild(printEditX(it, row));
+            return row;
+        }
+
+        function printEditSectionHead(title, obj, row) {
+            const head = document.createElement('div');
+            head.className = 'print-edit-head';
+            const h = document.createElement('div');
+            h.className = 'text-[11px] font-bold text-sia-gold';
+            h.textContent = title;
+            head.appendChild(h);
+            if (obj) head.appendChild(printEditToggle(obj, row));
+            return head;
         }
 
         function renderPrintEdit() {
             const wrap = document.getElementById('print-paper-wrap');
             const edit = document.getElementById('print-edit-wrap');
-            wrap.classList.add('hidden');
+            const paperScroll = document.getElementById('print-paper-scroll');
+            const editScroll = document.getElementById('print-edit-scroll');
+            if (paperScroll) paperScroll.classList.add('hidden');
+            if (editScroll) editScroll.classList.remove('hidden');
+            if (wrap) wrap.classList.add('hidden');
             edit.classList.remove('hidden');
+            const model = printState.model;
             const sector = currentPrintSector();
-            if (!sector) { edit.innerHTML = ''; return; }
+            if (!model || !sector) { edit.innerHTML = ''; return; }
             const frag = document.createDocumentFragment();
+
+            const meta = document.createElement('div');
+            meta.className = 'print-edit-card';
+            const metaHead = document.createElement('button');
+            metaHead.type = 'button';
+            metaHead.className = 'print-edit-acc font-bold text-sm';
+            metaHead.textContent = 'Menu details';
+            const metaBody = document.createElement('div');
+            metaBody.appendChild(printEditField('Flight', 'SQ ' + (model.flight || ''), (v) => {
+                model.flight = String(v).replace(/^SQ\s*/i, '');
+            }));
+            metaBody.appendChild(printEditField('Date', model.dateLong || '', (v) => { model.dateLong = v; }));
+            metaBody.appendChild(printEditField('Note', model.note || '', (v) => { model.note = v; }));
+            metaBody.appendChild(printEditField('Footer', model.footer || '', (v) => { model.footer = v; }, true));
+            metaHead.addEventListener('click', () => { metaBody.classList.toggle('hidden'); });
+            meta.appendChild(metaHead);
+            meta.appendChild(metaBody);
+            frag.appendChild(meta);
+
             (sector.cabins || []).forEach((cabin) => {
-                const cabinBlock = printEditBlock(cabin.name || cabin.code, cabin);
+                const card = document.createElement('div');
+                card.className = 'print-edit-card' + (cabin.hidden ? ' is-hidden' : '');
+                const head = document.createElement('div');
+                head.className = 'print-edit-head';
+                const left = document.createElement('div');
+                left.className = 'flex items-center gap-2 min-w-0 flex-1';
+                const badge = document.createElement('span');
+                badge.className = 'print-edit-badge';
+                badge.textContent = cabin.code || '';
+                const title = document.createElement('input');
+                title.className = 'print-edit-title';
+                title.value = cabin.name || cabin.code || '';
+                title.addEventListener('input', () => { cabin.name = title.value; });
+                left.appendChild(badge);
+                left.appendChild(title);
+                head.appendChild(left);
+                head.appendChild(printEditToggle(cabin, card));
+                card.appendChild(head);
+
                 (cabin.services || []).forEach((svc) => {
-                    const svcBlock = printEditBlock(svc.name, svc);
+                    const svcBox = document.createElement('div');
+                    svcBox.className = 'print-edit-svc' + (svc.hidden ? ' is-hidden' : '');
+                    svcBox.appendChild(printEditSectionHead(svc.name || 'Service', svc, svcBox));
                     (svc.courses || []).forEach((course) => {
-                        const courseBlock = printEditBlock(svc.name + ' · ' + course.label, course);
+                        const courseBox = document.createElement('div');
+                        courseBox.className = 'print-edit-course' + (course.hidden ? ' is-hidden' : '');
+                        const cHead = document.createElement('div');
+                        cHead.className = 'print-edit-head mt-1';
+                        const cLeft = document.createElement('div');
+                        cLeft.className = 'flex items-center gap-2 min-w-0';
+                        const cDot = document.createElement('span');
+                        cDot.className = 'print-edit-dot';
+                        cDot.style.marginTop = '0';
+                        const cName = document.createElement('input');
+                        cName.className = 'print-edit-title text-[13px]';
+                        cName.value = course.label || '';
+                        cName.addEventListener('input', () => { course.label = cName.value; });
+                        cLeft.appendChild(cDot);
+                        cLeft.appendChild(cName);
+                        cHead.appendChild(cLeft);
+                        cHead.appendChild(printEditToggle(course, courseBox));
+                        courseBox.appendChild(cHead);
                         (course.items || []).forEach((it) => {
-                            courseBlock.appendChild(printEditItemCard(course.label, it));
+                            courseBox.appendChild(printEditItemRow(it));
                         });
-                        svcBlock.appendChild(courseBlock);
+                        svcBox.appendChild(courseBox);
                     });
-                    cabinBlock.appendChild(svcBlock);
+                    card.appendChild(svcBox);
                 });
-                (cabin.delectables || []).forEach((it) => {
-                    cabinBlock.appendChild(printEditItemCard('Delectables', it));
-                });
+
+                if ((cabin.delectables || []).length) {
+                    const dBox = document.createElement('div');
+                    dBox.className = 'print-edit-svc';
+                    dBox.appendChild(printEditSectionHead('Delectables', null));
+                    cabin.delectables.forEach((it) => dBox.appendChild(printEditItemRow(it)));
+                    card.appendChild(dBox);
+                }
+
                 (cabin.drinks || []).forEach((g) => {
-                    const gBlock = printEditBlock(g.name || 'Beverages', g);
-                    (g.items || []).forEach((it) => {
-                        gBlock.appendChild(printEditItemCard(g.name || 'Beverages', it));
-                    });
-                    cabinBlock.appendChild(gBlock);
+                    const gBox = document.createElement('div');
+                    gBox.className = 'print-edit-svc' + (g.hidden ? ' is-hidden' : '');
+                    gBox.appendChild(printEditSectionHead(g.name || 'Beverages', g, gBox));
+                    (g.items || []).forEach((it) => gBox.appendChild(printEditItemRow(it)));
+                    card.appendChild(gBox);
                 });
-                frag.appendChild(cabinBlock);
+
+                frag.appendChild(card);
             });
+
             edit.innerHTML = '';
             edit.appendChild(frag);
+            try { lucide.createIcons(); } catch (e) {}
         }
 
         function renderPrintView() {
@@ -5423,9 +5572,14 @@ function getRegionForAirport(code) {
                 return;
             }
             const prevTransform = paper.style.transform;
+            const prevWidth = paper.style.width;
+            const prevMax = paper.style.maxWidth;
+            const prevMinH = paper.style.minHeight;
             try {
                 await ensureHtml2Canvas();
                 paper.style.transform = 'none';
+                paper.classList.remove('print-export-a4', 'print-export-a6');
+                paper.classList.add(printState.paper === 'a6' ? 'print-export-a6' : 'print-export-a4');
                 const canvas = await window.html2canvas(paper, {
                     scale: 2,
                     backgroundColor: '#ffffff',
@@ -5443,6 +5597,10 @@ function getRegionForAirport(code) {
                 await appAlert('Could not export image. ' + String(err.message || err));
             } finally {
                 paper.style.transform = prevTransform;
+                paper.style.width = prevWidth;
+                paper.style.maxWidth = prevMax;
+                paper.style.minHeight = prevMinH;
+                paper.classList.remove('print-export-a4', 'print-export-a6');
             }
         }
 
@@ -5463,8 +5621,24 @@ function getRegionForAirport(code) {
             document.getElementById('btn-close-print').addEventListener('click', closeMenuPrinter);
             const printBackdrop = document.getElementById('print-backdrop');
             if (printBackdrop) printBackdrop.addEventListener('click', closeMenuPrinter);
-            document.getElementById('print-layout-elegant').addEventListener('click', () => { printState.layout = 'elegant'; renderPrintView(); });
-            document.getElementById('print-layout-compact').addEventListener('click', () => { printState.layout = 'compact'; renderPrintView(); });
+            document.getElementById('print-layout-elegant').addEventListener('click', () => {
+                if (printState.layout !== 'elegant') {
+                    printState.layout = 'elegant';
+                    printState.paper = 'a4';
+                } else {
+                    printState.layout = 'elegant';
+                }
+                renderPrintView();
+            });
+            document.getElementById('print-layout-compact').addEventListener('click', () => {
+                if (printState.layout !== 'compact') {
+                    printState.layout = 'compact';
+                    printState.paper = 'a6';
+                } else {
+                    printState.layout = 'compact';
+                }
+                renderPrintView();
+            });
             document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(); });
             document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(); });
             document.getElementById('print-zoom-out').addEventListener('click', () => {
