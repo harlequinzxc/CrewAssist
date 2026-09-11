@@ -762,7 +762,7 @@
 
         <!-- Menu Printer -->
         <div id="print-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="print-overlay" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="print-overlay" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col overflow-hidden">
             <div class="w-full flex justify-center py-3 shrink-0 no-print">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -986,7 +986,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.12';
+        const APP_VERSION = '1.4.13';
 
         // State
         let appProfile = null;
@@ -4860,6 +4860,18 @@ function getRegionForAirport(code) {
             return /delectable|snack|light bite/i.test(name || '');
         }
 
+        function printIsLightBite(label) {
+            return /light\s*bite/i.test(label || '');
+        }
+
+        function printDrinkShownByDefault(name) {
+            const l = String(name || '').toLowerCase();
+            if (/champagn/.test(l)) return true;
+            if (/\bwhite\b/.test(l)) return true;
+            if (/\bred\b/.test(l) && !/red bull/.test(l)) return true;
+            return false;
+        }
+
         function printDrinkGroupLabel() {
             const parts = [];
             for (let i = 0; i < arguments.length; i++) {
@@ -4895,14 +4907,14 @@ function getRegionForAirport(code) {
                         namedSpecs.forEach((spec) => {
                             const items = takeItems(spec);
                             const label = printDrinkGroupLabel(catName, sub.name, spec.name);
-                            if (items.length) groups.push({ name: label, items: items });
+                            if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
                         });
                     } else {
                         const items = [];
                         specs.forEach((spec) => takeItems(spec).forEach((row) => items.push(row)));
                         (sub.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) items.push(row); });
                         const label = printDrinkGroupLabel(catName, sub.name);
-                        if (items.length) groups.push({ name: label, items: items });
+                        if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
                     }
                 });
             });
@@ -4915,7 +4927,7 @@ function getRegionForAirport(code) {
             (subs || []).forEach((sub) => {
                 (sub.items || []).forEach((it) => {
                     const row = printItemFromRaw(it);
-                    if (row) items.push(row);
+                    if (row) { row.hidden = true; items.push(row); }
                 });
             });
             return items;
@@ -4934,10 +4946,12 @@ function getRegionForAirport(code) {
                     (sel.mealCourses || []).forEach((course) => {
                         const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
                         if (!items.length) return;
+                        const label = printCourseLabel(course.category);
                         courses.push({
-                            label: printCourseLabel(course.category),
+                            label: label,
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
-                            items: items
+                            items: items,
+                            hidden: printIsDelectable(svcName) && !printIsLightBite(label)
                         });
                     });
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
@@ -4950,7 +4964,10 @@ function getRegionForAirport(code) {
                 });
                 services.push({ name: svcName, courses: courses });
                 if (printIsDelectable(svcName)) {
-                    courses.forEach((c) => (c.items || []).forEach((row) => delectables.push(row)));
+                    courses.forEach((c) => (c.items || []).forEach((row) => {
+                        if (c.hidden) row.hidden = true;
+                        delectables.push(row);
+                    }));
                 }
             });
             collectPrintSnacks(leg).forEach((it) => delectables.push(it));
@@ -5215,7 +5232,7 @@ function getRegionForAirport(code) {
                         if (lab.textContent) btn.appendChild(lab);
                         btn.addEventListener('click', () => {
                             printState.sectorIdx = idx;
-                            renderPrintView();
+                            renderPrintView(true);
                         });
                         row.appendChild(btn);
                     });
@@ -5507,10 +5524,20 @@ function getRegionForAirport(code) {
             try { lucide.createIcons(); } catch (e) {}
         }
 
-        function renderPrintView() {
+        function resetPrintPreviewScroll() {
+            ['print-paper-scroll', 'print-stage', 'print-overlay'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.scrollTop = 0;
+            });
+        }
+
+        function renderPrintView(resetPreviewScroll) {
             applyPrintChrome();
             if (printState.tab === 'edit') renderPrintEdit();
-            else renderPrintSheet();
+            else {
+                renderPrintSheet();
+                if (resetPreviewScroll) resetPrintPreviewScroll();
+            }
         }
 
         async function openMenuPrinter(flightNumber, date, cabinClasses) {
@@ -5647,7 +5674,7 @@ function getRegionForAirport(code) {
                 } else {
                     printState.layout = 'elegant';
                 }
-                renderPrintView();
+                renderPrintView(true);
             });
             document.getElementById('print-layout-compact').addEventListener('click', () => {
                 if (printState.layout !== 'compact') {
@@ -5656,10 +5683,10 @@ function getRegionForAirport(code) {
                 } else {
                     printState.layout = 'compact';
                 }
-                renderPrintView();
+                renderPrintView(true);
             });
-            document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(); });
-            document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(); });
+            document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(true); });
+            document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(true); });
             document.getElementById('print-zoom-out').addEventListener('click', () => {
                 printState.zoom = Math.max(70, printState.zoom - 10);
                 renderPrintView();

@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v45` (`sw.js`). App SemVer: **1.4.12** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v46` (`sw.js`). App SemVer: **1.4.13** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.12` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.13` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -30,11 +30,11 @@ Latest app cache: `crewassist-v45` (`sw.js`). App SemVer: **1.4.12** (`APP_VERSI
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed from settings; `initUI()` no longer reads it, so gender buttons work.
 - **CTAs:** Gold-bordered pills (navy/gold). Calculate stays disabled until required fields are filled.
 - **Repo cleanup:** Scratch `check*` / `temp*` / `fix*` / `test-plane*` files gone; airports inlined; unused `api/cabins.ts`, `api/getcabin.ts`, `api/menu.ts` removed (app never called them). Dead CSS (`.glow-gold`, `--aurora-opacity`, `--text-muted`) and unused DOM ids (`chip-container`, `btn-dev-import`) removed. Dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) already gone.
-- **Step 6 inflight menu printer:** Slide-up glass sheet. Sector pills: number in a circle + `LAX → NRT` (gold outline when selected). Toolbar pills `h-9 text-xs`. Elegant switch selects A4, Compact selects A6. Preview lays out a real A4/A6 page then uniformly scales it to the overlay width (type does not reflow with the browser). A−/A+ only `--print-type`. Sheet and edit scroll independently. Edit is one card per cabin. Export PNG/JPEG/Word. Do not call SQ from the browser.
+- **Step 6 inflight menu printer:** Slide-up glass sheet. Sector pills: number in a circle + route. Overlay `overflow-hidden`; preview scroll lives in `#print-paper-scroll` only. Changing sector, Elegant/Compact, or A4/A6 scrolls the live preview to the top (so sector 1 scroll does not carry onto sector 2). Snacks except Light Bites, and beverages except Champagne / red / white wine, are `hidden` by default (still in Edit → Show). Export PNG/JPEG/Word. Do not call SQ from the browser.
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Elegant dining-card + printer chrome in v1.4.12. Compact homework layout still first-pass — wait for a dedicated compact reference before locking it.
+- **Printer sheet art:** Elegant dining-card + printer chrome in v1.4.13. Compact homework layout still first-pass — wait for a dedicated compact reference before locking it.
 
 ## Key Architecture Decisions & Constraints
 
