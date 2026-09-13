@@ -1,15 +1,15 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v57` (`sw.js`). App SemVer: **1.4.24** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v58` (`sw.js`). App SemVer: **1.4.25** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.24` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.25` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
-- **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
+- **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push). LMA summary: day-by-day cards (`formatLmaDay` → `DD MMM YY`, B/L/D chips, `$` per-day amount, no station total), then a Breakfast/Lunch/Dinner totals card with counts (`BREAKFAST (3x)`) and `$` amounts.
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
   - Dropdowns: one row, horizontal scroll if narrow; menus overlay content.
   - Category control: single segmented bar (Meals / Drinks / Snacks / Amenities), no wrapping pills.
@@ -34,7 +34,7 @@ Latest app cache: `crewassist-v57` (`sw.js`). App SemVer: **1.4.24** (`APP_VERSI
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Elegant dining-card is in. Compact still iterating (v1.4.24: cabin edit accordions, compact 100% retune, YCL cheese hide). More compact notes still coming.
+- **Printer sheet art:** Viewer and printer are signed off (v1.4.24). Next discussion (not built): developer-mode editable IFA modifiers / LMA rates with JSON export.
 
 ## Key Architecture Decisions & Constraints
 
