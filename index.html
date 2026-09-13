@@ -330,8 +330,11 @@
         .pe-dishes { min-width: 0; }
         .pe-dish { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; letter-spacing: 0.01em; line-height: 1.3; text-align: left; }
         .pe-desc { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-style: italic; font-weight: 400; color: #5a6377; line-height: 1.45; margin: 0.5mm 0 2.4mm; text-align: left; }
-        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: #16294e; letter-spacing: 0.04em; text-transform: uppercase; margin: 1.6mm 0 1mm; }
+        .pe-bev-group { margin: 0 0 3.2mm; padding: 0 0 2.2mm; }
+        .pe-bev-group + .pe-bev-group { margin-top: 1.6mm; padding-top: 2.4mm; border-top: 0.5px solid rgba(22,41,78,0.14); }
+        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: #16294e; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 1.6mm; }
         .pe-plain { font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; line-height: 1.4; margin: 0 0 0.8mm; }
+        .pe-bev-item { font-weight: 600; line-height: 1.45; margin: 0 0 1.15mm; }
         .pe-plain-slate { color: #3c465c; }
         .pe-foot { margin-top: 10mm; text-align: center; font-size: calc(8px * var(--print-type, 1)); color: #9aa3b5; letter-spacing: 0.04em; }
         .pe-foot-rule { height: 1px; background: rgba(22,41,78,0.15); margin-bottom: 3mm; }
@@ -991,7 +994,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.15';
+        const APP_VERSION = '1.4.16';
 
         // State
         let appProfile = null;
@@ -4957,10 +4960,15 @@ function getRegionForAirport(code) {
 
         function printDrinkShownByDefault(name) {
             const l = String(name || '').toLowerCase();
+            if (/fortif/.test(l)) return false;
             if (/champagn/.test(l)) return true;
             if (/\bwhite\b/.test(l)) return true;
             if (/\bred\b/.test(l) && !/red bull/.test(l)) return true;
             return false;
+        }
+
+        function printHideCompactByDefault(label) {
+            return /baker|bread|hot\s*bev|coffee|tea/i.test(label || '');
         }
 
         function printDrinkGroupLabel() {
@@ -5044,7 +5052,7 @@ function getRegionForAirport(code) {
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
                             items: items,
                             hiddenElegant: hideCourse,
-                            hiddenCompact: hideCourse
+                            hiddenCompact: hideCourse || printHideCompactByDefault(label)
                         });
                     });
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
@@ -5052,7 +5060,7 @@ function getRegionForAirport(code) {
                         : ((selIdx === 0 && Array.isArray(meal.breadDetails)) ? meal.breadDetails : []);
                     const breadItems = (breads || []).map(printItemFromRaw).filter(Boolean);
                     if (breadItems.length) {
-                        courses.push({ label: 'From The Bakery', culinary: '', items: breadItems });
+                        courses.push({ label: 'From The Bakery', culinary: '', items: breadItems, hiddenElegant: false, hiddenCompact: true });
                     }
                 });
                 services.push({ name: svcName, courses: courses });
@@ -5229,10 +5237,12 @@ function getRegionForAirport(code) {
             vis.forEach((g) => {
                 const items = printVisible(g.items);
                 if (!items.length) return;
+                inner += '<div class="pe-bev-group">';
                 if (g.name) inner += `<div class="pe-bev-cat">${escapePrintHtml(String(g.name).toUpperCase())}</div>`;
                 items.forEach((it) => {
-                    inner += `<div class="pe-plain">${escapePrintHtml(printElegantWineLine(it))}</div>`;
+                    inner += `<div class="pe-plain pe-bev-item">${escapePrintHtml(printElegantWineLine(it))}</div>`;
                 });
+                inner += '</div>';
             });
             return renderElegantRow('Beverages', inner, 0);
         }
@@ -5415,6 +5425,7 @@ function getRegionForAirport(code) {
             wrap.innerHTML = '';
             wrap.appendChild(paper);
             applyPrintZoom();
+            playPrintContentAnim(paper);
         }
 
         function applyPrintZoom() {
@@ -5628,6 +5639,7 @@ function getRegionForAirport(code) {
             edit.innerHTML = '';
             edit.appendChild(frag);
             try { lucide.createIcons(); } catch (e) {}
+            playPrintContentAnim(edit);
         }
 
         function resetPrintPreviewScroll() {
@@ -5635,6 +5647,16 @@ function getRegionForAirport(code) {
                 const el = document.getElementById(id);
                 if (el) el.scrollTop = 0;
             });
+        }
+
+        function playPrintContentAnim(el) {
+            if (!el) {
+                el = document.getElementById('print-paper') || document.getElementById('print-edit-wrap');
+            }
+            if (!el) return;
+            el.classList.remove('menu-anim-in');
+            void el.offsetWidth;
+            el.classList.add('menu-anim-in');
         }
 
         function renderPrintView(resetPreviewScroll) {
@@ -5729,7 +5751,7 @@ function getRegionForAirport(code) {
             try {
                 await ensureHtml2Canvas();
                 paper.style.transform = 'none';
-                paper.classList.remove('print-export-a4', 'print-export-a6');
+                paper.classList.remove('menu-anim-in', 'print-export-a4', 'print-export-a6');
                 paper.classList.add(printState.paper === 'a6' ? 'print-export-a6' : 'print-export-a4');
                 const canvas = await window.html2canvas(paper, {
                     scale: 2,
