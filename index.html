@@ -355,15 +355,17 @@
 
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
-        .pc-block { margin: 0 0 2.2mm; }
-        .pc-head-img { display: block; width: 100%; height: auto; margin: 0 0 0.7mm; }
+        .pc-block { margin: 0 0 2.4mm; }
+        .pc-svc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
+        .pc-head { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.28; margin: 0 0 0.45mm; }
         .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
         .pc-course td { vertical-align: top; padding: 0; }
         .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.28; padding-right: 1.2mm !important; width: 1%; }
         .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.28; }
         .pc-item { line-height: 1.28; font-weight: 600; color: #000; margin: 0; }
         .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
-        .pc-hl-img { display: inline-block; vertical-align: middle; margin: 0 0.04em; }
+        .pc-hl { background: #000; color: #fff; padding: 0 0.12em; }
+        .print-a6 .pc-head,
         .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
         .print-bounds {
             position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
@@ -1020,7 +1022,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.21';
+        const APP_VERSION = '1.4.22';
 
         // State
         let appProfile = null;
@@ -5218,7 +5220,7 @@ function getRegionForAirport(code) {
                 const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
                 if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
-                if (mode === 'invert') return printBakeInvert(w);
+                if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
                 return '<s>' + inner + '</s>';
             }).join('');
         }
@@ -5364,84 +5366,15 @@ function getRegionForAirport(code) {
             return html;
         }
 
-        function printCompactTypePx() {
-            const base = printState.paper === 'a6' ? 7.5 : 8.5;
-            return base * (printZoom() / 100);
-        }
-
-        function printCompactInnerWidthPx() {
-            const pageMm = printState.paper === 'a6' ? 105 : 210;
-            const padMm = printState.paper === 'a6' ? 8 : 11;
-            return (pageMm - padMm) * 96 / 25.4;
-        }
-
-        function printBakeInvert(word) {
-            const text = String(word || '');
-            if (!text) return '';
-            const fontPx = printCompactTypePx();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const dpr = 2;
-            const font = '700 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
-            ctx.font = font;
-            const padX = Math.max(1.2, fontPx * 0.14);
-            const w = Math.max(1, Math.ceil(ctx.measureText(text).width + padX * 2));
-            const h = Math.max(1, Math.ceil(fontPx * 1.28));
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.font = font;
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, w, h);
-            ctx.fillStyle = '#fff';
-            ctx.fillText(text, padX, h / 2);
-            return '<img class="pc-hl-img" alt="" src="' + canvas.toDataURL('image/png') + '" width="' + w + '" height="' + h + '">';
-        }
-
-        function printBakeHeader(line) {
-            const text = String(line || '');
-            const fontPx = printCompactTypePx();
-            const maxW = printCompactInnerWidthPx();
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const dpr = 2;
-            const font = '800 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
-            ctx.font = font;
-            const words = text.split(/\s+/).filter(Boolean);
-            const lines = [];
-            let cur = '';
-            words.forEach((w) => {
-                const next = cur ? cur + ' ' + w : w;
-                if (!cur || ctx.measureText(next).width <= maxW) cur = next;
-                else { lines.push(cur); cur = w; }
-            });
-            if (cur) lines.push(cur);
-            if (!lines.length) lines.push(text);
-            const lineH = fontPx * 1.32;
-            const gap = Math.max(3, fontPx * 0.28);
-            const ruleH = 1;
-            const w = Math.max(1, Math.ceil(maxW));
-            const h = Math.max(1, Math.ceil(lines.length * lineH + gap + ruleH));
-            canvas.width = w * dpr;
-            canvas.height = h * dpr;
-            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-            ctx.font = font;
-            ctx.fillStyle = '#000';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            lines.forEach((ln, i) => ctx.fillText(ln, 0, i * lineH));
-            ctx.fillRect(0, lines.length * lineH + gap - ruleH, w, ruleH);
-            return '<img class="pc-head-img" alt="' + escapePrintHtml(text) + '" src="' + canvas.toDataURL('image/png') + '" width="' + w + '" height="' + h + '">';
-        }
-
-        function printCompactHeader(model, sector, cabin, svcName) {
+        function printCompactHeaderText(model, sector, cabin, svcName) {
             const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
             const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
             const date = model.dateShort || '';
-            const line = date ? (left + ' ' + date) : left;
-            return printBakeHeader(line);
+            return date ? (left + ' ' + date) : left;
+        }
+
+        function printCompactHeader(model, sector, cabin, svcName) {
+            return '<div class="pc-head">' + escapePrintHtml(printCompactHeaderText(model, sector, cabin, svcName)) + '</div>';
         }
 
         function printCircledNum(n) {
@@ -5475,14 +5408,14 @@ function getRegionForAirport(code) {
                         body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label)));
                     });
                     if (!body.length) return;
-                    html += '<div class="pc-block">';
+                    html += '<div class="pc-block"><div class="pc-svc-rule"></div>';
                     html += printCompactHeader(model, sector, cabin, svc.name);
                     html += body.join('');
                     html += '</div>';
                 });
                 const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
                 if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
-                    html += '<div class="pc-block">';
+                    html += '<div class="pc-block"><div class="pc-svc-rule"></div>';
                     html += printCompactHeader(model, sector, cabin, 'DELECTABLES');
                     html += printCompactItems('DELECTABLES', printVisible(cabin.delectables));
                     html += '</div>';
@@ -5495,7 +5428,7 @@ function getRegionForAirport(code) {
                     drinkBits.push(printCompactItems(printCompactCourse(g.name), vis));
                 });
                 if (drinkBits.length) {
-                    html += '<div class="pc-block">';
+                    html += '<div class="pc-block"><div class="pc-svc-rule"></div>';
                     html += printCompactHeader(model, sector, cabin, 'BEVERAGES');
                     html += drinkBits.join('');
                     html += '</div>';
@@ -5624,13 +5557,6 @@ function getRegionForAirport(code) {
             }
             applyPrintZoom();
             playPrintContentAnim(paper);
-            if (printState.layout === 'compact' && document.fonts && document.fonts.status !== 'loaded' && !window._printFontRefresh) {
-                window._printFontRefresh = true;
-                document.fonts.ready.then(() => {
-                    window._printFontRefresh = false;
-                    if (printState.layout === 'compact' && printState.tab === 'sheet') renderPrintSheet();
-                });
-            }
         }
 
         function applyPrintZoom() {
@@ -5938,6 +5864,218 @@ function getRegionForAirport(code) {
             });
         }
 
+        function collectCompactBlocks(model, sector) {
+            const blocks = [];
+            const takeItems = (list) => (list || []).map((it) => String(printDisplayName(it.name) || '').toUpperCase());
+            printVisible(sector.cabins).forEach((cabin) => {
+                printVisible(cabin.services).forEach((svc) => {
+                    const courses = [];
+                    (svc.courses || []).forEach((course) => {
+                        if (printIsHidden(course)) return;
+                        const visItems = printVisible(course.items);
+                        if (!visItems.length) return;
+                        courses.push({
+                            key: printCompactCourse(course.label),
+                            items: takeItems(visItems),
+                            asBites: printIsLightBite(course.label)
+                        });
+                    });
+                    if (!courses.length) return;
+                    blocks.push({ header: printCompactHeaderText(model, sector, cabin, svc.name), courses: courses });
+                });
+                const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
+                if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
+                    blocks.push({
+                        header: printCompactHeaderText(model, sector, cabin, 'DELECTABLES'),
+                        courses: [{ key: 'DELECTABLES', items: takeItems(printVisible(cabin.delectables)), asBites: false }]
+                    });
+                }
+                const drinkCourses = [];
+                printVisible(cabin.drinks).forEach((g) => {
+                    if (printIsHidden(g)) return;
+                    const vis = printVisible(g.items);
+                    if (!vis.length) return;
+                    drinkCourses.push({ key: printCompactCourse(g.name), items: takeItems(vis), asBites: false });
+                });
+                if (drinkCourses.length) {
+                    blocks.push({
+                        header: printCompactHeaderText(model, sector, cabin, 'BEVERAGES'),
+                        courses: drinkCourses
+                    });
+                }
+            });
+            return blocks;
+        }
+
+        function compactNameTokens(name) {
+            return String(name || '').split(/(\s+)/).filter((chunk) => chunk !== '').map((chunk) => {
+                if (/^\s+$/.test(chunk)) return { text: chunk, invert: false };
+                const core = chunk.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                return { text: chunk, invert: printIsProteinWord(core) };
+            });
+        }
+
+        function compactBitesTokens(items) {
+            const tokens = [];
+            (items || []).forEach((name, i) => {
+                if (i) tokens.push({ text: ', ', invert: false });
+                compactNameTokens(name).forEach((t) => tokens.push(t));
+            });
+            return tokens;
+        }
+
+        function compactWrapWords(ctx, text, maxW) {
+            const words = String(text || '').split(/\s+/).filter(Boolean);
+            const lines = [];
+            let cur = '';
+            words.forEach((w) => {
+                const next = cur ? cur + ' ' + w : w;
+                if (!cur || ctx.measureText(next).width <= maxW) cur = next;
+                else { lines.push(cur); cur = w; }
+            });
+            if (cur) lines.push(cur);
+            return lines.length ? lines : [String(text || '')];
+        }
+
+        function compactTokWidth(ctx, tok, fontPx) {
+            const w = ctx.measureText(tok.text).width;
+            return tok.invert ? w + fontPx * 0.28 : w;
+        }
+
+        function compactDrawTok(ctx, tok, x, baseline, fontPx, ascent, descent) {
+            if (!tok.invert) {
+                ctx.fillStyle = '#000';
+                ctx.fillText(tok.text, x, baseline);
+                return ctx.measureText(tok.text).width;
+            }
+            const pad = fontPx * 0.14;
+            const tw = ctx.measureText(tok.text).width;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x, baseline - ascent, tw + pad * 2, ascent + descent);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(tok.text, x + pad, baseline);
+            return tw + pad * 2;
+        }
+
+        function compactDrawTokenRun(ctx, tokens, x, baseline, minX, maxX, lineH, fontPx, ascent, descent, draw) {
+            let cx = x;
+            let by = baseline;
+            (tokens || []).forEach((tok) => {
+                const isSpace = /^\s+$/.test(tok.text);
+                const w = compactTokWidth(ctx, tok, fontPx);
+                if (!isSpace && cx + w > maxX && cx > minX + 0.5) {
+                    cx = minX;
+                    by += lineH;
+                }
+                if (isSpace && cx <= minX + 0.5) return;
+                if (draw) compactDrawTok(ctx, tok, cx, by, fontPx, ascent, descent);
+                cx += w;
+            });
+            return by;
+        }
+
+        async function exportCompactImage(type) {
+            const model = printState.model;
+            const sector = currentPrintSector();
+            if (!model || !sector) {
+                await appAlert('Nothing to export yet.');
+                return;
+            }
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            const blocks = collectCompactBlocks(model, sector);
+            const a6 = printState.paper === 'a6';
+            const dpi = 300;
+            const mm = dpi / 25.4;
+            const pageW = Math.round((a6 ? 105 : 210) * mm);
+            const pageH = Math.round((a6 ? 148 : 297) * mm);
+            const padX = (a6 ? 4 : 5.5) * mm;
+            const padTop = (a6 ? 3.5 : 5) * mm;
+            const padBot = (a6 ? 4 : 6) * mm;
+            const innerW = pageW - padX * 2;
+            const maxX = padX + innerW;
+            const fontPx = (a6 ? 7.5 : 8.5) * (printZoom() / 100) * (dpi / 96);
+            const lineH = fontPx * 1.28;
+            const headH = fontPx * 1.32;
+            const fontHead = '800 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
+            const fontBody = '600 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
+            const scratch = document.createElement('canvas').getContext('2d');
+            scratch.font = fontHead;
+            const sample = scratch.measureText('Hg');
+            const ascent = sample.actualBoundingBoxAscent || fontPx * 0.8;
+            const descent = sample.actualBoundingBoxDescent || fontPx * 0.22;
+
+            function layout(ctx, draw) {
+                let y = padTop;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+                blocks.forEach((block) => {
+                    const ruleH = Math.max(1, mm * 0.26);
+                    if (draw) {
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(padX, y, innerW, ruleH);
+                    }
+                    y += ruleH + fontPx * 0.32;
+                    ctx.font = fontHead;
+                    compactWrapWords(ctx, block.header, innerW).forEach((ln) => {
+                        if (draw) {
+                            ctx.fillStyle = '#000';
+                            ctx.fillText(ln, padX, y + ascent);
+                        }
+                        y += headH;
+                    });
+                    y += fontPx * 0.2;
+                    (block.courses || []).forEach((course) => {
+                        ctx.font = fontHead;
+                        const keyStr = course.key + ':';
+                        const keyW = ctx.measureText(keyStr).width;
+                        const textX = padX + keyW + fontPx * 0.45;
+                        if (draw) {
+                            ctx.fillStyle = '#000';
+                            ctx.fillText(keyStr, padX, y + ascent);
+                        }
+                        ctx.font = fontBody;
+                        if (course.asBites) {
+                            const lastB = compactDrawTokenRun(ctx, compactBitesTokens(course.items), textX, y + ascent, textX, maxX, lineH, fontPx, ascent, descent, draw);
+                            y = lastB - ascent + lineH + fontPx * 0.08;
+                        } else {
+                            (course.items || []).forEach((name, idx) => {
+                                ctx.font = fontHead;
+                                const num = printCircledNum(idx + 1) + ' ';
+                                const numW = ctx.measureText(num).width;
+                                if (draw) {
+                                    ctx.fillStyle = '#000';
+                                    ctx.fillText(num, textX, y + ascent);
+                                }
+                                ctx.font = fontBody;
+                                const lastB = compactDrawTokenRun(ctx, compactNameTokens(name), textX + numW, y + ascent, textX + numW, maxX, lineH, fontPx, ascent, descent, draw);
+                                y = lastB - ascent + lineH;
+                            });
+                            y += fontPx * 0.08;
+                        }
+                    });
+                    y += 2.2 * mm;
+                });
+                return y + padBot - 2.2 * mm;
+            }
+
+            const contentH = layout(scratch, false);
+            const canvas = document.createElement('canvas');
+            canvas.width = pageW;
+            canvas.height = Math.max(pageH, Math.ceil(contentH));
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            layout(ctx, true);
+            const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const ext = type === 'jpeg' ? 'jpg' : 'png';
+            await new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
+                    resolve();
+                }, mime, 0.95);
+            });
+        }
+
         async function exportPrintImage(type) {
             const wasEdit = printState.tab === 'edit';
             if (wasEdit) {
@@ -5954,6 +6092,10 @@ function getRegionForAirport(code) {
             const prevMax = paper.style.maxWidth;
             const prevMinH = paper.style.minHeight;
             const prevOverflow = paper.style.overflow;
+            if (printState.layout === 'compact') {
+                await exportCompactImage(type);
+                return;
+            }
             try {
                 await ensureHtml2Canvas();
                 paper.style.transform = 'none';
@@ -5961,7 +6103,7 @@ function getRegionForAirport(code) {
                 paper.classList.remove('menu-anim-in', 'print-export-a4', 'print-export-a6');
                 paper.classList.add(printState.paper === 'a6' ? 'print-export-a6' : 'print-export-a4');
                 const canvas = await window.html2canvas(paper, {
-                    scale: 2,
+                    scale: 3,
                     backgroundColor: '#ffffff',
                     useCORS: true,
                     logging: false,
@@ -5973,7 +6115,7 @@ function getRegionForAirport(code) {
                     canvas.toBlob((blob) => {
                         if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
                         resolve();
-                    }, mime, 0.92);
+                    }, mime, 0.95);
                 });
             } catch (err) {
                 await appAlert('Could not export image. ' + String(err.message || err));
