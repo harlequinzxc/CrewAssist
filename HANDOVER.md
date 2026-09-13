@@ -34,7 +34,7 @@ Latest app cache: `crewassist-v62` (`sw.js`). App SemVer: **1.4.29** (`APP_VERSI
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Viewer and printer are signed off (v1.4.24). Developer rates editor is in (v1.4.28): paired rank rates, SDP buffers, overrides & bonus, layover/turnaround modifiers as animated accordions; Save is this device; shared publish is still replacing `rates.json` on GitHub.
+- **Printer sheet art:** Viewer and printer are signed off (v1.4.24). Developer rates editor is in (v1.4.29): paired rank rates, SDP buffers, overrides & bonus, layover/turnaround bands with shared thresholds; Save is this device; shared publish is still replacing `rates.json` on GitHub.
 
 ## Key Architecture Decisions & Constraints
 
