@@ -1,7 +1,6 @@
 # LOGIC.md — Calculation Engine & Business Rules Specification
 
-> **Source of truth for all numeric logic.** If this document and the code disagree, this document wins.
-> Any change to calculation behaviour MUST be reflected here first, then in code.
+> **Source of truth for formulas and rules.** Default coefficients (rank rates, buffers, brackets, LMA B/L/D) ship in `rates.json`. Developer mode can override them on this device (`localStorage`); publishing a new `rates.json` on GitHub updates every install. If this document and the code disagree on *behaviour*, this document wins. If a live rate disagrees with the tables below, the live `rates.json` / device override wins.
 
 ---
 
@@ -463,15 +462,16 @@ IF LMA is valid
 ### 4.8 Developer Mode Unlock
 
 ```
-IF (now - lastResetTapAt) ≤ 800ms
-    THEN resetTapStreak += 1
-ELSE
-    THEN resetTapStreak = 1
+IF header brand tapped
+    AND (now - lastTap) ≤ 400ms
+        THEN tapStreak += 1
+    ELSE tapStreak = 1
 
-IF resetTapStreak ≥ 10
-    THEN toggle showDeveloperNote
-    AND close all developer sub-accordions
-    AND resetTapStreak = 0
+IF tapStreak ≥ 10
+    THEN toggle developer mode
+    AND persist crewAssist.devMode
+    AND show “Developer Mode Enabled” or “Developer Mode Disabled”
+    AND tapStreak = 0
 ```
 
 ### 4.9 Reset All Preservation Rules

@@ -398,6 +398,29 @@
         }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
+        .dev-rate-table { width: 100%; border-collapse: collapse; }
+        .dev-rate-table th { text-align: left; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; padding: 4px 6px; }
+        .dev-rate-table td { padding: 4px 6px; font-size: 12px; font-weight: 600; vertical-align: middle; }
+        .dev-rate-input { width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 6px 8px; font-size: 12px; font-weight: 700; color: inherit; outline: none; }
+        html.dark .dev-rate-input { border-color: rgba(255,255,255,0.12); }
+        .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
+        html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
+        .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
+        .dev-rate-acc-title { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; }
+        .dev-rate-fold { display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows 280ms ease; }
+        .dev-rate-fold.is-open { grid-template-rows: 1fr; }
+        .dev-rate-fold-inner { overflow: hidden; min-height: 0; }
+        .dev-rate-pad { padding: 0 8px 10px; }
+        .dev-rate-chev { transition: transform 280ms ease; color: #C9A227; flex-shrink: 0; }
+        .dev-rate-card.is-expanded .dev-rate-chev { transform: rotate(180deg); }
+        .dev-bracket { display: flex; flex-direction: column; gap: 8px; }
+        .dev-bracket-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .dev-bracket-formula { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; font-size: 12px; font-weight: 600; }
+        .dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: #C9A227; }
+        .dev-bracket-op { color: #9CA3AF; font-weight: 700; font-size: 11px; white-space: nowrap; }
+        .dev-bracket-echo { font-weight: 800; min-width: 1.5rem; text-align: center; }
+        .dev-bracket-arrow { color: #C9A227; font-weight: 700; flex-shrink: 0; }
+        .dev-rate-input.dev-bracket-num { width: 3.6rem; text-align: center; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
         .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
         .print-edit-fold.is-open { grid-template-rows: 1fr; }
@@ -615,7 +638,7 @@
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
-            <div class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
+            <div id="settings-scroll" class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
                 <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
@@ -657,12 +680,13 @@
                         <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
                     </p>
                     <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
-                        <span class="text-sm font-bold">Modifiers & Values</span>
-                        <textarea id="dev-modifiers-json" class="w-full h-32 bg-black/5 dark:bg-[#04070F] border border-gray-300 dark:border-gray-700/50 rounded-xl p-3 text-xs font-mono focus:outline-none focus:border-sia-gold resize-none" placeholder="{}"></textarea>
-                        <div class="flex gap-2">
-                            <button id="btn-dev-save" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-green-500/10 text-green-600 dark:text-[#4ade80] border border-green-500/20 hover:bg-green-500/20 transition-colors">Save</button>
-                            <button id="btn-dev-export" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-[#60a5fa] border border-blue-500/20 hover:bg-blue-500/20 transition-colors">Export</button>
-                            <button type="button" class="flex-1 py-2 px-3 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-[#c084fc] border border-purple-500/20 hover:bg-purple-500/20 transition-colors relative overflow-hidden">
+                        <span class="text-sm font-bold">IFA & LMA rates</span>
+                        <div id="dev-rates-root" class="flex flex-col gap-4"></div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="btn-dev-save" class="flex-1 min-w-[5.5rem] py-2 px-3 rounded-full text-xs font-bold bg-green-500/10 text-green-600 dark:text-[#4ade80] border border-green-500/20 hover:bg-green-500/20 transition-colors">Save</button>
+                            <button type="button" id="btn-dev-reset" class="flex-1 min-w-[5.5rem] py-2 px-3 rounded-full text-xs font-bold bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15">Reset</button>
+                            <button type="button" id="btn-dev-export" class="flex-1 min-w-[5.5rem] py-2 px-3 rounded-full text-xs font-bold bg-blue-500/10 text-blue-600 dark:text-[#60a5fa] border border-blue-500/20 hover:bg-blue-500/20 transition-colors">Export</button>
+                            <button type="button" class="flex-1 min-w-[5.5rem] py-2 px-3 rounded-full text-xs font-bold bg-purple-500/10 text-purple-600 dark:text-[#c084fc] border border-purple-500/20 hover:bg-purple-500/20 transition-colors relative overflow-hidden">
                                 Import
                                 <input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json">
                             </button>
@@ -1029,7 +1053,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.24';
+        const APP_VERSION = '1.4.29';
 
         // State
         let appProfile = null;
@@ -1058,6 +1082,7 @@
             initData();
             initUI();
             bindEvents();
+            loadShippedRates();
 
             // Register Service Worker
             if ('serviceWorker' in navigator) {
@@ -1091,6 +1116,7 @@
                 
                 const storedMods = localStorage.getItem('crewAssist.modifiers');
                 if (storedMods) appModifiers = JSON.parse(storedMods);
+                applyRatesFromStorage();
                 
                 const isLight = localStorage.getItem('crewAssist.theme') === 'light';
                 if (isLight) document.documentElement.classList.remove('dark');
@@ -1108,7 +1134,7 @@
             // Settings Sheet Init
             if (appDevMode) {
                 document.getElementById('settings-developer').classList.remove('hidden');
-                document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
+                renderDevRatesEditor();
             }
             if (appProfile) {
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
@@ -1211,12 +1237,18 @@
                 clearTimeout(devTapTimeout);
                 devTapTimeout = setTimeout(() => { devTapCount = 0; }, 400);
 
-                if (devTapCount >= 10 && !appDevMode) {
-                    appDevMode = true;
-                    localStorage.setItem('crewAssist.devMode', 'true');
-                    document.getElementById('settings-developer').classList.remove('hidden');
-                    document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
-                    appAlert('Developer Mode Unlocked');
+                if (devTapCount >= 10) {
+                    appDevMode = !appDevMode;
+                    localStorage.setItem('crewAssist.devMode', appDevMode ? 'true' : 'false');
+                    const pane = document.getElementById('settings-developer');
+                    if (appDevMode) {
+                        pane.classList.remove('hidden');
+                        renderDevRatesEditor();
+                        appAlert('Developer Mode Enabled');
+                    } else {
+                        pane.classList.add('hidden');
+                        appAlert('Developer Mode Disabled');
+                    }
                     devTapCount = 0;
                 }
             });
@@ -1246,44 +1278,13 @@
             });
 
             // Developer Events
-            document.getElementById('btn-dev-save').addEventListener('click', () => {
-                try {
-                    const parsed = JSON.parse(document.getElementById('dev-modifiers-json').value);
-                    appModifiers = parsed;
-                    localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
-                    appAlert('Modifiers saved successfully.');
-                } catch (e) {
-                    appAlert('Invalid JSON format.');
-                }
-            });
-
-            document.getElementById('btn-dev-export').addEventListener('click', () => {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appModifiers, null, 2));
-                const anchor = document.createElement('a');
-                anchor.setAttribute("href", dataStr);
-                anchor.setAttribute("download", "crewassist-modifiers.json");
-                document.body.appendChild(anchor);
-                anchor.click();
-                anchor.remove();
-            });
-
+            document.getElementById('btn-dev-save').addEventListener('click', () => { saveDevRates(); });
+            const resetRatesBtn = document.getElementById('btn-dev-reset');
+            if (resetRatesBtn) resetRatesBtn.addEventListener('click', () => { resetDevRates(); });
+            document.getElementById('btn-dev-export').addEventListener('click', () => { exportDevRates(); });
             document.getElementById('dev-file-import').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    try {
-                        const parsed = JSON.parse(ev.target.result);
-                        appModifiers = parsed;
-                        document.getElementById('dev-modifiers-json').value = JSON.stringify(appModifiers, null, 2);
-                        localStorage.setItem('crewAssist.modifiers', JSON.stringify(appModifiers));
-                        appAlert('Modifiers imported successfully.');
-                    } catch (err) {
-                        appAlert('Error parsing imported file. Please ensure it is valid JSON.');
-                    }
-                };
-                reader.readAsText(file);
-                e.target.value = ''; // reset
+                importDevRatesFile(e.target.files[0]);
+                e.target.value = '';
             });
             // Chat Events
             document.getElementById('btn-send').addEventListener('click', () => {
@@ -1656,10 +1657,20 @@
             }, 500); // Wait for slide down to finish
         }
 
+        function resetSettingsSheet() {
+            const scroll = document.getElementById('settings-scroll');
+            if (scroll) scroll.scrollTop = 0;
+            document.querySelectorAll('#dev-rates-root .dev-rate-card.is-expanded').forEach((card) => {
+                card.classList.remove('is-expanded');
+                const fold = card.querySelector('.dev-rate-fold');
+                if (fold) fold.classList.remove('is-open');
+            });
+        }
+
         function openSettings() {
             const backdrop = document.getElementById('settings-backdrop');
             const sheet = document.getElementById('settings-sheet');
-            
+            resetSettingsSheet();
             backdrop.classList.remove('hidden');
             // small delay to allow display:block to apply before opacity transition
             setTimeout(() => {
@@ -1690,7 +1701,18 @@
             stationBuffer: 1.5,
             paxingMultiplier: 0.75,
             directUSMultiplier: 3.5,
-            turnaroundBonusAmount: 90.00
+            turnaroundBonusAmount: 90.00,
+            layoverBrackets: [
+                { maxHours: 14, multiplier: 1.3 },
+                { maxHours: 18, multiplier: 2.5 },
+                { maxHours: null, multiplier: 3.0 }
+            ],
+            turnaroundBrackets: [
+                { maxHours: 12, multiplier: 1.3 },
+                { maxHours: 14, multiplier: 1.6 },
+                { maxHours: 18, multiplier: 2.5 },
+                { maxHours: null, multiplier: 3.0 }
+            ]
         };
 
         
@@ -2324,6 +2346,356 @@ function getRegionForAirport(code) {
             'Southeast Asia': { b: 31, l: 55, d: 70 }
         };
 
+        const DEFAULT_RATES = {
+            version: 1,
+            ifa: {
+                baseRates: Object.assign({}, IFA_CONFIG.baseRates),
+                sgBuffer: IFA_CONFIG.sgBuffer,
+                stationBuffer: IFA_CONFIG.stationBuffer,
+                paxingMultiplier: IFA_CONFIG.paxingMultiplier,
+                directUSMultiplier: IFA_CONFIG.directUSMultiplier,
+                turnaroundBonusAmount: IFA_CONFIG.turnaroundBonusAmount,
+                layoverBrackets: IFA_CONFIG.layoverBrackets.slice(),
+                turnaroundBrackets: IFA_CONFIG.turnaroundBrackets.slice()
+            },
+            lma: { regions: JSON.parse(JSON.stringify(REGION_RATES)) }
+        };
+        let shippedRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
+        let activeRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
+
+        function ratesEsc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[ch]));
+        }
+
+        function cloneRates(obj) {
+            return JSON.parse(JSON.stringify(obj || {}));
+        }
+
+        function numOr(val, fallback) {
+            const n = Number(val);
+            return isFinite(n) ? n : fallback;
+        }
+
+        function normalizeBrackets(list, fallback) {
+            const src = Array.isArray(list) && list.length ? list : (fallback || []);
+            return src.map((row) => ({
+                maxHours: (row && row.maxHours != null && row.maxHours !== '') ? numOr(row.maxHours, null) : null,
+                multiplier: numOr(row && row.multiplier, 1)
+            }));
+        }
+
+        function parseRates(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const src = raw.ifa ? raw : { version: 1, ifa: raw, lma: { regions: raw.regions || raw.lma } };
+            const ifaIn = src.ifa || {};
+            const base = cloneRates(DEFAULT_RATES);
+            const rates = {
+                version: numOr(src.version, 1),
+                ifa: {
+                    baseRates: Object.assign({}, base.ifa.baseRates),
+                    sgBuffer: numOr(ifaIn.sgBuffer, base.ifa.sgBuffer),
+                    stationBuffer: numOr(ifaIn.stationBuffer, base.ifa.stationBuffer),
+                    paxingMultiplier: numOr(ifaIn.paxingMultiplier, base.ifa.paxingMultiplier),
+                    directUSMultiplier: numOr(ifaIn.directUSMultiplier, base.ifa.directUSMultiplier),
+                    turnaroundBonusAmount: numOr(ifaIn.turnaroundBonusAmount, base.ifa.turnaroundBonusAmount),
+                    layoverBrackets: normalizeBrackets(ifaIn.layoverBrackets, base.ifa.layoverBrackets),
+                    turnaroundBrackets: normalizeBrackets(ifaIn.turnaroundBrackets, base.ifa.turnaroundBrackets)
+                },
+                lma: { regions: cloneRates(base.lma.regions) }
+            };
+            const incomingRates = ifaIn.baseRates || raw.baseRates || {};
+            Object.keys(rates.ifa.baseRates).forEach((k) => {
+                if (incomingRates[k] != null) rates.ifa.baseRates[k] = numOr(incomingRates[k], rates.ifa.baseRates[k]);
+            });
+            const incomingRegions = (src.lma && src.lma.regions) || raw.regions || {};
+            Object.keys(rates.lma.regions).forEach((k) => {
+                if (!incomingRegions[k]) return;
+                rates.lma.regions[k] = {
+                    b: numOr(incomingRegions[k].b, rates.lma.regions[k].b),
+                    l: numOr(incomingRegions[k].l, rates.lma.regions[k].l),
+                    d: numOr(incomingRegions[k].d, rates.lma.regions[k].d)
+                };
+            });
+            return rates;
+        }
+
+        function applyRatesToEngine(rates) {
+            const parsed = parseRates(rates) || cloneRates(DEFAULT_RATES);
+            activeRates = parsed;
+            const ifa = parsed.ifa;
+            IFA_CONFIG.baseRates = Object.assign({}, ifa.baseRates);
+            IFA_CONFIG.sgBuffer = ifa.sgBuffer;
+            IFA_CONFIG.stationBuffer = ifa.stationBuffer;
+            IFA_CONFIG.paxingMultiplier = ifa.paxingMultiplier;
+            IFA_CONFIG.directUSMultiplier = ifa.directUSMultiplier;
+            IFA_CONFIG.turnaroundBonusAmount = ifa.turnaroundBonusAmount;
+            IFA_CONFIG.layoverBrackets = ifa.layoverBrackets.slice();
+            IFA_CONFIG.turnaroundBrackets = ifa.turnaroundBrackets.slice();
+            Object.keys(REGION_RATES).forEach((k) => { delete REGION_RATES[k]; });
+            Object.keys(parsed.lma.regions).forEach((k) => {
+                REGION_RATES[k] = Object.assign({}, parsed.lma.regions[k]);
+            });
+        }
+
+        function applyRatesFromStorage() {
+            try {
+                const raw = localStorage.getItem('crewAssist.rates');
+                if (!raw) return false;
+                const parsed = parseRates(JSON.parse(raw));
+                if (!parsed) return false;
+                applyRatesToEngine(parsed);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function getBracketMultiplier(brackets, hours) {
+            const list = (brackets || []).slice().sort((a, b) => {
+                const am = a.maxHours == null ? Infinity : Number(a.maxHours);
+                const bm = b.maxHours == null ? Infinity : Number(b.maxHours);
+                return am - bm;
+            });
+            const h = Number(hours);
+            for (let i = 0; i < list.length; i++) {
+                const max = list[i].maxHours;
+                if (max == null || h <= Number(max)) return Number(list[i].multiplier);
+            }
+            return 1;
+        }
+
+        function ratesInput(value, attrs, extraClass) {
+            return '<input type="text" inputmode="decimal" class="dev-rate-input' + (extraClass ? ' ' + extraClass : '') + '" ' + (attrs || '') + ' value="' + ratesEsc(String(value == null ? '' : value)) + '">';
+        }
+
+        const IFA_RATE_GROUPS = [
+            { label: 'Jr. FS / Jr. FSS', keys: ['Jr. FS', 'Jr. FSS'] },
+            { label: 'FS / FSS', keys: ['FS', 'FSS'] },
+            { label: 'LS / LSS', keys: ['LS', 'LSS'] },
+            { label: 'CS / CSS', keys: ['CS', 'CSS'] },
+            { label: 'IFM', keys: ['IFM'] }
+        ];
+
+        function renderDevRatesEditor() {
+            const root = document.getElementById('dev-rates-root');
+            if (!root) return;
+            const openSet = new Set();
+            root.querySelectorAll('.dev-rate-card.is-expanded').forEach((el) => {
+                const id = el.getAttribute('data-section');
+                if (id) openSet.add(id);
+            });
+            const r = activeRates || DEFAULT_RATES;
+            const ifa = r.ifa;
+            const section = (id, title, inner) => {
+                const open = openSet.has(id);
+                return '<div class="dev-rate-card' + (open ? ' is-expanded' : '') + '" data-section="' + id + '">' +
+                    '<button type="button" class="dev-rate-acc">' +
+                    '<span class="dev-rate-acc-title">' + title + '</span>' +
+                    '<i data-lucide="chevron-down" class="dev-rate-chev w-4 h-4"></i>' +
+                    '</button>' +
+                    '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner"><div class="dev-rate-pad">' + inner + '</div></div></div>' +
+                    '</div>';
+            };
+            let html = '';
+            html += '<p class="text-[10px] text-gray-500 leading-relaxed">Save applies on this device only. To update every install, Export and replace <span class="font-mono">rates.json</span> on GitHub.</p>';
+            if (localStorage.getItem('crewAssist.rates')) {
+                html += '<p class="text-[10px] font-bold text-sia-gold">This device has saved overrides.</p>';
+            }
+            let rankBody = '<table class="dev-rate-table"><thead><tr><th>Rank</th><th>Rate</th></tr></thead><tbody>';
+            IFA_RATE_GROUPS.forEach((g) => {
+                const val = g.keys.map((k) => ifa.baseRates[k]).find((n) => n != null);
+                rankBody += '<tr><td>' + ratesEsc(g.label) + '</td><td>' + ratesInput(val, 'data-ifa-rates="' + ratesEsc(g.keys.join('|')) + '"') + '</td></tr>';
+            });
+            rankBody += '</tbody></table>';
+            html += section('rates', 'Base hourly IFA rate ($/h)', rankBody);
+
+            html += section('buffers', 'SDP buffers (hours)',
+                '<table class="dev-rate-table"><tbody>' +
+                '<tr><td>Out of Singapore</td><td>' + ratesInput(ifa.sgBuffer, 'data-ifa-field="sgBuffer"') + '</td></tr>' +
+                '<tr><td>Out of Station</td><td>' + ratesInput(ifa.stationBuffer, 'data-ifa-field="stationBuffer"') + '</td></tr>' +
+                '</tbody></table>');
+
+            html += section('overrides', 'Overrides &amp; bonus',
+                '<table class="dev-rate-table"><tbody>' +
+                '<tr><td>Paxing Multiplier</td><td>' + ratesInput(ifa.paxingMultiplier, 'data-ifa-field="paxingMultiplier"') + '</td></tr>' +
+                '<tr><td>Direct US Multiplier</td><td>' + ratesInput(ifa.directUSMultiplier, 'data-ifa-field="directUSMultiplier"') + '</td></tr>' +
+                '<tr><td>Turnaround Bonus</td><td>' + ratesInput(ifa.turnaroundBonusAmount, 'data-ifa-field="turnaroundBonusAmount"') + '</td></tr>' +
+                '</tbody></table>');
+
+            const renderBrackets = (key, varName, rows) => {
+                const list = rows || [];
+                let block = '<div class="dev-bracket" data-bracket-set="' + key + '">';
+                list.forEach((row, i) => {
+                    const isLast = i === list.length - 1;
+                    const prev = i === 0 ? '' : (list[i - 1].maxHours == null ? '' : String(list[i - 1].maxHours));
+                    let formula = '<span class="dev-bracket-var">' + ratesEsc(varName) + '</span>';
+                    if (i === 0 && !isLast) {
+                        formula += '<span class="dev-bracket-op">≤</span>';
+                        formula += ratesInput(row.maxHours, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="maxHours"', 'dev-bracket-num');
+                    } else if (!isLast) {
+                        formula += '<span class="dev-bracket-op">&gt;</span>';
+                        formula += '<span class="dev-bracket-echo" data-echo-from="' + (i - 1) + '">' + ratesEsc(prev) + '</span>';
+                        formula += '<span class="dev-bracket-op">AND ≤</span>';
+                        formula += ratesInput(row.maxHours, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="maxHours"', 'dev-bracket-num');
+                    } else {
+                        formula += '<span class="dev-bracket-op">&gt;</span>';
+                        formula += '<span class="dev-bracket-echo" data-echo-from="' + (i - 1) + '">' + ratesEsc(prev) + '</span>';
+                    }
+                    block += '<div class="dev-bracket-row">';
+                    block += '<span class="dev-bracket-formula">' + formula + '</span>';
+                    block += '<span class="dev-bracket-arrow">→</span>';
+                    block += ratesInput(row.multiplier, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="multiplier"', 'dev-bracket-num');
+                    block += '</div>';
+                });
+                block += '</div>';
+                return block;
+            };
+            html += section('layover', 'Layover modifiers', renderBrackets('layoverBrackets', 'SDP', ifa.layoverBrackets));
+            html += section('turnaround', 'Turnaround modifiers', renderBrackets('turnaroundBrackets', 'TSDP', ifa.turnaroundBrackets));
+
+            let lmaBody = '<table class="dev-rate-table"><thead><tr><th>Region</th><th>B</th><th>L</th><th>D</th></tr></thead><tbody>';
+            Object.keys(r.lma.regions).forEach((k) => {
+                const row = r.lma.regions[k];
+                lmaBody += '<tr><td>' + ratesEsc(k) + '</td>';
+                lmaBody += '<td>' + ratesInput(row.b, 'data-lma-region="' + ratesEsc(k) + '" data-col="b"') + '</td>';
+                lmaBody += '<td>' + ratesInput(row.l, 'data-lma-region="' + ratesEsc(k) + '" data-col="l"') + '</td>';
+                lmaBody += '<td>' + ratesInput(row.d, 'data-lma-region="' + ratesEsc(k) + '" data-col="d"') + '</td></tr>';
+            });
+            lmaBody += '</tbody></table>';
+            html += section('lma', 'LMA region rates', lmaBody);
+            root.innerHTML = html;
+            root.querySelectorAll('.dev-rate-acc').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const card = btn.closest('.dev-rate-card');
+                    const fold = card && card.querySelector('.dev-rate-fold');
+                    if (!card || !fold) return;
+                    const on = fold.classList.toggle('is-open');
+                    card.classList.toggle('is-expanded', on);
+                });
+            });
+            root.querySelectorAll('[data-col="maxHours"]').forEach((el) => {
+                const set = el.closest('[data-bracket-set]');
+                const idx = el.getAttribute('data-idx');
+                const sync = () => {
+                    const v = String(el.value || '').trim();
+                    (set || root).querySelectorAll('[data-echo-from="' + idx + '"]').forEach((lab) => {
+                        lab.textContent = v;
+                    });
+                };
+                el.addEventListener('input', sync);
+                sync();
+            });
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        function readRatesFromEditor() {
+            const root = document.getElementById('dev-rates-root');
+            const base = cloneRates(activeRates || DEFAULT_RATES);
+            if (!root) return base;
+            root.querySelectorAll('[data-ifa-rates]').forEach((el) => {
+                const keys = String(el.getAttribute('data-ifa-rates') || '').split('|');
+                keys.forEach((k) => {
+                    if (k) base.ifa.baseRates[k] = numOr(el.value, base.ifa.baseRates[k]);
+                });
+            });
+            root.querySelectorAll('[data-ifa-field]').forEach((el) => {
+                const k = el.getAttribute('data-ifa-field');
+                if (k) base.ifa[k] = numOr(el.value, base.ifa[k]);
+            });
+            const collect = (key) => {
+                const rows = [];
+                root.querySelectorAll('[data-bracket="' + key + '"][data-col="multiplier"]').forEach((el) => {
+                    const idx = parseInt(el.getAttribute('data-idx'), 10);
+                    const maxEl = root.querySelector('[data-bracket="' + key + '"][data-idx="' + idx + '"][data-col="maxHours"]');
+                    const maxRaw = maxEl ? String(maxEl.value || '').trim() : '';
+                    rows[idx] = {
+                        maxHours: (!maxEl || maxRaw === '') ? null : numOr(maxRaw, null),
+                        multiplier: numOr(el.value, 1)
+                    };
+                });
+                return rows.filter(Boolean);
+            };
+            const lay = collect('layoverBrackets');
+            const turn = collect('turnaroundBrackets');
+            if (lay.length) base.ifa.layoverBrackets = lay;
+            if (turn.length) base.ifa.turnaroundBrackets = turn;
+            root.querySelectorAll('[data-lma-region]').forEach((el) => {
+                const k = el.getAttribute('data-lma-region');
+                const col = el.getAttribute('data-col');
+                if (!k || !col || !base.lma.regions[k]) return;
+                base.lma.regions[k][col] = numOr(el.value, base.lma.regions[k][col]);
+            });
+            return parseRates(base);
+        }
+
+        async function saveDevRates() {
+            const parsed = readRatesFromEditor();
+            if (!parsed) {
+                await appAlert('Could not read rates from the tables.');
+                return;
+            }
+            applyRatesToEngine(parsed);
+            localStorage.setItem('crewAssist.rates', JSON.stringify(parsed));
+            renderDevRatesEditor();
+            await appAlert('Rates saved on this device.');
+        }
+
+        async function resetDevRates() {
+            const ok = await appConfirm('Clear this device’s rate overrides and restore the shipped rates.json values?');
+            if (!ok) return;
+            localStorage.removeItem('crewAssist.rates');
+            applyRatesToEngine(shippedRates);
+            renderDevRatesEditor();
+            await appAlert('Restored shipped rates on this device.');
+        }
+
+        function exportDevRates() {
+            const parsed = readRatesFromEditor() || activeRates || DEFAULT_RATES;
+            const blob = new Blob([JSON.stringify(parsed, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'crewassist-rates.json';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(a.href), 500);
+        }
+
+        function importDevRatesFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                try {
+                    const parsed = parseRates(JSON.parse(ev.target.result));
+                    if (!parsed) throw new Error('shape');
+                    applyRatesToEngine(parsed);
+                    localStorage.setItem('crewAssist.rates', JSON.stringify(parsed));
+                    renderDevRatesEditor();
+                    await appAlert('Rates imported and saved on this device.');
+                } catch (err) {
+                    await appAlert('Could not import that file. Use a CrewAssist rates JSON.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function loadShippedRates() {
+            try {
+                const res = await fetch('./rates.json', { cache: 'no-store' });
+                if (!res.ok) return;
+                const parsed = parseRates(await res.json());
+                if (!parsed) return;
+                shippedRates = parsed;
+                if (!localStorage.getItem('crewAssist.rates')) {
+                    applyRatesToEngine(shippedRates);
+                    renderDevRatesEditor();
+                }
+            } catch (e) {}
+        }
+
+
         let calcIdCounter = 0;
 
         function renderCalculatorCard(mode) {
@@ -2811,23 +3183,46 @@ function getRegionForAirport(code) {
             return hh + 'H ' + String(mm).padStart(2, '0') + 'M';
         }
 
+        function formatLmaDay(dt) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const d = dt.getDate();
+            const dd = (d < 10 ? '0' : '') + d;
+            return dd + ' ' + months[dt.getMonth()] + ' ' + String(dt.getFullYear()).slice(-2);
+        }
+
+        function formatMoney(n) {
+            const x = Number(n);
+            if (!isFinite(x)) return '$0.00';
+            const sign = x < 0 ? '-' : '';
+            const parts = Math.abs(x).toFixed(2).split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return sign + '$' + parts[0] + '.' + parts[1];
+        }
+
+        function ifaSectorLabel(idx) {
+            return ['First Sector', 'Second Sector', 'Third Sector', 'Fourth Sector'][idx] || ('Sector ' + (idx + 1));
+        }
+
+        function lmaMealBadge(on, letter, onCls) {
+            if (on) {
+                return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold ' + onCls + '">' + letter + '</span>';
+            }
+            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">✕</span>';
+        }
+
         function getLayoverMultiplier(sdp) {
-            if (sdp <= 14) return 1.3;
-            if (sdp <= 18) return 2.5;
-            return 3.0;
+            return getBracketMultiplier(IFA_CONFIG.layoverBrackets || DEFAULT_RATES.ifa.layoverBrackets, sdp);
         }
 
         function getTurnaroundMultiplier(totalSdp) {
-            if (totalSdp <= 12) return 1.3;
-            if (totalSdp <= 14) return 1.6;
-            if (totalSdp <= 18) return 2.5;
-            return 3.0;
+            return getBracketMultiplier(IFA_CONFIG.turnaroundBrackets || DEFAULT_RATES.ifa.turnaroundBrackets, totalSdp);
         }
 
         function executeCalculation(id, mode) {
             let ifaTotal = 0;
             let lmaTotal = 0;
             let globalB = 0, globalL = 0, globalD = 0;
+            let mealB = 0, mealL = 0, mealD = 0;
             let ifaDetails = [];
             let lmaDetails = [];
             let isTurnaround = false;
@@ -2895,8 +3290,8 @@ function getRegionForAirport(code) {
                     ifaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm mb-1">
-                                <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
-                                <span>$${allowance.toFixed(2)}</span>
+                                <span>${ifaSectorLabel(idx)}</span>
+                                <span>${formatMoney(allowance)}</span>
                             </div>
                             <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
@@ -2913,7 +3308,7 @@ function getRegionForAirport(code) {
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm">
                                 <span>Turnaround Bonus (${bonusCount}x)</span>
-                                <span>$${bonus.toFixed(2)}</span>
+                                <span>${formatMoney(bonus)}</span>
                             </div>
                         </div>
                     `);
@@ -2973,7 +3368,6 @@ function getRegionForAirport(code) {
                     
                     for (let d = 0; d <= daysDiff; d++) {
                         let currDt = new Date(arrDt.getTime() + d * 24*60*60*1000);
-                        let dateStr = currDt.toISOString().split('T')[0];
                         let bc=0, lc=0, dc=0;
                         
                         if (daysDiff === 0) {
@@ -2994,6 +3388,9 @@ function getRegionForAirport(code) {
                         
                         let dayCost = (bc*rates.b) + (lc*rates.l) + (dc*rates.d);
                         stationTotal += dayCost;
+                        mealB += bc;
+                        mealL += lc;
+                        mealD += dc;
                         globalB += (bc*rates.b);
                         globalL += (lc*rates.l);
                         globalD += (dc*rates.d);
@@ -3001,12 +3398,12 @@ function getRegionForAirport(code) {
                         if (bc>0 || lc>0 || dc>0) {
                             dayRows.push(`
                                 <div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
-                                    <span class="text-[11px] text-gray-600 dark:text-gray-400">${dateStr}</span>
+                                    <span class="text-[11px] text-gray-600 dark:text-gray-400">${formatLmaDay(currDt)}</span>
                                     <div class="flex items-center gap-1.5">
-                                        ${bc > 0 ? '<span class="bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded text-[10px] font-bold">B</span>' : ''}
-                                        ${lc > 0 ? '<span class="bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>' : ''}
-                                        ${dc > 0 ? '<span class="bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-[10px] font-bold">D</span>' : ''}
-                                        <span class="ml-2 text-[11px] font-bold text-gray-800 dark:text-gray-200">${dayCost.toFixed(2)}</span>
+                                        ${lmaMealBadge(bc > 0, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')}
+                                        ${lmaMealBadge(lc > 0, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')}
+                                        ${lmaMealBadge(dc > 0, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')}
+                                        <span class="ml-2 text-[11px] font-bold tabular-nums text-gray-800 dark:text-gray-200">${formatMoney(dayCost)}</span>
                                     </div>
                                 </div>
                             `);
@@ -3016,9 +3413,8 @@ function getRegionForAirport(code) {
 
                     lmaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
-                            <div class="flex justify-between font-bold text-sm mb-2 border-b border-black/5 dark:border-white/5 pb-2">
+                            <div class="font-bold text-sm mb-2 border-b border-black/5 dark:border-white/5 pb-2">
                                 <span>${iata} (${region})</span>
-                                <span class="text-sia-gold">${stationTotal.toFixed(2)}</span>
                             </div>
                             <div class="flex flex-col">
                                 ${dayRows.length > 0 ? dayRows.join('') : '<span class="text-xs text-gray-500">No meals eligible</span>'}
@@ -3029,19 +3425,19 @@ function getRegionForAirport(code) {
             }
 
             if (lmaTotal > 0 && !isTurnaround) {
-                lmaDetails.unshift(`
-                    <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mb-3 border border-black/5 dark:border-white/5">
+                lmaDetails.push(`
+                    <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">
                         <div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5 last:border-0">
-                            <span class="uppercase tracking-wider">Breakfast</span>
-                            <span class="text-sia-gold">${globalB.toFixed(2)}</span>
+                            <span class="tracking-wider"><span class="uppercase">Breakfast</span> (${mealB}x)</span>
+                            <span class="text-sia-gold">${formatMoney(globalB)}</span>
                         </div>
                         <div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5 last:border-0">
-                            <span class="uppercase tracking-wider">Lunch</span>
-                            <span class="text-sia-gold">${globalL.toFixed(2)}</span>
+                            <span class="tracking-wider"><span class="uppercase">Lunch</span> (${mealL}x)</span>
+                            <span class="text-sia-gold">${formatMoney(globalL)}</span>
                         </div>
                         <div class="flex flex-col items-center flex-1">
-                            <span class="uppercase tracking-wider">Dinner</span>
-                            <span class="text-sia-gold">${globalD.toFixed(2)}</span>
+                            <span class="tracking-wider"><span class="uppercase">Dinner</span> (${mealD}x)</span>
+                            <span class="text-sia-gold">${formatMoney(globalD)}</span>
                         </div>
                     </div>
                 `);
@@ -3058,7 +3454,7 @@ function getRegionForAirport(code) {
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
-                    <p class="text-4xl font-bold">$${grandTotal.toFixed(2)}</p>
+                    <p class="text-4xl font-bold">${formatMoney(grandTotal)}</p>
                 </div>
             `;
 
@@ -3067,7 +3463,7 @@ function getRegionForAirport(code) {
                     <div>
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="font-bold">IFA Breakdown</h4>
-                            <span class="font-bold text-sia-gold">$${ifaTotal.toFixed(2)}</span>
+                            <span class="font-bold text-sia-gold">${formatMoney(ifaTotal)}</span>
                         </div>
                         ${ifaDetails.join('')}
                     </div>
@@ -3081,7 +3477,7 @@ function getRegionForAirport(code) {
                     <div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="font-bold">LMA Breakdown</h4>
-                            <span class="font-bold text-sia-gold">$${lmaTotal.toFixed(2)}</span>
+                            <span class="font-bold text-sia-gold">${formatMoney(lmaTotal)}</span>
                         </div>
                         ${lmaDetails.join('')}
                     </div>
@@ -3099,13 +3495,13 @@ function getRegionForAirport(code) {
             // Post result message to chat
             let msg = '';
             if (isTurnaround && mode === 'both') {
-                msg = 'Your total COP Allowance is $' + grandTotal.toFixed(2);
+                msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
             } else if (mode === 'ifa') {
-                msg = 'Your IFA is $' + ifaTotal.toFixed(2);
+                msg = 'Your IFA is ' + formatMoney(ifaTotal);
             } else if (mode === 'lma') {
-                msg = 'Your LMA is $' + lmaTotal.toFixed(2);
+                msg = 'Your LMA is ' + formatMoney(lmaTotal);
             } else {
-                msg = 'Your total COP Allowance is $' + grandTotal.toFixed(2);
+                msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
             }
             
             setTimeout(() => {

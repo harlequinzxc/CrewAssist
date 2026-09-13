@@ -1,8 +1,9 @@
-const CACHE_NAME = 'crewassist-v57';
+const CACHE_NAME = 'crewassist-v62';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
+    './rates.json',
     './icons/favicon.png',
     './icons/logo-192.png',
     './icons/logo-512.png',
@@ -44,8 +45,9 @@ self.addEventListener('fetch', (event) => {
         url.pathname.endsWith('/sw.js') ||
         url.pathname.endsWith('/index.html') ||
         url.pathname.endsWith('/');
+    const isRates = url.pathname.endsWith('/rates.json');
 
-    if (isAppShell) {
+    if (isAppShell || isRates) {
         event.respondWith(
             fetch(req)
                 .then((res) => {
@@ -55,7 +57,11 @@ self.addEventListener('fetch', (event) => {
                     }
                     return res;
                 })
-                .catch(() => caches.match(req).then((cached) => cached || caches.match('./index.html')))
+                .catch(() => caches.match(req).then((cached) => {
+                    if (cached) return cached;
+                    if (isRates) return new Response('{}', { status: 503, headers: { 'Content-Type': 'application/json' } });
+                    return caches.match('./index.html');
+                }))
         );
         return;
     }
