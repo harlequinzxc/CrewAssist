@@ -356,18 +356,21 @@
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
         .pc-block { margin: 0 0 2.2mm; }
-        .pc-head { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.25; margin: 0; padding: 0 0 0.35mm; }
-        .pc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
+        .pc-head-img { display: block; width: 100%; height: auto; margin: 0 0 0.7mm; }
         .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
         .pc-course td { vertical-align: top; padding: 0; }
         .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.28; padding-right: 1.2mm !important; width: 1%; }
         .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.28; }
         .pc-item { line-height: 1.28; font-weight: 600; color: #000; margin: 0; }
         .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
-        table.pc-hl { display: inline-table; border-collapse: collapse; vertical-align: baseline; margin: 0 0.06em; }
-        table.pc-hl td { background: #000; color: #fff; padding: 0 0.14em; font: inherit; font-weight: 700; line-height: 1.2; }
-        .print-a6 .pc-head,
+        .pc-hl-img { display: inline-block; vertical-align: middle; margin: 0 0.04em; }
         .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
+        .print-bounds {
+            position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
+            border: 1.5px dashed #C9A227; pointer-events: none; z-index: 5;
+        }
+        .print-paper.print-a4 > .print-bounds { height: 297mm; }
+        .print-paper.print-a6 > .print-bounds { height: 148mm; }
 
         .print-edit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 12px; }
         .print-edit-card.is-hidden > .print-edit-head > :not(.print-edit-eye),
@@ -830,6 +833,7 @@
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
                         <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A+</button>
                     </div>
+                    <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Bounds</button>
                     <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
                     <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
                 </div>
@@ -1016,7 +1020,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.20';
+        const APP_VERSION = '1.4.21';
 
         // State
         let appProfile = null;
@@ -4784,6 +4788,7 @@ function getRegionForAirport(code) {
             zoomCompact: 100,
             greyscale: false,
             descriptions: true,
+            showBounds: true,
             tab: 'sheet',
             sectorIdx: 0,
             model: null
@@ -5213,7 +5218,7 @@ function getRegionForAirport(code) {
                 const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
                 if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
-                if (mode === 'invert') return '<table class="pc-hl"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
+                if (mode === 'invert') return printBakeInvert(w);
                 return '<s>' + inner + '</s>';
             }).join('');
         }
@@ -5359,12 +5364,84 @@ function getRegionForAirport(code) {
             return html;
         }
 
+        function printCompactTypePx() {
+            const base = printState.paper === 'a6' ? 7.5 : 8.5;
+            return base * (printZoom() / 100);
+        }
+
+        function printCompactInnerWidthPx() {
+            const pageMm = printState.paper === 'a6' ? 105 : 210;
+            const padMm = printState.paper === 'a6' ? 8 : 11;
+            return (pageMm - padMm) * 96 / 25.4;
+        }
+
+        function printBakeInvert(word) {
+            const text = String(word || '');
+            if (!text) return '';
+            const fontPx = printCompactTypePx();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const dpr = 2;
+            const font = '700 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
+            ctx.font = font;
+            const padX = Math.max(1.2, fontPx * 0.14);
+            const w = Math.max(1, Math.ceil(ctx.measureText(text).width + padX * 2));
+            const h = Math.max(1, Math.ceil(fontPx * 1.28));
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.font = font;
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, w, h);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(text, padX, h / 2);
+            return '<img class="pc-hl-img" alt="" src="' + canvas.toDataURL('image/png') + '" width="' + w + '" height="' + h + '">';
+        }
+
+        function printBakeHeader(line) {
+            const text = String(line || '');
+            const fontPx = printCompactTypePx();
+            const maxW = printCompactInnerWidthPx();
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const dpr = 2;
+            const font = '800 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
+            ctx.font = font;
+            const words = text.split(/\s+/).filter(Boolean);
+            const lines = [];
+            let cur = '';
+            words.forEach((w) => {
+                const next = cur ? cur + ' ' + w : w;
+                if (!cur || ctx.measureText(next).width <= maxW) cur = next;
+                else { lines.push(cur); cur = w; }
+            });
+            if (cur) lines.push(cur);
+            if (!lines.length) lines.push(text);
+            const lineH = fontPx * 1.32;
+            const gap = Math.max(3, fontPx * 0.28);
+            const ruleH = 1;
+            const w = Math.max(1, Math.ceil(maxW));
+            const h = Math.max(1, Math.ceil(lines.length * lineH + gap + ruleH));
+            canvas.width = w * dpr;
+            canvas.height = h * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            ctx.font = font;
+            ctx.fillStyle = '#000';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            lines.forEach((ln, i) => ctx.fillText(ln, 0, i * lineH));
+            ctx.fillRect(0, lines.length * lineH + gap - ruleH, w, ruleH);
+            return '<img class="pc-head-img" alt="' + escapePrintHtml(text) + '" src="' + canvas.toDataURL('image/png') + '" width="' + w + '" height="' + h + '">';
+        }
+
         function printCompactHeader(model, sector, cabin, svcName) {
             const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
             const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
             const date = model.dateShort || '';
             const line = date ? (left + ' ' + date) : left;
-            return '<div class="pc-head">' + escapePrintHtml(line) + '</div><div class="pc-rule"></div>';
+            return printBakeHeader(line);
         }
 
         function printCircledNum(n) {
@@ -5499,6 +5576,8 @@ function getRegionForAirport(code) {
             const desc = document.getElementById('print-opt-desc');
             paintOpt(grey, printState.greyscale, '✓ Greyscale', 'Greyscale');
             paintOpt(desc, printState.descriptions, '✓ Descriptions', 'Descriptions');
+            const bounds = document.getElementById('print-opt-bounds');
+            paintOpt(bounds, printState.showBounds, '✓ Bounds', 'Bounds');
             if (grey) grey.classList.toggle('hidden', compactOn);
             if (desc) desc.classList.toggle('hidden', compactOn);
             const tabSheet = document.getElementById('print-tab-sheet');
@@ -5537,8 +5616,21 @@ function getRegionForAirport(code) {
                 : renderElegantSheet(model, sector);
             wrap.innerHTML = '';
             wrap.appendChild(paper);
+            if (printState.showBounds) {
+                const edge = document.createElement('div');
+                edge.className = 'print-bounds';
+                edge.setAttribute('aria-hidden', 'true');
+                paper.appendChild(edge);
+            }
             applyPrintZoom();
             playPrintContentAnim(paper);
+            if (printState.layout === 'compact' && document.fonts && document.fonts.status !== 'loaded' && !window._printFontRefresh) {
+                window._printFontRefresh = true;
+                document.fonts.ready.then(() => {
+                    window._printFontRefresh = false;
+                    if (printState.layout === 'compact' && printState.tab === 'sheet') renderPrintSheet();
+                });
+            }
         }
 
         function applyPrintZoom() {
@@ -5872,7 +5964,8 @@ function getRegionForAirport(code) {
                     scale: 2,
                     backgroundColor: '#ffffff',
                     useCORS: true,
-                    logging: false
+                    logging: false,
+                    ignoreElements: (el) => !!(el && el.classList && el.classList.contains('print-bounds'))
                 });
                 const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png';
                 const ext = type === 'jpeg' ? 'jpg' : 'png';
@@ -5900,7 +5993,9 @@ function getRegionForAirport(code) {
                 appAlert('Nothing to export yet.');
                 return;
             }
-            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Menu</title></head><body>' + paper.innerHTML + '</body></html>';
+            const clone = paper.cloneNode(true);
+            clone.querySelectorAll('.print-bounds').forEach((el) => el.remove());
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Menu</title></head><body>' + clone.innerHTML + '</body></html>';
             downloadBlob(new Blob(['\ufeff' + html], { type: 'application/msword' }), printFileBase() + '.doc');
         }
 
@@ -5941,6 +6036,8 @@ function getRegionForAirport(code) {
                 setPrintZoom(Math.min(140, printZoom() + 10));
                 renderPrintView();
             });
+            const boundsBtn = document.getElementById('print-opt-bounds');
+            if (boundsBtn) boundsBtn.addEventListener('click', () => { printState.showBounds = !printState.showBounds; renderPrintView(); });
             document.getElementById('print-opt-grey').addEventListener('click', () => { printState.greyscale = !printState.greyscale; renderPrintView(); });
             document.getElementById('print-opt-desc').addEventListener('click', () => { printState.descriptions = !printState.descriptions; renderPrintView(); });
             document.getElementById('print-tab-sheet').addEventListener('click', () => { printState.tab = 'sheet'; renderPrintView(); });
