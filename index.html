@@ -355,9 +355,11 @@
 
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
-        .pc-block { margin: 0 0 2.4mm; }
+        .pc-block { margin: 0; }
+        .pc-block > .pc-course:last-of-type { margin-bottom: 0; }
         .pc-svc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
         .pc-head { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.28; margin: 0 0 0.45mm; }
+        .pc-block + .pc-block .pc-head { margin-top: 0.7mm; }
         .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
         .pc-course td { vertical-align: top; padding: 0; }
         .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.28; padding-right: 1.2mm !important; width: 1%; }
@@ -715,8 +717,8 @@
             <div class="flex items-center justify-between px-6 pb-3 shrink-0">
                 <h3 class="text-xl font-bold">Inflight Menu</h3>
                 <div class="flex items-center gap-1 shrink-0">
-                    <button type="button" id="btn-menu-to-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Print menu">
-                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    <button type="button" id="btn-menu-to-print" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 shrink-0" aria-label="Print menu">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
                     </button>
                     <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -1022,7 +1024,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.22';
+        const APP_VERSION = '1.4.23';
 
         // State
         let appProfile = null;
@@ -5408,17 +5410,17 @@ function getRegionForAirport(code) {
                         body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label)));
                     });
                     if (!body.length) return;
-                    html += '<div class="pc-block"><div class="pc-svc-rule"></div>';
+                    html += '<div class="pc-block">';
                     html += printCompactHeader(model, sector, cabin, svc.name);
                     html += body.join('');
-                    html += '</div>';
+                    html += '<div class="pc-svc-rule"></div></div>';
                 });
                 const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
                 if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
-                    html += '<div class="pc-block"><div class="pc-svc-rule"></div>';
+                    html += '<div class="pc-block">';
                     html += printCompactHeader(model, sector, cabin, 'DELECTABLES');
                     html += printCompactItems('DELECTABLES', printVisible(cabin.delectables));
-                    html += '</div>';
+                    html += '<div class="pc-svc-rule"></div></div>';
                 }
                 const drinkBits = [];
                 printVisible(cabin.drinks).forEach((g) => {
@@ -5428,10 +5430,10 @@ function getRegionForAirport(code) {
                     drinkBits.push(printCompactItems(printCompactCourse(g.name), vis));
                 });
                 if (drinkBits.length) {
-                    html += '<div class="pc-block"><div class="pc-svc-rule"></div>';
+                    html += '<div class="pc-block">';
                     html += printCompactHeader(model, sector, cabin, 'BEVERAGES');
                     html += drinkBits.join('');
-                    html += '</div>';
+                    html += '<div class="pc-svc-rule"></div></div>';
                 }
             });
             html += '</div>';
@@ -5949,9 +5951,13 @@ function getRegionForAirport(code) {
                 return ctx.measureText(tok.text).width;
             }
             const pad = fontPx * 0.14;
-            const tw = ctx.measureText(tok.text).width;
+            const m = ctx.measureText(tok.text);
+            const tw = m.width;
+            const as = (m.actualBoundingBoxAscent != null) ? m.actualBoundingBoxAscent : fontPx * 0.72;
+            const ds = Math.min((m.actualBoundingBoxDescent != null) ? m.actualBoundingBoxDescent : 0, fontPx * 0.04);
+            const padY = fontPx * 0.03;
             ctx.fillStyle = '#000';
-            ctx.fillRect(x, baseline - ascent, tw + pad * 2, ascent + descent);
+            ctx.fillRect(x, baseline - as - padY, tw + pad * 2, as + padY + ds);
             ctx.fillStyle = '#fff';
             ctx.fillText(tok.text, x + pad, baseline);
             return tw + pad * 2;
@@ -6009,12 +6015,6 @@ function getRegionForAirport(code) {
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'alphabetic';
                 blocks.forEach((block) => {
-                    const ruleH = Math.max(1, mm * 0.26);
-                    if (draw) {
-                        ctx.fillStyle = '#000';
-                        ctx.fillRect(padX, y, innerW, ruleH);
-                    }
-                    y += ruleH + fontPx * 0.32;
                     ctx.font = fontHead;
                     compactWrapWords(ctx, block.header, innerW).forEach((ln) => {
                         if (draw) {
@@ -6053,9 +6053,14 @@ function getRegionForAirport(code) {
                             y += fontPx * 0.08;
                         }
                     });
-                    y += 2.2 * mm;
+                    const ruleH = Math.max(1, mm * 0.26);
+                    if (draw) {
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(padX, y, innerW, ruleH);
+                    }
+                    y += ruleH + fontPx * 0.32;
                 });
-                return y + padBot - 2.2 * mm;
+                return y + padBot - fontPx * 0.32;
             }
 
             const contentH = layout(scratch, false);
