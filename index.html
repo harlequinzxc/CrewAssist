@@ -353,27 +353,37 @@
         .print-a6 .pe-choose { font-size: calc(6px * var(--print-type, 1)); }
         .print-a6 .pe-ring { width: 1.8mm; height: 1.8mm; border-width: 0.3mm; }
 
-        .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; }
+        .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
-        .pc-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #111; padding-bottom: 2px; margin-bottom: 4px; }
-        .pc-sq { font-size: calc(13px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.04em; }
-        .pc-date { font-size: calc(10px * var(--print-type, 1)); font-weight: 700; }
-        .pc-cabin { font-size: calc(9px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; margin: 5px 0 2px; border-bottom: 1px solid #111; }
-        .pc-svc { font-size: calc(8px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #374151; margin: 3px 0 1px; }
-        .pc-row { font-size: calc(8.5px * var(--print-type, 1)); line-height: 1.2; font-weight: 600; text-transform: uppercase; }
-        .pc-row s { text-decoration: line-through; color: #9CA3AF; }
-        .pc-course { color: #6B7280; font-weight: 800; }
-        .pc-bev { font-size: calc(8px * var(--print-type, 1)); text-transform: uppercase; font-weight: 600; line-height: 1.15; }
-        .pc-gap { height: 3px; }
+        .pc-block { margin: 0 0 4mm; }
+        .pc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid #000; padding-bottom: 1.5px; margin: 0 0 2mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
+        .pc-course { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; color: #000; text-transform: uppercase; margin: 1.4mm 0 0.6mm; }
+        .pc-item { display: flex; align-items: flex-start; gap: 1.6mm; font-size: calc(8.5px * var(--print-type, 1)); line-height: 1.35; font-weight: 600; text-transform: uppercase; color: #000; margin: 0.35mm 0; }
+        .pc-num { flex-shrink: 0; width: 1.45em; height: 1.45em; border: 1px solid #000; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 0.78em; font-weight: 800; line-height: 1; margin-top: 0.08em; }
+        .pc-hl { background: #000; color: #fff; padding: 0 0.18em; }
+        .print-a6 .pc-head,
+        .print-a6 .pc-course,
+        .print-a6 .pc-item { font-size: calc(7.5px * var(--print-type, 1)); }
 
         .print-edit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 12px; }
-        .print-edit-card.is-hidden,
-        .print-edit-svc.is-hidden,
-        .print-edit-course.is-hidden,
-        .print-edit-item.is-hidden,
-        .print-edit-block.is-hidden {
+        .print-edit-card.is-hidden > .print-edit-head > :not(.print-edit-eye),
+        .print-edit-card.is-hidden > :not(.print-edit-head),
+        .print-edit-svc.is-hidden > .print-edit-head > :not(.print-edit-eye),
+        .print-edit-svc.is-hidden > :not(.print-edit-head),
+        .print-edit-course.is-hidden > .print-edit-head > :not(.print-edit-eye),
+        .print-edit-course.is-hidden > :not(.print-edit-head),
+        .print-edit-item.is-hidden > :not(.print-edit-x):not(.print-edit-eye),
+        .print-edit-block.is-hidden > :not(.print-edit-head) {
             opacity: 0.38;
             filter: grayscale(0.85);
+        }
+        .print-edit-card.is-hidden .print-edit-eye,
+        .print-edit-svc.is-hidden .print-edit-eye,
+        .print-edit-course.is-hidden .print-edit-eye,
+        .print-edit-item.is-hidden .print-edit-eye,
+        .print-edit-item.is-hidden .print-edit-x {
+            opacity: 1;
+            filter: none;
         }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
@@ -994,7 +1004,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.16';
+        const APP_VERSION = '1.4.17';
 
         // State
         let appProfile = null;
@@ -4944,9 +4954,11 @@ function getRegionForAirport(code) {
             if (/baker/.test(l)) return 'FROM THE BAKERY';
             if (/praline/.test(l)) return 'PRALINES';
             if (/light/.test(l)) return 'LIGHT BITES';
+            if (/hot\s*bev|coffee|tea/.test(l)) return 'HOT BEV';
+            if (/fortif/.test(l)) return 'FORTIFIED';
+            if (/\bwhite\b/.test(l)) return 'WHITE';
+            if (/\bred\b/.test(l) && !/red bull/.test(l)) return 'RED';
             if (/champagn/.test(l)) return 'CHAMPAGNE';
-            if (/white/.test(l)) return 'WHITE';
-            if (/red/.test(l)) return 'RED';
             return String(label || '').toUpperCase();
         }
 
@@ -5128,11 +5140,21 @@ function getRegionForAirport(code) {
         }
 
         function printStrikeAllergens(name) {
+            return printMarkProteins(name, 'strike');
+        }
+
+        function printHighlightProteins(name) {
+            return printMarkProteins(name, 'invert');
+        }
+
+        function printMarkProteins(name, mode) {
             const words = String(name || '').split(/(\s+)/);
             return words.map((w) => {
                 const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                if (PRINT_ALLERGENS.indexOf(core) !== -1) return '<s>' + escapePrintHtml(w) + '</s>';
-                return escapePrintHtml(w);
+                if (PRINT_ALLERGENS.indexOf(core) === -1) return escapePrintHtml(w);
+                const inner = escapePrintHtml(w);
+                if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
+                return '<s>' + inner + '</s>';
             }).join('');
         }
 
@@ -5277,38 +5299,57 @@ function getRegionForAirport(code) {
             return html;
         }
 
+        function printCompactHeader(model, sector, cabin, svcName) {
+            const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
+            const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
+            return '<div class="pc-head"><span>' + escapePrintHtml(left) + '</span><span>' + escapePrintHtml(model.dateShort || '') + '</span></div>';
+        }
+
+        function printCompactItems(key, items) {
+            if (!items || !items.length) return '';
+            let html = '<div class="pc-course">' + escapePrintHtml(key) + ':</div>';
+            items.forEach((it, idx) => {
+                html += '<div class="pc-item"><span class="pc-num">' + (idx + 1) + '</span><span>' + printHighlightProteins(printDisplayName(it.name)) + '</span></div>';
+            });
+            return html;
+        }
+
         function renderCompactSheet(model, sector) {
             let html = '<div class="pc-inner">';
-            html += `<div class="pc-head"><span class="pc-sq">SQ${escapePrintHtml(model.flight)}</span><span class="pc-date">${escapePrintHtml(model.dateShort)}</span></div>`;
             printVisible(sector.cabins).forEach((cabin) => {
-                html += `<div class="pc-cabin">${escapePrintHtml(cabin.code)}</div>`;
                 printVisible(cabin.services).forEach((svc) => {
-                    html += `<div class="pc-svc">${escapePrintHtml(svc.name)}</div>`;
+                    const body = [];
                     (svc.courses || []).forEach((course) => {
-                        const key = printCompactCourse(course.label);
                         if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
-                        const names = visItems.map((it) => printStrikeAllergens(printDisplayName(it.name))).join(' / ');
-                        html += `<div class="pc-row"><span class="pc-course">${escapePrintHtml(key)}</span> ${names}</div>`;
+                        body.push(printCompactItems(printCompactCourse(course.label), visItems));
                     });
+                    if (!body.length) return;
+                    html += '<div class="pc-block">';
+                    html += printCompactHeader(model, sector, cabin, svc.name);
+                    html += body.join('');
+                    html += '</div>';
                 });
                 const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
                 if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
-                    html += `<div class="pc-svc">DELECTABLES</div>`;
-                    html += `<div class="pc-row">${printVisible(cabin.delectables).map((it) => printStrikeAllergens(printDisplayName(it.name))).join(' / ')}</div>`;
+                    html += '<div class="pc-block">';
+                    html += printCompactHeader(model, sector, cabin, 'DELECTABLES');
+                    html += printCompactItems('DELECTABLES', printVisible(cabin.delectables));
+                    html += '</div>';
                 }
-                const drinks = printVisible(cabin.drinks);
-                if (drinks.length) {
-                    html += `<div class="pc-gap"></div>`;
-                    drinks.forEach((g) => {
-                        if (printIsHidden(g)) return;
-                        const vis = printVisible(g.items);
-                        if (!vis.length) return;
-                        const key = printCompactCourse(g.name);
-                        const names = vis.map((it) => escapePrintHtml(it.name)).join(', ');
-                        html += `<div class="pc-bev"><span class="pc-course">${escapePrintHtml(key)}</span> ${names}</div>`;
-                    });
+                const drinkBits = [];
+                printVisible(cabin.drinks).forEach((g) => {
+                    if (printIsHidden(g)) return;
+                    const vis = printVisible(g.items);
+                    if (!vis.length) return;
+                    drinkBits.push(printCompactItems(printCompactCourse(g.name), vis));
+                });
+                if (drinkBits.length) {
+                    html += '<div class="pc-block">';
+                    html += printCompactHeader(model, sector, cabin, 'BEVERAGES');
+                    html += drinkBits.join('');
+                    html += '</div>';
                 }
             });
             html += '</div>';
