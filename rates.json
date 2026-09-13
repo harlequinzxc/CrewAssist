@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "ifa": {
+    "baseRates": {
+      "Jr. FS": 10,
+      "FS": 13.5,
+      "LS": 16,
+      "CS": 18.5,
+      "IFM": 23,
+      "Jr. FSS": 10,
+      "FSS": 13.5,
+      "LSS": 16,
+      "CSS": 18.5
+    },
+    "sgBuffer": 2.5,
+    "stationBuffer": 1.5,
+    "paxingMultiplier": 0.75,
+    "directUSMultiplier": 3.5,
+    "turnaroundBonusAmount": 90,
+    "layoverBrackets": [
+      { "maxHours": 14, "multiplier": 1.3 },
+      { "maxHours": 18, "multiplier": 2.5 },
+      { "maxHours": null, "multiplier": 3.0 }
+    ],
+    "turnaroundBrackets": [
+      { "maxHours": 12, "multiplier": 1.3 },
+      { "maxHours": 14, "multiplier": 1.6 },
+      { "maxHours": 18, "multiplier": 2.5 },
+      { "maxHours": null, "multiplier": 3.0 }
+    ]
+  },
+  "lma": {
+    "regions": {
+      "Australia / New Zealand": { "b": 50, "l": 86, "d": 111 },
+      "Orient": { "b": 57, "l": 100, "d": 128 },
+      "North America": { "b": 51, "l": 90, "d": 115 },
+      "Europe": { "b": 53, "l": 92, "d": 119 },
+      "Japan": { "b": 52, "l": 92, "d": 118 },
+      "Middle East": { "b": 40, "l": 70, "d": 91 },
+      "South Africa": { "b": 28, "l": 50, "d": 64 },
+      "South Asia": { "b": 36, "l": 64, "d": 82 },
+      "Southeast Asia": { "b": 31, "l": 55, "d": 70 }
+    }
+  }
+}

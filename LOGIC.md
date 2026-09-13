@@ -1,7 +1,6 @@
 # LOGIC.md — Calculation Engine & Business Rules Specification
 
-> **Source of truth for all numeric logic.** If this document and the code disagree, this document wins.
-> Any change to calculation behaviour MUST be reflected here first, then in code.
+> **Source of truth for formulas and rules.** Default coefficients (rank rates, buffers, brackets, LMA B/L/D) ship in `rates.json`. Developer mode can override them on this device (`localStorage`); publishing a new `rates.json` on GitHub updates every install. If this document and the code disagree on *behaviour*, this document wins. If a live rate disagrees with the tables below, the live `rates.json` / device override wins.
 
 ---
 
