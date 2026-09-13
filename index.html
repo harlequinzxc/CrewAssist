@@ -356,13 +356,15 @@
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
         .pc-block { margin: 0 0 2.2mm; }
-        .pc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid #000; padding-bottom: 1px; margin: 0 0 0.7mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
-        .pc-course { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2mm; align-items: start; font-size: calc(8.5px * var(--print-type, 1)); color: #000; text-transform: uppercase; margin: 0.12mm 0; }
-        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.22; }
-        .pc-list { min-width: 0; }
-        .pc-item { display: flex; align-items: flex-start; gap: 1.4mm; font-size: inherit; line-height: 1.22; font-weight: 600; color: #000; margin: 0; }
-        .pc-bites { font-weight: 600; line-height: 1.22; min-width: 0; }
-        .pc-num { flex-shrink: 0; width: 1.35em; height: 1.35em; border: 1px solid #000; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 800; line-height: 1; margin-top: 0.06em; }
+        .pc-head { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; margin: 0 0 0.7mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
+        .pc-head td { padding: 0 0 1px; vertical-align: baseline; }
+        .pc-head-date { text-align: right; white-space: nowrap; }
+        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; text-transform: uppercase; margin: 0.12mm 0; }
+        .pc-course td { vertical-align: top; padding: 0; }
+        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.22; padding-right: 1.2mm !important; width: 1%; }
+        .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.22; }
+        .pc-item { line-height: 1.22; font-weight: 600; color: #000; margin: 0; }
+        .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
         .pc-hl { background: #000; color: #fff; padding: 0 0.18em; }
         .print-a6 .pc-head,
         .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
@@ -707,9 +709,14 @@
             </div>
             <div class="flex items-center justify-between px-6 pb-3 shrink-0">
                 <h3 class="text-xl font-bold">Inflight Menu</h3>
-                <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" id="btn-menu-to-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Print menu">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    </button>
+                    <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
             <!-- Filters sit flush under the title (no scroll gap) -->
             <div id="menu-sticky-header" class="hidden shrink-0 px-6 pb-2 max-w-2xl mx-auto w-full border-b border-black/5 dark:border-white/5">
@@ -792,6 +799,9 @@
                         <div id="print-title" class="text-xl font-bold truncate">Menu Printer</div>
                         <div id="print-subtitle" class="text-[10px] text-gray-500 truncate"></div>
                     </div>
+                    <button type="button" id="print-btn-view" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 shrink-0" aria-label="View menu">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                    </button>
                     <div class="relative shrink-0">
                         <button type="button" id="print-btn-export" class="h-10 px-5 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black">Export</button>
                         <div id="print-export-menu" class="hidden absolute right-0 top-full mt-2 w-44 glass-bubble rounded-2xl border border-sia-gold/20 overflow-hidden z-10 p-1">
@@ -832,7 +842,7 @@
             <div id="print-stage" class="flex-1 min-h-0 flex flex-col px-3 pb-[max(16px,env(safe-area-inset-bottom))]">
                 <div id="print-loading" class="hidden flex flex-col items-center justify-center py-16 space-y-4 no-print">
                     <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
-                    <div class="text-sm font-semibold text-gray-500">Preparing menu sheet…</div>
+                    <div class="text-sm font-semibold text-gray-500">Preparing the menu…</div>
                 </div>
                 <div id="print-error" class="hidden text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
                 <div id="print-paper-scroll" class="flex-1 min-h-0 overflow-auto">
@@ -1006,7 +1016,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.18';
+        const APP_VERSION = '1.4.19';
 
         // State
         let appProfile = null;
@@ -3584,17 +3594,15 @@ function getRegionForAirport(code) {
         let menuLoadGen = 0;
         const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
         
-        function closeMenuViewer() {
+        function closeMenuViewer(immediate) {
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             closeMenuLightbox();
             
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
-            
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
+            if (immediate === true) backdrop.classList.add('hidden');
+            else setTimeout(() => backdrop.classList.add('hidden'), 300);
         }
 
         function openMenuLightbox(url) {
@@ -3634,6 +3642,8 @@ function getRegionForAirport(code) {
         
         document.getElementById('menu-backdrop').addEventListener('click', closeMenuViewer);
         document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
+        const menuToPrint = document.getElementById('btn-menu-to-print');
+        if (menuToPrint) menuToPrint.addEventListener('click', switchViewerToPrint);
         
         function showMenuState(state) {
             const st3 = document.getElementById('menu-state-3');
@@ -4811,7 +4821,7 @@ function getRegionForAirport(code) {
             return menuCabinLabel(code, currentMenuSearch.aircraftType);
         }
 
-        function closeMenuPrinter() {
+        function closeMenuPrinter(immediate) {
             const overlay = document.getElementById('print-overlay');
             const backdrop = document.getElementById('print-backdrop');
             const menu = document.getElementById('print-export-menu');
@@ -4819,8 +4829,35 @@ function getRegionForAirport(code) {
             if (overlay) overlay.classList.add('translate-y-full');
             if (backdrop) {
                 backdrop.classList.add('opacity-0');
-                setTimeout(() => backdrop.classList.add('hidden'), 300);
+                if (immediate === true) backdrop.classList.add('hidden');
+                else setTimeout(() => backdrop.classList.add('hidden'), 300);
             }
+        }
+
+        function currentMenuCabins() {
+            if (currentMenuSearch.selectedCabins && currentMenuSearch.selectedCabins.length) {
+                return currentMenuSearch.selectedCabins;
+            }
+            if (currentMenuSearch.selectedCabin) return [currentMenuSearch.selectedCabin];
+            return currentMenuSearch.cabins || [];
+        }
+
+        function switchPrinterToViewer() {
+            const fn = currentMenuSearch.flightNumber;
+            const date = currentMenuSearch.date;
+            const cabins = currentMenuCabins();
+            if (!fn || !date || !cabins.length) return;
+            closeMenuPrinter(true);
+            openMenuViewerForCabins(fn, date, cabins);
+        }
+
+        function switchViewerToPrint() {
+            const fn = currentMenuSearch.flightNumber;
+            const date = currentMenuSearch.date;
+            const cabins = currentMenuCabins();
+            if (!fn || !date || !cabins.length) return;
+            closeMenuViewer(true);
+            openMenuPrinter(fn, date, cabins);
         }
 
         function openPrintSheetChrome() {
@@ -4985,6 +5022,15 @@ function getRegionForAirport(code) {
             return /baker|bread|hot\s*bev|coffee|tea/i.test(label || '');
         }
 
+        function printHideCompactScl(cabinCode, label, itemName) {
+            if (String(cabinCode || '').toUpperCase() !== 'SCL') return false;
+            const l = String(label || itemName || '').toLowerCase();
+            if (/chocolate/.test(l) && !itemName) return true;
+            if (itemName && /^chocolate$/i.test(String(itemName).trim())) return true;
+            if (/cheese/.test(l) && /cracker/.test(l)) return true;
+            return false;
+        }
+
         function printDrinkGroupLabel() {
             const parts = [];
             for (let i = 0; i < arguments.length; i++) {
@@ -5046,7 +5092,7 @@ function getRegionForAirport(code) {
             return items;
         }
 
-        function collectPrintMeals(leg) {
+        function collectPrintMeals(leg, cabinCode) {
             const menuEn = extractEnUkBlock(leg, 'menu');
             const meals = (menuEn && menuEn.meals) || [];
             const services = [];
@@ -5061,12 +5107,15 @@ function getRegionForAirport(code) {
                         if (!items.length) return;
                         const label = printCourseLabel(course.category);
                         const hideCourse = printIsDelectable(svcName) && !printIsLightBite(label);
+                        items.forEach((it) => {
+                            if (printHideCompactScl(cabinCode, '', it.name)) it.hiddenCompact = true;
+                        });
                         courses.push({
                             label: label,
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
                             items: items,
                             hiddenElegant: hideCourse,
-                            hiddenCompact: hideCourse || printHideCompactByDefault(label)
+                            hiddenCompact: hideCourse || printHideCompactByDefault(label) || printHideCompactScl(cabinCode, label)
                         });
                     });
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
@@ -5106,7 +5155,7 @@ function getRegionForAirport(code) {
                             cabins: []
                         });
                     }
-                    const parsed = collectPrintMeals(leg);
+                    const parsed = collectPrintMeals(leg, bundle.cabinClass);
                     sectorsMap.get(code).cabins.push({
                         code: bundle.cabinClass,
                         name: printCabinTitle(bundle.cabinClass),
@@ -5313,21 +5362,26 @@ function getRegionForAirport(code) {
         function printCompactHeader(model, sector, cabin, svcName) {
             const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
             const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
-            return '<div class="pc-head"><span>' + escapePrintHtml(left) + '</span><span>' + escapePrintHtml(model.dateShort || '') + '</span></div>';
+            return '<table class="pc-head"><tr><td>' + escapePrintHtml(left) + '</td><td class="pc-head-date">' + escapePrintHtml(model.dateShort || '') + '</td></tr></table>';
+        }
+
+        function printCircledNum(n) {
+            n = n | 0;
+            if (n >= 1 && n <= 20) return String.fromCharCode(0x245F + n);
+            return String(n);
         }
 
         function printCompactItems(key, items, asBites) {
             if (!items || !items.length) return '';
             if (asBites) {
                 const line = items.map((it) => printHighlightProteins(printDisplayName(it.name))).join(', ');
-                return '<div class="pc-course"><span class="pc-key">' + escapePrintHtml(key) + ':</span><span class="pc-bites">' + line + '</span></div>';
+                return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-bites">' + line + '</td></tr></table>';
             }
-            let html = '<div class="pc-course"><span class="pc-key">' + escapePrintHtml(key) + ':</span><div class="pc-list">';
+            let list = '';
             items.forEach((it, idx) => {
-                html += '<div class="pc-item"><span class="pc-num">' + (idx + 1) + '</span><span>' + printHighlightProteins(printDisplayName(it.name)) + '</span></div>';
+                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(printDisplayName(it.name)) + '</div>';
             });
-            html += '</div></div>';
-            return html;
+            return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-list">' + list + '</td></tr></table>';
         }
 
         function renderCompactSheet(model, sector) {
@@ -5849,6 +5903,8 @@ function getRegionForAirport(code) {
             if (!overlay || overlay.dataset.bound === '1') return;
             overlay.dataset.bound = '1';
             document.getElementById('btn-close-print').addEventListener('click', closeMenuPrinter);
+            const printToView = document.getElementById('print-btn-view');
+            if (printToView) printToView.addEventListener('click', switchPrinterToViewer);
             const printBackdrop = document.getElementById('print-backdrop');
             if (printBackdrop) printBackdrop.addEventListener('click', closeMenuPrinter);
             document.getElementById('print-layout-elegant').addEventListener('click', () => {
