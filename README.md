@@ -15,7 +15,7 @@
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
-- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v60`).
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v61`).
 - `rates.json` — Default IFA modifiers and LMA region rates (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `API_REFERENCE.md` — Reverse-engineered SQ inflight-menu API: endpoints, payload tree, image fields, dish-id CDN URLs, CORS.
