@@ -358,9 +358,9 @@
         .pc-block { margin: 0; }
         .pc-block > .pc-course:last-of-type { margin-bottom: 0; }
         .pc-svc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
-        .pc-head { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.28; margin: 0 0 0.45mm; }
+        .pc-head { font-size: calc(6.8px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.28; margin: 0 0 0.45mm; }
         .pc-block + .pc-block .pc-head { margin-top: 0.7mm; }
-        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
+        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(6.8px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
         .pc-course td { vertical-align: top; padding: 0; }
         .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.28; padding-right: 1.2mm !important; width: 1%; }
         .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.28; }
@@ -368,7 +368,7 @@
         .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
         .pc-hl { background: #000; color: #fff; padding: 0 0.12em; }
         .print-a6 .pc-head,
-        .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
+        .print-a6 .pc-course { font-size: calc(6px * var(--print-type, 1)); }
         .print-bounds {
             position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
             border: 1.5px dashed #C9A227; pointer-events: none; z-index: 5;
@@ -399,6 +399,11 @@
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
+        .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
+        .print-edit-fold.is-open { grid-template-rows: 1fr; }
+        .print-edit-fold-inner { overflow: hidden; min-height: 0; }
+        .print-edit-chev { transition: transform 280ms ease; color: #C9A227; }
+        .print-edit-card.is-expanded .print-edit-chev { transform: rotate(180deg); }
         .print-edit-badge { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
         .print-edit-lab { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
         .print-edit-field { display: block; margin-top: 8px; }
@@ -833,13 +838,13 @@
                         <button type="button" id="print-paper-a6" class="px-3 h-9 rounded-full text-xs font-bold text-gray-500">A6</button>
                     </div>
                     <div class="flex items-center gap-1 shrink-0 text-xs font-bold">
-                        <button type="button" id="print-zoom-out" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A−</button>
+                        <button type="button" id="print-zoom-out" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A−</button>
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
-                        <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A+</button>
+                        <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
                     <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Bounds</button>
-                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
                     <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
+                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
                 </div>
                 </div>
                 <div class="flex mt-3 bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/10 dark:border-white/10">
@@ -1024,7 +1029,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.23';
+        const APP_VERSION = '1.4.24';
 
         // State
         let appProfile = null;
@@ -4798,13 +4803,25 @@ function getRegionForAirport(code) {
             model: null
         };
 
+        const PRINT_ZOOM_MIN = 70;
+        const PRINT_ZOOM_MAX = 140;
+
         function printZoom() {
             return printState.layout === 'compact' ? printState.zoomCompact : printState.zoomElegant;
         }
 
         function setPrintZoom(next) {
-            if (printState.layout === 'compact') printState.zoomCompact = next;
-            else printState.zoomElegant = next;
+            const z = Math.max(PRINT_ZOOM_MIN, Math.min(PRINT_ZOOM_MAX, next | 0));
+            if (printState.layout === 'compact') printState.zoomCompact = z;
+            else printState.zoomElegant = z;
+        }
+
+        function paintPrintZoomBtns() {
+            const z = printZoom();
+            const out = document.getElementById('print-zoom-out');
+            const inn = document.getElementById('print-zoom-in');
+            if (out) out.disabled = z <= PRINT_ZOOM_MIN;
+            if (inn) inn.disabled = z >= PRINT_ZOOM_MAX;
         }
 
         function escapePrintHtml(str) {
@@ -5032,11 +5049,16 @@ function getRegionForAirport(code) {
         }
 
         function printHideCompactScl(cabinCode, label, itemName) {
-            if (String(cabinCode || '').toUpperCase() !== 'SCL') return false;
+            const cabin = String(cabinCode || '').toUpperCase();
             const l = String(label || itemName || '').toLowerCase();
-            if (/chocolate/.test(l) && !itemName) return true;
-            if (itemName && /^chocolate$/i.test(String(itemName).trim())) return true;
-            if (/cheese/.test(l) && /cracker/.test(l)) return true;
+            const cheese = /cheese/.test(l) && /cracker/.test(l);
+            if (cabin === 'SCL') {
+                if (/chocolate/.test(l) && !itemName) return true;
+                if (itemName && /^chocolate$/i.test(String(itemName).trim())) return true;
+                if (cheese) return true;
+                return false;
+            }
+            if (cabin === 'YCL' && cheese) return true;
             return false;
         }
 
@@ -5528,6 +5550,7 @@ function getRegionForAirport(code) {
             }
             const zoomLab = document.getElementById('print-zoom-label');
             if (zoomLab) zoomLab.textContent = printZoom() + '%';
+            paintPrintZoomBtns();
         }
 
         function renderPrintSheet() {
@@ -5566,6 +5589,7 @@ function getRegionForAirport(code) {
             const paper = document.getElementById('print-paper');
             const label = document.getElementById('print-zoom-label');
             if (label) label.textContent = String(printZoom()) + '%';
+            paintPrintZoomBtns();
             if (!wrap || !paper) return;
             paper.classList.remove('print-export-a4', 'print-export-a6');
             paper.style.setProperty('--print-type', String(printZoom() / 100));
@@ -5713,11 +5737,27 @@ function getRegionForAirport(code) {
                 title.className = 'print-edit-title';
                 title.value = cabin.name || cabin.code || '';
                 title.addEventListener('input', () => { cabin.name = title.value; });
+                const chev = document.createElement('i');
+                chev.setAttribute('data-lucide', 'chevron-down');
+                chev.className = 'print-edit-chev w-4 h-4 shrink-0';
+                left.appendChild(chev);
                 left.appendChild(badge);
                 left.appendChild(title);
+                head.className = 'print-edit-head cursor-pointer';
                 head.appendChild(left);
                 head.appendChild(printEditToggle(cabin, card));
                 card.appendChild(head);
+                const fold = document.createElement('div');
+                fold.className = 'print-edit-fold';
+                const foldInner = document.createElement('div');
+                foldInner.className = 'print-edit-fold-inner';
+                fold.appendChild(foldInner);
+                card.appendChild(fold);
+                head.addEventListener('click', (e) => {
+                    if (e.target.closest('.print-edit-eye, input, textarea, button')) return;
+                    const on = fold.classList.toggle('is-open');
+                    card.classList.toggle('is-expanded', on);
+                });
 
                 (cabin.services || []).forEach((svc) => {
                     const svcBox = document.createElement('div');
@@ -5747,7 +5787,7 @@ function getRegionForAirport(code) {
                         });
                         svcBox.appendChild(courseBox);
                     });
-                    card.appendChild(svcBox);
+                    foldInner.appendChild(svcBox);
                 });
 
                 if ((cabin.delectables || []).length) {
@@ -5755,7 +5795,7 @@ function getRegionForAirport(code) {
                     dBox.className = 'print-edit-svc';
                     dBox.appendChild(printEditSectionHead('Delectables', null));
                     cabin.delectables.forEach((it) => dBox.appendChild(printEditItemRow(it)));
-                    card.appendChild(dBox);
+                    foldInner.appendChild(dBox);
                 }
 
                 (cabin.drinks || []).forEach((g) => {
@@ -5763,7 +5803,7 @@ function getRegionForAirport(code) {
                     gBox.className = 'print-edit-svc' + (printIsHidden(g) ? ' is-hidden' : '');
                     gBox.appendChild(printEditSectionHead(g.name || 'Beverages', g, gBox));
                     (g.items || []).forEach((it) => gBox.appendChild(printEditItemRow(it)));
-                    card.appendChild(gBox);
+                    foldInner.appendChild(gBox);
                 });
 
                 frag.appendChild(card);
@@ -5999,7 +6039,7 @@ function getRegionForAirport(code) {
             const padBot = (a6 ? 4 : 6) * mm;
             const innerW = pageW - padX * 2;
             const maxX = padX + innerW;
-            const fontPx = (a6 ? 7.5 : 8.5) * (printZoom() / 100) * (dpi / 96);
+            const fontPx = (a6 ? 6 : 6.8) * (printZoom() / 100) * (dpi / 96);
             const lineH = fontPx * 1.28;
             const headH = fontPx * 1.32;
             const fontHead = '800 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
