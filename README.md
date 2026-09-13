@@ -11,11 +11,11 @@
 - **Frontend:** HTML5, CSS3, vanilla JavaScript, Tailwind CSS (CDN), Lucide Icons.
 - **Backend / proxy:** Node.js Vercel serverless function (`api/sq.js`) for `getcabin` and `menu` only. SQ CORS allowlists `inflightmenu.singaporeair.com`, so the browser cannot read JSON directly; images are plain `<img src>` to that host (not CORS-gated).
 - **Data:** Airport IATA list and regions inlined in `index.html`. SQ payload and image URL map in `API_REFERENCE.md`.
-- **Architecture:** PWA (service worker `crewassist-v50`, web manifest) for install and cache. App SemVer `APP_VERSION` (currently 1.4.17) is shown on onboarding.
+- **Architecture:** PWA (service worker `crewassist-v51`, web manifest) for install and cache. App SemVer `APP_VERSION` (currently 1.4.18) is shown on onboarding.
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
-- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v50`).
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v51`).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `API_REFERENCE.md` — Reverse-engineered SQ inflight-menu API: endpoints, payload tree, image fields, dish-id CDN URLs, CORS.
 - `LOGIC.md` — Source of truth for COP / IFA / LMA formulas and rules.

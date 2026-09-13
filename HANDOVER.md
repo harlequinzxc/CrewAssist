@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v50` (`sw.js`). App SemVer: **1.4.17** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v51` (`sw.js`). App SemVer: **1.4.18** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.17` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.18` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -34,7 +34,7 @@ Latest app cache: `crewassist-v50` (`sw.js`). App SemVer: **1.4.17** (`APP_VERSI
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Elegant dining-card is in. Compact homework layout is in progress (v1.4.17: per-service header, numbered items, protein invert, wine keys) — more compact notes still coming.
+- **Printer sheet art:** Elegant dining-card is in. Compact still iterating (v1.4.18: tight hang-indent items, Light Bites comma-wrap, broader protein invert). More compact notes still coming.
 
 ## Key Architecture Decisions & Constraints
 

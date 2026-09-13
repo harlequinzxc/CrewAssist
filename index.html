@@ -355,15 +355,17 @@
 
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
-        .pc-block { margin: 0 0 4mm; }
-        .pc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid #000; padding-bottom: 1.5px; margin: 0 0 2mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
-        .pc-course { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; color: #000; text-transform: uppercase; margin: 1.4mm 0 0.6mm; }
-        .pc-item { display: flex; align-items: flex-start; gap: 1.6mm; font-size: calc(8.5px * var(--print-type, 1)); line-height: 1.35; font-weight: 600; text-transform: uppercase; color: #000; margin: 0.35mm 0; }
-        .pc-num { flex-shrink: 0; width: 1.45em; height: 1.45em; border: 1px solid #000; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 0.78em; font-weight: 800; line-height: 1; margin-top: 0.08em; }
+        .pc-block { margin: 0 0 2.2mm; }
+        .pc-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; border-bottom: 1px solid #000; padding-bottom: 1px; margin: 0 0 0.7mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
+        .pc-course { display: grid; grid-template-columns: auto 1fr; column-gap: 1.2mm; align-items: start; font-size: calc(8.5px * var(--print-type, 1)); color: #000; text-transform: uppercase; margin: 0.12mm 0; }
+        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.22; }
+        .pc-list { min-width: 0; }
+        .pc-item { display: flex; align-items: flex-start; gap: 1.4mm; font-size: inherit; line-height: 1.22; font-weight: 600; color: #000; margin: 0; }
+        .pc-bites { font-weight: 600; line-height: 1.22; min-width: 0; }
+        .pc-num { flex-shrink: 0; width: 1.35em; height: 1.35em; border: 1px solid #000; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 800; line-height: 1; margin-top: 0.06em; }
         .pc-hl { background: #000; color: #fff; padding: 0 0.18em; }
         .print-a6 .pc-head,
-        .print-a6 .pc-course,
-        .print-a6 .pc-item { font-size: calc(7.5px * var(--print-type, 1)); }
+        .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
 
         .print-edit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 12px; }
         .print-edit-card.is-hidden > .print-edit-head > :not(.print-edit-eye),
@@ -1004,7 +1006,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.17';
+        const APP_VERSION = '1.4.18';
 
         // State
         let appProfile = null;
@@ -4763,7 +4765,7 @@ function getRegionForAirport(code) {
         // ==========================================
 
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
-        const PRINT_ALLERGENS = ['salmon', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal'];
+        const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'grouper', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
         let lastPrintStale = false;
         let printState = {
             layout: 'elegant',
@@ -5147,11 +5149,20 @@ function getRegionForAirport(code) {
             return printMarkProteins(name, 'invert');
         }
 
+        function printIsProteinWord(core) {
+            const c = String(core || '').toLowerCase();
+            if (!c) return false;
+            if (PRINT_ALLERGENS.indexOf(c) !== -1) return true;
+            if (c.length > 3 && c.charAt(c.length - 1) === 's' && PRINT_ALLERGENS.indexOf(c.slice(0, -1)) !== -1) return true;
+            if (c.length > 4 && c.slice(-2) === 'es' && PRINT_ALLERGENS.indexOf(c.slice(0, -2)) !== -1) return true;
+            return false;
+        }
+
         function printMarkProteins(name, mode) {
             const words = String(name || '').split(/(\s+)/);
             return words.map((w) => {
                 const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                if (PRINT_ALLERGENS.indexOf(core) === -1) return escapePrintHtml(w);
+                if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
                 if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
                 return '<s>' + inner + '</s>';
@@ -5305,12 +5316,17 @@ function getRegionForAirport(code) {
             return '<div class="pc-head"><span>' + escapePrintHtml(left) + '</span><span>' + escapePrintHtml(model.dateShort || '') + '</span></div>';
         }
 
-        function printCompactItems(key, items) {
+        function printCompactItems(key, items, asBites) {
             if (!items || !items.length) return '';
-            let html = '<div class="pc-course">' + escapePrintHtml(key) + ':</div>';
+            if (asBites) {
+                const line = items.map((it) => printHighlightProteins(printDisplayName(it.name))).join(', ');
+                return '<div class="pc-course"><span class="pc-key">' + escapePrintHtml(key) + ':</span><span class="pc-bites">' + line + '</span></div>';
+            }
+            let html = '<div class="pc-course"><span class="pc-key">' + escapePrintHtml(key) + ':</span><div class="pc-list">';
             items.forEach((it, idx) => {
                 html += '<div class="pc-item"><span class="pc-num">' + (idx + 1) + '</span><span>' + printHighlightProteins(printDisplayName(it.name)) + '</span></div>';
             });
+            html += '</div></div>';
             return html;
         }
 
@@ -5323,7 +5339,7 @@ function getRegionForAirport(code) {
                         if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
-                        body.push(printCompactItems(printCompactCourse(course.label), visItems));
+                        body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label)));
                     });
                     if (!body.length) return;
                     html += '<div class="pc-block">';
