@@ -142,9 +142,8 @@
         html.chat-busy #chat-container textarea {
             pointer-events: none;
         }
-        html.chat-busy #btn-scroll-bottom {
+        html.chat-busy #btn-scroll-bottom.opacity-100 {
             pointer-events: auto !important;
-            opacity: 1 !important;
         }
 
         @keyframes float {
@@ -322,7 +321,6 @@
         .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(24px * var(--print-type, 1)); font-weight: 600; color: #16294e; line-height: 1.1; }
         .pe-svc-rule { height: 0.7mm; background: #16294e; margin: 2mm 0 3.5mm 25.5mm; }
         .pe-cui { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(15px * var(--print-type, 1)); font-weight: 600; color: #16294e; margin: 1.5mm 0 2.5mm 34.5mm; }
-        .pe-cui-sub { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(8.5px * var(--print-type, 1)); font-style: italic; font-weight: 400; color: #6b7280; margin: -1.5mm 0 2.5mm 34.5mm; }
         .pe-row { display: grid; grid-template-columns: 26mm 9mm 1fr; align-items: start; padding: 1.7mm 0; }
         .pe-label { text-align: right; padding-right: 4.5mm; }
         .pe-course { font-size: calc(10.5px * var(--print-type, 1)); font-style: italic; font-weight: 500; color: #2b3245; line-height: 1.25; letter-spacing: 0; text-transform: none; padding-top: 0; }
@@ -332,8 +330,11 @@
         .pe-dishes { min-width: 0; }
         .pe-dish { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; letter-spacing: 0.01em; line-height: 1.3; text-align: left; }
         .pe-desc { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-style: italic; font-weight: 400; color: #5a6377; line-height: 1.45; margin: 0.5mm 0 2.4mm; text-align: left; }
-        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: #16294e; letter-spacing: 0.04em; text-transform: uppercase; margin: 1.6mm 0 1mm; }
+        .pe-bev-group { margin: 0 0 3.2mm; padding: 0 0 2.2mm; }
+        .pe-bev-group + .pe-bev-group { margin-top: 1.6mm; padding-top: 2.4mm; border-top: 0.5px solid rgba(22,41,78,0.14); }
+        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: #16294e; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 1.6mm; }
         .pe-plain { font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; line-height: 1.4; margin: 0 0 0.8mm; }
+        .pe-bev-item { font-weight: 600; line-height: 1.45; margin: 0 0 1.15mm; }
         .pe-plain-slate { color: #3c465c; }
         .pe-foot { margin-top: 10mm; text-align: center; font-size: calc(8px * var(--print-type, 1)); color: #9aa3b5; letter-spacing: 0.04em; }
         .pe-foot-rule { height: 1px; background: rgba(22,41,78,0.15); margin-bottom: 3mm; }
@@ -352,21 +353,42 @@
         .print-a6 .pe-choose { font-size: calc(6px * var(--print-type, 1)); }
         .print-a6 .pe-ring { width: 1.8mm; height: 1.8mm; border-width: 0.3mm; }
 
-        .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; }
+        .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
-        .pc-head { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1.5px solid #111; padding-bottom: 2px; margin-bottom: 4px; }
-        .pc-sq { font-size: calc(13px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.04em; }
-        .pc-date { font-size: calc(10px * var(--print-type, 1)); font-weight: 700; }
-        .pc-cabin { font-size: calc(9px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; margin: 5px 0 2px; border-bottom: 1px solid #111; }
-        .pc-svc { font-size: calc(8px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #374151; margin: 3px 0 1px; }
-        .pc-row { font-size: calc(8.5px * var(--print-type, 1)); line-height: 1.2; font-weight: 600; text-transform: uppercase; }
-        .pc-row s { text-decoration: line-through; color: #9CA3AF; }
-        .pc-course { color: #6B7280; font-weight: 800; }
-        .pc-bev { font-size: calc(8px * var(--print-type, 1)); text-transform: uppercase; font-weight: 600; line-height: 1.15; }
-        .pc-gap { height: 3px; }
+        .pc-block { margin: 0 0 2.2mm; }
+        .pc-head { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; margin: 0 0 0.7mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
+        .pc-head td { padding: 0 0 1px; vertical-align: baseline; }
+        .pc-head-date { text-align: right; white-space: nowrap; }
+        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; text-transform: uppercase; margin: 0.12mm 0; }
+        .pc-course td { vertical-align: top; padding: 0; }
+        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.22; padding-right: 1.2mm !important; width: 1%; }
+        .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.22; }
+        .pc-item { line-height: 1.22; font-weight: 600; color: #000; margin: 0; }
+        .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
+        .pc-hl { background: #000; color: #fff; padding: 0 0.18em; }
+        .print-a6 .pc-head,
+        .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
 
         .print-edit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 12px; }
-        .print-edit-card.is-hidden { opacity: 0.45; }
+        .print-edit-card.is-hidden > .print-edit-head > :not(.print-edit-eye),
+        .print-edit-card.is-hidden > :not(.print-edit-head),
+        .print-edit-svc.is-hidden > .print-edit-head > :not(.print-edit-eye),
+        .print-edit-svc.is-hidden > :not(.print-edit-head),
+        .print-edit-course.is-hidden > .print-edit-head > :not(.print-edit-eye),
+        .print-edit-course.is-hidden > :not(.print-edit-head),
+        .print-edit-item.is-hidden > :not(.print-edit-x):not(.print-edit-eye),
+        .print-edit-block.is-hidden > :not(.print-edit-head) {
+            opacity: 0.38;
+            filter: grayscale(0.85);
+        }
+        .print-edit-card.is-hidden .print-edit-eye,
+        .print-edit-svc.is-hidden .print-edit-eye,
+        .print-edit-course.is-hidden .print-edit-eye,
+        .print-edit-item.is-hidden .print-edit-eye,
+        .print-edit-item.is-hidden .print-edit-x {
+            opacity: 1;
+            filter: none;
+        }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
@@ -687,9 +709,14 @@
             </div>
             <div class="flex items-center justify-between px-6 pb-3 shrink-0">
                 <h3 class="text-xl font-bold">Inflight Menu</h3>
-                <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" id="btn-menu-to-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Print menu">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    </button>
+                    <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
             <!-- Filters sit flush under the title (no scroll gap) -->
             <div id="menu-sticky-header" class="hidden shrink-0 px-6 pb-2 max-w-2xl mx-auto w-full border-b border-black/5 dark:border-white/5">
@@ -772,6 +799,9 @@
                         <div id="print-title" class="text-xl font-bold truncate">Menu Printer</div>
                         <div id="print-subtitle" class="text-[10px] text-gray-500 truncate"></div>
                     </div>
+                    <button type="button" id="print-btn-view" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 shrink-0" aria-label="View menu">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                    </button>
                     <div class="relative shrink-0">
                         <button type="button" id="print-btn-export" class="h-10 px-5 rounded-full text-sm font-bold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black">Export</button>
                         <div id="print-export-menu" class="hidden absolute right-0 top-full mt-2 w-44 glass-bubble rounded-2xl border border-sia-gold/20 overflow-hidden z-10 p-1">
@@ -812,7 +842,7 @@
             <div id="print-stage" class="flex-1 min-h-0 flex flex-col px-3 pb-[max(16px,env(safe-area-inset-bottom))]">
                 <div id="print-loading" class="hidden flex flex-col items-center justify-center py-16 space-y-4 no-print">
                     <div class="w-8 h-8 border-4 border-sia-gold border-t-transparent rounded-full animate-spin"></div>
-                    <div class="text-sm font-semibold text-gray-500">Preparing menu sheet…</div>
+                    <div class="text-sm font-semibold text-gray-500">Preparing the menu…</div>
                 </div>
                 <div id="print-error" class="hidden text-xs font-bold text-red-400 bg-red-500/10 p-3 rounded-lg border border-red-500/20 no-print"></div>
                 <div id="print-paper-scroll" class="flex-1 min-h-0 overflow-auto">
@@ -986,7 +1016,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.13';
+        const APP_VERSION = '1.4.19';
 
         // State
         let appProfile = null;
@@ -1457,6 +1487,7 @@
                 </div>
             `;
             chatContainer.appendChild(div);
+            updateScrollBottomBtn();
             if (appPrefs.autoScroll) scrollToBottom();
         }
 
@@ -1464,7 +1495,9 @@
             const ind = document.getElementById('typing-indicator');
             if (!ind) return Promise.resolve();
             ind.removeAttribute('id');
-            return animateChatRemove(ind);
+            const done = animateChatRemove(ind);
+            updateScrollBottomBtn();
+            return done;
         }
 
         let botSpeakQueue = Promise.resolve();
@@ -1518,7 +1551,8 @@
         function updateScrollBottomBtn() {
             const btn = document.getElementById('btn-scroll-bottom');
             if (!btn) return;
-            const show = !isChatNearBottom();
+            const typing = !!document.getElementById('typing-indicator');
+            const show = !typing && !isChatNearBottom();
             if (show) {
                 btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
                 btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
@@ -3554,23 +3588,21 @@ function getRegionForAirport(code) {
 
 // Inflight Menu Viewer Logic (Step 5)
         
-        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '' };
+        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', imageByName: Object.create(null), imageIdByName: Object.create(null) };
         let menuViewState = { category: 'meals', mealTab: 0 };
         let currentMealServices = [];
         let menuLoadGen = 0;
         const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
         
-        function closeMenuViewer() {
+        function closeMenuViewer(immediate) {
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             closeMenuLightbox();
             
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
-            
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
+            if (immediate === true) backdrop.classList.add('hidden');
+            else setTimeout(() => backdrop.classList.add('hidden'), 300);
         }
 
         function openMenuLightbox(url) {
@@ -3610,6 +3642,8 @@ function getRegionForAirport(code) {
         
         document.getElementById('menu-backdrop').addEventListener('click', closeMenuViewer);
         document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
+        const menuToPrint = document.getElementById('btn-menu-to-print');
+        if (menuToPrint) menuToPrint.addEventListener('click', switchViewerToPrint);
         
         function showMenuState(state) {
             const st3 = document.getElementById('menu-state-3');
@@ -3834,7 +3868,7 @@ function getRegionForAirport(code) {
             return `
                 <div class="menu-dish flex gap-3 items-start">
                     <button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${first}" aria-label="View photo">
-                        <img src="${first}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" data-cands="${dataCands}" data-ci="0" onerror="menuThumbNext(this)">
+                        <img src="${first}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" data-dish="${esc(name || '')}" data-cands="${dataCands}" data-ci="0" onload="menuThumbRemember(this)" onerror="menuThumbNext(this)">
                     </button>
                     <div class="min-w-0 flex-1">
                         <div class="font-bold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
@@ -3943,6 +3977,11 @@ function getRegionForAirport(code) {
             }
         }
 
+        function menuThumbRemember(img) {
+            if (!img || !img.src) return;
+            rememberMenuPhoto(img.getAttribute('data-dish'), img.currentSrc || img.src, '', true);
+        }
+
         function menuThumbNext(img) {
             const cands = (img.getAttribute('data-cands') || '').split('\n').filter(Boolean);
             let i = parseInt(img.getAttribute('data-ci') || '0', 10) + 1;
@@ -3956,44 +3995,75 @@ function getRegionForAirport(code) {
             menuThumbToBullet(img);
         }
 
+        function extractSqIfeUrl(item) {
+            if (!item || typeof item !== 'object') return '';
+            return extractSqImageUrl(item.imagePathIfeHigh)
+                || extractSqImageUrl(item.imagePathIfeMedium)
+                || extractSqImageUrl(item.imagePathIfeLow)
+                || extractSqImageUrl(item.imagePathIfe);
+        }
+
+        function dishIdBase(id) {
+            const m = String(id || '').match(/^([A-Z]{2}\d{6}(?:-\d{3})?)(?:-v\d+)?(?:-([A-Z]{3}))?$/i);
+            return m ? { base: m[1], cabin: (m[2] || '').toUpperCase() } : null;
+        }
+
+        function menuKnownCabins() {
+            const codes = [];
+            const add = (c) => {
+                c = String(c || '').toUpperCase();
+                if (c && codes.indexOf(c) === -1) codes.push(c);
+            };
+            if (currentMenuSearch) {
+                add(currentMenuSearch.selectedCabin);
+                (currentMenuSearch.selectedCabins || []).forEach(add);
+                (currentMenuSearch.cabins || []).forEach(add);
+            }
+            return codes;
+        }
+
         function dishIfePhotoUrls(item) {
-            const id = String((item && (item.id || item.itemId)) || '');
-            const m = id.match(/^([A-Z]{2}\d{6}(?:-\d{3})?)(?:-v\d+)?(?:-([A-Z]{3}))?$/i);
-            if (!m) return [];
-            const base = m[1];
-            const cabin = (m[2] || (currentMenuSearch && currentMenuSearch.selectedCabin) || '').toUpperCase();
-            if (!cabin) return [];
+            const name = item && (item.name || item.title || item.itemName);
+            const parsed = [];
+            const addParsed = (id) => {
+                const p = dishIdBase(id);
+                if (!p) return;
+                if (parsed.some((x) => x.base === p.base && x.cabin === p.cabin)) return;
+                parsed.push(p);
+            };
+            addParsed(item && (item.id || item.itemId));
+            addParsed(lookupMenuPhotoId(name));
+            if (!parsed.length) return [];
             const origin = 'https://inflightmenu.singaporeair.com';
-            return [
-                origin + '/fabs/IFE/INFM/' + cabin + '/HIGH/' + base + '_' + cabin + '.png',
-                origin + '/fabs/IFE/INFM/' + cabin + '/LOW/' + base + '_' + cabin + '.png'
-            ];
+            const urls = [];
+            const addUrl = (u) => { if (u && urls.indexOf(u) === -1) urls.push(u); };
+            parsed.forEach((p) => {
+                const cabins = [];
+                if (p.cabin) cabins.push(p.cabin);
+                menuKnownCabins().forEach((c) => { if (cabins.indexOf(c) === -1) cabins.push(c); });
+                cabins.forEach((cabin) => {
+                    addUrl(origin + '/fabs/IFE/INFM/' + cabin + '/HIGH/' + p.base + '_' + cabin + '.png');
+                    addUrl(origin + '/fabs/IFE/INFM/' + cabin + '/LOW/' + p.base + '_' + cabin + '.png');
+                });
+            });
+            return urls;
         }
 
         function photoCandidates(item) {
-            const parents = Array.prototype.slice.call(arguments, 1);
             const list = [];
             const add = (u) => {
                 const abs = extractSqImageUrl(u);
                 if (abs && list.indexOf(abs) === -1) list.push(abs);
             };
-            add(extractSqImageUrl.apply(null, [item].concat(parents)));
             if (item && typeof item === 'object') {
+                add(extractSqIfeUrl(item));
                 dishIfePhotoUrls(item).forEach(add);
-            }
-            const key = menuImageKey(item && (item.name || item.title || item.itemName));
-            if (currentMenuSearch.imageByName && key && currentMenuSearch.imageByName[key]) {
-                add(currentMenuSearch.imageByName[key]);
+                lookupMenuPhoto(item.name || item.title || item.itemName).forEach(add);
+            } else {
+                add(extractSqImageUrl(item));
+                lookupMenuPhoto(item).forEach(add);
             }
             return list;
-        }
-
-        function menuImageUrl(path) {
-            return extractSqImageUrl(path);
-        }
-
-        function menuItemMediaUrl(item) {
-            return extractSqImageUrl(item);
         }
 
         function cleanMenuText(str) {
@@ -4046,26 +4116,64 @@ function getRegionForAirport(code) {
             return cleanMenuText(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
         }
 
+        function menuImageKeys(name) {
+            const k = menuImageKey(name);
+            if (!k) return [];
+            const keys = [];
+            const add = (x) => { if (x && keys.indexOf(x) === -1) keys.push(x); };
+            add(k);
+            if (k.length > 3 && k.charAt(k.length - 1) === 's' && k.slice(-2) !== 'ss') add(k.slice(0, -1));
+            else add(k + 's');
+            k.split(' and ').forEach((part) => add(part.trim()));
+            return keys;
+        }
+
+        function rememberMenuPhoto(name, url, id, proven) {
+            if (!currentMenuSearch.imageByName) currentMenuSearch.imageByName = Object.create(null);
+            if (!currentMenuSearch.imageIdByName) currentMenuSearch.imageIdByName = Object.create(null);
+            menuImageKeys(name).forEach((key) => {
+                if (url && (proven || !currentMenuSearch.imageByName[key])) currentMenuSearch.imageByName[key] = url;
+                if (id && !currentMenuSearch.imageIdByName[key]) currentMenuSearch.imageIdByName[key] = id;
+            });
+        }
+
+        function lookupMenuPhoto(name) {
+            const urls = [];
+            menuImageKeys(name).forEach((key) => {
+                const u = currentMenuSearch.imageByName && currentMenuSearch.imageByName[key];
+                if (u && urls.indexOf(u) === -1) urls.push(u);
+            });
+            return urls;
+        }
+
+        function lookupMenuPhotoId(name) {
+            const keys = menuImageKeys(name);
+            for (let i = 0; i < keys.length; i++) {
+                const id = currentMenuSearch.imageIdByName && currentMenuSearch.imageIdByName[keys[i]];
+                if (id) return id;
+            }
+            return '';
+        }
+
         function indexMenuImages(data) {
-            const map = Object.create(null);
-            const remember = (name, url) => {
-                const key = menuImageKey(name);
-                if (key && url && !map[key]) map[key] = url;
-            };
-            const walkItem = (it, parents) => {
-                if (!it) return;
-                remember(it.name || it.title || it.itemName, extractSqImageUrl.apply(null, [it].concat(parents || [])));
+            const walkItem = (it) => {
+                if (!it || typeof it !== 'object') return;
+                rememberMenuPhoto(
+                    it.name || it.title || it.itemName,
+                    extractSqIfeUrl(it),
+                    it.id || it.itemId
+                );
             };
             (data && data.legs || []).forEach(leg => {
                 const menuEn = extractEnUkBlock(leg, 'menu');
                 ((menuEn && menuEn.meals) || []).forEach(meal => {
                     (meal.selectionDetails || []).forEach(sel => {
                         (sel.mealCourses || []).forEach(course => {
-                            (course.items || []).forEach(it => walkItem(it, [course, sel]));
+                            (course.items || []).forEach(walkItem);
                         });
-                        (sel.breadDetails || []).forEach(b => walkItem(b, [sel, meal]));
+                        (sel.breadDetails || []).forEach(walkItem);
                     });
-                    (meal.breadDetails || []).forEach(b => walkItem(b, [meal]));
+                    (meal.breadDetails || []).forEach(walkItem);
                 });
                 const bevEn = extractEnUkBlock(leg, 'beverage');
                 ((bevEn && bevEn.categories) || []).forEach(cat => {
@@ -4073,16 +4181,15 @@ function getRegionForAirport(code) {
                     subs.forEach(sub => {
                         const specs = (sub.specialities && sub.specialities.length) ? sub.specialities : [sub];
                         specs.forEach(spec => {
-                            (spec.items || []).forEach(it => walkItem(it, [spec, sub, cat]));
-                            if (spec.name) remember(spec.name, extractSqImageUrl(spec, sub, cat));
+                            (spec.items || []).forEach(walkItem);
+                            if (spec && spec.name) rememberMenuPhoto(spec.name, extractSqIfeUrl(spec), spec.id);
                         });
-                        (sub.items || []).forEach(it => walkItem(it, [sub, cat]));
+                        (sub.items || []).forEach(walkItem);
                     });
                 });
                 const snackSubs = leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories;
-                (snackSubs || []).forEach(sub => (sub.items || []).forEach(it => walkItem(it, [sub])));
+                (snackSubs || []).forEach(sub => (sub.items || []).forEach(walkItem));
             });
-            currentMenuSearch.imageByName = map;
         }
 
         function resolveMenuImage(item) {
@@ -4668,19 +4775,28 @@ function getRegionForAirport(code) {
         // ==========================================
 
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
-        const PRINT_ALLERGENS = ['salmon', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal'];
-        let lastPrintBundles = null;
+        const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'grouper', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
         let lastPrintStale = false;
         let printState = {
             layout: 'elegant',
             paper: 'a4',
-            zoom: 100,
+            zoomElegant: 100,
+            zoomCompact: 100,
             greyscale: false,
             descriptions: true,
             tab: 'sheet',
             sectorIdx: 0,
             model: null
         };
+
+        function printZoom() {
+            return printState.layout === 'compact' ? printState.zoomCompact : printState.zoomElegant;
+        }
+
+        function setPrintZoom(next) {
+            if (printState.layout === 'compact') printState.zoomCompact = next;
+            else printState.zoomElegant = next;
+        }
 
         function escapePrintHtml(str) {
             if (str == null || str === '') return '';
@@ -4705,7 +4821,7 @@ function getRegionForAirport(code) {
             return menuCabinLabel(code, currentMenuSearch.aircraftType);
         }
 
-        function closeMenuPrinter() {
+        function closeMenuPrinter(immediate) {
             const overlay = document.getElementById('print-overlay');
             const backdrop = document.getElementById('print-backdrop');
             const menu = document.getElementById('print-export-menu');
@@ -4713,8 +4829,35 @@ function getRegionForAirport(code) {
             if (overlay) overlay.classList.add('translate-y-full');
             if (backdrop) {
                 backdrop.classList.add('opacity-0');
-                setTimeout(() => backdrop.classList.add('hidden'), 300);
+                if (immediate === true) backdrop.classList.add('hidden');
+                else setTimeout(() => backdrop.classList.add('hidden'), 300);
             }
+        }
+
+        function currentMenuCabins() {
+            if (currentMenuSearch.selectedCabins && currentMenuSearch.selectedCabins.length) {
+                return currentMenuSearch.selectedCabins;
+            }
+            if (currentMenuSearch.selectedCabin) return [currentMenuSearch.selectedCabin];
+            return currentMenuSearch.cabins || [];
+        }
+
+        function switchPrinterToViewer() {
+            const fn = currentMenuSearch.flightNumber;
+            const date = currentMenuSearch.date;
+            const cabins = currentMenuCabins();
+            if (!fn || !date || !cabins.length) return;
+            closeMenuPrinter(true);
+            openMenuViewerForCabins(fn, date, cabins);
+        }
+
+        function switchViewerToPrint() {
+            const fn = currentMenuSearch.flightNumber;
+            const date = currentMenuSearch.date;
+            const cabins = currentMenuCabins();
+            if (!fn || !date || !cabins.length) return;
+            closeMenuViewer(true);
+            openMenuPrinter(fn, date, cabins);
         }
 
         function openPrintSheetChrome() {
@@ -4850,9 +4993,11 @@ function getRegionForAirport(code) {
             if (/baker/.test(l)) return 'FROM THE BAKERY';
             if (/praline/.test(l)) return 'PRALINES';
             if (/light/.test(l)) return 'LIGHT BITES';
+            if (/hot\s*bev|coffee|tea/.test(l)) return 'HOT BEV';
+            if (/fortif/.test(l)) return 'FORTIFIED';
+            if (/\bwhite\b/.test(l)) return 'WHITE';
+            if (/\bred\b/.test(l) && !/red bull/.test(l)) return 'RED';
             if (/champagn/.test(l)) return 'CHAMPAGNE';
-            if (/white/.test(l)) return 'WHITE';
-            if (/red/.test(l)) return 'RED';
             return String(label || '').toUpperCase();
         }
 
@@ -4866,9 +5011,23 @@ function getRegionForAirport(code) {
 
         function printDrinkShownByDefault(name) {
             const l = String(name || '').toLowerCase();
+            if (/fortif/.test(l)) return false;
             if (/champagn/.test(l)) return true;
             if (/\bwhite\b/.test(l)) return true;
             if (/\bred\b/.test(l) && !/red bull/.test(l)) return true;
+            return false;
+        }
+
+        function printHideCompactByDefault(label) {
+            return /baker|bread|hot\s*bev|coffee|tea/i.test(label || '');
+        }
+
+        function printHideCompactScl(cabinCode, label, itemName) {
+            if (String(cabinCode || '').toUpperCase() !== 'SCL') return false;
+            const l = String(label || itemName || '').toLowerCase();
+            if (/chocolate/.test(l) && !itemName) return true;
+            if (itemName && /^chocolate$/i.test(String(itemName).trim())) return true;
+            if (/cheese/.test(l) && /cracker/.test(l)) return true;
             return false;
         }
 
@@ -4907,14 +5066,14 @@ function getRegionForAirport(code) {
                         namedSpecs.forEach((spec) => {
                             const items = takeItems(spec);
                             const label = printDrinkGroupLabel(catName, sub.name, spec.name);
-                            if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
+                            if (items.length) { const hideOff = !printDrinkShownByDefault(label); groups.push({ name: label, items: items, hiddenElegant: hideOff, hiddenCompact: hideOff }); }
                         });
                     } else {
                         const items = [];
                         specs.forEach((spec) => takeItems(spec).forEach((row) => items.push(row)));
                         (sub.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) items.push(row); });
                         const label = printDrinkGroupLabel(catName, sub.name);
-                        if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
+                        if (items.length) { const hideOff = !printDrinkShownByDefault(label); groups.push({ name: label, items: items, hiddenElegant: hideOff, hiddenCompact: hideOff }); }
                     }
                 });
             });
@@ -4927,13 +5086,13 @@ function getRegionForAirport(code) {
             (subs || []).forEach((sub) => {
                 (sub.items || []).forEach((it) => {
                     const row = printItemFromRaw(it);
-                    if (row) { row.hidden = true; items.push(row); }
+                    if (row) { row.hiddenElegant = true; row.hiddenCompact = true; items.push(row); }
                 });
             });
             return items;
         }
 
-        function collectPrintMeals(leg) {
+        function collectPrintMeals(leg, cabinCode) {
             const menuEn = extractEnUkBlock(leg, 'menu');
             const meals = (menuEn && menuEn.meals) || [];
             const services = [];
@@ -4947,11 +5106,16 @@ function getRegionForAirport(code) {
                         const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
                         if (!items.length) return;
                         const label = printCourseLabel(course.category);
+                        const hideCourse = printIsDelectable(svcName) && !printIsLightBite(label);
+                        items.forEach((it) => {
+                            if (printHideCompactScl(cabinCode, '', it.name)) it.hiddenCompact = true;
+                        });
                         courses.push({
                             label: label,
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
                             items: items,
-                            hidden: printIsDelectable(svcName) && !printIsLightBite(label)
+                            hiddenElegant: hideCourse,
+                            hiddenCompact: hideCourse || printHideCompactByDefault(label) || printHideCompactScl(cabinCode, label)
                         });
                     });
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
@@ -4959,13 +5123,13 @@ function getRegionForAirport(code) {
                         : ((selIdx === 0 && Array.isArray(meal.breadDetails)) ? meal.breadDetails : []);
                     const breadItems = (breads || []).map(printItemFromRaw).filter(Boolean);
                     if (breadItems.length) {
-                        courses.push({ label: 'From The Bakery', culinary: '', items: breadItems });
+                        courses.push({ label: 'From The Bakery', culinary: '', items: breadItems, hiddenElegant: false, hiddenCompact: true });
                     }
                 });
                 services.push({ name: svcName, courses: courses });
                 if (printIsDelectable(svcName)) {
                     courses.forEach((c) => (c.items || []).forEach((row) => {
-                        if (c.hidden) row.hidden = true;
+                        if (c.hiddenElegant) { row.hiddenElegant = true; row.hiddenCompact = true; }
                         delectables.push(row);
                     }));
                 }
@@ -4991,7 +5155,7 @@ function getRegionForAirport(code) {
                             cabins: []
                         });
                     }
-                    const parsed = collectPrintMeals(leg);
+                    const parsed = collectPrintMeals(leg, bundle.cabinClass);
                     sectorsMap.get(code).cabins.push({
                         code: bundle.cabinClass,
                         name: printCabinTitle(bundle.cabinClass),
@@ -5027,11 +5191,30 @@ function getRegionForAirport(code) {
         }
 
         function printStrikeAllergens(name) {
+            return printMarkProteins(name, 'strike');
+        }
+
+        function printHighlightProteins(name) {
+            return printMarkProteins(name, 'invert');
+        }
+
+        function printIsProteinWord(core) {
+            const c = String(core || '').toLowerCase();
+            if (!c) return false;
+            if (PRINT_ALLERGENS.indexOf(c) !== -1) return true;
+            if (c.length > 3 && c.charAt(c.length - 1) === 's' && PRINT_ALLERGENS.indexOf(c.slice(0, -1)) !== -1) return true;
+            if (c.length > 4 && c.slice(-2) === 'es' && PRINT_ALLERGENS.indexOf(c.slice(0, -2)) !== -1) return true;
+            return false;
+        }
+
+        function printMarkProteins(name, mode) {
             const words = String(name || '').split(/(\s+)/);
             return words.map((w) => {
                 const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
-                if (PRINT_ALLERGENS.indexOf(core) !== -1) return '<s>' + escapePrintHtml(w) + '</s>';
-                return escapePrintHtml(w);
+                if (!printIsProteinWord(core)) return escapePrintHtml(w);
+                const inner = escapePrintHtml(w);
+                if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
+                return '<s>' + inner + '</s>';
             }).join('');
         }
 
@@ -5049,8 +5232,20 @@ function getRegionForAirport(code) {
             return String(name || code || '').toUpperCase();
         }
 
+        function printHiddenKey() {
+            return printState.layout === 'compact' ? 'hiddenCompact' : 'hiddenElegant';
+        }
+
+        function printIsHidden(obj) {
+            return !!(obj && obj[printHiddenKey()]);
+        }
+
+        function printSetHidden(obj, on) {
+            if (obj) obj[printHiddenKey()] = !!on;
+        }
+
         function printVisible(list) {
-            return (list || []).filter((x) => x && !x.hidden);
+            return (list || []).filter((x) => x && !printIsHidden(x));
         }
 
         function printIsPlainCourse(label) {
@@ -5100,7 +5295,7 @@ function getRegionForAirport(code) {
             groups.forEach((g) => {
                 if (g.culinary) html += `<div class="pe-cui">${escapePrintHtml(g.culinary)} Menu</div>`;
                 g.courses.forEach((course) => {
-                    if (course.hidden) return;
+                    if (printIsHidden(course)) return;
                     const items = printVisible(course.items);
                     if (!items.length) return;
                     const n = items.length;
@@ -5124,10 +5319,12 @@ function getRegionForAirport(code) {
             vis.forEach((g) => {
                 const items = printVisible(g.items);
                 if (!items.length) return;
+                inner += '<div class="pe-bev-group">';
                 if (g.name) inner += `<div class="pe-bev-cat">${escapePrintHtml(String(g.name).toUpperCase())}</div>`;
                 items.forEach((it) => {
-                    inner += `<div class="pe-plain">${escapePrintHtml(printElegantWineLine(it))}</div>`;
+                    inner += `<div class="pe-plain pe-bev-item">${escapePrintHtml(printElegantWineLine(it))}</div>`;
                 });
+                inner += '</div>';
             });
             return renderElegantRow('Beverages', inner, 0);
         }
@@ -5142,7 +5339,7 @@ function getRegionForAirport(code) {
                 const band = printElegantCabinBand(cabin.code, cabin.name);
                 html += `<div class="pe-band"><span class="pe-band-line"></span><span class="pe-band-txt">${escapePrintHtml(band)}</span><span class="pe-band-line"></span></div>`;
                 const paintSvc = (svc) => {
-                    if (svc.hidden) return;
+                    if (printIsHidden(svc)) return;
                     html += `<div class="pe-svc-wrap"><div class="pe-svc-head">
                         <div class="pe-route">${escapePrintHtml(depCity)}<br>TO ${escapePrintHtml(arrCity)}</div>
                         <div class="pe-vrule"></div>
@@ -5151,7 +5348,7 @@ function getRegionForAirport(code) {
                     html += renderElegantCourses(svc.courses);
                 };
                 printVisible(cabin.services).forEach((svc) => {
-                    const has = (svc.courses || []).some((c) => !c.hidden && printVisible(c.items).length);
+                    const has = (svc.courses || []).some((c) => !printIsHidden(c) && printVisible(c.items).length);
                     if (!has) return;
                     paintSvc(svc);
                 });
@@ -5162,38 +5359,67 @@ function getRegionForAirport(code) {
             return html;
         }
 
+        function printCompactHeader(model, sector, cabin, svcName) {
+            const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
+            const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
+            return '<table class="pc-head"><tr><td>' + escapePrintHtml(left) + '</td><td class="pc-head-date">' + escapePrintHtml(model.dateShort || '') + '</td></tr></table>';
+        }
+
+        function printCircledNum(n) {
+            n = n | 0;
+            if (n >= 1 && n <= 20) return String.fromCharCode(0x245F + n);
+            return String(n);
+        }
+
+        function printCompactItems(key, items, asBites) {
+            if (!items || !items.length) return '';
+            if (asBites) {
+                const line = items.map((it) => printHighlightProteins(printDisplayName(it.name))).join(', ');
+                return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-bites">' + line + '</td></tr></table>';
+            }
+            let list = '';
+            items.forEach((it, idx) => {
+                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(printDisplayName(it.name)) + '</div>';
+            });
+            return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-list">' + list + '</td></tr></table>';
+        }
+
         function renderCompactSheet(model, sector) {
             let html = '<div class="pc-inner">';
-            html += `<div class="pc-head"><span class="pc-sq">SQ${escapePrintHtml(model.flight)}</span><span class="pc-date">${escapePrintHtml(model.dateShort)}</span></div>`;
             printVisible(sector.cabins).forEach((cabin) => {
-                html += `<div class="pc-cabin">${escapePrintHtml(cabin.code)}</div>`;
                 printVisible(cabin.services).forEach((svc) => {
-                    html += `<div class="pc-svc">${escapePrintHtml(svc.name)}</div>`;
+                    const body = [];
                     (svc.courses || []).forEach((course) => {
-                        const key = printCompactCourse(course.label);
-                        if (course.hidden) return;
+                        if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
-                        const names = visItems.map((it) => printStrikeAllergens(printDisplayName(it.name))).join(' / ');
-                        html += `<div class="pc-row"><span class="pc-course">${escapePrintHtml(key)}</span> ${names}</div>`;
+                        body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label)));
                     });
+                    if (!body.length) return;
+                    html += '<div class="pc-block">';
+                    html += printCompactHeader(model, sector, cabin, svc.name);
+                    html += body.join('');
+                    html += '</div>';
                 });
                 const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
                 if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
-                    html += `<div class="pc-svc">DELECTABLES</div>`;
-                    html += `<div class="pc-row">${printVisible(cabin.delectables).map((it) => printStrikeAllergens(printDisplayName(it.name))).join(' / ')}</div>`;
+                    html += '<div class="pc-block">';
+                    html += printCompactHeader(model, sector, cabin, 'DELECTABLES');
+                    html += printCompactItems('DELECTABLES', printVisible(cabin.delectables));
+                    html += '</div>';
                 }
-                const drinks = printVisible(cabin.drinks);
-                if (drinks.length) {
-                    html += `<div class="pc-gap"></div>`;
-                    drinks.forEach((g) => {
-                        if (g.hidden) return;
-                        const vis = printVisible(g.items);
-                        if (!vis.length) return;
-                        const key = printCompactCourse(g.name);
-                        const names = vis.map((it) => escapePrintHtml(it.name)).join(', ');
-                        html += `<div class="pc-bev"><span class="pc-course">${escapePrintHtml(key)}</span> ${names}</div>`;
-                    });
+                const drinkBits = [];
+                printVisible(cabin.drinks).forEach((g) => {
+                    if (printIsHidden(g)) return;
+                    const vis = printVisible(g.items);
+                    if (!vis.length) return;
+                    drinkBits.push(printCompactItems(printCompactCourse(g.name), vis));
+                });
+                if (drinkBits.length) {
+                    html += '<div class="pc-block">';
+                    html += printCompactHeader(model, sector, cabin, 'BEVERAGES');
+                    html += drinkBits.join('');
+                    html += '</div>';
                 }
             });
             html += '</div>';
@@ -5256,22 +5482,23 @@ function getRegionForAirport(code) {
             };
             setSeg('print-layout-elegant', 'print-layout-compact', printState.layout === 'elegant');
             setSeg('print-paper-a4', 'print-paper-a6', printState.paper === 'a4');
+            const compactOn = printState.layout === 'compact';
+            const paintOpt = (el, on, onLabel, offLabel) => {
+                if (!el) return;
+                el.textContent = on ? onLabel : offLabel;
+                el.classList.toggle('bg-sia-gold', on);
+                el.classList.toggle('text-black', on);
+                el.classList.toggle('border-sia-gold', on);
+                el.classList.toggle('text-gray-500', !on);
+                el.classList.toggle('border-black/10', !on);
+                el.classList.toggle('dark:border-white/15', !on);
+            };
             const grey = document.getElementById('print-opt-grey');
-            if (grey) {
-                grey.textContent = printState.greyscale ? '✓ Greyscale' : 'Greyscale';
-                grey.classList.toggle('bg-sia-gold', printState.greyscale);
-                grey.classList.toggle('text-black', printState.greyscale);
-                grey.classList.toggle('border-sia-gold', printState.greyscale);
-                grey.classList.toggle('text-gray-500', !printState.greyscale);
-            }
             const desc = document.getElementById('print-opt-desc');
-            if (desc) {
-                desc.textContent = printState.descriptions ? '✓ Descriptions' : 'Descriptions';
-                desc.classList.toggle('bg-sia-gold', printState.descriptions);
-                desc.classList.toggle('text-black', printState.descriptions);
-                desc.classList.toggle('border-sia-gold', printState.descriptions);
-                desc.classList.toggle('text-gray-500', !printState.descriptions);
-            }
+            paintOpt(grey, printState.greyscale, '✓ Greyscale', 'Greyscale');
+            paintOpt(desc, printState.descriptions, '✓ Descriptions', 'Descriptions');
+            if (grey) grey.classList.toggle('hidden', compactOn);
+            if (desc) desc.classList.toggle('hidden', compactOn);
             const tabSheet = document.getElementById('print-tab-sheet');
             const tabEdit = document.getElementById('print-tab-edit');
             const sheetOn = printState.tab === 'sheet';
@@ -5284,7 +5511,7 @@ function getRegionForAirport(code) {
                 tabEdit.classList.toggle('text-gray-500', sheetOn);
             }
             const zoomLab = document.getElementById('print-zoom-label');
-            if (zoomLab) zoomLab.textContent = printState.zoom + '%';
+            if (zoomLab) zoomLab.textContent = printZoom() + '%';
         }
 
         function renderPrintSheet() {
@@ -5302,23 +5529,24 @@ function getRegionForAirport(code) {
             }
             const paper = document.createElement('div');
             paper.id = 'print-paper';
-            paper.className = 'print-paper print-' + printState.paper + (printState.greyscale ? ' print-grey' : '');
+            paper.className = 'print-paper print-' + printState.paper + ((printState.layout === 'elegant' && printState.greyscale) ? ' print-grey' : '');
             paper.innerHTML = printState.layout === 'compact'
                 ? renderCompactSheet(model, sector)
                 : renderElegantSheet(model, sector);
             wrap.innerHTML = '';
             wrap.appendChild(paper);
             applyPrintZoom();
+            playPrintContentAnim(paper);
         }
 
         function applyPrintZoom() {
             const wrap = document.getElementById('print-paper-wrap');
             const paper = document.getElementById('print-paper');
             const label = document.getElementById('print-zoom-label');
-            if (label) label.textContent = String(printState.zoom) + '%';
+            if (label) label.textContent = String(printZoom()) + '%';
             if (!wrap || !paper) return;
             paper.classList.remove('print-export-a4', 'print-export-a6');
-            paper.style.setProperty('--print-type', String(printState.zoom / 100));
+            paper.style.setProperty('--print-type', String(printZoom() / 100));
             paper.style.width = '';
             paper.style.maxWidth = '';
             paper.style.minHeight = '';
@@ -5343,12 +5571,12 @@ function getRegionForAirport(code) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'print-edit-eye';
-            const sync = () => { btn.textContent = obj.hidden ? 'Show' : 'Hide'; };
+            const sync = () => { btn.textContent = printIsHidden(obj) ? 'Show' : 'Hide'; };
             sync();
             btn.addEventListener('click', () => {
-                obj.hidden = !obj.hidden;
+                printSetHidden(obj, !printIsHidden(obj));
                 sync();
-                if (row) row.classList.toggle('is-hidden', !!obj.hidden);
+                if (row) row.classList.toggle('is-hidden', printIsHidden(obj));
             });
             return btn;
         }
@@ -5362,8 +5590,8 @@ function getRegionForAirport(code) {
             icon.className = 'w-3.5 h-3.5';
             btn.appendChild(icon);
             btn.addEventListener('click', () => {
-                obj.hidden = !obj.hidden;
-                if (row) row.classList.toggle('is-hidden', !!obj.hidden);
+                printSetHidden(obj, !printIsHidden(obj));
+                if (row) row.classList.toggle('is-hidden', printIsHidden(obj));
             });
             return btn;
         }
@@ -5384,7 +5612,7 @@ function getRegionForAirport(code) {
 
         function printEditItemRow(it) {
             const row = document.createElement('div');
-            row.className = 'print-edit-item' + (it.hidden ? ' is-hidden' : '');
+            row.className = 'print-edit-item' + (printIsHidden(it) ? ' is-hidden' : '');
             const dot = document.createElement('span');
             dot.className = 'print-edit-dot';
             row.appendChild(dot);
@@ -5451,7 +5679,7 @@ function getRegionForAirport(code) {
 
             (sector.cabins || []).forEach((cabin) => {
                 const card = document.createElement('div');
-                card.className = 'print-edit-card' + (cabin.hidden ? ' is-hidden' : '');
+                card.className = 'print-edit-card' + (printIsHidden(cabin) ? ' is-hidden' : '');
                 const head = document.createElement('div');
                 head.className = 'print-edit-head';
                 const left = document.createElement('div');
@@ -5471,11 +5699,11 @@ function getRegionForAirport(code) {
 
                 (cabin.services || []).forEach((svc) => {
                     const svcBox = document.createElement('div');
-                    svcBox.className = 'print-edit-svc' + (svc.hidden ? ' is-hidden' : '');
+                    svcBox.className = 'print-edit-svc' + (printIsHidden(svc) ? ' is-hidden' : '');
                     svcBox.appendChild(printEditSectionHead(svc.name || 'Service', svc, svcBox));
                     (svc.courses || []).forEach((course) => {
                         const courseBox = document.createElement('div');
-                        courseBox.className = 'print-edit-course' + (course.hidden ? ' is-hidden' : '');
+                        courseBox.className = 'print-edit-course' + (printIsHidden(course) ? ' is-hidden' : '');
                         const cHead = document.createElement('div');
                         cHead.className = 'print-edit-head mt-1';
                         const cLeft = document.createElement('div');
@@ -5510,7 +5738,7 @@ function getRegionForAirport(code) {
 
                 (cabin.drinks || []).forEach((g) => {
                     const gBox = document.createElement('div');
-                    gBox.className = 'print-edit-svc' + (g.hidden ? ' is-hidden' : '');
+                    gBox.className = 'print-edit-svc' + (printIsHidden(g) ? ' is-hidden' : '');
                     gBox.appendChild(printEditSectionHead(g.name || 'Beverages', g, gBox));
                     (g.items || []).forEach((it) => gBox.appendChild(printEditItemRow(it)));
                     card.appendChild(gBox);
@@ -5522,6 +5750,7 @@ function getRegionForAirport(code) {
             edit.innerHTML = '';
             edit.appendChild(frag);
             try { lucide.createIcons(); } catch (e) {}
+            playPrintContentAnim(edit);
         }
 
         function resetPrintPreviewScroll() {
@@ -5529,6 +5758,16 @@ function getRegionForAirport(code) {
                 const el = document.getElementById(id);
                 if (el) el.scrollTop = 0;
             });
+        }
+
+        function playPrintContentAnim(el) {
+            if (!el) {
+                el = document.getElementById('print-paper') || document.getElementById('print-edit-wrap');
+            }
+            if (!el) return;
+            el.classList.remove('menu-anim-in');
+            void el.offsetWidth;
+            el.classList.add('menu-anim-in');
         }
 
         function renderPrintView(resetPreviewScroll) {
@@ -5568,7 +5807,6 @@ function getRegionForAirport(code) {
                         isStale: result.isStale
                     };
                 }));
-                lastPrintBundles = results;
                 lastPrintStale = results.some((r) => r.isStale);
                 printState.model = buildPrintModel(results);
                 setPrintLoading(false);
@@ -5624,7 +5862,7 @@ function getRegionForAirport(code) {
             try {
                 await ensureHtml2Canvas();
                 paper.style.transform = 'none';
-                paper.classList.remove('print-export-a4', 'print-export-a6');
+                paper.classList.remove('menu-anim-in', 'print-export-a4', 'print-export-a6');
                 paper.classList.add(printState.paper === 'a6' ? 'print-export-a6' : 'print-export-a4');
                 const canvas = await window.html2canvas(paper, {
                     scale: 2,
@@ -5665,6 +5903,8 @@ function getRegionForAirport(code) {
             if (!overlay || overlay.dataset.bound === '1') return;
             overlay.dataset.bound = '1';
             document.getElementById('btn-close-print').addEventListener('click', closeMenuPrinter);
+            const printToView = document.getElementById('print-btn-view');
+            if (printToView) printToView.addEventListener('click', switchPrinterToViewer);
             const printBackdrop = document.getElementById('print-backdrop');
             if (printBackdrop) printBackdrop.addEventListener('click', closeMenuPrinter);
             document.getElementById('print-layout-elegant').addEventListener('click', () => {
@@ -5688,11 +5928,11 @@ function getRegionForAirport(code) {
             document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(true); });
             document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(true); });
             document.getElementById('print-zoom-out').addEventListener('click', () => {
-                printState.zoom = Math.max(70, printState.zoom - 10);
+                setPrintZoom(Math.max(70, printZoom() - 10));
                 renderPrintView();
             });
             document.getElementById('print-zoom-in').addEventListener('click', () => {
-                printState.zoom = Math.min(140, printState.zoom + 10);
+                setPrintZoom(Math.min(140, printZoom() + 10));
                 renderPrintView();
             });
             document.getElementById('print-opt-grey').addEventListener('click', () => { printState.greyscale = !printState.greyscale; renderPrintView(); });
