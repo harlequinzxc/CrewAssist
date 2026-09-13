@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v52` (`sw.js`). App SemVer: **1.4.19** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v53` (`sw.js`). App SemVer: **1.4.20** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.18` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.20` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -30,11 +30,11 @@ Latest app cache: `crewassist-v52` (`sw.js`). App SemVer: **1.4.19** (`APP_VERSI
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed from settings; `initUI()` no longer reads it, so gender buttons work.
 - **CTAs:** Gold-bordered pills (navy/gold). Calculate stays disabled until required fields are filled.
 - **Repo cleanup:** Scratch `check*` / `temp*` / `fix*` / `test-plane*` files gone; airports inlined; unused `api/cabins.ts`, `api/getcabin.ts`, `api/menu.ts` removed (app never called them). Dead CSS (`.glow-gold`, `--aurora-opacity`, `--text-muted`) and unused DOM ids (`chip-container`, `btn-dev-import`) removed. Dead overlay helpers (`openMenuViewer`, `showMenuError`, `hideMenuError`) already gone.
-- **Step 6 inflight menu printer:** Sheet and edit content replay `.menu-anim-in` like the overlay. Elegant drinks: Champagne / white / red on by default (not fortified); groups are spaced with hairlines. Compact hides From The Bakery and Hot Beverage courses by default; SCL compact also hides Chocolate (course or exact item) and Cheese and Crackers. Elegant/Compact zoom and hide flags stay independent. View ↔ print switch (`#btn-menu-to-print` / `#print-btn-view`) reuses `currentMenuSearch` (no second flight entry). Printer loading copy is “Preparing the menu”. Compact sheet chrome is tables + unicode circled numbers so PNG/JPEG via html2canvas does not drop flex/grid circles. Do not call SQ from the browser.
+- **Step 6 inflight menu printer:** Sheet and edit content replay `.menu-anim-in` like the overlay. Elegant drinks: Champagne / white / red on by default (not fortified); groups are spaced with hairlines. Compact hides From The Bakery and Hot Beverage courses by default; SCL compact also hides Chocolate (course or exact item) and Cheese and Crackers. Elegant/Compact zoom and hide flags stay independent. View ↔ print switch (`#btn-menu-to-print` / `#print-btn-view`) reuses `currentMenuSearch` (no second flight entry). Printer loading copy is “Preparing the menu”. Compact header is one line (`SQ478 (→JNB) JCL (SUPPER) 160926`) with a separate 1px rule (not a table border). Compact type is already uppercase in JS (no CSS `text-transform`). Protein invert is a nested `table.pc-hl` so html2canvas paints fill and type together. Do not call SQ from the browser.
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Elegant dining-card is in. Compact still iterating (v1.4.19: html2canvas-safe tables, SCL chocolate/cheese default-hide, view↔print). More compact notes still coming.
+- **Printer sheet art:** Elegant dining-card is in. Compact still iterating (v1.4.20: date after service, export-safe header rule + invert tables). More compact notes still coming.
 
 ## Key Architecture Decisions & Constraints
 

@@ -356,16 +356,16 @@
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
         .pc-block { margin: 0 0 2.2mm; }
-        .pc-head { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; margin: 0 0 0.7mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
-        .pc-head td { padding: 0 0 1px; vertical-align: baseline; }
-        .pc-head-date { text-align: right; white-space: nowrap; }
-        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; text-transform: uppercase; margin: 0.12mm 0; }
+        .pc-head { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.25; margin: 0; padding: 0 0 0.35mm; }
+        .pc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
+        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
         .pc-course td { vertical-align: top; padding: 0; }
-        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.22; padding-right: 1.2mm !important; width: 1%; }
-        .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.22; }
-        .pc-item { line-height: 1.22; font-weight: 600; color: #000; margin: 0; }
+        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.28; padding-right: 1.2mm !important; width: 1%; }
+        .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.28; }
+        .pc-item { line-height: 1.28; font-weight: 600; color: #000; margin: 0; }
         .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
-        .pc-hl { background: #000; color: #fff; padding: 0 0.18em; }
+        table.pc-hl { display: inline-table; border-collapse: collapse; vertical-align: baseline; margin: 0 0.06em; }
+        table.pc-hl td { background: #000; color: #fff; padding: 0 0.14em; font: inherit; font-weight: 700; line-height: 1.2; }
         .print-a6 .pc-head,
         .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
 
@@ -1016,7 +1016,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.19';
+        const APP_VERSION = '1.4.20';
 
         // State
         let appProfile = null;
@@ -5213,7 +5213,7 @@ function getRegionForAirport(code) {
                 const core = w.replace(/[^a-zA-Z]/g, '').toLowerCase();
                 if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
-                if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
+                if (mode === 'invert') return '<table class="pc-hl"><tbody><tr><td>' + inner + '</td></tr></tbody></table>';
                 return '<s>' + inner + '</s>';
             }).join('');
         }
@@ -5362,7 +5362,9 @@ function getRegionForAirport(code) {
         function printCompactHeader(model, sector, cabin, svcName) {
             const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
             const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
-            return '<table class="pc-head"><tr><td>' + escapePrintHtml(left) + '</td><td class="pc-head-date">' + escapePrintHtml(model.dateShort || '') + '</td></tr></table>';
+            const date = model.dateShort || '';
+            const line = date ? (left + ' ' + date) : left;
+            return '<div class="pc-head">' + escapePrintHtml(line) + '</div><div class="pc-rule"></div>';
         }
 
         function printCircledNum(n) {
@@ -5374,12 +5376,12 @@ function getRegionForAirport(code) {
         function printCompactItems(key, items, asBites) {
             if (!items || !items.length) return '';
             if (asBites) {
-                const line = items.map((it) => printHighlightProteins(printDisplayName(it.name))).join(', ');
+                const line = items.map((it) => printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase())).join(', ');
                 return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-bites">' + line + '</td></tr></table>';
             }
             let list = '';
             items.forEach((it, idx) => {
-                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(printDisplayName(it.name)) + '</div>';
+                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase()) + '</div>';
             });
             return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-list">' + list + '</td></tr></table>';
         }
@@ -5859,15 +5861,18 @@ function getRegionForAirport(code) {
             const prevWidth = paper.style.width;
             const prevMax = paper.style.maxWidth;
             const prevMinH = paper.style.minHeight;
+            const prevOverflow = paper.style.overflow;
             try {
                 await ensureHtml2Canvas();
                 paper.style.transform = 'none';
+                paper.style.overflow = 'visible';
                 paper.classList.remove('menu-anim-in', 'print-export-a4', 'print-export-a6');
                 paper.classList.add(printState.paper === 'a6' ? 'print-export-a6' : 'print-export-a4');
                 const canvas = await window.html2canvas(paper, {
                     scale: 2,
                     backgroundColor: '#ffffff',
-                    useCORS: true
+                    useCORS: true,
+                    logging: false
                 });
                 const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png';
                 const ext = type === 'jpeg' ? 'jpg' : 'png';
@@ -5884,6 +5889,7 @@ function getRegionForAirport(code) {
                 paper.style.width = prevWidth;
                 paper.style.maxWidth = prevMax;
                 paper.style.minHeight = prevMinH;
+                paper.style.overflow = prevOverflow;
                 paper.classList.remove('print-export-a4', 'print-export-a6');
             }
         }
