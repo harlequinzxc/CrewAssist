@@ -403,6 +403,15 @@
         .dev-rate-table td { padding: 4px 6px; font-size: 12px; font-weight: 600; vertical-align: middle; }
         .dev-rate-input { width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 6px 8px; font-size: 12px; font-weight: 700; color: inherit; outline: none; }
         html.dark .dev-rate-input { border-color: rgba(255,255,255,0.12); }
+        .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
+        html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
+        .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
+        .dev-rate-acc-title { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; }
+        .dev-rate-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
+        .dev-rate-fold.is-open { grid-template-rows: 1fr; }
+        .dev-rate-fold-inner { overflow: hidden; min-height: 0; padding: 0 8px 10px; }
+        .dev-rate-chev { transition: transform 280ms ease; color: #C9A227; flex-shrink: 0; }
+        .dev-rate-card.is-expanded .dev-rate-chev { transform: rotate(180deg); }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
         .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
         .print-edit-fold.is-open { grid-template-rows: 1fr; }
@@ -1035,7 +1044,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.27';
+        const APP_VERSION = '1.4.28';
 
         // State
         let appProfile = null;
@@ -2436,59 +2445,105 @@ function getRegionForAirport(code) {
             return '<input type="text" inputmode="decimal" class="dev-rate-input" ' + (attrs || '') + ' value="' + ratesEsc(String(value)) + '">';
         }
 
+        const IFA_RATE_GROUPS = [
+            { label: 'Jr. FS / Jr. FSS', keys: ['Jr. FS', 'Jr. FSS'] },
+            { label: 'FS / FSS', keys: ['FS', 'FSS'] },
+            { label: 'LS / LSS', keys: ['LS', 'LSS'] },
+            { label: 'CS / CSS', keys: ['CS', 'CSS'] },
+            { label: 'IFM', keys: ['IFM'] }
+        ];
+
         function renderDevRatesEditor() {
             const root = document.getElementById('dev-rates-root');
             if (!root) return;
+            const openSet = new Set();
+            root.querySelectorAll('.dev-rate-card.is-expanded').forEach((el) => {
+                const id = el.getAttribute('data-section');
+                if (id) openSet.add(id);
+            });
             const r = activeRates || DEFAULT_RATES;
             const ifa = r.ifa;
+            const section = (id, title, inner) => {
+                const open = openSet.has(id);
+                return '<div class="dev-rate-card' + (open ? ' is-expanded' : '') + '" data-section="' + id + '">' +
+                    '<button type="button" class="dev-rate-acc">' +
+                    '<span class="dev-rate-acc-title">' + title + '</span>' +
+                    '<i data-lucide="chevron-down" class="dev-rate-chev w-4 h-4"></i>' +
+                    '</button>' +
+                    '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner">' + inner + '</div></div>' +
+                    '</div>';
+            };
             let html = '';
             html += '<p class="text-[10px] text-gray-500 leading-relaxed">Save applies on this device only. To update every install, Export and replace <span class="font-mono">rates.json</span> on GitHub.</p>';
             if (localStorage.getItem('crewAssist.rates')) {
                 html += '<p class="text-[10px] font-bold text-sia-gold">This device has saved overrides.</p>';
             }
-            html += '<div><p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">IFA rank rates</p><table class="dev-rate-table"><thead><tr><th>Rank</th><th>Rate</th></tr></thead><tbody>';
-            Object.keys(ifa.baseRates).forEach((k) => {
-                html += '<tr><td>' + ratesEsc(k) + '</td><td>' + ratesInput(ifa.baseRates[k], 'data-ifa-rate="' + ratesEsc(k) + '"') + '</td></tr>';
+            let rankBody = '<table class="dev-rate-table"><thead><tr><th>Rank</th><th>Rate</th></tr></thead><tbody>';
+            IFA_RATE_GROUPS.forEach((g) => {
+                const val = g.keys.map((k) => ifa.baseRates[k]).find((n) => n != null);
+                rankBody += '<tr><td>' + ratesEsc(g.label) + '</td><td>' + ratesInput(val, 'data-ifa-rates="' + ratesEsc(g.keys.join('|')) + '"') + '</td></tr>';
             });
-            html += '</tbody></table></div>';
-            html += '<div><p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">IFA modifiers</p><table class="dev-rate-table"><tbody>';
-            html += '<tr><td>SG buffer (h)</td><td>' + ratesInput(ifa.sgBuffer, 'data-ifa-field="sgBuffer"') + '</td></tr>';
-            html += '<tr><td>Station buffer (h)</td><td>' + ratesInput(ifa.stationBuffer, 'data-ifa-field="stationBuffer"') + '</td></tr>';
-            html += '<tr><td>Paxing multiplier</td><td>' + ratesInput(ifa.paxingMultiplier, 'data-ifa-field="paxingMultiplier"') + '</td></tr>';
-            html += '<tr><td>Direct US multiplier</td><td>' + ratesInput(ifa.directUSMultiplier, 'data-ifa-field="directUSMultiplier"') + '</td></tr>';
-            html += '<tr><td>Turnaround bonus</td><td>' + ratesInput(ifa.turnaroundBonusAmount, 'data-ifa-field="turnaroundBonusAmount"') + '</td></tr>';
-            html += '</tbody></table></div>';
-            const renderBrackets = (title, key, rows) => {
-                let block = '<div><p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">' + title + '</p><table class="dev-rate-table"><thead><tr><th>Max hours</th><th>Multiplier</th></tr></thead><tbody>';
+            rankBody += '</tbody></table>';
+            html += section('rates', 'Base hourly IFA rate ($/h)', rankBody);
+
+            html += section('buffers', 'SDP buffers (hours)',
+                '<table class="dev-rate-table"><tbody>' +
+                '<tr><td>Out of Singapore</td><td>' + ratesInput(ifa.sgBuffer, 'data-ifa-field="sgBuffer"') + '</td></tr>' +
+                '<tr><td>Out of Station</td><td>' + ratesInput(ifa.stationBuffer, 'data-ifa-field="stationBuffer"') + '</td></tr>' +
+                '</tbody></table>');
+
+            html += section('overrides', 'Overrides &amp; bonus',
+                '<table class="dev-rate-table"><tbody>' +
+                '<tr><td>Paxing Multiplier</td><td>' + ratesInput(ifa.paxingMultiplier, 'data-ifa-field="paxingMultiplier"') + '</td></tr>' +
+                '<tr><td>Direct US Multiplier</td><td>' + ratesInput(ifa.directUSMultiplier, 'data-ifa-field="directUSMultiplier"') + '</td></tr>' +
+                '<tr><td>Turnaround Bonus</td><td>' + ratesInput(ifa.turnaroundBonusAmount, 'data-ifa-field="turnaroundBonusAmount"') + '</td></tr>' +
+                '</tbody></table>');
+
+            const renderBrackets = (key, rows) => {
+                let block = '<table class="dev-rate-table"><thead><tr><th>Max hours</th><th>Multiplier</th></tr></thead><tbody>';
                 (rows || []).forEach((row, i) => {
                     const maxVal = row.maxHours == null ? '' : row.maxHours;
                     block += '<tr><td>' + ratesInput(maxVal, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="maxHours" placeholder="rest"') + '</td>';
                     block += '<td>' + ratesInput(row.multiplier, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="multiplier"') + '</td></tr>';
                 });
-                block += '</tbody></table><p class="text-[10px] text-gray-500 mt-1">Blank max hours = remaining hours (last row).</p></div>';
+                block += '</tbody></table><p class="text-[10px] text-gray-500 mt-1">Blank max hours = remaining hours (last row).</p>';
                 return block;
             };
-            html += renderBrackets('Layover SDP brackets', 'layoverBrackets', ifa.layoverBrackets);
-            html += renderBrackets('Turnaround SDP brackets', 'turnaroundBrackets', ifa.turnaroundBrackets);
-            html += '<div><p class="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-2">LMA region rates</p><table class="dev-rate-table"><thead><tr><th>Region</th><th>B</th><th>L</th><th>D</th></tr></thead><tbody>';
+            html += section('layover', 'Layover modifiers', renderBrackets('layoverBrackets', ifa.layoverBrackets));
+            html += section('turnaround', 'Turnaround modifiers', renderBrackets('turnaroundBrackets', ifa.turnaroundBrackets));
+
+            let lmaBody = '<table class="dev-rate-table"><thead><tr><th>Region</th><th>B</th><th>L</th><th>D</th></tr></thead><tbody>';
             Object.keys(r.lma.regions).forEach((k) => {
                 const row = r.lma.regions[k];
-                html += '<tr><td>' + ratesEsc(k) + '</td>';
-                html += '<td>' + ratesInput(row.b, 'data-lma-region="' + ratesEsc(k) + '" data-col="b"') + '</td>';
-                html += '<td>' + ratesInput(row.l, 'data-lma-region="' + ratesEsc(k) + '" data-col="l"') + '</td>';
-                html += '<td>' + ratesInput(row.d, 'data-lma-region="' + ratesEsc(k) + '" data-col="d"') + '</td></tr>';
+                lmaBody += '<tr><td>' + ratesEsc(k) + '</td>';
+                lmaBody += '<td>' + ratesInput(row.b, 'data-lma-region="' + ratesEsc(k) + '" data-col="b"') + '</td>';
+                lmaBody += '<td>' + ratesInput(row.l, 'data-lma-region="' + ratesEsc(k) + '" data-col="l"') + '</td>';
+                lmaBody += '<td>' + ratesInput(row.d, 'data-lma-region="' + ratesEsc(k) + '" data-col="d"') + '</td></tr>';
             });
-            html += '</tbody></table></div>';
+            lmaBody += '</tbody></table>';
+            html += section('lma', 'LMA region rates', lmaBody);
             root.innerHTML = html;
+            root.querySelectorAll('.dev-rate-acc').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const card = btn.closest('.dev-rate-card');
+                    const fold = card && card.querySelector('.dev-rate-fold');
+                    if (!card || !fold) return;
+                    const on = fold.classList.toggle('is-open');
+                    card.classList.toggle('is-expanded', on);
+                });
+            });
+            try { lucide.createIcons(); } catch (e) {}
         }
 
         function readRatesFromEditor() {
             const root = document.getElementById('dev-rates-root');
             const base = cloneRates(activeRates || DEFAULT_RATES);
             if (!root) return base;
-            root.querySelectorAll('[data-ifa-rate]').forEach((el) => {
-                const k = el.getAttribute('data-ifa-rate');
-                if (k) base.ifa.baseRates[k] = numOr(el.value, base.ifa.baseRates[k]);
+            root.querySelectorAll('[data-ifa-rates]').forEach((el) => {
+                const keys = String(el.getAttribute('data-ifa-rates') || '').split('|');
+                keys.forEach((k) => {
+                    if (k) base.ifa.baseRates[k] = numOr(el.value, base.ifa.baseRates[k]);
+                });
             });
             root.querySelectorAll('[data-ifa-field]').forEach((el) => {
                 const k = el.getAttribute('data-ifa-field');

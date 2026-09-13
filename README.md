@@ -11,7 +11,7 @@
 - **Frontend:** HTML5, CSS3, vanilla JavaScript, Tailwind CSS (CDN), Lucide Icons.
 - **Backend / proxy:** Node.js Vercel serverless function (`api/sq.js`) for `getcabin` and `menu` only. SQ CORS allowlists `inflightmenu.singaporeair.com`, so the browser cannot read JSON directly; images are plain `<img src>` to that host (not CORS-gated).
 - **Data:** Airport IATA list and regions inlined in `index.html`. SQ payload and image URL map in `API_REFERENCE.md`.
-- **Architecture:** PWA (service worker `crewassist-v60`, web manifest) for install and cache. App SemVer `APP_VERSION` (currently 1.4.27) is shown on onboarding. IFA/LMA numbers load from `rates.json` (network-first); developer mode can save device overrides and export/import JSON.
+- **Architecture:** PWA (service worker `crewassist-v61`, web manifest) for install and cache. App SemVer `APP_VERSION` (currently 1.4.28) is shown on onboarding. IFA/LMA numbers load from `rates.json` (network-first); developer mode can save device overrides and export/import JSON.
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
