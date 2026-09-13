@@ -355,19 +355,26 @@
 
         .pc-inner { padding: 5mm 5.5mm 6mm; font-family: "Plus Jakarta Sans", sans-serif; color: #000; }
         .print-a6 .pc-inner { padding: 3.5mm 4mm 4mm; }
-        .pc-block { margin: 0 0 2.2mm; }
-        .pc-head { width: 100%; border-collapse: collapse; border-bottom: 1px solid #000; margin: 0 0 0.7mm; font-size: calc(8.5px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #000; }
-        .pc-head td { padding: 0 0 1px; vertical-align: baseline; }
-        .pc-head-date { text-align: right; white-space: nowrap; }
-        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(8.5px * var(--print-type, 1)); color: #000; text-transform: uppercase; margin: 0.12mm 0; }
+        .pc-block { margin: 0; }
+        .pc-block > .pc-course:last-of-type { margin-bottom: 0; }
+        .pc-svc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
+        .pc-head { font-size: calc(6.8px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.28; margin: 0 0 0.45mm; }
+        .pc-block + .pc-block .pc-head { margin-top: 0.7mm; }
+        .pc-course { width: 100%; border-collapse: collapse; font-size: calc(6.8px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
         .pc-course td { vertical-align: top; padding: 0; }
-        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.22; padding-right: 1.2mm !important; width: 1%; }
-        .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.22; }
-        .pc-item { line-height: 1.22; font-weight: 600; color: #000; margin: 0; }
+        .pc-key { font-weight: 800; white-space: nowrap; line-height: 1.28; padding-right: 1.2mm !important; width: 1%; }
+        .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.28; }
+        .pc-item { line-height: 1.28; font-weight: 600; color: #000; margin: 0; }
         .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
-        .pc-hl { background: #000; color: #fff; padding: 0 0.18em; }
+        .pc-hl { background: #000; color: #fff; padding: 0 0.12em; }
         .print-a6 .pc-head,
-        .print-a6 .pc-course { font-size: calc(7.5px * var(--print-type, 1)); }
+        .print-a6 .pc-course { font-size: calc(6px * var(--print-type, 1)); }
+        .print-bounds {
+            position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
+            border: 1.5px dashed #C9A227; pointer-events: none; z-index: 5;
+        }
+        .print-paper.print-a4 > .print-bounds { height: 297mm; }
+        .print-paper.print-a6 > .print-bounds { height: 148mm; }
 
         .print-edit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 12px; }
         .print-edit-card.is-hidden > .print-edit-head > :not(.print-edit-eye),
@@ -392,6 +399,11 @@
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
+        .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
+        .print-edit-fold.is-open { grid-template-rows: 1fr; }
+        .print-edit-fold-inner { overflow: hidden; min-height: 0; }
+        .print-edit-chev { transition: transform 280ms ease; color: #C9A227; }
+        .print-edit-card.is-expanded .print-edit-chev { transform: rotate(180deg); }
         .print-edit-badge { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
         .print-edit-lab { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
         .print-edit-field { display: block; margin-top: 8px; }
@@ -710,8 +722,8 @@
             <div class="flex items-center justify-between px-6 pb-3 shrink-0">
                 <h3 class="text-xl font-bold">Inflight Menu</h3>
                 <div class="flex items-center gap-1 shrink-0">
-                    <button type="button" id="btn-menu-to-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Print menu">
-                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    <button type="button" id="btn-menu-to-print" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 shrink-0" aria-label="Print menu">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
                     </button>
                     <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
@@ -826,12 +838,13 @@
                         <button type="button" id="print-paper-a6" class="px-3 h-9 rounded-full text-xs font-bold text-gray-500">A6</button>
                     </div>
                     <div class="flex items-center gap-1 shrink-0 text-xs font-bold">
-                        <button type="button" id="print-zoom-out" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A−</button>
+                        <button type="button" id="print-zoom-out" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A−</button>
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
-                        <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10">A+</button>
+                        <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
-                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
+                    <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Bounds</button>
                     <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
+                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
                 </div>
                 </div>
                 <div class="flex mt-3 bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/10 dark:border-white/10">
@@ -1016,7 +1029,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.19';
+        const APP_VERSION = '1.4.24';
 
         // State
         let appProfile = null;
@@ -4784,18 +4797,31 @@ function getRegionForAirport(code) {
             zoomCompact: 100,
             greyscale: false,
             descriptions: true,
+            showBounds: true,
             tab: 'sheet',
             sectorIdx: 0,
             model: null
         };
+
+        const PRINT_ZOOM_MIN = 70;
+        const PRINT_ZOOM_MAX = 140;
 
         function printZoom() {
             return printState.layout === 'compact' ? printState.zoomCompact : printState.zoomElegant;
         }
 
         function setPrintZoom(next) {
-            if (printState.layout === 'compact') printState.zoomCompact = next;
-            else printState.zoomElegant = next;
+            const z = Math.max(PRINT_ZOOM_MIN, Math.min(PRINT_ZOOM_MAX, next | 0));
+            if (printState.layout === 'compact') printState.zoomCompact = z;
+            else printState.zoomElegant = z;
+        }
+
+        function paintPrintZoomBtns() {
+            const z = printZoom();
+            const out = document.getElementById('print-zoom-out');
+            const inn = document.getElementById('print-zoom-in');
+            if (out) out.disabled = z <= PRINT_ZOOM_MIN;
+            if (inn) inn.disabled = z >= PRINT_ZOOM_MAX;
         }
 
         function escapePrintHtml(str) {
@@ -5023,11 +5049,16 @@ function getRegionForAirport(code) {
         }
 
         function printHideCompactScl(cabinCode, label, itemName) {
-            if (String(cabinCode || '').toUpperCase() !== 'SCL') return false;
+            const cabin = String(cabinCode || '').toUpperCase();
             const l = String(label || itemName || '').toLowerCase();
-            if (/chocolate/.test(l) && !itemName) return true;
-            if (itemName && /^chocolate$/i.test(String(itemName).trim())) return true;
-            if (/cheese/.test(l) && /cracker/.test(l)) return true;
+            const cheese = /cheese/.test(l) && /cracker/.test(l);
+            if (cabin === 'SCL') {
+                if (/chocolate/.test(l) && !itemName) return true;
+                if (itemName && /^chocolate$/i.test(String(itemName).trim())) return true;
+                if (cheese) return true;
+                return false;
+            }
+            if (cabin === 'YCL' && cheese) return true;
             return false;
         }
 
@@ -5359,10 +5390,15 @@ function getRegionForAirport(code) {
             return html;
         }
 
-        function printCompactHeader(model, sector, cabin, svcName) {
+        function printCompactHeaderText(model, sector, cabin, svcName) {
             const arr = String((sector && (sector.arr || sector.arrCity)) || '').toUpperCase();
             const left = 'SQ' + (model.flight || '') + (arr ? ' (→' + arr + ')' : '') + ' ' + (cabin.code || '') + ' (' + String(svcName || 'MEAL').toUpperCase() + ')';
-            return '<table class="pc-head"><tr><td>' + escapePrintHtml(left) + '</td><td class="pc-head-date">' + escapePrintHtml(model.dateShort || '') + '</td></tr></table>';
+            const date = model.dateShort || '';
+            return date ? (left + ' ' + date) : left;
+        }
+
+        function printCompactHeader(model, sector, cabin, svcName) {
+            return '<div class="pc-head">' + escapePrintHtml(printCompactHeaderText(model, sector, cabin, svcName)) + '</div>';
         }
 
         function printCircledNum(n) {
@@ -5374,12 +5410,12 @@ function getRegionForAirport(code) {
         function printCompactItems(key, items, asBites) {
             if (!items || !items.length) return '';
             if (asBites) {
-                const line = items.map((it) => printHighlightProteins(printDisplayName(it.name))).join(', ');
+                const line = items.map((it) => printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase())).join(', ');
                 return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-bites">' + line + '</td></tr></table>';
             }
             let list = '';
             items.forEach((it, idx) => {
-                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(printDisplayName(it.name)) + '</div>';
+                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase()) + '</div>';
             });
             return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-list">' + list + '</td></tr></table>';
         }
@@ -5399,14 +5435,14 @@ function getRegionForAirport(code) {
                     html += '<div class="pc-block">';
                     html += printCompactHeader(model, sector, cabin, svc.name);
                     html += body.join('');
-                    html += '</div>';
+                    html += '<div class="pc-svc-rule"></div></div>';
                 });
                 const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
                 if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
                     html += '<div class="pc-block">';
                     html += printCompactHeader(model, sector, cabin, 'DELECTABLES');
                     html += printCompactItems('DELECTABLES', printVisible(cabin.delectables));
-                    html += '</div>';
+                    html += '<div class="pc-svc-rule"></div></div>';
                 }
                 const drinkBits = [];
                 printVisible(cabin.drinks).forEach((g) => {
@@ -5419,7 +5455,7 @@ function getRegionForAirport(code) {
                     html += '<div class="pc-block">';
                     html += printCompactHeader(model, sector, cabin, 'BEVERAGES');
                     html += drinkBits.join('');
-                    html += '</div>';
+                    html += '<div class="pc-svc-rule"></div></div>';
                 }
             });
             html += '</div>';
@@ -5497,6 +5533,8 @@ function getRegionForAirport(code) {
             const desc = document.getElementById('print-opt-desc');
             paintOpt(grey, printState.greyscale, '✓ Greyscale', 'Greyscale');
             paintOpt(desc, printState.descriptions, '✓ Descriptions', 'Descriptions');
+            const bounds = document.getElementById('print-opt-bounds');
+            paintOpt(bounds, printState.showBounds, '✓ Bounds', 'Bounds');
             if (grey) grey.classList.toggle('hidden', compactOn);
             if (desc) desc.classList.toggle('hidden', compactOn);
             const tabSheet = document.getElementById('print-tab-sheet');
@@ -5512,6 +5550,7 @@ function getRegionForAirport(code) {
             }
             const zoomLab = document.getElementById('print-zoom-label');
             if (zoomLab) zoomLab.textContent = printZoom() + '%';
+            paintPrintZoomBtns();
         }
 
         function renderPrintSheet() {
@@ -5535,6 +5574,12 @@ function getRegionForAirport(code) {
                 : renderElegantSheet(model, sector);
             wrap.innerHTML = '';
             wrap.appendChild(paper);
+            if (printState.showBounds) {
+                const edge = document.createElement('div');
+                edge.className = 'print-bounds';
+                edge.setAttribute('aria-hidden', 'true');
+                paper.appendChild(edge);
+            }
             applyPrintZoom();
             playPrintContentAnim(paper);
         }
@@ -5544,6 +5589,7 @@ function getRegionForAirport(code) {
             const paper = document.getElementById('print-paper');
             const label = document.getElementById('print-zoom-label');
             if (label) label.textContent = String(printZoom()) + '%';
+            paintPrintZoomBtns();
             if (!wrap || !paper) return;
             paper.classList.remove('print-export-a4', 'print-export-a6');
             paper.style.setProperty('--print-type', String(printZoom() / 100));
@@ -5691,11 +5737,27 @@ function getRegionForAirport(code) {
                 title.className = 'print-edit-title';
                 title.value = cabin.name || cabin.code || '';
                 title.addEventListener('input', () => { cabin.name = title.value; });
+                const chev = document.createElement('i');
+                chev.setAttribute('data-lucide', 'chevron-down');
+                chev.className = 'print-edit-chev w-4 h-4 shrink-0';
+                left.appendChild(chev);
                 left.appendChild(badge);
                 left.appendChild(title);
+                head.className = 'print-edit-head cursor-pointer';
                 head.appendChild(left);
                 head.appendChild(printEditToggle(cabin, card));
                 card.appendChild(head);
+                const fold = document.createElement('div');
+                fold.className = 'print-edit-fold';
+                const foldInner = document.createElement('div');
+                foldInner.className = 'print-edit-fold-inner';
+                fold.appendChild(foldInner);
+                card.appendChild(fold);
+                head.addEventListener('click', (e) => {
+                    if (e.target.closest('.print-edit-eye, input, textarea, button')) return;
+                    const on = fold.classList.toggle('is-open');
+                    card.classList.toggle('is-expanded', on);
+                });
 
                 (cabin.services || []).forEach((svc) => {
                     const svcBox = document.createElement('div');
@@ -5725,7 +5787,7 @@ function getRegionForAirport(code) {
                         });
                         svcBox.appendChild(courseBox);
                     });
-                    card.appendChild(svcBox);
+                    foldInner.appendChild(svcBox);
                 });
 
                 if ((cabin.delectables || []).length) {
@@ -5733,7 +5795,7 @@ function getRegionForAirport(code) {
                     dBox.className = 'print-edit-svc';
                     dBox.appendChild(printEditSectionHead('Delectables', null));
                     cabin.delectables.forEach((it) => dBox.appendChild(printEditItemRow(it)));
-                    card.appendChild(dBox);
+                    foldInner.appendChild(dBox);
                 }
 
                 (cabin.drinks || []).forEach((g) => {
@@ -5741,7 +5803,7 @@ function getRegionForAirport(code) {
                     gBox.className = 'print-edit-svc' + (printIsHidden(g) ? ' is-hidden' : '');
                     gBox.appendChild(printEditSectionHead(g.name || 'Beverages', g, gBox));
                     (g.items || []).forEach((it) => gBox.appendChild(printEditItemRow(it)));
-                    card.appendChild(gBox);
+                    foldInner.appendChild(gBox);
                 });
 
                 frag.appendChild(card);
@@ -5844,6 +5906,221 @@ function getRegionForAirport(code) {
             });
         }
 
+        function collectCompactBlocks(model, sector) {
+            const blocks = [];
+            const takeItems = (list) => (list || []).map((it) => String(printDisplayName(it.name) || '').toUpperCase());
+            printVisible(sector.cabins).forEach((cabin) => {
+                printVisible(cabin.services).forEach((svc) => {
+                    const courses = [];
+                    (svc.courses || []).forEach((course) => {
+                        if (printIsHidden(course)) return;
+                        const visItems = printVisible(course.items);
+                        if (!visItems.length) return;
+                        courses.push({
+                            key: printCompactCourse(course.label),
+                            items: takeItems(visItems),
+                            asBites: printIsLightBite(course.label)
+                        });
+                    });
+                    if (!courses.length) return;
+                    blocks.push({ header: printCompactHeaderText(model, sector, cabin, svc.name), courses: courses });
+                });
+                const hasDelectableSvc = printVisible(cabin.services).some((s) => printIsDelectable(s.name));
+                if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
+                    blocks.push({
+                        header: printCompactHeaderText(model, sector, cabin, 'DELECTABLES'),
+                        courses: [{ key: 'DELECTABLES', items: takeItems(printVisible(cabin.delectables)), asBites: false }]
+                    });
+                }
+                const drinkCourses = [];
+                printVisible(cabin.drinks).forEach((g) => {
+                    if (printIsHidden(g)) return;
+                    const vis = printVisible(g.items);
+                    if (!vis.length) return;
+                    drinkCourses.push({ key: printCompactCourse(g.name), items: takeItems(vis), asBites: false });
+                });
+                if (drinkCourses.length) {
+                    blocks.push({
+                        header: printCompactHeaderText(model, sector, cabin, 'BEVERAGES'),
+                        courses: drinkCourses
+                    });
+                }
+            });
+            return blocks;
+        }
+
+        function compactNameTokens(name) {
+            return String(name || '').split(/(\s+)/).filter((chunk) => chunk !== '').map((chunk) => {
+                if (/^\s+$/.test(chunk)) return { text: chunk, invert: false };
+                const core = chunk.replace(/[^a-zA-Z]/g, '').toLowerCase();
+                return { text: chunk, invert: printIsProteinWord(core) };
+            });
+        }
+
+        function compactBitesTokens(items) {
+            const tokens = [];
+            (items || []).forEach((name, i) => {
+                if (i) tokens.push({ text: ', ', invert: false });
+                compactNameTokens(name).forEach((t) => tokens.push(t));
+            });
+            return tokens;
+        }
+
+        function compactWrapWords(ctx, text, maxW) {
+            const words = String(text || '').split(/\s+/).filter(Boolean);
+            const lines = [];
+            let cur = '';
+            words.forEach((w) => {
+                const next = cur ? cur + ' ' + w : w;
+                if (!cur || ctx.measureText(next).width <= maxW) cur = next;
+                else { lines.push(cur); cur = w; }
+            });
+            if (cur) lines.push(cur);
+            return lines.length ? lines : [String(text || '')];
+        }
+
+        function compactTokWidth(ctx, tok, fontPx) {
+            const w = ctx.measureText(tok.text).width;
+            return tok.invert ? w + fontPx * 0.28 : w;
+        }
+
+        function compactDrawTok(ctx, tok, x, baseline, fontPx, ascent, descent) {
+            if (!tok.invert) {
+                ctx.fillStyle = '#000';
+                ctx.fillText(tok.text, x, baseline);
+                return ctx.measureText(tok.text).width;
+            }
+            const pad = fontPx * 0.14;
+            const m = ctx.measureText(tok.text);
+            const tw = m.width;
+            const as = (m.actualBoundingBoxAscent != null) ? m.actualBoundingBoxAscent : fontPx * 0.72;
+            const ds = Math.min((m.actualBoundingBoxDescent != null) ? m.actualBoundingBoxDescent : 0, fontPx * 0.04);
+            const padY = fontPx * 0.03;
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x, baseline - as - padY, tw + pad * 2, as + padY + ds);
+            ctx.fillStyle = '#fff';
+            ctx.fillText(tok.text, x + pad, baseline);
+            return tw + pad * 2;
+        }
+
+        function compactDrawTokenRun(ctx, tokens, x, baseline, minX, maxX, lineH, fontPx, ascent, descent, draw) {
+            let cx = x;
+            let by = baseline;
+            (tokens || []).forEach((tok) => {
+                const isSpace = /^\s+$/.test(tok.text);
+                const w = compactTokWidth(ctx, tok, fontPx);
+                if (!isSpace && cx + w > maxX && cx > minX + 0.5) {
+                    cx = minX;
+                    by += lineH;
+                }
+                if (isSpace && cx <= minX + 0.5) return;
+                if (draw) compactDrawTok(ctx, tok, cx, by, fontPx, ascent, descent);
+                cx += w;
+            });
+            return by;
+        }
+
+        async function exportCompactImage(type) {
+            const model = printState.model;
+            const sector = currentPrintSector();
+            if (!model || !sector) {
+                await appAlert('Nothing to export yet.');
+                return;
+            }
+            if (document.fonts && document.fonts.ready) await document.fonts.ready;
+            const blocks = collectCompactBlocks(model, sector);
+            const a6 = printState.paper === 'a6';
+            const dpi = 300;
+            const mm = dpi / 25.4;
+            const pageW = Math.round((a6 ? 105 : 210) * mm);
+            const pageH = Math.round((a6 ? 148 : 297) * mm);
+            const padX = (a6 ? 4 : 5.5) * mm;
+            const padTop = (a6 ? 3.5 : 5) * mm;
+            const padBot = (a6 ? 4 : 6) * mm;
+            const innerW = pageW - padX * 2;
+            const maxX = padX + innerW;
+            const fontPx = (a6 ? 6 : 6.8) * (printZoom() / 100) * (dpi / 96);
+            const lineH = fontPx * 1.28;
+            const headH = fontPx * 1.32;
+            const fontHead = '800 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
+            const fontBody = '600 ' + fontPx + 'px "Plus Jakarta Sans", sans-serif';
+            const scratch = document.createElement('canvas').getContext('2d');
+            scratch.font = fontHead;
+            const sample = scratch.measureText('Hg');
+            const ascent = sample.actualBoundingBoxAscent || fontPx * 0.8;
+            const descent = sample.actualBoundingBoxDescent || fontPx * 0.22;
+
+            function layout(ctx, draw) {
+                let y = padTop;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+                blocks.forEach((block) => {
+                    ctx.font = fontHead;
+                    compactWrapWords(ctx, block.header, innerW).forEach((ln) => {
+                        if (draw) {
+                            ctx.fillStyle = '#000';
+                            ctx.fillText(ln, padX, y + ascent);
+                        }
+                        y += headH;
+                    });
+                    y += fontPx * 0.2;
+                    (block.courses || []).forEach((course) => {
+                        ctx.font = fontHead;
+                        const keyStr = course.key + ':';
+                        const keyW = ctx.measureText(keyStr).width;
+                        const textX = padX + keyW + fontPx * 0.45;
+                        if (draw) {
+                            ctx.fillStyle = '#000';
+                            ctx.fillText(keyStr, padX, y + ascent);
+                        }
+                        ctx.font = fontBody;
+                        if (course.asBites) {
+                            const lastB = compactDrawTokenRun(ctx, compactBitesTokens(course.items), textX, y + ascent, textX, maxX, lineH, fontPx, ascent, descent, draw);
+                            y = lastB - ascent + lineH + fontPx * 0.08;
+                        } else {
+                            (course.items || []).forEach((name, idx) => {
+                                ctx.font = fontHead;
+                                const num = printCircledNum(idx + 1) + ' ';
+                                const numW = ctx.measureText(num).width;
+                                if (draw) {
+                                    ctx.fillStyle = '#000';
+                                    ctx.fillText(num, textX, y + ascent);
+                                }
+                                ctx.font = fontBody;
+                                const lastB = compactDrawTokenRun(ctx, compactNameTokens(name), textX + numW, y + ascent, textX + numW, maxX, lineH, fontPx, ascent, descent, draw);
+                                y = lastB - ascent + lineH;
+                            });
+                            y += fontPx * 0.08;
+                        }
+                    });
+                    const ruleH = Math.max(1, mm * 0.26);
+                    if (draw) {
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(padX, y, innerW, ruleH);
+                    }
+                    y += ruleH + fontPx * 0.32;
+                });
+                return y + padBot - fontPx * 0.32;
+            }
+
+            const contentH = layout(scratch, false);
+            const canvas = document.createElement('canvas');
+            canvas.width = pageW;
+            canvas.height = Math.max(pageH, Math.ceil(contentH));
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            layout(ctx, true);
+            const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const ext = type === 'jpeg' ? 'jpg' : 'png';
+            await new Promise((resolve) => {
+                canvas.toBlob((blob) => {
+                    if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
+                    resolve();
+                }, mime, 0.95);
+            });
+        }
+
         async function exportPrintImage(type) {
             const wasEdit = printState.tab === 'edit';
             if (wasEdit) {
@@ -5859,15 +6136,23 @@ function getRegionForAirport(code) {
             const prevWidth = paper.style.width;
             const prevMax = paper.style.maxWidth;
             const prevMinH = paper.style.minHeight;
+            const prevOverflow = paper.style.overflow;
+            if (printState.layout === 'compact') {
+                await exportCompactImage(type);
+                return;
+            }
             try {
                 await ensureHtml2Canvas();
                 paper.style.transform = 'none';
+                paper.style.overflow = 'visible';
                 paper.classList.remove('menu-anim-in', 'print-export-a4', 'print-export-a6');
                 paper.classList.add(printState.paper === 'a6' ? 'print-export-a6' : 'print-export-a4');
                 const canvas = await window.html2canvas(paper, {
-                    scale: 2,
+                    scale: 3,
                     backgroundColor: '#ffffff',
-                    useCORS: true
+                    useCORS: true,
+                    logging: false,
+                    ignoreElements: (el) => !!(el && el.classList && el.classList.contains('print-bounds'))
                 });
                 const mime = type === 'jpeg' ? 'image/jpeg' : 'image/png';
                 const ext = type === 'jpeg' ? 'jpg' : 'png';
@@ -5875,7 +6160,7 @@ function getRegionForAirport(code) {
                     canvas.toBlob((blob) => {
                         if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
                         resolve();
-                    }, mime, 0.92);
+                    }, mime, 0.95);
                 });
             } catch (err) {
                 await appAlert('Could not export image. ' + String(err.message || err));
@@ -5884,6 +6169,7 @@ function getRegionForAirport(code) {
                 paper.style.width = prevWidth;
                 paper.style.maxWidth = prevMax;
                 paper.style.minHeight = prevMinH;
+                paper.style.overflow = prevOverflow;
                 paper.classList.remove('print-export-a4', 'print-export-a6');
             }
         }
@@ -5894,7 +6180,9 @@ function getRegionForAirport(code) {
                 appAlert('Nothing to export yet.');
                 return;
             }
-            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Menu</title></head><body>' + paper.innerHTML + '</body></html>';
+            const clone = paper.cloneNode(true);
+            clone.querySelectorAll('.print-bounds').forEach((el) => el.remove());
+            const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Menu</title></head><body>' + clone.innerHTML + '</body></html>';
             downloadBlob(new Blob(['\ufeff' + html], { type: 'application/msword' }), printFileBase() + '.doc');
         }
 
@@ -5935,6 +6223,8 @@ function getRegionForAirport(code) {
                 setPrintZoom(Math.min(140, printZoom() + 10));
                 renderPrintView();
             });
+            const boundsBtn = document.getElementById('print-opt-bounds');
+            if (boundsBtn) boundsBtn.addEventListener('click', () => { printState.showBounds = !printState.showBounds; renderPrintView(); });
             document.getElementById('print-opt-grey').addEventListener('click', () => { printState.greyscale = !printState.greyscale; renderPrintView(); });
             document.getElementById('print-opt-desc').addEventListener('click', () => { printState.descriptions = !printState.descriptions; renderPrintView(); });
             document.getElementById('print-tab-sheet').addEventListener('click', () => { printState.tab = 'sheet'; renderPrintView(); });
