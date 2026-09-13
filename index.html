@@ -407,11 +407,20 @@
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
         .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
         .dev-rate-acc-title { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; }
-        .dev-rate-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
+        .dev-rate-fold { display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows 280ms ease; }
         .dev-rate-fold.is-open { grid-template-rows: 1fr; }
-        .dev-rate-fold-inner { overflow: hidden; min-height: 0; padding: 0 8px 10px; }
+        .dev-rate-fold-inner { overflow: hidden; min-height: 0; }
+        .dev-rate-pad { padding: 0 8px 10px; }
         .dev-rate-chev { transition: transform 280ms ease; color: #C9A227; flex-shrink: 0; }
         .dev-rate-card.is-expanded .dev-rate-chev { transform: rotate(180deg); }
+        .dev-bracket { display: flex; flex-direction: column; gap: 8px; }
+        .dev-bracket-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .dev-bracket-formula { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; font-size: 12px; font-weight: 600; }
+        .dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: #C9A227; }
+        .dev-bracket-op { color: #9CA3AF; font-weight: 700; font-size: 11px; white-space: nowrap; }
+        .dev-bracket-echo { font-weight: 800; min-width: 1.5rem; text-align: center; }
+        .dev-bracket-arrow { color: #C9A227; font-weight: 700; flex-shrink: 0; }
+        .dev-rate-input.dev-bracket-num { width: 3.6rem; text-align: center; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
         .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
         .print-edit-fold.is-open { grid-template-rows: 1fr; }
@@ -629,7 +638,7 @@
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
-            <div class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
+            <div id="settings-scroll" class="px-6 pb-8 overflow-y-auto max-w-xl mx-auto w-full space-y-6">
                 <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
@@ -1044,7 +1053,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.28';
+        const APP_VERSION = '1.4.29';
 
         // State
         let appProfile = null;
@@ -1228,12 +1237,18 @@
                 clearTimeout(devTapTimeout);
                 devTapTimeout = setTimeout(() => { devTapCount = 0; }, 400);
 
-                if (devTapCount >= 10 && !appDevMode) {
-                    appDevMode = true;
-                    localStorage.setItem('crewAssist.devMode', 'true');
-                    document.getElementById('settings-developer').classList.remove('hidden');
-                    renderDevRatesEditor();
-                    appAlert('Developer Mode Unlocked');
+                if (devTapCount >= 10) {
+                    appDevMode = !appDevMode;
+                    localStorage.setItem('crewAssist.devMode', appDevMode ? 'true' : 'false');
+                    const pane = document.getElementById('settings-developer');
+                    if (appDevMode) {
+                        pane.classList.remove('hidden');
+                        renderDevRatesEditor();
+                        appAlert('Developer Mode Enabled');
+                    } else {
+                        pane.classList.add('hidden');
+                        appAlert('Developer Mode Disabled');
+                    }
                     devTapCount = 0;
                 }
             });
@@ -1642,10 +1657,20 @@
             }, 500); // Wait for slide down to finish
         }
 
+        function resetSettingsSheet() {
+            const scroll = document.getElementById('settings-scroll');
+            if (scroll) scroll.scrollTop = 0;
+            document.querySelectorAll('#dev-rates-root .dev-rate-card.is-expanded').forEach((card) => {
+                card.classList.remove('is-expanded');
+                const fold = card.querySelector('.dev-rate-fold');
+                if (fold) fold.classList.remove('is-open');
+            });
+        }
+
         function openSettings() {
             const backdrop = document.getElementById('settings-backdrop');
             const sheet = document.getElementById('settings-sheet');
-            
+            resetSettingsSheet();
             backdrop.classList.remove('hidden');
             // small delay to allow display:block to apply before opacity transition
             setTimeout(() => {
@@ -2441,8 +2466,8 @@ function getRegionForAirport(code) {
             return 1;
         }
 
-        function ratesInput(value, attrs) {
-            return '<input type="text" inputmode="decimal" class="dev-rate-input" ' + (attrs || '') + ' value="' + ratesEsc(String(value)) + '">';
+        function ratesInput(value, attrs, extraClass) {
+            return '<input type="text" inputmode="decimal" class="dev-rate-input' + (extraClass ? ' ' + extraClass : '') + '" ' + (attrs || '') + ' value="' + ratesEsc(String(value == null ? '' : value)) + '">';
         }
 
         const IFA_RATE_GROUPS = [
@@ -2470,7 +2495,7 @@ function getRegionForAirport(code) {
                     '<span class="dev-rate-acc-title">' + title + '</span>' +
                     '<i data-lucide="chevron-down" class="dev-rate-chev w-4 h-4"></i>' +
                     '</button>' +
-                    '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner">' + inner + '</div></div>' +
+                    '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner"><div class="dev-rate-pad">' + inner + '</div></div></div>' +
                     '</div>';
             };
             let html = '';
@@ -2499,18 +2524,36 @@ function getRegionForAirport(code) {
                 '<tr><td>Turnaround Bonus</td><td>' + ratesInput(ifa.turnaroundBonusAmount, 'data-ifa-field="turnaroundBonusAmount"') + '</td></tr>' +
                 '</tbody></table>');
 
-            const renderBrackets = (key, rows) => {
-                let block = '<table class="dev-rate-table"><thead><tr><th>Max hours</th><th>Multiplier</th></tr></thead><tbody>';
-                (rows || []).forEach((row, i) => {
-                    const maxVal = row.maxHours == null ? '' : row.maxHours;
-                    block += '<tr><td>' + ratesInput(maxVal, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="maxHours" placeholder="rest"') + '</td>';
-                    block += '<td>' + ratesInput(row.multiplier, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="multiplier"') + '</td></tr>';
+            const renderBrackets = (key, varName, rows) => {
+                const list = rows || [];
+                let block = '<div class="dev-bracket" data-bracket-set="' + key + '">';
+                list.forEach((row, i) => {
+                    const isLast = i === list.length - 1;
+                    const prev = i === 0 ? '' : (list[i - 1].maxHours == null ? '' : String(list[i - 1].maxHours));
+                    let formula = '<span class="dev-bracket-var">' + ratesEsc(varName) + '</span>';
+                    if (i === 0 && !isLast) {
+                        formula += '<span class="dev-bracket-op">≤</span>';
+                        formula += ratesInput(row.maxHours, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="maxHours"', 'dev-bracket-num');
+                    } else if (!isLast) {
+                        formula += '<span class="dev-bracket-op">&gt;</span>';
+                        formula += '<span class="dev-bracket-echo" data-echo-from="' + (i - 1) + '">' + ratesEsc(prev) + '</span>';
+                        formula += '<span class="dev-bracket-op">AND ≤</span>';
+                        formula += ratesInput(row.maxHours, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="maxHours"', 'dev-bracket-num');
+                    } else {
+                        formula += '<span class="dev-bracket-op">&gt;</span>';
+                        formula += '<span class="dev-bracket-echo" data-echo-from="' + (i - 1) + '">' + ratesEsc(prev) + '</span>';
+                    }
+                    block += '<div class="dev-bracket-row">';
+                    block += '<span class="dev-bracket-formula">' + formula + '</span>';
+                    block += '<span class="dev-bracket-arrow">→</span>';
+                    block += ratesInput(row.multiplier, 'data-bracket="' + key + '" data-idx="' + i + '" data-col="multiplier"', 'dev-bracket-num');
+                    block += '</div>';
                 });
-                block += '</tbody></table><p class="text-[10px] text-gray-500 mt-1">Blank max hours = remaining hours (last row).</p>';
+                block += '</div>';
                 return block;
             };
-            html += section('layover', 'Layover modifiers', renderBrackets('layoverBrackets', ifa.layoverBrackets));
-            html += section('turnaround', 'Turnaround modifiers', renderBrackets('turnaroundBrackets', ifa.turnaroundBrackets));
+            html += section('layover', 'Layover modifiers', renderBrackets('layoverBrackets', 'SDP', ifa.layoverBrackets));
+            html += section('turnaround', 'Turnaround modifiers', renderBrackets('turnaroundBrackets', 'TSDP', ifa.turnaroundBrackets));
 
             let lmaBody = '<table class="dev-rate-table"><thead><tr><th>Region</th><th>B</th><th>L</th><th>D</th></tr></thead><tbody>';
             Object.keys(r.lma.regions).forEach((k) => {
@@ -2532,6 +2575,18 @@ function getRegionForAirport(code) {
                     card.classList.toggle('is-expanded', on);
                 });
             });
+            root.querySelectorAll('[data-col="maxHours"]').forEach((el) => {
+                const set = el.closest('[data-bracket-set]');
+                const idx = el.getAttribute('data-idx');
+                const sync = () => {
+                    const v = String(el.value || '').trim();
+                    (set || root).querySelectorAll('[data-echo-from="' + idx + '"]').forEach((lab) => {
+                        lab.textContent = v;
+                    });
+                };
+                el.addEventListener('input', sync);
+                sync();
+            });
             try { lucide.createIcons(); } catch (e) {}
         }
 
@@ -2551,13 +2606,13 @@ function getRegionForAirport(code) {
             });
             const collect = (key) => {
                 const rows = [];
-                root.querySelectorAll('[data-bracket="' + key + '"][data-col="maxHours"]').forEach((el) => {
+                root.querySelectorAll('[data-bracket="' + key + '"][data-col="multiplier"]').forEach((el) => {
                     const idx = parseInt(el.getAttribute('data-idx'), 10);
-                    const multEl = root.querySelector('[data-bracket="' + key + '"][data-idx="' + idx + '"][data-col="multiplier"]');
-                    const maxRaw = String(el.value || '').trim();
+                    const maxEl = root.querySelector('[data-bracket="' + key + '"][data-idx="' + idx + '"][data-col="maxHours"]');
+                    const maxRaw = maxEl ? String(maxEl.value || '').trim() : '';
                     rows[idx] = {
-                        maxHours: maxRaw === '' ? null : numOr(maxRaw, null),
-                        multiplier: numOr(multEl && multEl.value, 1)
+                        maxHours: (!maxEl || maxRaw === '') ? null : numOr(maxRaw, null),
+                        multiplier: numOr(el.value, 1)
                     };
                 });
                 return rows.filter(Boolean);

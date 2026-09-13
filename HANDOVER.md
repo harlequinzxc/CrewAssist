@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v61` (`sw.js`). App SemVer: **1.4.28** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v62` (`sw.js`). App SemVer: **1.4.29** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.28` at the bottom of onboarding (`#app-semver`). Developer mode (10 taps) edits IFA/LMA rates from `rates.json` in animated accordions; paired cabin ranks share one rate.
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.29` at the bottom of onboarding (`#app-semver`). Developer mode (10 taps enable, 10 more disable). IFA/LMA rates from `rates.json` in animated accordions; layover/turnaround bands share each threshold.
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. Coefficients live in `rates.json` (network-first fetch, offline cache, `DEFAULT_RATES` fallback). Device overrides in `localStorage` key `crewAssist.rates`. Developer tables: IFA rank rates, buffers, paxing/US/turnaround bonus, layover + turnaround SDP brackets, LMA region B/L/D. Save = this device; Reset = shipped file; Export/Import JSON. Do not write to GitHub from the app. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet. Summary overlay uses `formatMoney` (`$1,457.38`). IFA sectors are First/Second/Third/Fourth Sector. LMA day rows: `formatLmaDay` (`DD MMM YY`), three fixed-width B/L/D badges (`✕` when that meal is missing), `$` per-day amount, no station total; then Breakfast/Lunch/Dinner totals with counts (`BREAKFAST (3x)`).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.

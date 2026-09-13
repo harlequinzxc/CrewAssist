@@ -462,15 +462,16 @@ IF LMA is valid
 ### 4.8 Developer Mode Unlock
 
 ```
-IF (now - lastResetTapAt) ≤ 800ms
-    THEN resetTapStreak += 1
-ELSE
-    THEN resetTapStreak = 1
+IF header brand tapped
+    AND (now - lastTap) ≤ 400ms
+        THEN tapStreak += 1
+    ELSE tapStreak = 1
 
-IF resetTapStreak ≥ 10
-    THEN toggle showDeveloperNote
-    AND close all developer sub-accordions
-    AND resetTapStreak = 0
+IF tapStreak ≥ 10
+    THEN toggle developer mode
+    AND persist crewAssist.devMode
+    AND show “Developer Mode Enabled” or “Developer Mode Disabled”
+    AND tapStreak = 0
 ```
 
 ### 4.9 Reset All Preservation Rules
