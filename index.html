@@ -322,7 +322,6 @@
         .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(24px * var(--print-type, 1)); font-weight: 600; color: #16294e; line-height: 1.1; }
         .pe-svc-rule { height: 0.7mm; background: #16294e; margin: 2mm 0 3.5mm 25.5mm; }
         .pe-cui { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(15px * var(--print-type, 1)); font-weight: 600; color: #16294e; margin: 1.5mm 0 2.5mm 34.5mm; }
-        .pe-cui-sub { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(8.5px * var(--print-type, 1)); font-style: italic; font-weight: 400; color: #6b7280; margin: -1.5mm 0 2.5mm 34.5mm; }
         .pe-row { display: grid; grid-template-columns: 26mm 9mm 1fr; align-items: start; padding: 1.7mm 0; }
         .pe-label { text-align: right; padding-right: 4.5mm; }
         .pe-course { font-size: calc(10.5px * var(--print-type, 1)); font-style: italic; font-weight: 500; color: #2b3245; line-height: 1.25; letter-spacing: 0; text-transform: none; padding-top: 0; }
@@ -986,7 +985,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.13';
+        const APP_VERSION = '1.4.14';
 
         // State
         let appProfile = null;
@@ -3554,7 +3553,7 @@ function getRegionForAirport(code) {
 
 // Inflight Menu Viewer Logic (Step 5)
         
-        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '' };
+        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', imageByName: Object.create(null), imageIdByName: Object.create(null) };
         let menuViewState = { category: 'meals', mealTab: 0 };
         let currentMealServices = [];
         let menuLoadGen = 0;
@@ -3834,7 +3833,7 @@ function getRegionForAirport(code) {
             return `
                 <div class="menu-dish flex gap-3 items-start">
                     <button type="button" class="menu-thumb shrink-0 rounded-lg overflow-hidden bg-black/10" data-full="${first}" aria-label="View photo">
-                        <img src="${first}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" data-cands="${dataCands}" data-ci="0" onerror="menuThumbNext(this)">
+                        <img src="${first}" class="w-16 h-16 object-cover pointer-events-none" alt="" loading="lazy" referrerpolicy="no-referrer" data-dish="${esc(name || '')}" data-cands="${dataCands}" data-ci="0" onload="menuThumbRemember(this)" onerror="menuThumbNext(this)">
                     </button>
                     <div class="min-w-0 flex-1">
                         <div class="font-bold text-sm leading-tight flex flex-wrap gap-2 items-center">${name || ''} ${iconsHtml || ''}</div>
@@ -3943,6 +3942,11 @@ function getRegionForAirport(code) {
             }
         }
 
+        function menuThumbRemember(img) {
+            if (!img || !img.src) return;
+            rememberMenuPhoto(img.getAttribute('data-dish'), img.currentSrc || img.src, '', true);
+        }
+
         function menuThumbNext(img) {
             const cands = (img.getAttribute('data-cands') || '').split('\n').filter(Boolean);
             let i = parseInt(img.getAttribute('data-ci') || '0', 10) + 1;
@@ -3956,44 +3960,75 @@ function getRegionForAirport(code) {
             menuThumbToBullet(img);
         }
 
+        function extractSqIfeUrl(item) {
+            if (!item || typeof item !== 'object') return '';
+            return extractSqImageUrl(item.imagePathIfeHigh)
+                || extractSqImageUrl(item.imagePathIfeMedium)
+                || extractSqImageUrl(item.imagePathIfeLow)
+                || extractSqImageUrl(item.imagePathIfe);
+        }
+
+        function dishIdBase(id) {
+            const m = String(id || '').match(/^([A-Z]{2}\d{6}(?:-\d{3})?)(?:-v\d+)?(?:-([A-Z]{3}))?$/i);
+            return m ? { base: m[1], cabin: (m[2] || '').toUpperCase() } : null;
+        }
+
+        function menuKnownCabins() {
+            const codes = [];
+            const add = (c) => {
+                c = String(c || '').toUpperCase();
+                if (c && codes.indexOf(c) === -1) codes.push(c);
+            };
+            if (currentMenuSearch) {
+                add(currentMenuSearch.selectedCabin);
+                (currentMenuSearch.selectedCabins || []).forEach(add);
+                (currentMenuSearch.cabins || []).forEach(add);
+            }
+            return codes;
+        }
+
         function dishIfePhotoUrls(item) {
-            const id = String((item && (item.id || item.itemId)) || '');
-            const m = id.match(/^([A-Z]{2}\d{6}(?:-\d{3})?)(?:-v\d+)?(?:-([A-Z]{3}))?$/i);
-            if (!m) return [];
-            const base = m[1];
-            const cabin = (m[2] || (currentMenuSearch && currentMenuSearch.selectedCabin) || '').toUpperCase();
-            if (!cabin) return [];
+            const name = item && (item.name || item.title || item.itemName);
+            const parsed = [];
+            const addParsed = (id) => {
+                const p = dishIdBase(id);
+                if (!p) return;
+                if (parsed.some((x) => x.base === p.base && x.cabin === p.cabin)) return;
+                parsed.push(p);
+            };
+            addParsed(item && (item.id || item.itemId));
+            addParsed(lookupMenuPhotoId(name));
+            if (!parsed.length) return [];
             const origin = 'https://inflightmenu.singaporeair.com';
-            return [
-                origin + '/fabs/IFE/INFM/' + cabin + '/HIGH/' + base + '_' + cabin + '.png',
-                origin + '/fabs/IFE/INFM/' + cabin + '/LOW/' + base + '_' + cabin + '.png'
-            ];
+            const urls = [];
+            const addUrl = (u) => { if (u && urls.indexOf(u) === -1) urls.push(u); };
+            parsed.forEach((p) => {
+                const cabins = [];
+                if (p.cabin) cabins.push(p.cabin);
+                menuKnownCabins().forEach((c) => { if (cabins.indexOf(c) === -1) cabins.push(c); });
+                cabins.forEach((cabin) => {
+                    addUrl(origin + '/fabs/IFE/INFM/' + cabin + '/HIGH/' + p.base + '_' + cabin + '.png');
+                    addUrl(origin + '/fabs/IFE/INFM/' + cabin + '/LOW/' + p.base + '_' + cabin + '.png');
+                });
+            });
+            return urls;
         }
 
         function photoCandidates(item) {
-            const parents = Array.prototype.slice.call(arguments, 1);
             const list = [];
             const add = (u) => {
                 const abs = extractSqImageUrl(u);
                 if (abs && list.indexOf(abs) === -1) list.push(abs);
             };
-            add(extractSqImageUrl.apply(null, [item].concat(parents)));
             if (item && typeof item === 'object') {
+                add(extractSqIfeUrl(item));
                 dishIfePhotoUrls(item).forEach(add);
-            }
-            const key = menuImageKey(item && (item.name || item.title || item.itemName));
-            if (currentMenuSearch.imageByName && key && currentMenuSearch.imageByName[key]) {
-                add(currentMenuSearch.imageByName[key]);
+                lookupMenuPhoto(item.name || item.title || item.itemName).forEach(add);
+            } else {
+                add(extractSqImageUrl(item));
+                lookupMenuPhoto(item).forEach(add);
             }
             return list;
-        }
-
-        function menuImageUrl(path) {
-            return extractSqImageUrl(path);
-        }
-
-        function menuItemMediaUrl(item) {
-            return extractSqImageUrl(item);
         }
 
         function cleanMenuText(str) {
@@ -4046,26 +4081,64 @@ function getRegionForAirport(code) {
             return cleanMenuText(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
         }
 
+        function menuImageKeys(name) {
+            const k = menuImageKey(name);
+            if (!k) return [];
+            const keys = [];
+            const add = (x) => { if (x && keys.indexOf(x) === -1) keys.push(x); };
+            add(k);
+            if (k.length > 3 && k.charAt(k.length - 1) === 's' && k.slice(-2) !== 'ss') add(k.slice(0, -1));
+            else add(k + 's');
+            k.split(' and ').forEach((part) => add(part.trim()));
+            return keys;
+        }
+
+        function rememberMenuPhoto(name, url, id, proven) {
+            if (!currentMenuSearch.imageByName) currentMenuSearch.imageByName = Object.create(null);
+            if (!currentMenuSearch.imageIdByName) currentMenuSearch.imageIdByName = Object.create(null);
+            menuImageKeys(name).forEach((key) => {
+                if (url && (proven || !currentMenuSearch.imageByName[key])) currentMenuSearch.imageByName[key] = url;
+                if (id && !currentMenuSearch.imageIdByName[key]) currentMenuSearch.imageIdByName[key] = id;
+            });
+        }
+
+        function lookupMenuPhoto(name) {
+            const urls = [];
+            menuImageKeys(name).forEach((key) => {
+                const u = currentMenuSearch.imageByName && currentMenuSearch.imageByName[key];
+                if (u && urls.indexOf(u) === -1) urls.push(u);
+            });
+            return urls;
+        }
+
+        function lookupMenuPhotoId(name) {
+            const keys = menuImageKeys(name);
+            for (let i = 0; i < keys.length; i++) {
+                const id = currentMenuSearch.imageIdByName && currentMenuSearch.imageIdByName[keys[i]];
+                if (id) return id;
+            }
+            return '';
+        }
+
         function indexMenuImages(data) {
-            const map = Object.create(null);
-            const remember = (name, url) => {
-                const key = menuImageKey(name);
-                if (key && url && !map[key]) map[key] = url;
-            };
-            const walkItem = (it, parents) => {
-                if (!it) return;
-                remember(it.name || it.title || it.itemName, extractSqImageUrl.apply(null, [it].concat(parents || [])));
+            const walkItem = (it) => {
+                if (!it || typeof it !== 'object') return;
+                rememberMenuPhoto(
+                    it.name || it.title || it.itemName,
+                    extractSqIfeUrl(it),
+                    it.id || it.itemId
+                );
             };
             (data && data.legs || []).forEach(leg => {
                 const menuEn = extractEnUkBlock(leg, 'menu');
                 ((menuEn && menuEn.meals) || []).forEach(meal => {
                     (meal.selectionDetails || []).forEach(sel => {
                         (sel.mealCourses || []).forEach(course => {
-                            (course.items || []).forEach(it => walkItem(it, [course, sel]));
+                            (course.items || []).forEach(walkItem);
                         });
-                        (sel.breadDetails || []).forEach(b => walkItem(b, [sel, meal]));
+                        (sel.breadDetails || []).forEach(walkItem);
                     });
-                    (meal.breadDetails || []).forEach(b => walkItem(b, [meal]));
+                    (meal.breadDetails || []).forEach(walkItem);
                 });
                 const bevEn = extractEnUkBlock(leg, 'beverage');
                 ((bevEn && bevEn.categories) || []).forEach(cat => {
@@ -4073,16 +4146,15 @@ function getRegionForAirport(code) {
                     subs.forEach(sub => {
                         const specs = (sub.specialities && sub.specialities.length) ? sub.specialities : [sub];
                         specs.forEach(spec => {
-                            (spec.items || []).forEach(it => walkItem(it, [spec, sub, cat]));
-                            if (spec.name) remember(spec.name, extractSqImageUrl(spec, sub, cat));
+                            (spec.items || []).forEach(walkItem);
+                            if (spec && spec.name) rememberMenuPhoto(spec.name, extractSqIfeUrl(spec), spec.id);
                         });
-                        (sub.items || []).forEach(it => walkItem(it, [sub, cat]));
+                        (sub.items || []).forEach(walkItem);
                     });
                 });
                 const snackSubs = leg.drySnack && leg.drySnack.category && leg.drySnack.category.subcategories;
-                (snackSubs || []).forEach(sub => (sub.items || []).forEach(it => walkItem(it, [sub])));
+                (snackSubs || []).forEach(sub => (sub.items || []).forEach(walkItem));
             });
-            currentMenuSearch.imageByName = map;
         }
 
         function resolveMenuImage(item) {
@@ -4669,7 +4741,6 @@ function getRegionForAirport(code) {
 
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
         const PRINT_ALLERGENS = ['salmon', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal'];
-        let lastPrintBundles = null;
         let lastPrintStale = false;
         let printState = {
             layout: 'elegant',
@@ -5568,7 +5639,6 @@ function getRegionForAirport(code) {
                         isStale: result.isStale
                     };
                 }));
-                lastPrintBundles = results;
                 lastPrintStale = results.some((r) => r.isStale);
                 printState.model = buildPrintModel(results);
                 setPrintLoading(false);

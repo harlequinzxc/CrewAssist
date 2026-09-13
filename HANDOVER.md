@@ -1,13 +1,13 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v46` (`sw.js`). App SemVer: **1.4.13** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v47` (`sw.js`). App SemVer: **1.4.14** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.13` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.14` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -15,7 +15,7 @@ Latest app cache: `crewassist-v46` (`sw.js`). App SemVer: **1.4.13** (`APP_VERSI
   - Category control: single segmented bar (Meals / Drinks / Snacks / Amenities), no wrapping pills.
   - `menuViewState` remembers category and meal tab across cabin / sector / cuisine changes; those changes and meal-service tabs scroll the overlay to top.
   - Centered meal-service title under the route hero. Meal-service tabs are centered horizontally.
-  - Meal photos: `imagePathIfeHigh` if SQ linked it (~9%), else construct `fabs/IFE/INFM/<cabin>/HIGH|LOW/<id>_<cabin>.png` from dish `id` (`photoCandidates` / `menuThumbNext`). Missing CDN objects return HTML 200 so `onerror` walks the list; if none decode as an image, gold bullet. No placeholders. Snacks tab and snack drinks stay bullets. Light Bites keep photos. `API_REFERENCE.md` is the SQ field map.
+  - Meal photos: `imagePathIfeHigh` if SQ linked it, else construct IFE URLs from dish `id` (and from a same-name dish’s id if this row has none). Linked/working URLs and ids are merged into `imageByName` / `imageIdByName` across legs, cabins, and later fetches — not reset per payload. Name keys also match singular/plural and `and`-splits (no dish-name hardcoding). Missing CDN = HTML 200 → `onerror` then gold bullet. No placeholders. Snacks tab and snack drinks stay bullets. Light Bites keep photos.
   - Each course is its own card. Course labels sit between thin gold hairlines; if there are 2+ dishes, italic `Choose one of N` (sentence case, no parentheses, never `CHOOSE`).
   - Items without a photo are gold bullets. Sections with 2+ items get a hairline between rows. Tap a thumbnail for a blurred full-screen lightbox (`#menu-lightbox`).
   - If a dish/bread has no image on this sector, reuse a same-name photo from another sector of the same menu (`imageByName`).
@@ -34,7 +34,7 @@ Latest app cache: `crewassist-v46` (`sw.js`). App SemVer: **1.4.13** (`APP_VERSI
 
 ## In-Progress / Known Gaps
 
-- **Printer sheet art:** Elegant dining-card + printer chrome in v1.4.13. Compact homework layout still first-pass — wait for a dedicated compact reference before locking it.
+- **Printer sheet art:** Elegant dining-card + printer chrome in v1.4.14. Compact homework layout still first-pass — wait for a dedicated compact reference before locking it.
 
 ## Key Architecture Decisions & Constraints
 
