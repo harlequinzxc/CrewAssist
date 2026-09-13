@@ -142,9 +142,8 @@
         html.chat-busy #chat-container textarea {
             pointer-events: none;
         }
-        html.chat-busy #btn-scroll-bottom {
+        html.chat-busy #btn-scroll-bottom.opacity-100 {
             pointer-events: auto !important;
-            opacity: 1 !important;
         }
 
         @keyframes float {
@@ -365,7 +364,14 @@
         .pc-gap { height: 3px; }
 
         .print-edit-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 12px; }
-        .print-edit-card.is-hidden { opacity: 0.45; }
+        .print-edit-card.is-hidden,
+        .print-edit-svc.is-hidden,
+        .print-edit-course.is-hidden,
+        .print-edit-item.is-hidden,
+        .print-edit-block.is-hidden {
+            opacity: 0.38;
+            filter: grayscale(0.85);
+        }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
         .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
@@ -985,7 +991,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.14';
+        const APP_VERSION = '1.4.15';
 
         // State
         let appProfile = null;
@@ -1456,6 +1462,7 @@
                 </div>
             `;
             chatContainer.appendChild(div);
+            updateScrollBottomBtn();
             if (appPrefs.autoScroll) scrollToBottom();
         }
 
@@ -1463,7 +1470,9 @@
             const ind = document.getElementById('typing-indicator');
             if (!ind) return Promise.resolve();
             ind.removeAttribute('id');
-            return animateChatRemove(ind);
+            const done = animateChatRemove(ind);
+            updateScrollBottomBtn();
+            return done;
         }
 
         let botSpeakQueue = Promise.resolve();
@@ -1517,7 +1526,8 @@
         function updateScrollBottomBtn() {
             const btn = document.getElementById('btn-scroll-bottom');
             if (!btn) return;
-            const show = !isChatNearBottom();
+            const typing = !!document.getElementById('typing-indicator');
+            const show = !typing && !isChatNearBottom();
             if (show) {
                 btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
                 btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
@@ -4745,13 +4755,23 @@ function getRegionForAirport(code) {
         let printState = {
             layout: 'elegant',
             paper: 'a4',
-            zoom: 100,
+            zoomElegant: 100,
+            zoomCompact: 100,
             greyscale: false,
             descriptions: true,
             tab: 'sheet',
             sectorIdx: 0,
             model: null
         };
+
+        function printZoom() {
+            return printState.layout === 'compact' ? printState.zoomCompact : printState.zoomElegant;
+        }
+
+        function setPrintZoom(next) {
+            if (printState.layout === 'compact') printState.zoomCompact = next;
+            else printState.zoomElegant = next;
+        }
 
         function escapePrintHtml(str) {
             if (str == null || str === '') return '';
@@ -4978,14 +4998,14 @@ function getRegionForAirport(code) {
                         namedSpecs.forEach((spec) => {
                             const items = takeItems(spec);
                             const label = printDrinkGroupLabel(catName, sub.name, spec.name);
-                            if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
+                            if (items.length) { const hideOff = !printDrinkShownByDefault(label); groups.push({ name: label, items: items, hiddenElegant: hideOff, hiddenCompact: hideOff }); }
                         });
                     } else {
                         const items = [];
                         specs.forEach((spec) => takeItems(spec).forEach((row) => items.push(row)));
                         (sub.items || []).forEach((it) => { const row = printItemFromRaw(it); if (row) items.push(row); });
                         const label = printDrinkGroupLabel(catName, sub.name);
-                        if (items.length) groups.push({ name: label, items: items, hidden: !printDrinkShownByDefault(label) });
+                        if (items.length) { const hideOff = !printDrinkShownByDefault(label); groups.push({ name: label, items: items, hiddenElegant: hideOff, hiddenCompact: hideOff }); }
                     }
                 });
             });
@@ -4998,7 +5018,7 @@ function getRegionForAirport(code) {
             (subs || []).forEach((sub) => {
                 (sub.items || []).forEach((it) => {
                     const row = printItemFromRaw(it);
-                    if (row) { row.hidden = true; items.push(row); }
+                    if (row) { row.hiddenElegant = true; row.hiddenCompact = true; items.push(row); }
                 });
             });
             return items;
@@ -5018,11 +5038,13 @@ function getRegionForAirport(code) {
                         const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
                         if (!items.length) return;
                         const label = printCourseLabel(course.category);
+                        const hideCourse = printIsDelectable(svcName) && !printIsLightBite(label);
                         courses.push({
                             label: label,
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
                             items: items,
-                            hidden: printIsDelectable(svcName) && !printIsLightBite(label)
+                            hiddenElegant: hideCourse,
+                            hiddenCompact: hideCourse
                         });
                     });
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
@@ -5036,7 +5058,7 @@ function getRegionForAirport(code) {
                 services.push({ name: svcName, courses: courses });
                 if (printIsDelectable(svcName)) {
                     courses.forEach((c) => (c.items || []).forEach((row) => {
-                        if (c.hidden) row.hidden = true;
+                        if (c.hiddenElegant) { row.hiddenElegant = true; row.hiddenCompact = true; }
                         delectables.push(row);
                     }));
                 }
@@ -5120,8 +5142,20 @@ function getRegionForAirport(code) {
             return String(name || code || '').toUpperCase();
         }
 
+        function printHiddenKey() {
+            return printState.layout === 'compact' ? 'hiddenCompact' : 'hiddenElegant';
+        }
+
+        function printIsHidden(obj) {
+            return !!(obj && obj[printHiddenKey()]);
+        }
+
+        function printSetHidden(obj, on) {
+            if (obj) obj[printHiddenKey()] = !!on;
+        }
+
         function printVisible(list) {
-            return (list || []).filter((x) => x && !x.hidden);
+            return (list || []).filter((x) => x && !printIsHidden(x));
         }
 
         function printIsPlainCourse(label) {
@@ -5171,7 +5205,7 @@ function getRegionForAirport(code) {
             groups.forEach((g) => {
                 if (g.culinary) html += `<div class="pe-cui">${escapePrintHtml(g.culinary)} Menu</div>`;
                 g.courses.forEach((course) => {
-                    if (course.hidden) return;
+                    if (printIsHidden(course)) return;
                     const items = printVisible(course.items);
                     if (!items.length) return;
                     const n = items.length;
@@ -5213,7 +5247,7 @@ function getRegionForAirport(code) {
                 const band = printElegantCabinBand(cabin.code, cabin.name);
                 html += `<div class="pe-band"><span class="pe-band-line"></span><span class="pe-band-txt">${escapePrintHtml(band)}</span><span class="pe-band-line"></span></div>`;
                 const paintSvc = (svc) => {
-                    if (svc.hidden) return;
+                    if (printIsHidden(svc)) return;
                     html += `<div class="pe-svc-wrap"><div class="pe-svc-head">
                         <div class="pe-route">${escapePrintHtml(depCity)}<br>TO ${escapePrintHtml(arrCity)}</div>
                         <div class="pe-vrule"></div>
@@ -5222,7 +5256,7 @@ function getRegionForAirport(code) {
                     html += renderElegantCourses(svc.courses);
                 };
                 printVisible(cabin.services).forEach((svc) => {
-                    const has = (svc.courses || []).some((c) => !c.hidden && printVisible(c.items).length);
+                    const has = (svc.courses || []).some((c) => !printIsHidden(c) && printVisible(c.items).length);
                     if (!has) return;
                     paintSvc(svc);
                 });
@@ -5242,7 +5276,7 @@ function getRegionForAirport(code) {
                     html += `<div class="pc-svc">${escapePrintHtml(svc.name)}</div>`;
                     (svc.courses || []).forEach((course) => {
                         const key = printCompactCourse(course.label);
-                        if (course.hidden) return;
+                        if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
                         const names = visItems.map((it) => printStrikeAllergens(printDisplayName(it.name))).join(' / ');
@@ -5258,7 +5292,7 @@ function getRegionForAirport(code) {
                 if (drinks.length) {
                     html += `<div class="pc-gap"></div>`;
                     drinks.forEach((g) => {
-                        if (g.hidden) return;
+                        if (printIsHidden(g)) return;
                         const vis = printVisible(g.items);
                         if (!vis.length) return;
                         const key = printCompactCourse(g.name);
@@ -5327,22 +5361,23 @@ function getRegionForAirport(code) {
             };
             setSeg('print-layout-elegant', 'print-layout-compact', printState.layout === 'elegant');
             setSeg('print-paper-a4', 'print-paper-a6', printState.paper === 'a4');
+            const compactOn = printState.layout === 'compact';
+            const paintOpt = (el, on, onLabel, offLabel) => {
+                if (!el) return;
+                el.textContent = on ? onLabel : offLabel;
+                el.classList.toggle('bg-sia-gold', on);
+                el.classList.toggle('text-black', on);
+                el.classList.toggle('border-sia-gold', on);
+                el.classList.toggle('text-gray-500', !on);
+                el.classList.toggle('border-black/10', !on);
+                el.classList.toggle('dark:border-white/15', !on);
+            };
             const grey = document.getElementById('print-opt-grey');
-            if (grey) {
-                grey.textContent = printState.greyscale ? '✓ Greyscale' : 'Greyscale';
-                grey.classList.toggle('bg-sia-gold', printState.greyscale);
-                grey.classList.toggle('text-black', printState.greyscale);
-                grey.classList.toggle('border-sia-gold', printState.greyscale);
-                grey.classList.toggle('text-gray-500', !printState.greyscale);
-            }
             const desc = document.getElementById('print-opt-desc');
-            if (desc) {
-                desc.textContent = printState.descriptions ? '✓ Descriptions' : 'Descriptions';
-                desc.classList.toggle('bg-sia-gold', printState.descriptions);
-                desc.classList.toggle('text-black', printState.descriptions);
-                desc.classList.toggle('border-sia-gold', printState.descriptions);
-                desc.classList.toggle('text-gray-500', !printState.descriptions);
-            }
+            paintOpt(grey, printState.greyscale, '✓ Greyscale', 'Greyscale');
+            paintOpt(desc, printState.descriptions, '✓ Descriptions', 'Descriptions');
+            if (grey) grey.classList.toggle('hidden', compactOn);
+            if (desc) desc.classList.toggle('hidden', compactOn);
             const tabSheet = document.getElementById('print-tab-sheet');
             const tabEdit = document.getElementById('print-tab-edit');
             const sheetOn = printState.tab === 'sheet';
@@ -5355,7 +5390,7 @@ function getRegionForAirport(code) {
                 tabEdit.classList.toggle('text-gray-500', sheetOn);
             }
             const zoomLab = document.getElementById('print-zoom-label');
-            if (zoomLab) zoomLab.textContent = printState.zoom + '%';
+            if (zoomLab) zoomLab.textContent = printZoom() + '%';
         }
 
         function renderPrintSheet() {
@@ -5373,7 +5408,7 @@ function getRegionForAirport(code) {
             }
             const paper = document.createElement('div');
             paper.id = 'print-paper';
-            paper.className = 'print-paper print-' + printState.paper + (printState.greyscale ? ' print-grey' : '');
+            paper.className = 'print-paper print-' + printState.paper + ((printState.layout === 'elegant' && printState.greyscale) ? ' print-grey' : '');
             paper.innerHTML = printState.layout === 'compact'
                 ? renderCompactSheet(model, sector)
                 : renderElegantSheet(model, sector);
@@ -5386,10 +5421,10 @@ function getRegionForAirport(code) {
             const wrap = document.getElementById('print-paper-wrap');
             const paper = document.getElementById('print-paper');
             const label = document.getElementById('print-zoom-label');
-            if (label) label.textContent = String(printState.zoom) + '%';
+            if (label) label.textContent = String(printZoom()) + '%';
             if (!wrap || !paper) return;
             paper.classList.remove('print-export-a4', 'print-export-a6');
-            paper.style.setProperty('--print-type', String(printState.zoom / 100));
+            paper.style.setProperty('--print-type', String(printZoom() / 100));
             paper.style.width = '';
             paper.style.maxWidth = '';
             paper.style.minHeight = '';
@@ -5414,12 +5449,12 @@ function getRegionForAirport(code) {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'print-edit-eye';
-            const sync = () => { btn.textContent = obj.hidden ? 'Show' : 'Hide'; };
+            const sync = () => { btn.textContent = printIsHidden(obj) ? 'Show' : 'Hide'; };
             sync();
             btn.addEventListener('click', () => {
-                obj.hidden = !obj.hidden;
+                printSetHidden(obj, !printIsHidden(obj));
                 sync();
-                if (row) row.classList.toggle('is-hidden', !!obj.hidden);
+                if (row) row.classList.toggle('is-hidden', printIsHidden(obj));
             });
             return btn;
         }
@@ -5433,8 +5468,8 @@ function getRegionForAirport(code) {
             icon.className = 'w-3.5 h-3.5';
             btn.appendChild(icon);
             btn.addEventListener('click', () => {
-                obj.hidden = !obj.hidden;
-                if (row) row.classList.toggle('is-hidden', !!obj.hidden);
+                printSetHidden(obj, !printIsHidden(obj));
+                if (row) row.classList.toggle('is-hidden', printIsHidden(obj));
             });
             return btn;
         }
@@ -5455,7 +5490,7 @@ function getRegionForAirport(code) {
 
         function printEditItemRow(it) {
             const row = document.createElement('div');
-            row.className = 'print-edit-item' + (it.hidden ? ' is-hidden' : '');
+            row.className = 'print-edit-item' + (printIsHidden(it) ? ' is-hidden' : '');
             const dot = document.createElement('span');
             dot.className = 'print-edit-dot';
             row.appendChild(dot);
@@ -5522,7 +5557,7 @@ function getRegionForAirport(code) {
 
             (sector.cabins || []).forEach((cabin) => {
                 const card = document.createElement('div');
-                card.className = 'print-edit-card' + (cabin.hidden ? ' is-hidden' : '');
+                card.className = 'print-edit-card' + (printIsHidden(cabin) ? ' is-hidden' : '');
                 const head = document.createElement('div');
                 head.className = 'print-edit-head';
                 const left = document.createElement('div');
@@ -5542,11 +5577,11 @@ function getRegionForAirport(code) {
 
                 (cabin.services || []).forEach((svc) => {
                     const svcBox = document.createElement('div');
-                    svcBox.className = 'print-edit-svc' + (svc.hidden ? ' is-hidden' : '');
+                    svcBox.className = 'print-edit-svc' + (printIsHidden(svc) ? ' is-hidden' : '');
                     svcBox.appendChild(printEditSectionHead(svc.name || 'Service', svc, svcBox));
                     (svc.courses || []).forEach((course) => {
                         const courseBox = document.createElement('div');
-                        courseBox.className = 'print-edit-course' + (course.hidden ? ' is-hidden' : '');
+                        courseBox.className = 'print-edit-course' + (printIsHidden(course) ? ' is-hidden' : '');
                         const cHead = document.createElement('div');
                         cHead.className = 'print-edit-head mt-1';
                         const cLeft = document.createElement('div');
@@ -5581,7 +5616,7 @@ function getRegionForAirport(code) {
 
                 (cabin.drinks || []).forEach((g) => {
                     const gBox = document.createElement('div');
-                    gBox.className = 'print-edit-svc' + (g.hidden ? ' is-hidden' : '');
+                    gBox.className = 'print-edit-svc' + (printIsHidden(g) ? ' is-hidden' : '');
                     gBox.appendChild(printEditSectionHead(g.name || 'Beverages', g, gBox));
                     (g.items || []).forEach((it) => gBox.appendChild(printEditItemRow(it)));
                     card.appendChild(gBox);
@@ -5758,11 +5793,11 @@ function getRegionForAirport(code) {
             document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(true); });
             document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(true); });
             document.getElementById('print-zoom-out').addEventListener('click', () => {
-                printState.zoom = Math.max(70, printState.zoom - 10);
+                setPrintZoom(Math.max(70, printZoom() - 10));
                 renderPrintView();
             });
             document.getElementById('print-zoom-in').addEventListener('click', () => {
-                printState.zoom = Math.min(140, printState.zoom + 10);
+                setPrintZoom(Math.min(140, printZoom() + 10));
                 renderPrintView();
             });
             document.getElementById('print-opt-grey').addEventListener('click', () => { printState.greyscale = !printState.greyscale; renderPrintView(); });
