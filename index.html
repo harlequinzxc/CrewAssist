@@ -1029,7 +1029,7 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.25';
+        const APP_VERSION = '1.4.26';
 
         // State
         let appProfile = null;
@@ -2818,6 +2818,26 @@ function getRegionForAirport(code) {
             return dd + ' ' + months[dt.getMonth()] + ' ' + String(dt.getFullYear()).slice(-2);
         }
 
+        function formatMoney(n) {
+            const x = Number(n);
+            if (!isFinite(x)) return '$0.00';
+            const sign = x < 0 ? '-' : '';
+            const parts = Math.abs(x).toFixed(2).split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            return sign + '$' + parts[0] + '.' + parts[1];
+        }
+
+        function ifaSectorLabel(idx) {
+            return ['First Sector', 'Second Sector', 'Third Sector', 'Fourth Sector'][idx] || ('Sector ' + (idx + 1));
+        }
+
+        function lmaMealBadge(on, letter, onCls) {
+            if (on) {
+                return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold ' + onCls + '">' + letter + '</span>';
+            }
+            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">✕</span>';
+        }
+
         function getLayoverMultiplier(sdp) {
             if (sdp <= 14) return 1.3;
             if (sdp <= 18) return 2.5;
@@ -2903,8 +2923,8 @@ function getRegionForAirport(code) {
                     ifaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm mb-1">
-                                <span>Sector ${idx+1} ${sec.isSg ? '🛫 from SG' : '🛬 to SG/Other'}</span>
-                                <span>$${allowance.toFixed(2)}</span>
+                                <span>${ifaSectorLabel(idx)}</span>
+                                <span>${formatMoney(allowance)}</span>
                             </div>
                             <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
@@ -2921,7 +2941,7 @@ function getRegionForAirport(code) {
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm">
                                 <span>Turnaround Bonus (${bonusCount}x)</span>
-                                <span>$${bonus.toFixed(2)}</span>
+                                <span>${formatMoney(bonus)}</span>
                             </div>
                         </div>
                     `);
@@ -3013,10 +3033,10 @@ function getRegionForAirport(code) {
                                 <div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
                                     <span class="text-[11px] text-gray-600 dark:text-gray-400">${formatLmaDay(currDt)}</span>
                                     <div class="flex items-center gap-1.5">
-                                        ${bc > 0 ? '<span class="bg-orange-500/20 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded text-[10px] font-bold">B</span>' : ''}
-                                        ${lc > 0 ? '<span class="bg-blue-500/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded text-[10px] font-bold">L</span>' : ''}
-                                        ${dc > 0 ? '<span class="bg-purple-500/20 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded text-[10px] font-bold">D</span>' : ''}
-                                        <span class="ml-2 text-[11px] font-bold text-gray-800 dark:text-gray-200">$${dayCost.toFixed(2)}</span>
+                                        ${lmaMealBadge(bc > 0, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')}
+                                        ${lmaMealBadge(lc > 0, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')}
+                                        ${lmaMealBadge(dc > 0, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')}
+                                        <span class="ml-2 text-[11px] font-bold tabular-nums text-gray-800 dark:text-gray-200">${formatMoney(dayCost)}</span>
                                     </div>
                                 </div>
                             `);
@@ -3042,15 +3062,15 @@ function getRegionForAirport(code) {
                     <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">
                         <div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5 last:border-0">
                             <span class="tracking-wider"><span class="uppercase">Breakfast</span> (${mealB}x)</span>
-                            <span class="text-sia-gold">$${globalB.toFixed(2)}</span>
+                            <span class="text-sia-gold">${formatMoney(globalB)}</span>
                         </div>
                         <div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5 last:border-0">
                             <span class="tracking-wider"><span class="uppercase">Lunch</span> (${mealL}x)</span>
-                            <span class="text-sia-gold">$${globalL.toFixed(2)}</span>
+                            <span class="text-sia-gold">${formatMoney(globalL)}</span>
                         </div>
                         <div class="flex flex-col items-center flex-1">
                             <span class="tracking-wider"><span class="uppercase">Dinner</span> (${mealD}x)</span>
-                            <span class="text-sia-gold">$${globalD.toFixed(2)}</span>
+                            <span class="text-sia-gold">${formatMoney(globalD)}</span>
                         </div>
                     </div>
                 `);
@@ -3067,7 +3087,7 @@ function getRegionForAirport(code) {
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
-                    <p class="text-4xl font-bold">$${grandTotal.toFixed(2)}</p>
+                    <p class="text-4xl font-bold">${formatMoney(grandTotal)}</p>
                 </div>
             `;
 
@@ -3076,7 +3096,7 @@ function getRegionForAirport(code) {
                     <div>
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="font-bold">IFA Breakdown</h4>
-                            <span class="font-bold text-sia-gold">$${ifaTotal.toFixed(2)}</span>
+                            <span class="font-bold text-sia-gold">${formatMoney(ifaTotal)}</span>
                         </div>
                         ${ifaDetails.join('')}
                     </div>
@@ -3090,7 +3110,7 @@ function getRegionForAirport(code) {
                     <div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="font-bold">LMA Breakdown</h4>
-                            <span class="font-bold text-sia-gold">$${lmaTotal.toFixed(2)}</span>
+                            <span class="font-bold text-sia-gold">${formatMoney(lmaTotal)}</span>
                         </div>
                         ${lmaDetails.join('')}
                     </div>
@@ -3108,13 +3128,13 @@ function getRegionForAirport(code) {
             // Post result message to chat
             let msg = '';
             if (isTurnaround && mode === 'both') {
-                msg = 'Your total COP Allowance is $' + grandTotal.toFixed(2);
+                msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
             } else if (mode === 'ifa') {
-                msg = 'Your IFA is $' + ifaTotal.toFixed(2);
+                msg = 'Your IFA is ' + formatMoney(ifaTotal);
             } else if (mode === 'lma') {
-                msg = 'Your LMA is $' + lmaTotal.toFixed(2);
+                msg = 'Your LMA is ' + formatMoney(lmaTotal);
             } else {
-                msg = 'Your total COP Allowance is $' + grandTotal.toFixed(2);
+                msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
             }
             
             setTimeout(() => {

@@ -1,15 +1,15 @@
 # AI Agent Handoff File (CrewAssist)
 
-Latest app cache: `crewassist-v58` (`sw.js`). App SemVer: **1.4.25** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
+Latest app cache: `crewassist-v59` (`sw.js`). App SemVer: **1.4.26** (`APP_VERSION` in `index.html`, shown on onboarding). Branch work for this line of UI lives on `arena/01a0819d-crewassist`.
 
 ---
 
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.25` at the bottom of onboarding (`#app-semver`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode (10 taps on the logo). Subtle SemVer `v1.4.26` at the bottom of onboarding (`#app-semver`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser.
-- **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push). LMA summary: day-by-day cards (`formatLmaDay` → `DD MMM YY`, B/L/D chips, `$` per-day amount, no station total), then a Breakfast/Lunch/Dinner totals card with counts (`BREAKFAST (3x)`) and `$` amounts.
+- **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet (absolute over content, not a layout push). Summary overlay uses `formatMoney` (`$1,457.38`). IFA sectors are First/Second/Third/Fourth Sector. LMA day rows: `formatLmaDay` (`DD MMM YY`), three fixed-width B/L/D badges (`✕` when that meal is missing), `$` per-day amount, no station total; then Breakfast/Lunch/Dinner totals with counts (`BREAKFAST (3x)`).
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
   - Dropdowns: one row, horizontal scroll if narrow; menus overlay content.
   - Category control: single segmented bar (Meals / Drinks / Snacks / Amenities), no wrapping pills.
