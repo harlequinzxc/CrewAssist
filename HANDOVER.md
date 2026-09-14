@@ -2,9 +2,9 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v64` (`sw.js`). App SemVer: **1.5.1** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
+Latest app cache: `crewassist-v65` (`sw.js`). App SemVer: **1.5.2** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
 
-**Product status (owner, 2026-09-15):** v1.5.1 is in for review. **Next (do not start until signed off):** archive, month total, flight-number auto-fill, shuttle toggle. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; later auto-fill may *pre-tick* shuttle when ground time is same calendar day or very short (SQ11/12 NRT–LAX is a long ground, not a shuttle).
+**Product status (owner, 2026-09-15):** v1.5.2 is in for review (Fetch auto-fill + Shuttle). **Next (do not start until signed off):** archive, month total. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; Fetch may *pre-tick* shuttle when ground time is same calendar day or under 6 hours (SQ11/12 NRT–LAX is a long ground, not a shuttle).
 
 ---
 
@@ -29,7 +29,7 @@ Latest app cache: `crewassist-v64` (`sw.js`). App SemVer: **1.5.1** (`APP_VERSIO
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane (origami dart) logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.5.1` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: a hairline **the width of `CrewAssist™`**, then `AN UNOFFICIAL CREW TOOL` on **one row** (`whitespace-nowrap`), SemVer colour. **10 taps** on `#header-brand` (400ms) toggles developer mode. Settings reopen: scroll top, collapse rate accordions. What’s new is a **glass overlay** (`#whatsnew-backdrop`) after `showMain` (after onboarding for new crew; on the chat page for returning crew). X closes. “Do not show again” writes `crewAssist.hideWhatsNew = APP_VERSION`; without the check it returns on every launch. A new stamp shows again even if they hid the previous one. `APP_WHAT_NEW` is an array of short bullets. There is **no** chat What’s new bubble.
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.5.2` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: a hairline **the width of `CrewAssist™`**, then `AN UNOFFICIAL CREW TOOL` on **one row** (`whitespace-nowrap`), SemVer colour. **10 taps** on `#header-brand` (400ms) toggles developer mode. Settings reopen: scroll top, collapse rate accordions. What’s new is a **glass overlay** (`#whatsnew-backdrop`) after `showMain` (after onboarding for new crew; on the chat page for returning crew). X closes. “Do not show again” sits **outside** the glass card (`flex items-center` checkbox + label). Checking it then closing writes `crewAssist.hideWhatsNew = APP_VERSION`; without the check it returns on every launch. A new stamp shows again even if they hid the previous one. `APP_WHAT_NEW` is an array of short bullets. There is **no** chat What’s new bubble.
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`).
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. Coefficients live in `rates.json` (network-first fetch, last-good `localStorage`, `DEFAULT_RATES` fallback baked from `IFA_CONFIG` / `REGION_RATES`). Device overrides in `crewAssist.rates`. Developer editor (animated `.dev-rate-fold` accordions, collapsed by default):
   - **Base hourly IFA rate ($/h)** — paired ranks share one field: Jr. FS / Jr. FSS, FS / FSS, LS / LSS, CS / CSS, IFM. Save writes both keys.
@@ -41,6 +41,8 @@ Latest app cache: `crewassist-v64` (`sw.js`). App SemVer: **1.5.1** (`APP_VERSIO
   - **LMA region rates** — B / L / D per region.
   - **Save** = this device. **Reset** = shipped `rates.json`. **Export / Import** JSON. **Do not write to GitHub from the app.** Publish to everyone = GitHub Desktop replace `rates.json`.
   - **Turnaround dates:** 2-sector = date above sector 1 and 2; 4-sector = date above sector 1 only. Layover still uses LMA dates. Defaults/cascade use `todayLocalYMD` / `addLocalDays`.
+  - **Fetch (optional):** each IFA sector has flight number + date + Fetch. Writes the same hours / LMA IATA / in-out fields the crew can type. Uses `/api/getcabin` then `/api/menu` (first published cabin, JCL preferred). Block time = UTC arr − dep. Multi-leg pick matches dep date / previous sector’s arrival airport; unpublished (101) may retry a sibling sector’s date. Cabin class is not required. Empty flight number does **not** disable Calculate (`ifa-fn-input` skipped in `validateInputs`). Do not auto-Calculate. A failed fetch must not wipe typed 101/net hours.
+  - **Shuttle:** per-LMA-station checkbox, default off, hidden with the LMA wrap on Turnaround. On → that station’s LMA is **$0** (no B/L/D); IFA unchanged. Not IFA flight type Turnaround. Fetch may pre-tick when same local YMD or ground &lt; 6h; crew can untick. Shuttle stations are skipped in Calculate validation. Do **not** hardcode flight numbers.
   - IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet.
   - Summary overlay: `formatMoney` (`$1,457.38`). IFA sectors First/Second/Third/Fourth Sector, with ` (Paxing)` when that sector is paxing. LMA day rows: `formatLmaDay` (`DD MMM YY`), three fixed-width B/L/D badges (`✕` when missing), `$` per day, **no station total**; then Breakfast/Lunch/Dinner totals with counts (`BREAKFAST (3x)`).
   - IFA hours display is `XH YM`, never a decimal like `10.17`.
@@ -76,7 +78,8 @@ Owner considers the app **essentially complete**. Do not start a new slice witho
 
 Honest leftovers (do not “fix” unless asked):
 
-- **Allowances Archive** is specified in `LOGIC.md` §§4.9–4.12 and 5.4 / 6.8. **It is not implemented** in `index.html`. Turnaround date fields (`#…-ifa-d1` / `d2`) and layover LMA dates are ready for it.
+- **Allowances Archive** is specified in `LOGIC.md` §§4.9–4.12 and 5.4 / 6.8. **It is not implemented** in `index.html`. Turnaround date fields (`#…-ifa-d1` / `d2`) and layover LMA dates are ready for it. Fetch writes into those same fields.
+- **Month total** is not implemented.
 - **`crewAssist.modifiers` / `appModifiers`** were removed in 1.5.1.
 - **Publish rates to all installs** is still: export or edit `rates.json`, commit, merge via GitHub Desktop. No one-tap GitHub write from the PWA (rejected).
 - **Airplane-mode CSS:** Tailwind/Lucide are CDNs and are **not** in `sw.js`. The PWA shell caches, but the UI looks unstyled offline. Offline last menu is on hold partly for this.
@@ -118,7 +121,7 @@ These have already caused regressions. Treat them as locks.
 ### Calculator / rates
 
 - `LOGIC.md` wins on **behaviour**. Live `rates.json` / `crewAssist.rates` wins on **coefficients**. Formulas stay in LOGIC + `executeCalculation`; numbers are not the source of truth in JS once `rates.json` has loaded.
-- Critical asymmetry: **layover** multiplier from **per-sector SDP**; **turnaround** multiplier from **summed** SDP, applied to every non-paxing sector. Paxing (0.75×, SDP ignored) beats Direct US (3.5×) if both were true. Direct US UI is layover + 2-sector only. LMA is **hidden / zero** on turnaround.
+- Critical asymmetry: **layover** multiplier from **per-sector SDP**; **turnaround** multiplier from **summed** SDP, applied to every non-paxing sector. Paxing (0.75×, SDP ignored) beats Direct US (3.5×) if both were true. Direct US UI is layover + 2-sector only. LMA is **hidden / zero** on turnaround. **Shuttle** is a per-station LMA skip ($0 that station only), not Turnaround; do not hardcode flight numbers (`LOGIC.md` §4.3a).
 - Rank pairs are the same rate (Jr. FS = Jr. FSS, etc.).
 - Bracket editor: one editable cutoff per boundary; the next band’s “> X” is a live echo, not a second field. Last band has no cutoff (`maxHours: null`).
 - Save = device only. Reset = shipped file. Export/Import JSON. **No GitHub write from the PWA. No one-tap publish. No non-dev crew editing.**
@@ -153,7 +156,7 @@ After every chat bubble (user or bot, including calculator and lookup cards) ful
 | Path | Role |
 |---|---|
 | `index.html` | Entire UI + engine (~360k). Three inline `<script>` blocks. |
-| `sw.js` | `crewassist-v64`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
+| `sw.js` | `crewassist-v65`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
 | `rates.json` | Default IFA + LMA numbers (`version`, `ifa.*`, `lma.regions`). |
 | `api/sq.js` | Vercel POST proxy; only `getcabin` \| `menu`; 12s abort; Origin/Referer spoof official site. |
 | `manifest.json` | PWA; `start_url` `./index.html`; theme `#0B1A3A`. |
