@@ -2,9 +2,9 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v62` (`sw.js`). App SemVer: **1.4.29** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). Working branch for this line: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`). Last noted HEAD when this file was rewritten: `f3b8abb` / `64b97ba` (1.4.29 rates editor).
+Latest app cache: `crewassist-v63` (`sw.js`). App SemVer: **1.5.0** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the one-line changelog for the What’s new bubble. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
 
-**Product status (owner, 2026-09-14):** the app is **more or less done**. Do **not** invent the next feature. Wait for a review or an explicit request. Signed-off slices: menu viewer + printer (v1.4.24), calculator summary overlay (v1.4.26), developer rates editor (v1.4.27–1.4.29).
+**Product status (owner, 2026-09-15):** v1.5.0 is in for review. **Next (do not start until signed off):** archive, month total, flight-number auto-fill, shuttle toggle. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; later auto-fill may *pre-tick* shuttle when ground time is same calendar day or very short (SQ11/12 NRT–LAX is a long ground, not a shuttle).
 
 ---
 
@@ -29,7 +29,7 @@ Latest app cache: `crewassist-v62` (`sw.js`). App SemVer: **1.4.29** (`APP_VERSI
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane (origami dart) logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.4.29` at the bottom of onboarding (`#app-semver`). **10 taps** on `#header-brand` (400ms streak window) **toggles** developer mode: “Developer Mode Enabled” / “Developer Mode Disabled” via `appAlert`. Persist `crewAssist.devMode`. Settings reopen (`openSettings` → `resetSettingsSheet`): `#settings-scroll` to top and all `#dev-rates-root` accordions collapsed.
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.5.0` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: hairline + `AN UNOFFICIAL CREW TOOL` in the SemVer colour, `h-0`/`absolute` so the 65% form does not move. **10 taps** on `#header-brand` (400ms streak window) **toggles** developer mode: “Developer Mode Enabled” / “Developer Mode Disabled” via `appAlert`. Persist `crewAssist.devMode`. Settings reopen (`openSettings` → `resetSettingsSheet`): `#settings-scroll` to top and all `#dev-rates-root` accordions collapsed. First-time onboarding writes `crewAssist.lastSeenVersion` so new crew skip the What’s new bubble; upgrades with a profile but no key see it once after the two welcome lines (`maybeWhatsNew`, `APP_WHAT_NEW`).
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`).
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. Coefficients live in `rates.json` (network-first fetch, last-good `localStorage`, `DEFAULT_RATES` fallback baked from `IFA_CONFIG` / `REGION_RATES`). Device overrides in `crewAssist.rates`. Developer editor (animated `.dev-rate-fold` accordions, collapsed by default):
   - **Base hourly IFA rate ($/h)** — paired ranks share one field: Jr. FS / Jr. FSS, FS / FSS, LS / LSS, CS / CSS, IFM. Save writes both keys.
@@ -51,7 +51,7 @@ Latest app cache: `crewassist-v62` (`sw.js`). App SemVer: **1.4.29** (`APP_VERSI
   - Each course is its own card. Course labels between thin gold hairlines; 2+ dishes → italic `Choose one of N` (never `(CHOOSE N)`).
   - Tap a thumbnail for `#menu-lightbox`. More/Less if copy > 2 lines (animate); imaged items stay horizontal.
 - **Chat jump-to-latest:** `#btn-scroll-bottom`, same size as send, just above chips; only when not at bottom. **Hide while typing.** Do not use `opacity: 1 !important` under `html.chat-busy` (it fights the hide).
-- **Flight lookup:** Card title Inflight Menu (plane icon). Fetch menu CTA: **book-open** for viewer, **printer** for print. After Fetch: typing → “Fetching menu from seat pocket.” → typing → overlay → “Here is the menu.” After a date: sector pills (if multi) + cabin pills; CTA grey until ≥1 sector (if shown) and ≥1 cabin. Date tap fetches immediately (500ms debounce is only for typing the flight number). `executeFetchCabins` shows `#fv-loading` then `Promise.all`s `getcabin` **and** a speculative JCL `menu` before painting pills. FCL label is Suites vs First from aircraft type (`380`/`388`).
+- **Flight lookup:** Card title Inflight Menu (plane icon). Last 5 successful fetches as chips under the flight field (`crewAssist.recentFlights`; horizontal scroll + `.mask-edge` like chat chips). Overlay `currentMenuSearch.selectedSector` is kept when switching cabin (`renderMenu` re-picks that leg). Fetch menu CTA: **book-open** for viewer, **printer** for print. After Fetch: typing → “Fetching menu from seat pocket.” → typing → overlay → “Here is the menu.” After a date: sector pills (if multi) + cabin pills; CTA grey until ≥1 sector (if shown) and ≥1 cabin. Date tap fetches immediately (500ms debounce is only for typing the flight number). `executeFetchCabins` shows `#fv-loading` then `Promise.all`s `getcabin` **and** a speculative JCL `menu` before painting pills. FCL label is Suites vs First from aircraft type (`380`/`388`).
 - **Chat motion:** `.chat-anim-in` (320ms) / `animateChatRemove`. After a bubble finishes, wait **500ms** (`CHAT_GAP_MS`) before the next bubble or typing (`noteBubbleShown` + `enqueueBot` waits on `lastBubbleReady`). Typing before every bot line, calculator, and lookup. Welcome is two bubbles (`{greeting}, {rank} {name}!` then `How can I help you today?`). Send, chips, and in-chat buttons locked (`html.chat-busy`) until the current bubble + gap finish.
 - **Onboarding gender:** Fixed. `#toggle-autoscroll` was removed; do not re-read it in `initUI()`.
 - **CTAs:** Gold-bordered pills. Calculate stays disabled until required fields are filled. Native `appAlert` / `appConfirm` — **never** `alert()` / `confirm()`. Send icon centered.
@@ -74,12 +74,11 @@ Owner considers the app **essentially complete**. Do not start a new slice witho
 
 Honest leftovers (do not “fix” unless asked):
 
-- **Allowances Archive** is specified in `LOGIC.md` §§4.9–4.12 and 5.4 / 6.8. **It is not implemented** in `index.html` (no archive UI, no `crewAssist.archives` key). Calculator reset/archive behaviour in LOGIC is ahead of the code.
-- **LMA meal windows** are hardcoded in `executeCalculation` (`bStart = 7*60+30`, etc.). They were **explicitly left out** of `rates.json` / the developer editor.
-- **LMA date fields still use `toISOString().split('T')[0]`** in several calculator default/cascade paths. `LOGIC.md` §6.7 forbids this (UTC+8 can shift the calendar day). Flight-lookup date helpers subtract `tzOffset` first. If a crew in Singapore reports a layover date off by one, this is the first place to look.
-- **`crewAssist.modifiers`** is still read in `initData` from the old JSON-textarea editor. The textarea is gone; the key is leftover and unused by the rates engine.
+- **Allowances Archive** is specified in `LOGIC.md` §§4.9–4.12 and 5.4 / 6.8. **It is not implemented** in `index.html`. Turnaround date fields (`#…-ifa-d1` / `d2`) and layover LMA dates are ready for it.
+- **`crewAssist.modifiers`** is still read in `initData` from the old JSON-textarea editor. Unused by the rates engine.
 - **Publish rates to all installs** is still: export or edit `rates.json`, commit, merge via GitHub Desktop. No one-tap GitHub write from the PWA (rejected).
-- **Printer / viewer / summary overlay / rates editor** are signed off at the versions above. Residual polish only if the owner reports it.
+- **Airplane-mode CSS:** Tailwind/Lucide are CDNs and are **not** in `sw.js`. The PWA shell caches, but the UI looks unstyled offline. Offline last menu is on hold partly for this.
+- Printer / viewer / summary overlay signed off (v1.4.24 / 1.4.26). Residual polish only if the owner reports it.
 
 ---
 
@@ -151,7 +150,7 @@ After every chat bubble (user or bot, including calculator and lookup cards) ful
 | Path | Role |
 |---|---|
 | `index.html` | Entire UI + engine (~360k). Three inline `<script>` blocks. |
-| `sw.js` | `crewassist-v62`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
+| `sw.js` | `crewassist-v63`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
 | `rates.json` | Default IFA + LMA numbers (`version`, `ifa.*`, `lma.regions`). |
 | `api/sq.js` | Vercel POST proxy; only `getcabin` \| `menu`; 12s abort; Origin/Referer spoof official site. |
 | `manifest.json` | PWA; `start_url` `./index.html`; theme `#0B1A3A`. |
@@ -173,7 +172,9 @@ There is no bundler, no tests suite, no `package.json` required for the frontend
 | `crewAssist.theme` | `'light'` or dark. |
 | `crewAssist.prefs` | `{ autoScroll }` (autoscroll toggle UI was removed). |
 | `crewAssist.devMode` | `'true'` / `'false'`. |
-| `crewAssist.rates` | Device override of `rates.json`. Absent → use shipped file. |
+| `crewAssist.rates` | Device override of `rates.json` (including meal windows). Absent → use shipped file. |
+| `crewAssist.lastSeenVersion` | Last `APP_VERSION` that showed (or skipped) What’s new. |
+| `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
 | `crewAssist.modifiers` | **Leftover** from the old textarea; unused by the rates engine. |
 
 ---

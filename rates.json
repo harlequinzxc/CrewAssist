@@ -30,6 +30,11 @@
     ]
   },
   "lma": {
+    "windows": {
+      "b": { "start": "07:30", "end": "08:30" },
+      "l": { "start": "12:30", "end": "13:30" },
+      "d": { "start": "19:30", "end": "20:30" }
+    },
     "regions": {
       "Australia / New Zealand": { "b": 50, "l": 86, "d": 111 },
       "Orient": { "b": 57, "l": 100, "d": 128 },

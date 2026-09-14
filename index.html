@@ -493,6 +493,12 @@
                         <img src="icons/logo-512.png" class="w-48 h-48 drop-shadow-2xl" alt="Plane">
                     </div>
                     <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
+                    <div class="h-0 relative w-full flex justify-center pointer-events-none">
+                        <div class="absolute top-2 flex flex-col items-center">
+                            <div class="w-8 h-px bg-sia-navy/20 dark:bg-white/15"></div>
+                            <p class="mt-1 text-[10px] tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none">AN UNOFFICIAL CREW TOOL</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="h-[65%] relative z-10 w-full backdrop-blur-sm">
@@ -1053,7 +1059,8 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.4.29';
+        const APP_VERSION = '1.5.0';
+        const APP_WHAT_NEW = 'Turnaround dates on COP, recent flights on the menu card, meal windows in developer rates, paxing labelled on the summary, and layover date fixes.';
 
         // State
         let appProfile = null;
@@ -1222,9 +1229,13 @@
                 // Auto-capitalize Name
                 const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                 tempProfile.name = nameParts.join(' ');
+                const firstProfile = !localStorage.getItem('crewAssist.profile');
                 
                 appProfile = { ...tempProfile };
                 localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
+                if (firstProfile && !localStorage.getItem('crewAssist.lastSeenVersion')) {
+                    localStorage.setItem('crewAssist.lastSeenVersion', APP_VERSION);
+                }
                 
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
                 
@@ -1455,6 +1466,7 @@
                 const firstName = appProfile.name.split(' ')[0];
                 addBotMessage(greeting + ', ' + appProfile.rank + ' ' + firstName + '!');
                 addBotMessage('How can I help you today?');
+                maybeWhatsNew();
             };
             if (!kids.length) {
                 greet();
@@ -1554,6 +1566,14 @@
 
         function addBotMessage(text) {
             return enqueueBot(() => addMessage('bot', text, true));
+        }
+
+        function maybeWhatsNew() {
+            const prev = localStorage.getItem('crewAssist.lastSeenVersion');
+            if (prev === APP_VERSION) return;
+            localStorage.setItem('crewAssist.lastSeenVersion', APP_VERSION);
+            if (!APP_WHAT_NEW) return;
+            addBotMessage("What's new in v" + APP_VERSION + ': ' + APP_WHAT_NEW);
         }
 
         function isChatNearBottom() {
@@ -2346,6 +2366,12 @@ function getRegionForAirport(code) {
             'Southeast Asia': { b: 31, l: 55, d: 70 }
         };
 
+        const LMA_WINDOWS = {
+            b: { start: '07:30', end: '08:30' },
+            l: { start: '12:30', end: '13:30' },
+            d: { start: '19:30', end: '20:30' }
+        };
+
         const DEFAULT_RATES = {
             version: 1,
             ifa: {
@@ -2358,7 +2384,10 @@ function getRegionForAirport(code) {
                 layoverBrackets: IFA_CONFIG.layoverBrackets.slice(),
                 turnaroundBrackets: IFA_CONFIG.turnaroundBrackets.slice()
             },
-            lma: { regions: JSON.parse(JSON.stringify(REGION_RATES)) }
+            lma: {
+                windows: JSON.parse(JSON.stringify(LMA_WINDOWS)),
+                regions: JSON.parse(JSON.stringify(REGION_RATES))
+            }
         };
         let shippedRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
         let activeRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
@@ -2403,8 +2432,18 @@ function getRegionForAirport(code) {
                     layoverBrackets: normalizeBrackets(ifaIn.layoverBrackets, base.ifa.layoverBrackets),
                     turnaroundBrackets: normalizeBrackets(ifaIn.turnaroundBrackets, base.ifa.turnaroundBrackets)
                 },
-                lma: { regions: cloneRates(base.lma.regions) }
+                lma: {
+                    windows: cloneRates(base.lma.windows || LMA_WINDOWS),
+                    regions: cloneRates(base.lma.regions)
+                }
             };
+            const incomingWindows = (src.lma && src.lma.windows) || raw.windows || {};
+            ['b', 'l', 'd'].forEach((k) => {
+                const w = incomingWindows[k];
+                if (!w) return;
+                if (w.start) rates.lma.windows[k].start = String(w.start);
+                if (w.end) rates.lma.windows[k].end = String(w.end);
+            });
             const incomingRates = ifaIn.baseRates || raw.baseRates || {};
             Object.keys(rates.ifa.baseRates).forEach((k) => {
                 if (incomingRates[k] != null) rates.ifa.baseRates[k] = numOr(incomingRates[k], rates.ifa.baseRates[k]);
@@ -2436,6 +2475,10 @@ function getRegionForAirport(code) {
             Object.keys(REGION_RATES).forEach((k) => { delete REGION_RATES[k]; });
             Object.keys(parsed.lma.regions).forEach((k) => {
                 REGION_RATES[k] = Object.assign({}, parsed.lma.regions[k]);
+            });
+            const win = (parsed.lma && parsed.lma.windows) || LMA_WINDOWS;
+            ['b', 'l', 'd'].forEach((k) => {
+                LMA_WINDOWS[k] = Object.assign({}, LMA_WINDOWS[k], win[k] || {});
             });
         }
 
@@ -2564,6 +2607,17 @@ function getRegionForAirport(code) {
                 lmaBody += '<td>' + ratesInput(row.d, 'data-lma-region="' + ratesEsc(k) + '" data-col="d"') + '</td></tr>';
             });
             lmaBody += '</tbody></table>';
+            const win = (r.lma && r.lma.windows) || LMA_WINDOWS;
+            const mealName = { b: 'Breakfast', l: 'Lunch', d: 'Dinner' };
+            let winBody = '<table class="dev-rate-table"><thead><tr><th>Meal</th><th>Start</th><th>End</th></tr></thead><tbody>';
+            ['b', 'l', 'd'].forEach((k) => {
+                const w = win[k] || {};
+                winBody += '<tr><td>' + mealName[k] + '</td>';
+                winBody += '<td>' + ratesInput(w.start, 'data-lma-window="' + k + '" data-col="start"') + '</td>';
+                winBody += '<td>' + ratesInput(w.end, 'data-lma-window="' + k + '" data-col="end"') + '</td></tr>';
+            });
+            winBody += '</tbody></table>';
+            html += section('windows', 'LMA meal windows', winBody);
             html += section('lma', 'LMA region rates', lmaBody);
             root.innerHTML = html;
             root.querySelectorAll('.dev-rate-acc').forEach((btn) => {
@@ -2626,6 +2680,15 @@ function getRegionForAirport(code) {
                 const col = el.getAttribute('data-col');
                 if (!k || !col || !base.lma.regions[k]) return;
                 base.lma.regions[k][col] = numOr(el.value, base.lma.regions[k][col]);
+            });
+            if (!base.lma.windows) base.lma.windows = cloneRates(LMA_WINDOWS);
+            root.querySelectorAll('[data-lma-window]').forEach((el) => {
+                const k = el.getAttribute('data-lma-window');
+                const col = el.getAttribute('data-col');
+                if (!k || !col) return;
+                if (!base.lma.windows[k]) base.lma.windows[k] = { start: '', end: '' };
+                const v = String(el.value || '').trim();
+                if (v) base.lma.windows[k][col] = v;
             });
             return parseRates(base);
         }
@@ -2697,6 +2760,32 @@ function getRegionForAirport(code) {
 
 
         let calcIdCounter = 0;
+
+        function pad2(n) {
+            return (n < 10 ? '0' : '') + n;
+        }
+
+        function formatLocalYMD(d) {
+            return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+        }
+
+        function todayLocalYMD() {
+            return formatLocalYMD(new Date());
+        }
+
+        function addLocalDays(ymd, n) {
+            const p = String(ymd || '').split('-');
+            if (p.length < 3) return ymd;
+            const d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+            d.setDate(d.getDate() + n);
+            return formatLocalYMD(d);
+        }
+
+        function parseHmToMinutes(s) {
+            const m = String(s || '').match(/^(\d{1,2}):(\d{2})$/);
+            if (!m) return null;
+            return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+        }
 
         function renderCalculatorCard(mode) {
             calcIdCounter++;
@@ -2871,10 +2960,13 @@ function getRegionForAirport(code) {
                         let label = i % 2 !== 0 ? 'Outbound from SG' : 'Inbound to SG';
                         if (is4 && !isTurn && i > 1) label = 'Station to Station';
                         if (is4 && !isTurn && i === 4) label = 'Inbound to SG';
+                        const showTurnDate = isTurn && (count === 2 || (count === 4 && i === 1));
 
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
+                                ${showTurnDate ? `<label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <input type="date" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ui-input w-full rounded-lg px-3 mb-2 text-sm font-bold focus:border-sia-gold outline-none">` : ''}
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
                                 <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
@@ -2916,24 +3008,16 @@ function getRegionForAirport(code) {
                     const div = document.createElement('div');
                     div.className = 'p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 relative overflow-hidden transition-all duration-500 max-h-0 opacity-0 scale-95';
                     
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = todayLocalYMD();
                     let defaultArr = today;
-                    let defaultDep = today;
+                    let defaultDep = addLocalDays(today, 2);
 
                     if (idx > 1) {
-                        // Cascading logic fallback (initial)
                         const prevDep = document.getElementById(`${id}-lma-d${idx-1}`).value;
                         if (prevDep) {
-                            const d = new Date(prevDep);
-                            d.setDate(d.getDate() + 1);
-                            defaultArr = d.toISOString().split('T')[0];
-                            d.setDate(d.getDate() + 1);
-                            defaultDep = d.toISOString().split('T')[0];
+                            defaultArr = addLocalDays(prevDep, 1);
+                            defaultDep = addLocalDays(prevDep, 2);
                         }
-                    } else {
-                        const d = new Date();
-                        d.setDate(d.getDate() + 2);
-                        defaultDep = d.toISOString().split('T')[0];
                     }
 
                     div.innerHTML = `
@@ -2990,21 +3074,19 @@ function getRegionForAirport(code) {
                         const val = e.target.value;
                         if (!val) return;
                         
-                        let d = new Date(val + "T00:00:00");
-                        d.setDate(d.getDate() + 1);
-                        
+                        let prevDep = addLocalDays(val, 1);
                         const dep = document.getElementById(`${id}-lma-d${idx}`);
-                        if (dep) dep.value = d.toISOString().split('T')[0];
+                        if (dep) dep.value = prevDep;
 
-                        // Cascade forward if exists
                         for (let j = idx + 1; j <= lmaCount; j++) {
                             const arrNext = document.getElementById(`${id}-lma-a${j}`);
                             const depNext = document.getElementById(`${id}-lma-d${j}`);
                             if (arrNext && depNext) {
-                                d.setDate(d.getDate() + 1);
-                                arrNext.value = d.toISOString().split('T')[0];
-                                d.setDate(d.getDate() + 1);
-                                depNext.value = d.toISOString().split('T')[0];
+                                const arrJ = addLocalDays(prevDep, 1);
+                                const depJ = addLocalDays(arrJ, 1);
+                                arrNext.value = arrJ;
+                                depNext.value = depJ;
+                                prevDep = depJ;
                             }
                         }
                     }
@@ -3290,7 +3372,7 @@ function getRegionForAirport(code) {
                     ifaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm mb-1">
-                                <span>${ifaSectorLabel(idx)}</span>
+                                <span>${ifaSectorLabel(idx)}${sec.paxing ? ' (paxing)' : ''}</span>
                                 <span>${formatMoney(allowance)}</span>
                             </div>
                             <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
@@ -3359,9 +3441,13 @@ function getRegionForAirport(code) {
                     const depMins = parseMins(dTime);
                     if (arrMins < 0 || depMins < 0) return;
 
-                    const bEnd = 8*60+30; const bStart = 7*60+30;
-                    const lEnd = 13*60+30; const lStart = 12*60+30;
-                    const dEnd = 20*60+30; const dStart = 19*60+30;
+                    const win = LMA_WINDOWS || {};
+                    const bStart = parseHmToMinutes(win.b && win.b.start) ?? (7 * 60 + 30);
+                    const bEnd = parseHmToMinutes(win.b && win.b.end) ?? (8 * 60 + 30);
+                    const lStart = parseHmToMinutes(win.l && win.l.start) ?? (12 * 60 + 30);
+                    const lEnd = parseHmToMinutes(win.l && win.l.end) ?? (13 * 60 + 30);
+                    const dStart = parseHmToMinutes(win.d && win.d.start) ?? (19 * 60 + 30);
+                    const dEnd = parseHmToMinutes(win.d && win.d.end) ?? (20 * 60 + 30);
 
                     let stationTotal = 0;
                     let dayRows = [];
@@ -3528,6 +3614,75 @@ function getRegionForAirport(code) {
     <script>
         
 
+        function loadRecentFlights() {
+            try {
+                const raw = JSON.parse(localStorage.getItem('crewAssist.recentFlights') || '[]');
+                return Array.isArray(raw) ? raw.filter((x) => x && x.flight && x.date).slice(0, 5) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function rememberRecentFlight(flight, dateStr) {
+            const num = String(flight || '').replace(/\s+/g, '');
+            const date = String(dateStr || '');
+            if (!num || !date) return;
+            const next = [{ flight: num, date: date }].concat(loadRecentFlights().filter((x) => !(x.flight === num && x.date === date))).slice(0, 5);
+            localStorage.setItem('crewAssist.recentFlights', JSON.stringify(next));
+        }
+
+        function formatRecentFlightDate(ymd) {
+            const p = String(ymd || '').split('-');
+            if (p.length < 3) return ymd;
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const d = parseInt(p[2], 10);
+            const m = parseInt(p[1], 10) - 1;
+            return d + ' ' + (months[m] || '');
+        }
+
+        function renderRecentFlightChips(cardId) {
+            const wrap = document.getElementById('fv-recent-' + cardId);
+            const row = document.getElementById('fv-recent-row-' + cardId);
+            if (!wrap || !row) return;
+            const list = loadRecentFlights();
+            row.textContent = '';
+            if (!list.length) {
+                wrap.classList.add('hidden');
+                return;
+            }
+            wrap.classList.remove('hidden');
+            list.forEach((item) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'shrink-0 glass-panel rounded-full px-3 py-1.5 text-[11px] font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20';
+                btn.textContent = 'SQ' + item.flight + ' · ' + formatRecentFlightDate(item.date);
+                btn.addEventListener('click', () => applyRecentFlight(cardId, item.flight, item.date));
+                row.appendChild(btn);
+            });
+        }
+
+        function applyRecentFlight(id, flight, dateStr) {
+            const fi = document.getElementById('fv-flight-' + id);
+            const hid = document.getElementById('fv-selected-date-' + id);
+            if (fi) fi.value = flight;
+            if (hid) hid.value = dateStr;
+            const today = todayLocalYMD();
+            const tom = addLocalDays(today, 1);
+            const buttons = document.getElementById('fv-date-buttons-' + id);
+            const pickerWrap = document.getElementById('fv-date-picker-wrap-' + id);
+            const picker = document.getElementById('fv-date-' + id);
+            if (dateStr === today || dateStr === tom) {
+                if (buttons) buttons.classList.remove('hidden');
+                if (pickerWrap) pickerWrap.classList.add('hidden');
+                selectDatePill(id, dateStr === today ? 'today' : 'tomorrow');
+            } else {
+                if (buttons) buttons.classList.add('hidden');
+                if (pickerWrap) pickerWrap.classList.remove('hidden');
+                if (picker) picker.value = dateStr;
+            }
+            checkAutoFetch(id, true);
+        }
+
         function renderFlightVerificationCard(mode) {
             const chatContainer = document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
@@ -3563,6 +3718,9 @@ function getRegionForAirport(code) {
                                 <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
                                 <input type="text" id="fv-flight-${uniqueId}" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
                             </div>
+                            <div id="fv-recent-${uniqueId}" class="hidden mt-2">
+                                <div id="fv-recent-row-${uniqueId}" class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge"></div>
+                            </div>
                         </div>
                         
                         <div id="fv-date-area-${uniqueId}" class="space-y-2 transition-all duration-300">
@@ -3594,6 +3752,7 @@ function getRegionForAirport(code) {
             chatContainer.appendChild(msgDiv);
             noteBubbleShown();
             lucide.createIcons();
+            renderRecentFlightChips(uniqueId);
             scrollToBottom();
         }
 
@@ -3817,6 +3976,8 @@ function getRegionForAirport(code) {
                     `;
                     
                     actionArea.innerHTML = contentHtml;
+                    rememberRecentFlight(flightNumber, dateStr);
+                    renderRecentFlightChips(id);
                     
                     // Save sectors in dataset for single-sector flights
                     if (!isMultiSector && legs.length === 1) {
@@ -3950,6 +4111,7 @@ function getRegionForAirport(code) {
 
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
             currentMenuSearch.selectedCabins = cabinClasses;
+            currentMenuSearch.selectedSector = '';
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             
@@ -3997,7 +4159,7 @@ function getRegionForAirport(code) {
 
 // Inflight Menu Viewer Logic (Step 5)
         
-        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', imageByName: Object.create(null), imageIdByName: Object.create(null) };
+        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', selectedSector: '', imageByName: Object.create(null), imageIdByName: Object.create(null) };
         let menuViewState = { category: 'meals', mealTab: 0 };
         let currentMealServices = [];
         let menuLoadGen = 0;
@@ -4197,22 +4359,30 @@ function getRegionForAirport(code) {
                 return currentMenuSearch.selectedSectors.includes(code);
             });
             
+            const legCode = (leg) => leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
+            const wanted = currentMenuSearch.selectedSector;
+            const pick = filteredLegs.find((leg) => legCode(leg) === wanted) || filteredLegs[0];
+
             if (filteredLegs.length > 1) {
                 sectorWrap.classList.remove('hidden');
                 filteredLegs.forEach(leg => {
                     const txt = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                    const code = legCode(leg);
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
                     btn.textContent = txt;
                     btn.onclick = () => {
+                        currentMenuSearch.selectedSector = code;
                         sectorLabel.textContent = txt;
                         toggleMenuDropdown('sector');
                         renderSector(leg);
                     };
                     sectorList.appendChild(btn);
                 });
-                sectorLabel.textContent = filteredLegs[0].flightDetails.departureAirportCode + ' ✈ ' + filteredLegs[0].flightDetails.arrivalAirportCode;
+                if (pick) {
+                    sectorLabel.textContent = pick.flightDetails.departureAirportCode + ' ✈ ' + pick.flightDetails.arrivalAirportCode;
+                }
             } else {
                 sectorWrap.classList.add('hidden');
             }
@@ -4221,8 +4391,9 @@ function getRegionForAirport(code) {
             document.getElementById('menu-culinary-wrap').classList.add('hidden');
             
             showMenuState(3);
-            if (filteredLegs.length > 0) {
-                renderSector(filteredLegs[0]);
+            if (pick) {
+                currentMenuSearch.selectedSector = legCode(pick);
+                renderSector(pick);
             }
         }
         
