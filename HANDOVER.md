@@ -2,9 +2,9 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v63` (`sw.js`). App SemVer: **1.5.0** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the one-line changelog for the What’s new bubble. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
+Latest app cache: `crewassist-v64` (`sw.js`). App SemVer: **1.5.1** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
 
-**Product status (owner, 2026-09-15):** v1.5.0 is in for review. **Next (do not start until signed off):** archive, month total, flight-number auto-fill, shuttle toggle. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; later auto-fill may *pre-tick* shuttle when ground time is same calendar day or very short (SQ11/12 NRT–LAX is a long ground, not a shuttle).
+**Product status (owner, 2026-09-15):** v1.5.1 is in for review. **Next (do not start until signed off):** archive, month total, flight-number auto-fill, shuttle toggle. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; later auto-fill may *pre-tick* shuttle when ground time is same calendar day or very short (SQ11/12 NRT–LAX is a long ground, not a shuttle).
 
 ---
 
@@ -29,7 +29,7 @@ Latest app cache: `crewassist-v63` (`sw.js`). App SemVer: **1.5.0** (`APP_VERSIO
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane (origami dart) logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.5.0` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: hairline + `AN UNOFFICIAL CREW TOOL` in the SemVer colour, `h-0`/`absolute` so the 65% form does not move. **10 taps** on `#header-brand` (400ms streak window) **toggles** developer mode: “Developer Mode Enabled” / “Developer Mode Disabled” via `appAlert`. Persist `crewAssist.devMode`. Settings reopen (`openSettings` → `resetSettingsSheet`): `#settings-scroll` to top and all `#dev-rates-root` accordions collapsed. First-time onboarding writes `crewAssist.lastSeenVersion` so new crew skip the What’s new bubble; upgrades with a profile but no key see it once after the two welcome lines (`maybeWhatsNew`, `APP_WHAT_NEW`).
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.5.1` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: a hairline **the width of `CrewAssist™`**, then `AN UNOFFICIAL CREW TOOL` on **one row** (`whitespace-nowrap`), SemVer colour. **10 taps** on `#header-brand` (400ms) toggles developer mode. Settings reopen: scroll top, collapse rate accordions. What’s new is a **glass overlay** (`#whatsnew-backdrop`) after `showMain` (after onboarding for new crew; on the chat page for returning crew). X closes. “Do not show again” writes `crewAssist.hideWhatsNew = APP_VERSION`; without the check it returns on every launch. A new stamp shows again even if they hid the previous one. `APP_WHAT_NEW` is an array of short bullets. There is **no** chat What’s new bubble.
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`).
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. Coefficients live in `rates.json` (network-first fetch, last-good `localStorage`, `DEFAULT_RATES` fallback baked from `IFA_CONFIG` / `REGION_RATES`). Device overrides in `crewAssist.rates`. Developer editor (animated `.dev-rate-fold` accordions, collapsed by default):
   - **Base hourly IFA rate ($/h)** — paired ranks share one field: Jr. FS / Jr. FSS, FS / FSS, LS / LSS, CS / CSS, IFM. Save writes both keys.
@@ -37,10 +37,12 @@ Latest app cache: `crewassist-v63` (`sw.js`). App SemVer: **1.5.0** (`APP_VERSIO
   - **Overrides & bonus** — Paxing Multiplier, Direct US Multiplier, Turnaround Bonus.
   - **Layover modifiers** — bands `SDP ≤ t0 → m0`, `SDP > t0 AND ≤ t1 → m1`, `SDP > t1 → m2`. Editing `t0` live-echoes into the next row’s “> …”. Stored as `ifa.layoverBrackets` (`maxHours` + `multiplier`; last row `maxHours: null`).
   - **Turnaround modifiers** — same pattern with **TSDP** and four bands (12 / 14 / 18 / rest).
+  - **LMA meal windows** — B/L/D start–end (`lma.windows` in `rates.json`; `LMA_WINDOWS` in JS). Defaults 07:30–08:30 / 12:30–13:30 / 19:30–20:30.
   - **LMA region rates** — B / L / D per region.
-  - **Save** = this device. **Reset** = shipped `rates.json`. **Export / Import** JSON. **Do not write to GitHub from the app.** Publish to everyone = GitHub Desktop replace `rates.json`. Meal **time windows are not** in the editor (hardcoded in `executeCalculation`: B 07:30–08:30, L 12:30–13:30, D 19:30–20:30).
+  - **Save** = this device. **Reset** = shipped `rates.json`. **Export / Import** JSON. **Do not write to GitHub from the app.** Publish to everyone = GitHub Desktop replace `rates.json`.
+  - **Turnaround dates:** 2-sector = date above sector 1 and 2; 4-sector = date above sector 1 only. Layover still uses LMA dates. Defaults/cascade use `todayLocalYMD` / `addLocalDays`.
   - IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet.
-  - Summary overlay: `formatMoney` (`$1,457.38`). IFA sectors First/Second/Third/Fourth Sector. LMA day rows: `formatLmaDay` (`DD MMM YY`), three fixed-width B/L/D badges (`✕` when missing), `$` per day, **no station total**; then Breakfast/Lunch/Dinner totals with counts (`BREAKFAST (3x)`).
+  - Summary overlay: `formatMoney` (`$1,457.38`). IFA sectors First/Second/Third/Fourth Sector, with ` (Paxing)` when that sector is paxing. LMA day rows: `formatLmaDay` (`DD MMM YY`), three fixed-width B/L/D badges (`✕` when missing), `$` per day, **no station total**; then Breakfast/Lunch/Dinner totals with counts (`BREAKFAST (3x)`).
   - IFA hours display is `XH YM`, never a decimal like `10.17`.
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
   - Dropdowns: one row; menus overlay content (do **not** restore `overflow-x: auto` on `#menu-dropdown-row` — it clips overlay dropdowns).
@@ -75,7 +77,7 @@ Owner considers the app **essentially complete**. Do not start a new slice witho
 Honest leftovers (do not “fix” unless asked):
 
 - **Allowances Archive** is specified in `LOGIC.md` §§4.9–4.12 and 5.4 / 6.8. **It is not implemented** in `index.html`. Turnaround date fields (`#…-ifa-d1` / `d2`) and layover LMA dates are ready for it.
-- **`crewAssist.modifiers`** is still read in `initData` from the old JSON-textarea editor. Unused by the rates engine.
+- **`crewAssist.modifiers` / `appModifiers`** were removed in 1.5.1.
 - **Publish rates to all installs** is still: export or edit `rates.json`, commit, merge via GitHub Desktop. No one-tap GitHub write from the PWA (rejected).
 - **Airplane-mode CSS:** Tailwind/Lucide are CDNs and are **not** in `sw.js`. The PWA shell caches, but the UI looks unstyled offline. Offline last menu is on hold partly for this.
 - Printer / viewer / summary overlay signed off (v1.4.24 / 1.4.26). Residual polish only if the owner reports it.
@@ -89,7 +91,8 @@ These have already caused regressions. Treat them as locks.
 ### Git, patching, docs
 
 - Unique-string Python replace on `index.html`; assert `function openMenuPrinter` and size > ~280k after every write.
-- After every commit update `README.md` and `HANDOVER.md` to match the build, **sequentially** (never two HANDOVER writes at once).
+- After every commit update `README.md`, `HANDOVER.md`, and **`LOGIC.md` if the change touches formulas or calculator rules**, to match the build. Edit those files **sequentially** (never two HANDOVER writes at once).
+- Periodically scan for unused files in the repo and unused variables/functions in `index.html`; remove them when found (`crewAssist.modifiers` / `appModifiers` were removed in 1.5.1).
 - Bump `APP_VERSION` + `sw.js` `CACHE_NAME` on every app change.
 - Only push `arena/01a0819d-crewassist`. Recover sandbox drift with explicit fetch + `reset --hard` of that branch — do not rebase onto old `main`.
 - No tokens in files. Screenshots in chat are OK.
@@ -150,7 +153,7 @@ After every chat bubble (user or bot, including calculator and lookup cards) ful
 | Path | Role |
 |---|---|
 | `index.html` | Entire UI + engine (~360k). Three inline `<script>` blocks. |
-| `sw.js` | `crewassist-v63`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
+| `sw.js` | `crewassist-v64`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
 | `rates.json` | Default IFA + LMA numbers (`version`, `ifa.*`, `lma.regions`). |
 | `api/sq.js` | Vercel POST proxy; only `getcabin` \| `menu`; 12s abort; Origin/Referer spoof official site. |
 | `manifest.json` | PWA; `start_url` `./index.html`; theme `#0B1A3A`. |
@@ -173,9 +176,8 @@ There is no bundler, no tests suite, no `package.json` required for the frontend
 | `crewAssist.prefs` | `{ autoScroll }` (autoscroll toggle UI was removed). |
 | `crewAssist.devMode` | `'true'` / `'false'`. |
 | `crewAssist.rates` | Device override of `rates.json` (including meal windows). Absent → use shipped file. |
-| `crewAssist.lastSeenVersion` | Last `APP_VERSION` that showed (or skipped) What’s new. |
+| `crewAssist.hideWhatsNew` | `APP_VERSION` if the user ticked “Do not show again” for that stamp. |
 | `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
-| `crewAssist.modifiers` | **Leftover** from the old textarea; unused by the rates engine. |
 
 ---
 
@@ -184,7 +186,7 @@ There is no bundler, no tests suite, no `package.json` required for the frontend
 1. Implement on `arena/01a0819d-crewassist`.
 2. Bump `APP_VERSION` and `CACHE_NAME`.
 3. `node --check` the concatenated inline scripts.
-4. Commit. Update README, then HANDOVER (sequential).
+4. Commit. Update README, then HANDOVER, then LOGIC if formulas/rules changed (sequential, never parallel HANDOVER).
 5. `git push origin arena/01a0819d-crewassist`.
 6. Ask the owner to review on the **phone** (onboarding stamp). Do not start the next slice until they sign off.
 7. Owner merges arena → main in GitHub Desktop when they want production.
