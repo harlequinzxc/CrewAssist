@@ -492,12 +492,12 @@
                     <div class="animate-float -mb-12">
                         <img src="icons/logo-512.png" class="w-48 h-48 drop-shadow-2xl" alt="Plane">
                     </div>
-                    <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
-                    <div class="h-0 relative w-full flex justify-center pointer-events-none">
-                        <div class="absolute top-2 flex flex-col items-center">
-                            <div class="w-8 h-px bg-sia-navy/20 dark:bg-white/15"></div>
-                            <p class="mt-1 text-[10px] tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none">AN UNOFFICIAL CREW TOOL</p>
+                    <div class="inline-flex flex-col items-center">
+                        <div class="inline-flex flex-col">
+                            <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
+                            <div class="h-px w-full bg-sia-navy/20 dark:bg-white/15 mt-1.5"></div>
                         </div>
+                        <p class="mt-1 text-[10px] tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
                     </div>
                 </div>
             </div>
@@ -731,6 +731,21 @@
         <div id="menu-lightbox" class="fixed inset-0 z-[80] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <button type="button" id="menu-lightbox-dismiss" class="absolute inset-0 w-full h-full cursor-zoom-out" aria-label="Close image"></button>
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
+        </div>
+
+        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
+            <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 pt-6 border border-sia-gold/20 shadow-2xl relative" onclick="event.stopPropagation()">
+                <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
+                <p id="whatsnew-title" class="text-sm font-bold mb-3"></p>
+                <ul id="whatsnew-list" class="text-sm leading-relaxed space-y-2 mb-5 pr-1"></ul>
+                <label class="flex items-start gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 cursor-pointer">
+                    <input type="checkbox" id="whatsnew-hide" class="accent-sia-gold mt-0.5 shrink-0">
+                    <span>Do not show again</span>
+                </label>
+            </div>
         </div>
 
         <div id="app-dialog-backdrop" class="fixed inset-0 z-[90] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
@@ -1059,14 +1074,19 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.0';
-        const APP_WHAT_NEW = 'Turnaround dates on COP, recent flights on the menu card, meal windows in developer rates, paxing labelled on the summary, and layover date fixes.';
+        const APP_VERSION = '1.5.1';
+        const APP_WHAT_NEW = [
+            'Turnaround dates on COP — two-sector turns get a date on each sector; four-sector turns get one date on sector 1.',
+            'Last five flights sit as chips on the inflight menu card.',
+            'Meal windows can be edited in developer rates.',
+            'Paxing is labelled on the summary.',
+            'Layover dates follow the phone calendar, not UTC.'
+        ];
 
         // State
         let appProfile = null;
         let appPrefs = { autoScroll: true };
         let appDevMode = false;
-        let appModifiers = {};
         
         let tempProfile = { name: '', gender: '', rank: '' };
         const ranks = {
@@ -1121,8 +1141,6 @@
                 
                 appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
                 
-                const storedMods = localStorage.getItem('crewAssist.modifiers');
-                if (storedMods) appModifiers = JSON.parse(storedMods);
                 applyRatesFromStorage();
                 
                 const isLight = localStorage.getItem('crewAssist.theme') === 'light';
@@ -1186,6 +1204,8 @@
         function appConfirm(message) { return showAppDialog(message, true); }
 
         function bindEvents() {
+            const wnClose = document.getElementById('whatsnew-close');
+            if (wnClose) wnClose.addEventListener('click', closeWhatsNew);
             document.getElementById('app-dialog-ok').addEventListener('click', () => closeAppDialog(true));
             document.getElementById('app-dialog-cancel').addEventListener('click', () => closeAppDialog(false));
             document.getElementById('app-dialog-backdrop').addEventListener('click', (e) => {
@@ -1229,13 +1249,9 @@
                 // Auto-capitalize Name
                 const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                 tempProfile.name = nameParts.join(' ');
-                const firstProfile = !localStorage.getItem('crewAssist.profile');
                 
                 appProfile = { ...tempProfile };
                 localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
-                if (firstProfile && !localStorage.getItem('crewAssist.lastSeenVersion')) {
-                    localStorage.setItem('crewAssist.lastSeenVersion', APP_VERSION);
-                }
                 
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
                 
@@ -1404,6 +1420,44 @@
             elObView.classList.add('hidden');
             elMainView.classList.remove('hidden');
             initChat();
+            maybeWhatsNewOverlay();
+        }
+
+        function maybeWhatsNewOverlay() {
+            const items = Array.isArray(APP_WHAT_NEW) ? APP_WHAT_NEW : (APP_WHAT_NEW ? [APP_WHAT_NEW] : []);
+            if (!items.length) return;
+            if (localStorage.getItem('crewAssist.hideWhatsNew') === APP_VERSION) return;
+            const backdrop = document.getElementById('whatsnew-backdrop');
+            const title = document.getElementById('whatsnew-title');
+            const list = document.getElementById('whatsnew-list');
+            const hide = document.getElementById('whatsnew-hide');
+            if (!backdrop || !list) return;
+            if (title) title.textContent = 'v' + APP_VERSION;
+            list.textContent = '';
+            items.forEach((line) => {
+                const li = document.createElement('li');
+                li.className = 'pl-3 relative';
+                const dot = document.createElement('span');
+                dot.className = 'absolute left-0 top-[0.55em] w-1.5 h-1.5 rounded-full bg-sia-gold';
+                li.appendChild(dot);
+                li.appendChild(document.createTextNode(line));
+                list.appendChild(li);
+            });
+            if (hide) hide.checked = false;
+            backdrop.classList.remove('hidden');
+            requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
+        function closeWhatsNew() {
+            const backdrop = document.getElementById('whatsnew-backdrop');
+            const hide = document.getElementById('whatsnew-hide');
+            if (hide && hide.checked) {
+                localStorage.setItem('crewAssist.hideWhatsNew', APP_VERSION);
+            }
+            if (!backdrop) return;
+            backdrop.classList.add('opacity-0');
+            setTimeout(() => backdrop.classList.add('hidden'), 200);
         }
 
         // --- Chat Logic ---
@@ -1466,7 +1520,6 @@
                 const firstName = appProfile.name.split(' ')[0];
                 addBotMessage(greeting + ', ' + appProfile.rank + ' ' + firstName + '!');
                 addBotMessage('How can I help you today?');
-                maybeWhatsNew();
             };
             if (!kids.length) {
                 greet();
@@ -1566,14 +1619,6 @@
 
         function addBotMessage(text) {
             return enqueueBot(() => addMessage('bot', text, true));
-        }
-
-        function maybeWhatsNew() {
-            const prev = localStorage.getItem('crewAssist.lastSeenVersion');
-            if (prev === APP_VERSION) return;
-            localStorage.setItem('crewAssist.lastSeenVersion', APP_VERSION);
-            if (!APP_WHAT_NEW) return;
-            addBotMessage("What's new in v" + APP_VERSION + ': ' + APP_WHAT_NEW);
         }
 
         function isChatNearBottom() {
@@ -3372,7 +3417,7 @@ function getRegionForAirport(code) {
                     ifaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm mb-1">
-                                <span>${ifaSectorLabel(idx)}${sec.paxing ? ' (paxing)' : ''}</span>
+                                <span>${ifaSectorLabel(idx)}${sec.paxing ? ' (Paxing)' : ''}</span>
                                 <span>${formatMoney(allowance)}</span>
                             </div>
                             <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
