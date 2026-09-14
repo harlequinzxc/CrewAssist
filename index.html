@@ -134,6 +134,19 @@
             min-width: 0;
             width: 100%;
             max-width: 100%;
+            font-size: 13px;
+        }
+        #chat-container input[type="date"]::-webkit-date-and-time-value {
+            text-align: left;
+        }
+        #chat-container input[type="date"]::-webkit-datetime-edit {
+            padding: 0;
+            min-width: 0;
+        }
+        #chat-container input[type="date"]::-webkit-calendar-picker-indicator {
+            margin: 0 0 0 0.1rem;
+            width: 0.95rem;
+            padding: 0;
         }
         .fetch-btn-spin {
             width: 0.85rem;
@@ -749,19 +762,21 @@
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
         </div>
 
-        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 gap-3" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
-            <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 pt-6 border border-sia-gold/20 shadow-2xl relative" onclick="event.stopPropagation()">
-                <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-                <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
-                <p id="whatsnew-title" class="text-sm font-bold mb-3"></p>
-                <ul id="whatsnew-list" class="text-sm leading-relaxed space-y-2 pr-1"></ul>
+        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
+            <div class="w-full max-w-sm">
+                <div class="glass-bubble w-full rounded-3xl p-5 pt-6 border border-sia-gold/20 shadow-2xl relative" onclick="event.stopPropagation()">
+                    <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
+                    <p id="whatsnew-title" class="text-sm font-bold mb-3"></p>
+                    <ul id="whatsnew-list" class="text-sm leading-relaxed space-y-2 pr-1"></ul>
+                </div>
+                <label class="mt-2.5 pl-5 flex items-center justify-start gap-2 text-xs font-bold text-white/80 cursor-pointer select-none">
+                    <input type="checkbox" id="whatsnew-hide" class="accent-sia-gold shrink-0">
+                    <span>Do not show again</span>
+                </label>
             </div>
-            <label class="flex items-center justify-center gap-2 text-xs font-bold text-white/80 cursor-pointer select-none">
-                <input type="checkbox" id="whatsnew-hide" class="accent-sia-gold shrink-0">
-                <span>Do not show again</span>
-            </label>
         </div>
 
         <div id="app-dialog-backdrop" class="fixed inset-0 z-[90] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
@@ -1090,11 +1105,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.3';
+        const APP_VERSION = '1.5.4';
         const APP_WHAT_NEW = [
-            'COP opens at the top of the calculator so you can start filling it.',
-            'Flight and date stay on one row; Fetch shows a spinner.',
-            'Direct US ticks on a fetched US sector. LMA can fetch or be typed.'
+            'What’s new: Do not show again sits at the bottom left of the window.',
+            'Flight and date stay on one row; Direct US ticks on a US sector.',
+            'LMA can Fetch inbound and outbound times, or you can type them.'
         ];
 
         // State
@@ -2428,9 +2443,11 @@ function getRegionForAirport(code) {
 }
 
         function isUsAirport(code) {
-            if (!code) return false;
-            const airport = airports.find((a) => a.code === code);
-            return !!(airport && airport.countryCode === 'US');
+            const raw = String(code || '').toUpperCase().replace(/[^A-Z]/g, '');
+            const key = raw.length > 3 ? raw.slice(-3) : raw;
+            if (!key) return false;
+            const airport = airports.find((a) => a.code === key);
+            return !!(airport && (airport.countryCode === 'US' || airport.country === 'United States'));
         }
 
 
@@ -3052,7 +3069,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-full shadow-lg border border-black/5 dark:border-white/5">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -3146,19 +3163,19 @@ function getRegionForAirport(code) {
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5" data-ifa-sector="${i}">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
-                                <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
-                                    <div class="w-[4.75rem] shrink-0">
+                                <div class="flex gap-1 items-end mb-2 flex-nowrap">
+                                    <div class="w-[3.6rem] shrink-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-7 pr-1 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
+                                            <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">SQ</span>
+                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-6 pr-0.5 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
                                         </div>
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                        <input type="date" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ui-input w-full rounded-lg px-1.5 py-2 text-sm font-bold focus:border-sia-gold outline-none">
+                                        <input type="date" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ui-input w-full rounded-lg px-1 py-2 text-sm font-bold focus:border-sia-gold outline-none">
                                     </div>
-                                    <button type="button" class="ifa-fetch-btn shrink-0 h-10 w-[3.6rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wider border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${i}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>
+                                    <button type="button" class="ifa-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${i}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>
                                 </div>
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
@@ -3213,18 +3230,18 @@ function getRegionForAirport(code) {
                         }
                     }
 
-                    const lmaFetchBtn = (leg) => `<button type="button" class="lma-fetch-btn shrink-0 h-10 w-[3.6rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wider border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${idx}" data-leg="${leg}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>`;
+                    const lmaFetchBtn = (leg) => `<button type="button" class="lma-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${idx}" data-leg="${leg}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>`;
                     const lmaFnField = (which) => `
-                                    <div class="w-[4.75rem] shrink-0">
+                                    <div class="w-[3.6rem] shrink-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-7 pr-1 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
+                                            <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">SQ</span>
+                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-6 pr-0.5 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
                                         </div>
                                     </div>`;
-                    const lmaTimesHtml = mode === 'lma' ? `
+                    const lmaTimesHtml = (mode === 'lma' || mode === 'both') ? `
                         <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival</p>
-                        <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
+                        <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('a')}
                             <div class="flex-1 min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
@@ -3237,7 +3254,7 @@ function getRegionForAirport(code) {
                             <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
                         <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure</p>
-                        <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
+                        <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('d')}
                             <div class="flex-1 min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
@@ -3291,7 +3308,7 @@ function getRegionForAirport(code) {
                     lucide.createIcons();
                     setTimeout(() => {
                         div.classList.remove('max-h-0', 'opacity-0', 'scale-95');
-                        div.classList.add('max-h-[960px]', 'opacity-100', 'scale-100');
+                        div.classList.add('max-h-[1200px]', 'opacity-100', 'scale-100');
                         if (appPrefs.autoScroll && idx > 1) setTimeout(() => scrollToBottom(), 300);
                     }, 10);
                     bindTimeInputs(id);
@@ -3332,7 +3349,7 @@ function getRegionForAirport(code) {
                     const btn = e.target.closest('.lma-remove-btn');
                     if (btn) {
                         const block = btn.parentElement;
-                        block.classList.remove('max-h-[960px]', 'opacity-100', 'scale-100');
+                        block.classList.remove('max-h-[1200px]', 'opacity-100', 'scale-100');
                         block.classList.add('max-h-0', 'opacity-0', 'scale-95');
                         setTimeout(() => block.remove(), 500);
                         lmaCount--;
@@ -3418,10 +3435,10 @@ function getRegionForAirport(code) {
                         if (!aCard || !aCard.getAttribute('data-arr-airport')) continue;
                         setVal(document.getElementById(`${id}-lma-iata${i}`), aCard.getAttribute('data-arr-airport'), true);
                         setVal(document.getElementById(`${id}-lma-a${i}`), aCard.getAttribute('data-arr-ymd'), false);
-                        setVal(document.getElementById(`${id}-lma-at${i}`), aCard.getAttribute('data-arr-hm'), false);
+                        setVal(document.getElementById(`${id}-lma-at${i}`), aCard.getAttribute('data-arr-hm'), true);
                         if (bCard && bCard.getAttribute('data-dep-ymd')) {
                             setVal(document.getElementById(`${id}-lma-d${i}`), bCard.getAttribute('data-dep-ymd'), false);
-                            setVal(document.getElementById(`${id}-lma-dt${i}`), bCard.getAttribute('data-dep-hm'), false);
+                            setVal(document.getElementById(`${id}-lma-dt${i}`), bCard.getAttribute('data-dep-hm'), true);
                             const sh = document.getElementById(`${id}-lma-sh${i}`);
                             if (sh) {
                                 const arrL = aCard.getAttribute('data-arr-ymd') && aCard.getAttribute('data-arr-hm')
@@ -3493,8 +3510,7 @@ function getRegionForAirport(code) {
                         }
                         const usEl = document.getElementById(`${id}-ifa-us${idx}`);
                         if (usEl) {
-                            const outbound = (idx % 2 !== 0);
-                            usEl.checked = outbound ? isUsAirport(leg.arrAirport) : isUsAirport(leg.depAirport);
+                            usEl.checked = isUsAirport(leg.arrAirport) || isUsAirport(leg.depAirport);
                         }
                         syncLmaFromIfa();
                     } catch (err) {
@@ -3506,7 +3522,7 @@ function getRegionForAirport(code) {
             }
 
             const lmaBox = document.getElementById(`${id}-lma-sectors`);
-            if (lmaBox && mode === 'lma') {
+            if (lmaBox && mode !== 'ifa') {
                 lmaBox.addEventListener('click', async (e) => {
                     const btn = e.target.closest('.lma-fetch-btn');
                     if (!btn) return;
