@@ -202,6 +202,8 @@ MM = total_minutes mod 60
 | `flightType` | enum | `Layover` | `Layover` \| `Turnaround` | — |
 | `is4Sector` | boolean | `false` | — | — |
 | `times[0..3]` | string `HH:MM` | `""` (empty) | minutes 0–59; hours ≥ 0 | hours:minutes |
+| `flightNumber[0..3]` | string | `""` | optional; Fetch fills times from `/menu` | — |
+| `fetchDate[0..3]` | `YYYY-MM-DD` | today | optional; scheduled departure date for Fetch | date |
 | `directUS[0..3]` | boolean | `false` | — | — |
 | `paxing[0..3]` | boolean | `false` | — | — |
 | `turnaroundStations[0..1]` | IATA string | `""` | 3 chars, must match DB | — |
@@ -226,6 +228,7 @@ MM = total_minutes mod 60
 | `arrivalTime` | `HH:MM` | `""` (empty) | 00:00–23:59 | time (station local) |
 | `departureDate` | `YYYY-MM-DD` | today + 2 days | ≥ arrivalDate | date |
 | `departureTime` | `HH:MM` | `""` (empty) | 00:00–23:59 | time (station local) |
+| `shuttle` | boolean | `false` | per station; if true, LMA = $0 (see 4.3a) | — |
 
 **4-sector mode:** `sectors[0..2]`, each with the above fields. Date chaining auto-populates downstream dates.
 
@@ -391,6 +394,17 @@ IF flightType == "Layover" AND is4Sector == true
 canShowDirectUS = (flightType == "Layover") AND (is4Sector == false)
 canShowPaxing   = (is4Sector == false)
 ```
+
+### 4.3a Shuttle (no LMA at that station)
+
+```
+IF LMA station shuttle == true
+    THEN LMA_sector_total = 0
+    AND no breakfast/lunch/dinner earned
+    AND IFA for the trip is unchanged (still layover or turnaround as selected)
+```
+
+Shuttle is a **per-station** skip, not IFA flight type Turnaround. Use it when the pairing turns at a station with no nightstop (same calendar day, or ground time under 6 hours). Do **not** hardcode flight numbers. Auto-fill may pre-tick Shuttle from those ground-time rules; the crew can untick.
 
 ### 4.3 LMA Hidden When Turnaround
 
