@@ -130,6 +130,22 @@
             mask-image: linear-gradient(to right, black 85%, transparent 100%);
             -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
         }
+        #chat-container input[type="date"] {
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+        }
+        .fetch-btn-spin {
+            width: 0.85rem;
+            height: 0.85rem;
+            border: 2px solid rgba(201, 162, 39, 0.28);
+            border-top-color: #C9A227;
+            border-radius: 50%;
+            animation: ca-spin 0.7s linear infinite;
+        }
+        @keyframes ca-spin {
+            to { transform: rotate(360deg); }
+        }
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -1074,11 +1090,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.2';
+        const APP_VERSION = '1.5.3';
         const APP_WHAT_NEW = [
-            'Fetch a sector from flight number and date to fill COP times.',
-            'Shuttle toggle on a layover station — no LMA for that ground time.',
-            'What’s new sits in an overlay; Do not show again is under the window.'
+            'COP opens at the top of the calculator so you can start filling it.',
+            'Flight and date stay on one row; Fetch shows a spinner.',
+            'Direct US ticks on a fetched US sector. LMA can fetch or be typed.'
         ];
 
         // State
@@ -1658,6 +1674,21 @@
                 chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
                 updateScrollBottomBtn();
             }, 500);
+        }
+
+        function scrollChatToEl(el) {
+            const chatContainer = document.getElementById('chat-container');
+            if (!chatContainer || !el) return;
+            const go = () => {
+                const cRect = chatContainer.getBoundingClientRect();
+                const eRect = el.getBoundingClientRect();
+                const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 8;
+                chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+                updateScrollBottomBtn();
+            };
+            setTimeout(go, 10);
+            setTimeout(go, 150);
+            setTimeout(go, 500);
         }
 
         function processInput(text) {
@@ -2396,6 +2427,12 @@ function getRegionForAirport(code) {
   return countryToRegion[airport.countryCode] || null;
 }
 
+        function isUsAirport(code) {
+            if (!code) return false;
+            const airport = airports.find((a) => a.code === code);
+            return !!(airport && airport.countryCode === 'US');
+        }
+
 
         const REGION_RATES = {
             'Australia / New Zealand': { b: 50, l: 86, d: 111 },
@@ -2906,17 +2943,30 @@ function getRegionForAirport(code) {
             return { ok: true, legs: legs };
         }
 
-        function pickScheduleLeg(legs, dateStr, preferDepAirport) {
+        function pickScheduleLeg(legs, dateStr, preferDepAirport, preferArrAirport) {
             if (!legs || !legs.length) return null;
             if (legs.length === 1) return legs[0];
             const ymd = (d) => (d ? formatLocalYMD(d) : '');
             let pool = legs.filter((l) => ymd(l.depLocal) === dateStr);
             if (!pool.length) pool = legs;
+            if (preferArrAirport) {
+                const byApt = pool.filter((l) => l.arrAirport === preferArrAirport);
+                if (byApt.length) return byApt[0];
+            }
             if (preferDepAirport) {
                 const byApt = pool.filter((l) => l.depAirport === preferDepAirport);
                 if (byApt.length) return byApt[0];
             }
             return pool[0];
+        }
+
+        function setFetchBusy(btn, on) {
+            if (!btn) return;
+            const label = btn.querySelector('.fetch-btn-label');
+            const spin = btn.querySelector('.fetch-btn-spin');
+            btn.disabled = !!on;
+            if (label) label.classList.toggle('hidden', !!on);
+            if (spin) spin.classList.toggle('hidden', !on);
         }
 
         function renderCalculatorCard(mode) {
@@ -3021,7 +3071,8 @@ function getRegionForAirport(code) {
             setTimeout(() => {
                 lucide.createIcons();
                 bindCalculatorEvents(id, mode);
-                if (appPrefs.autoScroll) scrollToBottom();
+                if (mode === 'both') scrollChatToEl(msgDiv);
+                else if (appPrefs.autoScroll) scrollToBottom();
             }, 10);
         }
 
@@ -3092,25 +3143,22 @@ function getRegionForAirport(code) {
                         let label = i % 2 !== 0 ? 'Outbound from SG' : 'Inbound to SG';
                         if (is4 && !isTurn && i > 1) label = 'Station to Station';
                         if (is4 && !isTurn && i === 4) label = 'Inbound to SG';
-                        const showTurnDate = isTurn && (count === 2 || (count === 4 && i === 1));
-                        const showFetchDate = !isTurn || showTurnDate || (isTurn && is4 && i > 1);
-
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5" data-ifa-sector="${i}">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
-                                <div class="flex gap-2 items-end mb-2">
-                                    <div class="flex-1 min-w-0">
+                                <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
+                                    <div class="w-[4.75rem] shrink-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
+                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
+                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-7 pr-1 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
                                         </div>
                                     </div>
-                                    <div class="flex-1 min-w-0 ${showFetchDate ? '' : 'hidden'}">
+                                    <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                        <input type="date" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ui-input w-full rounded-lg px-2 py-2 text-sm font-bold focus:border-sia-gold outline-none">
+                                        <input type="date" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ui-input w-full rounded-lg px-1.5 py-2 text-sm font-bold focus:border-sia-gold outline-none">
                                     </div>
-                                    <button type="button" class="ifa-fetch-btn shrink-0 h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-wider border border-sia-gold/70 text-sia-gold" data-idx="${i}">Fetch</button>
+                                    <button type="button" class="ifa-fetch-btn shrink-0 h-10 w-[3.6rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wider border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${i}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>
                                 </div>
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
@@ -3165,20 +3213,43 @@ function getRegionForAirport(code) {
                         }
                     }
 
-                    div.innerHTML = `
-                        ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
-                        <div class="mb-3">
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
-                            <div class="relative">
-                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
-                                <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
+                    const lmaFetchBtn = (leg) => `<button type="button" class="lma-fetch-btn shrink-0 h-10 w-[3.6rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wider border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${idx}" data-leg="${leg}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>`;
+                    const lmaFnField = (which) => `
+                                    <div class="w-[4.75rem] shrink-0">
+                                        <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
+                                        <div class="relative">
+                                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
+                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-7 pr-1 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
+                                        </div>
+                                    </div>`;
+                    const lmaTimesHtml = mode === 'lma' ? `
+                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival</p>
+                        <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
+                            ${lmaFnField('a')}
+                            <div class="flex-1 min-w-0">
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg px-1.5 py-2 text-sm font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
                             </div>
-                            <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
+                            ${lmaFetchBtn('arr')}
                         </div>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 cursor-pointer">
-                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
-                            Shuttle (no LMA)
-                        </label>
+                        <div class="mb-3">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                            <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                        </div>
+                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure</p>
+                        <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
+                            ${lmaFnField('d')}
+                            <div class="flex-1 min-w-0">
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg px-1.5 py-2 text-sm font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
+                            </div>
+                            ${lmaFetchBtn('dep')}
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                            <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
+                        </div>
+                    ` : `
                         <div class="grid grid-cols-2 gap-2 mb-2 min-w-0">
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
@@ -3200,12 +3271,28 @@ function getRegionForAirport(code) {
                             </div>
                         </div>
                     `;
+                    div.innerHTML = `
+                        ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+                        <div class="mb-3">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
+                            <div class="relative">
+                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
+                                <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
+                            </div>
+                            <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
+                        </div>
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 cursor-pointer">
+                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
+                            Shuttle (no LMA)
+                        </label>
+                        ${lmaTimesHtml}
+                    `;
                     container.appendChild(div);
                     lucide.createIcons();
                     setTimeout(() => {
                         div.classList.remove('max-h-0', 'opacity-0', 'scale-95');
-                        div.classList.add('max-h-[500px]', 'opacity-100', 'scale-100');
-                        if (appPrefs.autoScroll) setTimeout(() => scrollToBottom(), 300);
+                        div.classList.add('max-h-[960px]', 'opacity-100', 'scale-100');
+                        if (appPrefs.autoScroll && idx > 1) setTimeout(() => scrollToBottom(), 300);
                     }, 10);
                     bindTimeInputs(id);
                     
@@ -3245,7 +3332,7 @@ function getRegionForAirport(code) {
                     const btn = e.target.closest('.lma-remove-btn');
                     if (btn) {
                         const block = btn.parentElement;
-                        block.classList.remove('max-h-[500px]', 'opacity-100', 'scale-100');
+                        block.classList.remove('max-h-[960px]', 'opacity-100', 'scale-100');
                         block.classList.add('max-h-0', 'opacity-0', 'scale-95');
                         setTimeout(() => block.remove(), 500);
                         lmaCount--;
@@ -3263,7 +3350,7 @@ function getRegionForAirport(code) {
                 
                 const textInputs = containerNode.querySelectorAll('input[type="text"]');
                 textInputs.forEach(inp => {
-                    if (inp.classList.contains('ifa-fn-input')) return;
+                    if (inp.classList.contains('ifa-fn-input') || inp.classList.contains('lma-fn-input')) return;
                     const lmaCard = inp.closest('.lma-station');
                     if (lmaCard) {
                         const sh = lmaCard.querySelector('.lma-shuttle-input');
@@ -3299,13 +3386,13 @@ function getRegionForAirport(code) {
                 executeCalculation(id, mode);
             });
 
+            const setVal = (el, val, fire) => {
+                if (!el || val == null || val === '') return;
+                el.value = val;
+                if (fire) el.dispatchEvent(new Event('input', { bubbles: true }));
+            };
             const ifaBox = document.getElementById(`${id}-ifa-sectors`);
             if (ifaBox) {
-                const setVal = (el, val, fire) => {
-                    if (!el || val == null || val === '') return;
-                    el.value = val;
-                    if (fire) el.dispatchEvent(new Event('input', { bubbles: true }));
-                };
                 const lmaStationCount = () => {
                     let n = 0;
                     while (document.getElementById(`${id}-lma-iata${n + 1}`)) n++;
@@ -3361,9 +3448,7 @@ function getRegionForAirport(code) {
                         appAlert('Enter a flight number and date to fetch this sector.');
                         return;
                     }
-                    const prevLabel = btn.textContent;
-                    btn.disabled = true;
-                    btn.textContent = '…';
+                    setFetchBusy(btn, true);
                     try {
                         let result = await fetchSectorSchedule(fn, dateStr);
                         if (!result.ok) {
@@ -3406,12 +3491,85 @@ function getRegionForAirport(code) {
                             if (leg.arrUtc) card.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
                             if (leg.depUtc) card.setAttribute('data-dep-utc', String(leg.depUtc.getTime()));
                         }
+                        const usEl = document.getElementById(`${id}-ifa-us${idx}`);
+                        if (usEl) {
+                            const outbound = (idx % 2 !== 0);
+                            usEl.checked = outbound ? isUsAirport(leg.arrAirport) : isUsAirport(leg.depAirport);
+                        }
                         syncLmaFromIfa();
                     } catch (err) {
                         await appAlert('Could not fetch that flight. You can still type the times.');
                     } finally {
-                        btn.disabled = false;
-                        btn.textContent = prevLabel || 'Fetch';
+                        setFetchBusy(btn, false);
+                    }
+                });
+            }
+
+            const lmaBox = document.getElementById(`${id}-lma-sectors`);
+            if (lmaBox && mode === 'lma') {
+                lmaBox.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.lma-fetch-btn');
+                    if (!btn) return;
+                    const idx = btn.getAttribute('data-idx');
+                    const legKind = btn.getAttribute('data-leg');
+                    const isArr = legKind === 'arr';
+                    const fn = normSqFlight((document.getElementById(`${id}-lma-${isArr ? 'a' : 'd'}fn${idx}`) || {}).value);
+                    let dateStr = (document.getElementById(`${id}-lma-${isArr ? 'a' : 'd'}${idx}`) || {}).value || '';
+                    if (!fn || !dateStr) {
+                        appAlert('Enter a flight number and date to fetch this layover.');
+                        return;
+                    }
+                    setFetchBusy(btn, true);
+                    try {
+                        let result = await fetchSectorSchedule(fn, dateStr);
+                        if (!result.ok) {
+                            const otherD = (document.getElementById(`${id}-lma-${isArr ? 'd' : 'a'}${idx}`) || {}).value;
+                            if (otherD && otherD !== dateStr) result = await fetchSectorSchedule(fn, otherD);
+                        }
+                        if (!result.ok) {
+                            await appAlert('No published times for that flight/date. You can still type them.');
+                            return;
+                        }
+                        const iataNow = ((document.getElementById(`${id}-lma-iata${idx}`) || {}).value || '').trim().toUpperCase();
+                        const leg = isArr
+                            ? pickScheduleLeg(result.legs, dateStr, '', iataNow)
+                            : pickScheduleLeg(result.legs, dateStr, iataNow, '');
+                        if (!leg) {
+                            await appAlert('Could not read times for that sector. You can still type them.');
+                            return;
+                        }
+                        const station = btn.closest('.lma-station');
+                        if (isArr) {
+                            if (leg.arrAirport) setVal(document.getElementById(`${id}-lma-iata${idx}`), leg.arrAirport, true);
+                            if (leg.arrLocal) {
+                                setVal(document.getElementById(`${id}-lma-a${idx}`), formatLocalYMD(leg.arrLocal), false);
+                                setVal(document.getElementById(`${id}-lma-at${idx}`), hmFromDate(leg.arrLocal), true);
+                            }
+                            if (station && leg.arrUtc) station.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
+                        } else {
+                            if (leg.depAirport && !iataNow) setVal(document.getElementById(`${id}-lma-iata${idx}`), leg.depAirport, true);
+                            if (leg.depLocal) {
+                                setVal(document.getElementById(`${id}-lma-d${idx}`), formatLocalYMD(leg.depLocal), false);
+                                setVal(document.getElementById(`${id}-lma-dt${idx}`), hmFromDate(leg.depLocal), true);
+                            }
+                            if (station && leg.depUtc) station.setAttribute('data-dep-utc', String(leg.depUtc.getTime()));
+                        }
+                        const sh = document.getElementById(`${id}-lma-sh${idx}`);
+                        if (sh) {
+                            const aY = (document.getElementById(`${id}-lma-a${idx}`) || {}).value;
+                            const aT = (document.getElementById(`${id}-lma-at${idx}`) || {}).value;
+                            const dY = (document.getElementById(`${id}-lma-d${idx}`) || {}).value;
+                            const dT = (document.getElementById(`${id}-lma-dt${idx}`) || {}).value;
+                            const arrL = aY && aT ? new Date(aY + 'T' + aT + ':00') : null;
+                            const depL = dY && dT ? new Date(dY + 'T' + dT + ':00') : null;
+                            const arrU = station && station.getAttribute('data-arr-utc') ? new Date(Number(station.getAttribute('data-arr-utc'))) : null;
+                            const depU = station && station.getAttribute('data-dep-utc') ? new Date(Number(station.getAttribute('data-dep-utc'))) : null;
+                            sh.checked = suggestShuttle(arrL, depL, arrU, depU);
+                        }
+                    } catch (err) {
+                        await appAlert('Could not fetch that flight. You can still type the times.');
+                    } finally {
+                        setFetchBusy(btn, false);
                     }
                 });
             }
