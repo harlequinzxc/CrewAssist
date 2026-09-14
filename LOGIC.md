@@ -219,6 +219,8 @@ MM = total_minutes mod 60
 | 4-sector Turnaround | Singapore | Station | Singapore | Station |
 | 4-sector Layover | Singapore | Station | Station | Station |
 
+**Fetch (optional):** `/api/getcabin` then `/api/menu` for the first published cabin (JCL preferred). Block time = UTC arrival − UTC departure. LMA in/out times come from adjacent sectors. Empty flight number does not block Calculate. Cabin class is not required. On a 2-sector layover, Fetch ticks Direct US when either end of the sector is a US airport (`countryCode === US`); the crew can untick.
+
 ### 2.2 LMA Inputs
 
 | Input | Type | Default | Constraint | Unit |
@@ -229,6 +231,8 @@ MM = total_minutes mod 60
 | `departureDate` | `YYYY-MM-DD` | today + 2 days | ≥ arrivalDate | date |
 | `departureTime` | `HH:MM` | `""` (empty) | 00:00–23:59 | time (station local) |
 | `shuttle` | boolean | `false` | per station; if true, LMA = $0 (see 4.3a) | — |
+
+**Fetch (optional, LMA calculator):** inbound and outbound flight number + date write IATA / local in–out times from `/menu`. Empty flight number does not block Calculate. Crew can still type every field.
 
 **4-sector mode:** `sectors[0..2]`, each with the above fields. Date chaining auto-populates downstream dates.
 
