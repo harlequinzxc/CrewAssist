@@ -1282,12 +1282,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.9.0';
+        const APP_VERSION = '1.10.0';
         const APP_WHAT_NEW = [
-            'Flight Type and Sector Count are now pill selectors, with Layover and 2 Sectors picked for you.',
-            'Direct US, Paxing and Shuttle are toggle switches with plain-language hints.',
-            'Shuttle now appears on the second layover station only.',
-            'Emoji replaced with crisp icons throughout the app.'
+            'Flight number hints now match the pairing — SQ 632/633 on a 2-sector layover, SQ 852 out and back on a turnaround, and a number per sector on 4-sector pairings.',
+            'Sector dates step downhill: each sector starts a day after the one above, and no date can sit before the sector or station above it.',
+            'Flight Time is now labelled Flight Time Duration (HH:MM).',
+            'LMA hints updated: station e.g. BNE, flight SQ 265.'
         ];
 
         // State
@@ -3657,11 +3657,19 @@ function getRegionForAirport(code) {
                     const showUS = !isTurn && !is4;
                     const showPax = !is4;
 
+                    // Placeholder flight numbers hint at the shape of the pairing.
+                    const fnHints = is4
+                        ? (isTurn ? ['136', '135', '994', '995'] : ['12', '12', '11', '11'])
+                        : (isTurn ? ['852', '852'] : ['632', '633']);
+
                     let html = '';
                     for (let i = 1; i <= count; i++) {
                         let label = i % 2 !== 0 ? 'Outbound from SG' : 'Inbound to SG';
                         if (is4 && !isTurn && i > 1) label = 'Station to Station';
                         if (is4 && !isTurn && i === 4) label = 'Inbound to SG';
+                        // Sector dates step downhill: sector 1 is today, each one below
+                        // it starts a day later.
+                        const dfltDate = addLocalDays(todayLocalYMD(), i - 1);
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5" data-ifa-sector="${i}">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
@@ -3670,17 +3678,17 @@ function getRegionForAirport(code) {
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
                                             <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
+                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="${fnHints[i - 1]}">
                                         </div>
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                        <input type="hidden" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ca-date-input">
-                                        <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(todayLocalYMD())}</button>
+                                        <input type="hidden" id="${id}-ifa-d${i}" value="${dfltDate}" class="ca-date-input ifa-date-cascade" data-idx="${i}">
+                                        <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(dfltDate)}</button>
                                     </div>
                                     <button type="button" class="ifa-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${i}"><span class="fetch-face fetch-btn-label is-on">Fetch</span><span class="fetch-face fetch-btn-spin" aria-hidden="true"><span class="fetch-spin-ring"></span></span><span class="fetch-face fetch-btn-tick" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span></button>
                                 </div>
-                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
+                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time Duration (HH:MM)">
                                 
                                 ${showUS ? `
                                 <div class="ifa-us-field flex items-center justify-between gap-3 mt-2">
@@ -3730,6 +3738,29 @@ function getRegionForAirport(code) {
                 };
                 typeSel.addEventListener('change', onIfaDropdownChange);
                 cntSel.addEventListener('change', onIfaDropdownChange);
+
+                // Sector dates run downhill: no sector may sit before the one above
+                // it, so moving an upper date pushes the ones below it forward.
+                const ifaSectorsBox = document.getElementById(`${id}-ifa-sectors`);
+                // Start at the sector that was just typed (never sector 1, which has
+                // nothing above it) so a date picked in the past is pushed clear too.
+                const cascadeIfaDates = (fromIdx) => {
+                    for (let j = Math.max(fromIdx, 2); j <= parseInt(cntSel.value); j++) {
+                        const prev = document.getElementById(`${id}-ifa-d${j - 1}`);
+                        const cur = document.getElementById(`${id}-ifa-d${j}`);
+                        if (!prev || !cur || !prev.value) continue;
+                        if (cur.value < prev.value) { // ISO YMD compares chronologically
+                            cur.value = addLocalDays(prev.value, 1);
+                            syncDateBtn(cur);
+                        }
+                    }
+                };
+                if (ifaSectorsBox) {
+                    ifaSectorsBox.addEventListener('change', (e) => {
+                        if (!e.target.classList || !e.target.classList.contains('ifa-date-cascade')) return;
+                        cascadeIfaDates(parseInt(e.target.dataset.idx, 10));
+                    });
+                }
                 renderIfaSectors();
             }
 
@@ -3763,7 +3794,7 @@ function getRegionForAirport(code) {
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
                                             <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
+                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="265">
                                         </div>
                                     </div>`;
                     const lmaTimesHtml = (mode === 'lma' || mode === 'both') ? `
@@ -3822,7 +3853,7 @@ function getRegionForAirport(code) {
                         <div class="lma-iata-field mb-3">
                             <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
                             <div class="relative">
-                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
+                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. BNE" maxlength="3">
                                 <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
                             </div>
                             <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
@@ -3865,6 +3896,35 @@ function getRegionForAirport(code) {
 
                 btnAdd.addEventListener('click', addLmaSector);
 
+                // No LMA date may sit before the one above it. The chain runs
+                // arr1, dep1, arr2, dep2, ... so a fix anywhere walks downhill and
+                // only moves the dates that are actually out of order.
+                const lmaDateChain = () => {
+                    const out = [];
+                    for (let j = 1; j <= lmaCount; j++) {
+                        ['a', 'd'].forEach((k) => {
+                            const el = document.getElementById(`${id}-lma-${k}${j}`);
+                            if (el) out.push(el);
+                        });
+                    }
+                    return out;
+                };
+                const cascadeLmaFloor = (from) => {
+                    const chain = lmaDateChain();
+                    const start = chain.indexOf(from);
+                    if (start < 0) return;
+                    // Start at the date that was just typed (never the first in the
+                    // chain) so one picked in the past is pushed clear too.
+                    for (let k = Math.max(start, 1); k < chain.length; k++) {
+                        const prev = chain[k - 1], cur = chain[k];
+                        if (!prev.value) continue;
+                        if (cur.value < prev.value) { // ISO YMD compares chronologically
+                            cur.value = addLocalDays(prev.value, 1);
+                            syncDateBtn(cur);
+                        }
+                    }
+                };
+
                 // Event delegation for cascading dates
                 container.addEventListener('change', (e) => {
                     if (e.target.classList.contains('date-cascade')) {
@@ -3889,6 +3949,11 @@ function getRegionForAirport(code) {
                                 prevDep = depJ;
                             }
                         }
+                        cascadeLmaFloor(e.target);
+                    } else if (e.target.classList.contains('date-cascade-dep')) {
+                        // A departure date typed by hand can leave the next station
+                        // (or this station's own arrival) stranded in the past.
+                        cascadeLmaFloor(e.target);
                     }
                 });
 
