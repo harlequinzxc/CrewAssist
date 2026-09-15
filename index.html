@@ -159,6 +159,16 @@
         @keyframes ca-spin {
             to { transform: rotate(360deg); }
         }
+        #cadate-panel {
+            background: #F6F1E8;
+            color: #0B1A3A;
+            border: 1px solid rgba(201, 162, 39, 0.45);
+        }
+        html.dark #cadate-panel {
+            background: #0B1A3A;
+            color: #F6F1E8;
+            border: 1px solid rgba(201, 162, 39, 0.35);
+        }
         .cadate-day {
             width: 2.25rem;
             height: 2.25rem;
@@ -168,6 +178,10 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            color: #0B1A3A;
+        }
+        html.dark .cadate-day {
+            color: #F6F1E8;
         }
         .cadate-day.is-sel {
             background: #C9A227;
@@ -807,7 +821,7 @@
         </div>
 
         <div id="cadate-backdrop" class="fixed inset-0 z-[92] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
-            <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 border border-sia-gold/20 shadow-2xl" onclick="event.stopPropagation()">
+            <div id="cadate-panel" class="w-full max-w-sm rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
                 <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold">Select date</p>
                 <p id="cadate-heading" class="text-2xl font-bold mt-1 mb-4"></p>
                 <div class="flex items-center justify-between mb-3">
@@ -1144,11 +1158,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.5';
+        const APP_VERSION = '1.5.6';
         const APP_WHAT_NEW = [
-            'COP keeps its original width; dates open a CrewAssist calendar.',
-            'Fetching a 4-sector pairing no longer jumps the chat.',
-            'Summary opens at the top. Multi-leg flights pick the unused sector.'
+            'The date calendar is readable in light theme and days are tappable.',
+            'COP, IFA and LMA cards match the inflight menu width.',
+            'Flight and date fields share a row with the same width.'
         ];
 
         // State
@@ -2982,16 +2996,16 @@ function getRegionForAirport(code) {
             if (btn) {
                 const inp = document.getElementById(btn.getAttribute('data-date-input'));
                 if (inp) openCaDatePicker(inp);
-                return;
             }
-            const day = e.target.closest('#cadate-grid [data-ymd]');
-            if (day) {
-                caDatePicked = day.getAttribute('data-ymd');
-                const p = caDatePicked.split('-');
-                caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
-                renderCaDateGrid();
-                return;
-            }
+        });
+        document.getElementById('cadate-grid').addEventListener('click', (e) => {
+            const day = e.target.closest('[data-ymd]');
+            if (!day) return;
+            e.stopPropagation();
+            caDatePicked = day.getAttribute('data-ymd');
+            const p = caDatePicked.split('-');
+            caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
+            renderCaDateGrid();
         });
         document.getElementById('cadate-prev').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3227,7 +3241,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[85%] shadow-sm border border-black/5 dark:border-white/5">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -3321,12 +3335,12 @@ function getRegionForAirport(code) {
                         html += `
                             <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5" data-ifa-sector="${i}">
                                 <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
-                                <div class="flex gap-1 items-end mb-2 flex-nowrap">
-                                    <div class="w-[3.6rem] shrink-0">
+                                <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
+                                    <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-6 pr-0.5 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
+                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
+                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
                                         </div>
                                     </div>
                                     <div class="flex-1 min-w-0">
@@ -3391,11 +3405,11 @@ function getRegionForAirport(code) {
 
                     const lmaFetchBtn = (leg) => `<button type="button" class="lma-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${idx}" data-leg="${leg}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>`;
                     const lmaFnField = (which) => `
-                                    <div class="w-[3.6rem] shrink-0">
+                                    <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-6 pr-0.5 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
+                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
+                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
                                         </div>
                                     </div>`;
                     const lmaTimesHtml = (mode === 'lma' || mode === 'both') ? `
