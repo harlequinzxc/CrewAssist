@@ -818,7 +818,6 @@
                             <span id="calcui-desc-badge" class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border border-sia-gold text-sia-gold whitespace-nowrap">★ Recommended</span>
                         </div>
                         <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">Flight number + date — flight time, station, arrival &amp; departure date &amp; time auto-filled.</p>
-                        <p id="calcui-helper" class="text-[11px] text-gray-500 dark:text-white/45 mt-1.5">For the best experience, leave it in default</p>
                     </div>
                 </div>
 
@@ -1251,10 +1250,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.7.0';
+        const APP_VERSION = '1.8.0';
         const APP_WHAT_NEW = [
-            'Calculator interface now shapes the calculators: Default hides flight time, Direct US and the LMA block; Manual hides every Fetch button.',
-            'Settings: each mode has its own icon and description, with Default marked ★ Recommended.'
+            'LMA calculator: Arrival / Departure Date and Time labels, with Shuttle moved below Departure Time.',
+            'Changing flight type or sector count now clears the calculator.',
+            'Calculate stays greyed until the flight number is entered in Default mode.'
         ];
 
         // State
@@ -2041,6 +2041,7 @@
             const isManual = calcUiMode === 'manual';
             card.querySelectorAll('.ifa-time-input').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.ifa-us-field').forEach((el) => el.classList.toggle('hidden', isDefault));
+            card.querySelectorAll('.lma-iata-field, .lma-time-field').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.ifa-fetch-btn, .lma-fetch-btn').forEach((el) => el.classList.toggle('hidden', isManual));
             // LMA section only exists to hide on cards that also carry IFA sectors.
             if (card.querySelector('[data-calc-ifa-sectors]')) {
@@ -2049,6 +2050,8 @@
                 const isTurn = !!typeInp && typeInp.value === 'Turnaround';
                 if (wrap) wrap.classList.toggle('hidden', isTurn || isDefault);
             }
+            // Visibility drives the Calculate gate, so make it re-evaluate.
+            card.dispatchEvent(new Event('input'));
         }
 
         function syncCalcUiAll() {
@@ -3605,6 +3608,9 @@ function getRegionForAirport(code) {
         };
 
         function bindCalculatorEvents(id, mode) {
+            // Assigned by the LMA block below so an IFA dropdown change can reset
+            // LMA stations too (null on the very first render — nothing to reset).
+            let resetLmaFields = null;
             // Bind dropdown toggles
             if (mode === 'ifa' || mode === 'both') {
                 ['flight-type', 'sector-count'].forEach(type => {
@@ -3694,8 +3700,14 @@ function getRegionForAirport(code) {
                     syncCalcUiAll();
                 };
 
-                typeSel.addEventListener('change', renderIfaSectors);
-                cntSel.addEventListener('change', renderIfaSectors);
+                // A different flight type or sector count starts the card clean:
+                // IFA sectors are rebuilt by renderIfaSectors, LMA stations by this.
+                const onIfaDropdownChange = () => {
+                    renderIfaSectors();
+                    if (resetLmaFields) resetLmaFields();
+                };
+                typeSel.addEventListener('change', onIfaDropdownChange);
+                cntSel.addEventListener('change', onIfaDropdownChange);
                 renderIfaSectors();
             }
 
@@ -3733,32 +3745,30 @@ function getRegionForAirport(code) {
                                         </div>
                                     </div>`;
                     const lmaTimesHtml = (mode === 'lma' || mode === 'both') ? `
-                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival</p>
                         <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('a')}
                             <div class="flex-1 min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
                                 <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
                             ${lmaFetchBtn('arr')}
                         </div>
-                        <div class="mb-3">
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                        <div class="lma-time-field mb-3">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Time</label>
                             <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
-                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure</p>
                         <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('d')}
                             <div class="flex-1 min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Date</label>
                                 <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
                             ${lmaFetchBtn('dep')}
                         </div>
-                        <div>
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                        <div class="lma-time-field mb-2">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Time</label>
                             <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
                     ` : `
@@ -3787,7 +3797,7 @@ function getRegionForAirport(code) {
                     `;
                     div.innerHTML = `
                         ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
-                        <div class="mb-3">
+                        <div class="lma-iata-field mb-3">
                             <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
                             <div class="relative">
                                 <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
@@ -3795,11 +3805,11 @@ function getRegionForAirport(code) {
                             </div>
                             <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
                         </div>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 cursor-pointer">
-                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
-                            Shuttle (no LMA)
-                        </label>
                         ${lmaTimesHtml}
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer">
+                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
+                            Shuttle
+                        </label>
                     `;
                     container.appendChild(div);
                     lucide.createIcons();
@@ -3812,6 +3822,13 @@ function getRegionForAirport(code) {
                     syncCalcUiAll();
                     
                     if (idx === 3) btnAdd.classList.add('hidden'); // max 3
+                };
+
+                resetLmaFields = () => {
+                    container.textContent = '';
+                    lmaCount = 0;
+                    btnAdd.classList.remove('hidden');
+                    addLmaSector();
                 };
 
                 addLmaSector(); // Default 1st station
@@ -3864,10 +3881,13 @@ function getRegionForAirport(code) {
                 let allFilled = true;
                 const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
                 if (!containerNode) return;
+                // Default mode hides the time / LMA fields, so the flight number is the
+                // one thing the crew must supply — keep Calculate greyed until it is.
+                const fnRequired = calcUiMode === 'default';
                 
                 const textInputs = containerNode.querySelectorAll('input[type="text"]');
                 textInputs.forEach(inp => {
-                    if (inp.classList.contains('ifa-fn-input') || inp.classList.contains('lma-fn-input')) return;
+                    if (!fnRequired && (inp.classList.contains('ifa-fn-input') || inp.classList.contains('lma-fn-input'))) return;
                     const lmaCard = inp.closest('.lma-station');
                     if (lmaCard) {
                         const sh = lmaCard.querySelector('.lma-shuttle-input');
