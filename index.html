@@ -1292,12 +1292,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.15.0';
+        const APP_VERSION = '1.16.0';
         const APP_WHAT_NEW = [
-            'The trip bar is now two rows: your stations own the full top line and never wrap, with progress and Fetch all below.',
-            'If a route is ever too wide, it scrolls sideways instead of dropping a chip.',
-            'The LMA calculator now waits for a valid station code and both times before Calculate lights up.',
-            'LMA Fetch all lights up like Calculate once every flight number is in, and turns off again after a successful fetch.'
+            'Sector cards now fold and unfold with a smooth animation instead of snapping.',
+            'Turnaround shortens to Turn whenever the full word would spill out of its pill.',
+            'Fetch all is sized to sit comfortably inside the chat bubble.'
         ];
 
         // State
@@ -3422,6 +3421,17 @@ function getRegionForAirport(code) {
             return m ? m[1] : '';
         }
 
+        // "Turnaround" is the longest pill label and on a narrow card it can spill
+        // out of the pill. When the full word no longer fits, shorten it to "Turn" —
+        // the pill still carries data-value="Turnaround", only the label changes.
+        function fitCalcPills() {
+            document.querySelectorAll('.calc-pill[data-value="Turnaround"]').forEach((el) => {
+                el.textContent = 'Turnaround';
+                if (el.scrollWidth > el.clientWidth) el.textContent = 'Turn';
+            });
+        }
+        window.addEventListener('resize', fitCalcPills);
+
         // Durations read as clock times in an input, which is easy to mistake for a
         // time of day. For display, "02:15" becomes "2h 15m".
         function formatDurationHm(hm) {
@@ -3609,11 +3619,11 @@ function getRegionForAirport(code) {
                         <!-- Trip summary: route, progress, and the single Fetch all -->
                         <div class="ifa-trip-bar mb-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
                             <div id="${id}-ifa-trip-route" class="ifa-trip-route flex flex-nowrap items-center gap-x-1.5 overflow-x-auto text-xs font-bold"></div>
-                            <div class="flex items-center gap-2.5 mt-1.5">
+                            <div class="flex items-center gap-2 mt-1.5">
                                 <p id="${id}-ifa-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-500"></p>
                                 <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden shrink-0 text-[10px] font-bold text-sia-gold underline">Expand all</button>
-                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 ml-auto h-10 px-4 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
-                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 ml-auto h-10 px-3 rounded-full text-[9px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none">
+                                    <i data-lucide="download" class="w-3 h-3 shrink-0"></i>
                                     <span class="ifa-fetch-all-label">Fetch all</span>
                                 </button>
                             </div>
@@ -3634,7 +3644,7 @@ function getRegionForAirport(code) {
                             <div class="flex items-center gap-2 mt-2">
                                 <p id="${id}-lma-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-400">0 of 0 fetched</p>
                                 <button type="button" id="${id}-lma-expand-all" class="lma-expand-all hidden shrink-0 text-[10px] font-bold uppercase tracking-wide text-sia-gold">Expand all</button>
-                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all shrink-0 ml-auto h-10 px-4 rounded-full text-xs font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none"><i data-lucide="download" class="w-4 h-4"></i><span class="lma-fetch-all-label">Fetch all</span></button>
+                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all shrink-0 ml-auto h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none"><i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i><span class="lma-fetch-all-label">Fetch all</span></button>
                             </div>
                         </div>
                         <div id="${id}-lma-sectors" class="space-y-3"></div>
@@ -3667,6 +3677,7 @@ function getRegionForAirport(code) {
                 lucide.createIcons();
                 bindCalculatorEvents(id, mode);
                 syncCalcUiAll();
+                fitCalcPills();
                 // COP always scrolled to the top of the card. Now every card decides
                 // by height — and a COP card is long, so it takes the same branch.
                 if (mode === 'both' || appPrefs.autoScroll) scrollChatToBubble(msgDiv);
@@ -3862,7 +3873,19 @@ function getRegionForAirport(code) {
                 const row = card.querySelector('.ifa-summary-row');
                 const edit = card.querySelector('.ifa-edit-area');
                 if (row) row.classList.toggle('hidden', !collapsed);
-                if (edit) edit.classList.toggle('hidden', collapsed);
+                if (edit) {
+                    // Fold with the same max-height/opacity animation the LMA stations
+                    // use. max-h-0 (not display:none) is what lets validateInputs keep
+                    // skipping a folded card, and the transition makes it feel like one.
+                    edit.classList.add('overflow-hidden', 'transition-all', 'duration-500', 'ease-in-out');
+                    if (collapsed) {
+                        edit.classList.remove('max-h-[1200px]', 'opacity-100');
+                        edit.classList.add('max-h-0', 'opacity-0');
+                    } else {
+                        edit.classList.remove('max-h-0', 'opacity-0');
+                        edit.classList.add('max-h-[1200px]', 'opacity-100');
+                    }
+                }
             }
 
             // The first sector that is not fetched yet always stays open for editing.
