@@ -601,6 +601,35 @@
             }
             .print-paper.print-grey { filter: grayscale(1); }
         }
+
+        /* Toggle switch (Direct US / Paxing / Shuttle). The real checkbox stays in the
+           DOM as an sr-only sibling, so every existing `.checked` read keeps working. */
+        .ca-switch {
+            position: relative;
+            display: block;
+            flex-shrink: 0;
+            width: 2.25rem;
+            height: 1.25rem;
+            border-radius: 9999px;
+            background: rgba(0, 0, 0, 0.15);
+            transition: background-color 0.2s ease;
+        }
+        .dark .ca-switch { background: rgba(255, 255, 255, 0.15); }
+        .ca-switch::after {
+            content: '';
+            position: absolute;
+            top: 0.125rem;
+            left: 0.125rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 9999px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s ease;
+        }
+        .ca-switch-input:checked ~ .ca-switch { background: #C9A227; }
+        .ca-switch-input:checked ~ .ca-switch::after { transform: translateX(1rem); }
+        .ca-inline-icon { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
     </style>
 </head>
 <body class="antialiased w-full h-full min-h-screen flex flex-col">
@@ -731,14 +760,17 @@
                     
                     <!-- Quick Action Chips -->
                     <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="total">
-                            💰 Calculate total allowance
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="total">
+                            <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
+                            Calculate total allowance
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="menu">
-                            🍴 What are we serving onboard
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="menu">
+                            <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
+                            What are we serving onboard
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="print">
-                            🖨️ Print the menu
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="print">
+                            <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
+                            Print the menu
                         </button>
                     </div>
 
@@ -969,7 +1001,7 @@
                             <!-- Sector Wrap -->
                             <div class="relative shrink-0 min-w-[8.5rem] flex-1 basis-[8.5rem]" id="menu-sector-wrap">
                                 <button type="button" onclick="toggleMenuDropdown('sector')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center gap-1 transition-colors">
-                                    <span id="menu-sector-label" class="truncate">Sector</span>
+                                    <span id="menu-sector-label" class="truncate inline-flex items-center gap-1">Sector</span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 shrink-0 transition-transform duration-300" id="menu-sector-icon"></i>
                                 </button>
                                 <div id="menu-sector-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
@@ -1063,9 +1095,9 @@
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
                         <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
-                    <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Bounds</button>
-                    <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
-                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
+                    <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Bounds</span></button>
+                    <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Descriptions</span></button>
+                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5 hidden"></i><span class="opt-txt">Greyscale</span></button>
                 </div>
                 </div>
                 <div class="flex mt-3 bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/10 dark:border-white/10">
@@ -1250,11 +1282,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.8.0';
+        const APP_VERSION = '1.12.0';
         const APP_WHAT_NEW = [
-            'LMA calculator: Arrival / Departure Date and Time labels, with Shuttle moved below Departure Time.',
-            'Changing flight type or sector count now clears the calculator.',
-            'Calculate stays greyed until the flight number is entered in Default mode.'
+            'COP and IFA now open with a trip bar — SIN → JNB → CPT → JNB → SIN — so you can see the whole pairing at a glance.',
+            'One Fetch all replaces the button on every sector, filling them one after another. Fetched sectors fold to a single line; tap to edit.',
+            'A line under Calculate tells you where you are: “Fetch all sectors to continue (2/4)” or “All sectors fetched · Ready”.',
+            'COP and IFA sector dates now cascade exactly like the LMA dates.'
         ];
 
         // State
@@ -1732,7 +1765,7 @@
             
             chatContainer.appendChild(msgDiv);
             noteBubbleShown();
-            if (appPrefs.autoScroll) scrollToBottom();
+            if (appPrefs.autoScroll) scrollChatToBubble(msgDiv);
         }
 
         function showTypingIndicator() {
@@ -1828,31 +1861,40 @@
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
 
-        function scrollToBottom() {
+        function scrollToBottomNow() {
             const chatContainer = document.getElementById('chat-container');
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-                updateScrollBottomBtn();
-            }, 10);
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-                updateScrollBottomBtn();
-            }, 150);
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-                updateScrollBottomBtn();
-            }, 500);
+            if (!chatContainer) return;
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            updateScrollBottomBtn();
         }
 
-        function scrollChatToEl(el) {
+        function scrollToBottom() {
+            setTimeout(scrollToBottomNow, 10);
+            setTimeout(scrollToBottomNow, 150);
+            setTimeout(scrollToBottomNow, 500);
+        }
+
+        // One pass: put the top of `el` at the top of the chat area.
+        function scrollChatToElNow(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer || !el) return;
+            const cRect = chatContainer.getBoundingClientRect();
+            const eRect = el.getBoundingClientRect();
+            const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 8;
+            chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+            updateScrollBottomBtn();
+        }
+
+        // A bubble taller than the visible chat area can never be read from the
+        // bottom, so put its top on screen; a shorter one scrolls to the end of the
+        // thread. Re-measured on every pass because cards are still growing (LMA
+        // stations and calculator sectors animate open) when they first land.
+        function scrollChatToBubble(el) {
+            const chatContainer = document.getElementById('chat-container');
+            if (!chatContainer) return;
             const go = () => {
-                const cRect = chatContainer.getBoundingClientRect();
-                const eRect = el.getBoundingClientRect();
-                const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 8;
-                chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
-                updateScrollBottomBtn();
+                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el);
+                else scrollToBottomNow();
             };
             setTimeout(go, 10);
             setTimeout(go, 150);
@@ -2043,6 +2085,9 @@
             card.querySelectorAll('.ifa-us-field').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.lma-iata-field, .lma-time-field').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.ifa-fetch-btn, .lma-fetch-btn').forEach((el) => el.classList.toggle('hidden', isManual));
+            // Manual is hand-entry only: no Fetch all, so the trip bar (which is built
+            // from fetched airports) and the fetch-progress hint would only mislead.
+            card.querySelectorAll('.ifa-trip-bar, .calc-hint').forEach((el) => el.classList.toggle('hidden', isManual));
             // LMA section only exists to hide on cards that also carry IFA sectors.
             if (card.querySelector('[data-calc-ifa-sectors]')) {
                 const wrap = card.querySelector('.calc-lma-section');
@@ -3518,34 +3563,39 @@ function getRegionForAirport(code) {
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> ${ifaHeader}</h4>
                         </div>
                         <div class="flex gap-2 mb-3 z-30 relative">
-                            <!-- Flight Type Custom Dropdown -->
-                            <div class="flex-1 relative">
-                                <button type="button" id="${id}-flight-type-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                    <span id="${id}-flight-type-label">Layover</span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-flight-type-icon"></i>
-                                </button>
+                            <!-- Flight Type pills. The hidden input keeps the old
+                                 value + change-event contract, so nothing downstream changed. -->
+                            <div class="flex-1 min-w-0">
+                                <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
+                                <div id="${id}-flight-type-pills" data-calc-pill="flight-type" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="Layover">Layover</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="Turnaround">Turnaround</button>
+                                </div>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
-                                <div id="${id}-flight-type-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
-                                    <div class="p-1 flex flex-col gap-1">
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Layover', 'Layover')">Layover</button>
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Turnaround', 'Turnaround')">Turnaround</button>
-                                    </div>
-                                </div>
                             </div>
-                            <!-- Sector Count Custom Dropdown -->
-                            <div class="flex-1 relative">
-                                <button type="button" id="${id}-sector-count-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                    <span id="${id}-sector-count-label">2 Sectors</span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-sector-count-icon"></i>
-                                </button>
+                            <!-- Sector Count pills -->
+                            <div class="flex-1 min-w-0">
+                                <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
+                                <div id="${id}-sector-count-pills" data-calc-pill="sector-count" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="2">2 Sectors</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="4">4 Sectors</button>
+                                </div>
                                 <input type="hidden" id="${id}-sector-count" value="2">
-                                <div id="${id}-sector-count-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
-                                    <div class="p-1 flex flex-col gap-1">
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '2', '2 Sectors')">2 Sectors</button>
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '4', '4 Sectors')">4 Sectors</button>
-                                    </div>
+                            </div>
+                        </div>
+                        <!-- Trip summary: route, progress, and the single Fetch all -->
+                        <div class="ifa-trip-bar mb-3 flex items-start justify-between gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                            <div class="min-w-0 flex-1">
+                                <div id="${id}-ifa-trip-route" class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-bold"></div>
+                                <div class="flex items-center gap-2.5 mt-1">
+                                    <p id="${id}-ifa-trip-progress" class="text-[10px] font-bold text-gray-500"></p>
+                                    <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden text-[10px] font-bold text-sia-gold underline">Expand all</button>
                                 </div>
                             </div>
+                            <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 h-10 px-4 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                <span class="ifa-fetch-all-label">Fetch all</span>
+                            </button>
                         </div>
                         <div id="${id}-ifa-sectors" data-calc-ifa-sectors="1" class="space-y-3"></div>
                     </div>
@@ -3575,6 +3625,7 @@ function getRegionForAirport(code) {
                     <button id="${id}-btn-calc" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none mt-2">
                         Calculate
                     </button>
+                    <p id="${id}-calc-hint" class="calc-hint empty:hidden text-[10px] font-bold text-gray-500 text-center mt-2"></p>
                 </div>
             `;
             
@@ -3586,59 +3637,173 @@ function getRegionForAirport(code) {
                 lucide.createIcons();
                 bindCalculatorEvents(id, mode);
                 syncCalcUiAll();
-                if (mode === 'both') scrollChatToEl(msgDiv);
-                else if (appPrefs.autoScroll) scrollToBottom();
+                // COP always scrolled to the top of the card. Now every card decides
+                // by height — and a COP card is long, so it takes the same branch.
+                if (mode === 'both' || appPrefs.autoScroll) scrollChatToBubble(msgDiv);
             }, 10);
         }
-
-                window.selectDropdown = function(id, type, value, labelText) {
-            document.getElementById(id + '-' + type).value = value;
-            document.getElementById(id + '-' + type + '-label').innerText = labelText;
-            
-            // Close menu
-            const menu = document.getElementById(id + '-' + type + '-menu');
-            const icon = document.getElementById(id + '-' + type + '-icon');
-            menu.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
-            menu.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-            icon.classList.remove('rotate-180');
-            
-            // Trigger change event to update sectors
-            const inp = document.getElementById(id + '-' + type);
-            inp.dispatchEvent(new Event('change'));
-        };
 
         function bindCalculatorEvents(id, mode) {
             // Assigned by the LMA block below so an IFA dropdown change can reset
             // LMA stations too (null on the very first render — nothing to reset).
             let resetLmaFields = null;
-            // Bind dropdown toggles
+
+            // ==========================================
+            // IFA trip summary bar + per-sector fetch state.
+            // Function declarations, not const arrows: renderIfaSectors is defined
+            // and first run further down this function and it repaints the bar.
+            // They read the DOM by id rather than closing over anything declared
+            // later in this function, so there is no ordering hazard.
+            // ==========================================
+            let ifaApplyingFetch = false;   // set while a fetch writes fields back
+            let ifaFetchingAll = false;
+
+            function ifaSectorCard(i) {
+                const box = document.getElementById(`${id}-ifa-sectors`);
+                return box ? box.querySelector('[data-ifa-sector="' + i + '"]') : null;
+            }
+            function ifaSectorCount() {
+                const el = document.getElementById(`${id}-sector-count`);
+                return el ? (parseInt(el.value, 10) || 0) : 0;
+            }
+            function ifaSectorState(i) {
+                const c = ifaSectorCard(i);
+                return c ? (c.getAttribute('data-ifa-state') || 'idle') : 'idle';
+            }
+
+            function ifaFillSummaryRow(i) {
+                const card = ifaSectorCard(i);
+                if (!card) return;
+                const val = (suffix) => {
+                    const el = document.getElementById(`${id}-${suffix}${i}`);
+                    return el ? (el.value || '').trim() : '';
+                };
+                const put = (sel, text) => { const el = card.querySelector(sel); if (el) el.textContent = text; };
+                const d = val('ifa-d');
+                put('.ifa-sum-fn', 'SQ ' + (val('ifa-fn') || '\u2014'));
+                put('.ifa-sum-date', d ? formatDateBtn(d) : '\u2014');
+                put('.ifa-sum-time', val('ifa-t') || '\u2014');
+            }
+
+            function ifaPaintSector(i) {
+                const card = ifaSectorCard(i);
+                if (!card) return;
+                const state = ifaSectorState(i);
+                const dot = card.querySelector('.ifa-status-dot');
+                if (dot) {
+                    // gold + pulsing while loading, green when done, red on failure
+                    dot.className = 'ifa-status-dot w-2 h-2 rounded-full shrink-0' + (
+                        state === 'loading' ? ' bg-sia-gold animate-pulse'
+                            : state === 'done' ? ' bg-green-500'
+                            : state === 'error' ? ' bg-red-500'
+                            : ' hidden');
+                }
+                const retry = card.querySelector('.ifa-retry-btn');
+                if (retry) retry.classList.toggle('hidden', state !== 'error');
+                const collapsed = state === 'done' && card.getAttribute('data-ifa-collapsed') === '1';
+                if (collapsed) ifaFillSummaryRow(i);
+                const row = card.querySelector('.ifa-summary-row');
+                const edit = card.querySelector('.ifa-edit-area');
+                if (row) row.classList.toggle('hidden', !collapsed);
+                if (edit) edit.classList.toggle('hidden', collapsed);
+            }
+
+            // The first sector that is not fetched yet always stays open for editing.
+            function ifaKeepFirstOpen() {
+                let opened = false;
+                for (let i = 1; i <= ifaSectorCount(); i++) {
+                    const card = ifaSectorCard(i);
+                    if (!card) continue;
+                    if (ifaSectorState(i) !== 'done' && !opened) {
+                        card.removeAttribute('data-ifa-collapsed');
+                        opened = true;
+                    }
+                }
+            }
+
+            function ifaSetCollapsed(i, on) {
+                const card = ifaSectorCard(i);
+                if (!card) return;
+                if (on) card.setAttribute('data-ifa-collapsed', '1');
+                else card.removeAttribute('data-ifa-collapsed');
+                ifaPaintSector(i);
+                ifaPaintTripBar();
+            }
+
+            function ifaSetState(i, state) {
+                const card = ifaSectorCard(i);
+                if (!card) return;
+                card.setAttribute('data-ifa-state', state);
+                // a fetched sector folds away; anything else stays editable
+                if (state === 'done') card.setAttribute('data-ifa-collapsed', '1');
+                else card.removeAttribute('data-ifa-collapsed');
+                ifaKeepFirstOpen();
+                ifaPaintSector(i);
+                ifaPaintTripBar();
+            }
+
+            function ifaPaintTripBar() {
+                const count = ifaSectorCount();
+                const route = document.getElementById(`${id}-ifa-trip-route`);
+                if (route) {
+                    const first = ifaSectorCard(1);
+                    const nodes = [((first && first.getAttribute('data-dep-airport')) || 'SIN')];
+                    for (let i = 1; i <= count; i++) {
+                        const c = ifaSectorCard(i);
+                        nodes.push((c && c.getAttribute('data-arr-airport')) || '\u00b7\u00b7\u00b7');
+                    }
+                    route.innerHTML = nodes.map((n, k) =>
+                        (k ? '<span class="ifa-trip-arrow text-gray-400">\u2192</span>' : '') +
+                        '<span class="ifa-trip-node' + (n === '\u00b7\u00b7\u00b7' ? ' text-gray-400' : '') + '">' + n + '</span>'
+                    ).join('');
+                }
+                let done = 0, collapsed = 0;
+                for (let i = 1; i <= count; i++) {
+                    const st = ifaSectorState(i);
+                    const card = ifaSectorCard(i);
+                    if (st === 'done') {
+                        done++;
+                        if (card && card.getAttribute('data-ifa-collapsed') === '1') collapsed++;
+                    }
+                }
+                const prog = document.getElementById(`${id}-ifa-trip-progress`);
+                if (prog) prog.textContent = done + ' of ' + count + ' fetched';
+                const expandAll = document.getElementById(`${id}-ifa-expand-all`);
+                if (expandAll) expandAll.classList.toggle('hidden', collapsed === 0);
+                const allBtn = document.getElementById(`${id}-ifa-fetch-all`);
+                if (allBtn) {
+                    const lab = allBtn.querySelector('.ifa-fetch-all-label');
+                    if (lab) lab.textContent = ifaFetchingAll ? 'Fetching\u2026' : 'Fetch all';
+                    allBtn.disabled = ifaFetchingAll;
+                }
+                const hint = document.getElementById(`${id}-calc-hint`);
+                if (hint) {
+                    hint.textContent = !count ? ''
+                        : (done >= count ? 'All sectors fetched \u00b7 Ready'
+                            : 'Fetch all sectors to continue (' + done + '/' + count + ')');
+                }
+            }
+            // Bind the pill groups (they replaced the old custom dropdowns). A pill
+            // writes the hidden input and fires `change`, so onIfaDropdownChange still
+            // rebuilds the IFA sectors and resets the LMA stations.
             if (mode === 'ifa' || mode === 'both') {
                 ['flight-type', 'sector-count'].forEach(type => {
-                    const btn = document.getElementById(id + '-' + type + '-btn');
-                    if(btn) {
+                    const grp = document.getElementById(id + '-' + type + '-pills');
+                    if (!grp) return;
+                    const pills = Array.prototype.slice.call(grp.querySelectorAll('.calc-pill'));
+                    pills.forEach(btn => {
                         btn.addEventListener('click', () => {
-                            const menu = document.getElementById(id + '-' + type + '-menu');
-                            const icon = document.getElementById(id + '-' + type + '-icon');
-                            const isClosed = menu.classList.contains('max-h-0');
-                            
-                            // Close others in this calculator only
-                            ['flight-type', 'sector-count'].forEach(t => {
-                                const m = document.getElementById(id + '-' + t + '-menu');
-                                const i = document.getElementById(id + '-' + t + '-icon');
-                                if (m) {
-                                    m.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
-                                    m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-                                }
-                                if (i) i.classList.remove('rotate-180');
+                            pills.forEach(b => {
+                                const on = b === btn;
+                                b.classList.toggle('bg-sia-gold', on);
+                                b.classList.toggle('text-black', on);
+                                b.classList.toggle('text-gray-500', !on);
                             });
-                            
-                            if (isClosed) {
-                                menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
-                                menu.classList.add('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
-                                icon.classList.add('rotate-180');
-                            }
+                            const inp = document.getElementById(id + '-' + type);
+                            inp.value = btn.getAttribute('data-value');
+                            inp.dispatchEvent(new Event('change'));
                         });
-                    }
+                    });
                 });
             }
             // IFA Binding
@@ -3656,41 +3821,85 @@ function getRegionForAirport(code) {
                     const showUS = !isTurn && !is4;
                     const showPax = !is4;
 
+                    // Placeholder flight numbers hint at the shape of the pairing.
+                    const fnHints = is4
+                        ? (isTurn ? ['136', '135', '994', '995'] : ['12', '12', '11', '11'])
+                        : (isTurn ? ['852', '853'] : ['632', '633']);
+
                     let html = '';
                     for (let i = 1; i <= count; i++) {
                         let label = i % 2 !== 0 ? 'Outbound from SG' : 'Inbound to SG';
                         if (is4 && !isTurn && i > 1) label = 'Station to Station';
                         if (is4 && !isTurn && i === 4) label = 'Inbound to SG';
+                        // Sector dates step downhill: sector 1 is today, each one below
+                        // it starts a day later.
+                        const dfltDate = addLocalDays(todayLocalYMD(), i - 1);
                         html += `
-                            <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5" data-ifa-sector="${i}">
-                                <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-2">Sector ${i} (${label})</p>
+                            <div class="p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5" data-ifa-sector="${i}" data-ifa-state="idle">
+                                <button type="button" class="ifa-summary-row hidden w-full flex items-center gap-2 text-left" title="Tap to edit">
+                                    <span class="w-4 h-4 shrink-0 rounded-full bg-green-500 inline-flex items-center justify-center"><i data-lucide="check" class="w-2.5 h-2.5 text-white"></i></span>
+                                    <span class="ifa-sum-fn text-xs font-bold whitespace-nowrap">SQ —</span>
+                                    <span class="ifa-sum-date text-xs font-bold text-gray-500 whitespace-nowrap">—</span>
+                                    <span class="ifa-sum-time ml-auto text-xs font-bold text-sia-gold whitespace-nowrap">—</span>
+                                </button>
+                                <div class="ifa-edit-area">
+                                <div class="flex items-center justify-between gap-2 mb-2">
+                                    <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Sector ${i} (${label})</p>
+                                    <span class="flex items-center gap-2 shrink-0">
+                                        <span class="ifa-status-dot hidden w-2 h-2 rounded-full"></span>
+                                        <button type="button" class="ifa-retry-btn hidden text-[10px] font-bold text-red-500 underline" data-idx="${i}">Retry</button>
+                                    </span>
+                                </div>
                                 <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
                                     <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
                                             <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="11">
+                                            <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="${fnHints[i - 1]}">
                                         </div>
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                        <input type="hidden" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ca-date-input">
-                                        <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(todayLocalYMD())}</button>
+                                        <input type="hidden" id="${id}-ifa-d${i}" value="${dfltDate}" class="ca-date-input ifa-date-cascade" data-idx="${i}">
+                                        <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(dfltDate)}</button>
                                     </div>
-                                    <button type="button" class="ifa-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${i}"><span class="fetch-face fetch-btn-label is-on">Fetch</span><span class="fetch-face fetch-btn-spin" aria-hidden="true"><span class="fetch-spin-ring"></span></span><span class="fetch-face fetch-btn-tick" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span></button>
                                 </div>
-                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
+                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time Duration (HH:MM)">
                                 
-                                <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
-                                    ${showUS ? `<label class="ifa-us-field flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
-                                    ${showPax ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-px${i}" class="accent-sia-gold"> Paxing</label>` : ''}
+                                ${showUS ? `
+                                <div class="ifa-us-field flex items-center justify-between gap-3 mt-2">
+                                    <span class="flex items-center gap-1.5 min-w-0">
+                                        <i data-lucide="flag" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                        <span class="text-xs font-bold whitespace-nowrap">Direct US</span>
+                                        <span class="text-[10px] text-gray-500 truncate">ULR flight — ${IFA_CONFIG.directUSMultiplier}×</span>
+                                    </span>
+                                    <label class="inline-flex items-center cursor-pointer shrink-0">
+                                        <input type="checkbox" id="${id}-ifa-us${i}" class="ifa-us-input ca-switch-input sr-only">
+                                        <span class="ca-switch"></span>
+                                    </label>
+                                </div>` : ''}
+                                ${showPax ? `
+                                <div class="ifa-px-field flex items-center justify-between gap-3 mt-2">
+                                    <span class="flex items-center gap-1.5 min-w-0">
+                                        <i data-lucide="armchair" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                        <span class="text-xs font-bold whitespace-nowrap">Paxing</span>
+                                        <span class="text-[10px] text-gray-500 truncate">Deadheading — ${IFA_CONFIG.paxingMultiplier}×</span>
+                                    </span>
+                                    <label class="inline-flex items-center cursor-pointer shrink-0">
+                                        <input type="checkbox" id="${id}-ifa-px${i}" class="ifa-px-input ca-switch-input sr-only">
+                                        <span class="ca-switch"></span>
+                                    </label>
+                                </div>` : ''}
                                 </div>
                             </div>
                         `;
                     }
                     container.innerHTML = html;
+                    lucide.createIcons(); // flag / armchair live in the markup above
                     playChatAnim(container);
                     bindTimeInputs(id);
+
+                    ifaPaintTripBar();
 
                     // Hide LMA on Turnaround, and in Default mode (Fetch fills it)
                     if (mode === 'both') {
@@ -3708,6 +3917,28 @@ function getRegionForAirport(code) {
                 };
                 typeSel.addEventListener('change', onIfaDropdownChange);
                 cntSel.addEventListener('change', onIfaDropdownChange);
+
+                // Sector dates run downhill: no sector may sit before the one above
+                // it, so moving an upper date pushes the ones below it forward.
+                const ifaSectorsBox = document.getElementById(`${id}-ifa-sectors`);
+                // The same cascading logic the LMA dates use: changing a date
+                // rewrites every date below it to the day after the one above,
+                // in order, whether or not it was already out of sequence.
+                const cascadeIfaDates = (fromIdx) => {
+                    for (let j = fromIdx + 1; j <= parseInt(cntSel.value); j++) {
+                        const prev = document.getElementById(`${id}-ifa-d${j - 1}`);
+                        const cur = document.getElementById(`${id}-ifa-d${j}`);
+                        if (!prev || !cur || !prev.value) continue;
+                        cur.value = addLocalDays(prev.value, 1);
+                        syncDateBtn(cur);
+                    }
+                };
+                if (ifaSectorsBox) {
+                    ifaSectorsBox.addEventListener('change', (e) => {
+                        if (!e.target.classList || !e.target.classList.contains('ifa-date-cascade')) return;
+                        cascadeIfaDates(parseInt(e.target.dataset.idx, 10));
+                    });
+                }
                 renderIfaSectors();
             }
 
@@ -3741,7 +3972,7 @@ function getRegionForAirport(code) {
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
                                             <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
-                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="11">
+                                            <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="265">
                                         </div>
                                     </div>`;
                     const lmaTimesHtml = (mode === 'lma' || mode === 'both') ? `
@@ -3800,16 +4031,24 @@ function getRegionForAirport(code) {
                         <div class="lma-iata-field mb-3">
                             <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
                             <div class="relative">
-                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
+                                <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. BNE" maxlength="3">
                                 <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
                             </div>
                             <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
                         </div>
                         ${lmaTimesHtml}
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer">
-                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
-                            Shuttle
-                        </label>
+                        ${idx === 2 ? `
+                        <div class="lma-shuttle-row flex items-center justify-between gap-3 mt-3">
+                            <span class="flex items-center gap-1.5 min-w-0">
+                                <i data-lucide="repeat" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                <span class="text-xs font-bold whitespace-nowrap">Shuttle</span>
+                                <span class="text-[10px] text-gray-500 truncate">1-stop connection — <em>no LMA</em></span>
+                            </span>
+                            <label class="inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="${id}-lma-sh${idx}" class="lma-shuttle-input ca-switch-input sr-only">
+                                <span class="ca-switch"></span>
+                            </label>
+                        </div>` : ''}
                     `;
                     container.appendChild(div);
                     lucide.createIcons();
@@ -3835,6 +4074,35 @@ function getRegionForAirport(code) {
 
                 btnAdd.addEventListener('click', addLmaSector);
 
+                // No LMA date may sit before the one above it. The chain runs
+                // arr1, dep1, arr2, dep2, ... so a fix anywhere walks downhill and
+                // only moves the dates that are actually out of order.
+                const lmaDateChain = () => {
+                    const out = [];
+                    for (let j = 1; j <= lmaCount; j++) {
+                        ['a', 'd'].forEach((k) => {
+                            const el = document.getElementById(`${id}-lma-${k}${j}`);
+                            if (el) out.push(el);
+                        });
+                    }
+                    return out;
+                };
+                const cascadeLmaFloor = (from) => {
+                    const chain = lmaDateChain();
+                    const start = chain.indexOf(from);
+                    if (start < 0) return;
+                    // Start at the date that was just typed (never the first in the
+                    // chain) so one picked in the past is pushed clear too.
+                    for (let k = Math.max(start, 1); k < chain.length; k++) {
+                        const prev = chain[k - 1], cur = chain[k];
+                        if (!prev.value) continue;
+                        if (cur.value < prev.value) { // ISO YMD compares chronologically
+                            cur.value = addLocalDays(prev.value, 1);
+                            syncDateBtn(cur);
+                        }
+                    }
+                };
+
                 // Event delegation for cascading dates
                 container.addEventListener('change', (e) => {
                     if (e.target.classList.contains('date-cascade')) {
@@ -3859,6 +4127,11 @@ function getRegionForAirport(code) {
                                 prevDep = depJ;
                             }
                         }
+                        cascadeLmaFloor(e.target);
+                    } else if (e.target.classList.contains('date-cascade-dep')) {
+                        // A departure date typed by hand can leave the next station
+                        // (or this station's own arrival) stranded in the past.
+                        cascadeLmaFloor(e.target);
                     }
                 });
 
@@ -3982,32 +4255,64 @@ function getRegionForAirport(code) {
                         }
                     }
                 };
-                ifaBox.addEventListener('click', async (e) => {
-                    const btn = e.target.closest('.ifa-fetch-btn');
-                    if (!btn) return;
-                    const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                    const fn = normSqFlight((document.getElementById(`${id}-ifa-fn${idx}`) || {}).value);
+                // One Fetch all replaces the per-sector buttons. A sector only gets
+                // its own button back when its fetch fails, and that button is a Retry.
+                ifaBox.addEventListener('click', (e) => {
+                    const row = e.target.closest('.ifa-summary-row');
+                    if (row) {
+                        const card = row.closest('[data-ifa-sector]');
+                        if (card) ifaSetCollapsed(parseInt(card.getAttribute('data-ifa-sector'), 10), false);
+                        return;
+                    }
+                    const retry = e.target.closest('.ifa-retry-btn');
+                    if (retry) ifaFetchOneSector(parseInt(retry.getAttribute('data-idx'), 10), false);
+                });
+
+                // Editing a fetched sector marks it unfetched again.
+                ifaBox.addEventListener('input', (e) => {
+                    if (ifaApplyingFetch) return;
+                    const card = e.target.closest ? e.target.closest('[data-ifa-sector]') : null;
+                    if (!card) return;
+                    const i = parseInt(card.getAttribute('data-ifa-sector'), 10);
+                    if (ifaSectorState(i) !== 'done') return;
+                    card.setAttribute('data-ifa-state', 'idle');
+                    card.removeAttribute('data-ifa-collapsed');
+                    ifaKeepFirstOpen();
+                    ifaPaintSector(i);
+                    ifaPaintTripBar();
+                });
+
+                // Fetch one sector. `quiet` suppresses the alerts so Fetch all can run
+                // down the list without a modal per sector — the red dot and the Retry
+                // button carry that information instead.
+                async function ifaFetchOneSector(idx, quiet) {
+                    const card = ifaSectorCard(idx);
+                    if (!card) return false;
+                    const fnEl = document.getElementById(`${id}-ifa-fn${idx}`);
+                    const fn = normSqFlight(fnEl ? fnEl.value : '');
                     let dateStr = (document.getElementById(`${id}-ifa-d${idx}`) || {}).value || '';
                     if (!dateStr) {
                         const d1 = document.getElementById(`${id}-ifa-d1`);
                         if (d1) dateStr = d1.value;
                     }
                     if (!fn || !dateStr) {
-                        appAlert('Enter a flight number and date to fetch this sector.');
-                        return;
+                        if (!quiet) await appAlert('Enter a flight number and date to fetch this sector.');
+                        ifaSetState(idx, 'error');
+                        return false;
                     }
                     const side = menuDateSide(dateStr);
                     if (side) {
-                        await appAlert(menuDateFetchError(side));
-                        return;
+                        if (!quiet) await appAlert(menuDateFetchError(side));
+                        ifaSetState(idx, 'error');
+                        return false;
                     }
-                    setFetchFace(btn, 'spin');
-                    let fetchOk = false;
+                    ifaSetState(idx, 'loading');
+                    let ok = false;
                     try {
                         let result = await fetchSectorSchedule(fn, dateStr);
                         if (!result.ok) {
-                            const count = parseInt(document.getElementById(`${id}-sector-count`).value, 10) || 0;
-                            for (let j = 1; j <= count; j++) {
+                            // unpublished on this date: a sibling sector may share the flight
+                            for (let j = 1; j <= ifaSectorCount(); j++) {
                                 if (j === idx) continue;
                                 const otherFn = normSqFlight((document.getElementById(`${id}-ifa-fn${j}`) || {}).value);
                                 const otherD = (document.getElementById(`${id}-ifa-d${j}`) || {}).value;
@@ -4018,55 +4323,86 @@ function getRegionForAirport(code) {
                             }
                         }
                         if (!result.ok) {
-                            await appAlert('No published times for that flight/date. You can still type them.');
-                            return;
+                            if (!quiet) await appAlert('No published times for that flight/date. You can still type them.');
+                            ifaSetState(idx, 'error');
+                            return false;
                         }
-                        const prevCard = ifaBox.querySelector('[data-ifa-sector="' + (idx - 1) + '"]');
+                        const prevCard = ifaSectorCard(idx - 1);
                         const prefer = prevCard ? prevCard.getAttribute('data-arr-airport') : '';
                         const usedPairs = [];
-                        ifaBox.querySelectorAll('[data-ifa-sector]').forEach((c) => {
-                            if (c.getAttribute('data-ifa-sector') === String(idx)) return;
-                            const d = c.getAttribute('data-dep-airport');
-                            const a = c.getAttribute('data-arr-airport');
-                            if (d && a) usedPairs.push(d + '>' + a);
-                        });
+                        for (let j = 1; j <= ifaSectorCount(); j++) {
+                            if (j === idx) continue;
+                            const c = ifaSectorCard(j);
+                            if (!c) continue;
+                            const dApt = c.getAttribute('data-dep-airport');
+                            const aApt = c.getAttribute('data-arr-airport');
+                            if (dApt && aApt) usedPairs.push(dApt + '>' + aApt);
+                        }
                         const typeEl = document.getElementById(`${id}-flight-type`);
-                        const countNow = parseInt((document.getElementById(`${id}-sector-count`) || {}).value, 10) || 0;
+                        const countNow = ifaSectorCount();
                         const preferArr = (typeEl && typeEl.value !== 'Turnaround' && idx === countNow) ? 'SIN' : '';
                         const leg = pickScheduleLeg(result.legs, dateStr, prefer, preferArr, usedPairs);
                         if (!leg || !leg.hours) {
-                            await appAlert('Could not read times for that sector. You can still type them.');
-                            return;
+                            if (!quiet) await appAlert('Could not read times for that sector. You can still type them.');
+                            ifaSetState(idx, 'error');
+                            return false;
                         }
-                        const card = btn.closest('[data-ifa-sector]');
-                        setVal(document.getElementById(`${id}-ifa-t${idx}`), hoursToHm(leg.hours), true);
-                        if (card) {
-                            if (leg.arrAirport) card.setAttribute('data-arr-airport', leg.arrAirport);
-                            if (leg.depAirport) card.setAttribute('data-dep-airport', leg.depAirport);
-                            if (leg.arrLocal) {
-                                card.setAttribute('data-arr-ymd', formatLocalYMD(leg.arrLocal));
-                                card.setAttribute('data-arr-hm', hmFromDate(leg.arrLocal));
-                            }
-                            if (leg.depLocal) {
-                                const typedYmd = ((document.getElementById(`${id}-ifa-d${idx}`) || {}).value || '').trim();
-                                card.setAttribute('data-dep-ymd', typedYmd || formatLocalYMD(leg.depLocal));
-                                card.setAttribute('data-dep-hm', hmFromDate(leg.depLocal));
-                            }
-                            if (leg.arrUtc) card.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
-                            if (leg.depUtc) card.setAttribute('data-dep-utc', String(leg.depUtc.getTime()));
+                        // Guarded so the write-back does not read as a crew edit.
+                        ifaApplyingFetch = true;
+                        try {
+                            setVal(document.getElementById(`${id}-ifa-t${idx}`), hoursToHm(leg.hours), true);
+                        } finally {
+                            ifaApplyingFetch = false;
                         }
+                        if (leg.arrAirport) card.setAttribute('data-arr-airport', leg.arrAirport);
+                        if (leg.depAirport) card.setAttribute('data-dep-airport', leg.depAirport);
+                        if (leg.arrLocal) {
+                            card.setAttribute('data-arr-ymd', formatLocalYMD(leg.arrLocal));
+                            card.setAttribute('data-arr-hm', hmFromDate(leg.arrLocal));
+                        }
+                        if (leg.depLocal) {
+                            const typedYmd = ((document.getElementById(`${id}-ifa-d${idx}`) || {}).value || '').trim();
+                            card.setAttribute('data-dep-ymd', typedYmd || formatLocalYMD(leg.depLocal));
+                            card.setAttribute('data-dep-hm', hmFromDate(leg.depLocal));
+                        }
+                        if (leg.arrUtc) card.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
+                        if (leg.depUtc) card.setAttribute('data-dep-utc', String(leg.depUtc.getTime()));
                         const usEl = document.getElementById(`${id}-ifa-us${idx}`);
-                        if (usEl) {
-                            usEl.checked = isUsAirport(leg.arrAirport) || isUsAirport(leg.depAirport);
-                        }
+                        if (usEl) usEl.checked = isUsAirport(leg.arrAirport) || isUsAirport(leg.depAirport);
                         syncLmaFromIfa();
-                        fetchOk = true;
+                        ok = true;
                     } catch (err) {
-                        await appAlert('Could not fetch that flight. You can still type the times.');
-                    } finally {
-                        finishFetchBtn(btn, fetchOk);
+                        if (!quiet) await appAlert('Could not fetch that flight. You can still type the times.');
                     }
-                });
+                    ifaSetState(idx, ok ? 'done' : 'error');
+                    return ok;
+                }
+
+                // One tap, every outstanding sector, strictly one after another.
+                async function ifaFetchAll() {
+                    if (ifaFetchingAll) return;
+                    ifaFetchingAll = true;
+                    ifaPaintTripBar();
+                    try {
+                        for (let i = 1; i <= ifaSectorCount(); i++) {
+                            if (ifaSectorState(i) === 'done') continue;
+                            await ifaFetchOneSector(i, true);
+                        }
+                    } finally {
+                        ifaFetchingAll = false;
+                        ifaPaintTripBar();
+                    }
+                }
+
+                const fetchAllBtn = document.getElementById(`${id}-ifa-fetch-all`);
+                if (fetchAllBtn) fetchAllBtn.addEventListener('click', () => { ifaFetchAll(); });
+                const expandAllBtn = document.getElementById(`${id}-ifa-expand-all`);
+                if (expandAllBtn) {
+                    expandAllBtn.addEventListener('click', () => {
+                        for (let i = 1; i <= ifaSectorCount(); i++) ifaSetCollapsed(i, false);
+                    });
+                }
+                ifaPaintTripBar();
             }
 
             const lmaBox = document.getElementById(`${id}-lma-sectors`);
@@ -4286,11 +4622,17 @@ function getRegionForAirport(code) {
             return ['First Sector', 'Second Sector', 'Third Sector', 'Fourth Sector'][idx] || ('Sector ' + (idx + 1));
         }
 
+        // Lucide icons inlined as raw SVG. These strings are interpolated into markup
+        // that never gets a lucide.createIcons() pass (the menu viewer) or into
+        // textContent sinks, so a real <i data-lucide> would show up as an empty tag.
+        const LUCIDE_PLANE_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>';
+        const LUCIDE_X_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
         function lmaMealBadge(on, letter, onCls) {
             if (on) {
                 return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold ' + onCls + '">' + letter + '</span>';
             }
-            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">✕</span>';
+            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">' + LUCIDE_X_SVG + '</span>';
         }
 
         function getLayoverMultiplier(sdp) {
@@ -4775,7 +5117,7 @@ function getRegionForAirport(code) {
             noteBubbleShown();
             lucide.createIcons();
             renderRecentFlightChips(uniqueId);
-            scrollToBottom();
+            scrollChatToBubble(msgDiv);
         }
 
         function showDatePickerUI(id) {
@@ -4959,9 +5301,9 @@ function getRegionForAirport(code) {
                         `;
                         legs.forEach(leg => {
                             const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
-                            const label = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                            const label = leg.flightDetails.departureAirportCode + LUCIDE_PLANE_SVG + leg.flightDetails.arrivalAirportCode;
                             contentHtml += `
-                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${label}</button>
+                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5">${label}</button>
                             `;
                         });
                         contentHtml += `
@@ -5382,6 +5724,8 @@ function getRegionForAirport(code) {
             const sectorWrap = document.getElementById('menu-sector-wrap');
             const sectorList = document.getElementById('menu-sector-list');
             const sectorLabel = document.getElementById('menu-sector-label');
+            // Airport codes now travel inside markup (the lucide plane icon), so escape them.
+            const escCode = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             sectorList.innerHTML = '';
             
             // Filter legs based on user selection in chat card
@@ -5398,22 +5742,22 @@ function getRegionForAirport(code) {
             if (filteredLegs.length > 1) {
                 sectorWrap.classList.remove('hidden');
                 filteredLegs.forEach(leg => {
-                    const txt = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                    const txt = escCode(leg.flightDetails.departureAirportCode) + LUCIDE_PLANE_SVG + escCode(leg.flightDetails.arrivalAirportCode);
                     const code = legCode(leg);
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
-                    btn.textContent = txt;
+                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors inline-flex items-center gap-1.5';
+                    btn.innerHTML = txt;
                     btn.onclick = () => {
                         currentMenuSearch.selectedSector = code;
-                        sectorLabel.textContent = txt;
+                        sectorLabel.innerHTML = txt;
                         toggleMenuDropdown('sector');
                         renderSector(leg);
                     };
                     sectorList.appendChild(btn);
                 });
                 if (pick) {
-                    sectorLabel.textContent = pick.flightDetails.departureAirportCode + ' ✈ ' + pick.flightDetails.arrivalAirportCode;
+                    sectorLabel.innerHTML = escCode(pick.flightDetails.departureAirportCode) + LUCIDE_PLANE_SVG + escCode(pick.flightDetails.arrivalAirportCode);
                 }
             } else {
                 sectorWrap.classList.add('hidden');
@@ -7118,9 +7462,13 @@ function getRegionForAirport(code) {
             setSeg('print-layout-elegant', 'print-layout-compact', printState.layout === 'elegant');
             setSeg('print-paper-a4', 'print-paper-a6', printState.paper === 'a4');
             const compactOn = printState.layout === 'compact';
-            const paintOpt = (el, on, onLabel, offLabel) => {
+            const paintOpt = (el, on, label) => {
                 if (!el) return;
-                el.textContent = on ? onLabel : offLabel;
+                // The lucide tick shows the on-state; the text is just the option name.
+                const tick = el.querySelector('.opt-tick');
+                const txt = el.querySelector('.opt-txt');
+                if (tick) tick.classList.toggle('hidden', !on);
+                if (txt) txt.textContent = label;
                 el.classList.toggle('bg-sia-gold', on);
                 el.classList.toggle('text-black', on);
                 el.classList.toggle('border-sia-gold', on);
@@ -7130,10 +7478,10 @@ function getRegionForAirport(code) {
             };
             const grey = document.getElementById('print-opt-grey');
             const desc = document.getElementById('print-opt-desc');
-            paintOpt(grey, printState.greyscale, '✓ Greyscale', 'Greyscale');
-            paintOpt(desc, printState.descriptions, '✓ Descriptions', 'Descriptions');
+            paintOpt(grey, printState.greyscale, 'Greyscale');
+            paintOpt(desc, printState.descriptions, 'Descriptions');
             const bounds = document.getElementById('print-opt-bounds');
-            paintOpt(bounds, printState.showBounds, '✓ Bounds', 'Bounds');
+            paintOpt(bounds, printState.showBounds, 'Bounds');
             if (grey) grey.classList.toggle('hidden', compactOn);
             if (desc) desc.classList.toggle('hidden', compactOn);
             const tabSheet = document.getElementById('print-tab-sheet');
