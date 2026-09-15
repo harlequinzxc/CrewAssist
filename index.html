@@ -159,6 +159,23 @@
         @keyframes ca-spin {
             to { transform: rotate(360deg); }
         }
+        .cadate-day {
+            width: 2.25rem;
+            height: 2.25rem;
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cadate-day.is-sel {
+            background: #C9A227;
+            color: #111827;
+        }
+        .cadate-day.is-today:not(.is-sel) {
+            box-shadow: inset 0 0 0 1.5px #C9A227;
+        }
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -789,6 +806,28 @@
             </div>
         </div>
 
+        <div id="cadate-backdrop" class="fixed inset-0 z-[92] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
+            <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 border border-sia-gold/20 shadow-2xl" onclick="event.stopPropagation()">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold">Select date</p>
+                <p id="cadate-heading" class="text-2xl font-bold mt-1 mb-4"></p>
+                <div class="flex items-center justify-between mb-3">
+                    <p id="cadate-month" class="text-sm font-bold"></p>
+                    <div class="flex items-center gap-1">
+                        <button type="button" id="cadate-prev" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-lg font-bold" aria-label="Previous month">‹</button>
+                        <button type="button" id="cadate-next" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-lg font-bold" aria-label="Next month">›</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+                </div>
+                <div id="cadate-grid" class="grid grid-cols-7 gap-y-1 place-items-center"></div>
+                <div class="flex justify-end gap-6 mt-4">
+                    <button type="button" id="cadate-cancel" class="text-sm font-bold text-sia-gold">Cancel</button>
+                    <button type="button" id="cadate-ok" class="text-sm font-bold text-sia-gold">OK</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Menu Viewer Sheet -->
         <div id="menu-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
         <div id="menu-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
@@ -1105,11 +1144,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.4';
+        const APP_VERSION = '1.5.5';
         const APP_WHAT_NEW = [
-            'What’s new: Do not show again sits at the bottom left of the window.',
-            'Flight and date stay on one row; Direct US ticks on a US sector.',
-            'LMA can Fetch inbound and outbound times, or you can type them.'
+            'COP keeps its original width; dates open a CrewAssist calendar.',
+            'Fetching a 4-sector pairing no longer jumps the chat.',
+            'Summary opens at the top. Multi-leg flights pick the unused sector.'
         ];
 
         // State
@@ -2870,6 +2909,118 @@ function getRegionForAirport(code) {
             return formatLocalYMD(new Date());
         }
 
+        function formatDateBtn(ymd) {
+            const m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!m) return 'Pick date';
+            return m[3] + '/' + m[2] + '/' + m[1];
+        }
+
+        function syncDateBtn(el) {
+            if (!el) return;
+            const btn = document.getElementById(el.id + '-btn');
+            if (btn) btn.textContent = formatDateBtn(el.value);
+        }
+
+        const CA_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+        const CA_MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec'];
+        let caDateTarget = null;
+        let caDateView = new Date();
+        let caDatePicked = '';
+
+        function closeCaDatePicker() {
+            const bd = document.getElementById('cadate-backdrop');
+            if (!bd) return;
+            bd.classList.add('opacity-0');
+            setTimeout(() => bd.classList.add('hidden'), 200);
+            caDateTarget = null;
+        }
+
+        function renderCaDateGrid() {
+            const heading = document.getElementById('cadate-heading');
+            const monthEl = document.getElementById('cadate-month');
+            const grid = document.getElementById('cadate-grid');
+            if (!grid) return;
+            const y = caDateView.getFullYear();
+            const m = caDateView.getMonth();
+            const picked = String(caDatePicked || '').split('-');
+            const pY = parseInt(picked[0], 10);
+            const pM = parseInt(picked[1], 10);
+            const pD = parseInt(picked[2], 10);
+            const headD = isFinite(pD) ? pD : 1;
+            if (heading) heading.textContent = headD + ' ' + CA_MONTHS_SHORT[isFinite(pM) ? pM - 1 : m] + ' ' + (isFinite(pY) ? pY : y);
+            if (monthEl) monthEl.textContent = CA_MONTHS[m] + ' ' + y;
+            const first = new Date(y, m, 1);
+            const startPad = first.getDay();
+            const daysIn = new Date(y, m + 1, 0).getDate();
+            const today = todayLocalYMD();
+            let html = '';
+            for (let i = 0; i < startPad; i++) html += '<span></span>';
+            for (let d = 1; d <= daysIn; d++) {
+                const ymd = y + '-' + pad2(m + 1) + '-' + pad2(d);
+                let cls = 'cadate-day';
+                if (ymd === caDatePicked) cls += ' is-sel';
+                if (ymd === today) cls += ' is-today';
+                html += '<button type="button" class="' + cls + '" data-ymd="' + ymd + '">' + d + '</button>';
+            }
+            grid.innerHTML = html;
+        }
+
+        function openCaDatePicker(inputEl) {
+            if (!inputEl) return;
+            caDateTarget = inputEl;
+            caDatePicked = inputEl.value || todayLocalYMD();
+            const p = caDatePicked.split('-');
+            caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
+            renderCaDateGrid();
+            const bd = document.getElementById('cadate-backdrop');
+            bd.classList.remove('hidden');
+            setTimeout(() => bd.classList.remove('opacity-0'), 10);
+        }
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.ca-date-btn');
+            if (btn) {
+                const inp = document.getElementById(btn.getAttribute('data-date-input'));
+                if (inp) openCaDatePicker(inp);
+                return;
+            }
+            const day = e.target.closest('#cadate-grid [data-ymd]');
+            if (day) {
+                caDatePicked = day.getAttribute('data-ymd');
+                const p = caDatePicked.split('-');
+                caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
+                renderCaDateGrid();
+                return;
+            }
+        });
+        document.getElementById('cadate-prev').addEventListener('click', (e) => {
+            e.stopPropagation();
+            caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() - 1, 1);
+            renderCaDateGrid();
+        });
+        document.getElementById('cadate-next').addEventListener('click', (e) => {
+            e.stopPropagation();
+            caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() + 1, 1);
+            renderCaDateGrid();
+        });
+        document.getElementById('cadate-cancel').addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeCaDatePicker();
+        });
+        document.getElementById('cadate-ok').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (caDateTarget && caDatePicked) {
+                caDateTarget.value = caDatePicked;
+                syncDateBtn(caDateTarget);
+                caDateTarget.dispatchEvent(new Event('input', { bubbles: true }));
+                caDateTarget.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            closeCaDatePicker();
+        });
+        document.getElementById('cadate-backdrop').addEventListener('click', (e) => {
+            if (e.target.id === 'cadate-backdrop') closeCaDatePicker();
+        });
+
         function addLocalDays(ymd, n) {
             const p = String(ymd || '').split('-');
             if (p.length < 3) return ymd;
@@ -2960,21 +3111,28 @@ function getRegionForAirport(code) {
             return { ok: true, legs: legs };
         }
 
-        function pickScheduleLeg(legs, dateStr, preferDepAirport, preferArrAirport) {
+        function pickScheduleLeg(legs, dateStr, preferDepAirport, preferArrAirport, usedPairs) {
             if (!legs || !legs.length) return null;
-            if (legs.length === 1) return legs[0];
             const ymd = (d) => (d ? formatLocalYMD(d) : '');
-            let pool = legs.filter((l) => ymd(l.depLocal) === dateStr);
-            if (!pool.length) pool = legs;
-            if (preferArrAirport) {
-                const byApt = pool.filter((l) => l.arrAirport === preferArrAirport);
-                if (byApt.length) return byApt[0];
-            }
-            if (preferDepAirport) {
-                const byApt = pool.filter((l) => l.depAirport === preferDepAirport);
-                if (byApt.length) return byApt[0];
-            }
-            return pool[0];
+            const pair = (l) => (l.depAirport || '') + '>' + (l.arrAirport || '');
+            const used = usedPairs || [];
+            let pool = used.length ? legs.filter((l) => used.indexOf(pair(l)) < 0) : legs.slice();
+            if (!pool.length) pool = legs.slice();
+            const score = (l) => {
+                let s = 0;
+                if (preferDepAirport && l.depAirport === preferDepAirport) s += 8;
+                if (preferArrAirport && l.arrAirport === preferArrAirport) s += 8;
+                if (dateStr && ymd(l.depLocal) === dateStr) s += 4;
+                if (dateStr && ymd(l.arrLocal) === dateStr) s += 1;
+                return s;
+            };
+            let best = pool[0];
+            let bestS = -1;
+            pool.forEach((l) => {
+                const s = score(l);
+                if (s > bestS) { bestS = s; best = l; }
+            });
+            return best || pool[0] || legs[0];
         }
 
         function setFetchBusy(btn, on) {
@@ -3069,7 +3227,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-full shadow-lg border border-black/5 dark:border-white/5">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[90%] shadow-lg border border-black/5 dark:border-white/5">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -3173,7 +3331,8 @@ function getRegionForAirport(code) {
                                     </div>
                                     <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                        <input type="date" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ui-input w-full rounded-lg px-1 py-2 text-sm font-bold focus:border-sia-gold outline-none">
+                                        <input type="hidden" id="${id}-ifa-d${i}" value="${todayLocalYMD()}" class="ca-date-input">
+                                        <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(todayLocalYMD())}</button>
                                     </div>
                                     <button type="button" class="ifa-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${i}"><span class="fetch-btn-label">Fetch</span><span class="fetch-btn-spin hidden" aria-hidden="true"></span></button>
                                 </div>
@@ -3245,7 +3404,8 @@ function getRegionForAirport(code) {
                             ${lmaFnField('a')}
                             <div class="flex-1 min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg px-1.5 py-2 text-sm font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
+                                <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
+                                <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
                             ${lmaFetchBtn('arr')}
                         </div>
@@ -3258,7 +3418,8 @@ function getRegionForAirport(code) {
                             ${lmaFnField('d')}
                             <div class="flex-1 min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
-                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg px-1.5 py-2 text-sm font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
+                                <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
+                                <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
                             ${lmaFetchBtn('dep')}
                         </div>
@@ -3270,7 +3431,8 @@ function getRegionForAirport(code) {
                         <div class="grid grid-cols-2 gap-2 mb-2 min-w-0">
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
-                                <input type="date" id="${id}-lma-a${idx}" value="${defaultArr}" class="ui-input w-full rounded-lg px-3 text-sm font-bold focus:border-sia-gold outline-none date-cascade" data-idx="${idx}">
+                                <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
+                                <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
@@ -3280,7 +3442,8 @@ function getRegionForAirport(code) {
                         <div class="grid grid-cols-2 gap-2 min-w-0">
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Dep Date</label>
-                                <input type="date" id="${id}-lma-d${idx}" value="${defaultDep}" class="ui-input w-full rounded-lg px-3 text-sm font-bold focus:border-sia-gold outline-none date-cascade-dep" data-idx="${idx}">
+                                <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
+                                <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
                             <div class="min-w-0">
                                 <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
@@ -3309,7 +3472,7 @@ function getRegionForAirport(code) {
                     setTimeout(() => {
                         div.classList.remove('max-h-0', 'opacity-0', 'scale-95');
                         div.classList.add('max-h-[1200px]', 'opacity-100', 'scale-100');
-                        if (appPrefs.autoScroll && idx > 1) setTimeout(() => scrollToBottom(), 300);
+                        if (appPrefs.autoScroll && idx > 1 && mode !== 'both' && !window.__caLmaQuietAdd) setTimeout(() => scrollToBottom(), 300);
                     }, 10);
                     bindTimeInputs(id);
                     
@@ -3329,7 +3492,7 @@ function getRegionForAirport(code) {
                         
                         let prevDep = addLocalDays(val, 1);
                         const dep = document.getElementById(`${id}-lma-d${idx}`);
-                        if (dep) dep.value = prevDep;
+                        if (dep) { dep.value = prevDep; syncDateBtn(dep); }
 
                         for (let j = idx + 1; j <= lmaCount; j++) {
                             const arrNext = document.getElementById(`${id}-lma-a${j}`);
@@ -3339,6 +3502,8 @@ function getRegionForAirport(code) {
                                 const depJ = addLocalDays(arrJ, 1);
                                 arrNext.value = arrJ;
                                 depNext.value = depJ;
+                                syncDateBtn(arrNext);
+                                syncDateBtn(depNext);
                                 prevDep = depJ;
                             }
                         }
@@ -3406,6 +3571,7 @@ function getRegionForAirport(code) {
             const setVal = (el, val, fire) => {
                 if (!el || val == null || val === '') return;
                 el.value = val;
+                syncDateBtn(el);
                 if (fire) el.dispatchEvent(new Event('input', { bubbles: true }));
             };
             const ifaBox = document.getElementById(`${id}-ifa-sectors`);
@@ -3417,8 +3583,13 @@ function getRegionForAirport(code) {
                 };
                 const ensureLmaStations = (n) => {
                     const btnAdd = document.getElementById(`${id}-btn-add-lma`);
-                    while (lmaStationCount() < n && btnAdd && !btnAdd.classList.contains('hidden')) {
-                        btnAdd.click();
+                    window.__caLmaQuietAdd = true;
+                    try {
+                        while (lmaStationCount() < n && btnAdd && !btnAdd.classList.contains('hidden')) {
+                            btnAdd.click();
+                        }
+                    } finally {
+                        window.__caLmaQuietAdd = false;
                     }
                 };
                 const syncLmaFromIfa = () => {
@@ -3436,7 +3607,9 @@ function getRegionForAirport(code) {
                         setVal(document.getElementById(`${id}-lma-iata${i}`), aCard.getAttribute('data-arr-airport'), true);
                         setVal(document.getElementById(`${id}-lma-a${i}`), aCard.getAttribute('data-arr-ymd'), false);
                         setVal(document.getElementById(`${id}-lma-at${i}`), aCard.getAttribute('data-arr-hm'), true);
-                        if (bCard && bCard.getAttribute('data-dep-ymd')) {
+                        const stationApt = aCard.getAttribute('data-arr-airport') || '';
+                        const nextDepApt = bCard ? (bCard.getAttribute('data-dep-airport') || '') : '';
+                        if (bCard && bCard.getAttribute('data-dep-ymd') && (!nextDepApt || !stationApt || nextDepApt === stationApt)) {
                             setVal(document.getElementById(`${id}-lma-d${i}`), bCard.getAttribute('data-dep-ymd'), false);
                             setVal(document.getElementById(`${id}-lma-dt${i}`), bCard.getAttribute('data-dep-hm'), true);
                             const sh = document.getElementById(`${id}-lma-sh${i}`);
@@ -3486,7 +3659,17 @@ function getRegionForAirport(code) {
                         }
                         const prevCard = ifaBox.querySelector('[data-ifa-sector="' + (idx - 1) + '"]');
                         const prefer = prevCard ? prevCard.getAttribute('data-arr-airport') : '';
-                        const leg = pickScheduleLeg(result.legs, dateStr, prefer);
+                        const usedPairs = [];
+                        ifaBox.querySelectorAll('[data-ifa-sector]').forEach((c) => {
+                            if (c.getAttribute('data-ifa-sector') === String(idx)) return;
+                            const d = c.getAttribute('data-dep-airport');
+                            const a = c.getAttribute('data-arr-airport');
+                            if (d && a) usedPairs.push(d + '>' + a);
+                        });
+                        const typeEl = document.getElementById(`${id}-flight-type`);
+                        const countNow = parseInt((document.getElementById(`${id}-sector-count`) || {}).value, 10) || 0;
+                        const preferArr = (typeEl && typeEl.value !== 'Turnaround' && idx === countNow) ? 'SIN' : '';
+                        const leg = pickScheduleLeg(result.legs, dateStr, prefer, preferArr, usedPairs);
                         if (!leg || !leg.hours) {
                             await appAlert('Could not read times for that sector. You can still type them.');
                             return;
@@ -4033,11 +4216,13 @@ function getRegionForAirport(code) {
             }
 
             content.innerHTML = html;
+            content.scrollTop = 0;
             
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
                 sheet.classList.remove('translate-y-full');
+                content.scrollTop = 0;
             }, 10);
             
             // Post result message to chat

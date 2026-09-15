@@ -219,7 +219,7 @@ MM = total_minutes mod 60
 | 4-sector Turnaround | Singapore | Station | Singapore | Station |
 | 4-sector Layover | Singapore | Station | Station | Station |
 
-**Fetch (optional):** `/api/getcabin` then `/api/menu` for the first published cabin (JCL preferred). Block time = UTC arrival − UTC departure. LMA in/out times come from adjacent sectors. Empty flight number does not block Calculate. Cabin class is not required. On a 2-sector layover, Fetch ticks Direct US when either end of the sector is a US airport (`countryCode === US`); the crew can untick.
+**Fetch (optional):** `/api/getcabin` then `/api/menu` for the first published cabin (JCL preferred). Block time = UTC arrival − UTC departure. LMA in/out times come from adjacent sectors. Empty flight number does not block Calculate. Cabin class is not required. On a 2-sector layover, Fetch ticks Direct US when either end of the sector is a US airport (`countryCode === US`); the crew can untick. Multi-leg menus (same flight number, e.g. SIN–NRT–LAX) pick the unused dep→arr pair, preferring the previous sector’s arrival airport as this sector’s departure (last layover sector prefers SIN). LMA departure is the next sector’s departure at that station, never the previous arrival clock.
 
 ### 2.2 LMA Inputs
 
