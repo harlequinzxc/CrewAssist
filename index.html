@@ -198,11 +198,17 @@
         .cadate-day {
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
-        #cadate-hairline {
+        #cadate-hairline,
+        #cadate-hairline-foot {
             height: 1px;
             width: 100%;
             background: rgba(201, 162, 39, 0.35);
+        }
+        #cadate-hairline {
             margin: 0.75rem 0 1rem;
+        }
+        #cadate-hairline-foot {
+            margin: 0.75rem 0 0;
         }
         #cadate-panel .cadate-legend-swatch {
             width: 1.1rem;
@@ -899,7 +905,8 @@
                     <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch is-today cadate-day is-today"></span> Today</span>
                     <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch cadate-day is-sel"></span> Selected</span>
                 </div>
-                <div class="flex items-center justify-between mt-4">
+                <div id="cadate-hairline-foot"></div>
+                <div class="flex items-center justify-between mt-3">
                     <button type="button" id="cadate-today" class="text-sm font-bold text-sia-navy dark:text-sia-gold">Today</button>
                     <div class="flex items-center gap-6">
                         <button type="button" id="cadate-cancel" class="text-sm font-bold text-gray-500 dark:text-white/45">Cancel</button>
@@ -1225,11 +1232,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.9';
+        const APP_VERSION = '1.5.10';
         const APP_WHAT_NEW = [
-            'LMA out-date stays on the sector date you typed (no overnight +1).',
-            'Calendar header shows the weekday; Today jumps back; height stays put.',
-            'Cancel and OK are different colours; month changes are animated.'
+            'Calendar: a fine gold hairline now sits under the legend, above Today / Cancel / OK.'
         ];
 
         // State
