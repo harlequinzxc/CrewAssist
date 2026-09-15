@@ -11,12 +11,14 @@ Latest app cache: `crewassist-v73` (`sw.js`). App SemVer: **1.5.10** (`APP_VERSI
 ## How to work in this repo
 
 - **Branch:** every Arena chat session gets its **own** branch, `arena/<session-id>-crewassist` (ids look like `01a0a47b-…`). It is **different for every chat** and changes when the owner jumps between chats, so a branch name you read in this file, in an old commit message, or from a previous session is **already stale**. First action in any session: `BR=$(git branch --show-current)`, and use `$BR` everywhere below. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
-- **Sandbox drift:** this environment can silently check out an outdated/stale commit on `main`, causing mass deletions. Recover with (`$BR` = this session's branch):
+- **Sandbox drift:** this environment can silently **re-clone the repo onto an outdated/stale commit** — your commits vanish from local history while your file edits survive as uncommitted changes, and `/tmp` plus any background process are wiped. `git reflog` shows the signature: a fresh `clone: from …` followed by `checkout: moving from main to arena/…`. The remote is **not** damaged. Recover with (`$BR` = this session's branch):
   ```
   BR=$(git branch --show-current)
-  git fetch origin "refs/heads/$BR:refs/remotes/origin/$BR"
+  git fetch origin "refs/heads/$BR:refs/remotes/origin/$BR"   # a plain `git fetch origin` does NOT restore the ref
   git reset --hard "origin/$BR"
   ```
+  Then re-apply the change you were making and commit it again. Confirm with `git ls-remote origin "refs/heads/$BR"` that local HEAD equals the remote SHA.
+  **A rejected non-fast-forward push is this drift, not a sync problem** — it means the remote is *ahead* and your local branch was reset to a stale base. **Never `git push --force`;** that erases the good upstream commits. Seen first-hand 2026-09-15: three already-pushed commits disappeared locally, the remote was untouched, and the rejected push was the only warning.
 - **Patching `index.html`:** it is ~423 kB / 413 KiB (7.7k lines) with three inline scripts. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
 - **Do not edit `HANDOVER.md` in parallel.** Two concurrent search/replaces race; the later write wins and drops the other. README then HANDOVER, **one file at a time**, after every commit.
 - **SemVer + cache on every app change:** bump `APP_VERSION` in `index.html` (patch x.y.Z for polish, minor x.Y.0 for features) **and** `CACHE_NAME` in `sw.js` (`crewassist-vN`). The onboarding stamp is how the owner confirms the phone has the build. Docs-only README/HANDOVER tweaks have sometimes shipped without a bump; app/JS/CSS changes must bump both.
