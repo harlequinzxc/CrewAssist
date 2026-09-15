@@ -185,6 +185,34 @@
         #cadate-panel.is-strict .cadate-day.is-out {
             cursor: not-allowed;
         }
+        #cadate-grid-wrap {
+            overflow: hidden;
+            height: 13.5rem;
+        }
+        #cadate-grid {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            grid-template-rows: repeat(6, 2.25rem);
+            place-items: center;
+        }
+        .cadate-day {
+            transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        }
+        #cadate-hairline {
+            height: 1px;
+            width: 100%;
+            background: rgba(201, 162, 39, 0.35);
+            margin: 0.75rem 0 1rem;
+        }
+        #cadate-panel .cadate-legend-swatch {
+            width: 1.1rem;
+            height: 1.1rem;
+            border-radius: 9999px;
+            display: inline-flex;
+            flex-shrink: 0;
+            font-size: 0;
+            pointer-events: none;
+        }
         @keyframes ca-spin {
             to { transform: rotate(360deg); }
         }
@@ -852,7 +880,8 @@
         <div id="cadate-backdrop" class="fixed inset-0 z-[92] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <div id="cadate-panel" class="w-full max-w-sm rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
                 <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold">Select date</p>
-                <p id="cadate-heading" class="text-2xl font-bold mt-1 mb-4"></p>
+                <p id="cadate-heading" class="text-2xl font-bold mt-1"></p>
+                <div id="cadate-hairline"></div>
                 <div class="flex items-center justify-between mb-3">
                     <p id="cadate-month" class="text-sm font-bold"></p>
                     <div class="flex items-center gap-1">
@@ -863,10 +892,19 @@
                 <div class="grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
                     <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                 </div>
-                <div id="cadate-grid" class="grid grid-cols-7 gap-y-1 place-items-center"></div>
-                <div class="flex justify-end gap-6 mt-4">
-                    <button type="button" id="cadate-cancel" class="text-sm font-bold text-sia-gold">Cancel</button>
-                    <button type="button" id="cadate-ok" class="text-sm font-bold text-sia-gold">OK</button>
+                <div id="cadate-grid-wrap">
+                    <div id="cadate-grid"></div>
+                </div>
+                <div class="flex items-center gap-4 mt-3 text-[10px] font-bold text-gray-500">
+                    <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch is-today cadate-day is-today"></span> Today</span>
+                    <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch cadate-day is-sel"></span> Selected</span>
+                </div>
+                <div class="flex items-center justify-between mt-4">
+                    <button type="button" id="cadate-today" class="text-sm font-bold text-sia-navy dark:text-sia-gold">Today</button>
+                    <div class="flex items-center gap-6">
+                        <button type="button" id="cadate-cancel" class="text-sm font-bold text-gray-500 dark:text-white/45">Cancel</button>
+                        <button type="button" id="cadate-ok" class="text-sm font-bold text-sia-gold">OK</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1187,11 +1225,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.8';
+        const APP_VERSION = '1.5.9';
         const APP_WHAT_NEW = [
-            'LMA dates follow local flight time; Fetch spinner spins in place.',
-            'Pick Date on inflight menu shows the day you chose.',
-            'Past / far-ahead Fetch copy is shorter and clearer.'
+            'LMA out-date stays on the sector date you typed (no overnight +1).',
+            'Calendar header shows the weekday; Today jumps back; height stays put.',
+            'Cancel and OK are different colours; month changes are animated.'
         ];
 
         // State
@@ -2966,6 +3004,7 @@ function getRegionForAirport(code) {
 
         const CA_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
         const CA_MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sept','Oct','Nov','Dec'];
+        const CA_DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
         let caDateTarget = null;
         let caDateView = new Date();
         let caDatePicked = '';
@@ -2981,7 +3020,7 @@ function getRegionForAirport(code) {
             caDateOnCommit = null;
         }
 
-        function renderCaDateGrid() {
+        function renderCaDateGrid(slideDir) {
             const heading = document.getElementById('cadate-heading');
             const monthEl = document.getElementById('cadate-month');
             const grid = document.getElementById('cadate-grid');
@@ -2993,12 +3032,16 @@ function getRegionForAirport(code) {
             const pM = parseInt(picked[1], 10);
             const pD = parseInt(picked[2], 10);
             const headD = isFinite(pD) ? pD : 1;
-            if (heading) heading.textContent = headD + ' ' + CA_MONTHS_SHORT[isFinite(pM) ? pM - 1 : m] + ' ' + (isFinite(pY) ? pY : y);
+            const headM = isFinite(pM) ? pM - 1 : m;
+            const headY = isFinite(pY) ? pY : y;
+            const headDt = new Date(headY, headM, headD);
+            if (heading) heading.textContent = CA_DOW[headDt.getDay()] + ', ' + headD + ' ' + CA_MONTHS_SHORT[headM] + ' ' + headY;
             if (monthEl) monthEl.textContent = CA_MONTHS[m] + ' ' + y;
             const first = new Date(y, m, 1);
             const startPad = first.getDay();
             const daysIn = new Date(y, m + 1, 0).getDate();
             const today = todayLocalYMD();
+            const empties = 42 - startPad - daysIn;
             let html = '';
             for (let i = 0; i < startPad; i++) html += '<span></span>';
             for (let d = 1; d <= daysIn; d++) {
@@ -3009,7 +3052,20 @@ function getRegionForAirport(code) {
                 if (menuDateSide(ymd)) cls += ' is-out';
                 html += '<button type="button" class="' + cls + '" data-ymd="' + ymd + '">' + d + '</button>';
             }
+            for (let i = 0; i < empties; i++) html += '<span></span>';
             grid.innerHTML = html;
+            if (slideDir) {
+                grid.style.transition = 'none';
+                grid.style.transform = 'translateX(' + (slideDir * 18) + '%)';
+                grid.style.opacity = '0.35';
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        grid.style.transition = 'transform 0.28s ease, opacity 0.28s ease';
+                        grid.style.transform = 'translateX(0)';
+                        grid.style.opacity = '1';
+                    });
+                });
+            }
         }
 
         function openCaDatePicker(inputEl, strict, onCommit) {
@@ -3042,19 +3098,42 @@ function getRegionForAirport(code) {
             const ymd = day.getAttribute('data-ymd');
             if (caDateStrict && menuDateSide(ymd)) return;
             caDatePicked = ymd;
-            const p = caDatePicked.split('-');
-            caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
-            renderCaDateGrid();
+            const grid = document.getElementById('cadate-grid');
+            if (grid) {
+                grid.querySelectorAll('[data-ymd]').forEach((el) => {
+                    el.classList.toggle('is-sel', el.getAttribute('data-ymd') === ymd);
+                });
+            }
+            const heading = document.getElementById('cadate-heading');
+            const p = ymd.split('-');
+            const dt = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+            if (heading) {
+                heading.style.transition = 'opacity 0.18s ease';
+                heading.style.opacity = '0.35';
+                heading.textContent = CA_DOW[dt.getDay()] + ', ' + parseInt(p[2], 10) + ' ' + CA_MONTHS_SHORT[dt.getMonth()] + ' ' + p[0];
+                requestAnimationFrame(() => { heading.style.opacity = '1'; });
+            }
         });
         document.getElementById('cadate-prev').addEventListener('click', (e) => {
             e.stopPropagation();
             caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() - 1, 1);
-            renderCaDateGrid();
+            renderCaDateGrid(-1);
         });
         document.getElementById('cadate-next').addEventListener('click', (e) => {
             e.stopPropagation();
             caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() + 1, 1);
-            renderCaDateGrid();
+            renderCaDateGrid(1);
+        });
+        document.getElementById('cadate-today').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const t = todayLocalYMD();
+            if (caDateStrict && menuDateSide(t)) return;
+            const parts = t.split('-');
+            const nextView = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
+            const dir = nextView.getTime() > caDateView.getTime() ? 1 : (nextView.getTime() < caDateView.getTime() ? -1 : 0);
+            caDatePicked = t;
+            caDateView = nextView;
+            renderCaDateGrid(dir || 0);
         });
         document.getElementById('cadate-cancel').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -3707,9 +3786,12 @@ function getRegionForAirport(code) {
                         setVal(document.getElementById(`${id}-lma-at${i}`), aCard.getAttribute('data-arr-hm'), true);
                         const stationApt = aCard.getAttribute('data-arr-airport') || '';
                         const nextDepApt = bCard ? (bCard.getAttribute('data-dep-airport') || '') : '';
-                        if (bCard && bCard.getAttribute('data-dep-ymd') && (!nextDepApt || !stationApt || nextDepApt === stationApt)) {
-                            setVal(document.getElementById(`${id}-lma-d${i}`), bCard.getAttribute('data-dep-ymd'), false);
-                            setVal(document.getElementById(`${id}-lma-dt${i}`), bCard.getAttribute('data-dep-hm'), true);
+                        const nextTyped = ((document.getElementById(`${id}-ifa-d${i + 1}`) || {}).value || '').trim();
+                        const depYmd = nextTyped || (bCard ? bCard.getAttribute('data-dep-ymd') : '') || '';
+                        const depHm = bCard ? bCard.getAttribute('data-dep-hm') : '';
+                        if (bCard && depYmd && depHm && (!nextDepApt || !stationApt || nextDepApt === stationApt)) {
+                            setVal(document.getElementById(`${id}-lma-d${i}`), depYmd, false);
+                            setVal(document.getElementById(`${id}-lma-dt${i}`), depHm, true);
                             const sh = document.getElementById(`${id}-lma-sh${i}`);
                             if (sh) {
                                 const arrL = aCard.getAttribute('data-arr-ymd') && aCard.getAttribute('data-arr-hm')
@@ -3788,7 +3870,8 @@ function getRegionForAirport(code) {
                                 card.setAttribute('data-arr-hm', hmFromDate(leg.arrLocal));
                             }
                             if (leg.depLocal) {
-                                card.setAttribute('data-dep-ymd', formatLocalYMD(leg.depLocal));
+                                const typedYmd = ((document.getElementById(`${id}-ifa-d${idx}`) || {}).value || '').trim();
+                                card.setAttribute('data-dep-ymd', typedYmd || formatLocalYMD(leg.depLocal));
                                 card.setAttribute('data-dep-hm', hmFromDate(leg.depLocal));
                             }
                             if (leg.arrUtc) card.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
