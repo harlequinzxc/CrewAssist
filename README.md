@@ -1,6 +1,6 @@
 **CrewAssist** is a Progressive Web App (PWA) for Singapore Airlines (SIA) cabin crew. It is a mobile-first, chatbot-style assistant for inflight and layover calculations, plus live digital inflight menus. It is an **unofficial** crew tool.
 
-As of **v1.5.7** (`crewassist-v70`): chat, COP/IFA/LMA calculator (optional per-sector Fetch from flight number + date, per-station Shuttle skip for LMA), inflight menu viewer, printer, and a developer rates editor (including meal windows). Archive and month total are **not built yet**. Next-agent instructions live in [`HANDOVER.md`](HANDOVER.md). Formulas live in [`LOGIC.md`](LOGIC.md). The SQ inflight-menu API map lives in [`API_REFERENCE.md`](API_REFERENCE.md).
+As of **v1.5.8** (`crewassist-v71`): chat, COP/IFA/LMA calculator (optional per-sector Fetch from flight number + date, per-station Shuttle skip for LMA), inflight menu viewer, printer, and a developer rates editor (including meal windows). Archive and month total are **not built yet**. Next-agent instructions live in [`HANDOVER.md`](HANDOVER.md). Formulas live in [`LOGIC.md`](LOGIC.md). The SQ inflight-menu API map lives in [`API_REFERENCE.md`](API_REFERENCE.md).
 
 ## Features & Goals
 - **Chatbot interface:** NLP-style intent matching for quick commands (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`). Jump-to-latest control matches the send button and only shows when the thread is not at the bottom. Typing dots play before every bot line, calculator, and menu lookup. After a bubble finishes entering, wait 500ms before the next bubble or typing. Send, chips, and in-chat buttons stay locked until that animation finishes (no spam). Welcome is two bubbles. Messages, cards, typing, and lookup blocks fade/slide in and out.
@@ -13,11 +13,11 @@ As of **v1.5.7** (`crewassist-v70`): chat, COP/IFA/LMA calculator (optional per-
 - **Frontend:** HTML5, CSS3, vanilla JavaScript, Tailwind CSS (CDN), Lucide Icons. Almost all UI and logic is a single `index.html`.
 - **Backend / proxy:** Node.js Vercel serverless function (`api/sq.js`) for `getcabin` and `menu` only. SQ CORS allowlists `inflightmenu.singaporeair.com`, so the browser cannot read JSON directly; images are plain `<img src>` to that host (not CORS-gated).
 - **Data:** Airport IATA list and regions inlined in `index.html`. Default IFA/LMA numbers in `rates.json`. SQ payload and image URL map in `API_REFERENCE.md`. Formulas in `LOGIC.md`.
-- **Architecture:** PWA (service worker `crewassist-v70`, web manifest) for install and cache. App SemVer `APP_VERSION` (currently 1.5.7) is shown on onboarding. A What’s new overlay lists `APP_WHAT_NEW` after onboarding (or on the chat page for returning crew). Close with the X; “Do not show again” sits **outside** the glass window, checkbox and label on one row, and stores `crewAssist.hideWhatsNew` for this stamp only. IFA/LMA numbers and meal windows load from `rates.json` (network-first); developer mode can save device overrides and export/import JSON. Publishing new rates to every install is replacing `rates.json` on GitHub (not from the PWA).
+- **Architecture:** PWA (service worker `crewassist-v71`, web manifest) for install and cache. App SemVer `APP_VERSION` (currently 1.5.8) is shown on onboarding. A What’s new overlay lists `APP_WHAT_NEW` after onboarding (or on the chat page for returning crew). Close with the X; “Do not show again” sits **outside** the glass window, checkbox and label on one row, and stores `crewAssist.hideWhatsNew` for this stamp only. IFA/LMA numbers and meal windows load from `rates.json` (network-first); developer mode can save device overrides and export/import JSON. Publishing new rates to every install is replacing `rates.json` on GitHub (not from the PWA).
 
 ## File Structure
 - `index.html` — UI, chat, calculators, menu overlay, printer, and all app logic.
-- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v70`).
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v71`).
 - `rates.json` — Default IFA modifiers and LMA region rates (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `API_REFERENCE.md` — Reverse-engineered SQ inflight-menu API: endpoints, payload tree, image fields, dish-id CDN URLs, CORS.
@@ -32,4 +32,4 @@ As of **v1.5.7** (`crewassist-v70`): chat, COP/IFA/LMA calculator (optional per-
 3. Proxy / live menus: Vercel CLI (`npm i -g vercel`) then `vercel dev`.
 4. Use a mobile viewport (or a phone) — the UI is built mobile-first.
 
-Install as a PWA from the phone browser. After a deploy, confirm the onboarding stamp matches `APP_VERSION` (currently `v1.5.7`). Onboarding title: hairline the width of `CrewAssist™`, then `AN UNOFFICIAL CREW TOOL` on one row, same colour as the SemVer stamp.
+Install as a PWA from the phone browser. After a deploy, confirm the onboarding stamp matches `APP_VERSION` (currently `v1.5.8`). Onboarding title: hairline the width of `CrewAssist™`, then `AN UNOFFICIAL CREW TOOL` on one row, same colour as the SemVer stamp.
