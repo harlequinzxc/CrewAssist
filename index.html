@@ -148,7 +148,17 @@
             width: 0.95rem;
             padding: 0;
         }
-        .ifa-fetch-btn, .lma-fetch-btn {
+        /* A route that outgrows its card scrolls sideways; the chips never wrap or
+           squash, and the scrollbar stays out of the way. */
+        .ifa-trip-route, .lma-trip-route {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .ifa-trip-route::-webkit-scrollbar, .lma-trip-route::-webkit-scrollbar {
+            display: none;
+        }
+
+        .ifa-fetch-btn {
             position: relative;
         }
         .fetch-face {
@@ -1282,12 +1292,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.12.0';
+        const APP_VERSION = '1.15.0';
         const APP_WHAT_NEW = [
-            'COP and IFA now open with a trip bar — SIN → JNB → CPT → JNB → SIN — so you can see the whole pairing at a glance.',
-            'One Fetch all replaces the button on every sector, filling them one after another. Fetched sectors fold to a single line; tap to edit.',
-            'A line under Calculate tells you where you are: “Fetch all sectors to continue (2/4)” or “All sectors fetched · Ready”.',
-            'COP and IFA sector dates now cascade exactly like the LMA dates.'
+            'The trip bar is now two rows: your stations own the full top line and never wrap, with progress and Fetch all below.',
+            'If a route is ever too wide, it scrolls sideways instead of dropping a chip.',
+            'The LMA calculator now waits for a valid station code and both times before Calculate lights up.',
+            'LMA Fetch all lights up like Calculate once every flight number is in, and turns off again after a successful fetch.'
         ];
 
         // State
@@ -2084,10 +2094,10 @@
             card.querySelectorAll('.ifa-time-input').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.ifa-us-field').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.lma-iata-field, .lma-time-field').forEach((el) => el.classList.toggle('hidden', isDefault));
-            card.querySelectorAll('.ifa-fetch-btn, .lma-fetch-btn').forEach((el) => el.classList.toggle('hidden', isManual));
+            card.querySelectorAll('.ifa-fetch-btn').forEach((el) => el.classList.toggle('hidden', isManual));
             // Manual is hand-entry only: no Fetch all, so the trip bar (which is built
             // from fetched airports) and the fetch-progress hint would only mislead.
-            card.querySelectorAll('.ifa-trip-bar, .calc-hint').forEach((el) => el.classList.toggle('hidden', isManual));
+            card.querySelectorAll('.ifa-trip-bar, .calc-hint, .lma-trip-bar, .lma-calc-hint').forEach((el) => el.classList.toggle('hidden', isManual));
             // LMA section only exists to hide on cards that also carry IFA sectors.
             if (card.querySelector('[data-calc-ifa-sectors]')) {
                 const wrap = card.querySelector('.calc-lma-section');
@@ -3217,6 +3227,24 @@ function getRegionForAirport(code) {
         let caDatePicked = '';
         let caDateStrict = false;
         let caDateOnCommit = null;
+        let caDateMin = '';   // earliest YMD this field may take ('' = unrestricted)
+
+        // The earliest date a calculator date field may take: the date of the sector
+        // or station above it. Stops the calendar offering a day the cascade would
+        // immediately overwrite.
+        function caMinDateFor(inp) {
+            if (!inp || !inp.id) return '';
+            const m = /^(.*)-(ifa-d|lma-a|lma-d)(\d+)$/.exec(inp.id);
+            if (!m) return '';
+            const base = m[1], kind = m[2], idx = parseInt(m[3], 10);
+            const val = (suffix) => {
+                const el = document.getElementById(base + '-' + suffix);
+                return el ? (el.value || '') : '';
+            };
+            if (kind === 'ifa-d') return idx > 1 ? val('ifa-d' + (idx - 1)) : '';
+            if (kind === 'lma-a') return idx > 1 ? val('lma-d' + (idx - 1)) : '';
+            return val('lma-a' + idx); // a departure is never before its own arrival
+        }
 
         function closeCaDatePicker() {
             const bd = document.getElementById('cadate-backdrop');
@@ -3256,7 +3284,7 @@ function getRegionForAirport(code) {
                 let cls = 'cadate-day';
                 if (ymd === caDatePicked) cls += ' is-sel';
                 if (ymd === today) cls += ' is-today';
-                if (menuDateSide(ymd)) cls += ' is-out';
+                if (menuDateSide(ymd) || (caDateMin && ymd < caDateMin)) cls += ' is-out';
                 html += '<button type="button" class="' + cls + '" data-ymd="' + ymd + '">' + d + '</button>';
             }
             for (let i = 0; i < empties; i++) html += '<span></span>';
@@ -3275,11 +3303,12 @@ function getRegionForAirport(code) {
             }
         }
 
-        function openCaDatePicker(inputEl, strict, onCommit) {
+        function openCaDatePicker(inputEl, strict, onCommit, minYmd) {
             if (!inputEl) return;
             caDateTarget = inputEl;
             caDateStrict = !!strict;
             caDateOnCommit = onCommit || null;
+            caDateMin = minYmd || '';
             caDatePicked = inputEl.value || todayLocalYMD();
             const p = caDatePicked.split('-');
             caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
@@ -3295,7 +3324,7 @@ function getRegionForAirport(code) {
             const btn = e.target.closest('.ca-date-btn');
             if (btn) {
                 const inp = document.getElementById(btn.getAttribute('data-date-input'));
-                if (inp) openCaDatePicker(inp);
+                if (inp) openCaDatePicker(inp, false, null, caMinDateFor(inp));
             }
         });
         document.getElementById('cadate-grid').addEventListener('click', (e) => {
@@ -3304,6 +3333,7 @@ function getRegionForAirport(code) {
             e.stopPropagation();
             const ymd = day.getAttribute('data-ymd');
             if (caDateStrict && menuDateSide(ymd)) return;
+            if (caDateMin && ymd < caDateMin) return;
             caDatePicked = ymd;
             const grid = document.getElementById('cadate-grid');
             if (grid) {
@@ -3335,6 +3365,7 @@ function getRegionForAirport(code) {
             e.stopPropagation();
             const t = todayLocalYMD();
             if (caDateStrict && menuDateSide(t)) return;
+            if (caDateMin && t < caDateMin) return;
             const parts = t.split('-');
             const nextView = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
             const dir = nextView.getTime() > caDateView.getTime() ? 1 : (nextView.getTime() < caDateView.getTime() ? -1 : 0);
@@ -3349,6 +3380,9 @@ function getRegionForAirport(code) {
         document.getElementById('cadate-ok').addEventListener('click', (e) => {
             e.stopPropagation();
             if (caDateStrict && menuDateSide(caDatePicked)) {
+                return;
+            }
+            if (caDateMin && caDatePicked && caDatePicked < caDateMin) {
                 return;
             }
             const commit = caDateOnCommit;
@@ -3386,6 +3420,14 @@ function getRegionForAirport(code) {
         function normSqFlight(raw) {
             const m = String(raw || '').trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
             return m ? m[1] : '';
+        }
+
+        // Durations read as clock times in an input, which is easy to mistake for a
+        // time of day. For display, "02:15" becomes "2h 15m".
+        function formatDurationHm(hm) {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || '').trim());
+            if (!m) return String(hm || '').trim();
+            return parseInt(m[1], 10) + 'h ' + pad2(parseInt(m[2], 10)) + 'm';
         }
 
         function hoursToHm(hours) {
@@ -3495,25 +3537,6 @@ function getRegionForAirport(code) {
             return best || pool[0] || legs[0];
         }
 
-        function setFetchFace(btn, face) {
-            if (!btn) return;
-            btn.querySelectorAll('.fetch-face').forEach((el) => el.classList.remove('is-on'));
-            const sel = face === 'spin' ? '.fetch-btn-spin' : (face === 'tick' ? '.fetch-btn-tick' : '.fetch-btn-label');
-            const on = btn.querySelector(sel);
-            if (on) on.classList.add('is-on');
-            btn.disabled = face !== 'idle';
-        }
-
-        function finishFetchBtn(btn, ok) {
-            if (!btn) return;
-            if (ok) {
-                setFetchFace(btn, 'tick');
-                setTimeout(() => setFetchFace(btn, 'idle'), 720);
-            } else {
-                setFetchFace(btn, 'idle');
-            }
-        }
-
         function menuDateMinYMD() { return addLocalDays(todayLocalYMD(), -2); }
         function menuDateMaxYMD() { return addLocalDays(todayLocalYMD(), 42); }
         function menuDateSide(ymd) {
@@ -3568,8 +3591,8 @@ function getRegionForAirport(code) {
                             <div class="flex-1 min-w-0">
                                 <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
                                 <div id="${id}-flight-type-pills" data-calc-pill="flight-type" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="Layover">Layover</button>
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="Turnaround">Turnaround</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="Layover">Layover</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="Turnaround">Turnaround</button>
                                 </div>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
                             </div>
@@ -3577,25 +3600,23 @@ function getRegionForAirport(code) {
                             <div class="flex-1 min-w-0">
                                 <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
                                 <div id="${id}-sector-count-pills" data-calc-pill="sector-count" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="2">2 Sectors</button>
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="4">4 Sectors</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="2">2</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="4">4</button>
                                 </div>
                                 <input type="hidden" id="${id}-sector-count" value="2">
                             </div>
                         </div>
                         <!-- Trip summary: route, progress, and the single Fetch all -->
-                        <div class="ifa-trip-bar mb-3 flex items-start justify-between gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                            <div class="min-w-0 flex-1">
-                                <div id="${id}-ifa-trip-route" class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-bold"></div>
-                                <div class="flex items-center gap-2.5 mt-1">
-                                    <p id="${id}-ifa-trip-progress" class="text-[10px] font-bold text-gray-500"></p>
-                                    <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden text-[10px] font-bold text-sia-gold underline">Expand all</button>
-                                </div>
+                        <div class="ifa-trip-bar mb-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                            <div id="${id}-ifa-trip-route" class="ifa-trip-route flex flex-nowrap items-center gap-x-1.5 overflow-x-auto text-xs font-bold"></div>
+                            <div class="flex items-center gap-2.5 mt-1.5">
+                                <p id="${id}-ifa-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-500"></p>
+                                <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden shrink-0 text-[10px] font-bold text-sia-gold underline">Expand all</button>
+                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 ml-auto h-10 px-4 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                    <span class="ifa-fetch-all-label">Fetch all</span>
+                                </button>
                             </div>
-                            <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 h-10 px-4 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
-                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                                <span class="ifa-fetch-all-label">Fetch all</span>
-                            </button>
                         </div>
                         <div id="${id}-ifa-sectors" data-calc-ifa-sectors="1" class="space-y-3"></div>
                     </div>
@@ -3608,8 +3629,17 @@ function getRegionForAirport(code) {
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> ${lmaHeader}</h4>
                         </div>
-                        <div class="space-y-3" id="${id}-lma-sectors"></div>
+                        <div class="lma-trip-bar mb-2.5 px-2.5 py-2 rounded-xl border border-sia-gold/40 bg-sia-gold/5">
+                            <div id="${id}-lma-trip-route" class="lma-trip-route flex items-center gap-1 flex-nowrap overflow-x-auto text-[11px] font-bold text-sia-navy dark:text-white"></div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <p id="${id}-lma-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-400">0 of 0 fetched</p>
+                                <button type="button" id="${id}-lma-expand-all" class="lma-expand-all hidden shrink-0 text-[10px] font-bold uppercase tracking-wide text-sia-gold">Expand all</button>
+                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all shrink-0 ml-auto h-10 px-4 rounded-full text-xs font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none"><i data-lucide="download" class="w-4 h-4"></i><span class="lma-fetch-all-label">Fetch all</span></button>
+                            </div>
+                        </div>
+                        <div id="${id}-lma-sectors" class="space-y-3"></div>
                         <button id="${id}-btn-add-lma" class="w-full py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-500 mt-2 hover:border-sia-gold hover:text-sia-gold transition-colors">+ Add Layover Station</button>
+                        <p id="${id}-lma-calc-hint" class="lma-calc-hint hidden text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1"></p>
                     </div>
                 `;
             }
@@ -3655,6 +3685,133 @@ function getRegionForAirport(code) {
             // They read the DOM by id rather than closing over anything declared
             // later in this function, so there is no ordering hazard.
             // ==========================================
+            let lmaApplyingFetchX = false;
+            let lmaApplyingFetch = false;
+            let lmaFetchingAll = false;
+
+            // ---- LMA trip bar helpers. Function declarations, not const arrows:
+            // addLmaSector() runs before this point and already repaints the bar.
+            function lmaStationEl(idx) {
+                const box = document.getElementById(`${id}-lma-sectors`);
+                return box ? box.querySelector('.lma-station[data-idx="' + idx + '"]') : null;
+            }
+            function lmaStationCount() {
+                const box = document.getElementById(`${id}-lma-sectors`);
+                return box ? box.querySelectorAll('.lma-station').length : 0;
+            }
+            function lmaVal(idx, suffix) {
+                const el = document.getElementById(`${id}-lma-${suffix}${idx}`);
+                return el ? (el.value || '').trim() : '';
+            }
+            function lmaLegDone(idx, kind) {
+                const st = lmaStationEl(idx);
+                if (!st) return false;
+                return (st.getAttribute(kind === 'arr' ? 'data-arr-state' : 'data-dep-state') || 'idle') === 'done';
+            }
+            function lmaStationDone(idx) {
+                return lmaLegDone(idx, 'arr') && lmaLegDone(idx, 'dep');
+            }
+            function lmaFillSummaryRow(idx) {
+                const st = lmaStationEl(idx);
+                if (!st) return;
+                const put = (sel, v) => { const el = st.querySelector(sel); if (el) el.textContent = v; };
+                const a = lmaVal(idx, 'afn'), dd = lmaVal(idx, 'dfn');
+                put('.lma-sum-fns', (a || dd) ? ('SQ ' + (a || '\u2013') + ' / ' + (dd || '\u2013')) : '\u2014');
+                put('.lma-sum-iata', lmaVal(idx, 'iata') || '\u00b7\u00b7\u00b7');
+            }
+            function lmaPaintStation(idx) {
+                const st = lmaStationEl(idx);
+                if (!st) return;
+                lmaFillSummaryRow(idx);
+                const collapsed = lmaStationDone(idx) && st.getAttribute('data-lma-collapsed') === '1';
+                const sum = st.querySelector('.lma-summary-row');
+                const edit = st.querySelector('.lma-edit-area');
+                if (sum) sum.classList.toggle('hidden', !collapsed);
+                if (edit) edit.classList.toggle('hidden', collapsed);
+                const aState = st.getAttribute('data-arr-state') || 'idle';
+                const dState = st.getAttribute('data-dep-state') || 'idle';
+                const dot = st.querySelector('.lma-status-dot');
+                if (dot) {
+                    dot.className = 'lma-status-dot shrink-0 w-2 h-2 rounded-full ' +
+                        ((aState === 'loading' || dState === 'loading') ? 'bg-sia-gold animate-pulse'
+                            : (aState === 'error' || dState === 'error') ? 'bg-red-500' : 'hidden');
+                }
+                st.querySelectorAll('.lma-retry-btn').forEach((b) => {
+                    const attr = b.getAttribute('data-leg') === 'arr' ? 'data-arr-state' : 'data-dep-state';
+                    b.classList.toggle('hidden', (st.getAttribute(attr) || 'idle') !== 'error');
+                });
+            }
+            function lmaKeepFirstOpen() {
+                for (let i = 1; i <= lmaStationCount(); i++) {
+                    if (!lmaStationDone(i)) {
+                        const st = lmaStationEl(i);
+                        if (st) st.removeAttribute('data-lma-collapsed');
+                        break;
+                    }
+                }
+            }
+            function lmaSetStationDone(idx, done) {
+                const st = lmaStationEl(idx);
+                if (!st) return;
+                if (done) st.setAttribute('data-lma-collapsed', '1');
+                else st.removeAttribute('data-lma-collapsed');
+                lmaKeepFirstOpen();
+                for (let i = 1; i <= lmaStationCount(); i++) lmaPaintStation(i);
+                lmaPaintTripBar();
+            }
+            function lmaPaintTripBar() {
+                const count = lmaStationCount();
+                const route = document.getElementById(`${id}-lma-trip-route`);
+                if (route) {
+                    const nodes = ['SIN'];
+                    for (let i = 1; i <= count; i++) nodes.push(lmaVal(i, 'iata') || '\u00b7\u00b7\u00b7');
+                    route.innerHTML = nodes.map((n, k) =>
+                        (k ? '<span class="lma-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
+                        '<span class="lma-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold ' +
+                        (n === '\u00b7\u00b7\u00b7'
+                            ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
+                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15') +
+                        '">' + n + '</span>'
+                    ).join('');
+                }
+                let done = 0, folded = 0;
+                for (let i = 1; i <= count; i++) {
+                    if (lmaStationDone(i)) done++;
+                    const st = lmaStationEl(i);
+                    if (st && st.getAttribute('data-lma-collapsed') === '1' && lmaStationDone(i)) folded++;
+                }
+                const prog = document.getElementById(`${id}-lma-trip-progress`);
+                if (prog) prog.textContent = done + ' of ' + count + ' fetched';
+                const exp = document.getElementById(`${id}-lma-expand-all`);
+                if (exp) exp.classList.toggle('hidden', folded === 0);
+                // Fetch all arms like Calculate: every flight number in, and at
+                // least one leg still empty. Editing brings it back.
+                let fnReady = count > 0;
+                for (let i = 1; i <= count && fnReady; i++) {
+                    const st = lmaStationEl(i);
+                    const sh = st && st.querySelector('.lma-shuttle-input');
+                    if (sh && sh.checked) continue;
+                    if (!lmaVal(i, 'afn') || !lmaVal(i, 'dfn')) fnReady = false;
+                }
+                const allBtn = document.getElementById(`${id}-lma-fetch-all`);
+                if (allBtn) {
+                    const live = fnReady && done < count && !lmaFetchingAll;
+                    const lab = allBtn.querySelector('.lma-fetch-all-label');
+                    if (lab) lab.textContent = lmaFetchingAll ? 'Fetching\u2026' : 'Fetch all';
+                    allBtn.disabled = !live;
+                    allBtn.classList.toggle('cta-gold', live);
+                    allBtn.classList.toggle('border-sia-gold/70', !live);
+                    allBtn.classList.toggle('text-sia-gold', !live);
+                }
+                const hint = document.getElementById(`${id}-lma-calc-hint`);
+                if (hint) {
+                    hint.textContent = count === 0 ? '' : (done === count
+                        ? 'All layovers fetched \u00b7 Ready'
+                        : 'Fetch all layovers to continue (' + done + '/' + count + ')');
+                    hint.classList.toggle('hidden', !hint.textContent);
+                }
+            }
+
             let ifaApplyingFetch = false;   // set while a fetch writes fields back
             let ifaFetchingAll = false;
 
@@ -3682,7 +3839,7 @@ function getRegionForAirport(code) {
                 const d = val('ifa-d');
                 put('.ifa-sum-fn', 'SQ ' + (val('ifa-fn') || '\u2014'));
                 put('.ifa-sum-date', d ? formatDateBtn(d) : '\u2014');
-                put('.ifa-sum-time', val('ifa-t') || '\u2014');
+                put('.ifa-sum-time-txt', formatDurationHm(val('ifa-t')) || '\u2014');
             }
 
             function ifaPaintSector(i) {
@@ -3753,8 +3910,12 @@ function getRegionForAirport(code) {
                         nodes.push((c && c.getAttribute('data-arr-airport')) || '\u00b7\u00b7\u00b7');
                     }
                     route.innerHTML = nodes.map((n, k) =>
-                        (k ? '<span class="ifa-trip-arrow text-gray-400">\u2192</span>' : '') +
-                        '<span class="ifa-trip-node' + (n === '\u00b7\u00b7\u00b7' ? ' text-gray-400' : '') + '">' + n + '</span>'
+                        (k ? '<span class="ifa-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
+                        '<span class="ifa-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold ' +
+                        (n === '\u00b7\u00b7\u00b7'
+                            ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
+                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15') +
+                        '">' + n + '</span>'
                     ).join('');
                 }
                 let done = 0, collapsed = 0;
@@ -3770,11 +3931,24 @@ function getRegionForAirport(code) {
                 if (prog) prog.textContent = done + ' of ' + count + ' fetched';
                 const expandAll = document.getElementById(`${id}-ifa-expand-all`);
                 if (expandAll) expandAll.classList.toggle('hidden', collapsed === 0);
+                // Fetch all only lights up like Calculate once every flight number is
+                // in, and goes back to the outline style once the trip is complete —
+                // editing a flight number or a date brings it back.
+                let fnReady = count > 0;
+                for (let i = 1; i <= count; i++) {
+                    const fnEl = document.getElementById(`${id}-ifa-fn${i}`);
+                    if (!fnEl || !(fnEl.value || '').trim()) { fnReady = false; break; }
+                }
                 const allBtn = document.getElementById(`${id}-ifa-fetch-all`);
                 if (allBtn) {
+                    const live = fnReady && done < count && !ifaFetchingAll;
                     const lab = allBtn.querySelector('.ifa-fetch-all-label');
                     if (lab) lab.textContent = ifaFetchingAll ? 'Fetching\u2026' : 'Fetch all';
-                    allBtn.disabled = ifaFetchingAll;
+                    allBtn.disabled = !live;
+                    allBtn.classList.toggle('cta-gold', live);
+                    allBtn.classList.toggle('text-black', false);
+                    allBtn.classList.toggle('border-sia-gold/70', !live);
+                    allBtn.classList.toggle('text-sia-gold', !live);
                 }
                 const hint = document.getElementById(`${id}-calc-hint`);
                 if (hint) {
@@ -3840,7 +4014,7 @@ function getRegionForAirport(code) {
                                     <span class="w-4 h-4 shrink-0 rounded-full bg-green-500 inline-flex items-center justify-center"><i data-lucide="check" class="w-2.5 h-2.5 text-white"></i></span>
                                     <span class="ifa-sum-fn text-xs font-bold whitespace-nowrap">SQ —</span>
                                     <span class="ifa-sum-date text-xs font-bold text-gray-500 whitespace-nowrap">—</span>
-                                    <span class="ifa-sum-time ml-auto text-xs font-bold text-sia-gold whitespace-nowrap">—</span>
+                                    <span class="ifa-sum-time ml-auto inline-flex items-center gap-1 text-xs font-bold text-sia-gold whitespace-nowrap"><i data-lucide="clock" class="w-3 h-3 shrink-0"></i><span class="ifa-sum-time-txt">\u2014</span></span>
                                 </button>
                                 <div class="ifa-edit-area">
                                 <div class="flex items-center justify-between gap-2 mb-2">
@@ -3937,6 +4111,7 @@ function getRegionForAirport(code) {
                     ifaSectorsBox.addEventListener('change', (e) => {
                         if (!e.target.classList || !e.target.classList.contains('ifa-date-cascade')) return;
                         cascadeIfaDates(parseInt(e.target.dataset.idx, 10));
+                        ifaPaintTripBar(); // a new date can re-arm Fetch all
                     });
                 }
                 renderIfaSectors();
@@ -3953,6 +4128,9 @@ function getRegionForAirport(code) {
                     const idx = lmaCount;
                     const div = document.createElement('div');
                     div.className = 'lma-station p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 relative overflow-hidden transition-all duration-500 max-h-0 opacity-0 scale-95';
+                    div.setAttribute('data-idx', String(idx));
+                    div.setAttribute('data-arr-state', 'idle');
+                    div.setAttribute('data-dep-state', 'idle');
                     
                     const today = todayLocalYMD();
                     let defaultArr = today;
@@ -3966,7 +4144,9 @@ function getRegionForAirport(code) {
                         }
                     }
 
-                    const lmaFetchBtn = (leg) => `<button type="button" class="lma-fetch-btn shrink-0 h-10 w-[3.15rem] px-0 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center justify-center" data-idx="${idx}" data-leg="${leg}"><span class="fetch-face fetch-btn-label is-on">Fetch</span><span class="fetch-face fetch-btn-spin" aria-hidden="true"><span class="fetch-spin-ring"></span></span><span class="fetch-face fetch-btn-tick" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg></span></button>`;
+                    // Fetch all on the trip bar covers every station, so a station only
+                    // gets its own button back when one of its legs actually failed.
+                    const lmaRetryBtn = (leg) => `<button type="button" class="lma-retry-btn hidden shrink-0 h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-500 inline-flex items-center gap-1" data-idx="${idx}" data-leg="${leg}">Retry</button>`;
                     const lmaFnField = (which) => `
                                     <div class="flex-1 min-w-0">
                                         <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
@@ -3983,7 +4163,7 @@ function getRegionForAirport(code) {
                                 <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
-                            ${lmaFetchBtn('arr')}
+                            ${lmaRetryBtn('arr')}
                         </div>
                         <div class="lma-time-field mb-3">
                             <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Time</label>
@@ -3996,7 +4176,7 @@ function getRegionForAirport(code) {
                                 <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
-                            ${lmaFetchBtn('dep')}
+                            ${lmaRetryBtn('dep')}
                         </div>
                         <div class="lma-time-field mb-2">
                             <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Time</label>
@@ -4028,8 +4208,16 @@ function getRegionForAirport(code) {
                     `;
                     div.innerHTML = `
                         ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
+                        <button type="button" class="lma-summary-row hidden w-full flex items-center gap-2 text-left px-2.5 py-2 rounded-lg bg-green-500/10 border border-green-500/30">
+                            <span class="shrink-0 w-4 h-4 rounded-full bg-green-500 inline-flex items-center justify-center">
+                                <i data-lucide="check" class="w-2.5 h-2.5 text-white"></i>
+                            </span>
+                            <span class="lma-sum-fns text-xs font-bold text-sia-navy dark:text-white truncate"></span>
+                            <span class="lma-sum-iata shrink-0 ml-auto px-2 py-1 rounded-lg border text-[11px] font-bold border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-sia-navy dark:text-white">\u00b7\u00b7\u00b7</span>
+                        </button>
+                        <div class="lma-edit-area">
                         <div class="lma-iata-field mb-3">
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
+                            <label class="flex items-center gap-1.5 text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1"><span class="lma-status-dot shrink-0 w-2 h-2 rounded-full bg-sia-gold animate-pulse hidden"></span>Station IATA</label>
                             <div class="relative">
                                 <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. BNE" maxlength="3">
                                 <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
@@ -4049,6 +4237,7 @@ function getRegionForAirport(code) {
                                 <span class="ca-switch"></span>
                             </label>
                         </div>` : ''}
+                        </div>
                     `;
                     container.appendChild(div);
                     lucide.createIcons();
@@ -4061,6 +4250,7 @@ function getRegionForAirport(code) {
                     syncCalcUiAll();
                     
                     if (idx === 3) btnAdd.classList.add('hidden'); // max 3
+                    lmaPaintTripBar();
                 };
 
                 resetLmaFields = () => {
@@ -4177,6 +4367,39 @@ function getRegionForAirport(code) {
                     }
                 });
                 
+                // The flight time must be present whether the crew typed it or Fetch
+                // filled it. Default mode hides the field, so Fetch is how it lands —
+                // but Calculate must not fire on a sector with no duration at all.
+                containerNode.querySelectorAll('.ifa-time-input').forEach((inp) => {
+                    if ((inp.value || '').trim().length < 4) allFilled = false;
+                });
+
+                // LMA calculator: a valid station code and both times must be present,
+                // typed or fetched. Default mode hides them, so Fetch is how they land.
+                // Scoped to the LMA-only card on purpose - on a COP card these fields
+                // are fed by syncLmaFromIfa, which deliberately leaves a departure time
+                // empty when the next sector departs somewhere else, and in Default mode
+                // the crew cannot type them, so a blanket gate would lock Calculate.
+                // A station with Shuttle ticked earns no LMA and stays exempt, exactly
+                // as the visible-input pass above treats it.
+                const isLmaOnlyCard = !!containerNode.querySelector('.calc-lma-section')
+                    && !containerNode.querySelector('[data-calc-ifa-sectors]');
+                if (isLmaOnlyCard) {
+                    const lmaExempt = (inp) => {
+                        const st = inp.closest('.lma-station');
+                        const sh = st && st.querySelector('.lma-shuttle-input');
+                        return !!(sh && sh.checked);
+                    };
+                    containerNode.querySelectorAll('.lma-iata-input').forEach((inp) => {
+                        if (lmaExempt(inp)) return;
+                        if (!/^[A-Za-z]{3}$/.test((inp.value || '').trim())) allFilled = false;
+                    });
+                    containerNode.querySelectorAll('.lma-time-input').forEach((inp) => {
+                        if (lmaExempt(inp)) return;
+                        if ((inp.value || '').trim().length < 4) allFilled = false;
+                    });
+                }
+
                 const calcBtn = document.getElementById(`${id}-btn-calc`);
                 if (calcBtn) {
                     calcBtn.disabled = !allFilled;
@@ -4254,6 +4477,12 @@ function getRegionForAirport(code) {
                             }
                         }
                     }
+                    document.querySelectorAll(`#${id}-lma-sectors .lma-station`).forEach((st) => {
+                        const i = Number(st.getAttribute('data-idx'));
+                        if (lmaVal(i, 'at').length >= 4) st.setAttribute('data-arr-state', 'done');
+                        if (lmaVal(i, 'dt').length >= 4) st.setAttribute('data-dep-state', 'done');
+                    });
+                    lmaPaintTripBar();
                 };
                 // One Fetch all replaces the per-sector buttons. A sector only gets
                 // its own button back when its fetch fails, and that button is a Retry.
@@ -4274,12 +4503,13 @@ function getRegionForAirport(code) {
                     const card = e.target.closest ? e.target.closest('[data-ifa-sector]') : null;
                     if (!card) return;
                     const i = parseInt(card.getAttribute('data-ifa-sector'), 10);
-                    if (ifaSectorState(i) !== 'done') return;
-                    card.setAttribute('data-ifa-state', 'idle');
-                    card.removeAttribute('data-ifa-collapsed');
-                    ifaKeepFirstOpen();
-                    ifaPaintSector(i);
-                    ifaPaintTripBar();
+                    if (ifaSectorState(i) === 'done') {
+                        card.setAttribute('data-ifa-state', 'idle');
+                        card.removeAttribute('data-ifa-collapsed');
+                        ifaKeepFirstOpen();
+                        ifaPaintSector(i);
+                    }
+                    ifaPaintTripBar(); // a typed flight number can re-arm Fetch all
                 });
 
                 // Fetch one sector. `quiet` suppresses the alerts so Fetch all can run
@@ -4381,6 +4611,16 @@ function getRegionForAirport(code) {
                 // One tap, every outstanding sector, strictly one after another.
                 async function ifaFetchAll() {
                     if (ifaFetchingAll) return;
+                    // Check the whole trip first so the crew gets one message, not one
+                    // modal per sector.
+                    for (let i = 1; i <= ifaSectorCount(); i++) {
+                        const dEl = document.getElementById(`${id}-ifa-d${i}`);
+                        const dv = dEl ? (dEl.value || '') : '';
+                        if (dv && menuDateSide(dv)) {
+                            await appAlert('Live flight information isn\u2019t available for the selected dates.');
+                            return;
+                        }
+                    }
                     ifaFetchingAll = true;
                     ifaPaintTripBar();
                     try {
@@ -4407,78 +4647,156 @@ function getRegionForAirport(code) {
 
             const lmaBox = document.getElementById(`${id}-lma-sectors`);
             if (lmaBox && mode !== 'ifa') {
-                lmaBox.addEventListener('click', async (e) => {
-                    const btn = e.target.closest('.lma-fetch-btn');
-                    if (!btn) return;
-                    const idx = btn.getAttribute('data-idx');
-                    const legKind = btn.getAttribute('data-leg');
+                // One leg at a time; Fetch all walks every station in order.
+                async function lmaFetchOneLeg(idx, legKind, quiet) {
+                    const st = lmaStationEl(idx);
+                    if (!st) return false;
                     const isArr = legKind === 'arr';
-                    const fn = normSqFlight((document.getElementById(`${id}-lma-${isArr ? 'a' : 'd'}fn${idx}`) || {}).value);
-                    let dateStr = (document.getElementById(`${id}-lma-${isArr ? 'a' : 'd'}${idx}`) || {}).value || '';
+                    const attr = isArr ? 'data-arr-state' : 'data-dep-state';
+                    const fn = normSqFlight(lmaVal(idx, isArr ? 'afn' : 'dfn'));
+                    const dateStr = lmaVal(idx, isArr ? 'a' : 'd');
                     if (!fn || !dateStr) {
-                        appAlert('Enter a flight number and date to fetch this layover.');
-                        return;
+                        st.setAttribute(attr, 'error');
+                        lmaPaintStation(idx);
+                        if (!quiet) await appAlert('Enter a flight number and date to fetch this layover.');
+                        return false;
                     }
                     const side = menuDateSide(dateStr);
                     if (side) {
-                        await appAlert(menuDateFetchError(side));
-                        return;
+                        st.setAttribute(attr, 'error');
+                        lmaPaintStation(idx);
+                        if (!quiet) await appAlert(menuDateFetchError(side));
+                        return false;
                     }
-                    setFetchFace(btn, 'spin');
-                    let fetchOk = false;
+                    st.setAttribute(attr, 'loading');
+                    lmaPaintStation(idx);
+                    let ok = false;
                     try {
                         let result = await fetchSectorSchedule(fn, dateStr);
                         if (!result.ok) {
-                            const otherD = (document.getElementById(`${id}-lma-${isArr ? 'd' : 'a'}${idx}`) || {}).value;
+                            const otherD = lmaVal(idx, isArr ? 'd' : 'a');
                             if (otherD && otherD !== dateStr) result = await fetchSectorSchedule(fn, otherD);
                         }
                         if (!result.ok) {
-                            await appAlert('No published times for that flight/date. You can still type them.');
-                            return;
+                            if (!quiet) await appAlert('No published times for that flight/date. You can still type them.');
+                            return false;
                         }
-                        const iataNow = ((document.getElementById(`${id}-lma-iata${idx}`) || {}).value || '').trim().toUpperCase();
+                        const iataNow = lmaVal(idx, 'iata');
                         const leg = isArr
                             ? pickScheduleLeg(result.legs, dateStr, '', iataNow)
                             : pickScheduleLeg(result.legs, dateStr, iataNow, '');
                         if (!leg) {
-                            await appAlert('Could not read times for that sector. You can still type them.');
-                            return;
+                            if (!quiet) await appAlert('Could not read times for that sector. You can still type them.');
+                            return false;
                         }
-                        const station = btn.closest('.lma-station');
-                        if (isArr) {
-                            if (leg.arrAirport) setVal(document.getElementById(`${id}-lma-iata${idx}`), leg.arrAirport, true);
-                            if (leg.arrLocal) {
-                                setVal(document.getElementById(`${id}-lma-a${idx}`), formatLocalYMD(leg.arrLocal), false);
-                                setVal(document.getElementById(`${id}-lma-at${idx}`), hmFromDate(leg.arrLocal), true);
+                        // Writing the fields back fires input; keep that from reading as an edit.
+                        lmaApplyingFetch = true;
+                        try {
+                            if (isArr) {
+                                if (leg.arrAirport) setVal(document.getElementById(`${id}-lma-iata${idx}`), leg.arrAirport, true);
+                                if (leg.arrLocal) {
+                                    setVal(document.getElementById(`${id}-lma-a${idx}`), formatLocalYMD(leg.arrLocal), false);
+                                    setVal(document.getElementById(`${id}-lma-at${idx}`), hmFromDate(leg.arrLocal), true);
+                                }
+                                if (leg.arrUtc) st.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
+                            } else {
+                                if (leg.depAirport && !iataNow) setVal(document.getElementById(`${id}-lma-iata${idx}`), leg.depAirport, true);
+                                if (leg.depLocal) {
+                                    setVal(document.getElementById(`${id}-lma-d${idx}`), formatLocalYMD(leg.depLocal), false);
+                                    setVal(document.getElementById(`${id}-lma-dt${idx}`), hmFromDate(leg.depLocal), true);
+                                }
+                                if (leg.depUtc) st.setAttribute('data-dep-utc', String(leg.depUtc.getTime()));
                             }
-                            if (station && leg.arrUtc) station.setAttribute('data-arr-utc', String(leg.arrUtc.getTime()));
-                        } else {
-                            if (leg.depAirport && !iataNow) setVal(document.getElementById(`${id}-lma-iata${idx}`), leg.depAirport, true);
-                            if (leg.depLocal) {
-                                setVal(document.getElementById(`${id}-lma-d${idx}`), formatLocalYMD(leg.depLocal), false);
-                                setVal(document.getElementById(`${id}-lma-dt${idx}`), hmFromDate(leg.depLocal), true);
-                            }
-                            if (station && leg.depUtc) station.setAttribute('data-dep-utc', String(leg.depUtc.getTime()));
-                        }
+                        } finally { lmaApplyingFetch = false; }
                         const sh = document.getElementById(`${id}-lma-sh${idx}`);
                         if (sh) {
-                            const aY = (document.getElementById(`${id}-lma-a${idx}`) || {}).value;
-                            const aT = (document.getElementById(`${id}-lma-at${idx}`) || {}).value;
-                            const dY = (document.getElementById(`${id}-lma-d${idx}`) || {}).value;
-                            const dT = (document.getElementById(`${id}-lma-dt${idx}`) || {}).value;
+                            const aY = lmaVal(idx, 'a'), aT = lmaVal(idx, 'at');
+                            const dY = lmaVal(idx, 'd'), dT = lmaVal(idx, 'dt');
                             const arrL = aY && aT ? new Date(aY + 'T' + aT + ':00') : null;
                             const depL = dY && dT ? new Date(dY + 'T' + dT + ':00') : null;
-                            const arrU = station && station.getAttribute('data-arr-utc') ? new Date(Number(station.getAttribute('data-arr-utc'))) : null;
-                            const depU = station && station.getAttribute('data-dep-utc') ? new Date(Number(station.getAttribute('data-dep-utc'))) : null;
+                            const arrU = st.getAttribute('data-arr-utc') ? new Date(Number(st.getAttribute('data-arr-utc'))) : null;
+                            const depU = st.getAttribute('data-dep-utc') ? new Date(Number(st.getAttribute('data-dep-utc'))) : null;
                             sh.checked = suggestShuttle(arrL, depL, arrU, depU);
                         }
-                        fetchOk = true;
+                        ok = true;
+                        return true;
                     } catch (err) {
-                        await appAlert('Could not fetch that flight. You can still type the times.');
+                        if (!quiet) await appAlert('Could not fetch that flight. You can still type the times.');
+                        return false;
                     } finally {
-                        finishFetchBtn(btn, fetchOk);
+                        st.setAttribute(attr, ok ? 'done' : 'error');
+                        if (ok) lmaSetStationDone(idx, lmaStationDone(idx));
+                        else lmaPaintStation(idx);
+                    }
+                }
+
+                async function lmaFetchAll() {
+                    if (lmaFetchingAll) return;
+                    // One window for the whole trip, not one modal per leg.
+                    const n = lmaStationCount();
+                    for (let i = 1; i <= n; i++) {
+                        for (const kind of ['arr', 'dep']) {
+                            const dv = lmaVal(i, kind === 'arr' ? 'a' : 'd');
+                            if (dv && menuDateSide(dv)) {
+                                await appAlert('Live flight information isn\u2019t available for the selected dates.');
+                                return;
+                            }
+                        }
+                    }
+                    lmaFetchingAll = true;
+                    lmaPaintTripBar();
+                    try {
+                        for (let i = 1; i <= n; i++) {
+                            for (const kind of ['arr', 'dep']) {
+                                if (lmaLegDone(i, kind)) continue;
+                                await lmaFetchOneLeg(i, kind, true);
+                            }
+                        }
+                    } finally {
+                        lmaFetchingAll = false;
+                        lmaPaintTripBar();
+                    }
+                }
+
+                lmaBox.addEventListener('click', (e) => {
+                    const row = e.target.closest('.lma-summary-row');
+                    if (row) {
+                        const st = row.closest('.lma-station');
+                        if (st) {
+                            st.removeAttribute('data-lma-collapsed');
+                            lmaPaintStation(Number(st.getAttribute('data-idx')));
+                        }
+                        return;
+                    }
+                    const retry = e.target.closest('.lma-retry-btn');
+                    if (retry) {
+                        lmaFetchOneLeg(Number(retry.getAttribute('data-idx')), retry.getAttribute('data-leg'), false)
+                            .then(lmaPaintTripBar);
                     }
                 });
+
+                lmaBox.addEventListener('input', (e) => {
+                    if (lmaApplyingFetch) return;
+                    const st = e.target.closest && e.target.closest('.lma-station');
+                    if (!st) return;
+                    // Editing anything in a station makes both legs unfetched again,
+                    // the same way editing an IFA sector does.
+                    st.setAttribute('data-arr-state', 'idle');
+                    st.setAttribute('data-dep-state', 'idle');
+                    st.removeAttribute('data-lma-collapsed');
+                    lmaKeepFirstOpen();
+                    lmaPaintStation(Number(st.getAttribute('data-idx')));
+                    lmaPaintTripBar();
+                });
+
+                const lmaAllBtn = document.getElementById(`${id}-lma-fetch-all`);
+                if (lmaAllBtn) lmaAllBtn.addEventListener('click', lmaFetchAll);
+                const lmaExpBtn = document.getElementById(`${id}-lma-expand-all`);
+                if (lmaExpBtn) lmaExpBtn.addEventListener('click', () => {
+                    lmaBox.querySelectorAll('.lma-station').forEach((st) => st.removeAttribute('data-lma-collapsed'));
+                    for (let i = 1; i <= lmaStationCount(); i++) lmaPaintStation(i);
+                });
+                lmaPaintTripBar();
             }
         }
 
