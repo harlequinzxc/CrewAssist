@@ -10,11 +10,11 @@ Latest app cache: `crewassist-v73` (`sw.js`). App SemVer: **1.5.10** (`APP_VERSI
 
 ## How to work in this repo
 
-- **Branch:** do all work on `arena/01a0819d-crewassist`. Push only that branch. Merging arena → `main` in **GitHub Desktop** is the correct publish path. Do not rebase arena onto stale `main`.
-- **Sandbox drift:** this environment can silently check out old `main` (`a70877c`) with mass deletions. Recover with:
+- **Branch:** do all work on your designated `arena/<branch-name>`. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
+- **Sandbox drift:** this environment can silently check out an outdated/stale commit on `main`, causing mass deletions. Recover with:
   ```
-  git fetch origin refs/heads/arena/01a0819d-crewassist:refs/remotes/origin/arena/01a0819d-crewassist
-  git reset --hard origin/arena/01a0819d-crewassist
+  git fetch origin refs/heads/arena/<branch-name>:refs/remotes/origin/arena/<branch-name>
+  git reset --hard origin/arena/<branch-name>
   ```
   Confirm `function openMenuPrinter` still exists in `index.html` and the file is **> ~280k**.
 - **Patching `index.html`:** it is ~360k with three inline scripts. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
