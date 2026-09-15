@@ -1282,12 +1282,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.10.0';
+        const APP_VERSION = '1.11.0';
         const APP_WHAT_NEW = [
-            'Flight number hints now match the pairing — SQ 632/633 on a 2-sector layover, SQ 852 out and back on a turnaround, and a number per sector on 4-sector pairings.',
-            'Sector dates step downhill: each sector starts a day after the one above, and no date can sit before the sector or station above it.',
-            'Flight Time is now labelled Flight Time Duration (HH:MM).',
-            'LMA hints updated: station e.g. BNE, flight SQ 265.'
+            'A chat bubble taller than your screen now opens at its top, so nothing starts half-read; shorter ones still scroll to the latest message.',
+            'Turnaround pairings hint SQ 852 out and SQ 853 back.',
+            'Sector dates keep stepping downhill — each one starts a day later, and matching the sector above is still fine.'
         ];
 
         // State
@@ -1765,7 +1764,7 @@
             
             chatContainer.appendChild(msgDiv);
             noteBubbleShown();
-            if (appPrefs.autoScroll) scrollToBottom();
+            if (appPrefs.autoScroll) scrollChatToBubble(msgDiv);
         }
 
         function showTypingIndicator() {
@@ -1861,31 +1860,40 @@
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
 
-        function scrollToBottom() {
+        function scrollToBottomNow() {
             const chatContainer = document.getElementById('chat-container');
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-                updateScrollBottomBtn();
-            }, 10);
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-                updateScrollBottomBtn();
-            }, 150);
-            setTimeout(() => {
-                chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
-                updateScrollBottomBtn();
-            }, 500);
+            if (!chatContainer) return;
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            updateScrollBottomBtn();
         }
 
-        function scrollChatToEl(el) {
+        function scrollToBottom() {
+            setTimeout(scrollToBottomNow, 10);
+            setTimeout(scrollToBottomNow, 150);
+            setTimeout(scrollToBottomNow, 500);
+        }
+
+        // One pass: put the top of `el` at the top of the chat area.
+        function scrollChatToElNow(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer || !el) return;
+            const cRect = chatContainer.getBoundingClientRect();
+            const eRect = el.getBoundingClientRect();
+            const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 8;
+            chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+            updateScrollBottomBtn();
+        }
+
+        // A bubble taller than the visible chat area can never be read from the
+        // bottom, so put its top on screen; a shorter one scrolls to the end of the
+        // thread. Re-measured on every pass because cards are still growing (LMA
+        // stations and calculator sectors animate open) when they first land.
+        function scrollChatToBubble(el) {
+            const chatContainer = document.getElementById('chat-container');
+            if (!chatContainer) return;
             const go = () => {
-                const cRect = chatContainer.getBoundingClientRect();
-                const eRect = el.getBoundingClientRect();
-                const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 8;
-                chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
-                updateScrollBottomBtn();
+                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el);
+                else scrollToBottomNow();
             };
             setTimeout(go, 10);
             setTimeout(go, 150);
@@ -3610,8 +3618,9 @@ function getRegionForAirport(code) {
                 lucide.createIcons();
                 bindCalculatorEvents(id, mode);
                 syncCalcUiAll();
-                if (mode === 'both') scrollChatToEl(msgDiv);
-                else if (appPrefs.autoScroll) scrollToBottom();
+                // COP always scrolled to the top of the card. Now every card decides
+                // by height — and a COP card is long, so it takes the same branch.
+                if (mode === 'both' || appPrefs.autoScroll) scrollChatToBubble(msgDiv);
             }, 10);
         }
 
@@ -3660,7 +3669,7 @@ function getRegionForAirport(code) {
                     // Placeholder flight numbers hint at the shape of the pairing.
                     const fnHints = is4
                         ? (isTurn ? ['136', '135', '994', '995'] : ['12', '12', '11', '11'])
-                        : (isTurn ? ['852', '852'] : ['632', '633']);
+                        : (isTurn ? ['852', '853'] : ['632', '633']);
 
                     let html = '';
                     for (let i = 1; i <= count; i++) {
@@ -4876,7 +4885,7 @@ function getRegionForAirport(code) {
             noteBubbleShown();
             lucide.createIcons();
             renderRecentFlightChips(uniqueId);
-            scrollToBottom();
+            scrollChatToBubble(msgDiv);
         }
 
         function showDatePickerUI(id) {
