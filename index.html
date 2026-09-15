@@ -601,6 +601,35 @@
             }
             .print-paper.print-grey { filter: grayscale(1); }
         }
+
+        /* Toggle switch (Direct US / Paxing / Shuttle). The real checkbox stays in the
+           DOM as an sr-only sibling, so every existing `.checked` read keeps working. */
+        .ca-switch {
+            position: relative;
+            display: block;
+            flex-shrink: 0;
+            width: 2.25rem;
+            height: 1.25rem;
+            border-radius: 9999px;
+            background: rgba(0, 0, 0, 0.15);
+            transition: background-color 0.2s ease;
+        }
+        .dark .ca-switch { background: rgba(255, 255, 255, 0.15); }
+        .ca-switch::after {
+            content: '';
+            position: absolute;
+            top: 0.125rem;
+            left: 0.125rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 9999px;
+            background: #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+            transition: transform 0.2s ease;
+        }
+        .ca-switch-input:checked ~ .ca-switch { background: #C9A227; }
+        .ca-switch-input:checked ~ .ca-switch::after { transform: translateX(1rem); }
+        .ca-inline-icon { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
     </style>
 </head>
 <body class="antialiased w-full h-full min-h-screen flex flex-col">
@@ -731,14 +760,17 @@
                     
                     <!-- Quick Action Chips -->
                     <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="total">
-                            💰 Calculate total allowance
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="total">
+                            <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
+                            Calculate total allowance
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="menu">
-                            🍴 What are we serving onboard
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="menu">
+                            <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
+                            What are we serving onboard
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20" data-intent="print">
-                            🖨️ Print the menu
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="print">
+                            <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
+                            Print the menu
                         </button>
                     </div>
 
@@ -969,7 +1001,7 @@
                             <!-- Sector Wrap -->
                             <div class="relative shrink-0 min-w-[8.5rem] flex-1 basis-[8.5rem]" id="menu-sector-wrap">
                                 <button type="button" onclick="toggleMenuDropdown('sector')" class="w-full bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center gap-1 transition-colors">
-                                    <span id="menu-sector-label" class="truncate">Sector</span>
+                                    <span id="menu-sector-label" class="truncate inline-flex items-center gap-1">Sector</span>
                                     <i data-lucide="chevron-down" class="w-3 h-3 shrink-0 transition-transform duration-300" id="menu-sector-icon"></i>
                                 </button>
                                 <div id="menu-sector-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
@@ -1063,9 +1095,9 @@
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
                         <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
-                    <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Bounds</button>
-                    <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0">✓ Descriptions</button>
-                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0">Greyscale</button>
+                    <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Bounds</span></button>
+                    <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Descriptions</span></button>
+                    <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5 hidden"></i><span class="opt-txt">Greyscale</span></button>
                 </div>
                 </div>
                 <div class="flex mt-3 bg-black/5 dark:bg-white/5 rounded-full p-0.5 border border-black/10 dark:border-white/10">
@@ -1250,11 +1282,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.8.0';
+        const APP_VERSION = '1.9.0';
         const APP_WHAT_NEW = [
-            'LMA calculator: Arrival / Departure Date and Time labels, with Shuttle moved below Departure Time.',
-            'Changing flight type or sector count now clears the calculator.',
-            'Calculate stays greyed until the flight number is entered in Default mode.'
+            'Flight Type and Sector Count are now pill selectors, with Layover and 2 Sectors picked for you.',
+            'Direct US, Paxing and Shuttle are toggle switches with plain-language hints.',
+            'Shuttle now appears on the second layover station only.',
+            'Emoji replaced with crisp icons throughout the app.'
         ];
 
         // State
@@ -3518,33 +3551,24 @@ function getRegionForAirport(code) {
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="plane" class="w-4 h-4"></i> ${ifaHeader}</h4>
                         </div>
                         <div class="flex gap-2 mb-3 z-30 relative">
-                            <!-- Flight Type Custom Dropdown -->
-                            <div class="flex-1 relative">
-                                <button type="button" id="${id}-flight-type-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                    <span id="${id}-flight-type-label">Layover</span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-flight-type-icon"></i>
-                                </button>
+                            <!-- Flight Type pills. The hidden input keeps the old
+                                 value + change-event contract, so nothing downstream changed. -->
+                            <div class="flex-1 min-w-0">
+                                <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
+                                <div id="${id}-flight-type-pills" data-calc-pill="flight-type" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="Layover">Layover</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="Turnaround">Turnaround</button>
+                                </div>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
-                                <div id="${id}-flight-type-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
-                                    <div class="p-1 flex flex-col gap-1">
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Layover', 'Layover')">Layover</button>
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'flight-type', 'Turnaround', 'Turnaround')">Turnaround</button>
-                                    </div>
-                                </div>
                             </div>
-                            <!-- Sector Count Custom Dropdown -->
-                            <div class="flex-1 relative">
-                                <button type="button" id="${id}-sector-count-btn" class="ui-input w-full rounded-xl py-2 px-3 text-xs font-bold flex justify-between items-center transition-colors">
-                                    <span id="${id}-sector-count-label">2 Sectors</span>
-                                    <i data-lucide="chevron-down" class="w-3 h-3 transition-transform duration-300" id="${id}-sector-count-icon"></i>
-                                </button>
-                                <input type="hidden" id="${id}-sector-count" value="2">
-                                <div id="${id}-sector-count-menu" class="w-full mt-1 absolute left-0 right-0 top-full glass-bubble border border-black/10 dark:border-white/10 rounded-xl overflow-hidden shadow-xl max-h-0 opacity-0 pointer-events-none transition-all duration-300 z-50">
-                                    <div class="p-1 flex flex-col gap-1">
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '2', '2 Sectors')">2 Sectors</button>
-                                        <button type="button" class="w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" onclick="selectDropdown('${id}', 'sector-count', '4', '4 Sectors')">4 Sectors</button>
-                                    </div>
+                            <!-- Sector Count pills -->
+                            <div class="flex-1 min-w-0">
+                                <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
+                                <div id="${id}-sector-count-pills" data-calc-pill="sector-count" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="2">2 Sectors</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="4">4 Sectors</button>
                                 </div>
+                                <input type="hidden" id="${id}-sector-count" value="2">
                             </div>
                         </div>
                         <div id="${id}-ifa-sectors" data-calc-ifa-sectors="1" class="space-y-3"></div>
@@ -3591,54 +3615,31 @@ function getRegionForAirport(code) {
             }, 10);
         }
 
-                window.selectDropdown = function(id, type, value, labelText) {
-            document.getElementById(id + '-' + type).value = value;
-            document.getElementById(id + '-' + type + '-label').innerText = labelText;
-            
-            // Close menu
-            const menu = document.getElementById(id + '-' + type + '-menu');
-            const icon = document.getElementById(id + '-' + type + '-icon');
-            menu.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
-            menu.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-            icon.classList.remove('rotate-180');
-            
-            // Trigger change event to update sectors
-            const inp = document.getElementById(id + '-' + type);
-            inp.dispatchEvent(new Event('change'));
-        };
-
         function bindCalculatorEvents(id, mode) {
             // Assigned by the LMA block below so an IFA dropdown change can reset
             // LMA stations too (null on the very first render — nothing to reset).
             let resetLmaFields = null;
-            // Bind dropdown toggles
+            // Bind the pill groups (they replaced the old custom dropdowns). A pill
+            // writes the hidden input and fires `change`, so onIfaDropdownChange still
+            // rebuilds the IFA sectors and resets the LMA stations.
             if (mode === 'ifa' || mode === 'both') {
                 ['flight-type', 'sector-count'].forEach(type => {
-                    const btn = document.getElementById(id + '-' + type + '-btn');
-                    if(btn) {
+                    const grp = document.getElementById(id + '-' + type + '-pills');
+                    if (!grp) return;
+                    const pills = Array.prototype.slice.call(grp.querySelectorAll('.calc-pill'));
+                    pills.forEach(btn => {
                         btn.addEventListener('click', () => {
-                            const menu = document.getElementById(id + '-' + type + '-menu');
-                            const icon = document.getElementById(id + '-' + type + '-icon');
-                            const isClosed = menu.classList.contains('max-h-0');
-                            
-                            // Close others in this calculator only
-                            ['flight-type', 'sector-count'].forEach(t => {
-                                const m = document.getElementById(id + '-' + t + '-menu');
-                                const i = document.getElementById(id + '-' + t + '-icon');
-                                if (m) {
-                                    m.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
-                                    m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
-                                }
-                                if (i) i.classList.remove('rotate-180');
+                            pills.forEach(b => {
+                                const on = b === btn;
+                                b.classList.toggle('bg-sia-gold', on);
+                                b.classList.toggle('text-black', on);
+                                b.classList.toggle('text-gray-500', !on);
                             });
-                            
-                            if (isClosed) {
-                                menu.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
-                                menu.classList.add('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
-                                icon.classList.add('rotate-180');
-                            }
+                            const inp = document.getElementById(id + '-' + type);
+                            inp.value = btn.getAttribute('data-value');
+                            inp.dispatchEvent(new Event('change'));
                         });
-                    }
+                    });
                 });
             }
             // IFA Binding
@@ -3681,14 +3682,35 @@ function getRegionForAirport(code) {
                                 </div>
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
-                                <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
-                                    ${showUS ? `<label class="ifa-us-field flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
-                                    ${showPax ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-px${i}" class="accent-sia-gold"> Paxing</label>` : ''}
-                                </div>
+                                ${showUS ? `
+                                <div class="ifa-us-field flex items-center justify-between gap-3 mt-2">
+                                    <span class="flex items-center gap-1.5 min-w-0">
+                                        <i data-lucide="flag" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                        <span class="text-xs font-bold whitespace-nowrap">Direct US</span>
+                                        <span class="text-[10px] text-gray-500 truncate">ULR flight — ${IFA_CONFIG.directUSMultiplier}×</span>
+                                    </span>
+                                    <label class="inline-flex items-center cursor-pointer shrink-0">
+                                        <input type="checkbox" id="${id}-ifa-us${i}" class="ifa-us-input ca-switch-input sr-only">
+                                        <span class="ca-switch"></span>
+                                    </label>
+                                </div>` : ''}
+                                ${showPax ? `
+                                <div class="ifa-px-field flex items-center justify-between gap-3 mt-2">
+                                    <span class="flex items-center gap-1.5 min-w-0">
+                                        <i data-lucide="armchair" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                        <span class="text-xs font-bold whitespace-nowrap">Paxing</span>
+                                        <span class="text-[10px] text-gray-500 truncate">Deadheading — ${IFA_CONFIG.paxingMultiplier}×</span>
+                                    </span>
+                                    <label class="inline-flex items-center cursor-pointer shrink-0">
+                                        <input type="checkbox" id="${id}-ifa-px${i}" class="ifa-px-input ca-switch-input sr-only">
+                                        <span class="ca-switch"></span>
+                                    </label>
+                                </div>` : ''}
                             </div>
                         `;
                     }
                     container.innerHTML = html;
+                    lucide.createIcons(); // flag / armchair live in the markup above
                     playChatAnim(container);
                     bindTimeInputs(id);
 
@@ -3806,10 +3828,18 @@ function getRegionForAirport(code) {
                             <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
                         </div>
                         ${lmaTimesHtml}
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer">
-                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
-                            Shuttle
-                        </label>
+                        ${idx === 2 ? `
+                        <div class="lma-shuttle-row flex items-center justify-between gap-3 mt-3">
+                            <span class="flex items-center gap-1.5 min-w-0">
+                                <i data-lucide="repeat" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                <span class="text-xs font-bold whitespace-nowrap">Shuttle</span>
+                                <span class="text-[10px] text-gray-500 truncate">1-stop connection — <em>no LMA</em></span>
+                            </span>
+                            <label class="inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="${id}-lma-sh${idx}" class="lma-shuttle-input ca-switch-input sr-only">
+                                <span class="ca-switch"></span>
+                            </label>
+                        </div>` : ''}
                     `;
                     container.appendChild(div);
                     lucide.createIcons();
@@ -4286,11 +4316,17 @@ function getRegionForAirport(code) {
             return ['First Sector', 'Second Sector', 'Third Sector', 'Fourth Sector'][idx] || ('Sector ' + (idx + 1));
         }
 
+        // Lucide icons inlined as raw SVG. These strings are interpolated into markup
+        // that never gets a lucide.createIcons() pass (the menu viewer) or into
+        // textContent sinks, so a real <i data-lucide> would show up as an empty tag.
+        const LUCIDE_PLANE_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>';
+        const LUCIDE_X_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
         function lmaMealBadge(on, letter, onCls) {
             if (on) {
                 return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold ' + onCls + '">' + letter + '</span>';
             }
-            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">✕</span>';
+            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">' + LUCIDE_X_SVG + '</span>';
         }
 
         function getLayoverMultiplier(sdp) {
@@ -4959,9 +4995,9 @@ function getRegionForAirport(code) {
                         `;
                         legs.forEach(leg => {
                             const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
-                            const label = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                            const label = leg.flightDetails.departureAirportCode + LUCIDE_PLANE_SVG + leg.flightDetails.arrivalAirportCode;
                             contentHtml += `
-                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${label}</button>
+                                <button type="button" onclick="toggleSector('${id}', this)" data-sector="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5">${label}</button>
                             `;
                         });
                         contentHtml += `
@@ -5382,6 +5418,8 @@ function getRegionForAirport(code) {
             const sectorWrap = document.getElementById('menu-sector-wrap');
             const sectorList = document.getElementById('menu-sector-list');
             const sectorLabel = document.getElementById('menu-sector-label');
+            // Airport codes now travel inside markup (the lucide plane icon), so escape them.
+            const escCode = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             sectorList.innerHTML = '';
             
             // Filter legs based on user selection in chat card
@@ -5398,22 +5436,22 @@ function getRegionForAirport(code) {
             if (filteredLegs.length > 1) {
                 sectorWrap.classList.remove('hidden');
                 filteredLegs.forEach(leg => {
-                    const txt = leg.flightDetails.departureAirportCode + ' ✈ ' + leg.flightDetails.arrivalAirportCode;
+                    const txt = escCode(leg.flightDetails.departureAirportCode) + LUCIDE_PLANE_SVG + escCode(leg.flightDetails.arrivalAirportCode);
                     const code = legCode(leg);
                     const btn = document.createElement('button');
                     btn.type = 'button';
-                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
-                    btn.textContent = txt;
+                    btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors inline-flex items-center gap-1.5';
+                    btn.innerHTML = txt;
                     btn.onclick = () => {
                         currentMenuSearch.selectedSector = code;
-                        sectorLabel.textContent = txt;
+                        sectorLabel.innerHTML = txt;
                         toggleMenuDropdown('sector');
                         renderSector(leg);
                     };
                     sectorList.appendChild(btn);
                 });
                 if (pick) {
-                    sectorLabel.textContent = pick.flightDetails.departureAirportCode + ' ✈ ' + pick.flightDetails.arrivalAirportCode;
+                    sectorLabel.innerHTML = escCode(pick.flightDetails.departureAirportCode) + LUCIDE_PLANE_SVG + escCode(pick.flightDetails.arrivalAirportCode);
                 }
             } else {
                 sectorWrap.classList.add('hidden');
@@ -7118,9 +7156,13 @@ function getRegionForAirport(code) {
             setSeg('print-layout-elegant', 'print-layout-compact', printState.layout === 'elegant');
             setSeg('print-paper-a4', 'print-paper-a6', printState.paper === 'a4');
             const compactOn = printState.layout === 'compact';
-            const paintOpt = (el, on, onLabel, offLabel) => {
+            const paintOpt = (el, on, label) => {
                 if (!el) return;
-                el.textContent = on ? onLabel : offLabel;
+                // The lucide tick shows the on-state; the text is just the option name.
+                const tick = el.querySelector('.opt-tick');
+                const txt = el.querySelector('.opt-txt');
+                if (tick) tick.classList.toggle('hidden', !on);
+                if (txt) txt.textContent = label;
                 el.classList.toggle('bg-sia-gold', on);
                 el.classList.toggle('text-black', on);
                 el.classList.toggle('border-sia-gold', on);
@@ -7130,10 +7172,10 @@ function getRegionForAirport(code) {
             };
             const grey = document.getElementById('print-opt-grey');
             const desc = document.getElementById('print-opt-desc');
-            paintOpt(grey, printState.greyscale, '✓ Greyscale', 'Greyscale');
-            paintOpt(desc, printState.descriptions, '✓ Descriptions', 'Descriptions');
+            paintOpt(grey, printState.greyscale, 'Greyscale');
+            paintOpt(desc, printState.descriptions, 'Descriptions');
             const bounds = document.getElementById('print-opt-bounds');
-            paintOpt(bounds, printState.showBounds, '✓ Bounds', 'Bounds');
+            paintOpt(bounds, printState.showBounds, 'Bounds');
             if (grey) grey.classList.toggle('hidden', compactOn);
             if (desc) desc.classList.toggle('hidden', compactOn);
             const tabSheet = document.getElementById('print-tab-sheet');
