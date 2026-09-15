@@ -198,11 +198,17 @@
         .cadate-day {
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
-        #cadate-hairline {
+        #cadate-hairline,
+        #cadate-hairline-foot {
             height: 1px;
             width: 100%;
             background: rgba(201, 162, 39, 0.35);
+        }
+        #cadate-hairline {
             margin: 0.75rem 0 1rem;
+        }
+        #cadate-hairline-foot {
+            margin: 0.75rem 0 0;
         }
         #cadate-panel .cadate-legend-swatch {
             width: 1.1rem;
@@ -797,6 +803,24 @@
                     </div>
                 </div>
 
+                <!-- Allowance Calculator Interface -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
+                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
+                        <div id="calcui-segmented" class="flex w-full flex-nowrap items-stretch rounded-xl bg-black/5 dark:bg-white/5 p-0.5 border border-black/10 dark:border-white/10" role="radiogroup" aria-label="Allowance calculator interface">
+                            <button type="button" id="calcui-pill-default" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 bg-sia-gold text-black"><i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> Default</button>
+                            <button type="button" id="calcui-pill-manual" data-calcui="manual" role="radio" aria-checked="false" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200"><i data-lucide="pen-line" class="w-3.5 h-3.5 shrink-0"></i> Manual</button>
+                            <button type="button" id="calcui-pill-advanced" data-calcui="advanced" role="radio" aria-checked="false" class="calcui-pill hidden flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200"><i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 shrink-0"></i> Advanced</button>
+                        </div>
+                        <div class="flex items-center gap-2 mt-3.5">
+                            <span id="calcui-desc-icon" class="shrink-0 text-sia-gold inline-flex"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
+                            <p id="calcui-desc-title" class="text-sm font-bold">Smart automation</p>
+                            <span id="calcui-desc-badge" class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border border-sia-gold text-sia-gold whitespace-nowrap">★ Recommended</span>
+                        </div>
+                        <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">Flight number + date — flight time, station, arrival &amp; departure date &amp; time auto-filled.</p>
+                    </div>
+                </div>
+
                 <!-- Developer Section -->
                 <div id="settings-developer" class="hidden">
                     <p class="text-[10px] text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
@@ -899,7 +923,8 @@
                     <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch is-today cadate-day is-today"></span> Today</span>
                     <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch cadate-day is-sel"></span> Selected</span>
                 </div>
-                <div class="flex items-center justify-between mt-4">
+                <div id="cadate-hairline-foot"></div>
+                <div class="flex items-center justify-between mt-3">
                     <button type="button" id="cadate-today" class="text-sm font-bold text-sia-navy dark:text-sia-gold">Today</button>
                     <div class="flex items-center gap-6">
                         <button type="button" id="cadate-cancel" class="text-sm font-bold text-gray-500 dark:text-white/45">Cancel</button>
@@ -1225,11 +1250,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.9';
+        const APP_VERSION = '1.8.0';
         const APP_WHAT_NEW = [
-            'LMA out-date stays on the sector date you typed (no overnight +1).',
-            'Calendar header shows the weekday; Today jumps back; height stays put.',
-            'Cancel and OK are different colours; month changes are animated.'
+            'LMA calculator: Arrival / Departure Date and Time labels, with Shuttle moved below Departure Time.',
+            'Changing flight type or sector count now clears the calculator.',
+            'Calculate stays greyed until the flight number is entered in Default mode.'
         ];
 
         // State
@@ -1290,6 +1315,8 @@
                 
                 appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
                 
+                loadCalcUiMode();
+                
                 applyRatesFromStorage();
                 
                 const isLight = localStorage.getItem('crewAssist.theme') === 'light';
@@ -1315,6 +1342,7 @@
             }
             const semver = document.getElementById('app-semver');
             if (semver) semver.textContent = 'v' + APP_VERSION;
+            syncCalcUiPills();
         }
 
         let appDialogResolver = null;
@@ -1425,6 +1453,7 @@
                         pane.classList.add('hidden');
                         appAlert('Developer Mode Disabled');
                     }
+                    syncCalcUiDevMode();
                     devTapCount = 0;
                 }
             });
@@ -1438,6 +1467,10 @@
             // Settings Events
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
             document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
+
+            document.querySelectorAll('#calcui-segmented .calcui-pill').forEach((pill) => {
+                pill.addEventListener('click', () => setCalcUiMode(pill.getAttribute('data-calcui')));
+            });
             
             document.getElementById('btn-edit-profile').addEventListener('click', () => {
                 closeSettings();
@@ -1920,6 +1953,135 @@
             }, 300);
         }
         
+        // ==========================================
+        // ALLOWANCE CALCULATOR INTERFACE MODE
+        // Settings > "Allowance calculator interface". One segmented pill:
+        // Default / Manual / Advanced. Advanced exists only in developer mode.
+        // `calcUiMode` is what the calculator renderers read to decide which
+        // elements to show; nothing is hidden yet beyond this setting itself.
+        // ==========================================
+        const CALC_UI_MODES = ['default', 'manual', 'advanced'];
+        const CALC_UI_META = {
+            default: {
+                icon: 'sparkles',
+                title: 'Smart automation',
+                badge: '★ Recommended',
+                desc: 'Flight number + date — flight time, station, arrival & departure date & time auto-filled.'
+            },
+            manual: {
+                icon: 'pen-line',
+                title: 'Full manual control',
+                badge: '',
+                desc: 'Every value entered by hand. Full control, zero automation.'
+            },
+            advanced: {
+                icon: 'sliders-horizontal',
+                title: 'Advanced breakdowns',
+                badge: '',
+                desc: 'Automation with manual control. For power users who want the full picture.'
+            }
+        };
+        let calcUiMode = 'default';
+
+        function loadCalcUiMode() {
+            let stored = '';
+            try { stored = localStorage.getItem('crewAssist.calcUi') || ''; } catch (e) {}
+            if (CALC_UI_MODES.indexOf(stored) === -1) stored = 'default';
+            if (stored === 'advanced' && !appDevMode) stored = 'default';
+            calcUiMode = stored;
+            return calcUiMode;
+        }
+
+        function syncCalcUiPills() {
+            const adv = document.getElementById('calcui-pill-advanced');
+            if (adv) adv.classList.toggle('hidden', !appDevMode);
+            CALC_UI_MODES.forEach((mode) => {
+                const pill = document.getElementById('calcui-pill-' + mode);
+                if (!pill) return;
+                const on = mode === calcUiMode;
+                pill.classList.toggle('bg-sia-gold', on);
+                pill.classList.toggle('text-black', on);
+                pill.classList.toggle('text-sia-navy', !on);
+                pill.classList.toggle('dark:text-gray-200', !on);
+                pill.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+            const meta = CALC_UI_META[calcUiMode] || CALC_UI_META.default;
+            const desc = document.getElementById('calcui-desc');
+            if (desc) desc.textContent = meta.desc;
+            const title = document.getElementById('calcui-desc-title');
+            if (title) title.textContent = meta.title;
+            const badge = document.getElementById('calcui-desc-badge');
+            if (badge) {
+                badge.textContent = meta.badge;
+                badge.classList.toggle('hidden', !meta.badge);
+            }
+            const iconWrap = document.getElementById('calcui-desc-icon');
+            if (iconWrap && iconWrap.getAttribute('data-icon') !== meta.icon) {
+                iconWrap.setAttribute('data-icon', meta.icon);
+                iconWrap.innerHTML = '<i data-lucide="' + meta.icon + '" class="w-4 h-4"></i>';
+                try { lucide.createIcons(); } catch (e) {}
+            }
+        }
+
+        // ==========================================
+        // WHAT EACH MODE SHOWS ON THE CALCULATOR CARDS
+        //   advanced → everything (unchanged)
+        //   default  → IFA flight time + Direct US hidden; LMA Flight Details
+        //              section hidden (COP only — the LMA-only calculator has
+        //              nothing else to show, so it keeps its section)
+        //   manual   → every Fetch button hidden; the flight + date fields then
+        //              share the freed width evenly (both are flex-1)
+        // Elements are hidden with the `hidden` class on purpose: validateInputs
+        // skips inputs inside a `.hidden` ancestor, so hidden fields never hold
+        // Calculate hostage.
+        // ==========================================
+        function syncCalcUiCard(card) {
+            if (!card) return;
+            const isDefault = calcUiMode === 'default';
+            const isManual = calcUiMode === 'manual';
+            card.querySelectorAll('.ifa-time-input').forEach((el) => el.classList.toggle('hidden', isDefault));
+            card.querySelectorAll('.ifa-us-field').forEach((el) => el.classList.toggle('hidden', isDefault));
+            card.querySelectorAll('.lma-iata-field, .lma-time-field').forEach((el) => el.classList.toggle('hidden', isDefault));
+            card.querySelectorAll('.ifa-fetch-btn, .lma-fetch-btn').forEach((el) => el.classList.toggle('hidden', isManual));
+            // LMA section only exists to hide on cards that also carry IFA sectors.
+            if (card.querySelector('[data-calc-ifa-sectors]')) {
+                const wrap = card.querySelector('.calc-lma-section');
+                const typeInp = card.querySelector('input[id$="-flight-type"]');
+                const isTurn = !!typeInp && typeInp.value === 'Turnaround';
+                if (wrap) wrap.classList.toggle('hidden', isTurn || isDefault);
+            }
+            // Visibility drives the Calculate gate, so make it re-evaluate.
+            card.dispatchEvent(new Event('input'));
+        }
+
+        function syncCalcUiAll() {
+            document.querySelectorAll('[data-calc-card]').forEach(syncCalcUiCard);
+        }
+
+        function setCalcUiMode(mode, persist) {
+            if (CALC_UI_MODES.indexOf(mode) === -1) return calcUiMode;
+            if (mode === 'advanced' && !appDevMode) mode = 'default';
+            calcUiMode = mode;
+            if (persist !== false) {
+                try { localStorage.setItem('crewAssist.calcUi', calcUiMode); } catch (e) {}
+            }
+            syncCalcUiPills();
+            syncCalcUiAll();
+            return calcUiMode;
+        }
+
+        // Call after any developer-mode change: show/hide the Advanced pill and
+        // drop back to Default if the crew was on Advanced when dev mode turned off.
+        function syncCalcUiDevMode() {
+            if (calcUiMode === 'advanced' && !appDevMode) {
+                calcUiMode = 'default';
+                try { localStorage.setItem('crewAssist.calcUi', calcUiMode); } catch (e) {}
+            }
+            syncCalcUiPills();
+            syncCalcUiAll();
+            return calcUiMode;
+        }
+
         // ==========================================
         // STEP 4: CALCULATOR ENGINE & UI (Vanilla JS)
         // ==========================================
@@ -3385,14 +3547,14 @@ function getRegionForAirport(code) {
                                 </div>
                             </div>
                         </div>
-                        <div id="${id}-ifa-sectors" class="space-y-3"></div>
+                        <div id="${id}-ifa-sectors" data-calc-ifa-sectors="1" class="space-y-3"></div>
                     </div>
                 `;
             }
 
             if (mode === 'lma' || mode === 'both') {
                 lmaHtml = `
-                    <div class="mb-4 ${mode === 'both' ? 'border-t border-black/5 dark:border-white/5 pt-4' : ''}" id="${id}-lma-wrap">
+                    <div class="mb-4 calc-lma-section ${mode === 'both' ? 'border-t border-black/5 dark:border-white/5 pt-4' : ''}" id="${id}-lma-wrap">
                         <div class="flex items-center justify-between mb-3">
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> ${lmaHeader}</h4>
                         </div>
@@ -3404,7 +3566,7 @@ function getRegionForAirport(code) {
 
             msgDiv.innerHTML = `
                 
-                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[85%] shadow-sm border border-black/5 dark:border-white/5">
+                <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[85%] shadow-sm border border-black/5 dark:border-white/5" data-calc-card="1">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
@@ -3423,6 +3585,7 @@ function getRegionForAirport(code) {
             setTimeout(() => {
                 lucide.createIcons();
                 bindCalculatorEvents(id, mode);
+                syncCalcUiAll();
                 if (mode === 'both') scrollChatToEl(msgDiv);
                 else if (appPrefs.autoScroll) scrollToBottom();
             }, 10);
@@ -3445,6 +3608,9 @@ function getRegionForAirport(code) {
         };
 
         function bindCalculatorEvents(id, mode) {
+            // Assigned by the LMA block below so an IFA dropdown change can reset
+            // LMA stations too (null on the very first render — nothing to reset).
+            let resetLmaFields = null;
             // Bind dropdown toggles
             if (mode === 'ifa' || mode === 'both') {
                 ['flight-type', 'sector-count'].forEach(type => {
@@ -3516,7 +3682,7 @@ function getRegionForAirport(code) {
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time (HH:MM)">
                                 
                                 <div class="flex gap-4 mt-2 ${!showUS && !showPax ? 'hidden' : ''}">
-                                    ${showUS ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
+                                    ${showUS ? `<label class="ifa-us-field flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-us${i}" class="accent-sia-gold"> Direct US</label>` : ''}
                                     ${showPax ? `<label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer"><input type="checkbox" id="${id}-ifa-px${i}" class="accent-sia-gold"> Paxing</label>` : ''}
                                 </div>
                             </div>
@@ -3526,19 +3692,22 @@ function getRegionForAirport(code) {
                     playChatAnim(container);
                     bindTimeInputs(id);
 
-                    // Hide LMA if Turnaround
+                    // Hide LMA on Turnaround, and in Default mode (Fetch fills it)
                     if (mode === 'both') {
                         const lmaWrap = document.getElementById(`${id}-lma-wrap`);
-                        if (isTurn) {
-                            lmaWrap.classList.add('hidden');
-                        } else {
-                            lmaWrap.classList.remove('hidden');
-                        }
+                        if (lmaWrap) lmaWrap.classList.toggle('hidden', isTurn || calcUiMode === 'default');
                     }
+                    syncCalcUiAll();
                 };
 
-                typeSel.addEventListener('change', renderIfaSectors);
-                cntSel.addEventListener('change', renderIfaSectors);
+                // A different flight type or sector count starts the card clean:
+                // IFA sectors are rebuilt by renderIfaSectors, LMA stations by this.
+                const onIfaDropdownChange = () => {
+                    renderIfaSectors();
+                    if (resetLmaFields) resetLmaFields();
+                };
+                typeSel.addEventListener('change', onIfaDropdownChange);
+                cntSel.addEventListener('change', onIfaDropdownChange);
                 renderIfaSectors();
             }
 
@@ -3576,32 +3745,30 @@ function getRegionForAirport(code) {
                                         </div>
                                     </div>`;
                     const lmaTimesHtml = (mode === 'lma' || mode === 'both') ? `
-                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival</p>
                         <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('a')}
                             <div class="flex-1 min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
                                 <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
                             ${lmaFetchBtn('arr')}
                         </div>
-                        <div class="mb-3">
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                        <div class="lma-time-field mb-3">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Time</label>
                             <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
-                        <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure</p>
                         <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('d')}
                             <div class="flex-1 min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Date</label>
                                 <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
                             ${lmaFetchBtn('dep')}
                         </div>
-                        <div>
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                        <div class="lma-time-field mb-2">
+                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Time</label>
                             <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
                     ` : `
@@ -3630,7 +3797,7 @@ function getRegionForAirport(code) {
                     `;
                     div.innerHTML = `
                         ${idx > 1 ? `<button type="button" class="absolute top-2 right-2 text-red-500 hover:text-red-700 lma-remove-btn" data-idx="${idx}"><i data-lucide="x" class="w-4 h-4"></i></button>` : ''}
-                        <div class="mb-3">
+                        <div class="lma-iata-field mb-3">
                             <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Station IATA</label>
                             <div class="relative">
                                 <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. LHR" maxlength="3">
@@ -3638,11 +3805,11 @@ function getRegionForAirport(code) {
                             </div>
                             <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
                         </div>
-                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 mb-2 cursor-pointer">
-                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
-                            Shuttle (no LMA)
-                        </label>
                         ${lmaTimesHtml}
+                        <label class="flex items-center gap-1.5 text-xs font-bold text-gray-500 cursor-pointer">
+                            <input type="checkbox" id="${id}-lma-sh${idx}" class="accent-sia-gold lma-shuttle-input">
+                            Shuttle
+                        </label>
                     `;
                     container.appendChild(div);
                     lucide.createIcons();
@@ -3652,8 +3819,16 @@ function getRegionForAirport(code) {
                         if (appPrefs.autoScroll && idx > 1 && mode !== 'both' && !window.__caLmaQuietAdd) setTimeout(() => scrollToBottom(), 300);
                     }, 10);
                     bindTimeInputs(id);
+                    syncCalcUiAll();
                     
                     if (idx === 3) btnAdd.classList.add('hidden'); // max 3
+                };
+
+                resetLmaFields = () => {
+                    container.textContent = '';
+                    lmaCount = 0;
+                    btnAdd.classList.remove('hidden');
+                    addLmaSector();
                 };
 
                 addLmaSector(); // Default 1st station
@@ -3706,10 +3881,13 @@ function getRegionForAirport(code) {
                 let allFilled = true;
                 const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
                 if (!containerNode) return;
+                // Default mode hides the time / LMA fields, so the flight number is the
+                // one thing the crew must supply — keep Calculate greyed until it is.
+                const fnRequired = calcUiMode === 'default';
                 
                 const textInputs = containerNode.querySelectorAll('input[type="text"]');
                 textInputs.forEach(inp => {
-                    if (inp.classList.contains('ifa-fn-input') || inp.classList.contains('lma-fn-input')) return;
+                    if (!fnRequired && (inp.classList.contains('ifa-fn-input') || inp.classList.contains('lma-fn-input'))) return;
                     const lmaCard = inp.closest('.lma-station');
                     if (lmaCard) {
                         const sh = lmaCard.querySelector('.lma-shuttle-input');

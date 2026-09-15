@@ -2,22 +2,24 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v72` (`sw.js`). App SemVer: **1.5.9** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
+Latest app cache: `crewassist-v76` (`sw.js`). App SemVer: **1.8.0** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
 
-**Product status (owner, 2026-09-15):** v1.5.9 is in for review (LMA out-date = typed sector date; calendar weekday/Today/fixed height). **Next (do not start until signed off):** archive, month total. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; Fetch may *pre-tick* shuttle when ground time is same calendar day or under 6 hours (SQ11/12 NRT–LAX is a long ground, not a shuttle).
+**Product status (owner, 2026-09-15):** v1.5.9 is **signed off** — its issues are fixed (LMA out-date = typed sector date; calendar weekday/Today/fixed height). **In for review: v1.5.10** (calendar hairline), **v1.6.0** (Settings → Allowance calculator interface), **v1.7.0** (modes hide calculator elements; icons, titles, ★ Recommended) and **v1.8.0** (LMA labels + Shuttle position, dropdowns reset the card, Calculate gate in Default). **Next (do not start until signed off):** archive, month total. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; Fetch may *pre-tick* shuttle when ground time is same calendar day or under 6 hours (SQ11/12 NRT–LAX is a long ground, not a shuttle).
 
 ---
 
 ## How to work in this repo
 
-- **Branch:** do all work on `arena/01a0819d-crewassist`. Push only that branch. Merging arena → `main` in **GitHub Desktop** is the correct publish path. Do not rebase arena onto stale `main`.
-- **Sandbox drift:** this environment can silently check out old `main` (`a70877c`) with mass deletions. Recover with:
+- **Branch:** every Arena chat session gets its **own** branch, `arena/<session-id>-crewassist` (ids look like `01a0a47b-…`). It is **different for every chat** and changes when the owner jumps between chats, so a branch name you read in this file, in an old commit message, or from a previous session is **already stale**. First action in any session: `BR=$(git branch --show-current)`, and use `$BR` everywhere below. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
+- **Sandbox drift:** this environment can silently **re-clone the repo onto an outdated/stale commit** — your commits vanish from local history while your file edits survive as uncommitted changes, and `/tmp` plus any background process are wiped. `git reflog` shows the signature: a fresh `clone: from …` followed by `checkout: moving from main to arena/…`. The remote is **not** damaged. Recover with (`$BR` = this session's branch):
   ```
-  git fetch origin refs/heads/arena/01a0819d-crewassist:refs/remotes/origin/arena/01a0819d-crewassist
-  git reset --hard origin/arena/01a0819d-crewassist
+  BR=$(git branch --show-current)
+  git fetch origin "refs/heads/$BR:refs/remotes/origin/$BR"   # a plain `git fetch origin` does NOT restore the ref
+  git reset --hard "origin/$BR"
   ```
-  Confirm `function openMenuPrinter` still exists in `index.html` and the file is **> ~280k**.
-- **Patching `index.html`:** it is ~360k with three inline scripts. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
+  Then re-apply the change you were making and commit it again. Confirm with `git ls-remote origin "refs/heads/$BR"` that local HEAD equals the remote SHA.
+  **A rejected non-fast-forward push is this drift, not a sync problem** — it means the remote is *ahead* and your local branch was reset to a stale base. **Never `git push --force`;** that erases the good upstream commits. Seen first-hand 2026-09-15: three already-pushed commits disappeared locally, the remote was untouched, and the rejected push was the only warning.
+- **Patching `index.html`:** it is ~423 kB / 413 KiB (7.7k lines) with three inline scripts. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
 - **Do not edit `HANDOVER.md` in parallel.** Two concurrent search/replaces race; the later write wins and drops the other. README then HANDOVER, **one file at a time**, after every commit.
 - **SemVer + cache on every app change:** bump `APP_VERSION` in `index.html` (patch x.y.Z for polish, minor x.Y.0 for features) **and** `CACHE_NAME` in `sw.js` (`crewassist-vN`). The onboarding stamp is how the owner confirms the phone has the build. Docs-only README/HANDOVER tweaks have sometimes shipped without a bump; app/JS/CSS changes must bump both.
 - **Ask for review** before starting the next slice.
@@ -29,7 +31,7 @@ Latest app cache: `crewassist-v72` (`sw.js`). App SemVer: **1.5.9** (`APP_VERSIO
 ## Current State (Completed & Working)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane (origami dart) logo.
-- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.5.9` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: a hairline **the width of `CrewAssist™`**, then `AN UNOFFICIAL CREW TOOL` on **one row** (`whitespace-nowrap`), SemVer colour. **10 taps** on `#header-brand` (400ms) toggles developer mode. Settings reopen: scroll top, collapse rate accordions. What’s new is a **glass overlay** (`#whatsnew-backdrop`) after `showMain` (after onboarding for new crew; on the chat page for returning crew). X closes. “Do not show again” sits **outside** the glass card, **bottom-left** of the window (`pl-5` just before the card’s corner arc), checkbox + label on one row. Checking it then closing writes `crewAssist.hideWhatsNew = APP_VERSION`; without the check it returns on every launch. A new stamp shows again even if they hid the previous one. `APP_WHAT_NEW` is an array of short bullets. There is **no** chat What’s new bubble.
+- **Step 2:** Onboarding UI, settings bottom sheet, developer mode. Subtle SemVer `v1.6.0` at the bottom of onboarding (`#app-semver`). Under the CrewAssist title: a hairline **the width of `CrewAssist™`**, then `AN UNOFFICIAL CREW TOOL` on **one row** (`whitespace-nowrap`), SemVer colour. **10 taps** on `#header-brand` (400ms) toggles developer mode. Settings reopen: scroll top, collapse rate accordions. Settings sections in order: Profile, Feedback and Support, **Allowance calculator interface**, Developer Mode (hidden unless dev), Data Management. What’s new is a **glass overlay** (`#whatsnew-backdrop`) after `showMain` (after onboarding for new crew; on the chat page for returning crew). X closes. “Do not show again” sits **outside** the glass card, **bottom-left** of the window (`pl-5` just before the card’s corner arc), checkbox + label on one row. Checking it then closing writes `crewAssist.hideWhatsNew = APP_VERSION`; without the check it returns on every launch. A new stamp shows again even if they hid the previous one. `APP_WHAT_NEW` is an array of short bullets. There is **no** chat What’s new bubble.
 - **Step 3:** Chatbot, greeting, quick-action chips, regex intent parser (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`).
 - **Step 4:** COP / IFA / LMA calculators with nested sectors, cascading dates, glassmorphic summary overlay. Coefficients live in `rates.json` (network-first fetch, last-good `localStorage`, `DEFAULT_RATES` fallback baked from `IFA_CONFIG` / `REGION_RATES`). Device overrides in `crewAssist.rates`. Developer editor (animated `.dev-rate-fold` accordions, collapsed by default):
   - **Base hourly IFA rate ($/h)** — paired ranks share one field: Jr. FS / Jr. FSS, FS / FSS, LS / LSS, CS / CSS, IFM. Save writes both keys.
@@ -42,18 +44,20 @@ Latest app cache: `crewassist-v72` (`sw.js`). App SemVer: **1.5.9** (`APP_VERSIO
   - **Save** = this device. **Reset** = shipped `rates.json`. **Export / Import** JSON. **Do not write to GitHub from the app.** Publish to everyone = GitHub Desktop replace `rates.json`.
   - **Turnaround dates:** 2-sector = date above sector 1 and 2; 4-sector = date above sector 1 only. Layover still uses LMA dates. Defaults/cascade use `todayLocalYMD` / `addLocalDays`.
   - **COP scroll:** opening COP (`mode === 'both'`) calls `scrollChatToEl` on the calculator card so the **top** of the form is in view. Do not `scrollToBottom` for COP (the card is long). IFA/LMA-only still scroll to bottom. Adding LMA stations on COP / first Fetch must not steal that scroll (`mode !== 'both'` and `__caLmaQuietAdd`).
-  - **CrewAssist calendar:** `#cadate-panel` is **opaque** cream `#F6F1E8` / navy `#0B1A3A`. Days outside **today−2 … today+42** get `.is-out` strikethrough (number still visible). COP/IFA/LMA can still select them; Fetch then `appAlert`s past vs too-far-future and does not call `/api/sq`. Inflight menu Pick Date opens the same picker with `caDateStrict` — crossed days are not tappable. Do not restore `input type=date` on COP/IFA/LMA. `showDatePickerUI` must not call `showPicker()`. Header is `Sat, 26 Sept 2026` plus gold hairline. Fixed 6-row grid (`#cadate-grid-wrap` 13.5rem). `#cadate-today` jumps to today. Month slide ±18%. Cancel muted gray; OK gold. Legend: Today ring / Selected fill.
+  - **Calculator interface mode (setting v1.6.0, behaviour v1.7.0):** Settings → *Allowance calculator interface* is one segmented pill (`#calcui-segmented`): **Default** (`sparkles`) / **Manual** (`pen-line`) / **Advanced** (`sliders-horizontal`), gold fill on the selected pill. Under it a header row — `#calcui-desc-icon` + `#calcui-desc-title` + `#calcui-desc-badge` — then `#calcui-desc` (the old `#calcui-helper` line was removed in v1.8.0). All copy lives in `CALC_UI_META` (`icon` / `title` / `badge` / `desc`): Default = “Smart automation” + gold-outline badge **★ Recommended**; Manual = “Full manual control”, no badge; Advanced = “Advanced breakdowns”, no badge. **Advanced exists only in developer mode** — hidden pill, `setCalcUiMode` clamps a stray `advanced` back to `default`, and turning developer mode **off** while on Advanced drops to Default and rewrites storage (`syncCalcUiDevMode`). State is `calcUiMode` (`'default'` | `'manual'` | `'advanced'`), persisted as `crewAssist.calcUi`, loaded by `loadCalcUiMode` (unknown value → `default`), painted by `syncCalcUiPills` from `initUI`.
+    **What each mode shows** — `syncCalcUiCard` / `syncCalcUiAll`, applied to every `[data-calc-card]`, re-run after each sector re-render, each added LMA station, and on every mode change (so cards already in the thread repaint live): **advanced** = everything, unchanged. **default** = hide `.ifa-time-input` and `.ifa-us-field` (Direct US only — Paxing stays), and hide the LMA `.calc-lma-section` **only on cards that also carry `[data-calc-ifa-sectors]`** — the LMA-only calculator keeps its section (it would otherwise be an empty card) but loses `.lma-iata-field` and both `.lma-time-field` instead; Turnaround keeps hiding LMA independently. **Calculate gate:** `validateInputs` normally skips `ifa-fn-input` / `lma-fn-input`, but when `calcUiMode === 'default'` the flight number is required, so the button stays greyed until the crew types it (without this, every visible field was hidden and Calculate fired on an empty card → `$0.00` summary). `syncCalcUiCard` dispatches a non-bubbling `input` on the card so the gate re-evaluates on every mode change. **manual** = hide every `.ifa-fetch-btn` / `.lma-fetch-btn`; flight and date are both `flex-1 min-w-0`, so they share the freed width evenly with no extra CSS. Hide with the **`hidden` class, never raw `display:none`** — `validateInputs` skips inputs inside a `.hidden` ancestor, and that is what stops hidden fields from holding Calculate hostage.
+  - **CrewAssist calendar:** `#cadate-panel` is **opaque** cream `#F6F1E8` / navy `#0B1A3A`. Days outside **today−2 … today+42** get `.is-out` strikethrough (number still visible). COP/IFA/LMA can still select them; Fetch then `appAlert`s past vs too-far-future and does not call `/api/sq`. Inflight menu Pick Date opens the same picker with `caDateStrict` — crossed days are not tappable. Do not restore `input type=date` on COP/IFA/LMA. `showDatePickerUI` must not call `showPicker()`. Header is `Sat, 26 Sept 2026` plus gold hairline. Fixed 6-row grid (`#cadate-grid-wrap` 13.5rem). `#cadate-today` jumps to today. Month slide ±18%. Cancel muted gray; OK gold. Legend: Today ring / Selected fill. **Two** gold hairlines (1px `rgba(201,162,39,0.35)`, full width): `#cadate-hairline` under the header date, `#cadate-hairline-foot` between the legend and the Today / Cancel / OK row (0.75rem both sides of the foot line; the action row is `mt-3`).
   - **LMA out date:** next sector’s **typed** `#ifa-d` (not `data-arr-ymd` / destination arrival). Overnight NRT→SIN must not +1 the layover out date. In-date stays previous sector arrival local.
   - **Fetch date:** do **not** write `leg.depLocal` back onto the sector date field (that +1’d last-sector SQ11). Keep the typed date. Button faces: Fetch → spinner → tick → Fetch (`setFetchFace` / `finishFetchBtn`). Spinner rotation is on `.fetch-spin-ring` **inside** `.fetch-face` — do not animate `transform` on the face (that made the ring walk diagonally).
   - **LMA dates:** `parseSqLocal` (wall time) vs `parseSqUtc`. Do not `new Date('YYYY-MM-DD HH:MM')` for local fields — Chrome treats that as UTC and LMA +1s in Singapore.
   - **Inflight Pick Date:** after OK, the Pick Date pill shows `DD/MM/YYYY` and stays selected until Today or Tomorrow.
   - **Flight/date row:** both `flex-1 min-w-0`. Labels and SQ prefix `text-[10px]`; values `text-sm`.
   - **Summary:** `showResultsOverlay` sets `#results-content.scrollTop = 0`.
-  - **Fetch (optional):** each IFA sector **always** has flight + date on **one row** (flight and date equal `flex-1`, calculator card `w-[85%]` like inflight menu) + Fetch. Fetch button is fixed width (`w-[3.15rem]`); busy state is a CSS spinner (`.fetch-btn-spin`), never `"…"`, never `textContent` swap. Writes the same hours / LMA IATA / in-out fields the crew can type. Uses `/api/getcabin` then `/api/menu` (first published cabin, JCL preferred). Block time = UTC arr − dep. Multi-leg menus pick the **unused** dep→arr pair (`pickScheduleLeg` + usedPairs), preferring previous sector arr as this dep; last layover sector prefers SIN. LMA dep only if next sector dep airport matches the station. Unpublished (101) may retry a sibling sector’s date. Cabin class is not required. Empty flight number does **not** disable Calculate (`ifa-fn-input` / `lma-fn-input` skipped in `validateInputs`). Do not auto-Calculate. A failed fetch must not wipe typed 101/net hours.
+  - **Fetch (optional):** each IFA sector **always** has flight + date on **one row** (flight and date equal `flex-1`, calculator card `w-[85%]` like inflight menu) + Fetch. Fetch button is fixed width (`w-[3.15rem]`); busy state is a CSS spinner (`.fetch-btn-spin`), never `"…"`, never `textContent` swap. Writes the same hours / LMA IATA / in-out fields the crew can type. Uses `/api/getcabin` then `/api/menu` (first published cabin, JCL preferred). Block time = UTC arr − dep. Multi-leg menus pick the **unused** dep→arr pair (`pickScheduleLeg` + usedPairs), preferring previous sector arr as this dep; last layover sector prefers SIN. LMA dep only if next sector dep airport matches the station. Unpublished (101) may retry a sibling sector’s date. Cabin class is not required. Empty flight number does **not** disable Calculate (`ifa-fn-input` / `lma-fn-input` skipped in `validateInputs`) — **except in Default interface mode**, where the flight number is the required field. Do not auto-Calculate. A failed fetch must not wipe typed 101/net hours.
   - **Direct US auto:** on 2-sector layover Fetch, tick Direct US if **either** airport is US (`isUsAirport`). Crew can untick. Direct US UI is still layover + 2-sector only.
   - **LMA Fetch:** on the LMA calculator **and** COP, inbound and outbound each have flight + date + Fetch; times/IATA stay editable. COP also still fills LMA from IFA Fetch.
-  - **Shuttle:** per-LMA-station checkbox, default off, hidden with the LMA wrap on Turnaround. On → that station’s LMA is **$0** (no B/L/D); IFA unchanged. Not IFA flight type Turnaround. Fetch may pre-tick when same local YMD or ground &lt; 6h; crew can untick. Shuttle stations are skipped in Calculate validation. Do **not** hardcode flight numbers.
-  - IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet.
+  - **Shuttle:** per-LMA-station checkbox, label is just **Shuttle** and it sits **last in the station, below Departure Time** (v1.8.0). Default off, hidden with the LMA wrap on Turnaround. On → that station’s LMA is **$0** (no B/L/D); IFA unchanged. Not IFA flight type Turnaround. Fetch may pre-tick when same local YMD or ground &lt; 6h; crew can untick. Shuttle stations are skipped in Calculate validation. Do **not** hardcode flight numbers.
+  - IFA/COP flight-type and sector-count dropdowns use the same glass overlay as the menu sheet. **Either dropdown resets the card** (v1.8.0): `renderIfaSectors` rebuilds the IFA sectors and `resetLmaFields` (assigned by the LMA block, called through `onIfaDropdownChange`) clears the stations back to one empty one.
   - Summary overlay: `formatMoney` (`$1,457.38`). IFA sectors First/Second/Third/Fourth Sector, with ` (Paxing)` when that sector is paxing. LMA day rows: `formatLmaDay` (`DD MMM YY`), three fixed-width B/L/D badges (`✕` when missing), `$` per day, **no station total**; then Breakfast/Lunch/Dinner totals with counts (`BREAKFAST (3x)`).
   - IFA hours display is `XH YM`, never a decimal like `10.17`.
 - **Step 5:** Inflight menu viewer. Chat flight verification → `api/sq.js` → overlay.
@@ -107,7 +111,7 @@ These have already caused regressions. Treat them as locks.
 - After every commit update `README.md`, `HANDOVER.md`, and **`LOGIC.md` if the change touches formulas or calculator rules**, to match the build. Edit those files **sequentially** (never two HANDOVER writes at once).
 - Periodically scan for unused files in the repo and unused variables/functions in `index.html`; remove them when found (`crewAssist.modifiers` / `appModifiers` were removed in 1.5.1).
 - Bump `APP_VERSION` + `sw.js` `CACHE_NAME` on every app change.
-- Only push `arena/01a0819d-crewassist`. Recover sandbox drift with explicit fetch + `reset --hard` of that branch — do not rebase onto old `main`.
+- Only push the session branch (`$BR`). Recover sandbox drift with explicit fetch + `reset --hard` of that branch — do not rebase onto old `main`.
 - No tokens in files. Screenshots in chat are OK.
 
 ### DOM / CSS traps
@@ -165,8 +169,8 @@ After every chat bubble (user or bot, including calculator and lookup cards) ful
 
 | Path | Role |
 |---|---|
-| `index.html` | Entire UI + engine (~360k). Three inline `<script>` blocks. |
-| `sw.js` | `crewassist-v72`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
+| `index.html` | Entire UI + engine (~423 kB / 413 KiB, 7.7k lines). Three inline `<script>` blocks. |
+| `sw.js` | `crewassist-v76`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
 | `rates.json` | Default IFA + LMA numbers (`version`, `ifa.*`, `lma.regions`). |
 | `api/sq.js` | Vercel POST proxy; only `getcabin` \| `menu`; 12s abort; Origin/Referer spoof official site. |
 | `manifest.json` | PWA; `start_url` `./index.html`; theme `#0B1A3A`. |
@@ -190,19 +194,31 @@ There is no bundler, no tests suite, no `package.json` required for the frontend
 | `crewAssist.devMode` | `'true'` / `'false'`. |
 | `crewAssist.rates` | Device override of `rates.json` (including meal windows). Absent → use shipped file. |
 | `crewAssist.hideWhatsNew` | `APP_VERSION` if the user ticked “Do not show again” for that stamp. |
+| `crewAssist.calcUi` | Calculator interface mode: `default` (absent/unknown) \| `manual` \| `advanced` (developer mode only). |
 | `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
 
 ---
 
 ## How to ship a change
 
-1. Implement on `arena/01a0819d-crewassist`.
-2. Bump `APP_VERSION` and `CACHE_NAME`.
-3. `node --check` the concatenated inline scripts.
-4. Commit. Update README, then HANDOVER, then LOGIC if formulas/rules changed (sequential, never parallel HANDOVER).
-5. `git push origin arena/01a0819d-crewassist`.
-6. Ask the owner to review on the **phone** (onboarding stamp). Do not start the next slice until they sign off.
-7. Owner merges arena → main in GitHub Desktop when they want production.
+Resolve the session branch first and reuse it — never type a branch name from memory:
+
+```
+BR=$(git branch --show-current)   # this session's arena/<session-id>-crewassist
+```
+
+1. Implement on `$BR`. Do not start a new slice until the owner signs off the last one.
+2. Bump **both** stamps together: `APP_VERSION` (`index.html` — patch x.y.Z for polish, minor x.Y.0 for a feature) and `CACHE_NAME` (`sw.js`, `crewassist-vN`). Without the cache bump the owner's phone keeps serving the old build and the change never ships.
+3. Verify before committing. This sandbox has **no browser**, so drive the real code:
+   - `node --check` the three concatenated inline scripts (join with **real** newlines). Catches a write that broke a script mid-block; it **cannot** see a whole missing block.
+   - `node --check sw.js`. `python3 -m json.tool rates.json manifest.json` if either changed — a malformed `rates.json` parses to garbage and silently mis-computes allowances.
+   - For DOM / CSS / JS behaviour, load `index.html` in jsdom and call the **shipping** function (`openCaDatePicker`, `maybeWhatsNewOverlay`, `executeCalculation`), then assert DOM order and `getComputedStyle`.
+   - If `rates.json` or a formula changed, re-run the `LOGIC.md` §7 test cases through `executeCalculation`.
+   - Truncation / drift net: the `function openMenuPrinter` + size assertion (see **How to work in this repo → Patching `index.html`**) is the only check that catches a whole-block loss.
+4. Commit, then update docs **one file at a time**: README → HANDOVER → LOGIC (only if formulas or calculator rules changed). Never two HANDOVER writes at once.
+5. `git push origin "$BR"`.
+6. Ask the owner to review on the **phone** — the onboarding stamp must read the new `APP_VERSION`. A mismatch means cache, not code.
+7. Owner merges arena → main in GitHub Desktop when they want production. No agent pushes `main`.
 
 To publish new **rates** to everyone: change `rates.json` (or paste an Export), commit, merge. Devices without a `crewAssist.rates` override pick it up on next network-first fetch. Devices with an override keep the override until Reset.
 
@@ -216,7 +232,7 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 - html2canvas for compact invert/header (1.4.19–1.4.21).
 - `innerHTML +=` on menu trees.
 - Body-wide `tabular-nums`; `#menu-dropdown-row { overflow-x: auto }`.
-- Rebase arena onto stale `main` `a70877c`.
+- Rebasing `arena` onto a stale `main`.
 - Parallel `HANDOVER.md` search/replaces.
 - `must(old, new, 2)` treating `2` as a label.
 - `node --check` with `'\\n;\\n'.join` (checker SyntaxError).
