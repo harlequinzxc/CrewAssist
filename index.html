@@ -803,6 +803,20 @@
                     </div>
                 </div>
 
+                <!-- Allowance Calculator Interface -->
+                <div>
+                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
+                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
+                        <div id="calcui-segmented" class="flex w-full flex-nowrap items-stretch rounded-xl bg-black/5 dark:bg-white/5 p-0.5 border border-black/10 dark:border-white/10" role="radiogroup" aria-label="Allowance calculator interface">
+                            <button type="button" id="calcui-pill-default" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors bg-sia-gold text-black">Default</button>
+                            <button type="button" id="calcui-pill-manual" data-calcui="manual" role="radio" aria-checked="false" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors text-sia-navy dark:text-gray-200">Manual</button>
+                            <button type="button" id="calcui-pill-advanced" data-calcui="advanced" role="radio" aria-checked="false" class="calcui-pill hidden flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors text-sia-navy dark:text-gray-200">Advanced</button>
+                        </div>
+                        <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-3 leading-relaxed">Enter flight number and departure date. Let the app do the rest.</p>
+                        <p id="calcui-helper" class="text-[11px] text-gray-500 dark:text-white/45 mt-1.5">For the best experience, leave it in default</p>
+                    </div>
+                </div>
+
                 <!-- Developer Section -->
                 <div id="settings-developer" class="hidden">
                     <p class="text-[10px] text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
@@ -1232,9 +1246,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.5.10';
+        const APP_VERSION = '1.6.0';
         const APP_WHAT_NEW = [
-            'Calendar: a fine gold hairline now sits under the legend, above Today / Cancel / OK.'
+            'Settings: choose the allowance calculator interface — Default, Manual, or Advanced (Advanced appears in developer mode).'
         ];
 
         // State
@@ -1295,6 +1309,8 @@
                 
                 appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
                 
+                loadCalcUiMode();
+                
                 applyRatesFromStorage();
                 
                 const isLight = localStorage.getItem('crewAssist.theme') === 'light';
@@ -1320,6 +1336,7 @@
             }
             const semver = document.getElementById('app-semver');
             if (semver) semver.textContent = 'v' + APP_VERSION;
+            syncCalcUiPills();
         }
 
         let appDialogResolver = null;
@@ -1430,6 +1447,7 @@
                         pane.classList.add('hidden');
                         appAlert('Developer Mode Disabled');
                     }
+                    syncCalcUiDevMode();
                     devTapCount = 0;
                 }
             });
@@ -1443,6 +1461,10 @@
             // Settings Events
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
             document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
+
+            document.querySelectorAll('#calcui-segmented .calcui-pill').forEach((pill) => {
+                pill.addEventListener('click', () => setCalcUiMode(pill.getAttribute('data-calcui')));
+            });
             
             document.getElementById('btn-edit-profile').addEventListener('click', () => {
                 closeSettings();
@@ -1925,6 +1947,69 @@
             }, 300);
         }
         
+        // ==========================================
+        // ALLOWANCE CALCULATOR INTERFACE MODE
+        // Settings > "Allowance calculator interface". One segmented pill:
+        // Default / Manual / Advanced. Advanced exists only in developer mode.
+        // `calcUiMode` is what the calculator renderers read to decide which
+        // elements to show; nothing is hidden yet beyond this setting itself.
+        // ==========================================
+        const CALC_UI_MODES = ['default', 'manual', 'advanced'];
+        const CALC_UI_DESC = {
+            default: 'Enter flight number and departure date. Let the app do the rest.',
+            manual: 'Every value entered by hand. Full control, zero automation.',
+            advanced: 'For power users who want details.'
+        };
+        let calcUiMode = 'default';
+
+        function loadCalcUiMode() {
+            let stored = '';
+            try { stored = localStorage.getItem('crewAssist.calcUi') || ''; } catch (e) {}
+            if (CALC_UI_MODES.indexOf(stored) === -1) stored = 'default';
+            if (stored === 'advanced' && !appDevMode) stored = 'default';
+            calcUiMode = stored;
+            return calcUiMode;
+        }
+
+        function syncCalcUiPills() {
+            const adv = document.getElementById('calcui-pill-advanced');
+            if (adv) adv.classList.toggle('hidden', !appDevMode);
+            CALC_UI_MODES.forEach((mode) => {
+                const pill = document.getElementById('calcui-pill-' + mode);
+                if (!pill) return;
+                const on = mode === calcUiMode;
+                pill.classList.toggle('bg-sia-gold', on);
+                pill.classList.toggle('text-black', on);
+                pill.classList.toggle('text-sia-navy', !on);
+                pill.classList.toggle('dark:text-gray-200', !on);
+                pill.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+            const desc = document.getElementById('calcui-desc');
+            if (desc) desc.textContent = CALC_UI_DESC[calcUiMode] || CALC_UI_DESC.default;
+        }
+
+        function setCalcUiMode(mode, persist) {
+            if (CALC_UI_MODES.indexOf(mode) === -1) return calcUiMode;
+            if (mode === 'advanced' && !appDevMode) mode = 'default';
+            calcUiMode = mode;
+            if (persist !== false) {
+                try { localStorage.setItem('crewAssist.calcUi', calcUiMode); } catch (e) {}
+            }
+            syncCalcUiPills();
+            return calcUiMode;
+        }
+
+        // Call after any developer-mode change: show/hide the Advanced pill and
+        // drop back to Default if the crew was on Advanced when dev mode turned off.
+        function syncCalcUiDevMode() {
+            if (calcUiMode === 'advanced' && !appDevMode) {
+                calcUiMode = 'default';
+                try { localStorage.setItem('crewAssist.calcUi', calcUiMode); } catch (e) {}
+            }
+            syncCalcUiPills();
+            return calcUiMode;
+        }
+
         // ==========================================
         // STEP 4: CALCULATOR ENGINE & UI (Vanilla JS)
         // ==========================================
