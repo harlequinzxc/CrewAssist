@@ -2,22 +2,22 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v73` (`sw.js`). App SemVer: **1.5.10** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: `arena/01a0819d-crewassist` (repo `harlequinzxc/CrewAssist`).
+Latest app cache: `crewassist-v73` (`sw.js`). App SemVer: **1.5.10** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
 
-**Product status (owner, 2026-09-15):** v1.5.10 is in for review — its only change over v1.5.9 is a gold hairline between the calendar legend and the Today / Cancel / OK row (v1.5.9: LMA out-date = typed sector date; calendar weekday/Today/fixed height). **Next (do not start until signed off):** archive, month total. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; Fetch may *pre-tick* shuttle when ground time is same calendar day or under 6 hours (SQ11/12 NRT–LAX is a long ground, not a shuttle).
+**Product status (owner, 2026-09-15):** v1.5.9 is **signed off** — its issues are fixed (LMA out-date = typed sector date; calendar weekday/Today/fixed height). v1.5.10 is in for review — its only change is a gold hairline between the calendar legend and the Today / Cancel / OK row. **Next (do not start until signed off):** archive, month total. Offline last menu is **on hold**. Do not hardcode SQ478/479 (or any flight) for shuttle; Fetch may *pre-tick* shuttle when ground time is same calendar day or under 6 hours (SQ11/12 NRT–LAX is a long ground, not a shuttle).
 
 ---
 
 ## How to work in this repo
 
-- **Branch:** do all work on your designated `arena/<branch-name>`. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
-- **Sandbox drift:** this environment can silently check out an outdated/stale commit on `main`, causing mass deletions. Recover with:
+- **Branch:** every Arena chat session gets its **own** branch, `arena/<session-id>-crewassist` (ids look like `01a0a47b-…`). It is **different for every chat** and changes when the owner jumps between chats, so a branch name you read in this file, in an old commit message, or from a previous session is **already stale**. First action in any session: `BR=$(git branch --show-current)`, and use `$BR` everywhere below. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
+- **Sandbox drift:** this environment can silently check out an outdated/stale commit on `main`, causing mass deletions. Recover with (`$BR` = this session's branch):
   ```
-  git fetch origin refs/heads/arena/<branch-name>:refs/remotes/origin/arena/<branch-name>
-  git reset --hard origin/arena/<branch-name>
+  BR=$(git branch --show-current)
+  git fetch origin "refs/heads/$BR:refs/remotes/origin/$BR"
+  git reset --hard "origin/$BR"
   ```
-  Confirm `function openMenuPrinter` still exists in `index.html` and the file is **> ~280k**.
-- **Patching `index.html`:** it is ~360k with three inline scripts. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
+- **Patching `index.html`:** it is ~423 kB / 413 KiB (7.7k lines) with three inline scripts. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
 - **Do not edit `HANDOVER.md` in parallel.** Two concurrent search/replaces race; the later write wins and drops the other. README then HANDOVER, **one file at a time**, after every commit.
 - **SemVer + cache on every app change:** bump `APP_VERSION` in `index.html` (patch x.y.Z for polish, minor x.Y.0 for features) **and** `CACHE_NAME` in `sw.js` (`crewassist-vN`). The onboarding stamp is how the owner confirms the phone has the build. Docs-only README/HANDOVER tweaks have sometimes shipped without a bump; app/JS/CSS changes must bump both.
 - **Ask for review** before starting the next slice.
@@ -107,7 +107,7 @@ These have already caused regressions. Treat them as locks.
 - After every commit update `README.md`, `HANDOVER.md`, and **`LOGIC.md` if the change touches formulas or calculator rules**, to match the build. Edit those files **sequentially** (never two HANDOVER writes at once).
 - Periodically scan for unused files in the repo and unused variables/functions in `index.html`; remove them when found (`crewAssist.modifiers` / `appModifiers` were removed in 1.5.1).
 - Bump `APP_VERSION` + `sw.js` `CACHE_NAME` on every app change.
-- Only push `arena/01a0819d-crewassist`. Recover sandbox drift with explicit fetch + `reset --hard` of that branch — do not rebase onto old `main`.
+- Only push the session branch (`$BR`). Recover sandbox drift with explicit fetch + `reset --hard` of that branch — do not rebase onto old `main`.
 - No tokens in files. Screenshots in chat are OK.
 
 ### DOM / CSS traps
@@ -165,7 +165,7 @@ After every chat bubble (user or bot, including calculator and lookup cards) ful
 
 | Path | Role |
 |---|---|
-| `index.html` | Entire UI + engine (~360k). Three inline `<script>` blocks. |
+| `index.html` | Entire UI + engine (~423 kB / 413 KiB, 7.7k lines). Three inline `<script>` blocks. |
 | `sw.js` | `crewassist-v73`. Precaches shell + `rates.json`. Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
 | `rates.json` | Default IFA + LMA numbers (`version`, `ifa.*`, `lma.regions`). |
 | `api/sq.js` | Vercel POST proxy; only `getcabin` \| `menu`; 12s abort; Origin/Referer spoof official site. |
@@ -196,11 +196,11 @@ There is no bundler, no tests suite, no `package.json` required for the frontend
 
 ## How to ship a change
 
-1. Implement on `arena/01a0819d-crewassist`.
+1. `BR=$(git branch --show-current)` — this session's `arena/<session-id>-crewassist`. Implement on `$BR`.
 2. Bump `APP_VERSION` and `CACHE_NAME`.
 3. `node --check` the concatenated inline scripts.
 4. Commit. Update README, then HANDOVER, then LOGIC if formulas/rules changed (sequential, never parallel HANDOVER).
-5. `git push origin arena/01a0819d-crewassist`.
+5. `git push origin "$BR"`.
 6. Ask the owner to review on the **phone** (onboarding stamp). Do not start the next slice until they sign off.
 7. Owner merges arena → main in GitHub Desktop when they want production.
 
@@ -216,7 +216,7 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 - html2canvas for compact invert/header (1.4.19–1.4.21).
 - `innerHTML +=` on menu trees.
 - Body-wide `tabular-nums`; `#menu-dropdown-row { overflow-x: auto }`.
-- Rebase arena onto stale `main` `a70877c`.
+- Rebasing `arena` onto a stale `main`.
 - Parallel `HANDOVER.md` search/replaces.
 - `must(old, new, 2)` treating `2` as a label.
 - `node --check` with `'\\n;\\n'.join` (checker SyntaxError).
