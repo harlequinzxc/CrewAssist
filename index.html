@@ -148,6 +148,16 @@
             width: 0.95rem;
             padding: 0;
         }
+        /* A route that outgrows its card scrolls sideways; the chips never wrap or
+           squash, and the scrollbar stays out of the way. */
+        .ifa-trip-route, .lma-trip-route {
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        .ifa-trip-route::-webkit-scrollbar, .lma-trip-route::-webkit-scrollbar {
+            display: none;
+        }
+
         .ifa-fetch-btn {
             position: relative;
         }
@@ -1282,12 +1292,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.14.0';
+        const APP_VERSION = '1.15.0';
         const APP_WHAT_NEW = [
-            'The LMA calculator gets the same trip bar and Fetch all — SIN → LHR → CDG, one tap for every station.',
-            'LMA stations now fold to SQ 265 / 266 LHR once both legs are in, and a failed leg gets its own Retry.',
-            'Sector pills read 2 and 4, so the whole pill row fits on one line.',
-            'Durations read 2h 15m instead of 02:15, and Fetch all lights up like Calculate once every flight number is in.'
+            'The trip bar is now two rows: your stations own the full top line and never wrap, with progress and Fetch all below.',
+            'If a route is ever too wide, it scrolls sideways instead of dropping a chip.',
+            'The LMA calculator now waits for a valid station code and both times before Calculate lights up.',
+            'LMA Fetch all lights up like Calculate once every flight number is in, and turns off again after a successful fetch.'
         ];
 
         // State
@@ -3597,18 +3607,16 @@ function getRegionForAirport(code) {
                             </div>
                         </div>
                         <!-- Trip summary: route, progress, and the single Fetch all -->
-                        <div class="ifa-trip-bar mb-3 flex items-start justify-between gap-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                            <div class="min-w-0 flex-1">
-                                <div id="${id}-ifa-trip-route" class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs font-bold"></div>
-                                <div class="flex items-center gap-2.5 mt-1">
-                                    <p id="${id}-ifa-trip-progress" class="text-[10px] font-bold text-gray-500"></p>
-                                    <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden text-[10px] font-bold text-sia-gold underline">Expand all</button>
-                                </div>
+                        <div class="ifa-trip-bar mb-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
+                            <div id="${id}-ifa-trip-route" class="ifa-trip-route flex flex-nowrap items-center gap-x-1.5 overflow-x-auto text-xs font-bold"></div>
+                            <div class="flex items-center gap-2.5 mt-1.5">
+                                <p id="${id}-ifa-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-500"></p>
+                                <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden shrink-0 text-[10px] font-bold text-sia-gold underline">Expand all</button>
+                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 ml-auto h-10 px-4 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                                    <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                                    <span class="ifa-fetch-all-label">Fetch all</span>
+                                </button>
                             </div>
-                            <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 h-10 px-4 rounded-full text-[10px] font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
-                                <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                                <span class="ifa-fetch-all-label">Fetch all</span>
-                            </button>
                         </div>
                         <div id="${id}-ifa-sectors" data-calc-ifa-sectors="1" class="space-y-3"></div>
                     </div>
@@ -3622,13 +3630,11 @@ function getRegionForAirport(code) {
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> ${lmaHeader}</h4>
                         </div>
                         <div class="lma-trip-bar mb-2.5 px-2.5 py-2 rounded-xl border border-sia-gold/40 bg-sia-gold/5">
-                            <div class="flex items-center gap-2">
-                                <div class="flex-1 min-w-0">
-                                    <div id="${id}-lma-trip-route" class="flex items-center gap-1 flex-wrap text-[11px] font-bold text-sia-navy dark:text-white"></div>
-                                    <p id="${id}-lma-trip-progress" class="mt-1 text-[10px] font-bold text-gray-400">0 of 0 fetched</p>
-                                </div>
+                            <div id="${id}-lma-trip-route" class="lma-trip-route flex items-center gap-1 flex-nowrap overflow-x-auto text-[11px] font-bold text-sia-navy dark:text-white"></div>
+                            <div class="flex items-center gap-2 mt-2">
+                                <p id="${id}-lma-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-400">0 of 0 fetched</p>
                                 <button type="button" id="${id}-lma-expand-all" class="lma-expand-all hidden shrink-0 text-[10px] font-bold uppercase tracking-wide text-sia-gold">Expand all</button>
-                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all shrink-0 h-10 px-4 rounded-full text-xs font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none"><i data-lucide="download" class="w-4 h-4"></i><span class="lma-fetch-all-label">Fetch all</span></button>
+                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all shrink-0 ml-auto h-10 px-4 rounded-full text-xs font-bold uppercase tracking-wide border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none"><i data-lucide="download" class="w-4 h-4"></i><span class="lma-fetch-all-label">Fetch all</span></button>
                             </div>
                         </div>
                         <div id="${id}-lma-sectors" class="space-y-3"></div>
@@ -4367,6 +4373,32 @@ function getRegionForAirport(code) {
                 containerNode.querySelectorAll('.ifa-time-input').forEach((inp) => {
                     if ((inp.value || '').trim().length < 4) allFilled = false;
                 });
+
+                // LMA calculator: a valid station code and both times must be present,
+                // typed or fetched. Default mode hides them, so Fetch is how they land.
+                // Scoped to the LMA-only card on purpose - on a COP card these fields
+                // are fed by syncLmaFromIfa, which deliberately leaves a departure time
+                // empty when the next sector departs somewhere else, and in Default mode
+                // the crew cannot type them, so a blanket gate would lock Calculate.
+                // A station with Shuttle ticked earns no LMA and stays exempt, exactly
+                // as the visible-input pass above treats it.
+                const isLmaOnlyCard = !!containerNode.querySelector('.calc-lma-section')
+                    && !containerNode.querySelector('[data-calc-ifa-sectors]');
+                if (isLmaOnlyCard) {
+                    const lmaExempt = (inp) => {
+                        const st = inp.closest('.lma-station');
+                        const sh = st && st.querySelector('.lma-shuttle-input');
+                        return !!(sh && sh.checked);
+                    };
+                    containerNode.querySelectorAll('.lma-iata-input').forEach((inp) => {
+                        if (lmaExempt(inp)) return;
+                        if (!/^[A-Za-z]{3}$/.test((inp.value || '').trim())) allFilled = false;
+                    });
+                    containerNode.querySelectorAll('.lma-time-input').forEach((inp) => {
+                        if (lmaExempt(inp)) return;
+                        if ((inp.value || '').trim().length < 4) allFilled = false;
+                    });
+                }
 
                 const calcBtn = document.getElementById(`${id}-btn-calc`);
                 if (calcBtn) {
