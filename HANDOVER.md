@@ -196,13 +196,24 @@ There is no bundler, no tests suite, no `package.json` required for the frontend
 
 ## How to ship a change
 
-1. `BR=$(git branch --show-current)` — this session's `arena/<session-id>-crewassist`. Implement on `$BR`.
-2. Bump `APP_VERSION` and `CACHE_NAME`.
-3. `node --check` the concatenated inline scripts.
-4. Commit. Update README, then HANDOVER, then LOGIC if formulas/rules changed (sequential, never parallel HANDOVER).
+Resolve the session branch first and reuse it — never type a branch name from memory:
+
+```
+BR=$(git branch --show-current)   # this session's arena/<session-id>-crewassist
+```
+
+1. Implement on `$BR`. Do not start a new slice until the owner signs off the last one.
+2. Bump **both** stamps together: `APP_VERSION` (`index.html` — patch x.y.Z for polish, minor x.Y.0 for a feature) and `CACHE_NAME` (`sw.js`, `crewassist-vN`). Without the cache bump the owner's phone keeps serving the old build and the change never ships.
+3. Verify before committing. This sandbox has **no browser**, so drive the real code:
+   - `node --check` the three concatenated inline scripts (join with **real** newlines). Catches a write that broke a script mid-block; it **cannot** see a whole missing block.
+   - `node --check sw.js`. `python3 -m json.tool rates.json manifest.json` if either changed — a malformed `rates.json` parses to garbage and silently mis-computes allowances.
+   - For DOM / CSS / JS behaviour, load `index.html` in jsdom and call the **shipping** function (`openCaDatePicker`, `maybeWhatsNewOverlay`, `executeCalculation`), then assert DOM order and `getComputedStyle`.
+   - If `rates.json` or a formula changed, re-run the `LOGIC.md` §7 test cases through `executeCalculation`.
+   - Truncation / drift net: the `function openMenuPrinter` + size assertion (see **How to work in this repo → Patching `index.html`**) is the only check that catches a whole-block loss.
+4. Commit, then update docs **one file at a time**: README → HANDOVER → LOGIC (only if formulas or calculator rules changed). Never two HANDOVER writes at once.
 5. `git push origin "$BR"`.
-6. Ask the owner to review on the **phone** (onboarding stamp). Do not start the next slice until they sign off.
-7. Owner merges arena → main in GitHub Desktop when they want production.
+6. Ask the owner to review on the **phone** — the onboarding stamp must read the new `APP_VERSION`. A mismatch means cache, not code.
+7. Owner merges arena → main in GitHub Desktop when they want production. No agent pushes `main`.
 
 To publish new **rates** to everyone: change `rates.json` (or paste an Export), commit, merge. Devices without a `crewAssist.rates` override pick it up on next network-first fetch. Devices with an override keep the override until Reset.
 
