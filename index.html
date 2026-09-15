@@ -1282,12 +1282,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.12.0';
+        const APP_VERSION = '1.13.0';
         const APP_WHAT_NEW = [
-            'COP and IFA now open with a trip bar — SIN → JNB → CPT → JNB → SIN — so you can see the whole pairing at a glance.',
-            'One Fetch all replaces the button on every sector, filling them one after another. Fetched sectors fold to a single line; tap to edit.',
-            'A line under Calculate tells you where you are: “Fetch all sectors to continue (2/4)” or “All sectors fetched · Ready”.',
-            'COP and IFA sector dates now cascade exactly like the LMA dates.'
+            'Sector pills read 2 and 4, so the whole pill row fits on one line.',
+            'Durations now read 2h 15m instead of 02:15, with a clock icon — no more mistaking them for a time of day.',
+            'Fetch all lights up like Calculate once every flight number is in, and stays off until the trip needs it again.',
+            'The calendar no longer offers a date before the sector above it, and Calculate waits for a real flight time.'
         ];
 
         // State
@@ -3217,6 +3217,24 @@ function getRegionForAirport(code) {
         let caDatePicked = '';
         let caDateStrict = false;
         let caDateOnCommit = null;
+        let caDateMin = '';   // earliest YMD this field may take ('' = unrestricted)
+
+        // The earliest date a calculator date field may take: the date of the sector
+        // or station above it. Stops the calendar offering a day the cascade would
+        // immediately overwrite.
+        function caMinDateFor(inp) {
+            if (!inp || !inp.id) return '';
+            const m = /^(.*)-(ifa-d|lma-a|lma-d)(\d+)$/.exec(inp.id);
+            if (!m) return '';
+            const base = m[1], kind = m[2], idx = parseInt(m[3], 10);
+            const val = (suffix) => {
+                const el = document.getElementById(base + '-' + suffix);
+                return el ? (el.value || '') : '';
+            };
+            if (kind === 'ifa-d') return idx > 1 ? val('ifa-d' + (idx - 1)) : '';
+            if (kind === 'lma-a') return idx > 1 ? val('lma-d' + (idx - 1)) : '';
+            return val('lma-a' + idx); // a departure is never before its own arrival
+        }
 
         function closeCaDatePicker() {
             const bd = document.getElementById('cadate-backdrop');
@@ -3256,7 +3274,7 @@ function getRegionForAirport(code) {
                 let cls = 'cadate-day';
                 if (ymd === caDatePicked) cls += ' is-sel';
                 if (ymd === today) cls += ' is-today';
-                if (menuDateSide(ymd)) cls += ' is-out';
+                if (menuDateSide(ymd) || (caDateMin && ymd < caDateMin)) cls += ' is-out';
                 html += '<button type="button" class="' + cls + '" data-ymd="' + ymd + '">' + d + '</button>';
             }
             for (let i = 0; i < empties; i++) html += '<span></span>';
@@ -3275,11 +3293,12 @@ function getRegionForAirport(code) {
             }
         }
 
-        function openCaDatePicker(inputEl, strict, onCommit) {
+        function openCaDatePicker(inputEl, strict, onCommit, minYmd) {
             if (!inputEl) return;
             caDateTarget = inputEl;
             caDateStrict = !!strict;
             caDateOnCommit = onCommit || null;
+            caDateMin = minYmd || '';
             caDatePicked = inputEl.value || todayLocalYMD();
             const p = caDatePicked.split('-');
             caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
@@ -3295,7 +3314,7 @@ function getRegionForAirport(code) {
             const btn = e.target.closest('.ca-date-btn');
             if (btn) {
                 const inp = document.getElementById(btn.getAttribute('data-date-input'));
-                if (inp) openCaDatePicker(inp);
+                if (inp) openCaDatePicker(inp, false, null, caMinDateFor(inp));
             }
         });
         document.getElementById('cadate-grid').addEventListener('click', (e) => {
@@ -3304,6 +3323,7 @@ function getRegionForAirport(code) {
             e.stopPropagation();
             const ymd = day.getAttribute('data-ymd');
             if (caDateStrict && menuDateSide(ymd)) return;
+            if (caDateMin && ymd < caDateMin) return;
             caDatePicked = ymd;
             const grid = document.getElementById('cadate-grid');
             if (grid) {
@@ -3335,6 +3355,7 @@ function getRegionForAirport(code) {
             e.stopPropagation();
             const t = todayLocalYMD();
             if (caDateStrict && menuDateSide(t)) return;
+            if (caDateMin && t < caDateMin) return;
             const parts = t.split('-');
             const nextView = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, 1);
             const dir = nextView.getTime() > caDateView.getTime() ? 1 : (nextView.getTime() < caDateView.getTime() ? -1 : 0);
@@ -3349,6 +3370,9 @@ function getRegionForAirport(code) {
         document.getElementById('cadate-ok').addEventListener('click', (e) => {
             e.stopPropagation();
             if (caDateStrict && menuDateSide(caDatePicked)) {
+                return;
+            }
+            if (caDateMin && caDatePicked && caDatePicked < caDateMin) {
                 return;
             }
             const commit = caDateOnCommit;
@@ -3386,6 +3410,14 @@ function getRegionForAirport(code) {
         function normSqFlight(raw) {
             const m = String(raw || '').trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
             return m ? m[1] : '';
+        }
+
+        // Durations read as clock times in an input, which is easy to mistake for a
+        // time of day. For display, "02:15" becomes "2h 15m".
+        function formatDurationHm(hm) {
+            const m = /^(\d{1,2}):(\d{2})$/.exec(String(hm || '').trim());
+            if (!m) return String(hm || '').trim();
+            return parseInt(m[1], 10) + 'h ' + pad2(parseInt(m[2], 10)) + 'm';
         }
 
         function hoursToHm(hours) {
@@ -3568,8 +3600,8 @@ function getRegionForAirport(code) {
                             <div class="flex-1 min-w-0">
                                 <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
                                 <div id="${id}-flight-type-pills" data-calc-pill="flight-type" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="Layover">Layover</button>
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="Turnaround">Turnaround</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="Layover">Layover</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="Turnaround">Turnaround</button>
                                 </div>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
                             </div>
@@ -3577,8 +3609,8 @@ function getRegionForAirport(code) {
                             <div class="flex-1 min-w-0">
                                 <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
                                 <div id="${id}-sector-count-pills" data-calc-pill="sector-count" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors bg-sia-gold text-black" data-value="2">2 Sectors</button>
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors text-gray-500" data-value="4">4 Sectors</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="2">2</button>
+                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="4">4</button>
                                 </div>
                                 <input type="hidden" id="${id}-sector-count" value="2">
                             </div>
@@ -3682,7 +3714,7 @@ function getRegionForAirport(code) {
                 const d = val('ifa-d');
                 put('.ifa-sum-fn', 'SQ ' + (val('ifa-fn') || '\u2014'));
                 put('.ifa-sum-date', d ? formatDateBtn(d) : '\u2014');
-                put('.ifa-sum-time', val('ifa-t') || '\u2014');
+                put('.ifa-sum-time-txt', formatDurationHm(val('ifa-t')) || '\u2014');
             }
 
             function ifaPaintSector(i) {
@@ -3753,8 +3785,12 @@ function getRegionForAirport(code) {
                         nodes.push((c && c.getAttribute('data-arr-airport')) || '\u00b7\u00b7\u00b7');
                     }
                     route.innerHTML = nodes.map((n, k) =>
-                        (k ? '<span class="ifa-trip-arrow text-gray-400">\u2192</span>' : '') +
-                        '<span class="ifa-trip-node' + (n === '\u00b7\u00b7\u00b7' ? ' text-gray-400' : '') + '">' + n + '</span>'
+                        (k ? '<span class="ifa-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
+                        '<span class="ifa-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold ' +
+                        (n === '\u00b7\u00b7\u00b7'
+                            ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
+                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15') +
+                        '">' + n + '</span>'
                     ).join('');
                 }
                 let done = 0, collapsed = 0;
@@ -3770,11 +3806,24 @@ function getRegionForAirport(code) {
                 if (prog) prog.textContent = done + ' of ' + count + ' fetched';
                 const expandAll = document.getElementById(`${id}-ifa-expand-all`);
                 if (expandAll) expandAll.classList.toggle('hidden', collapsed === 0);
+                // Fetch all only lights up like Calculate once every flight number is
+                // in, and goes back to the outline style once the trip is complete —
+                // editing a flight number or a date brings it back.
+                let fnReady = count > 0;
+                for (let i = 1; i <= count; i++) {
+                    const fnEl = document.getElementById(`${id}-ifa-fn${i}`);
+                    if (!fnEl || !(fnEl.value || '').trim()) { fnReady = false; break; }
+                }
                 const allBtn = document.getElementById(`${id}-ifa-fetch-all`);
                 if (allBtn) {
+                    const live = fnReady && done < count && !ifaFetchingAll;
                     const lab = allBtn.querySelector('.ifa-fetch-all-label');
                     if (lab) lab.textContent = ifaFetchingAll ? 'Fetching\u2026' : 'Fetch all';
-                    allBtn.disabled = ifaFetchingAll;
+                    allBtn.disabled = !live;
+                    allBtn.classList.toggle('cta-gold', live);
+                    allBtn.classList.toggle('text-black', false);
+                    allBtn.classList.toggle('border-sia-gold/70', !live);
+                    allBtn.classList.toggle('text-sia-gold', !live);
                 }
                 const hint = document.getElementById(`${id}-calc-hint`);
                 if (hint) {
@@ -3840,7 +3889,7 @@ function getRegionForAirport(code) {
                                     <span class="w-4 h-4 shrink-0 rounded-full bg-green-500 inline-flex items-center justify-center"><i data-lucide="check" class="w-2.5 h-2.5 text-white"></i></span>
                                     <span class="ifa-sum-fn text-xs font-bold whitespace-nowrap">SQ —</span>
                                     <span class="ifa-sum-date text-xs font-bold text-gray-500 whitespace-nowrap">—</span>
-                                    <span class="ifa-sum-time ml-auto text-xs font-bold text-sia-gold whitespace-nowrap">—</span>
+                                    <span class="ifa-sum-time ml-auto inline-flex items-center gap-1 text-xs font-bold text-sia-gold whitespace-nowrap"><i data-lucide="clock" class="w-3 h-3 shrink-0"></i><span class="ifa-sum-time-txt">\u2014</span></span>
                                 </button>
                                 <div class="ifa-edit-area">
                                 <div class="flex items-center justify-between gap-2 mb-2">
@@ -3937,6 +3986,7 @@ function getRegionForAirport(code) {
                     ifaSectorsBox.addEventListener('change', (e) => {
                         if (!e.target.classList || !e.target.classList.contains('ifa-date-cascade')) return;
                         cascadeIfaDates(parseInt(e.target.dataset.idx, 10));
+                        ifaPaintTripBar(); // a new date can re-arm Fetch all
                     });
                 }
                 renderIfaSectors();
@@ -4177,6 +4227,13 @@ function getRegionForAirport(code) {
                     }
                 });
                 
+                // The flight time must be present whether the crew typed it or Fetch
+                // filled it. Default mode hides the field, so Fetch is how it lands —
+                // but Calculate must not fire on a sector with no duration at all.
+                containerNode.querySelectorAll('.ifa-time-input').forEach((inp) => {
+                    if ((inp.value || '').trim().length < 4) allFilled = false;
+                });
+
                 const calcBtn = document.getElementById(`${id}-btn-calc`);
                 if (calcBtn) {
                     calcBtn.disabled = !allFilled;
@@ -4274,12 +4331,13 @@ function getRegionForAirport(code) {
                     const card = e.target.closest ? e.target.closest('[data-ifa-sector]') : null;
                     if (!card) return;
                     const i = parseInt(card.getAttribute('data-ifa-sector'), 10);
-                    if (ifaSectorState(i) !== 'done') return;
-                    card.setAttribute('data-ifa-state', 'idle');
-                    card.removeAttribute('data-ifa-collapsed');
-                    ifaKeepFirstOpen();
-                    ifaPaintSector(i);
-                    ifaPaintTripBar();
+                    if (ifaSectorState(i) === 'done') {
+                        card.setAttribute('data-ifa-state', 'idle');
+                        card.removeAttribute('data-ifa-collapsed');
+                        ifaKeepFirstOpen();
+                        ifaPaintSector(i);
+                    }
+                    ifaPaintTripBar(); // a typed flight number can re-arm Fetch all
                 });
 
                 // Fetch one sector. `quiet` suppresses the alerts so Fetch all can run
@@ -4381,6 +4439,16 @@ function getRegionForAirport(code) {
                 // One tap, every outstanding sector, strictly one after another.
                 async function ifaFetchAll() {
                     if (ifaFetchingAll) return;
+                    // Check the whole trip first so the crew gets one message, not one
+                    // modal per sector.
+                    for (let i = 1; i <= ifaSectorCount(); i++) {
+                        const dEl = document.getElementById(`${id}-ifa-d${i}`);
+                        const dv = dEl ? (dEl.value || '') : '';
+                        if (dv && menuDateSide(dv)) {
+                            await appAlert('Live flight information isn\u2019t available for the selected dates.');
+                            return;
+                        }
+                    }
                     ifaFetchingAll = true;
                     ifaPaintTripBar();
                     try {
