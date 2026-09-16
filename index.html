@@ -1303,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.2';
+        const APP_VERSION = '1.19.4';
         const APP_WHAT_NEW = [
-            'Fixed: Calculate switches on as soon as your fetch lands - no extra tap needed.',
-            'Fetch all brings the card back into view, and the save button ticks before handing itself back.',
-            'Quick-action chips keep their default look - no gold tint, right after a tap or a click.'
+            'Fetch all and new replies glide into view instead of snapping.',
+            'The save button is untappable while it ticks, then hands itself back.',
+            'Your Earnings read oldest to newest, top to bottom.'
         ];
 
         // State
@@ -1882,10 +1882,10 @@
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
 
-        function scrollToBottomNow() {
+        function scrollToBottomNow(behavior) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: behavior || 'auto' });
             updateScrollBottomBtn();
         }
 
@@ -1902,7 +1902,7 @@
             const cRect = chatContainer.getBoundingClientRect();
             const eRect = el.getBoundingClientRect();
             const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 12;
-            chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+            chatContainer.scrollTo({ top: Math.max(0, top), behavior: behavior || 'auto' });
             updateScrollBottomBtn();
         }
 
@@ -1913,9 +1913,11 @@
         function scrollChatToBubble(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
+            // Auto-scroll is animated: the same top-if-taller / bottom-if-fits rule,
+            // but eased instead of snapping.
             const go = () => {
-                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el);
-                else scrollToBottomNow();
+                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el, 'smooth');
+                else scrollToBottomNow('smooth');
             };
             setTimeout(go, 10);
             setTimeout(go, 150);
@@ -5391,19 +5393,19 @@ function getRegionForAirport(code) {
             if (mode === 'both' && archivePayload) {
                 setResultsAction('save', false);
                 const ab = document.getElementById('btn-results-action');
-                let saveConfirming = false;
                 if (ab) ab.onclick = () => {
-                    if (ab.disabled || saveConfirming) return;
+                    if (ab.disabled || ab.dataset.done) return;
                     const arr = loadArchive();
                     arr.push(archivePayload);
                     persistArchive(arr);
-                    // A tick for "that landed", then the save button comes back. The
-                    // lock only covers the tick, so a second tap cannot double-save.
-                    saveConfirming = true;
+                    // Simple, one tap saves once. The tick shows full-colour but the
+                    // button is untappable from the tap onward, and the save icon that
+                    // follows comes back INACTIVE - there is no second save from here.
+                    ab.dataset.done = '1';
                     setResultsAction('check', false);
+                    ab.disabled = true;
                     setTimeout(() => {
-                        setResultsAction('save', false);
-                        saveConfirming = false;
+                        setResultsAction('save', true);
                     }, 1200);
                 };
             } else {
@@ -5497,8 +5499,10 @@ function getRegionForAirport(code) {
             } else {
                 const groups = {};
                 entries.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
-                Object.keys(groups).sort().reverse().forEach((mk) => {
-                    const list = groups[mk];
+                Object.keys(groups).sort().forEach((mk) => {
+                    // Oldest first: the archive reads chronologically top to bottom -
+                    // oldest month and oldest entry at the top, the newest at the end.
+                    const list = groups[mk].slice().sort((a, b) => String(a.savedAt || '').localeCompare(String(b.savedAt || '')));
                     const total = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
                     html += `
                         <div class="mb-5">
