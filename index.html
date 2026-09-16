@@ -1299,11 +1299,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.18.1';
+        const APP_VERSION = '1.19.0';
         const APP_WHAT_NEW = [
-            'Ask "How much have I earned?" for your Earnings - I keep every saved allowance with its monthly total.',
-            'COP summaries now save with a circular button beside the close, and the archive clears with a tap.',
-            'Fetch all keeps its size while it spins, and an empty piggy bank explains itself in two short replies.'
+            'Editing a flight number or a date now greys Calculate until you fetch again - the times on screen have to belong to your flight.',
+            'Ask "How much have I earned?" for your Earnings, with a monthly total for everything you save.',
+            'COP summaries save with a circular button beside the close, and the archive clears with a tap.'
         ];
 
         // State
@@ -3724,6 +3724,14 @@ function getRegionForAirport(code) {
             let lmaApplyingFetch = false;
             let lmaFetchingAll = false;
 
+            // Sectors whose flight number or date the crew edited after a fetch. The
+            // times on screen then belong to the old flight/date, so Calculate stays
+            // grey until that sector is fetched again - or until the crew types the
+            // times in by hand, which is the same information arriving the other way.
+            // Keys look like 'ifa:2' / 'lma:1'. Manual mode has no Fetch button, so it
+            // is exempt from the gate.
+            const staleSectors = new Set();
+
             // ---- LMA trip bar helpers. Function declarations, not const arrows:
             // addLmaSector() runs before this point and already repaints the bar.
             function lmaStationEl(idx) {
@@ -4451,16 +4459,59 @@ function getRegionForAirport(code) {
                     });
                 }
 
+                // An edited flight number or date outranks everything else: the crew
+                // has to refetch before Calculate means anything. Sectors that no
+                // longer exist, and LMA stations with Shuttle ticked (they earn no
+                // LMA, so there is nothing to fetch), drop out of the set here.
+                if (calcUiMode !== 'manual' && staleSectors.size) {
+                    staleSectors.forEach((k) => {
+                        const p = k.split(':');
+                        const probe = p[0] === 'ifa'
+                            ? containerNode.querySelector('[data-ifa-sector="' + p[1] + '"]')
+                            : containerNode.querySelector('.lma-station[data-idx="' + p[1] + '"]');
+                        if (!probe) { staleSectors.delete(k); return; }
+                        if (p[0] === 'lma') {
+                            const sh = probe.querySelector('.lma-shuttle-input');
+                            if (sh && sh.checked) staleSectors.delete(k);
+                        }
+                    });
+                    if (staleSectors.size) allFilled = false;
+                }
+
                 const calcBtn = document.getElementById(`${id}-btn-calc`);
                 if (calcBtn) {
                     calcBtn.disabled = !allFilled;
                 }
             };
 
+            // Editing a flight number or a date marks that sector stale; typing a
+            // time clears it again. The ApplyingFetch guards keep a fetch writing its
+            // results back from reading as a crew edit.
+            const staleEditListener = (e) => {
+                if (ifaApplyingFetch || lmaApplyingFetch) return;
+                const t = e.target;
+                if (!t || !t.classList || !t.closest) return;
+                const ifaCard = t.closest('[data-ifa-sector]');
+                const st = t.closest('.lma-station');
+                const key = ifaCard ? 'ifa:' + ifaCard.getAttribute('data-ifa-sector')
+                    : st ? 'lma:' + st.getAttribute('data-idx') : null;
+                if (!key) return;
+                if (t.classList.contains('ifa-fn-input') || t.classList.contains('lma-fn-input') || t.classList.contains('ca-date-input')) {
+                    staleSectors.add(key);
+                } else if (t.classList.contains('ifa-time-input') || t.classList.contains('lma-time-input')) {
+                    if (!staleSectors.delete(key)) return;
+                } else {
+                    return;
+                }
+                validateInputs();
+            };
+
             const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
             if (containerNode) {
                 containerNode.addEventListener('input', validateInputs);
                 containerNode.addEventListener('change', validateInputs);
+                containerNode.addEventListener('input', staleEditListener);
+                containerNode.addEventListener('change', staleEditListener);
                 containerNode.addEventListener('click', () => setTimeout(validateInputs, 100)); // for add/remove buttons
                 setTimeout(validateInputs, 100);
             }
@@ -4652,6 +4703,7 @@ function getRegionForAirport(code) {
                         if (usEl) usEl.checked = isUsAirport(leg.arrAirport) || isUsAirport(leg.depAirport);
                         syncLmaFromIfa();
                         ok = true;
+                        staleSectors.delete('ifa:' + idx);
                     } catch (err) {
                         if (!quiet) await appAlert('Could not fetch that flight. You can still type the times.');
                     }
@@ -4776,8 +4828,11 @@ function getRegionForAirport(code) {
                         return false;
                     } finally {
                         st.setAttribute(attr, ok ? 'done' : 'error');
-                        if (ok) lmaSetStationDone(idx, lmaStationDone(idx));
-                        else lmaPaintStation(idx);
+                        if (ok) {
+                            lmaSetStationDone(idx, lmaStationDone(idx));
+                            // Both legs fresh again - the station is no longer stale.
+                            if (lmaStationDone(idx)) staleSectors.delete('lma:' + idx);
+                        } else lmaPaintStation(idx);
                     }
                 }
 
