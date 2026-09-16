@@ -263,6 +263,10 @@
         .cadate-day.is-today:not(.is-sel) {
             box-shadow: inset 0 0 0 1.5px #C9A227;
         }
+        /* The quick-action chips deliberately have NO hover tint. A gold hover
+           read as the chip "staying gold" after a tap on touch screens and after a
+           click on any pointer that rests on the chip, so the default look is the
+           only look. */
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -770,19 +774,19 @@
                     
                     <!-- Quick Action Chips -->
                     <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="total">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
                             <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
                             Calculate total allowance.
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="menu">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="menu">
                             <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
                             What are we serving onboard?
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="print">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="print">
                             <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
                             Print the menu.
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="earn">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="earn">
                             <i data-lucide="piggy-bank" class="w-3.5 h-3.5 shrink-0"></i>
                             How much have I earned?
                         </button>
@@ -1299,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.0';
+        const APP_VERSION = '1.19.2';
         const APP_WHAT_NEW = [
-            'Editing a flight number or a date now greys Calculate until you fetch again - the times on screen have to belong to your flight.',
-            'Ask "How much have I earned?" for your Earnings, with a monthly total for everything you save.',
-            'COP summaries save with a circular button beside the close, and the archive clears with a tap.'
+            'Fixed: Calculate switches on as soon as your fetch lands - no extra tap needed.',
+            'Fetch all brings the card back into view, and the save button ticks before handing itself back.',
+            'Quick-action chips keep their default look - no gold tint, right after a tap or a click.'
         ];
 
         // State
@@ -4708,12 +4712,20 @@ function getRegionForAirport(code) {
                         if (!quiet) await appAlert('Could not fetch that flight. You can still type the times.');
                     }
                     ifaSetState(idx, ok ? 'done' : 'error');
+                    // The write-back fired its input events while this sector was still
+                    // marked stale, so the gate has to be re-run now that it is not.
+                    validateInputs();
                     return ok;
                 }
 
                 // One tap, every outstanding sector, strictly one after another.
                 async function ifaFetchAll() {
                     if (ifaFetchingAll) return;
+                    // Bring the card back into view the way a new bubble does: to its
+                    // top when it is taller than the chat window, to the bottom when it
+                    // fits. Same helper, so the two never disagree.
+                    const ifaBubble = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
+                    if (ifaBubble) scrollChatToBubble(ifaBubble);
                     // Check the whole trip first so the crew gets one message, not one
                     // modal per sector.
                     for (let i = 1; i <= ifaSectorCount(); i++) {
@@ -4833,11 +4845,16 @@ function getRegionForAirport(code) {
                             // Both legs fresh again - the station is no longer stale.
                             if (lmaStationDone(idx)) staleSectors.delete('lma:' + idx);
                         } else lmaPaintStation(idx);
+                        // Same reason as the IFA side: re-run the gate now the stale
+                        // flag has had its say.
+                        validateInputs();
                     }
                 }
 
                 async function lmaFetchAll() {
                     if (lmaFetchingAll) return;
+                    const lmaBubble = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
+                    if (lmaBubble) scrollChatToBubble(lmaBubble);
                     // One window for the whole trip, not one modal per leg.
                     const n = lmaStationCount();
                     for (let i = 1; i <= n; i++) {
@@ -5322,7 +5339,8 @@ function getRegionForAirport(code) {
             if (!kind) { b.classList.add('hidden'); b.innerHTML = ''; b.onclick = null; return; }
             b.classList.remove('hidden');
             b.innerHTML = '<i data-lucide="' + kind + '" class="w-5 h-5"></i>';
-            b.setAttribute('aria-label', kind === 'save' ? 'Save to archives' : 'Clear saved earnings');
+            const actionLabels = { save: 'Save to archives', check: 'Saved to archives', trash: 'Clear saved earnings' };
+            b.setAttribute('aria-label', actionLabels[kind] || kind);
             b.disabled = !!disabled;
             b.classList.toggle('opacity-40', !!disabled);
             b.classList.toggle('pointer-events-none', !!disabled);
@@ -5373,13 +5391,20 @@ function getRegionForAirport(code) {
             if (mode === 'both' && archivePayload) {
                 setResultsAction('save', false);
                 const ab = document.getElementById('btn-results-action');
+                let saveConfirming = false;
                 if (ab) ab.onclick = () => {
-                    if (ab.disabled) return;
+                    if (ab.disabled || saveConfirming) return;
                     const arr = loadArchive();
                     arr.push(archivePayload);
                     persistArchive(arr);
-                    ab.disabled = true;
-                    ab.classList.add('opacity-40', 'pointer-events-none');
+                    // A tick for "that landed", then the save button comes back. The
+                    // lock only covers the tick, so a second tap cannot double-save.
+                    saveConfirming = true;
+                    setResultsAction('check', false);
+                    setTimeout(() => {
+                        setResultsAction('save', false);
+                        saveConfirming = false;
+                    }, 1200);
                 };
             } else {
                 setResultsAction(null);
