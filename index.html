@@ -1303,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.2';
+        const APP_VERSION = '1.19.3';
         const APP_WHAT_NEW = [
-            'Fixed: Calculate switches on as soon as your fetch lands - no extra tap needed.',
-            'Fetch all brings the card back into view, and the save button ticks before handing itself back.',
-            'Quick-action chips keep their default look - no gold tint, right after a tap or a click.'
+            'Fetch all and new replies glide into view instead of snapping.',
+            'The save button is untappable while it ticks, then hands itself back.',
+            'Your Earnings now list the newest entry on top.'
         ];
 
         // State
@@ -1882,10 +1882,10 @@
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
 
-        function scrollToBottomNow() {
+        function scrollToBottomNow(behavior) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
-            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'auto' });
+            chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: behavior || 'auto' });
             updateScrollBottomBtn();
         }
 
@@ -1902,7 +1902,7 @@
             const cRect = chatContainer.getBoundingClientRect();
             const eRect = el.getBoundingClientRect();
             const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 12;
-            chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+            chatContainer.scrollTo({ top: Math.max(0, top), behavior: behavior || 'auto' });
             updateScrollBottomBtn();
         }
 
@@ -1913,9 +1913,11 @@
         function scrollChatToBubble(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
+            // Auto-scroll is animated: the same top-if-taller / bottom-if-fits rule,
+            // but eased instead of snapping.
             const go = () => {
-                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el);
-                else scrollToBottomNow();
+                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el, 'smooth');
+                else scrollToBottomNow('smooth');
             };
             setTimeout(go, 10);
             setTimeout(go, 150);
@@ -5401,6 +5403,9 @@ function getRegionForAirport(code) {
                     // lock only covers the tick, so a second tap cannot double-save.
                     saveConfirming = true;
                     setResultsAction('check', false);
+                    // Untappable straight away so a second tap can't double-save. The
+                    // button carries no disabled: dimming, so the tick reads full-colour.
+                    ab.disabled = true;
                     setTimeout(() => {
                         setResultsAction('save', false);
                         saveConfirming = false;
@@ -5498,7 +5503,9 @@ function getRegionForAirport(code) {
                 const groups = {};
                 entries.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
                 Object.keys(groups).sort().reverse().forEach((mk) => {
-                    const list = groups[mk];
+                    // Newest entry on top within the month, so the latest save is what
+                    // the crew sees first instead of sitting at the bottom.
+                    const list = groups[mk].slice().sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
                     const total = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
                     html += `
                         <div class="mb-5">
