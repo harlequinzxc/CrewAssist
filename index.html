@@ -1292,10 +1292,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.16.0';
+        const APP_VERSION = '1.16.1';
         const APP_WHAT_NEW = [
-            'Sector cards now fold and unfold with a smooth animation instead of snapping.',
-            'Turnaround shortens to Turn whenever the full word would spill out of its pill.',
+            'Turnaround now reliably shortens to Turn on narrow screens - the pill is measured correctly and re-checked once the font loads.',
+            'Sector cards fold and unfold with a smooth animation.',
             'Fetch all is sized to sit comfortably inside the chat bubble.'
         ];
 
@@ -3431,6 +3431,11 @@ function getRegionForAirport(code) {
             });
         }
         window.addEventListener('resize', fitCalcPills);
+        window.addEventListener('load', fitCalcPills);
+        if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+            document.fonts.ready.then(() => fitCalcPills()).catch(() => {});
+            document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', fitCalcPills);
+        }
 
         // Durations read as clock times in an input, which is easy to mistake for a
         // time of day. For display, "02:15" becomes "2h 15m".
@@ -3601,8 +3606,8 @@ function getRegionForAirport(code) {
                             <div class="flex-1 min-w-0">
                                 <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
                                 <div id="${id}-flight-type-pills" data-calc-pill="flight-type" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="Layover">Layover</button>
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="Turnaround">Turnaround</button>
+                                    <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="Layover">Layover</button>
+                                    <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="Turnaround">Turnaround</button>
                                 </div>
                                 <input type="hidden" id="${id}-flight-type" value="Layover">
                             </div>
@@ -3610,8 +3615,8 @@ function getRegionForAirport(code) {
                             <div class="flex-1 min-w-0">
                                 <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
                                 <div id="${id}-sector-count-pills" data-calc-pill="sector-count" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="2">2</button>
-                                    <button type="button" class="calc-pill flex-1 rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="4">4</button>
+                                    <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="2">2</button>
+                                    <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="4">4</button>
                                 </div>
                                 <input type="hidden" id="${id}-sector-count" value="2">
                             </div>
@@ -3678,6 +3683,8 @@ function getRegionForAirport(code) {
                 bindCalculatorEvents(id, mode);
                 syncCalcUiAll();
                 fitCalcPills();
+                // the webfont usually lands after the first pass; re-measure a few times
+                [150, 400, 900].forEach((t) => setTimeout(fitCalcPills, t));
                 // COP always scrolled to the top of the card. Now every card decides
                 // by height — and a COP card is long, so it takes the same branch.
                 if (mode === 'both' || appPrefs.autoScroll) scrollChatToBubble(msgDiv);
@@ -7503,10 +7510,6 @@ function getRegionForAirport(code) {
                 stale: lastPrintStale,
                 sectors: sectors
             };
-        }
-
-        function printStrikeAllergens(name) {
-            return printMarkProteins(name, 'strike');
         }
 
         function printHighlightProteins(name) {
