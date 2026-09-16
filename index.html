@@ -267,6 +267,19 @@
            read as the chip "staying gold" after a tap on touch screens and after a
            click on any pointer that rests on the chip, so the default look is the
            only look. */
+        /* A filled-in form should not outlive its result: cards fold to their
+           header the moment their overlay opens, and the header re-expands on tap. */
+        .ca-fold-body {
+            overflow: hidden;
+            max-height: 6000px;
+            opacity: 1;
+            transition: max-height 0.45s ease, opacity 0.3s ease;
+        }
+        .ca-folded .ca-fold-body { max-height: 0; opacity: 0; }
+        .ca-fold-toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .ca-fold-icon { transition: transform 0.3s ease; }
+        .ca-folded .ca-fold-icon { transform: rotate(-90deg); }
+
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -776,11 +789,11 @@
                     <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
                             <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
-                            Calculate total allowance.
+                            Calculate my allowance.
                         </button>
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="menu">
                             <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
-                            What are we serving onboard?
+                            What's being served?
                         </button>
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="print">
                             <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
@@ -794,7 +807,7 @@
 
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
-                        <input type="text" id="chat-input" placeholder="IFA, LMA, COP, Menu, Print, Earnings" class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
+                        <input type="text" id="chat-input" placeholder="Try &quot;menu&quot;..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
                         <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
@@ -1303,8 +1316,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.6';
+        const APP_VERSION = '1.19.7';
         const APP_WHAT_NEW = [
+            'Calculators and the menu form fold to their header once the result opens - tap the header to expand.',
             'Fetch all and new replies glide into view instead of snapping.',
             'The save button is untappable while it ticks, then hands itself back.',
             'Earnings rows now show the sector-1 flight date, and the save button works on every summary - not just the first.'
@@ -1941,7 +1955,7 @@
             if (/print|printer|homework/.test(lowerText)) {
                 renderFlightVerificationCard('print');
             }
-            else if (/menu|serving|onboard/.test(lowerText)) {
+            else if (/menu|serving|served|onboard/.test(lowerText)) {
                 renderFlightVerificationCard('menu');
             }
             else if (/archive|archives|history|earnings|earned|earn/.test(lowerText)) {
@@ -3589,6 +3603,30 @@ function getRegionForAirport(code) {
             return '';
         }
 
+        function makeCardFoldable(card) {
+            if (!card || card.dataset.foldable) return;
+            const header = card.querySelector('.ca-card-header');
+            if (!header) return;
+            card.dataset.foldable = '1';
+            const body = document.createElement('div');
+            body.className = 'ca-fold-body';
+            let n = header.nextSibling;
+            while (n) { const nxt = n.nextSibling; body.appendChild(n); n = nxt; }
+            card.appendChild(body);
+            header.classList.add('ca-fold-toggle');
+            const ico = document.createElement('i');
+            ico.setAttribute('data-lucide', 'chevron-down');
+            ico.className = 'ca-fold-icon w-4 h-4 shrink-0';
+            header.appendChild(ico);
+            header.addEventListener('click', () => card.classList.toggle('ca-folded'));
+            try { lucide.createIcons(); } catch (e) {}
+        }
+        function foldCard(card) {
+            if (!card) return;
+            makeCardFoldable(card);
+            card.classList.add('ca-folded');
+        }
+
         function renderCalculatorCard(mode) {
             calcIdCounter++;
             const id = 'calc-' + calcIdCounter;
@@ -3685,7 +3723,7 @@ function getRegionForAirport(code) {
             msgDiv.innerHTML = `
                 
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none w-[85%] shadow-sm border border-black/5 dark:border-white/5" data-calc-card="1">
-                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
+                    <div class="ca-card-header flex items-center justify-between mb-4 pb-2 border-b border-black/5 dark:border-white/5">
                         <h3 class="font-bold text-sm text-sia-gold">${calcTitle}</h3>
                     </div>
                     ${ifaHtml}
@@ -3699,7 +3737,8 @@ function getRegionForAirport(code) {
             
             chatContainer.appendChild(msgDiv);
             noteBubbleShown();
-            
+            makeCardFoldable(msgDiv.querySelector('.glass-bubble'));
+
             // Wait a tick for DOM
             setTimeout(() => {
                 lucide.createIcons();
@@ -5333,6 +5372,8 @@ function getRegionForAirport(code) {
             const grandTotal = ifaTotal + lmaTotal;
             const archivePayload = (mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null;
             showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload);
+            const ccBtn = document.getElementById(id + '-btn-calc');
+            if (ccBtn) foldCard(ccBtn.closest('.glass-bubble'));
         }
 
         function setResultsAction(kind, disabled) {
@@ -5703,7 +5744,7 @@ function getRegionForAirport(code) {
             msgDiv.innerHTML = `
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">
                     <input type="hidden" id="fv-mode-${uniqueId}" value="${mode}">
-                    <div class="font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
+                    <div class="ca-card-header font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
                         <i data-lucide="plane" class="w-5 h-5"></i> ${headerText}
                     </div>
                     
@@ -5747,6 +5788,7 @@ function getRegionForAirport(code) {
             
             chatContainer.appendChild(msgDiv);
             noteBubbleShown();
+            makeCardFoldable(msgDiv.querySelector('.glass-bubble'));
             lucide.createIcons();
             renderRecentFlightChips(uniqueId);
             scrollChatToBubble(msgDiv);
@@ -6076,6 +6118,8 @@ function getRegionForAirport(code) {
             enqueueBot(() => {
                 if (actionType === 'menu') {
                     openMenuViewerForCabins(flightNumber, date, selectedCabins);
+                    const fvMode = document.getElementById('fv-mode-' + id);
+                    if (fvMode) foldCard(fvMode.closest('.glass-bubble'));
                 } else if (actionType === 'print') {
                     openMenuPrinter(flightNumber, date, selectedCabins);
                 }
