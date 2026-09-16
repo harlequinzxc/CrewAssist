@@ -279,6 +279,16 @@
         .ca-fold-toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ca-fold-icon { transition: transform 0.3s ease; }
         .ca-folded .ca-fold-icon { transform: rotate(-90deg); }
+        /* A folded card should read like any other chat bubble: same padding,
+           no leftover header rule/margin, one line of text-sm. */
+        .glass-bubble.ca-folded { padding: 0.875rem; }
+        .ca-folded .ca-card-header {
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+            border-bottom-width: 0 !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+        }
 
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
@@ -1316,8 +1326,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.7';
+        const APP_VERSION = '1.19.8';
         const APP_WHAT_NEW = [
+            'Cards fold the moment you send a new message, and a folded card now matches a normal chat bubble.',
             'Calculators and the menu form fold to their header once the result opens - tap the header to expand.',
             'Fetch all and new replies glide into view instead of snapping.',
             'The save button is untappable while it ticks, then hands itself back.',
@@ -1941,6 +1952,7 @@
         function processInput(text) {
             if (isChatBusy()) return;
             if (!text || !String(text).trim()) return;
+            foldAllCards();
             setChatBusy(true);
             addMessage('user', text);
             document.getElementById('chat-input').value = '';
@@ -3625,6 +3637,10 @@ function getRegionForAirport(code) {
             if (!card) return;
             makeCardFoldable(card);
             card.classList.add('ca-folded');
+        }
+
+        function foldAllCards() {
+            document.querySelectorAll('.glass-bubble[data-foldable="1"]').forEach((c) => c.classList.add('ca-folded'));
         }
 
         function renderCalculatorCard(mode) {
