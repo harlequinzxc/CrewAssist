@@ -263,14 +263,10 @@
         .cadate-day.is-today:not(.is-sel) {
             box-shadow: inset 0 0 0 1.5px #C9A227;
         }
-        /* Chip hover lives behind a hover-capable pointer on purpose. On a phone a
-           tap leaves :hover stuck, so the chip stayed gold after the finger lifted. */
-        @media (hover: hover) and (pointer: fine) {
-            .action-chip:hover {
-                background: rgba(201, 162, 39, 0.2);
-            }
-        }
-
+        /* The quick-action chips deliberately have NO hover tint. A gold hover
+           read as the chip "staying gold" after a tap on touch screens and after a
+           click on any pointer that rests on the chip, so the default look is the
+           only look. */
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -1307,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.1';
+        const APP_VERSION = '1.19.2';
         const APP_WHAT_NEW = [
             'Fixed: Calculate switches on as soon as your fetch lands - no extra tap needed.',
             'Fetch all brings the card back into view, and the save button ticks before handing itself back.',
-            'Quick-action chips no longer stay gold after you lift your finger.'
+            'Quick-action chips keep their default look - no gold tint, right after a tap or a click.'
         ];
 
         // State
