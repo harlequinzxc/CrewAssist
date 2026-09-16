@@ -263,11 +263,6 @@
         .cadate-day.is-today:not(.is-sel) {
             box-shadow: inset 0 0 0 1.5px #C9A227;
         }
-        .action-chip.chip-active {
-            background: #C9A227;
-            color: #0B1A3A;
-            border-color: #C9A227;
-        }
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -1304,11 +1299,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.18.0';
+        const APP_VERSION = '1.18.1';
         const APP_WHAT_NEW = [
             'Ask "How much have I earned?" for your Earnings - I keep every saved allowance with its monthly total.',
             'COP summaries now save with a circular button beside the close, and the archive clears with a tap.',
-            'Quick-action chips show when pressed, and Fetch all keeps its size while it spins.'
+            'Fetch all keeps its size while it spins, and an empty piggy bank explains itself in two short replies.'
         ];
 
         // State
@@ -1566,7 +1561,6 @@
             document.querySelectorAll('.action-chip').forEach(chip => {
                 chip.addEventListener('click', (e) => {
                     if (isChatBusy()) return;
-                    e.currentTarget.classList.add('chip-active');
                     processInput(e.currentTarget.innerText.trim());
                 });
             });
@@ -1838,10 +1832,6 @@
             return lastBubbleReady;
         }
 
-        function clearChipActive() {
-            document.querySelectorAll('.action-chip.chip-active').forEach((c) => c.classList.remove('chip-active'));
-        }
-
         function enqueueBot(fn) {
             const gen = ++chatLockGen;
             setChatBusy(true);
@@ -1850,7 +1840,6 @@
                 setTimeout(() => {
                     Promise.resolve(hideTypingIndicator()).then(() => {
                         try { fn(); } catch (err) { console.error(err); }
-                        clearChipActive();
                         resolve();
                     });
                 }, 550 + Math.random() * 350);
@@ -1951,7 +1940,8 @@
             }
             else if (/archive|archives|history|earnings|earned|earn/.test(lowerText)) {
                 if (loadArchive().length === 0) {
-                    addBotMessage("No allowances saved yet \u2014 your piggy bank is empty. <i data-lucide=\"piggy-bank\" class=\"w-4 h-4 inline\"></i> Run a COP calculation and hit save, and I'll keep track of everything.");
+                    addBotMessage("Your piggy bank is empty. <i data-lucide=\"piggy-bank\" class=\"w-4 h-4 inline\"></i>");
+                    addBotMessage("Run a COP calculation and hit save, and I'll keep track of everything.");
                 } else {
                     addBotMessage('Pulling up your earnings!');
                     setTimeout(() => showArchiveOverlay(), 400);
