@@ -1303,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.5';
+        const APP_VERSION = '1.19.6';
         const APP_WHAT_NEW = [
             'Fetch all and new replies glide into view instead of snapping.',
             'The save button is untappable while it ticks, then hands itself back.',
-            'Saving a summary with no station now asks you to type one, and Fetch all scrolls the card into view.'
+            'Earnings rows now show the sector-1 flight date, and the save button works on every summary - not just the first.'
         ];
 
         // State
@@ -5393,6 +5393,9 @@ function getRegionForAirport(code) {
             if (mode === 'both' && archivePayload) {
                 setResultsAction('save', false);
                 const ab = document.getElementById('btn-results-action');
+                // The header button is shared across summaries: a previous summary's
+                // one-shot flag must not kill this one's save.
+                if (ab) delete ab.dataset.done;
 
                 const doSave = (station) => {
                     if (station != null) archivePayload.stationDisplay = station;
@@ -5484,6 +5487,14 @@ function getRegionForAirport(code) {
             const m = parseInt(p[1], 10);
             return (isFinite(m) && names[m - 1] ? names[m - 1] : (p[1] || '')) + ' ' + (p[0] || '');
         }
+
+        function archiveDayLabel(ymd) {
+            const p = String(ymd || '').split('-');
+            const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const m = parseInt(p[1], 10), d = parseInt(p[2], 10);
+            if (!isFinite(m) || !isFinite(d) || !names[m - 1]) return ymd || '';
+            return d + ' ' + names[m - 1];
+        }
         function buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) {
             const amount = isTurnaround ? ifaTotal : (ifaTotal + lmaTotal); // 4.12
             if (!(amount > 0)) return null;
@@ -5507,6 +5518,7 @@ function getRegionForAirport(code) {
                 id: 'a' + Date.now().toString(36) + Math.floor(Math.random() * 10000),
                 savedAt: new Date().toISOString(),
                 monthKey,
+                sectorDate: d1,
                 flightType: isTurnaround ? 'Turnaround' : 'Layover',
                 stationDisplay: codes.length ? codes.join('/') : '\u2014', // 4.11
                 amount: Math.round(amount * 100) / 100,
@@ -5544,7 +5556,7 @@ function getRegionForAirport(code) {
                         html += `
                             <div class="flex items-center gap-2 text-xs bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl p-2 mb-1">
                                 <span class="font-bold text-sia-navy dark:text-white">${e.stationDisplay || ''}</span>
-                                <span class="text-gray-500">${e.flightType || ''}</span>
+                                <span class="text-gray-500">${archiveDayLabel(e.sectorDate) || (e.flightType || '')}</span>
                                 <span class="ml-auto font-bold text-sia-gold">${formatMoney(e.amount)}</span>
                                 <button type="button" class="ca-arch-del text-red-500 p-1" data-arch="${e.id}" aria-label="Delete entry"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
                             </div>`;
