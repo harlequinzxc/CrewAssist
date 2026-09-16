@@ -1303,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.3';
+        const APP_VERSION = '1.19.4';
         const APP_WHAT_NEW = [
             'Fetch all and new replies glide into view instead of snapping.',
             'The save button is untappable while it ticks, then hands itself back.',
-            'Your Earnings now list the newest entry on top.'
+            'Your Earnings read oldest to newest, top to bottom.'
         ];
 
         // State
@@ -5393,22 +5393,19 @@ function getRegionForAirport(code) {
             if (mode === 'both' && archivePayload) {
                 setResultsAction('save', false);
                 const ab = document.getElementById('btn-results-action');
-                let saveConfirming = false;
                 if (ab) ab.onclick = () => {
-                    if (ab.disabled || saveConfirming) return;
+                    if (ab.disabled || ab.dataset.done) return;
                     const arr = loadArchive();
                     arr.push(archivePayload);
                     persistArchive(arr);
-                    // A tick for "that landed", then the save button comes back. The
-                    // lock only covers the tick, so a second tap cannot double-save.
-                    saveConfirming = true;
+                    // Simple, one tap saves once. The tick shows full-colour but the
+                    // button is untappable from the tap onward, and the save icon that
+                    // follows comes back INACTIVE - there is no second save from here.
+                    ab.dataset.done = '1';
                     setResultsAction('check', false);
-                    // Untappable straight away so a second tap can't double-save. The
-                    // button carries no disabled: dimming, so the tick reads full-colour.
                     ab.disabled = true;
                     setTimeout(() => {
-                        setResultsAction('save', false);
-                        saveConfirming = false;
+                        setResultsAction('save', true);
                     }, 1200);
                 };
             } else {
@@ -5502,10 +5499,10 @@ function getRegionForAirport(code) {
             } else {
                 const groups = {};
                 entries.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
-                Object.keys(groups).sort().reverse().forEach((mk) => {
-                    // Newest entry on top within the month, so the latest save is what
-                    // the crew sees first instead of sitting at the bottom.
-                    const list = groups[mk].slice().sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+                Object.keys(groups).sort().forEach((mk) => {
+                    // Oldest first: the archive reads chronologically top to bottom -
+                    // oldest month and oldest entry at the top, the newest at the end.
+                    const list = groups[mk].slice().sort((a, b) => String(a.savedAt || '').localeCompare(String(b.savedAt || '')));
                     const total = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
                     html += `
                         <div class="mb-5">
