@@ -1303,11 +1303,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.4';
+        const APP_VERSION = '1.19.5';
         const APP_WHAT_NEW = [
             'Fetch all and new replies glide into view instead of snapping.',
             'The save button is untappable while it ticks, then hands itself back.',
-            'Your Earnings read oldest to newest, top to bottom.'
+            'Saving a summary with no station now asks you to type one, and Fetch all scrolls the card into view.'
         ];
 
         // State
@@ -1896,7 +1896,7 @@
         }
 
         // One pass: put the top of `el` at the top of the chat area.
-        function scrollChatToElNow(el) {
+        function scrollChatToElNow(el, behavior) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer || !el) return;
             const cRect = chatContainer.getBoundingClientRect();
@@ -5393,20 +5393,50 @@ function getRegionForAirport(code) {
             if (mode === 'both' && archivePayload) {
                 setResultsAction('save', false);
                 const ab = document.getElementById('btn-results-action');
-                if (ab) ab.onclick = () => {
-                    if (ab.disabled || ab.dataset.done) return;
+
+                const doSave = (station) => {
+                    if (station != null) archivePayload.stationDisplay = station;
                     const arr = loadArchive();
                     arr.push(archivePayload);
                     persistArchive(arr);
-                    // Simple, one tap saves once. The tick shows full-colour but the
-                    // button is untappable from the tap onward, and the save icon that
-                    // follows comes back INACTIVE - there is no second save from here.
+                    const prm = content.querySelector('#ca-station-prompt');
+                    if (prm) prm.remove();
+                    // One tap saves once: full-colour tick while untappable, then the
+                    // save icon returns INACTIVE - no second save from this summary.
                     ab.dataset.done = '1';
                     setResultsAction('check', false);
                     ab.disabled = true;
-                    setTimeout(() => {
-                        setResultsAction('save', true);
-                    }, 1200);
+                    setTimeout(() => setResultsAction('save', true), 1200);
+                };
+
+                // Only when the summary has no station do we ask, inline, once. The
+                // field accepts anything the crew types; Skip keeps the dash.
+                const openStationPrompt = () => {
+                    if (content.querySelector('#ca-station-prompt')) return;
+                    setResultsAction(null);
+                    const wrap = document.createElement('div');
+                    wrap.id = 'ca-station-prompt';
+                    wrap.className = 'chat-anim-in mb-4 p-3 rounded-xl border border-sia-gold/40 bg-black/5 dark:bg-white/5';
+                    wrap.innerHTML = `
+                        <p class="text-xs font-bold uppercase tracking-wide mb-2 text-sia-gold">Enter Station (IATA)</p>
+                        <input id="ca-station-input" type="text" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold" placeholder="e.g. JNB/CPT" autocomplete="off">
+                        <div class="flex gap-2 mt-2">
+                            <button id="ca-station-save" type="button" class="flex-1 py-2 rounded-lg bg-sia-gold text-black text-xs font-bold uppercase tracking-wide">Save</button>
+                            <button id="ca-station-skip" type="button" class="flex-1 py-2 rounded-lg border border-white/20 text-xs font-bold uppercase tracking-wide">Skip</button>
+                        </div>`;
+                    content.insertBefore(wrap, content.firstChild);
+                    const inp = wrap.querySelector('#ca-station-input');
+                    wrap.querySelector('#ca-station-save').addEventListener('click', () => {
+                        doSave((inp.value || '').trim() || '\u2014');
+                    });
+                    wrap.querySelector('#ca-station-skip').addEventListener('click', () => doSave('\u2014'));
+                    if (inp.focus) inp.focus();
+                };
+
+                if (ab) ab.onclick = () => {
+                    if (ab.disabled || ab.dataset.done) return;
+                    if (archivePayload.stationDisplay === '\u2014') openStationPrompt();
+                    else doSave(null);
                 };
             } else {
                 setResultsAction(null);
