@@ -263,6 +263,11 @@
         .cadate-day.is-today:not(.is-sel) {
             box-shadow: inset 0 0 0 1.5px #C9A227;
         }
+        .action-chip.chip-active {
+            background: #C9A227;
+            color: #0B1A3A;
+            border-color: #C9A227;
+        }
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
         html.chat-busy .action-chip {
@@ -772,21 +777,25 @@
                     <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="total">
                             <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
-                            Calculate total allowance
+                            Calculate total allowance.
                         </button>
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="menu">
                             <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
-                            What are we serving onboard
+                            What are we serving onboard?
                         </button>
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="print">
                             <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
-                            Print the menu
+                            Print the menu.
+                        </button>
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20 inline-flex items-center gap-1.5" data-intent="earn">
+                            <i data-lucide="piggy-bank" class="w-3.5 h-3.5 shrink-0"></i>
+                            How much have I earned?
                         </button>
                     </div>
 
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
-                        <input type="text" id="chat-input" placeholder="IFA, LMA, COP, Menu, Print" class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
+                        <input type="text" id="chat-input" placeholder="IFA, LMA, COP, Menu, Print, Earnings" class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
                         <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
@@ -901,9 +910,12 @@
             </div>
             <div class="flex items-center justify-between px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5">
                 <h3 class="text-xl font-bold" id="results-title">Summary</h3>
-                <button id="btn-close-results" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+                <div class="flex items-center gap-1">
+                    <button id="btn-results-action" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden" aria-label="Save"></button>
+                    <button id="btn-close-results" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
             <div class="px-6 py-6 overflow-y-auto max-w-xl mx-auto w-full space-y-6 flex-grow" id="results-content">
                 <!-- Injected via JS -->
@@ -1292,11 +1304,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.17.0';
+        const APP_VERSION = '1.18.0';
         const APP_WHAT_NEW = [
-            'The Allowances Archive is here: Save to archives from your COP summary, and type "archive" to see every month with its total.',
-            'Fetch all now spins a loading circle while it works, instead of showing static text.',
-            'Everything that appears, hides, expands or collapses now animates.'
+            'Ask "How much have I earned?" for your Earnings - I keep every saved allowance with its monthly total.',
+            'COP summaries now save with a circular button beside the close, and the archive clears with a tap.',
+            'Quick-action chips show when pressed, and Fetch all keeps its size while it spins.'
         ];
 
         // State
@@ -1554,6 +1566,7 @@
             document.querySelectorAll('.action-chip').forEach(chip => {
                 chip.addEventListener('click', (e) => {
                     if (isChatBusy()) return;
+                    e.currentTarget.classList.add('chip-active');
                     processInput(e.currentTarget.innerText.trim());
                 });
             });
@@ -1773,6 +1786,7 @@
             }
             
             chatContainer.appendChild(msgDiv);
+            try { lucide.createIcons(); } catch (e) {}
             noteBubbleShown();
             if (appPrefs.autoScroll) scrollChatToBubble(msgDiv);
         }
@@ -1824,6 +1838,10 @@
             return lastBubbleReady;
         }
 
+        function clearChipActive() {
+            document.querySelectorAll('.action-chip.chip-active').forEach((c) => c.classList.remove('chip-active'));
+        }
+
         function enqueueBot(fn) {
             const gen = ++chatLockGen;
             setChatBusy(true);
@@ -1832,6 +1850,7 @@
                 setTimeout(() => {
                     Promise.resolve(hideTypingIndicator()).then(() => {
                         try { fn(); } catch (err) { console.error(err); }
+                        clearChipActive();
                         resolve();
                     });
                 }, 550 + Math.random() * 350);
@@ -1889,7 +1908,7 @@
             if (!chatContainer || !el) return;
             const cRect = chatContainer.getBoundingClientRect();
             const eRect = el.getBoundingClientRect();
-            const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 8;
+            const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 12;
             chatContainer.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
             updateScrollBottomBtn();
         }
@@ -1930,8 +1949,13 @@
             else if (/menu|serving|onboard/.test(lowerText)) {
                 renderFlightVerificationCard('menu');
             }
-            else if (/archive|archives|history/.test(lowerText)) {
-                showArchiveOverlay();
+            else if (/archive|archives|history|earnings|earned|earn/.test(lowerText)) {
+                if (loadArchive().length === 0) {
+                    addBotMessage("No allowances saved yet \u2014 your piggy bank is empty. <i data-lucide=\"piggy-bank\" class=\"w-4 h-4 inline\"></i> Run a COP calculation and hit save, and I'll keep track of everything.");
+                } else {
+                    addBotMessage('Pulling up your earnings!');
+                    setTimeout(() => showArchiveOverlay(), 400);
+                }
             }
             else if (/total|cop|both|allowance|calculate/.test(lowerText)) {
                 renderCalculatorCard('both');
@@ -3630,9 +3654,9 @@ function getRegionForAirport(code) {
                             <div class="flex items-center gap-2 mt-1.5">
                                 <p id="${id}-ifa-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-500"></p>
                                 <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden shrink-0 text-[10px] font-bold text-sia-gold underline">Expand all</button>
-                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all shrink-0 ml-auto h-10 px-3 rounded-full text-[9px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none">
-                                    <span class="fetch-idle inline-flex items-center gap-1"><i data-lucide="download" class="w-3 h-3 shrink-0"></i><span class="ifa-fetch-all-label">Fetch all</span></span>
-                                    <span class="fetch-busy hidden items-center justify-center"><span class="fetch-spin-ring"></span></span>
+                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all relative shrink-0 ml-auto h-10 px-3 rounded-full text-[9px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none">
+                                    <span class="fetch-idle inline-flex items-center gap-1 transition-opacity"><i data-lucide="download" class="w-3 h-3 shrink-0"></i><span class="ifa-fetch-all-label">Fetch all</span></span>
+                                    <span class="fetch-busy fetch-face"><span class="fetch-spin-ring"></span></span>
                                 </button>
                             </div>
                         </div>
@@ -3652,7 +3676,7 @@ function getRegionForAirport(code) {
                             <div class="flex items-center gap-2 mt-2">
                                 <p id="${id}-lma-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-400">0 of 0 fetched</p>
                                 <button type="button" id="${id}-lma-expand-all" class="lma-expand-all hidden shrink-0 text-[10px] font-bold uppercase tracking-wide text-sia-gold">Expand all</button>
-                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all shrink-0 ml-auto h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none"><span class="fetch-idle inline-flex items-center gap-1"><i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i><span class="lma-fetch-all-label">Fetch all</span></span><span class="fetch-busy hidden items-center justify-center"><span class="fetch-spin-ring"></span></span></button>
+                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all relative shrink-0 ml-auto h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none"><span class="fetch-idle inline-flex items-center gap-1 transition-opacity"><i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i><span class="lma-fetch-all-label">Fetch all</span></span><span class="fetch-busy fetch-face"><span class="fetch-spin-ring"></span></span></button>
                             </div>
                         </div>
                         <div id="${id}-lma-sectors" class="space-y-3"></div>
@@ -3819,8 +3843,8 @@ function getRegionForAirport(code) {
                     const live = fnReady && done < count && !lmaFetchingAll;
                     const idle = allBtn.querySelector('.fetch-idle');
                     const busy = allBtn.querySelector('.fetch-busy');
-                    if (idle) idle.classList.toggle('hidden', lmaFetchingAll);
-                    if (busy) busy.classList.toggle('hidden', !lmaFetchingAll);
+                    if (idle) idle.classList.toggle('opacity-0', lmaFetchingAll);
+                    if (busy) busy.classList.toggle('is-on', lmaFetchingAll);
                     allBtn.disabled = !live;
                     allBtn.classList.toggle('cta-gold', live);
                     allBtn.classList.toggle('border-sia-gold/70', !live);
@@ -3979,8 +4003,8 @@ function getRegionForAirport(code) {
                     const live = fnReady && done < count && !ifaFetchingAll;
                     const idle = allBtn.querySelector('.fetch-idle');
                     const busy = allBtn.querySelector('.fetch-busy');
-                    if (idle) idle.classList.toggle('hidden', ifaFetchingAll);
-                    if (busy) busy.classList.toggle('hidden', !ifaFetchingAll);
+                    if (idle) idle.classList.toggle('opacity-0', ifaFetchingAll);
+                    if (busy) busy.classList.toggle('is-on', ifaFetchingAll);
                     allBtn.disabled = !live;
                     allBtn.classList.toggle('cta-gold', live);
                     allBtn.classList.toggle('text-black', false);
@@ -5247,6 +5271,19 @@ function getRegionForAirport(code) {
             showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload);
         }
 
+        function setResultsAction(kind, disabled) {
+            const b = document.getElementById('btn-results-action');
+            if (!b) return;
+            if (!kind) { b.classList.add('hidden'); b.innerHTML = ''; b.onclick = null; return; }
+            b.classList.remove('hidden');
+            b.innerHTML = '<i data-lucide="' + kind + '" class="w-5 h-5"></i>';
+            b.setAttribute('aria-label', kind === 'save' ? 'Save to archives' : 'Clear saved earnings');
+            b.disabled = !!disabled;
+            b.classList.toggle('opacity-40', !!disabled);
+            b.classList.toggle('pointer-events-none', !!disabled);
+            try { lucide.createIcons(); } catch (e) {}
+        }
+
         function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
@@ -5285,26 +5322,22 @@ function getRegionForAirport(code) {
                 `;
             }
 
-            if (mode === 'both' && archivePayload) {
-                html += `
-                    <div class="mt-6">
-                        <button type="button" id="ca-save-archive" class="w-full py-3 rounded-xl border border-sia-gold/70 text-sia-gold text-xs font-bold uppercase tracking-wide inline-flex items-center justify-center gap-1.5 disabled:opacity-60"><i data-lucide="bookmark" class="w-4 h-4"></i> Save to archives</button>
-                    </div>
-                `;
-            }
-
+            document.getElementById('results-title').textContent = 'Summary';
             content.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
             if (mode === 'both' && archivePayload) {
-                const sb = content.querySelector('#ca-save-archive');
-                if (sb) sb.addEventListener('click', () => {
-                    if (sb.disabled) return;
+                setResultsAction('save', false);
+                const ab = document.getElementById('btn-results-action');
+                if (ab) ab.onclick = () => {
+                    if (ab.disabled) return;
                     const arr = loadArchive();
                     arr.push(archivePayload);
                     persistArchive(arr);
-                    sb.disabled = true;
-                    sb.textContent = 'Saved to archives';
-                });
+                    ab.disabled = true;
+                    ab.classList.add('opacity-40', 'pointer-events-none');
+                };
+            } else {
+                setResultsAction(null);
             }
             content.scrollTop = 0;
 
@@ -5382,14 +5415,15 @@ function getRegionForAirport(code) {
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
             const entries = loadArchive();
+            const allTotal = entries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
-                    <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Allowances Archive</p>
-                    <p class="text-3xl font-bold">${entries.length} saved</p>
+                    <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Earnings</p>
+                    <p class="text-3xl font-bold">${formatMoney(allTotal)}</p>
                 </div>
             `;
             if (entries.length === 0) {
-                html += `<div class="text-center text-sm font-semibold text-gray-500 py-8">No archived allowances yet.</div>`;
+                html += `<div class="text-center text-sm font-semibold text-gray-500 py-8">No earnings saved yet.</div>`;
             } else {
                 const groups = {};
                 entries.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
@@ -5413,7 +5447,6 @@ function getRegionForAirport(code) {
                     });
                     html += `</div>`;
                 });
-                html += `<button type="button" id="ca-arch-clear" class="w-full py-2 rounded-xl border border-red-500/40 text-red-500 text-xs font-bold">Clear all</button>`;
             }
             content.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
@@ -5421,12 +5454,15 @@ function getRegionForAirport(code) {
                 persistArchive(loadArchive().filter((x) => x.id !== b.getAttribute('data-arch')));
                 showArchiveOverlay();
             }));
-            const clr = content.querySelector('#ca-arch-clear');
-            if (clr) clr.addEventListener('click', () => {
-                appConfirm('Clear the whole allowances archive? This cannot be undone.').then((ok) => {
+            document.getElementById('results-title').textContent = 'Earnings';
+            setResultsAction('trash', entries.length === 0);
+            const ab = document.getElementById('btn-results-action');
+            if (ab) ab.onclick = () => {
+                if (ab.disabled) return;
+                appConfirm('Are you sure you want to clear all saved earnings? This cannot be undone.').then((ok) => {
                     if (ok) { persistArchive([]); showArchiveOverlay(); }
                 });
-            });
+            };
             content.scrollTop = 0;
             backdrop.classList.remove('hidden');
             setTimeout(() => {
