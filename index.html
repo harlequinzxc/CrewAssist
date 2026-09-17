@@ -1326,8 +1326,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.10';
+        const APP_VERSION = '1.19.11';
         const APP_WHAT_NEW = [
+            'COP and menu cards now always open top-aligned and hold that position on iPhone.',
             'Top-aligning a tall card now animates scrollTop directly, so it lands correctly on iPhone Safari too.',
             'Tall chat bubbles settle before the top-or-bottom scroll decision, and a brief lock stops the view being yanked back down.',
             'Cards fold the moment you send a new message, and a folded card now matches a normal chat bubble.',
@@ -1968,16 +1969,20 @@
         function scrollChatToBubble(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
-            let lastH = -1, stable = 0, tries = 0, aligned = false;
+            // Interactive cards always top-align: even when one fits, top-aligned it
+            // is still fully visible, and this is immune to iOS height-measurement
+            // quirks. Text bubbles keep the taller-than-window rule.
+            const isCard = !!(el && el.querySelector && (el.querySelector('[data-calc-card]') || el.querySelector('[id^="fv-mode-"]')));
+            let tries = 0;
             const tick = () => {
-                // offsetHeight ignores the chat-anim-in transform, so the tall/short
-                // decision is stable even mid-animation.
                 const hgt = el ? (el.offsetHeight || el.getBoundingClientRect().height) : 0;
-                if (hgt === lastH) stable += 1; else stable = 0;
-                lastH = hgt; tries += 1;
-                if (el && hgt > chatContainer.clientHeight) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1000); aligned = true; }
-                else if (!aligned) scrollToBottomNow('smooth', true);
-                if (stable < 2 && tries < 14) setTimeout(tick, 70);
+                const tall = isCard || (el && hgt > chatContainer.clientHeight);
+                if (tall) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1200); }
+                else scrollToBottomNow('smooth', true);
+                tries += 1;
+                // Cards re-assert the top for ~2s so a late iOS bottom-scroll is
+                // corrected; short bubbles settle quickly.
+                if (tries < (tall ? 28 : 6)) setTimeout(tick, 70);
             };
             setTimeout(tick, 10);
         }
