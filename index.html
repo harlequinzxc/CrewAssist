@@ -1326,16 +1326,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.11';
+        const APP_VERSION = '1.19.12';
         const APP_WHAT_NEW = [
-            'COP and menu cards now always open top-aligned and hold that position on iPhone.',
-            'Top-aligning a tall card now animates scrollTop directly, so it lands correctly on iPhone Safari too.',
-            'Tall chat bubbles settle before the top-or-bottom scroll decision, and a brief lock stops the view being yanked back down.',
-            'Cards fold the moment you send a new message, and a folded card now matches a normal chat bubble.',
-            'Calculators and the menu form fold to their header once the result opens - tap the header to expand.',
-            'Fetch all and new replies glide into view instead of snapping.',
-            'The save button is untappable while it ticks, then hands itself back.',
-            'Earnings rows now show the sector-1 flight date, and the save button works on every summary - not just the first.'
+            'The what-is-new list now shows only this update, not the full history.',
+            'Housekeeping: removed unused code and locked the card top-scroll behaviour as a project rule.'
         ];
 
         // State
@@ -3819,7 +3813,6 @@ function getRegionForAirport(code) {
             // They read the DOM by id rather than closing over anything declared
             // later in this function, so there is no ordering hazard.
             // ==========================================
-            let lmaApplyingFetchX = false;
             let lmaApplyingFetch = false;
             let lmaFetchingAll = false;
 
