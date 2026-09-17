@@ -1326,8 +1326,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.8';
+        const APP_VERSION = '1.19.9';
         const APP_WHAT_NEW = [
+            'Tall chat bubbles settle before the top-or-bottom scroll decision, and a brief lock stops the view being yanked back down.',
             'Cards fold the moment you send a new message, and a folded card now matches a normal chat bubble.',
             'Calculators and the menu form fold to their header once the result opens - tap the header to expand.',
             'Fetch all and new replies glide into view instead of snapping.',
@@ -1907,9 +1908,10 @@
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
 
-        function scrollToBottomNow(behavior) {
+        function scrollToBottomNow(behavior, force) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
+            if (!force && isChatScrollLocked()) return;
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: behavior || 'auto' });
             updateScrollBottomBtn();
         }
@@ -1931,22 +1933,33 @@
             updateScrollBottomBtn();
         }
 
+        // A brief lock that stops automatic bottom-scrolls from yanking the view
+        // back down right after a tall bubble has been top-aligned (iOS Safari's
+        // smooth scrollTo is interruptible). Manual jumps are unaffected.
+        let caScrollLockUntil = 0;
+        function lockChatScroll(ms) { caScrollLockUntil = Date.now() + (ms || 1000); }
+        function isChatScrollLocked() { return Date.now() < caScrollLockUntil; }
+
         // A bubble taller than the visible chat area can never be read from the
         // bottom, so put its top on screen; a shorter one scrolls to the end of the
-        // thread. Re-measured on every pass because cards are still growing (LMA
-        // stations and calculator sectors animate open) when they first land.
+        // thread. Sampled until the height stops changing (cards animate open) so
+        // the tall/short decision uses the final size, not a mid-animation one.
         function scrollChatToBubble(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
-            // Auto-scroll is animated: the same top-if-taller / bottom-if-fits rule,
-            // but eased instead of snapping.
-            const go = () => {
-                if (el && el.getBoundingClientRect().height > chatContainer.clientHeight) scrollChatToElNow(el, 'smooth');
-                else scrollToBottomNow('smooth');
+            let lastH = -1, stable = 0, tries = 0;
+            const act = (hgt) => {
+                if (el && hgt > chatContainer.clientHeight) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1000); }
+                else scrollToBottomNow('smooth', true);
             };
-            setTimeout(go, 10);
-            setTimeout(go, 150);
-            setTimeout(go, 500);
+            const tick = () => {
+                const hgt = el ? el.getBoundingClientRect().height : 0;
+                if (hgt === lastH) stable += 1; else stable = 0;
+                lastH = hgt; tries += 1;
+                act(hgt);
+                if (stable < 2 && tries < 14) setTimeout(tick, 70);
+            };
+            setTimeout(tick, 10);
         }
 
         function processInput(text) {
