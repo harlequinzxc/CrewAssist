@@ -1326,8 +1326,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.9';
+        const APP_VERSION = '1.19.10';
         const APP_WHAT_NEW = [
+            'Top-aligning a tall card now animates scrollTop directly, so it lands correctly on iPhone Safari too.',
             'Tall chat bubbles settle before the top-or-bottom scroll decision, and a brief lock stops the view being yanked back down.',
             'Cards fold the moment you send a new message, and a folded card now matches a normal chat bubble.',
             'Calculators and the menu form fold to their header once the result opens - tap the header to expand.',
@@ -1922,14 +1923,34 @@
             setTimeout(scrollToBottomNow, 500);
         }
 
+        // Eased scroll driven by direct scrollTop writes. iOS Safari silently
+        // cancels native scrollTo({behavior:'smooth'}) while layout/transform is
+        // still settling, so we animate the value ourselves instead.
+        function easeChatScrollTo(top, dur) {
+            const el = document.getElementById('chat-container');
+            if (!el) return;
+            const start = el.scrollTop;
+            const delta = top - start;
+            if (Math.abs(delta) < 1) { el.scrollTop = top; updateScrollBottomBtn(); return; }
+            const t0 = (window.performance || Date).now();
+            const step = (now) => {
+                const p = Math.min(1, (now - t0) / (dur || 350));
+                const e = 1 - Math.pow(1 - p, 3);
+                el.scrollTop = start + delta * e;
+                if (p < 1) requestAnimationFrame(step); else updateScrollBottomBtn();
+            };
+            requestAnimationFrame(step);
+        }
+
         // One pass: put the top of `el` at the top of the chat area.
         function scrollChatToElNow(el, behavior) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer || !el) return;
             const cRect = chatContainer.getBoundingClientRect();
             const eRect = el.getBoundingClientRect();
-            const top = chatContainer.scrollTop + (eRect.top - cRect.top) - 12;
-            chatContainer.scrollTo({ top: Math.max(0, top), behavior: behavior || 'auto' });
+            const top = Math.max(0, chatContainer.scrollTop + (eRect.top - cRect.top) - 12);
+            if (behavior === 'smooth') easeChatScrollTo(top, 350);
+            else chatContainer.scrollTop = top;
             updateScrollBottomBtn();
         }
 
@@ -1947,16 +1968,15 @@
         function scrollChatToBubble(el) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
-            let lastH = -1, stable = 0, tries = 0;
-            const act = (hgt) => {
-                if (el && hgt > chatContainer.clientHeight) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1000); }
-                else scrollToBottomNow('smooth', true);
-            };
+            let lastH = -1, stable = 0, tries = 0, aligned = false;
             const tick = () => {
-                const hgt = el ? el.getBoundingClientRect().height : 0;
+                // offsetHeight ignores the chat-anim-in transform, so the tall/short
+                // decision is stable even mid-animation.
+                const hgt = el ? (el.offsetHeight || el.getBoundingClientRect().height) : 0;
                 if (hgt === lastH) stable += 1; else stable = 0;
                 lastH = hgt; tries += 1;
-                act(hgt);
+                if (el && hgt > chatContainer.clientHeight) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1000); aligned = true; }
+                else if (!aligned) scrollToBottomNow('smooth', true);
                 if (stable < 2 && tries < 14) setTimeout(tick, 70);
             };
             setTimeout(tick, 10);
