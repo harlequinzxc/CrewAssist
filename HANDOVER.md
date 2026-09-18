@@ -2,7 +2,7 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v101` (`sw.js`). App SemVer: **1.19.12** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
+Latest app cache: `crewassist-v102` (`sw.js`). App SemVer: **1.19.13** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
 
 **Standing rule (owner, 2026-09-16): any content that appears, hides, changes, transitions, expands or collapses in the app must be animated — never an instant show/hide. New UI (archive overlays, cards, trip bars) follows the max-height/opacity `transition-all` pattern; migrate remaining instant `hidden` toggles to it on touch.**
 
@@ -194,6 +194,10 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 ### Release notes + housekeeping (project rule)
 
 `APP_WHAT_NEW` is rendered in full on every version bump, so REWRITE it each release to contain ONLY that release's bullets (never accumulate history). Run a dead-code sweep each release (unused `let`/`const`/`function`/files) and remove findings; the sweep is a simple identifier-count over `index.html`.
+
+### Earnings archive (v1.19.13 redesign)
+
+Dedicated overlay (`#ca-arch-*`), not the shared results sheet: pinned gold summary bar (scope pill cycles ALL-TIME -> year -> month of the newest entry; count + total follow), search (route text, stacks with scope), collapsible month groups **newest first** (this supersedes the older oldest-first reading order for the Earnings page), 4-part rows (route / date / amount / grey x), 6s Undo toast for delete/import/clear-all, header import (JSON only, validate-then-preview, merge-only, dup skip) + export (JSON/CSV, share-or-download, `crewassist-earnings-<scope>.<ext>`) + gated trash (respects filters). Storage schema unchanged: `{id, savedAt, monthKey, sectorDate, flightType, stationDisplay, amount}`.
 
 ---
 
