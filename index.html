@@ -267,6 +267,15 @@
            read as the chip "staying gold" after a tap on touch screens and after a
            click on any pointer that rests on the chip, so the default look is the
            only look. */
+        /* Earnings archive redesign (v1.19.13) */
+        .ca-arch-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(90deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); color: #111; }
+        .ca-arch-pill { background: rgba(0,0,0,.15); border: none; color: #111; font-weight: 700; font-size: 11px; letter-spacing: .06em; padding: 6px 12px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
+        .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
+        .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
+        .ca-arch-chev { transition: transform .3s ease; }
+        .ca-arch-collapsed .ca-arch-chev { transform: rotate(-90deg); }
+
         /* A filled-in form should not outlive its result: cards fold to their
            header the moment their overlay opens, and the header re-expands on tap. */
         .ca-fold-body {
@@ -925,6 +934,28 @@
         </div>
 
         <!-- Results Overlay Sheet -->
+        <!-- Earnings archive overlay (v1.19.13 redesign) -->
+        <div id="ca-arch-backdrop" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="ca-arch-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+            <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-black/5 dark:border-white/5">
+                <h3 class="text-xl font-bold">Earnings</h3>
+                <div class="flex items-center gap-1">
+                    <button type="button" id="ca-arch-import" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Import backup"><i data-lucide="upload" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-export" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Export backup"><i data-lucide="download" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-trash" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Delete visible entries"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-close" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+            </div>
+            <div id="ca-arch-bar" class="ca-arch-bar"></div>
+            <div class="px-5 pt-3"><input id="ca-arch-search" type="text" placeholder="Search flights…" class="w-full rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 px-4 py-2.5 text-sm outline-none" /></div>
+            <div id="ca-arch-list" class="px-5 pb-8 pt-2 overflow-y-auto flex-grow"></div>
+        </div>
+        <div id="ca-arch-toast" class="ca-arch-toast hidden"></div>
+        <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
+            <div class="absolute inset-0 bg-black/50" data-ca-arch-sub-close></div>
+            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full"></div>
+        </div>
+
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
         <div id="results-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
@@ -1326,10 +1357,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.12';
+        const APP_VERSION = '1.19.13';
         const APP_WHAT_NEW = [
-            'The what-is-new list now shows only this update, not the full history.',
-            'Housekeeping: removed unused code and locked the card top-scroll behaviour as a project rule.'
+            'Earnings is a redesigned page: pinned total bar with a scope pill, search, collapsible months, and one-tap delete with Undo.',
+            'Import (JSON) and Export (JSON/CSV) backups, plus a gated clear-all - all undoable.'
         ];
 
         // State
@@ -5612,69 +5643,207 @@ function getRegionForAirport(code) {
                 amount: Math.round(amount * 100) / 100,
             };
         }
-        function showArchiveOverlay() {
-            const backdrop = document.getElementById('results-backdrop');
-            const sheet = document.getElementById('results-sheet');
-            const content = document.getElementById('results-content');
-            const entries = loadArchive();
-            const allTotal = entries.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-            let html = `
-                <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
-                    <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Earnings</p>
-                    <p class="text-3xl font-bold">${formatMoney(allTotal)}</p>
-                </div>
-            `;
-            if (entries.length === 0) {
-                html += `<div class="text-center text-sm font-semibold text-gray-500 py-8">No earnings saved yet.</div>`;
-            } else {
-                const groups = {};
-                entries.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
-                Object.keys(groups).sort().forEach((mk) => {
-                    // Oldest first: the archive reads chronologically top to bottom -
-                    // oldest month and oldest entry at the top, the newest at the end.
-                    const list = groups[mk].slice().sort((a, b) => String(a.savedAt || '').localeCompare(String(b.savedAt || '')));
-                    const total = list.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-                    html += `
-                        <div class="mb-5">
-                            <div class="flex justify-between items-center mb-2">
-                                <h4 class="font-bold">${archiveMonthLabel(mk)}</h4>
-                                <span class="font-bold text-sia-gold">${formatMoney(total)}</span>
-                            </div>`;
-                    list.forEach((e) => {
-                        html += `
-                            <div class="flex items-center gap-2 text-xs bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl p-2 mb-1">
-                                <span class="font-bold text-sia-navy dark:text-white">${e.stationDisplay || ''}</span>
-                                <span class="text-gray-500">${archiveDayLabel(e.sectorDate) || (e.flightType || '')}</span>
-                                <span class="ml-auto font-bold text-sia-gold">${formatMoney(e.amount)}</span>
-                                <button type="button" class="ca-arch-del text-red-500 p-1" data-arch="${e.id}" aria-label="Delete entry"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
-                            </div>`;
-                    });
-                    html += `</div>`;
-                });
-            }
-            content.innerHTML = html;
-            try { lucide.createIcons(); } catch (e) {}
-            content.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', () => {
-                persistArchive(loadArchive().filter((x) => x.id !== b.getAttribute('data-arch')));
-                showArchiveOverlay();
-            }));
-            document.getElementById('results-title').textContent = 'Earnings';
-            setResultsAction('trash', entries.length === 0);
-            const ab = document.getElementById('btn-results-action');
-            if (ab) ab.onclick = () => {
-                if (ab.disabled) return;
-                appConfirm('Are you sure you want to clear all saved earnings? This cannot be undone.').then((ok) => {
-                    if (ok) { persistArchive([]); showArchiveOverlay(); }
-                });
-            };
-            content.scrollTop = 0;
-            backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
-                content.scrollTop = 0;
-            }, 10);
+        // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
+        const archState = { scope: 'all', search: '', collapsed: {} };
+        let archUndoTimer = null;
+        function archEl(id) { return document.getElementById(id); }
+        const ARCH_MU = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        function archScopeInfo() {
+            const es = loadArchive();
+            if (!es.length) return { mk: '', yr: '' };
+            const n = es.reduce((m, e) => (String(e.savedAt || '') > String(m.savedAt || '') ? e : m), es[0]);
+            const mk = n.monthKey || String(n.sectorDate || n.savedAt || '').slice(0, 7);
+            return { mk: mk, yr: mk.slice(0, 4) };
         }
+        function archScopeLabel() {
+            const info = archScopeInfo();
+            if (archState.scope === 'year') return info.yr || 'ALL-TIME';
+            if (archState.scope === 'month') { const p = info.mk.split('-'); const m = parseInt(p[1], 10); return (isFinite(m) && ARCH_MU[m-1] ? ARCH_MU[m-1] : (p[1]||'')) + ' ' + (p[0]||''); }
+            return 'ALL-TIME';
+        }
+        function archFiltered() {
+            const info = archScopeInfo();
+            const q = archState.search.trim().toLowerCase();
+            return loadArchive().filter((e) => {
+                if (archState.scope === 'year' && String(e.monthKey || '').slice(0, 4) !== info.yr) return false;
+                if (archState.scope === 'month' && String(e.monthKey || '') !== info.mk) return false;
+                if (q && String(e.stationDisplay || '').toLowerCase().indexOf(q) === -1) return false;
+                return true;
+            });
+        }
+        function archToast(msg, undoFn) {
+            const t = archEl('ca-arch-toast'); t.innerHTML = '';
+            const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
+            if (undoFn) { const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'font-bold text-sia-gold'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u); }
+            t.classList.remove('hidden');
+            clearTimeout(archUndoTimer); archUndoTimer = setTimeout(hideArchToast, 6000);
+        }
+        function hideArchToast() { archEl('ca-arch-toast').classList.add('hidden'); }
+        function archDeleteOne(id) {
+            const all = loadArchive(); const removed = all.filter((x) => x.id === id);
+            if (!removed.length) return;
+            persistArchive(all.filter((x) => x.id !== id));
+            archToast('Entry deleted', () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
+            renderArch();
+        }
+        function openArchSub(html) { archEl('ca-arch-sub-sheet').innerHTML = html; archEl('ca-arch-sub').classList.remove('hidden'); }
+        function closeArchSub() { archEl('ca-arch-sub').classList.add('hidden'); }
+        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); setTimeout(() => { b.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); }
+        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => { b.classList.add('hidden'); }, 300); }
+
+        function renderArch() {
+            const bar = archEl('ca-arch-bar'), list = archEl('ca-arch-list');
+            const vis = archFiltered();
+            const total = vis.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+            bar.innerHTML = '<button type="button" id="ca-arch-pill" class="ca-arch-pill">' + archScopeLabel() + '</button>'
+                + '<span class="text-xs opacity-70 ml-auto">' + vis.length + ' flight' + (vis.length === 1 ? '' : 's') + '</span>'
+                + '<span class="font-bold pl-3">' + formatMoney(total) + '</span>';
+            archEl('ca-arch-pill').onclick = () => { archState.scope = archState.scope === 'all' ? 'year' : (archState.scope === 'year' ? 'month' : 'all'); renderArch(); };
+            if (!vis.length) {
+                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights found.<br><span class="text-xs">Try clearing the search or switching scope.</span><br><button type="button" id="ca-arch-reset" class="mt-3 px-4 py-2 rounded-full bg-black/10 dark:bg-white/10 text-xs font-bold">Reset</button></div>';
+                const r = archEl('ca-arch-reset'); if (r) r.onclick = () => { archState.search = ''; archState.scope = 'all'; const s = archEl('ca-arch-search'); if (s) s.value = ''; renderArch(); };
+                try { lucide.createIcons(); } catch (e) {}
+                return;
+            }
+            const groups = {};
+            vis.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
+            const mks = Object.keys(groups).sort().reverse();
+            let html = '';
+            mks.forEach((mk) => {
+                const rows = groups[mk].slice().sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+                const sub = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                const col = !!archState.collapsed[mk];
+                html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-3">'
+                    + '<button type="button" class="ca-arch-group-head w-full flex items-center justify-between py-2" data-mk="' + mk + '">'
+                    + '<span class="font-bold">' + archiveMonthLabel(mk) + '</span>'
+                    + '<span class="flex items-center gap-2"><span class="font-bold text-sia-gold">' + formatMoney(sub) + '</span><i data-lucide="chevron-down" class="ca-arch-chev w-4 h-4"></i></span></button>'
+                    + '<div class="ca-arch-group-body">';
+                rows.forEach((e) => {
+                    html += '<div class="flex items-center gap-2 py-2 border-b border-black/5 dark:border-white/5">'
+                        + '<span class="font-bold">' + (e.stationDisplay || '') + '</span>'
+                        + '<span class="text-xs text-gray-500">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
+                        + '<span class="ml-auto font-bold text-sia-gold">' + formatMoney(e.amount) + '</span>'
+                        + '<button type="button" class="ca-arch-del text-gray-400 p-1" data-id="' + e.id + '" aria-label="Delete entry"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                });
+                html += '</div></div>';
+            });
+            list.innerHTML = html;
+            try { lucide.createIcons(); } catch (e) {}
+            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); archState.collapsed[k] = !archState.collapsed[k]; hd.closest('.ca-arch-group').classList.toggle('ca-arch-collapsed'); }));
+            list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', () => { archDeleteOne(b.getAttribute('data-id')); }));
+        }
+
+        function archNormalize(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            const amount = Math.round((Number(raw.amount != null ? raw.amount : raw.value) || 0) * 100) / 100;
+            if (!isFinite(amount) || amount <= 0) return null;
+            const route = raw.stationDisplay || raw.route || raw.station || '';
+            const date = raw.sectorDate || raw.date || '';
+            if (!route && !date) return null;
+            return {
+                id: raw.id || ('a' + Date.now().toString(36) + Math.floor(Math.random() * 1000000)),
+                savedAt: raw.savedAt || new Date().toISOString(),
+                monthKey: raw.monthKey || String(date).slice(0, 7),
+                sectorDate: date,
+                flightType: raw.flightType || '',
+                stationDisplay: route,
+                amount: amount
+            };
+        }
+        function archKey(r, d, a) { return String(r || '').toLowerCase() + '|' + String(d || '') + '|' + Math.round((Number(a) || 0) * 100); }
+        function archImport() {
+            openArchSub('<h4 class="font-bold text-lg mb-1">Import backup</h4><p class="text-xs text-gray-500">JSON backups only - CSV isn’t supported here.</p>'
+                + '<input type="file" id="ca-sub-file" accept=".json,application/json" class="block w-full text-sm pt-3">'
+                + '<div id="ca-sub-preview" class="text-sm pt-2"></div>');
+            archEl('ca-sub-file').addEventListener('change', (ev) => { const f = ev.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (e2) => archImportRead(f.name, String(e2.target.result)); r.readAsText(f); });
+        }
+        function archImportRead(name, text) {
+            const pv = archEl('ca-sub-preview');
+            const trimmed = String(text || '').trim();
+            if (/\.csv$/i.test(name) || (trimmed && trimmed[0] !== '{' && trimmed[0] !== '[')) {
+                pv.innerHTML = '<p class="text-red-500 font-semibold">That looks like a CSV. I only read JSON backups - export one here and try again.</p>'; return;
+            }
+            let data; try { data = JSON.parse(trimmed); } catch (e) { pv.innerHTML = '<p class="text-red-500 font-semibold">That file isn’t valid JSON.</p>'; return; }
+            const arr = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
+            const existing = loadArchive();
+            const have = {}; existing.forEach((e) => { have[archKey(e.stationDisplay, e.sectorDate, e.amount)] = 1; });
+            const readable = []; const seen = {}; let dup = 0;
+            arr.forEach((raw) => { const e = archNormalize(raw); if (!e) return; readable.push(e); const k = archKey(e.stationDisplay, e.sectorDate, e.amount); if (have[k] || seen[k]) dup++; else seen[k] = 1; });
+            const fresh = []; const fs2 = {};
+            readable.forEach((e) => { const k = archKey(e.stationDisplay, e.sectorDate, e.amount); if (!have[k] && !fs2[k]) { fs2[k] = 1; fresh.push(e); } });
+            const sum = fresh.reduce((s, e) => s + e.amount, 0);
+            pv.innerHTML = '<p class="font-semibold">Found ' + readable.length + ' readable · ' + formatMoney(sum) + ' · ' + dup + ' duplicate' + (dup === 1 ? '' : 's') + '</p>'
+                + '<button type="button" id="ca-sub-import" ' + (fresh.length ? '' : 'disabled ') + 'class="mt-3 w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold disabled:opacity-40">Import ' + fresh.length + ' new</button>';
+            const ib = archEl('ca-sub-import');
+            if (ib) ib.onclick = () => {
+                const imported = fresh.slice();
+                persistArchive(loadArchive().concat(imported));
+                closeArchSub();
+                archToast('Imported ' + imported.length + ' entries', () => { const ids = {}; imported.forEach((x) => { ids[x.id] = 1; }); persistArchive(loadArchive().filter((x) => !ids[x.id])); renderArch(); });
+                renderArch();
+            };
+        }
+        function csvCell(v) { v = String(v == null ? '' : v); if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"'; return v; }
+        function archScopeSuffix() { const info = archScopeInfo(); return archState.scope === 'month' ? info.mk : (archState.scope === 'year' ? info.yr : 'all'); }
+        function archShareOrDownload(blob, filename) {
+            try {
+                if (navigator.share && navigator.canShare) {
+                    const f = new File([blob], filename, { type: blob.type });
+                    if (navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: filename }).catch(() => {}); archToast('Exported ' + filename, null); return; }
+                }
+            } catch (e) {}
+            downloadBlob(blob, filename);
+            archToast('Exported ' + filename, null);
+        }
+        function archDoExport(kind) {
+            const data = archFiltered(); const suf = archScopeSuffix();
+            if (kind === 'json') {
+                archShareOrDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'crewassist-earnings-' + suf + '.json');
+            } else {
+                let csv = 'route,date,type,amount\n';
+                data.forEach((e) => { csv += csvCell(e.stationDisplay) + ',' + (e.sectorDate || '') + ',' + csvCell(e.flightType || '') + ',' + (Number(e.amount) || 0).toFixed(2) + '\n'; });
+                archShareOrDownload(new Blob([csv], { type: 'text/csv' }), 'crewassist-earnings-' + suf + '.csv');
+            }
+            closeArchSub();
+        }
+        function archExport() {
+            openArchSub('<h4 class="font-bold text-lg mb-1">Export earnings</h4><p class="text-xs text-gray-500 mb-1">Keep this file private - it contains your pay data.</p>'
+                + '<button type="button" id="ca-sub-json" class="w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold">JSON - Full backup</button>'
+                + '<button type="button" id="ca-sub-csv" class="w-full py-3 rounded-full bg-black/10 dark:bg-white/10 font-bold">CSV - Spreadsheet</button>');
+            archEl('ca-sub-json').onclick = () => archDoExport('json');
+            archEl('ca-sub-csv').onclick = () => archDoExport('csv');
+        }
+        function archTrash() {
+            const vis = archFiltered();
+            if (!vis.length) { archToast('Nothing to delete', null); return; }
+            openArchSub('<h4 class="font-bold text-lg mb-1">Delete ' + vis.length + ' visible entr' + (vis.length === 1 ? 'y' : 'ies') + '?</h4><p class="text-xs text-gray-500 mb-3">Respects current filters. This can be undone.</p>'
+                + '<div class="flex gap-2"><button type="button" id="ca-sub-del" class="flex-1 py-3 rounded-full bg-red-500 text-white font-bold">Delete</button><button type="button" id="ca-sub-cancel" class="flex-1 py-3 rounded-full bg-black/10 dark:bg-white/10 font-bold">Cancel</button></div>');
+            archEl('ca-sub-cancel').onclick = closeArchSub;
+            archEl('ca-sub-del').onclick = () => {
+                const ids = {}; vis.forEach((e) => { ids[e.id] = 1; });
+                const removed = loadArchive().filter((x) => ids[x.id]);
+                persistArchive(loadArchive().filter((x) => !ids[x.id]));
+                closeArchSub();
+                archToast('Deleted ' + removed.length + ' entr' + (removed.length === 1 ? 'y' : 'ies'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
+                renderArch();
+            };
+        }
+
+        function showArchiveOverlay() {
+            archState.scope = 'all'; archState.search = ''; archState.collapsed = {};
+            const s = archEl('ca-arch-search'); if (s) s.value = '';
+            openArchOverlay();
+        }
+
+        (function bindArchUi() {
+            archEl('ca-arch-close').addEventListener('click', closeArchOverlay);
+            archEl('ca-arch-backdrop').addEventListener('click', closeArchOverlay);
+            archEl('ca-arch-import').addEventListener('click', archImport);
+            archEl('ca-arch-export').addEventListener('click', archExport);
+            archEl('ca-arch-trash').addEventListener('click', archTrash);
+            archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
+            document.querySelector('[data-ca-arch-sub-close]').addEventListener('click', closeArchSub);
+        })();
 
         document.getElementById('results-backdrop').addEventListener('click', () => {
             document.getElementById('btn-close-results').click();
