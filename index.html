@@ -579,7 +579,7 @@
         .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-edited-tag { color: var(--sia-gold, #c9a227); font-size: 8px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
-        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); }
+        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); margin-left: 6px; flex: 0 0 auto; }
         .dev-sec-dot.is-on { display: inline-block; }
         .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
@@ -1374,10 +1374,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.18';
+        const APP_VERSION = '1.19.19';
         const APP_WHAT_NEW = [
-            'Every export now behaves the same: on PC it saves to Downloads, on iPhone/iPad it opens the share sheet so you can Save to Files.',
-            'All exports — rates, earnings backups, images, Word — use one save path, and both import buttons accept the same JSON picker.'
+            'Every export on mobile opens the share panel; on PC and Mac it is always a direct download to Downloads.',
+            'The unsaved-edits dot sits right at the end of its section title, and deleting archived earnings asks with the same pop-up as the settings page.'
         ];
 
         // State
@@ -3098,8 +3098,7 @@ function getRegionForAirport(code) {
                 const open = openSet.has(id);
                 return '<div class="dev-rate-card' + (open ? ' is-expanded' : '') + '" data-section="' + id + '">' +
                     '<button type="button" class="dev-rate-acc">' +
-                    '<span class="dev-rate-acc-title">' + title + '</span>' +
-                    '<span class="dev-sec-dot" aria-hidden="true"></span>' +
+                    '<span class="flex items-center min-w-0"><span class="dev-rate-acc-title">' + title + '</span><span class="dev-sec-dot" aria-hidden="true"></span></span>' +
                     '<i data-lucide="chevron-down" class="dev-rate-chev w-4 h-4"></i>' +
                     '</button>' +
                     '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner"><div class="dev-rate-pad">' + inner + '</div></div></div>' +
@@ -5901,17 +5900,14 @@ function getRegionForAirport(code) {
         function archTrash() {
             const vis = archFiltered();
             if (!vis.length) { archToast('Nothing to delete', null); return; }
-            openArchSub('<h4 class="font-bold text-lg mb-1">Delete ' + vis.length + ' entr' + (vis.length === 1 ? 'y' : 'ies') + '?</h4><p class="text-xs text-gray-500 mb-3">This can be undone.</p>'
-                + '<div class="flex gap-2"><button type="button" id="ca-sub-del" class="flex-1 py-3 rounded-full bg-red-500 text-white font-bold">Delete</button><button type="button" id="ca-sub-cancel" class="flex-1 py-3 rounded-full bg-black/10 dark:bg-white/10 font-bold">Cancel</button></div>');
-            archEl('ca-sub-cancel').onclick = closeArchSub;
-            archEl('ca-sub-del').onclick = () => {
+            appConfirm('Delete ' + vis.length + ' entr' + (vis.length === 1 ? 'y' : 'ies') + '? This can be undone.').then((ok) => {
+                if (!ok) return;
                 const ids = {}; vis.forEach((e) => { ids[e.id] = 1; });
                 const removed = loadArchive().filter((x) => ids[x.id]);
                 persistArchive(loadArchive().filter((x) => !ids[x.id]));
-                closeArchSub();
                 archToast('Deleted ' + removed.length + ' entr' + (removed.length === 1 ? 'y' : 'ies'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
                 renderArch();
-            };
+            });
         }
 
         function showArchiveOverlay() {
@@ -8816,12 +8812,13 @@ function getRegionForAirport(code) {
             setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
         }
 
-        function exportIsIOS() {
+        function exportIsMobile() {
             const ua = navigator.userAgent || '';
-            return /iPhone|iPad|iPod/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua));
+            if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+            return !!(navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua));
         }
         async function exportFile(blob, filename) {
-            if (exportIsIOS() && navigator.share && navigator.canShare) {
+            if (exportIsMobile() && navigator.share && navigator.canShare) {
                 try {
                     const f = new File([blob], filename, { type: (blob && blob.type) || 'application/octet-stream' });
                     if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: filename }); return true; }
