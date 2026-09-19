@@ -579,6 +579,8 @@
         .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-edited-tag { color: var(--sia-gold, #c9a227); font-size: 8px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
+        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); }
+        .dev-sec-dot.is-on { display: inline-block; }
         .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
         .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
@@ -926,7 +928,7 @@
                             <div class="grid grid-cols-3 gap-2">
                                 <button type="button" id="btn-dev-reset" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold" aria-label="Reset rates"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset</button>
                                 <button type="button" id="btn-dev-export" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold" aria-label="Export rates"><i data-lucide="file-down" class="w-4 h-4"></i>Export</button>
-                                <button type="button" id="btn-dev-import" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="file-up" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json"></button>
+                                <button type="button" id="btn-dev-import" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="file-up" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,application/json"></button>
                             </div>
                         </div>
                     </div>
@@ -1372,10 +1374,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.16';
+        const APP_VERSION = '1.19.18';
         const APP_WHAT_NEW = [
-            'Earnings keeps multi-sector routes (JNB/CPT) and only drops SIN; flight amounts read white under gold month subtotals.',
-            'Developer rates get a split Save / Reset / Export / Import footer with a live unsaved-edits state and EDITED row tags.'
+            'Every export now behaves the same: on PC it saves to Downloads, on iPhone/iPad it opens the share sheet so you can Save to Files.',
+            'All exports — rates, earnings backups, images, Word — use one save path, and both import buttons accept the same JSON picker.'
         ];
 
         // State
@@ -3097,6 +3099,7 @@ function getRegionForAirport(code) {
                 return '<div class="dev-rate-card' + (open ? ' is-expanded' : '') + '" data-section="' + id + '">' +
                     '<button type="button" class="dev-rate-acc">' +
                     '<span class="dev-rate-acc-title">' + title + '</span>' +
+                    '<span class="dev-sec-dot" aria-hidden="true"></span>' +
                     '<i data-lucide="chevron-down" class="dev-rate-chev w-4 h-4"></i>' +
                     '</button>' +
                     '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner"><div class="dev-rate-pad">' + inner + '</div></div></div>' +
@@ -3296,6 +3299,11 @@ function getRegionForAirport(code) {
                     if (row.tagName === 'TR' && row.cells && row.cells[0]) row.cells[0].appendChild(tag); else row.appendChild(tag);
                 } else if (!isEd && tag) tag.remove();
             });
+            root.querySelectorAll('.dev-rate-card').forEach((card) => {
+                const has = !!card.querySelector('.dev-row-edited');
+                const dot = card.querySelector('.dev-sec-dot');
+                if (dot) dot.classList.toggle('is-on', has);
+            });
         }
 
         async function saveDevRates() {
@@ -3326,14 +3334,7 @@ function getRegionForAirport(code) {
         function exportDevRates() {
             const parsed = readRatesFromEditor() || activeRates || DEFAULT_RATES;
             const doIt = () => {
-                const blob = new Blob([JSON.stringify(parsed, null, 2)], { type: 'application/json' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'crewassist-rates.json';
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                setTimeout(() => URL.revokeObjectURL(a.href), 500);
+                exportFile(new Blob([JSON.stringify(parsed, null, 2)], { type: 'application/json' }), 'crewassist-rates.json').then((ok) => { if (ok) archToast('Exported crewassist-rates.json', null); });
             };
             if (devDirty) appConfirm('This file includes unsaved edits. Export anyway?').then((ok) => { if (ok) doIt(); });
             else doIt();
@@ -5723,6 +5724,13 @@ function getRegionForAirport(code) {
             const mk = n.monthKey || String(n.sectorDate || n.savedAt || '').slice(0, 7);
             return { mk: mk, yr: mk.slice(0, 4) };
         }
+        function archExpandMk() {
+            const all = loadArchive();
+            const mks = []; all.forEach((e) => { if (e.monthKey && mks.indexOf(e.monthKey) === -1) mks.push(e.monthKey); });
+            mks.sort().reverse();
+            const nowMk = todayLocalYMD().slice(0, 7);
+            return mks.indexOf(nowMk) !== -1 ? nowMk : (mks[0] || '');
+        }
         function archScopeLabel() {
             const info = archScopeInfo();
             if (archState.scope === 'year') return info.yr || 'ALL-TIME';
@@ -5788,7 +5796,7 @@ function getRegionForAirport(code) {
             const groups = {};
             vis.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
             const mks = Object.keys(groups).sort().reverse();
-            const newestMk = archScopeInfo().mk;
+            const newestMk = archExpandMk();
             let html = '';
             mks.forEach((mk) => {
                 const rows = groups[mk].slice().sort((a, b) => (String(b.sectorDate || '').localeCompare(String(a.sectorDate || ''))) || ((idx[b.id] || 0) - (idx[a.id] || 0)));
@@ -5813,7 +5821,7 @@ function getRegionForAirport(code) {
             list.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
             list.scrollTop = keep;
-            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archScopeInfo().mk); archState.collapsed[k] = !eff; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
+            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archExpandMk()); archState.collapsed[k] = !eff; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', () => { archDeleteOne(b.getAttribute('data-id')); }));
         }
 
@@ -5870,14 +5878,7 @@ function getRegionForAirport(code) {
         function csvCell(v) { v = String(v == null ? '' : v); if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"'; return v; }
         function archScopeSuffix() { const info = archScopeInfo(); return archState.scope === 'month' ? info.mk : (archState.scope === 'year' ? info.yr : 'all'); }
         function archShareOrDownload(blob, filename) {
-            try {
-                if (navigator.share && navigator.canShare) {
-                    const f = new File([blob], filename, { type: blob.type });
-                    if (navigator.canShare({ files: [f] })) { navigator.share({ files: [f], title: filename }).catch(() => {}); archToast('Exported ' + filename, null); return; }
-                }
-            } catch (e) {}
-            downloadBlob(blob, filename);
-            archToast('Exported ' + filename, null);
+            exportFile(blob, filename).then((ok) => { if (ok) archToast('Exported ' + filename, null); });
         }
         function archDoExport(kind) {
             const data = archFiltered(); const suf = archScopeSuffix();
@@ -8815,6 +8816,21 @@ function getRegionForAirport(code) {
             setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 400);
         }
 
+        function exportIsIOS() {
+            const ua = navigator.userAgent || '';
+            return /iPhone|iPad|iPod/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua));
+        }
+        async function exportFile(blob, filename) {
+            if (exportIsIOS() && navigator.share && navigator.canShare) {
+                try {
+                    const f = new File([blob], filename, { type: (blob && blob.type) || 'application/octet-stream' });
+                    if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: filename }); return true; }
+                } catch (e) { if (e && e.name === 'AbortError') return false; }
+            }
+            downloadBlob(blob, filename);
+            return true;
+        }
+
         async function ensureHtml2Canvas() {
             if (window.html2canvas) return;
             await new Promise((resolve, reject) => {
@@ -9035,7 +9051,7 @@ function getRegionForAirport(code) {
             const ext = type === 'jpeg' ? 'jpg' : 'png';
             await new Promise((resolve) => {
                 canvas.toBlob((blob) => {
-                    if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
+                    if (blob) exportFile(blob, printFileBase() + '.' + ext);
                     resolve();
                 }, mime, 0.95);
             });
@@ -9078,7 +9094,7 @@ function getRegionForAirport(code) {
                 const ext = type === 'jpeg' ? 'jpg' : 'png';
                 await new Promise((resolve) => {
                     canvas.toBlob((blob) => {
-                        if (blob) downloadBlob(blob, printFileBase() + '.' + ext);
+                        if (blob) exportFile(blob, printFileBase() + '.' + ext);
                         resolve();
                     }, mime, 0.95);
                 });
@@ -9103,7 +9119,7 @@ function getRegionForAirport(code) {
             const clone = paper.cloneNode(true);
             clone.querySelectorAll('.print-bounds').forEach((el) => el.remove());
             const html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>Menu</title></head><body>' + clone.innerHTML + '</body></html>';
-            downloadBlob(new Blob(['\ufeff' + html], { type: 'application/msword' }), printFileBase() + '.doc');
+            exportFile(new Blob(['\ufeff' + html], { type: 'application/msword' }), printFileBase() + '.doc');
         }
 
         function bindPrintUi() {
