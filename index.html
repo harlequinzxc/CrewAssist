@@ -579,6 +579,8 @@
         .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-edited-tag { color: var(--sia-gold, #c9a227); font-size: 8px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
+        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); }
+        .dev-sec-dot.is-on { display: inline-block; }
         .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
         .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
@@ -1372,10 +1374,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.16';
+        const APP_VERSION = '1.19.17';
         const APP_WHAT_NEW = [
-            'Earnings keeps multi-sector routes (JNB/CPT) and only drops SIN; flight amounts read white under gold month subtotals.',
-            'Developer rates get a split Save / Reset / Export / Import footer with a live unsaved-edits state and EDITED row tags.'
+            'Earnings opens with the real current month expanded — future months like an early-saved October start collapsed.',
+            'Developer rate sections show a gold dot on their collapsed header while they hold unsaved edits.'
         ];
 
         // State
@@ -3097,6 +3099,7 @@ function getRegionForAirport(code) {
                 return '<div class="dev-rate-card' + (open ? ' is-expanded' : '') + '" data-section="' + id + '">' +
                     '<button type="button" class="dev-rate-acc">' +
                     '<span class="dev-rate-acc-title">' + title + '</span>' +
+                    '<span class="dev-sec-dot" aria-hidden="true"></span>' +
                     '<i data-lucide="chevron-down" class="dev-rate-chev w-4 h-4"></i>' +
                     '</button>' +
                     '<div class="dev-rate-fold' + (open ? ' is-open' : '') + '"><div class="dev-rate-fold-inner"><div class="dev-rate-pad">' + inner + '</div></div></div>' +
@@ -3295,6 +3298,11 @@ function getRegionForAirport(code) {
                     tag = document.createElement('span'); tag.className = 'dev-edited-tag'; tag.textContent = 'EDITED';
                     if (row.tagName === 'TR' && row.cells && row.cells[0]) row.cells[0].appendChild(tag); else row.appendChild(tag);
                 } else if (!isEd && tag) tag.remove();
+            });
+            root.querySelectorAll('.dev-rate-card').forEach((card) => {
+                const has = !!card.querySelector('.dev-row-edited');
+                const dot = card.querySelector('.dev-sec-dot');
+                if (dot) dot.classList.toggle('is-on', has);
             });
         }
 
@@ -5723,6 +5731,13 @@ function getRegionForAirport(code) {
             const mk = n.monthKey || String(n.sectorDate || n.savedAt || '').slice(0, 7);
             return { mk: mk, yr: mk.slice(0, 4) };
         }
+        function archExpandMk() {
+            const all = loadArchive();
+            const mks = []; all.forEach((e) => { if (e.monthKey && mks.indexOf(e.monthKey) === -1) mks.push(e.monthKey); });
+            mks.sort().reverse();
+            const nowMk = todayLocalYMD().slice(0, 7);
+            return mks.indexOf(nowMk) !== -1 ? nowMk : (mks[0] || '');
+        }
         function archScopeLabel() {
             const info = archScopeInfo();
             if (archState.scope === 'year') return info.yr || 'ALL-TIME';
@@ -5788,7 +5803,7 @@ function getRegionForAirport(code) {
             const groups = {};
             vis.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
             const mks = Object.keys(groups).sort().reverse();
-            const newestMk = archScopeInfo().mk;
+            const newestMk = archExpandMk();
             let html = '';
             mks.forEach((mk) => {
                 const rows = groups[mk].slice().sort((a, b) => (String(b.sectorDate || '').localeCompare(String(a.sectorDate || ''))) || ((idx[b.id] || 0) - (idx[a.id] || 0)));
@@ -5813,7 +5828,7 @@ function getRegionForAirport(code) {
             list.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
             list.scrollTop = keep;
-            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archScopeInfo().mk); archState.collapsed[k] = !eff; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
+            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archExpandMk()); archState.collapsed[k] = !eff; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', () => { archDeleteOne(b.getAttribute('data-id')); }));
         }
 
