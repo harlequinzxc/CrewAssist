@@ -929,7 +929,7 @@
                             <button type="button" id="btn-dev-save" class="dev-save w-full h-12 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-sm font-bold inline-flex items-center justify-center gap-2 transition-all" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span id="dev-save-label">Save rates</span></button>
                             <div class="flex gap-2">
                                 <button type="button" id="btn-dev-export" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
-                                <button type="button" id="btn-dev-import" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="upload" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,application/json"></button>
+                                <button type="button" id="btn-dev-import" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="upload" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
                             </div>
                         </div>
                     </div>
@@ -1378,10 +1378,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.20';
+        const APP_VERSION = '1.19.21';
         const APP_WHAT_NEW = [
-            'Every export opens the share panel on mobile — including JSON on Android, which previously saved instead — and always downloads directly on PC and Mac.',
-            'Rates footer is now Save with Export and Import side by side on one line; Reset lives in Data Management as a gold pill above Clear All Data.'
+            'Android now opens the share panel for JSON exports too — they share as .txt, the only file kind Android allows, and both import buttons accept them back.',
+            'Exports toast the filename that was actually shared or downloaded.'
         ];
 
         // State
@@ -3341,7 +3341,7 @@ function getRegionForAirport(code) {
         function exportDevRates() {
             const parsed = readRatesFromEditor() || activeRates || DEFAULT_RATES;
             const doIt = () => {
-                exportFile(new Blob([JSON.stringify(parsed, null, 2)], { type: 'application/json' }), 'crewassist-rates.json').then((ok) => { if (ok) archToast('Exported crewassist-rates.json', null); });
+                exportFile(new Blob([JSON.stringify(parsed, null, 2)], { type: 'application/json' }), 'crewassist-rates.json').then((res) => { if (res) archToast('Exported ' + res, null); });
             };
             if (devDirty) appConfirm('This file includes unsaved edits. Export anyway?').then((ok) => { if (ok) doIt(); });
             else doIt();
@@ -5852,7 +5852,7 @@ function getRegionForAirport(code) {
         function archKey(r, d, a) { return String(r || '').toLowerCase() + '|' + String(d || '') + '|' + Math.round((Number(a) || 0) * 100); }
         function archImport() {
             openArchSub('<h4 class="font-bold text-lg mb-1">Import backup</h4><p class="text-xs text-gray-500">JSON backups only - CSV isn’t supported here.</p>'
-                + '<input type="file" id="ca-sub-file" accept=".json,application/json" class="block w-full text-sm pt-3">'
+                + '<input type="file" id="ca-sub-file" accept=".json,.txt,application/json,text/plain" class="block w-full text-sm pt-3">'
                 + '<div id="ca-sub-preview" class="text-sm pt-2"></div>');
             archEl('ca-sub-file').addEventListener('change', (ev) => { const f = ev.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (e2) => archImportRead(f.name, String(e2.target.result)); r.readAsText(f); });
         }
@@ -5885,7 +5885,7 @@ function getRegionForAirport(code) {
         function csvCell(v) { v = String(v == null ? '' : v); if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"'; return v; }
         function archScopeSuffix() { const info = archScopeInfo(); return archState.scope === 'month' ? info.mk : (archState.scope === 'year' ? info.yr : 'all'); }
         function archShareOrDownload(blob, filename) {
-            exportFile(blob, filename).then((ok) => { if (ok) archToast('Exported ' + filename, null); });
+            exportFile(blob, filename).then((res) => { if (res) archToast('Exported ' + res, null); });
         }
         function archDoExport(kind) {
             const data = archFiltered(); const suf = archScopeSuffix();
@@ -8828,17 +8828,22 @@ function getRegionForAirport(code) {
         async function exportFile(blob, filename) {
             if (exportIsMobile() && navigator.share && navigator.canShare) {
                 try {
-                    const mkFile = (type) => new File([blob], filename, { type: type || 'application/octet-stream' });
-                    let f = mkFile(blob && blob.type);
+                    const mkFile = (name, type) => new File([blob], name, { type: type || 'application/octet-stream' });
+                    let f = mkFile(filename, blob && blob.type);
                     if (!navigator.canShare({ files: [f] })) {
-                        const alt = mkFile('text/plain'); // Android only shares text/*, image/*, video/*, audio/*, pdf - fall back for application/json etc.
-                        f = navigator.canShare({ files: [alt] }) ? alt : null;
+                        f = null;
+                        if (blob && blob.type === 'application/json') {
+                            // Android gates shareable files by filename extension and rejects .json;
+                            // share the identical bytes as .txt - imports read content, not extension.
+                            const alt = mkFile(filename.replace(/(\.[^.]+)?$/, '.txt'), 'text/plain');
+                            if (navigator.canShare({ files: [alt] })) f = alt;
+                        }
                     }
-                    if (f) { await navigator.share({ files: [f], title: filename }); return true; }
+                    if (f) { await navigator.share({ files: [f], title: f.name }); return f.name; }
                 } catch (e) { if (e && e.name === 'AbortError') return false; }
             }
             downloadBlob(blob, filename);
-            return true;
+            return filename;
         }
 
         async function ensureHtml2Canvas() {
