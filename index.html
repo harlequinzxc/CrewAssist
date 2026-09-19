@@ -268,6 +268,8 @@
            click on any pointer that rests on the chip, so the default look is the
            only look. */
         /* Earnings archive redesign (v1.19.13) */
+        .ca-arch-search:focus { border-color: var(--sia-gold, #c9a227); }
+        .ca-arch-amt { font-variant-numeric: tabular-nums; }
         .ca-arch-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(90deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); color: #111; }
         .ca-arch-pill { background: rgba(0,0,0,.15); border: none; color: #111; font-weight: 700; font-size: 11px; letter-spacing: .06em; padding: 6px 12px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
@@ -947,10 +949,16 @@
                 </div>
             </div>
             <div id="ca-arch-bar" class="ca-arch-bar"></div>
-            <div class="px-5 pt-3"><input id="ca-arch-search" type="text" placeholder="Search flights…" class="w-full rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 px-4 py-2.5 text-sm outline-none" /></div>
+            <div class="px-5 pt-3">
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                    <input id="ca-arch-search" type="text" placeholder="Search flights…" aria-label="Search flights" class="ca-arch-search w-full rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 pl-10 pr-9 py-2.5 text-sm outline-none" />
+                    <button type="button" id="ca-arch-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1" aria-label="Clear search"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+            </div>
             <div id="ca-arch-list" class="px-5 pb-8 pt-2 overflow-y-auto flex-grow"></div>
         </div>
-        <div id="ca-arch-toast" class="ca-arch-toast hidden"></div>
+        <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
             <div class="absolute inset-0 bg-black/50" data-ca-arch-sub-close></div>
             <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full"></div>
@@ -1357,10 +1365,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.13';
+        const APP_VERSION = '1.19.14';
         const APP_WHAT_NEW = [
-            'Earnings is a redesigned page: pinned total bar with a scope pill, search, collapsible months, and one-tap delete with Undo.',
-            'Import (JSON) and Export (JSON/CSV) backups, plus a gated clear-all - all undoable.'
+            'Earnings search: icon, gold focus ring, and a clear button; months show a count when collapsed and a true subtotal when filtered.',
+            'Rows sort by flight date (newest first) and delete with a named Undo toast.'
         ];
 
         // State
@@ -5683,53 +5691,68 @@ function getRegionForAirport(code) {
             const all = loadArchive(); const removed = all.filter((x) => x.id === id);
             if (!removed.length) return;
             persistArchive(all.filter((x) => x.id !== id));
-            archToast('Entry deleted', () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
+            archToast('Deleted ' + (removed[0].stationDisplay || 'entry') + ' · ' + formatMoney(removed[0].amount), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
             renderArch();
         }
         function openArchSub(html) { archEl('ca-arch-sub-sheet').innerHTML = html; archEl('ca-arch-sub').classList.remove('hidden'); }
         function closeArchSub() { archEl('ca-arch-sub').classList.add('hidden'); }
         function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); setTimeout(() => { b.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); }
-        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); setTimeout(() => { b.classList.add('hidden'); }, 300); }
+        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; setTimeout(() => { b.classList.add('hidden'); }, 300); }
 
         function renderArch() {
             const bar = archEl('ca-arch-bar'), list = archEl('ca-arch-list');
+            const all = loadArchive();
+            const keep = list.scrollTop;
             const vis = archFiltered();
             const total = vis.reduce((s, e) => s + (Number(e.amount) || 0), 0);
             bar.innerHTML = '<button type="button" id="ca-arch-pill" class="ca-arch-pill">' + archScopeLabel() + '</button>'
                 + '<span class="text-xs opacity-70 ml-auto">' + vis.length + ' flight' + (vis.length === 1 ? '' : 's') + '</span>'
                 + '<span class="font-bold pl-3">' + formatMoney(total) + '</span>';
             archEl('ca-arch-pill').onclick = () => { archState.scope = archState.scope === 'all' ? 'year' : (archState.scope === 'year' ? 'month' : 'all'); renderArch(); };
+            const clearBtn = archEl('ca-arch-clear');
+            if (clearBtn) clearBtn.classList.toggle('hidden', !archState.search);
+            if (!all.length) {
+                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Tap the import arrow to bring in a JSON backup.</span></div>';
+                try { lucide.createIcons(); } catch (e) {}
+                return;
+            }
             if (!vis.length) {
                 list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights found.<br><span class="text-xs">Try clearing the search or switching scope.</span><br><button type="button" id="ca-arch-reset" class="mt-3 px-4 py-2 rounded-full bg-black/10 dark:bg-white/10 text-xs font-bold">Reset</button></div>';
                 const r = archEl('ca-arch-reset'); if (r) r.onclick = () => { archState.search = ''; archState.scope = 'all'; const s = archEl('ca-arch-search'); if (s) s.value = ''; renderArch(); };
                 try { lucide.createIcons(); } catch (e) {}
                 return;
             }
+            // Render-sorted only: flight date desc, ties by insertion order desc.
+            const idx = {}; all.forEach((e, i) => { idx[e.id] = i; });
+            const fullMonth = {}; all.forEach((e) => { fullMonth[e.monthKey] = (fullMonth[e.monthKey] || 0) + (Number(e.amount) || 0); });
             const groups = {};
             vis.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
             const mks = Object.keys(groups).sort().reverse();
             let html = '';
             mks.forEach((mk) => {
-                const rows = groups[mk].slice().sort((a, b) => String(b.savedAt || '').localeCompare(String(a.savedAt || '')));
+                const rows = groups[mk].slice().sort((a, b) => (String(b.sectorDate || '').localeCompare(String(a.sectorDate || ''))) || ((idx[b.id] || 0) - (idx[a.id] || 0)));
                 const sub = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                const full = fullMonth[mk] || 0;
+                const filtered = Math.abs(full - sub) > 0.004;
                 const col = !!archState.collapsed[mk];
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-3">'
-                    + '<button type="button" class="ca-arch-group-head w-full flex items-center justify-between py-2" data-mk="' + mk + '">'
-                    + '<span class="font-bold">' + archiveMonthLabel(mk) + '</span>'
-                    + '<span class="flex items-center gap-2"><span class="font-bold text-sia-gold">' + formatMoney(sub) + '</span><i data-lucide="chevron-down" class="ca-arch-chev w-4 h-4"></i></span></button>'
+                    + '<button type="button" class="ca-arch-group-head w-full flex items-center justify-between py-2" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
+                    + '<span class="font-bold">' + archiveMonthLabel(mk) + (col ? ' <span class="text-xs text-gray-500 font-normal">· ' + rows.length + ' flight' + (rows.length === 1 ? '' : 's') + '</span>' : '') + '</span>'
+                    + '<span class="flex items-center gap-2"><span class="font-bold text-sia-gold">' + formatMoney(sub) + (filtered ? ' <span class="text-xs text-gray-500 font-normal">of ' + formatMoney(full) + '</span>' : '') + '</span><i data-lucide="chevron-down" class="ca-arch-chev w-4 h-4"></i></span></button>'
                     + '<div class="ca-arch-group-body">';
                 rows.forEach((e) => {
                     html += '<div class="flex items-center gap-2 py-2 border-b border-black/5 dark:border-white/5">'
                         + '<span class="font-bold">' + (e.stationDisplay || '') + '</span>'
                         + '<span class="text-xs text-gray-500">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
-                        + '<span class="ml-auto font-bold text-sia-gold">' + formatMoney(e.amount) + '</span>'
-                        + '<button type="button" class="ca-arch-del text-gray-400 p-1" data-id="' + e.id + '" aria-label="Delete entry"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                        + '<span class="ca-arch-amt ml-auto font-bold text-sia-gold">' + formatMoney(e.amount) + '</span>'
+                        + '<button type="button" class="ca-arch-del text-gray-400 p-1" data-id="' + e.id + '" aria-label="Delete ' + (e.stationDisplay || '') + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 html += '</div></div>';
             });
             list.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
-            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); archState.collapsed[k] = !archState.collapsed[k]; hd.closest('.ca-arch-group').classList.toggle('ca-arch-collapsed'); }));
+            list.scrollTop = keep;
+            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); archState.collapsed[k] = !archState.collapsed[k]; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', () => { archDeleteOne(b.getAttribute('data-id')); }));
         }
 
@@ -5842,6 +5865,7 @@ function getRegionForAirport(code) {
             archEl('ca-arch-export').addEventListener('click', archExport);
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
+            archEl('ca-arch-clear').addEventListener('click', () => { const s = archEl('ca-arch-search'); s.value = ''; archState.search = ''; renderArch(); s.focus(); try { s.setSelectionRange(s.value.length, s.value.length); } catch (e) {} });
             document.querySelector('[data-ca-arch-sub-close]').addEventListener('click', closeArchSub);
         })();
 
