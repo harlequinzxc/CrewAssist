@@ -581,6 +581,8 @@
         .dev-edited-tag { color: var(--sia-gold, #c9a227); font-size: 8px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
         .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); margin-left: 6px; flex: 0 0 auto; }
         .dev-sec-dot.is-on { display: inline-block; }
+        .dev-reset-pill { animation: devResetIn 280ms ease; }
+        @keyframes devResetIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
         .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
         .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
@@ -925,10 +927,9 @@
                         <div id="dev-rates-root" class="flex flex-col gap-4"></div>
                         <div class="flex flex-col gap-2">
                             <button type="button" id="btn-dev-save" class="dev-save w-full h-12 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-sm font-bold inline-flex items-center justify-center gap-2 transition-all" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span id="dev-save-label">Save rates</span></button>
-                            <div class="grid grid-cols-3 gap-2">
-                                <button type="button" id="btn-dev-reset" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold" aria-label="Reset rates"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset</button>
-                                <button type="button" id="btn-dev-export" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold" aria-label="Export rates"><i data-lucide="file-down" class="w-4 h-4"></i>Export</button>
-                                <button type="button" id="btn-dev-import" class="h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-500 border border-black/10 dark:border-white/15 inline-flex flex-col items-center justify-center gap-0.5 text-[10px] font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="file-up" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,application/json"></button>
+                            <div class="flex gap-2">
+                                <button type="button" id="btn-dev-export" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
+                                <button type="button" id="btn-dev-import" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="upload" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,application/json"></button>
                             </div>
                         </div>
                     </div>
@@ -937,9 +938,12 @@
                 <!-- Data -->
                 <div>
                     <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
-                    <button id="btn-clear-data" class="w-full py-3 px-4 rounded-2xl text-sm font-bold bg-red-500/10 text-red-600 dark:text-[#ff4c4c] border border-red-500/20 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
-                    </button>
+                    <div class="flex flex-col gap-2">
+                        <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to defaults"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to defaults</button>
+                        <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1374,10 +1378,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.19';
+        const APP_VERSION = '1.19.20';
         const APP_WHAT_NEW = [
-            'Every export on mobile opens the share panel; on PC and Mac it is always a direct download to Downloads.',
-            'The unsaved-edits dot sits right at the end of its section title, and deleting archived earnings asks with the same pop-up as the settings page.'
+            'Every export opens the share panel on mobile — including JSON on Android, which previously saved instead — and always downloads directly on PC and Mac.',
+            'Rates footer is now Save with Export and Import side by side on one line; Reset lives in Data Management as a gold pill above Clear All Data.'
         ];
 
         // State
@@ -1458,6 +1462,7 @@
             // Settings Sheet Init
             if (appDevMode) {
                 document.getElementById('settings-developer').classList.remove('hidden');
+                document.getElementById('btn-dev-reset').classList.remove('hidden');
                 renderDevRatesEditor();
             }
             if (appProfile) {
@@ -1568,12 +1573,15 @@
                     appDevMode = !appDevMode;
                     localStorage.setItem('crewAssist.devMode', appDevMode ? 'true' : 'false');
                     const pane = document.getElementById('settings-developer');
+                    const resetPill = document.getElementById('btn-dev-reset');
                     if (appDevMode) {
                         pane.classList.remove('hidden');
+                        resetPill.classList.remove('hidden');
                         renderDevRatesEditor();
                         appAlert('Developer Mode Enabled');
                     } else {
                         pane.classList.add('hidden');
+                        resetPill.classList.add('hidden');
                         appAlert('Developer Mode Disabled');
                     }
                     syncCalcUiDevMode();
@@ -8820,8 +8828,13 @@ function getRegionForAirport(code) {
         async function exportFile(blob, filename) {
             if (exportIsMobile() && navigator.share && navigator.canShare) {
                 try {
-                    const f = new File([blob], filename, { type: (blob && blob.type) || 'application/octet-stream' });
-                    if (navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: filename }); return true; }
+                    const mkFile = (type) => new File([blob], filename, { type: type || 'application/octet-stream' });
+                    let f = mkFile(blob && blob.type);
+                    if (!navigator.canShare({ files: [f] })) {
+                        const alt = mkFile('text/plain'); // Android only shares text/*, image/*, video/*, audio/*, pdf - fall back for application/json etc.
+                        f = navigator.canShare({ files: [alt] }) ? alt : null;
+                    }
+                    if (f) { await navigator.share({ files: [f], title: filename }); return true; }
                 } catch (e) { if (e && e.name === 'AbortError') return false; }
             }
             downloadBlob(blob, filename);
