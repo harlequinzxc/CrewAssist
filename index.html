@@ -1378,10 +1378,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.21';
+        const APP_VERSION = '1.19.22';
         const APP_WHAT_NEW = [
-            'Android now opens the share panel for JSON exports too — they share as .txt, the only file kind Android allows, and both import buttons accept them back.',
-            'Exports toast the filename that was actually shared or downloaded.'
+            'Android exports now attempt the share panel directly instead of trusting a file check that can refuse valid files — JSON shares as .txt there.',
+            'Calculator trip bars turn each fetched sector box green, animated in place as the fetch lands.'
         ];
 
         // State
@@ -4004,15 +4004,27 @@ function getRegionForAirport(code) {
                 const route = document.getElementById(`${id}-lma-trip-route`);
                 if (route) {
                     const nodes = ['SIN'];
-                    for (let i = 1; i <= count; i++) nodes.push(lmaVal(i, 'iata') || '\u00b7\u00b7\u00b7');
-                    route.innerHTML = nodes.map((n, k) =>
-                        (k ? '<span class="lma-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
-                        '<span class="lma-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold ' +
-                        (n === '\u00b7\u00b7\u00b7'
-                            ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
-                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15') +
-                        '">' + n + '</span>'
-                    ).join('');
+                    const fetched = [false];
+                    for (let i = 1; i <= count; i++) { nodes.push(lmaVal(i, 'iata') || '\u00b7\u00b7\u00b7'); fetched.push(lmaStationDone(i)); }
+                    const nodeCls = (n, k) => (n === '\u00b7\u00b7\u00b7'
+                        ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
+                        : fetched[k]
+                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
+                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
+                    const baseCls = 'lma-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold transition-colors duration-200 ';
+                    if (route.childElementCount === nodes.length * 2 - 1) {
+                        // same shape: update in place so fetched boxes turn green smoothly
+                        nodes.forEach((n, k) => {
+                            const nd = route.children[k * 2];
+                            nd.textContent = n;
+                            nd.className = baseCls + nodeCls(n, k);
+                        });
+                    } else {
+                        route.innerHTML = nodes.map((n, k) =>
+                            (k ? '<span class="lma-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
+                            '<span class="' + baseCls + nodeCls(n, k) + '">' + n + '</span>'
+                        ).join('');
+                    }
                 }
                 let done = 0, folded = 0;
                 for (let i = 1; i <= count; i++) {
@@ -4159,18 +4171,31 @@ function getRegionForAirport(code) {
                 if (route) {
                     const first = ifaSectorCard(1);
                     const nodes = [((first && first.getAttribute('data-dep-airport')) || 'SIN')];
+                    const fetched = [false];
                     for (let i = 1; i <= count; i++) {
                         const c = ifaSectorCard(i);
                         nodes.push((c && c.getAttribute('data-arr-airport')) || '\u00b7\u00b7\u00b7');
+                        fetched.push(ifaSectorState(i) === 'done');
                     }
-                    route.innerHTML = nodes.map((n, k) =>
-                        (k ? '<span class="ifa-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
-                        '<span class="ifa-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold ' +
-                        (n === '\u00b7\u00b7\u00b7'
-                            ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
-                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15') +
-                        '">' + n + '</span>'
-                    ).join('');
+                    const nodeCls = (n, k) => (n === '\u00b7\u00b7\u00b7'
+                        ? 'text-gray-400 bg-black/5 dark:bg-white/5 border-black/10 dark:border-white/10'
+                        : fetched[k]
+                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
+                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
+                    const baseCls = 'ifa-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold transition-colors duration-200 ';
+                    if (route.childElementCount === nodes.length * 2 - 1) {
+                        // same shape: update in place so fetched boxes turn green smoothly
+                        nodes.forEach((n, k) => {
+                            const nd = route.children[k * 2];
+                            nd.textContent = n;
+                            nd.className = baseCls + nodeCls(n, k);
+                        });
+                    } else {
+                        route.innerHTML = nodes.map((n, k) =>
+                            (k ? '<span class="ifa-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
+                            '<span class="' + baseCls + nodeCls(n, k) + '">' + n + '</span>'
+                        ).join('');
+                    }
                 }
                 let done = 0, collapsed = 0;
                 for (let i = 1; i <= count; i++) {
@@ -8826,21 +8851,28 @@ function getRegionForAirport(code) {
             return !!(navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua));
         }
         async function exportFile(blob, filename) {
-            if (exportIsMobile() && navigator.share && navigator.canShare) {
+            if (exportIsMobile() && navigator.share) {
+                const mkFile = (name, type) => new File([blob], name, { type: type || 'application/octet-stream' });
+                const forms = [mkFile(filename, blob && blob.type)];
+                if (blob && blob.type === 'application/json') {
+                    // Android's share sheet rejects .json files; the same bytes as .txt is
+                    // the shareable form - imports read content, not the extension.
+                    forms.push(mkFile(filename.replace(/(\.[^.]+)?$/, '.txt'), 'text/plain'));
+                }
+                // Prefer the first form canShare accepts; when canShare refuses everything
+                // (some Androids reject even valid .txt), attempt the most shareable form
+                // directly - a genuine refusal rejects and falls back to the download.
+                let pick = null;
+                if (navigator.canShare) {
+                    for (const f of forms) { if (navigator.canShare({ files: [f] })) { pick = f; break; } }
+                }
+                if (!pick) pick = forms[forms.length - 1];
                 try {
-                    const mkFile = (name, type) => new File([blob], name, { type: type || 'application/octet-stream' });
-                    let f = mkFile(filename, blob && blob.type);
-                    if (!navigator.canShare({ files: [f] })) {
-                        f = null;
-                        if (blob && blob.type === 'application/json') {
-                            // Android gates shareable files by filename extension and rejects .json;
-                            // share the identical bytes as .txt - imports read content, not extension.
-                            const alt = mkFile(filename.replace(/(\.[^.]+)?$/, '.txt'), 'text/plain');
-                            if (navigator.canShare({ files: [alt] })) f = alt;
-                        }
-                    }
-                    if (f) { await navigator.share({ files: [f], title: f.name }); return f.name; }
-                } catch (e) { if (e && e.name === 'AbortError') return false; }
+                    await navigator.share({ files: [pick], title: pick.name });
+                    return pick.name;
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return false; // user dismissed the share panel
+                }
             }
             downloadBlob(blob, filename);
             return filename;
