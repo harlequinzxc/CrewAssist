@@ -1,0 +1,11 @@
+{
+  "name": "crewassist-tests",
+  "private": true,
+  "description": "jsdom behaviour tests for the CrewAssist PWA. The app itself needs no build step; this manifest only pins the test dependency.",
+  "scripts": {
+    "test": "node run-all.js"
+  },
+  "devDependencies": {
+    "jsdom": "24.1.0"
+  }
+}

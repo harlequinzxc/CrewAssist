@@ -262,6 +262,10 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 
 ---
 
+
+## Testing (in-repo jsdom suite)
+`tests/` contains the behaviour suite introduced 2026-09-19 (owner-approved). Run: `cd tests && npm install && npm test` (or `node tests/run-all.js`). Suites are named by feature — `dev-rates`, `dev-ui`, `earnings-archive`, `exports`, `trip-bar` — and assert OUTCOMES, not internals, so they survive refactors. Rules: every new feature ships with its test block; an intentional behaviour change updates the matching block in the same commit; never dispatch DOMContentLoaded manually in the harness (jsdom fires its own — double-firing double-binds every listener); dialog close fades take 200ms, wait >=400ms before asserting hidden. `tests/package.json` pins jsdom (committed via a `.gitignore` negation; the root package files stay ignored by repo convention) — `node_modules` and lockfiles are never committed.
+
 ## Recovery / dead ends (do not retry)
 
 - Prefixing SQ relative images with `/assets/` 404ed thumbs.

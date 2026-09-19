@@ -25,6 +25,7 @@ As of **v1.19.22** (`crewassist-v111`): chat, COP/IFA/LMA calculator (optional p
 - `icons/` — Transparent dart for in-app (`logo-192.png`, `logo-512.png`); navy + gold PWA icons (`app-icon-180/192/512.png`).
 - `README.md` — Overview, stack, setup, and tree.
 - `HANDOVER.md` — AI-agent handoff: current build, open work, and constraints.
+- `tests/` — jsdom behaviour tests for the shipped features (`cd tests && npm install && npm test`; see `tests/README.md`).
 
 ## Setup & Running
 1. Clone the repository.
@@ -33,3 +34,6 @@ As of **v1.19.22** (`crewassist-v111`): chat, COP/IFA/LMA calculator (optional p
 4. Use a mobile viewport (or a phone) — the UI is built mobile-first.
 
 Install as a PWA from the phone browser. After a deploy, confirm the onboarding stamp matches `APP_VERSION` (currently `v1.19.22`). Onboarding title: hairline the width of `CrewAssist™`, then `AN UNOFFICIAL CREW TOOL` on one row, same colour as the SemVer stamp.
+
+## Tests
+`tests/` holds the jsdom behaviour suite: it boots the real `index.html` in a fake browser and asserts the feature contracts (rates editor state machine, exports across PC/iOS/Android, archive behaviour, trip bars, dev UI). Run with `cd tests && npm install && npm test` — no build step, ~25s. New features bring their test block; intentional behaviour changes update the matching block in the same sitting. Details and conventions: `tests/README.md`.
