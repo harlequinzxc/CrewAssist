@@ -2,7 +2,7 @@
 
 **Read this file first.** Then `LOGIC.md` (formulas), `API_REFERENCE.md` (SQ menu API), `README.md` (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
 
-Latest app cache: `crewassist-v102` (`sw.js`). App SemVer: **1.19.13** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
+Latest app cache: `crewassist-v103` (`sw.js`). App SemVer: **1.19.14** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_WHAT_NEW` is the bullet list for the What’s new **overlay**. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
 
 **Standing rule (owner, 2026-09-16): any content that appears, hides, changes, transitions, expands or collapses in the app must be animated — never an instant show/hide. New UI (archive overlays, cards, trip bars) follows the max-height/opacity `transition-all` pattern; migrate remaining instant `hidden` toggles to it on touch.**
 
@@ -197,7 +197,7 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 
 ### Earnings archive (v1.19.13 redesign)
 
-Dedicated overlay (`#ca-arch-*`), not the shared results sheet: pinned gold summary bar (scope pill cycles ALL-TIME -> year -> month of the newest entry; count + total follow), search (route text, stacks with scope), collapsible month groups **newest first** (this supersedes the older oldest-first reading order for the Earnings page), 4-part rows (route / date / amount / grey x), 6s Undo toast for delete/import/clear-all, header import (JSON only, validate-then-preview, merge-only, dup skip) + export (JSON/CSV, share-or-download, `crewassist-earnings-<scope>.<ext>`) + gated trash (respects filters). Storage schema unchanged: `{id, savedAt, monthKey, sectorDate, flightType, stationDisplay, amount}`.
+Dedicated overlay (`#ca-arch-*`), not the shared results sheet: pinned gold summary bar (scope pill cycles ALL-TIME -> year -> month of the newest entry; count + total follow), search (route text, stacks with scope), collapsible month groups **newest first** (this supersedes the older oldest-first reading order for the Earnings page), 4-part rows (route / date / amount / grey x), 6s Undo toast for delete/import/clear-all, header import (JSON only, validate-then-preview, merge-only, dup skip) + export (JSON/CSV, share-or-download, `crewassist-earnings-<scope>.<ext>`) + gated trash (respects filters). Storage schema unchanged: `{id, savedAt, monthKey, sectorDate, flightType, stationDisplay, amount}`. v1.19.14 polish: search icon + gold focus + clear(refocus); collapsed month headers show a muted count; a filtered month's subtotal reads "$X of $Y" (never understates); rows render-sorted flight-date desc with insertion-order ties (storage stays append-only); list scroll position is preserved across re-renders; headers are buttons with `aria-expanded`, toast is `role=status`; icons limited to search/chevron-down/x.
 
 ---
 
