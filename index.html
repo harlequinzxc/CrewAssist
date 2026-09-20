@@ -303,6 +303,7 @@
 
         html.chat-busy #chat-input,
         html.chat-busy #btn-send,
+        html.chat-busy #btn-roster,
         html.chat-busy .action-chip {
             pointer-events: none;
             opacity: 0.45;
@@ -837,11 +838,15 @@
 
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
+                        <button id="btn-roster" type="button" title="Import roster PDF" aria-label="Import roster PDF" class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-gray-400 hover:text-sia-gold transition-colors active:scale-95">
+                            <i data-lucide="paperclip" class="w-4 h-4"></i>
+                        </button>
                         <input type="text" id="chat-input" placeholder="Try &quot;menu&quot;..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
                         <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
+                    <input type="file" id="roster-file-input" accept="application/pdf,.pdf" multiple class="hidden">
 
                 </div>
             </div>
@@ -1378,10 +1383,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.19.22';
+        const APP_VERSION = '1.20.0';
         const APP_WHAT_NEW = [
-            'Android exports now attempt the share panel directly instead of trusting a file check that can refuse valid files — JSON shares as .txt there.',
-            'Calculator trip bars turn each fetched sector box green, animated in place as the fetch lands.'
+            'New paperclip in the chat bar: attach your Crew Roster Report PDF and your whole month builds itself — every trip, time, date and layover station filled with zero fetching.',
+            'A confirm bubble shows every trip I read before anything is built; Build or Discard is always your call, and unreadable lines are reported, never guessed.'
         ];
 
         // State
@@ -1632,6 +1637,17 @@
                 if (isChatBusy()) return;
                 const input = document.getElementById('chat-input');
                 processInput(input.value);
+            });
+
+            // Roster PDF import (paperclip + hidden file input)
+            document.getElementById('btn-roster').addEventListener('click', () => {
+                if (isChatBusy()) return;
+                openRosterPicker();
+            });
+            document.getElementById('roster-file-input').addEventListener('change', (e) => {
+                const files = e.target.files;
+                e.target.value = '';
+                if (files && files.length) handleRosterFiles(files);
             });
 
             document.getElementById('chat-input').addEventListener('keypress', (e) => {
@@ -2048,6 +2064,414 @@
             enqueueBot(() => analyzeIntent(text));
         }
 
+        // ================= ROSTER PDF IMPORT (v1.20.0) =================
+        // Attach a Crew Roster Report PDF; the app reads it on-device with pdf.js
+        // (lazy-loaded from CDN like the image exporter) and prefills calculator
+        // cards per trip. Parsing is pure so tests drive it without pdf.js.
+        //
+        // How the report is built (reverse-engineered from six real months):
+        // the page is rotated 90°, so in raw item coordinates x = row position
+        // and y = column position. The generator also splits a column's text
+        // runs mid-table (same visual column, slightly different y), so columns
+        // are identified by nearest-header-y with value-pattern filtering, and
+        // fn/sector values are matched globally because their shapes are unique.
+        // Overnight flights appear twice: an operating row and a landing-day
+        // echo row that never repeats STD/STA/Flight Time — it only complements
+        // them, which is exactly how echoes are told apart from repeated
+        // operations of the same flight number later in the month.
+
+        const ROSTER_PDFJS_SRC = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+        const ROSTER_PDFJS_WORKER = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const ROSTER_PDFJS_FONTS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/';
+        const RO_MON = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
+
+        function rosterEsc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+        function rosterDateToYmd(s) {
+            const m = String(s || '').match(/^(\d{2})([A-Za-z]{3})(\d{2})$/);
+            if (!m) return '';
+            const mo = RO_MON[(m[2][0] + m[2].slice(1).toLowerCase())] || RO_MON[m[2]];
+            if (!mo) return '';
+            return `20${m[3]}-${String(mo).padStart(2, '0')}-${m[1]}`;
+        }
+        function rosterHm(v) {
+            const s = String(v || '');
+            if (/^\d{2}:\d{2}$/.test(s)) return s;
+            if (/^\d{4}$/.test(s)) return s.slice(0, 2) + ':' + s.slice(2);
+            return '';
+        }
+        function rosterYmAdd(s, days) { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
+        const RO_IS = {
+            date: s => /^\d{2}[A-Za-z]{3}\d{2}$/.test(s),
+            fn: s => /^SQ \d{1,4}$/.test(s),
+            sector: s => /^[A-Z]{3}-[A-Z]{3}$/.test(s),
+            hm: s => /^\d{2}:\d{2}$/.test(s),
+            hhmm: s => /^\d{4}$/.test(s)
+        };
+
+        function rosterParse(items) {
+            const byPage = {};
+            (items || []).forEach(it => {
+                if (!it || !it.str || !it.str.trim()) return;
+                it = { str: it.str.trim(), x: it.x, y: it.y, page: it.page || 1 };
+                (byPage[it.page] = byPage[it.page] || []).push(it);
+            });
+            const anchors = [];
+            const pool = [];
+            const pages = Object.keys(byPage).map(Number).sort((a, b) => a - b);
+            pages.forEach(p => {
+                const its = byPage[p];
+                // fn + sector values: globally unique shapes, immune to column splits
+                its.forEach(v => {
+                    if (RO_IS.fn(v.str)) pool.push({ key: 'fn', str: v.str, x: v.x, page: p });
+                    else if (RO_IS.sector(v.str)) pool.push({ key: 'sector', str: v.str, x: v.x, page: p });
+                });
+                // date anchors: dominant-y cluster of date-shaped items (the
+                // two dates on the "From --" header line sit alone at their own
+                // y's, so the dominant group is always the real date column;
+                // even a 1-date continuation page at a table break counts)
+                const dateItems = its.filter(v => RO_IS.date(v.str));
+                if (dateItems.length >= 1) {
+                    const fnXs = its.filter(v => RO_IS.fn(v.str)).map(v => v.x);
+                    const inZone = (g) => {
+                        if (!fnXs.length) return 0;
+                        const lo = Math.min.apply(null, fnXs) - 40, hi = Math.max.apply(null, fnXs) + 40;
+                        return g.items.reduce((n, d) => (d.x >= lo && d.x <= hi ? n + 1 : n), 0);
+                    };
+                    const groups = [];
+                    dateItems.forEach(d => {
+                        let g = groups.find(g => Math.abs(g.y - d.y) <= 3);
+                        if (!g) { g = { y: d.y, items: [] }; groups.push(g); }
+                        g.items.push(d);
+                    });
+                    // biggest group wins; ties (tiny pages) break toward the
+                    // group that sits in the table's row zone, not the margins
+                    groups.sort((a, b) => (b.items.length - a.items.length) || (inZone(b) - inZone(a)));
+                    groups[0].items.forEach(d => anchors.push({ x: d.x, page: p, date: d.str }));
+                }
+                // std/sta/ft: assign each value to its nearest header anchor
+                const rptY = its.some(v => v.str === 'Rpt') ? its.find(v => v.str === 'Rpt').y : null;
+                const stdY = its.some(v => v.str === 'STD') ? its.find(v => v.str === 'STD').y : null;
+                const staY = its.some(v => v.str === 'STA') ? its.find(v => v.str === 'STA').y : null;
+                let ftY = null;
+                its.forEach(v => {
+                    if (v.str !== 'Flight') return;
+                    if (its.some(w => w.str === 'Time' && Math.abs(w.y - v.y) <= 3)) ftY = v.y;
+                });
+                const digitAnchors = [[rptY, 'rpt'], [stdY, 'std'], [staY, 'sta']].filter(a => a[0] != null);
+                its.forEach(v => {
+                    if (RO_IS.hhmm(v.str) && digitAnchors.length) {
+                        let best = null, bd = 1e9;
+                        digitAnchors.forEach(a => { const d = Math.abs(a[0] - v.y); if (d < bd) { bd = d; best = a[1]; } });
+                        if (best && best !== 'rpt' && bd <= 16) pool.push({ key: best, str: v.str, x: v.x, page: p });
+                    } else if (RO_IS.hm(v.str) && ftY != null && Math.abs(ftY - v.y) <= 16) {
+                        pool.push({ key: 'ft', str: v.str, x: v.x, page: p });
+                    }
+                });
+            });
+            // ---- rows: cluster values by (page, x) ----
+            const rowList = [];
+            pool.sort((a, b) => (a.page - b.page) || (a.x - b.x));
+            pool.forEach(v => {
+                let r = null;
+                for (let i = rowList.length - 1; i >= 0; i--) {
+                    const t = rowList[i];
+                    if (t.page !== v.page) { if (t.page < v.page) break; continue; }
+                    if (Math.abs(t.x - v.x) <= 3) { r = t; break; }
+                    if (t.x < v.x - 3) break;
+                }
+                if (!r) { r = { page: v.page, x: v.x, vals: {} }; rowList.push(r); }
+                if (!r.vals[v.key]) r.vals[v.key] = v.str;
+            });
+            anchors.sort((a, b) => (a.page - b.page) || (a.x - b.x));
+            rowList.forEach(r => {
+                let best = null;
+                anchors.forEach(a => { if (a.page < r.page || (a.page === r.page && a.x <= r.x + 1)) best = a; });
+                r.ymd = best ? rosterDateToYmd(best.date) : '';
+            });
+            // ---- flights + echo merge ----
+            // An echo is the immediate next occurrence of the same flight+sector
+            // (within 2 days) whose times COMPLEMENT the operating row; the
+            // generator never repeats STD/STA/FT on echo rows.
+            const flights = [];
+            const byKey = {};
+            rowList.forEach(r => {
+                if (!r.vals.fn || !r.vals.sector || !r.ymd) return;
+                const m = r.vals.sector.match(/^([A-Z]{3})-([A-Z]{3})$/);
+                if (!m) return;
+                const key = r.vals.fn + '|' + r.vals.sector;
+                const prev = byKey[key];
+                if (prev) {
+                    const gap = (new Date(r.ymd) - new Date(prev.ymd)) / 86400000;
+                    const last = flights[flights.length - 1];
+                    const complementary = ['std', 'sta', 'ft'].some(k => r.vals[k] && !prev[k]) &&
+                                          !['std', 'sta', 'ft'].some(k => r.vals[k] && prev[k]);
+                    if (last === prev && gap >= 0 && gap <= 2 && complementary) {
+                        ['std', 'sta', 'ft'].forEach(k => { if (r.vals[k] && !prev[k]) { prev[k] = r.vals[k]; prev[k + 'RowYmd'] = r.ymd; } });
+                        prev.echoYmd = r.ymd;
+                        return;
+                    }
+                }
+                const f = { fn: r.vals.fn.replace(/^SQ\s*/, ''), dep: m[1], arr: m[2],
+                    std: r.vals.std || '', sta: r.vals.sta || '', ft: r.vals.ft || '',
+                    stdRowYmd: r.ymd, staRowYmd: r.ymd, ymd: r.ymd, echoYmd: '' };
+                byKey[key] = f;
+                flights.push(f);
+            });
+            flights.forEach(f => {
+                f.stdHm = rosterHm(f.std); f.staHm = rosterHm(f.sta); f.ftHm = f.ft;
+                f.depDate = f.std ? f.stdRowYmd : '';
+                if (f.sta) {
+                    f.arrDate = (f.staRowYmd !== f.stdRowYmd || !f.std) ? f.staRowYmd
+                        : ((f.staHm < f.stdHm) ? rosterYmAdd(f.staRowYmd, 1) : f.staRowYmd);
+                } else f.arrDate = '';
+            });
+            // ---- trips: chain sectors until the pattern returns to SIN ----
+            const raw = [];
+            let cur = null;
+            flights.forEach(f => {
+                if (!cur) { cur = { sectors: [], startOk: f.dep === 'SIN' }; raw.push(cur); }
+                cur.sectors.push(f);
+                if (f.arr === 'SIN') cur = null;
+            });
+            // same-day back-to-back turnarounds at SIN are one 4-sector day
+            const merged = [];
+            raw.forEach(t => {
+                const prev = merged[merged.length - 1];
+                if (prev && prev.sectors.length + t.sectors.length <= 4 &&
+                    prev.sectors[prev.sectors.length - 1].arrDate === t.sectors[0].depDate &&
+                    prev.sectors[0].dep === 'SIN' && t.sectors[t.sectors.length - 1].arr === 'SIN') {
+                    prev.sectors = prev.sectors.concat(t.sectors);
+                } else merged.push(t);
+            });
+            const trips = merged.map(t => {
+                const last = t.sectors[t.sectors.length - 1];
+                const trip = { sectors: t.sectors, type: 'Layover', stations: [], ok: true, reason: '' };
+                if (!t.startOk) { trip.ok = false; trip.reason = 'starts outside Singapore (roster begins mid-trip)'; }
+                else if (last.arr !== 'SIN') { trip.ok = false; trip.reason = 'does not return to Singapore before the roster ends'; }
+                else if (t.sectors.length !== 2 && t.sectors.length !== 4) { trip.ok = false; trip.reason = t.sectors.length + ' sectors (calculator supports 2 or 4)'; }
+                if (t.sectors.some(s => !s.stdHm || !s.staHm || !s.ftHm || !s.depDate || !s.arrDate)) {
+                    trip.ok = false; trip.reason = (trip.reason ? trip.reason + '; ' : '') + 'some times could not be read';
+                }
+                if (!trip.ok) return trip;
+                // Layover vs turnaround: any intermediate ground time over 6h
+                // (same threshold as the LMA shuttle suggestion) is a layover.
+                let maxGround = -1;
+                for (let i = 0; i < t.sectors.length - 1; i++) {
+                    const a = t.sectors[i], b = t.sectors[i + 1];
+                    const am = a.arrDate && a.staHm ? new Date(a.arrDate + 'T' + a.staHm + ':00') : null;
+                    const bm = b.depDate && b.stdHm ? new Date(b.depDate + 'T' + b.stdHm + ':00') : null;
+                    const g = am && bm ? (bm - am) / 60000 : 99999;
+                    if (g > maxGround) maxGround = g;
+                }
+                trip.type = maxGround <= 360 ? 'Turnaround' : 'Layover';
+                for (let i = 0; i < t.sectors.length - 1; i++) {
+                    const a = t.sectors[i], b = t.sectors[i + 1];
+                    if (a.arr === 'SIN') continue;
+                    const lastSt = trip.stations[trip.stations.length - 1];
+                    if (lastSt && lastSt.code === a.arr) { lastSt.outDate = b.depDate; lastSt.outTime = b.stdHm; lastSt.outFn = b.fn; }
+                    else trip.stations.push({ code: a.arr, inDate: a.arrDate, inTime: a.staHm, inFn: a.fn, outDate: b.depDate, outTime: b.stdHm, outFn: b.fn });
+                }
+                return trip;
+            });
+            // ---- skipped days ----
+            const flyingDates = new Set();
+            flights.forEach(f => { if (f.ymd) flyingDates.add(f.ymd); });
+            const seen = new Set();
+            let skippedDays = 0;
+            anchors.forEach(a => {
+                const ymd = rosterDateToYmd(a.date);
+                if (!ymd || seen.has(ymd)) return;
+                seen.add(ymd);
+                if (!flyingDates.has(ymd)) skippedDays++;
+            });
+            const monthLabel = anchors.length ? rosterDateToYmd(anchors[0].date).slice(0, 7) : '';
+            return { monthLabel, trips, flights, skippedDays, flyingDays: seen.size - skippedDays };
+        }
+
+        async function ensurePdfJs() {
+            if (window.pdfjsLib) return;
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = ROSTER_PDFJS_SRC;
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Could not load the PDF reader'));
+                document.head.appendChild(s);
+            });
+            try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = ROSTER_PDFJS_WORKER; } catch (e) {}
+        }
+
+        async function rosterReadPdf(file) {
+            await ensurePdfJs();
+            const buf = await file.arrayBuffer();
+            const doc = await window.pdfjsLib.getDocument({ data: buf, standardFontDataUrl: ROSTER_PDFJS_FONTS }).promise;
+            const items = [];
+            for (let p = 1; p <= doc.numPages; p++) {
+                const page = await doc.getPage(p);
+                const tc = await page.getTextContent();
+                tc.items.forEach(it => { if (it.str && it.str.trim()) items.push({ str: it.str.trim(), x: it.transform[4], y: it.transform[5], page: p }); });
+            }
+            return items;
+        }
+
+        function openRosterPicker() {
+            const inp = document.getElementById('roster-file-input');
+            if (!inp) return;
+            inp.value = '';
+            inp.click();
+        }
+
+        async function handleRosterFiles(fileList) {
+            const files = Array.from(fileList || []).filter(f => f && ((f.type || '').indexOf('pdf') >= 0 || /\.pdf$/i.test(f.name || '')));
+            if (!files.length) {
+                addBotMessage("That doesn't look like a PDF — I can only read <b>Crew Roster Report</b> PDFs.");
+                return;
+            }
+            setChatBusy(true);
+            try {
+                for (const f of files) {
+                    let items = null;
+                    try { items = await rosterReadPdf(f); }
+                    catch (e) { addBotMessage(`I couldn't read <b>${rosterEsc(f.name)}</b> — it may be corrupt or password-protected.`); continue; }
+                    const parsed = rosterParse(items);
+                    if (!parsed.flights.length) {
+                        addBotMessage(`<b>${rosterEsc(f.name)}</b> doesn't look like a Crew Roster Report — I found no flight rows.`);
+                        continue;
+                    }
+                    const parsedRef = parsed, fileName = f.name;
+                    await new Promise(res => enqueueBot(() => { renderRosterConfirm(parsedRef, fileName); res(); }));
+                }
+            } finally { setChatBusy(false); }
+        }
+
+        function rosterMonthName(ym) {
+            const m = String(ym || '').match(/^(\d{4})-(\d{2})$/);
+            if (!m) return '';
+            return (typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[parseInt(m[2], 10) - 1] : m[1] + '-' + m[2]) + ' ' + m[1];
+        }
+        function rosterShortDate(ymd) {
+            const m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!m) return '';
+            return parseInt(m[3], 10) + ' ' + (typeof CA_MONTHS_SHORT !== 'undefined' ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] : m[2]);
+        }
+
+        function renderRosterConfirm(parsed, fileName) {
+            const tripsOk = parsed.trips.filter(t => t.ok);
+            const flagged = parsed.trips.filter(t => !t.ok);
+            const sectors = tripsOk.reduce((n, t) => n + t.sectors.length, 0);
+            const lines = [];
+            lines.push(`<b>${rosterEsc(fileName)}</b> — ${rosterEsc(rosterMonthName(parsed.monthLabel))}: <b>${tripsOk.length} trip${tripsOk.length === 1 ? '' : 's'} · ${sectors} sector${sectors === 1 ? '' : 's'}</b> across ${parsed.flyingDays} flying day${parsed.flyingDays === 1 ? '' : 's'}.`);
+            if (parsed.skippedDays) lines.push(`Skipped ${parsed.skippedDays} non-flying day${parsed.skippedDays === 1 ? '' : 's'} (leave, off and standby rows).`);
+            flagged.forEach(t => lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')} — ${t.reason}; not built.`));
+            const listHtml = tripsOk.map((t, i) => {
+                const s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
+                const route = t.sectors.map(s => s.dep).join('–') + '–' + sl.arr;
+                return `<div class="flex items-baseline gap-2 min-w-0">
+                    <span class="text-gray-400">${i + 1}.</span>
+                    <span class="font-bold truncate">${route}</span>
+                    <span class="ml-auto shrink-0 text-gray-500">${rosterShortDate(s0.depDate)} – ${rosterShortDate(sl.arrDate)}</span>
+                    <span class="shrink-0 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-bold uppercase">${t.type === 'Turnaround' ? 'T/A' : 'Layover'}</span>
+                </div>`;
+            }).join('');
+            const html = `
+                ${lines.map(l => `<p class="mb-1">${l}</p>`).join('')}
+                ${listHtml ? `<div class="mt-2 space-y-1.5 text-xs">${listHtml}</div>` : ''}
+                <div class="flex gap-2 mt-3">
+                    <button type="button" class="roster-build-btn flex-1 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                        <i data-lucide="hammer" class="w-3.5 h-3.5"></i>Build cards
+                    </button>
+                    <button type="button" class="roster-discard-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>Discard
+                    </button>
+                </div>`;
+            addMessage('bot', html, true);
+            const bubble = document.getElementById('chat-container').lastElementChild;
+            const buildBtn = bubble.querySelector('.roster-build-btn');
+            const discardBtn = bubble.querySelector('.roster-discard-btn');
+            const spend = () => {
+                buildBtn.disabled = true;
+                discardBtn.disabled = true;
+                buildBtn.classList.add('opacity-50', 'pointer-events-none');
+                discardBtn.classList.add('opacity-50', 'pointer-events-none');
+            };
+            buildBtn.addEventListener('click', () => { spend(); rosterBuildCards(parsed); });
+            discardBtn.addEventListener('click', () => { spend(); addBotMessage('Discarded — nothing was built. Attach the roster again anytime.'); });
+        }
+
+        function rosterBuildCards(parsed) {
+            const ok = parsed.trips.filter(t => t.ok);
+            if (!ok.length) { addBotMessage('Nothing to build — every trip was flagged.'); return; }
+            addBotMessage(`Building ${ok.length} calculator card${ok.length === 1 ? '' : 's'} — check the times against your roster, then Calculate. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>`);
+            ok.forEach(trip => renderCalculatorCard('both', (id) => rosterPrefillCard(id, trip)));
+        }
+
+        function rosterPrefillCard(id, trip) {
+            const q = (suf) => document.getElementById(`${id}-${suf}`);
+            // Mirrors the calendar-commit path (value -> button label -> input
+            // -> change), so every existing handler — cascades, trip bars,
+            // Fetch-all re-arm — runs exactly as if the crew typed it.
+            const setVal = (el, val, fire) => {
+                if (!el || val == null || val === '') return;
+                el.value = val;
+                const isDate = el.classList && el.classList.contains('ca-date-input');
+                if (isDate) syncDateBtn(el);
+                if (fire) {
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    if (isDate) el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            };
+            const pillClick = (group, val) => {
+                const btn = document.querySelector(`#${id}-${group} [data-value="${val}"]`);
+                if (btn) btn.click();
+            };
+            // Pills first — changing flight type / sector count rebuilds the
+            // sector scaffolding and resets LMA to a single station block.
+            pillClick('flight-type-pills', trip.type);
+            if (trip.sectors.length === 4) pillClick('sector-count-pills', '4');
+            // Dates are set in 1..N order: each change cascades the dates below
+            // it, and every later set overwrites that guess with the roster's
+            // real date, so the final values are exactly the PDF's.
+            trip.sectors.forEach((s, i) => {
+                const k = i + 1;
+                setVal(q(`ifa-fn${k}`), s.fn, true);
+                setVal(q(`ifa-d${k}`), s.depDate, true);
+                setVal(q(`ifa-t${k}`), s.ftHm, true);
+            });
+            // Direct US switch exists on 2-sector layovers only (same rule as Fetch)
+            if (trip.type === 'Layover' && trip.sectors.length === 2 &&
+                trip.sectors.some(s => isUsAirport(s.dep) || isUsAirport(s.arr))) {
+                const us = q('ifa-us1');
+                if (us && !us.checked) { us.checked = true; us.dispatchEvent(new Event('change', { bubbles: true })); }
+            }
+            // LMA stations (layover trips only — Turnaround hides the LMA section)
+            if (trip.type === 'Layover' && trip.stations.length) {
+                const btnAdd = q('btn-add-lma');
+                window.__caLmaQuietAdd = true;
+                try {
+                    let have = 0;
+                    while (q(`lma-iata${have + 1}`)) have++;
+                    while (have < trip.stations.length && btnAdd && !btnAdd.classList.contains('hidden')) { btnAdd.click(); have++; }
+                } finally { window.__caLmaQuietAdd = false; }
+                trip.stations.forEach((st, i) => {
+                    const k = i + 1;
+                    setVal(q(`lma-iata${k}`), st.code, true);
+                    setVal(q(`lma-afn${k}`), st.inFn, true);
+                    setVal(q(`lma-dfn${k}`), st.outFn, true);
+                    setVal(q(`lma-a${k}`), st.inDate, true);
+                    setVal(q(`lma-at${k}`), st.inTime, true);
+                    setVal(q(`lma-d${k}`), st.outDate, true);
+                    setVal(q(`lma-dt${k}`), st.outTime, true);
+                    const block = document.querySelector(`#${id}-lma-sectors .lma-station[data-idx="${k}"]`);
+                    if (block) {
+                        if (st.inTime) block.setAttribute('data-arr-state', 'done');
+                        if (st.outTime) block.setAttribute('data-dep-state', 'done');
+                    }
+                });
+            }
+            syncCalcUiAll();
+        }
+
         function analyzeIntent(text) {
             const lowerText = text.toLowerCase();
             
@@ -2067,6 +2491,10 @@
                     addBotMessage('Pulling up your earnings!');
                     setTimeout(() => showArchiveOverlay(), 400);
                 }
+            }
+            else if (/roster|upload|import/.test(lowerText)) {
+                addBotMessage('Opening the roster picker — attach your <b>Crew Roster Report</b> PDF.');
+                setTimeout(() => openRosterPicker(), 400);
             }
             else if (/total|cop|both|allowance|calculate/.test(lowerText)) {
                 renderCalculatorCard('both');
@@ -3780,7 +4208,7 @@ function getRegionForAirport(code) {
             document.querySelectorAll('.glass-bubble[data-foldable="1"]').forEach((c) => c.classList.add('ca-folded'));
         }
 
-        function renderCalculatorCard(mode) {
+        function renderCalculatorCard(mode, onReady) {
             calcIdCounter++;
             const id = 'calc-' + calcIdCounter;
             
@@ -3900,6 +4328,8 @@ function getRegionForAirport(code) {
                 fitCalcPills();
                 // the webfont usually lands after the first pass; re-measure a few times
                 [150, 400, 900].forEach((t) => setTimeout(fitCalcPills, t));
+                // Roster import prefills through this hook once the card is bound.
+                if (typeof onReady === 'function') { try { onReady(id); } catch (e) { console.error(e); } }
                 // COP always scrolled to the top of the card. Now every card decides
                 // by height — and a COP card is long, so it takes the same branch.
                 if (mode === 'both' || appPrefs.autoScroll) scrollChatToBubble(msgDiv);

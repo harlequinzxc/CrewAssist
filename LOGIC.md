@@ -257,6 +257,10 @@ Incomplete sectors return `null` and contribute `0` to totals. **The app never c
 
 ---
 
+### 2.5 Roster PDF Import (prefill source)
+
+A Crew Roster Report PDF may prefill the inputs above; it is a source, not a separate calculation path. On-device parsing fills `flightNumber`, `fetchDate` (the scheduled departure date, port-local), `times` (the roster's per-sector Flight Time) and, for layover trips, the LMA station with arrival date/time (previous sector's port-local STA + its date) and departure date/time (next sector's STD + date). Direct US is pre-ticked on 2-sector layovers touching a US airport; the crew can untick it. Port-local times are used exactly as printed — no timezone conversion. Anything the parser cannot read with confidence (times, trip shapes outside 2/4 sectors, trips that do not return to SIN within the roster) is reported and left for manual entry — never guessed.
+
 ## 3. MODIFIERS & TIERS
 
 ### 3.1 IFA Rank Tiers (Base Hourly Rates)

@@ -201,6 +201,20 @@ Dedicated overlay (`#ca-arch-*`), not the shared results sheet: pinned gold summ
 
 **Owner sign-off 2026-09-19:** v1.19.22 accepted — all features through the v1.19.x series are complete and live.
 
+### Roster PDF import (v1.20.0)
+
+Paperclip `#btn-roster` (left of `#chat-input`) + hidden `#roster-file-input` (accept `application/pdf,.pdf`, multiple) + intent `/roster|upload|import/` all open the picker. pdf.js 3.11.174 lazy-loads from cdnjs on first use (`ensurePdfJs`; `workerSrc` set after load, `standardFontDataUrl` passed to `getDocument`); corrupt/password PDFs and non-roster PDFs produce clean bubbles via `handleRosterFiles`. Parsing is 100% on-device.
+
+**How the report is built (reverse-engineered from six real months):** the page is rotated 90° — in raw pdf.js item coordinates **x = row position, y = column position** (22pt row pitch). The generator splits a column's text runs mid-table (same visual column, slightly different y), so: fn/sector values match globally (their shapes are unique); date anchors come from the dominant-y cluster of date-shaped items (excludes the `From --` header dates); STD/STA/FT values go to their nearest header anchor ('STD' / 'STA' / 'Flight'+'Time') within ±16, never 'Rpt'. Rows cluster by (page, x) tol 3; a row's date is the latest anchor at-or-above it, carried across page breaks.
+
+**Echo rows:** overnight/midnight flights appear twice (operating row + landing-day row) and the echo never repeats STD/STA/FT — it only complements them. Merge rule: same flight+sector, immediate next flight row, ≤2-day gap, complementary times. A repeated operation later in the month carries its own complete times and stays a separate flight (Aug 2026's SQ 37 LAX-SIN merges across THREE rows — op + two echoes).
+
+**Trip rules:** chain sectors until arrival at SIN; same-day back-to-back SIN turnarounds merge into one 4-sector trip; Layover iff any intermediate ground >6h (same threshold as `suggestShuttle`), else Turnaround; LMA stations = consecutive stops, in = inbound STA + its row date (same-row STA < STD rolls +1), out = outbound STD. After-midnight departures carry the STD row's date (flight date, not duty date). 2-sector layovers touching a US airport (`isUsAirport`) pre-tick Direct US. Mid-trip starts, month-end open trips and >4-sector loops are flagged in the bubble, not built. Non-flying days = date anchors with no flight rows (no duty-code breakdown — the duty column splits and legend pages make it unreliable).
+
+**Prefill path:** `renderCalculatorCard(mode, onReady)` takes an optional callback fired after `bindCalculatorEvents` (roster build is its only caller). `rosterPrefillCard` clicks the flight-type / sector-count pills first (they rebuild the scaffolding), then writes every value through the calendar-commit path (value → `syncDateBtn` → `input` → `change`), dates in 1..N order so each cascade guess is overwritten by the next real date. LMA stations are added with the `__caLmaQuietAdd` fetch idiom and marked `data-arr/dep-state` done. Turnaround cards skip LMA (that section is hidden for them anyway).
+
+**Privacy:** real rosters live in `_inbox/` on the work branch for development only and are purged (file + branch history) after sign-off; the test suite uses synthetic rosters exclusively (`tests/roster-pdf.test.js` generates them with the same geometry).
+
 ---
 
 ## File map
@@ -264,7 +278,7 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 
 
 ## Testing (in-repo jsdom suite)
-`tests/` contains the behaviour suite introduced 2026-09-19 (owner-approved). Run: `cd tests && npm install && npm test` (or `node tests/run-all.js`). Suites are named by feature — `dev-rates`, `dev-ui`, `earnings-archive`, `exports`, `trip-bar` — and assert OUTCOMES, not internals, so they survive refactors. Rules: every new feature ships with its test block; an intentional behaviour change updates the matching block in the same commit; never dispatch DOMContentLoaded manually in the harness (jsdom fires its own — double-firing double-binds every listener); dialog close fades take 200ms, wait >=400ms before asserting hidden. `tests/package.json` pins jsdom (committed via a `.gitignore` negation; the root package files stay ignored by repo convention) — `node_modules` and lockfiles are never committed.
+`tests/` contains the behaviour suite introduced 2026-09-19 (owner-approved). Run: `cd tests && npm install && npm test` (or `node tests/run-all.js`). Suites are named by feature — `dev-rates`, `dev-ui`, `earnings-archive`, `exports`, `trip-bar`, `roster-pdf` — and assert OUTCOMES, not internals, so they survive refactors. `roster-pdf` generates synthetic rosters with the real generator's geometry (rotated table, echo rows, column splits) — real roster data is never committed. Rules: every new feature ships with its test block; an intentional behaviour change updates the matching block in the same commit; never dispatch DOMContentLoaded manually in the harness (jsdom fires its own — double-firing double-binds every listener); dialog close fades take 200ms, wait >=400ms before asserting hidden. `tests/package.json` pins jsdom (committed via a `.gitignore` negation; the root package files stay ignored by repo convention) — `node_modules` and lockfiles are never committed.
 
 ## Recovery / dead ends (do not retry)
 
