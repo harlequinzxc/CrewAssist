@@ -201,9 +201,13 @@ Dedicated overlay (`#ca-arch-*`), not the shared results sheet: pinned gold summ
 
 **Owner sign-off 2026-09-19:** v1.19.22 accepted — all features through the v1.19.x series are complete and live.
 
-### Roster PDF import (v1.20.0)
+### Roster PDF import (v1.20.0; multi-month stitching v1.20.1)
 
 Paperclip `#btn-roster` (left of `#chat-input`) + hidden `#roster-file-input` (accept `application/pdf,.pdf`, multiple) + intent `/roster|upload|import/` all open the picker. pdf.js 3.11.174 lazy-loads from cdnjs on first use (`ensurePdfJs`; `workerSrc` set after load, `standardFontDataUrl` passed to `getDocument`); corrupt/password PDFs and non-roster PDFs produce clean bubbles via `handleRosterFiles`. Parsing is 100% on-device.
+
+**Multi-month batches (v1.20.1):** `handleRosterFiles` parses each picked PDF, dedupes by `monthLabel` (duplicates get a skip bubble naming the file), sorts by month, and for 2+ unique months stitches the raw item lists with `rosterStitchItems` before one `rosterParse` — so a trip crossing a month boundary (out on the 29th, back on the 2nd) builds complete instead of being flagged open-ended in one file and mid-trip in the next. Stitching renumbers pages continuously (`pageOff += maxPage` per file) because rows and date anchors key on (page, x) and every PDF restarts at page 1. `renderRosterConfirm(parsed, fileName, displayMonth)` takes a third label arg ('June 2026 – July 2026'); without it the parsed month is shown, so single-month callers are unaffected.
+
+**Live FileList trap (v1.20.1 fix):** in real browsers `input.value = ''` empties `e.target.files` **in place** — store the list, clear the value, and the stored list's `length` reads 0, so the handler no-ops (exactly the owner's "nothing happens" report). Always snapshot first: `Array.from(e.target.files || [])` *before* clearing. jsdom never trips this when tests call `handleRosterFiles` directly, so the regression test simulates the liveness: a `files` getter whose `length` reads whether the value has been cleared yet.
 
 **How the report is built (reverse-engineered from six real months):** the page is rotated 90° — in raw pdf.js item coordinates **x = row position, y = column position** (22pt row pitch). The generator splits a column's text runs mid-table (same visual column, slightly different y), so: fn/sector values match globally (their shapes are unique); date anchors come from the dominant-y cluster of date-shaped items (excludes the `From --` header dates); STD/STA/FT values go to their nearest header anchor ('STD' / 'STA' / 'Flight'+'Time') within ±16, never 'Rpt'. Rows cluster by (page, x) tol 3; a row's date is the latest anchor at-or-above it, carried across page breaks.
 
