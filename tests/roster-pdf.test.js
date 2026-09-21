@@ -193,6 +193,89 @@ const MONTH = [
     R.ok(/doesn't look like a PDF/.test(txt), 'non-PDF rejected with a clear bubble');
   }
 
+  // ---- UI: regression — the live FileList bug ----
+  // In browsers, input.value = '' empties e.target.files IN PLACE. The change
+  // handler must snapshot the files before clearing, or "nothing happens"
+  // after picking a PDF (the v1.20.0 bug on a real device).
+  {
+    const { w, d } = await boot(APP);
+    const inp = d.getElementById('roster-file-input');
+    let got = -1;
+    w.handleRosterFiles = (fl) => { got = fl.length; };
+    const fakeFile = { name: 'July 2026.pdf', type: 'application/pdf' };
+    let chosen = true;
+    const live = { get length() { return chosen ? 1 : 0; }, item: () => (chosen ? fakeFile : null), 0: fakeFile };
+    Object.defineProperty(inp, 'files', { configurable: true, get: () => live });
+    Object.defineProperty(inp, 'value', { configurable: true, get: () => (chosen ? 'x' : ''), set: (v) => { if (v === '') chosen = false; } });
+    inp.dispatchEvent(new w.Event('change', { bubbles: true }));
+    R.ok(got === 1, 'files snapshotted before the input is cleared (live FileList regression)');
+    R.eq(inp.value, '', 'input reset so the same file can be re-picked');
+  }
+
+  // ---- parser + stitching: a trip crossing a month boundary ----
+  // Out on 29 Jun, back on 2 Jul: open-ended in June's report, mid-trip in
+  // July's, complete when both months are stitched into one timeline.
+  {
+    const { w, d } = await boot(APP);
+    const june = buildRoster([
+      { date: '29Jun26', day: 'Mon' },
+      { fn: 'SQ 324', sector: 'SIN-AMS', std: '2350', sta: '0742', ft: '13:30' } // arr 30 Jun (STA < STD)
+    ]);
+    const july = buildRoster([
+      { date: '02Jul26', day: 'Thu' },
+      { fn: 'SQ 323', sector: 'AMS-SIN', std: '1030', sta: '0445', ft: '12:15' } // arr 3 Jul
+    ]);
+    const juneAlone = w.rosterParse(june);
+    R.eq(juneAlone.trips[0].ok, false, 'June alone: boundary trip flagged');
+    R.ok(/does not return to Singapore/.test(juneAlone.trips[0].reason), 'June alone: open-ended reason');
+    const julyAlone = w.rosterParse(july);
+    R.eq(julyAlone.trips[0].ok, false, 'July alone: fragment flagged');
+    R.ok(/starts outside Singapore/.test(julyAlone.trips[0].reason), 'July alone: mid-trip reason');
+    const stitched = w.rosterParse(w.rosterStitchItems([june, july]));
+    R.eq(stitched.trips.length, 1, 'stitched: one trip');
+    R.eq(stitched.trips[0].ok, true, 'stitched: boundary trip is buildable');
+    R.eq(stitched.trips[0].type, 'Layover', 'stitched: 51h ground makes it a Layover');
+    R.eq(stitched.trips[0].stations[0].code, 'AMS', 'stitched: station');
+    R.eq(stitched.trips[0].stations[0].inDate, '2026-06-30', 'stitched: AMS in date');
+    R.eq(stitched.trips[0].stations[0].outDate, '2026-07-02', 'stitched: AMS out date');
+    R.eq(stitched.trips[0].sectors[0].depDate, '2026-06-29', 'stitched: sector 1 departs 29 Jun');
+    R.eq(stitched.trips[0].sectors[1].depDate, '2026-07-02', 'stitched: sector 2 departs 2 Jul');
+    w.renderRosterConfirm(stitched, 'June 2026.pdf + July 2026.pdf', 'June 2026 – July 2026');
+    await wait(100);
+    const btxt = d.getElementById('chat-container').lastElementChild.textContent;
+    R.ok(/June 2026 – July 2026/.test(btxt), 'multi-month bubble shows the span label');
+  }
+
+  // ---- UI: handleRosterFiles orchestrates a multi-month batch ----
+  // Stubbed reader; checks dedupe-by-month, ordering, and the stitched bubble.
+  {
+    const { w, d } = await boot(APP);
+    const june = buildRoster([
+      { date: '29Jun26', day: 'Mon' },
+      { fn: 'SQ 324', sector: 'SIN-AMS', std: '2350', sta: '0742', ft: '13:30' }
+    ]);
+    const july = buildRoster([
+      { date: '02Jul26', day: 'Thu' },
+      { fn: 'SQ 323', sector: 'AMS-SIN', std: '1030', sta: '0445', ft: '12:15' }
+    ]);
+    w.rosterReadPdf = async (f) => (/July/.test(f.name) ? july : june);
+    await w.handleRosterFiles([
+      { name: 'July 2026.pdf', type: 'application/pdf' },
+      { name: 'June 2026.pdf', type: 'application/pdf' },
+      { name: 'June 2026 (1).pdf', type: 'application/pdf' }
+    ]);
+    await wait(1600);
+    const txt = d.getElementById('chat-container').textContent;
+    R.ok(/June 2026 \(1\)\.pdf covers a month already in this batch/.test(txt), 'duplicate month named in skip message');
+    R.ok(/kept the first, skipped the rest/.test(txt), 'skip message explains the resolution');
+    const bubble = d.getElementById('chat-container').lastElementChild;
+    const bt = bubble.textContent;
+    R.ok(/June 2026\.pdf \+ July 2026\.pdf/.test(bt), 'bubble names both files');
+    R.ok(/June 2026 – July 2026/.test(bt), 'bubble shows the stitched span');
+    R.ok(/1 trip · 2 sectors/.test(bt), 'boundary trip is complete in the stitched count');
+    R.ok(!/not built/.test(bt), 'nothing flagged in the stitched timeline');
+  }
+
   // ---- UI: confirm bubble -> Build -> prefilled cards ----
   {
     const { w, d } = await boot(APP);

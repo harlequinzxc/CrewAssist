@@ -1383,10 +1383,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.20.0';
+        const APP_VERSION = '1.20.1';
         const APP_WHAT_NEW = [
-            'New paperclip in the chat bar: attach your Crew Roster Report PDF and your whole month builds itself — every trip, time, date and layover station filled with zero fetching.',
-            'A confirm bubble shows every trip I read before anything is built; Build or Discard is always your call, and unreadable lines are reported, never guessed.'
+            'Fixed: after picking a PDF from the paperclip nothing happened — the file list was being cleared before it was read. Import now runs the moment you choose a file.',
+            'Attach two roster months together and trips that cross the month boundary (out on the 29th, back on the 2nd) build complete — the reports are stitched into one timeline.'
         ];
 
         // State
@@ -1645,9 +1645,11 @@
                 openRosterPicker();
             });
             document.getElementById('roster-file-input').addEventListener('change', (e) => {
-                const files = e.target.files;
+                // Snapshot the files BEFORE clearing: e.target.files is a LIVE
+                // FileList in browsers, and value = '' empties it in place.
+                const files = Array.from(e.target.files || []);
                 e.target.value = '';
-                if (files && files.length) handleRosterFiles(files);
+                if (files.length) handleRosterFiles(files);
             });
 
             document.getElementById('chat-input').addEventListener('keypress', (e) => {
@@ -2330,6 +2332,7 @@
             }
             setChatBusy(true);
             try {
+                const loaded = [];
                 for (const f of files) {
                     let items = null;
                     try { items = await rosterReadPdf(f); }
@@ -2339,10 +2342,48 @@
                         addBotMessage(`<b>${rosterEsc(f.name)}</b> doesn't look like a Crew Roster Report — I found no flight rows.`);
                         continue;
                     }
-                    const parsedRef = parsed, fileName = f.name;
-                    await new Promise(res => enqueueBot(() => { renderRosterConfirm(parsedRef, fileName); res(); }));
+                    loaded.push({ name: f.name, items, month: parsed.monthLabel });
                 }
+                if (!loaded.length) return;
+                // One report covers one month, so a trip crossing a month
+                // boundary (e.g. out on the 29th, back on the 2nd) is open-ended
+                // in one file and starts mid-trip in the next. Stitching the
+                // files into one timeline completes it.
+                const byMonth = new Map();
+                const dupes = [];
+                loaded.forEach(f => { if (byMonth.has(f.month)) dupes.push(f.name); else byMonth.set(f.month, f); });
+                if (dupes.length) {
+                    addBotMessage(`${dupes.map(rosterEsc).join(', ')} cover${dupes.length === 1 ? 's' : ''} a month already in this batch — kept the first, skipped the rest.`);
+                }
+                const unique = Array.from(byMonth.values()).sort((a, b) => (a.month < b.month ? -1 : a.month > b.month ? 1 : 0));
+                let parsed, fileName, displayMonth = '';
+                if (unique.length === 1) {
+                    parsed = rosterParse(unique[0].items);
+                    fileName = unique[0].name;
+                } else {
+                    parsed = rosterParse(rosterStitchItems(unique.map(f => f.items)));
+                    const months = unique.map(f => f.month);
+                    displayMonth = rosterMonthName(months[0]) + ' – ' + rosterMonthName(months[months.length - 1]);
+                    fileName = unique.map(f => f.name).join(' + ');
+                }
+                const parsedRef = parsed, nameRef = fileName, monthRef = displayMonth;
+                await new Promise(res => enqueueBot(() => { renderRosterConfirm(parsedRef, nameRef, monthRef); res(); }));
             } finally { setChatBusy(false); }
+        }
+
+        // Concatenate report items into one timeline: pages are renumbered
+        // continuously (rows and date anchors key off (page, x), so a restart
+        // at page 1 would collide two reports' rows together).
+        function rosterStitchItems(itemsList) {
+            const out = [];
+            let pageOff = 0;
+            (itemsList || []).forEach(items => {
+                let maxP = 0;
+                (items || []).forEach(it => { const p = it.page || 1; if (p > maxP) maxP = p; });
+                (items || []).forEach(it => out.push({ str: it.str, x: it.x, y: it.y, page: (it.page || 1) + pageOff }));
+                pageOff += maxP;
+            });
+            return out;
         }
 
         function rosterMonthName(ym) {
@@ -2356,12 +2397,12 @@
             return parseInt(m[3], 10) + ' ' + (typeof CA_MONTHS_SHORT !== 'undefined' ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] : m[2]);
         }
 
-        function renderRosterConfirm(parsed, fileName) {
+        function renderRosterConfirm(parsed, fileName, displayMonth) {
             const tripsOk = parsed.trips.filter(t => t.ok);
             const flagged = parsed.trips.filter(t => !t.ok);
             const sectors = tripsOk.reduce((n, t) => n + t.sectors.length, 0);
             const lines = [];
-            lines.push(`<b>${rosterEsc(fileName)}</b> — ${rosterEsc(rosterMonthName(parsed.monthLabel))}: <b>${tripsOk.length} trip${tripsOk.length === 1 ? '' : 's'} · ${sectors} sector${sectors === 1 ? '' : 's'}</b> across ${parsed.flyingDays} flying day${parsed.flyingDays === 1 ? '' : 's'}.`);
+            lines.push(`<b>${rosterEsc(fileName)}</b> — ${rosterEsc(displayMonth || rosterMonthName(parsed.monthLabel))}: <b>${tripsOk.length} trip${tripsOk.length === 1 ? '' : 's'} · ${sectors} sector${sectors === 1 ? '' : 's'}</b> across ${parsed.flyingDays} flying day${parsed.flyingDays === 1 ? '' : 's'}.`);
             if (parsed.skippedDays) lines.push(`Skipped ${parsed.skippedDays} non-flying day${parsed.skippedDays === 1 ? '' : 's'} (leave, off and standby rows).`);
             flagged.forEach(t => lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')} — ${t.reason}; not built.`));
             const listHtml = tripsOk.map((t, i) => {
