@@ -1383,10 +1383,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.20.1';
+        const APP_VERSION = '1.21.0';
         const APP_WHAT_NEW = [
-            'Fixed: after picking a PDF from the paperclip nothing happened — the file list was being cleared before it was read. Import now runs the moment you choose a file.',
-            'Attach two roster months together and trips that cross the month boundary (out on the 29th, back on the 2nd) build complete — the reports are stitched into one timeline.'
+            'New Calculate all button under Build/Discard: one tap builds and calculates every roster trip, with one combined summary — grand total, per-trip breakdowns — and a single Save that files them all.',
+            'Prefer one-at-a-time? Nothing changed: Build the cards and Calculate each yourself; Calculate all stays available for the rest.'
         ];
 
         // State
@@ -2425,26 +2425,140 @@
                     <button type="button" class="roster-discard-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
                         <i data-lucide="x" class="w-3.5 h-3.5"></i>Discard
                     </button>
-                </div>`;
+                </div>
+                <button type="button" class="roster-calc-all-btn mt-2 w-full py-2.5 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                    <i data-lucide="calculator" class="w-3.5 h-3.5"></i>Calculate all
+                </button>`;
             addMessage('bot', html, true);
             const bubble = document.getElementById('chat-container').lastElementChild;
             const buildBtn = bubble.querySelector('.roster-build-btn');
             const discardBtn = bubble.querySelector('.roster-discard-btn');
-            const spend = () => {
-                buildBtn.disabled = true;
-                discardBtn.disabled = true;
-                buildBtn.classList.add('opacity-50', 'pointer-events-none');
-                discardBtn.classList.add('opacity-50', 'pointer-events-none');
+            const calcAllBtn = bubble.querySelector('.roster-calc-all-btn');
+            // The cards this bubble created (ids fill in as they bind), so
+            // Calculate all targets exactly this batch — even after Build.
+            const batch = { ids: [], built: false };
+            const setSpent = (btn) => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'pointer-events-none');
             };
-            buildBtn.addEventListener('click', () => { spend(); rosterBuildCards(parsed); });
-            discardBtn.addEventListener('click', () => { spend(); addBotMessage('Discarded — nothing was built. Attach the roster again anytime.'); });
+            // Build spends only itself and Discard: the crew can still hand-check
+            // a few cards and hand the rest to Calculate all afterwards.
+            const spendBuildRow = () => { setSpent(buildBtn); setSpent(discardBtn); };
+            const spendAll = () => { setSpent(buildBtn); setSpent(discardBtn); setSpent(calcAllBtn); };
+            buildBtn.addEventListener('click', () => { spendBuildRow(); rosterBuildCards(parsed, batch); });
+            discardBtn.addEventListener('click', () => { spendAll(); addBotMessage('Discarded — nothing was built. Attach the roster again anytime.'); });
+            calcAllBtn.addEventListener('click', () => { spendAll(); rosterCalculateAll(parsed, batch); });
         }
 
-        function rosterBuildCards(parsed) {
+        function rosterBuildCards(parsed, batch, silent) {
             const ok = parsed.trips.filter(t => t.ok);
             if (!ok.length) { addBotMessage('Nothing to build — every trip was flagged.'); return; }
-            addBotMessage(`Building ${ok.length} calculator card${ok.length === 1 ? '' : 's'} — check the times against your roster, then Calculate. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>`);
-            ok.forEach(trip => renderCalculatorCard('both', (id) => rosterPrefillCard(id, trip)));
+            if (!silent) addBotMessage(`Building ${ok.length} calculator card${ok.length === 1 ? '' : 's'} — check the times against your roster, then Calculate. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>`);
+            ok.forEach(trip => renderCalculatorCard('both', (id) => {
+                if (batch) batch.ids.push({ id: id, trip: trip });
+                rosterPrefillCard(id, trip);
+            }));
+            if (batch) batch.built = true;
+        }
+
+        // Automation path: build (if needed) + calculate every trip in one tap,
+        // then show ONE combined summary. Manual stays exactly as it was —
+        // Build, then Calculate per card, whenever the crew prefers that.
+        function rosterCalculateAll(parsed, batch) {
+            const ok = parsed.trips.filter(t => t.ok);
+            if (!ok.length) { addBotMessage('Nothing to calculate — every trip was flagged.'); return; }
+            if (batch && !batch.built) {
+                addBotMessage(`Building ${ok.length} card${ok.length === 1 ? '' : 's'} and calculating every trip — results in a moment. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>`);
+                rosterBuildCards(parsed, batch, true);
+            }
+            // renderCalculatorCard binds and prefills on a ~10ms timeout; give
+            // every card a beat to finish before its inputs are read.
+            setTimeout(() => {
+                const results = [];
+                let skipped = 0;
+                (batch ? batch.ids : []).forEach(entry => {
+                    const btn = document.getElementById(`${entry.id}-btn-calc`);
+                    // Calculate's own gate: grey means the card is incomplete, and
+                    // an incomplete card is reported, never half-calculated.
+                    if (!btn || btn.disabled) { skipped++; return; }
+                    results.push({ trip: entry.trip, res: computeCardResults(entry.id, 'both') });
+                    foldCard(btn.closest('.glass-bubble'));
+                });
+                if (!results.length) {
+                    addBotMessage("The cards aren't complete enough to calculate yet — fill in what's missing, then Calculate.");
+                    return;
+                }
+                showRosterAllOverlay(results, skipped);
+            }, 250);
+        }
+
+        function showRosterAllOverlay(results, skipped) {
+            const backdrop = document.getElementById('results-backdrop');
+            const sheet = document.getElementById('results-sheet');
+            const content = document.getElementById('results-content');
+            const grand = results.reduce((n, r) => n + r.res.grandTotal, 0);
+            const n = results.length;
+            let html = `
+                <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
+                    <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total — ${n} trip${n === 1 ? '' : 's'}</p>
+                    <p class="text-4xl font-bold">${formatMoney(grand)}</p>
+                </div>`;
+            if (skipped) html += `
+                <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl border border-amber-500/20 text-center mb-4">${skipped} card${skipped === 1 ? '' : 's'} skipped — incomplete fields. Calculate ${skipped === 1 ? 'it' : 'them'} individually once filled.</div>`;
+            results.forEach(r => {
+                const t = r.trip, s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
+                const route = t.sectors.map(s => s.dep).join('–') + '–' + sl.arr;
+                html += `
+                <div class="mb-6">
+                    <div class="flex items-baseline justify-between gap-2 border-b border-black/10 dark:border-white/10 pb-2 mb-3">
+                        <div class="min-w-0">
+                            <span class="font-bold text-sm">${route}</span>
+                            <span class="text-[11px] text-gray-500 ml-1.5">${rosterShortDate(s0.depDate)} – ${rosterShortDate(sl.arrDate)}</span>
+                            <span class="ml-1.5 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-bold uppercase">${t.type === 'Turnaround' ? 'T/A' : 'Layover'}</span>
+                        </div>
+                        <span class="shrink-0 font-bold text-sia-gold">${formatMoney(r.res.grandTotal)}</span>
+                    </div>
+                    ${r.res.ifaDetails.join('')}
+                    ${r.res.isTurnaround
+                        ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
+                        : r.res.lmaDetails.join('')}
+                </div>`;
+            });
+            document.getElementById('results-title').textContent = 'Summary';
+            content.innerHTML = html;
+            // One tap saves every trip as its own archive entry — the same
+            // entries the crew would get by saving each summary by hand. Roster
+            // cards already carry their stations, so the single-summary station
+            // prompt doesn't apply; station-less trips keep the dash (4.11).
+            const payloads = results.map(r => r.res.archivePayload).filter(Boolean);
+            const ab = document.getElementById('btn-results-action');
+            setResultsAction(payloads.length ? 'save' : null, false);
+            if (ab) delete ab.dataset.done;
+            if (ab && payloads.length) {
+                ab.onclick = () => {
+                    if (ab.disabled || ab.dataset.done) return;
+                    const arr = loadArchive();
+                    arr.push(...payloads);
+                    persistArchive(arr);
+                    appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved.`);
+                    // One tap saves once: full-colour tick, then the save icon
+                    // returns INACTIVE — same one-shot as a single summary.
+                    ab.dataset.done = '1';
+                    setResultsAction('check', false);
+                    ab.disabled = true;
+                    setTimeout(() => setResultsAction('save', true), 1200);
+                };
+            }
+            content.scrollTop = 0;
+            backdrop.classList.remove('hidden');
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+                content.scrollTop = 0;
+            }, 10);
+            setTimeout(() => {
+                addBotMessage(`Your total COP Allowance across ${n} trip${n === 1 ? '' : 's'} is ${formatMoney(grand)}`);
+            }, 600);
         }
 
         function rosterPrefillCard(id, trip) {
@@ -5773,7 +5887,9 @@ function getRegionForAirport(code) {
             return getBracketMultiplier(IFA_CONFIG.turnaroundBrackets || DEFAULT_RATES.ifa.turnaroundBrackets, totalSdp);
         }
 
-        function executeCalculation(id, mode) {
+        // The card's compute core, split from executeCalculation so "Calculate
+        // all" can total every roster card into one combined summary.
+        function computeCardResults(id, mode) {
             let ifaTotal = 0;
             let lmaTotal = 0;
             let globalB = 0, globalL = 0, globalD = 0;
@@ -5789,7 +5905,7 @@ function getRegionForAirport(code) {
                 isTurnaround = type === 'Turnaround';
                 const is4 = count === 4;
 
-                const rankRate = IFA_CONFIG.baseRates[appProfile.rank] || 13.5;
+                const rankRate = (appProfile && IFA_CONFIG.baseRates[appProfile.rank]) || 13.5;
                 
                 // Determine SG logic per 2.1
                 const isSgArr = is4 
@@ -6017,9 +6133,20 @@ function getRegionForAirport(code) {
                     </div>
                 `);
             }
-            const grandTotal = ifaTotal + lmaTotal;
-            const archivePayload = (mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null;
-            showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload);
+            return {
+                grandTotal: ifaTotal + lmaTotal,
+                ifaTotal: ifaTotal,
+                lmaTotal: lmaTotal,
+                ifaDetails: ifaDetails,
+                lmaDetails: lmaDetails,
+                isTurnaround: isTurnaround,
+                archivePayload: (mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null
+            };
+        }
+
+        function executeCalculation(id, mode) {
+            const r = computeCardResults(id, mode);
+            showResultsOverlay(r.grandTotal, r.ifaTotal, r.lmaTotal, r.ifaDetails, r.lmaDetails, r.isTurnaround, mode, r.archivePayload);
             const ccBtn = document.getElementById(id + '-btn-calc');
             if (ccBtn) foldCard(ccBtn.closest('.glass-bubble'));
         }
