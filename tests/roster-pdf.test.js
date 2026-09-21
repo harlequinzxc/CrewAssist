@@ -330,6 +330,66 @@ const MONTH = [
     R.eq(d.getElementById(`${id5}-lma-at2`).value, '12:59', 'LAX in time');
   }
 
+  // ---- UI: Calculate all — one tap builds + calculates every trip ----
+  {
+    const { w, d } = await boot(APP);
+    const parsed = w.rosterParse(buildRoster(MONTH));
+    w.renderRosterConfirm(parsed, 'Test Month.pdf');
+    await wait(100);
+    const bubble = d.getElementById('chat-container').lastElementChild;
+    const calcAllBtn = bubble.querySelector('.roster-calc-all-btn');
+    R.ok(!!calcAllBtn, 'Calculate all button sits under Build/Discard');
+    calcAllBtn.click();
+    await wait(1000);
+    const cards = Array.from(d.querySelectorAll('[data-calc-card]'));
+    R.eq(cards.length, 6, 'Calculate all builds the cards too');
+    R.ok(cards.every(c => c.classList.contains('ca-folded')), 'every card folded, like a manual Calculate');
+    const backdrop = d.getElementById('results-backdrop');
+    R.ok(!backdrop.classList.contains('hidden'), 'combined summary opens');
+    const txt = d.getElementById('results-content').textContent;
+    R.ok(/Grand Total — 6 trips/.test(txt), 'header totals all six trips');
+    // The combined total must equal the sum of the individual card results.
+    const expect = [1, 2, 3, 4, 5, 6].reduce((n, i) => n + w.computeCardResults(`calc-${i}`, 'both').grandTotal, 0);
+    R.ok(txt.indexOf(w.formatMoney(expect)) !== -1, 'combined grand total = sum of the per-trip totals');
+    R.ok(/LMA is not eligible for Turnaround flights/.test(txt), 'turnaround trips keep the honest LMA note');
+    R.ok(/SIN–KTM–SIN/.test(txt), 'per-trip sections carry their routes');
+    R.ok(bubble.querySelector('.roster-build-btn').disabled && bubble.querySelector('.roster-discard-btn').disabled && calcAllBtn.disabled, 'Calculate all spends the whole footer');
+    // Save: one tap files every trip as its own archive entry, one-shot
+    const ab = d.getElementById('btn-results-action');
+    R.ok(!ab.classList.contains('hidden'), 'save action offered on the combined summary');
+    ab.click();
+    await wait(150);
+    const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.eq(arch.length, 6, 'one tap saves six archive entries');
+    R.eq(arch.filter(e => e.monthKey === '2026-07').length, 4, 'July trips file under July');
+    R.ok(arch.some(e => e.monthKey === '2026-09' && e.stationDisplay === 'NRT/LAX'), 'US trip files under its own sector-1 month');
+    R.eq(ab.dataset.done, '1', 'combined save is one-shot');
+    ab.click();
+    await wait(50);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, arch.length, 'second tap saves nothing');
+    d.getElementById('btn-close-results').click();
+    await wait(400);
+    R.ok(backdrop.classList.contains('hidden'), 'combined summary closes');
+  }
+
+  // ---- UI: Build first, Calculate all still available after ----
+  {
+    const { w, d } = await boot(APP);
+    const parsed = w.rosterParse(buildRoster(MONTH));
+    w.renderRosterConfirm(parsed, 'Test Month.pdf');
+    await wait(100);
+    const bubble = d.getElementById('chat-container').lastElementChild;
+    bubble.querySelector('.roster-build-btn').click();
+    await wait(700);
+    R.eq(d.querySelectorAll('[data-calc-card]').length, 6, 'Build made the cards');
+    const calcAllBtn = bubble.querySelector('.roster-calc-all-btn');
+    R.eq(calcAllBtn.disabled, false, 'Calculate all stays available after Build');
+    calcAllBtn.click();
+    await wait(1000);
+    R.ok(!d.getElementById('results-backdrop').classList.contains('hidden'), 'combined summary opens after a manual Build');
+    R.ok(/Grand Total — 6 trips/.test(d.getElementById('results-content').textContent), 'all trips included after Build');
+  }
+
   // ---- UI: Discard builds nothing ----
   {
     const { w, d } = await boot(APP);
@@ -341,6 +401,8 @@ const MONTH = [
     await wait(700);
     R.eq(d.querySelectorAll('[data-calc-card]').length, 0, 'Discard builds no cards');
     R.ok(bubble.querySelector('.roster-discard-btn').classList.contains('pointer-events-none'), 'Discard is one-shot');
+    R.ok(bubble.querySelector('.roster-build-btn').disabled, 'Discard spends Build');
+    R.ok(bubble.querySelector('.roster-calc-all-btn').disabled, 'Discard spends Calculate all');
   }
 
   process.exit(R.done());
