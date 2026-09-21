@@ -978,8 +978,8 @@
         </div>
         <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
-            <div class="absolute inset-0 bg-black/50" data-ca-arch-sub-close></div>
-            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full"></div>
+            <div class="ca-arch-sub-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
+            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full translate-y-full transition-transform duration-300"></div>
         </div>
 
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
@@ -1383,10 +1383,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.21.0';
+        const APP_VERSION = '1.22.0';
         const APP_WHAT_NEW = [
-            'New Calculate all button under Build/Discard: one tap builds and calculates every roster trip, with one combined summary — grand total, per-trip breakdowns — and a single Save that files them all.',
-            'Prefer one-at-a-time? Nothing changed: Build the cards and Calculate each yourself; Calculate all stays available for the rest.'
+            'Flight Overview: every summary now opens with a plain-English rundown of the trip — flight numbers, times, how IFA was derived, when you landed into and left each station, and what LMA covers.',
+            'Your earnings archive is now tappable: tap any saved flight to reopen its full summary, exactly as it was calculated that day.',
+            'Fixed: layovers in Kathmandu were skipping LMA — Nepal is now in the South Asia rate table.'
         ];
 
         // State
@@ -2518,6 +2519,7 @@
                         </div>
                         <span class="shrink-0 font-bold text-sia-gold">${formatMoney(r.res.grandTotal)}</span>
                     </div>
+                    ${overviewBlock(flightOverviewText(r.res.detail))}
                     ${r.res.ifaDetails.join('')}
                     ${r.res.isTurnaround
                         ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
@@ -2526,6 +2528,7 @@
             });
             document.getElementById('results-title').textContent = 'Summary';
             content.innerHTML = html;
+            try { lucide.createIcons(); } catch (e) {}
             // One tap saves every trip as its own archive entry — the same
             // entries the crew would get by saving each summary by hand. Roster
             // cards already carry their stations, so the single-summary station
@@ -2592,6 +2595,11 @@
                 setVal(q(`ifa-fn${k}`), s.fn, true);
                 setVal(q(`ifa-d${k}`), s.depDate, true);
                 setVal(q(`ifa-t${k}`), s.ftHm, true);
+                const blk = document.querySelector(`#${id}-ifa-sectors [data-ifa-sector="${k}"]`);
+                if (blk) {
+                    if (s.dep) blk.setAttribute('data-dep-airport', s.dep);
+                    if (s.arr) blk.setAttribute('data-arr-airport', s.arr);
+                }
             });
             // Direct US switch exists on 2-sector layovers only (same rule as Fetch)
             if (trip.type === 'Layover' && trip.sectors.length === 2 &&
@@ -3488,7 +3496,7 @@ const countryToRegion = {
   GB: "Europe", FR: "Europe", DE: "Europe", NL: "Europe", ES: "Europe", IT: "Europe", CH: "Europe", AT: "Europe", BE: "Europe", DK: "Europe", SE: "Europe", NO: "Europe", FI: "Europe", GR: "Europe", TR: "Europe", IE: "Europe", PL: "Europe",
   AE: "Middle East", QA: "Middle East", SA: "Middle East", BH: "Middle East", KW: "Middle East", OM: "Middle East",
   ZA: "South Africa",
-  IN: "South Asia", BD: "South Asia", LK: "South Asia", MV: "South Asia",
+  IN: "South Asia", BD: "South Asia", LK: "South Asia", MV: "South Asia", NP: "South Asia",
   SG: "Southeast Asia", MY: "Southeast Asia", TH: "Southeast Asia", ID: "Southeast Asia", PH: "Southeast Asia", VN: "Southeast Asia", MM: "Southeast Asia", KH: "Southeast Asia"
 };
 
@@ -5897,6 +5905,10 @@ function getRegionForAirport(code) {
             let ifaDetails = [];
             let lmaDetails = [];
             let isTurnaround = false;
+            // Structured snapshot of everything the Flight Overview paragraph and
+            // the archive's reopen-view need (frozen at calculate time, so later
+            // rate edits never rewrite a saved summary).
+            const snap = { v: 1, type: '', sectorCount: 0, rankRate: 0, sectors: [], bonusCount: 0, bonusAmount: 0, tripSdpHm: '', ifaTotal: 0, lmaTotal: 0, grandTotal: 0, stations: [] };
             
             // IFA
             if (mode === 'ifa' || mode === 'both') {
@@ -5906,6 +5918,9 @@ function getRegionForAirport(code) {
                 const is4 = count === 4;
 
                 const rankRate = (appProfile && IFA_CONFIG.baseRates[appProfile.rank]) || 13.5;
+                snap.type = isTurnaround ? 'Turnaround' : 'Layover';
+                snap.sectorCount = count;
+                snap.rankRate = rankRate;
                 
                 // Determine SG logic per 2.1
                 const isSgArr = is4 
@@ -5935,6 +5950,7 @@ function getRegionForAirport(code) {
                 }
 
                 const sharedTurnMult = isTurnaround ? getTurnaroundMultiplier(tripSdp) : 0;
+                snap.tripSdpHm = formatHoursHM(tripSdp);
                 
                 sectors.forEach((sec, idx) => {
                     if (!sec) return;
@@ -5957,6 +5973,21 @@ function getRegionForAirport(code) {
                     
                     const allowance = sec.hours * rankRate * mult;
                     ifaTotal += allowance;
+                    const secBlock = document.querySelector(`#${id}-ifa-sectors [data-ifa-sector="${idx + 1}"]`);
+                    snap.sectors.push({
+                        fn: ((document.getElementById(`${id}-ifa-fn${idx + 1}`) || {}).value || '').trim(),
+                        ftHm: formatHoursHM(sec.hours),
+                        sdpHm: formatHoursHM(sec.sdp),
+                        mult: mult,
+                        amount: Math.round(allowance * 100) / 100,
+                        paxing: !!sec.paxing,
+                        directUs: !!sec.directUs,
+                        isSg: !!sec.isSg,
+                        dep: secBlock ? (secBlock.getAttribute('data-dep-airport') || '') : '',
+                        arr: secBlock ? (secBlock.getAttribute('data-arr-airport') || '') : '',
+                        depYmd: ((document.getElementById(`${id}-ifa-d${idx + 1}`) || {}).value || ''),
+                        logic: logic
+                    });
                     
                     ifaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
@@ -5975,6 +6006,8 @@ function getRegionForAirport(code) {
                     const bonusCount = is4 ? 2 : 1;
                     const bonus = bonusCount * IFA_CONFIG.turnaroundBonusAmount;
                     ifaTotal += bonus;
+                    snap.bonusCount = bonusCount;
+                    snap.bonusAmount = Math.round(bonus * 100) / 100;
                     ifaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                             <div class="flex justify-between font-bold text-sm">
@@ -5999,11 +6032,14 @@ function getRegionForAirport(code) {
                     const aTime = document.getElementById(`${id}-lma-at${idxStr}`).value;
                     const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
                     const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
+                    const snapStation = { code: iata, region: '', inYmd: aDate, inHm: aTime, outYmd: dDate, outHm: dTime, days: [], total: 0, shuttle: false, skipped: '' };
 
                     const shInp = document.getElementById(`${id}-lma-sh${idxStr}`);
                     const isShuttle = !!(shInp && shInp.checked);
 
                     if (isShuttle) {
+                        snapStation.shuttle = true;
+                        snap.stations.push(snapStation);
                         lmaDetails.push(`
                             <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
                                 <div class="flex justify-between font-bold text-sm">
@@ -6017,15 +6053,20 @@ function getRegionForAirport(code) {
                     }
 
                     if (!iata || !aDate || !dDate || !aTime || !dTime ) {
+                        snapStation.skipped = 'Incomplete fields';
+                        snap.stations.push(snapStation);
                         lmaDetails.push('<div class="text-red-500 text-xs mb-2">Missing or incomplete fields for station ' + (iata || idxStr) + '. Skipping.</div>');
                         return;
                     }
 
                     const region = getRegionForAirport(iata);
                     if (!region) {
+                        snapStation.skipped = 'Unknown region';
+                        snap.stations.push(snapStation);
                         lmaDetails.push('<div class="text-red-500 text-xs mb-2">Unknown region for ' + iata + '. Skipping.</div>');
                         return;
                     }
+                    snapStation.region = region;
                     
                     const rates = REGION_RATES[region];
                     
@@ -6034,7 +6075,7 @@ function getRegionForAirport(code) {
                     const msDiff = depDt.getTime() - arrDt.getTime();
                     const daysDiff = Math.round(msDiff / (1000 * 60 * 60 * 24));
                     
-                    if (daysDiff < 0) return;
+                    if (daysDiff < 0) { snapStation.skipped = 'Departs before it arrives'; snap.stations.push(snapStation); return; }
                     
                     const parseMins = (t) => {
                         const m = t.match(/^(\d{1,2}):(\d{2})$/);
@@ -6044,7 +6085,7 @@ function getRegionForAirport(code) {
                     
                     const arrMins = parseMins(aTime);
                     const depMins = parseMins(dTime);
-                    if (arrMins < 0 || depMins < 0) return;
+                    if (arrMins < 0 || depMins < 0) { snapStation.skipped = 'Unreadable times'; snap.stations.push(snapStation); return; }
 
                     const win = LMA_WINDOWS || {};
                     const bStart = parseHmToMinutes(win.b && win.b.start) ?? (7 * 60 + 30);
@@ -6085,6 +6126,11 @@ function getRegionForAirport(code) {
                         globalB += (bc*rates.b);
                         globalL += (lc*rates.l);
                         globalD += (dc*rates.d);
+                        snapStation.days.push({
+                            ymd: currDt.getFullYear() + '-' + String(currDt.getMonth() + 1).padStart(2, '0') + '-' + String(currDt.getDate()).padStart(2, '0'),
+                            b: bc, l: lc, d: dc,
+                            cost: Math.round(dayCost * 100) / 100
+                        });
                         
                         if (bc>0 || lc>0 || dc>0) {
                             dayRows.push(`
@@ -6101,6 +6147,8 @@ function getRegionForAirport(code) {
                         }
                     }
                     lmaTotal += stationTotal;
+                    snapStation.total = Math.round(stationTotal * 100) / 100;
+                    snap.stations.push(snapStation);
 
                     lmaDetails.push(`
                         <div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">
@@ -6133,6 +6181,12 @@ function getRegionForAirport(code) {
                     </div>
                 `);
             }
+            snap.ifaTotal = Math.round(ifaTotal * 100) / 100;
+            snap.lmaTotal = Math.round(lmaTotal * 100) / 100;
+            snap.grandTotal = Math.round((ifaTotal + lmaTotal) * 100) / 100;
+            snap.meals = { b: mealB, l: mealL, d: mealD, bAmt: Math.round(globalB * 100) / 100, lAmt: Math.round(globalL * 100) / 100, dAmt: Math.round(globalD * 100) / 100 };
+            const snapPayload = (mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null;
+            if (snapPayload) snapPayload.detail = snap;
             return {
                 grandTotal: ifaTotal + lmaTotal,
                 ifaTotal: ifaTotal,
@@ -6140,15 +6194,263 @@ function getRegionForAirport(code) {
                 ifaDetails: ifaDetails,
                 lmaDetails: lmaDetails,
                 isTurnaround: isTurnaround,
-                archivePayload: (mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null
+                archivePayload: snapPayload,
+                detail: snap
             };
         }
 
         function executeCalculation(id, mode) {
             const r = computeCardResults(id, mode);
-            showResultsOverlay(r.grandTotal, r.ifaTotal, r.lmaTotal, r.ifaDetails, r.lmaDetails, r.isTurnaround, mode, r.archivePayload);
+            showResultsOverlay(r.grandTotal, r.ifaTotal, r.lmaTotal, r.ifaDetails, r.lmaDetails, r.isTurnaround, mode, r.archivePayload, r.detail);
             const ccBtn = document.getElementById(id + '-btn-calc');
             if (ccBtn) foldCard(ccBtn.closest('.glass-bubble'));
+        }
+
+        // ================= FLIGHT OVERVIEW (v1.22.0) =================
+        // Plain-English, personal-voice paragraph generated from the structured
+        // snapshot — the same object the archive stores, so a live summary and a
+        // reopened one can never disagree. Format locked with the owner:
+        // "Sat 5th Sep 1727H", SDP kept as a term, Direct US only SIN–US–SIN.
+        const OV_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const OV_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        function ovOrdinal(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+        function ovYmdDate(ymd) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+            return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null;
+        }
+        function ovDay(ymd) {
+            const d = ovYmdDate(ymd);
+            return d ? OV_DAYS[d.getDay()] + ' ' + ovOrdinal(d.getDate()) + ' ' + OV_MONTHS[d.getMonth()] : String(ymd || '');
+        }
+        function ovTime(hm) { const t = String(hm || '').replace(':', ''); return t ? t + 'H' : ''; }
+        function ovDT(ymd, hm) { const t = ovTime(hm); return t ? ovDay(ymd) + ' ' + t : ovDay(ymd); }
+        function ovCity(code) {
+            const c = String(code || '').toUpperCase();
+            if (!c) return '';
+            const a = (typeof airports !== 'undefined' ? airports : []).find(x => x.code === c);
+            return a ? a.city : c;
+        }
+        function ovNights(inYmd, outYmd) {
+            const a = ovYmdDate(inYmd), b = ovYmdDate(outYmd);
+            return (a && b) ? Math.round((b.getTime() - a.getTime()) / 86400000) : 0;
+        }
+        function ovFtMins(ftHm) {
+            const m = /^(\d+)H\s*(\d+)M$/.exec(String(ftHm || ''));
+            return m ? (+m[1]) * 60 + (+m[2]) : 0;
+        }
+        function ovMealsList(day) {
+            const parts = [];
+            if (day.b) parts.push('breakfast');
+            if (day.l) parts.push('lunch');
+            if (day.d) parts.push('dinner');
+            if (!parts.length) return '';
+            if (parts.length === 1) return parts[0];
+            return parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
+        }
+        function ovWindows() {
+            const win = (typeof LMA_WINDOWS !== 'undefined' ? LMA_WINDOWS : {}) || {};
+            const p = (v, d) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '')); return m ? m[1] + m[2] + 'H' : d; };
+            return { dEnd: p(win.d && win.d.end, '2030H') };
+        }
+        function ovArrivalAside(st) {
+            if (!st || st.skipped || st.shuttle || !(st.days || []).length) return '';
+            const arrDay = st.days[0];
+            if (arrDay.b || arrDay.l || arrDay.d) return ' — in time for ' + ovMealsList(arrDay);
+            const arrMins = (typeof parseHmToMinutes === 'function' ? (parseHmToMinutes(st.inHm) || 0) : 0);
+            const dEnd = (typeof LMA_WINDOWS !== 'undefined' && typeof parseHmToMinutes === 'function') ? parseHmToMinutes(LMA_WINDOWS.d && LMA_WINDOWS.d.end) : null;
+            if (dEnd != null && arrMins > dEnd) return " — just missing dinner, I'm afraid; the window closes " + ovWindows().dEnd;
+            return '';
+        }
+        function ovStationStory(st) {
+            const city = ovCity(st.code) || 'the station';
+            if (st.skipped === 'Unknown region') return 'no LMA for ' + city + " — it's not in the station-rate table yet";
+            if (st.skipped) return 'no LMA for ' + city + ' (' + st.skipped.toLowerCase() + ')';
+            if (st.shuttle) return 'no LMA on the ' + city + ' shuttle ground';
+            const days = st.days || [];
+            const withMeals = days.filter(x => x.b || x.l || x.d);
+            if (!days.length || !withMeals.length) return city + ' paid nothing — no meal windows were open while you were on the ground';
+            const region = st.region ? ' at ' + st.region + ' rates' : '';
+            if (days.length === 1) return 'the ' + ovDay(days[0].ymd) + ' on the ground covers ' + ovMealsList(days[0]) + region;
+            const arrDay = days[0], depDay = days[days.length - 1];
+            const arrMeals = ovMealsList(arrDay), depMeals = ovMealsList(depDay);
+            if (days.length === 2) {
+                if (!arrMeals && depMeals) return 'arrival day pays nothing, but ' + ovDay(depDay.ymd) + ' covers ' + depMeals + region;
+                const bits = [];
+                if (arrMeals) bits.push(arrMeals + ' on arrival');
+                if (depMeals) bits.push(depMeals + ' before the ' + ovTime(st.outHm) + ' out');
+                return bits.join(', ') + region;
+            }
+            const bits = [];
+            if (arrMeals) bits.push(arrMeals + ' on arrival');
+            const midFull = days.slice(1, days.length - 1).filter(x => x.b && x.l && x.d).length;
+            const fw = { 1: 'one', 2: 'two', 3: 'three' };
+            if (midFull === 1) bits.push('one full day');
+            else if (midFull > 1) bits.push((fw[midFull] || String(midFull)) + ' full days');
+            days.slice(1, days.length - 1).filter(x => (x.b || x.l || x.d) && !(x.b && x.l && x.d)).forEach(x => bits.push(ovMealsList(x) + ' on ' + ovDay(x.ymd)));
+            if (depMeals) bits.push(depMeals + ' before the ' + ovTime(st.outHm) + ' out');
+            return bits.join(', ') + region;
+        }
+        function ovStationListPhrase(stations) {
+            // "two Tokyo stays plus LA" — groups repeated station codes.
+            const order = [];
+            const counts = {};
+            (stations || []).forEach(st => { const k = st.code || '?'; counts[k] = (counts[k] || 0) + 1; if (order.indexOf(k) === -1) order.push(k); });
+            const words = { 2: 'two', 3: 'three' };
+            const parts = order.map(k => (counts[k] > 1 ? (words[counts[k]] || counts[k]) + ' ' + (ovCity(k) || k) + ' stays' : (ovCity(k) || k)));
+            if (!parts.length) return '';
+            if (parts.length === 1) return parts[0];
+            return parts.slice(0, -1).join(', ') + ' plus ' + parts[parts.length - 1];
+        }
+        function flightOverviewText(s) {
+            if (!s || !s.sectors || !s.sectors.length) return '';
+            const secs = s.sectors;
+            const isTurn = s.type === 'Turnaround';
+            const rate = '$' + Number(s.rankRate || 0).toFixed(2);
+            const fn = (i) => (secs[i].fn ? 'SQ ' + secs[i].fn : 'that leg');
+            const paxFns = secs.filter(x => x.paxing && x.fn).map(x => 'SQ ' + x.fn);
+            const paxNote = paxFns.length ? ' (' + paxFns.join(', ') + ' counted as paxing — ' + (typeof IFA_CONFIG !== 'undefined' ? IFA_CONFIG.paxingMultiplier : 0.75) + '×, SDP ignored)' : '';
+            const grand = formatMoney(s.grandTotal);
+            const stations = (s.stations || []).filter(st => !st.skipped && !st.shuttle);
+            const allStations = s.stations || [];
+            let txt = '';
+            if (isTurn) {
+                const day = ovDay(secs[0].depYmd);
+                const mult = secs[0].mult;
+                if (secs.length === 2) {
+                    const city = ovCity(secs[0].arr);
+                    const day2 = ovDay(secs[1].depYmd);
+                    if (day2 && day2 !== day) {
+                        txt += (city ? 'An overnight turnaround in ' + city : 'An overnight turnaround') + ' — ' + fn(0) + ' out on ' + day + ' (' + secs[0].ftHm + ') and ' + fn(1) + ' home on ' + day2 + ' (' + secs[1].ftHm + '). ';
+                    } else {
+                        txt += city
+                            ? 'A quick hop to ' + city + ' and back on ' + day + ' — ' + fn(0) + ' out (' + secs[0].ftHm + ') and ' + fn(1) + ' home (' + secs[1].ftHm + '). '
+                            : 'A quick out-and-back on ' + day + ' — ' + fn(0) + ' out (' + secs[0].ftHm + ') and ' + fn(1) + ' home (' + secs[1].ftHm + '). ';
+                    }
+                    const sgB = (typeof IFA_CONFIG !== 'undefined' && IFA_CONFIG.sgBuffer) ? formatHoursHM(IFA_CONFIG.sgBuffer) : '2H 30M';
+                    const stB = (typeof IFA_CONFIG !== 'undefined' && IFA_CONFIG.stationBuffer) ? formatHoursHM(IFA_CONFIG.stationBuffer) : '1H 30M';
+                    txt += "With your buffers added (" + sgB + ' out of Singapore, ' + stB + ' at ' + (city || 'the outstation') + ") the trip's total SDP comes to " + s.tripSdpHm + ', which lands in the ' + mult + '× turnaround bracket — so the flying pays ' + formatMoney(secs[0].amount) + ' + ' + formatMoney(secs[1].amount) + paxNote + '.';
+                } else {
+                    const c1 = ovCity(secs[0].arr), c2 = ovCity(secs[2] ? secs[2].arr : '');
+                    const legs = fn(0) + ' out, ' + fn(1) + ' back, ' + fn(2) + ' out again, ' + fn(3) + ' home';
+                    const fts = secs.map(x => ovFtMins(x.ftHm));
+                    const mn = fts.indexOf(Math.min.apply(null, fts)), mx = fts.indexOf(Math.max.apply(null, fts));
+                    const range = (mn !== mx) ? 'four sectors between ' + secs[mn].ftHm + ' and ' + secs[mx].ftHm : 'four sectors at ' + secs[0].ftHm + ' each';
+                    if (c1 && c2 && c1 === c2) txt += 'A double ' + c1 + ' shuttle on ' + day + ': ' + legs + ' — ' + range + '. ';
+                    else if (c1 && c2) txt += 'Two turnarounds in one day on ' + day + ': ' + c1 + ' with ' + fn(0) + '/' + fn(1) + ' and ' + c2 + ' with ' + fn(2) + '/' + fn(3) + ' — ' + range + '. ';
+                    else txt += 'Four sectors, two out-and-backs, on ' + day + ': ' + legs + ' — ' + range + '. ';
+                    const sumFly = formatMoney(Math.round(secs.reduce((n, x) => n + (x.amount || 0), 0) * 100) / 100);
+                    txt += "The day's total SDP is " + s.tripSdpHm + ', which ' + (mult > 1.3 ? 'nudges you up into the ' : 'sits in the ') + mult + '× bracket, and every sector gets it — ' + sumFly + ' of flying' + paxNote + '.';
+                }
+                if (s.bonusCount === 1) txt += ' And the day earns your ' + formatMoney(s.bonusAmount) + ' turnaround bonus.';
+                else if (s.bonusCount > 1) { const bw = { 2: 'two', 3: 'three' }[s.bonusCount] || String(s.bonusCount); txt += ' And because you did the out-and-back ' + (s.bonusCount === 2 ? 'twice' : s.bonusCount + ' times') + ', ' + bw + ' turnaround bonuses at ' + formatMoney(s.bonusAmount / s.bonusCount) + ' each.'; }
+                txt += " " + grand + " all in. No LMA — same-day flying doesn't qualify.";
+            } else {
+                const st0 = stations[0];
+                const last = secs[secs.length - 1];
+                const stForRange = stations[stations.length - 1];
+                const range = (stForRange && stForRange.outYmd ? ovDay(secs[0].depYmd) + ' – ' + ovDay(stForRange.outYmd) : ovDay(secs[0].depYmd) + ' – ' + ovDay(last.depYmd));
+                const mults = secs.map(x => x.mult);
+                const sameMult = mults.every(m => m === mults[0]);
+                const usTouch = secs.some(x => isUsAirport(x.dep) || isUsAirport(x.arr));
+                const anyDirectUs = secs.some(x => x.directUs);
+                const multPhrase = anyDirectUs
+                    ? 'both under the ' + (typeof IFA_CONFIG !== 'undefined' ? IFA_CONFIG.directUSMultiplier : 3.5) + '× Direct US override — a straight SIN–US–SIN'
+                    : (sameMult ? 'both in the ' + mults[0] + '× layover bracket' : 'at ' + mults.join('× and ') + '×');
+                if (secs.length === 2) {
+                    const city = st0 ? ovCity(st0.code) : '';
+                    const nights = st0 ? ovNights(st0.inYmd, st0.outYmd) : 0;
+                    const stay = nights <= 1 ? 'overnight' : (nights + '-night stay');
+                    txt += (city ? "This one's the " + city + ' ' + stay + ', ' + range + '. ' : 'The layover, ' + range + '. ');
+                    if (st0) txt += fn(0) + ' takes you out (' + secs[0].ftHm + '), landing ' + ovDT(st0.inYmd, st0.inHm) + ovArrivalAside(st0) + '. You head home ' + (st0.outYmd ? ovDT(st0.outYmd, st0.outHm) + ' on ' : 'on ') + fn(1) + ' (' + secs[1].ftHm + '). ';
+                    else txt += fn(0) + ' takes you out (' + secs[0].ftHm + ') and ' + fn(1) + ' brings you home (' + secs[1].ftHm + '). ';
+                    txt += 'The flying pays ' + formatMoney(secs[0].amount) + ' + ' + formatMoney(secs[1].amount) + ' — SDPs of ' + secs[0].sdpHm + ' and ' + secs[1].sdpHm + ', ' + multPhrase + ' at ' + rate + '/hr' + paxNote + '. ';
+                    if (allStations.length) txt += 'LMA: ' + allStations.map(ovStationStory).join('; ') + ' — ' + formatMoney(s.lmaTotal) + '. ';
+                    else if (s.lmaTotal > 0) txt += 'LMA: ' + formatMoney(s.lmaTotal) + '. ';
+                    txt += grand + ' altogether.';
+                } else {
+                    const cityBits = [];
+                    secs.forEach((x, i) => { if (i < secs.length - 1 && x.arr && x.arr !== 'SIN' && cityBits.indexOf(ovCity(x.arr)) === -1) cityBits.push(ovCity(x.arr)); });
+                    txt += (stations.length >= 2 ? 'The big one: ' : 'A four-sector layover through ') + (cityBits.length ? cityBits.join(' and ') : 'four sectors') + ', ' + range + '. ';
+                    const legBits = [];
+                    for (let i = 0; i < secs.length - 1; i++) {
+                        const st = stations[i];
+                        const land = st ? ', landing ' + ovDT(st.inYmd, st.inHm) + ovArrivalAside(st) : '';
+                        legBits.push((i === 0 ? fn(i) + ' takes you to ' + (ovCity(secs[i].arr) || 'the first stop') : 'then ' + fn(i) + ' on to ' + (ovCity(secs[i].arr) || 'the next stop')) + ' (' + secs[i].ftHm + land + ')');
+                    }
+                    txt += legBits.join(', ') + '. ';
+                    const stLast = stations[stations.length - 1];
+                    if (stLast) txt += fn(secs.length - 1) + ' brings you home' + (stLast.outYmd ? ' on the ' + ovOrdinal((ovYmdDate(stLast.outYmd) || new Date()).getDate()) + ' (out of ' + (ovCity(stLast.code) || 'the last station') + ' ' + ovTime(stLast.outHm) + ')' : '') + '. ';
+                    txt += 'The flying pays ' + formatMoney(s.ifaTotal) + ' — SDPs of ' + secs.map(x => x.sdpHm).join(', ') + ', ' + (sameMult ? 'all in the ' + mults[0] + '× bracket' : 'paying across the brackets') + paxNote + '. ';
+                    if (usTouch && !anyDirectUs && typeof IFA_CONFIG !== 'undefined') txt += 'And no, no Direct US on this one — the ' + IFA_CONFIG.directUSMultiplier + '× only applies to a straight SIN–US–SIN, and you went the scenic way. ';
+                    if (allStations.length) {
+                        const meals = s.meals || { b: 0, l: 0, d: 0 };
+                        txt += 'LMA is where this trip earns: ' + ovStationListPhrase(stations) + ' — ' + allStations.map(ovStationStory).join('; ') + ', ' + meals.b + ' breakfast' + (meals.b === 1 ? '' : 's') + ', ' + meals.l + ' lunch' + (meals.l === 1 ? '' : 'es') + ' and ' + meals.d + ' dinner' + (meals.d === 1 ? '' : 's') + ' — ' + formatMoney(s.lmaTotal) + ', for a total of ' + grand + '.';
+                    } else {
+                        txt += 'LMA: ' + formatMoney(s.lmaTotal) + '. ' + grand + ' altogether.';
+                    }
+                }
+            }
+            return txt.trim();
+        }
+        function overviewBlock(text) {
+            if (!text) return '';
+            return '<div class="mb-6">'
+                + '<div class="flex items-center gap-1.5 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-sia-gold"></i><span class="text-[10px] font-bold uppercase tracking-wider text-sia-gold">Flight Overview</span></div>'
+                + '<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">' + text + '</p>'
+                + '</div>';
+        }
+        // Rebuilds the IFA/LMA breakdown from a stored snapshot (archive reopen).
+        function overviewDetailHtml(s) {
+            if (!s || !s.sectors) return '';
+            let html = '';
+            html += '<div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6"><div class="flex justify-between items-center mb-3"><h4 class="font-bold">IFA Breakdown</h4><span class="font-bold text-sia-gold">' + formatMoney(s.ifaTotal) + '</span></div>';
+            s.sectors.forEach((x, i) => {
+                html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">'
+                    + '<div class="flex justify-between font-bold text-sm mb-1"><span>' + ifaSectorLabel(i) + (x.fn ? ' — SQ ' + x.fn : '') + (x.paxing ? ' (Paxing)' : '') + '</span><span>' + formatMoney(x.amount) + '</span></div>'
+                    + '<p class="text-[10px] text-gray-500">' + x.ftHm + ' × $' + s.rankRate + ' × ' + x.mult + '×</p>'
+                    + '<p class="text-xs text-gray-600 dark:text-gray-400 mt-1">' + (x.logic || '') + '</p>'
+                    + '</div>';
+            });
+            if (s.bonusCount) {
+                html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5"><div class="flex justify-between font-bold text-sm"><span>Turnaround Bonus (' + s.bonusCount + 'x)</span><span>' + formatMoney(s.bonusAmount) + '</span></div></div>';
+            }
+            html += '</div>';
+            if (s.type !== 'Turnaround' && (s.stations || []).length) {
+                html += '<div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6"><div class="flex justify-between items-center mb-3"><h4 class="font-bold">LMA Breakdown</h4><span class="font-bold text-sia-gold">' + formatMoney(s.lmaTotal) + '</span></div>';
+                (s.stations || []).forEach(st => {
+                    if (st.shuttle) {
+                        html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5"><div class="flex justify-between font-bold text-sm"><span>' + (ovCity(st.code) || st.code) + ' (Shuttle)</span><span>' + formatMoney(0) + '</span></div><p class="text-[10px] text-gray-500 mt-1">No LMA on shuttle ground time</p></div>';
+                        return;
+                    }
+                    if (st.skipped) {
+                        html += '<div class="text-red-500 text-xs mb-2">' + st.skipped + ' for ' + (st.code || 'station') + '.</div>';
+                        return;
+                    }
+                    const dayRows = (st.days || []).filter(x => x.b || x.l || x.d).map(x =>
+                        '<div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">'
+                        + '<span class="text-[11px] text-gray-600 dark:text-gray-400">' + formatLmaDay(ovYmdDate(x.ymd) || new Date()) + '</span>'
+                        + '<div class="flex items-center gap-1.5">'
+                        + lmaMealBadge(!!x.b, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')
+                        + lmaMealBadge(!!x.l, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')
+                        + lmaMealBadge(!!x.d, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')
+                        + '<span class="ml-2 text-[11px] font-bold tabular-nums text-gray-800 dark:text-gray-200">' + formatMoney(x.cost) + '</span>'
+                        + '</div></div>').join('');
+                    html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">'
+                        + '<div class="font-bold text-sm mb-2 border-b border-black/5 dark:border-white/5 pb-2"><span>' + (st.code || 'Station') + (st.region ? ' (' + st.region + ')' : '') + '</span></div>'
+                        + '<div class="flex flex-col">' + (dayRows || '<span class="text-xs text-gray-500">No meals eligible</span>') + '</div>'
+                        + '</div>';
+                });
+                const meals = s.meals;
+                if (meals && s.lmaTotal > 0) {
+                    html += '<div class="flex justify-between items-center text-[10px] font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">'
+                        + '<div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5"><span class="tracking-wider"><span class="uppercase">Breakfast</span> (' + meals.b + 'x)</span><span class="text-sia-gold">' + formatMoney(meals.bAmt) + '</span></div>'
+                        + '<div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5"><span class="tracking-wider"><span class="uppercase">Lunch</span> (' + meals.l + 'x)</span><span class="text-sia-gold">' + formatMoney(meals.lAmt) + '</span></div>'
+                        + '<div class="flex flex-col items-center flex-1"><span class="tracking-wider"><span class="uppercase">Dinner</span> (' + meals.d + 'x)</span><span class="text-sia-gold">' + formatMoney(meals.dAmt) + '</span></div>'
+                        + '</div>';
+                }
+                html += '</div>';
+            }
+            return html;
         }
 
         function setResultsAction(kind, disabled) {
@@ -6165,7 +6467,7 @@ function getRegionForAirport(code) {
             try { lucide.createIcons(); } catch (e) {}
         }
 
-        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload) {
+        function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload, detail) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
@@ -6176,6 +6478,7 @@ function getRegionForAirport(code) {
                     <p class="text-4xl font-bold">${formatMoney(grandTotal)}</p>
                 </div>
             `;
+            if (mode === 'both' && detail) html += overviewBlock(flightOverviewText(detail));
 
             if (ifaDetails.length > 0) {
                 html += `
@@ -6392,8 +6695,28 @@ function getRegionForAirport(code) {
             archToast('Deleted ' + (archRoute(removed[0]) || 'entry'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
             renderArch();
         }
-        function openArchSub(html) { archEl('ca-arch-sub-sheet').innerHTML = html; archEl('ca-arch-sub').classList.remove('hidden'); }
-        function closeArchSub() { archEl('ca-arch-sub').classList.add('hidden'); }
+        let archSubTimer = null;
+        function openArchSub(html) {
+            if (archSubTimer) { clearTimeout(archSubTimer); archSubTimer = null; }
+            archEl('ca-arch-sub-sheet').innerHTML = html;
+            const wrap = archEl('ca-arch-sub');
+            wrap.classList.remove('hidden');
+            // Let the hidden->visible flip land first, then ease the sheet up.
+            setTimeout(() => {
+                const shade = wrap.querySelector('.ca-arch-sub-shade');
+                if (shade) shade.classList.remove('opacity-0');
+                archEl('ca-arch-sub-sheet').classList.remove('translate-y-full');
+                archEl('ca-arch-sub-sheet').scrollTop = 0;
+            }, 10);
+        }
+        function closeArchSub() {
+            const wrap = archEl('ca-arch-sub');
+            const shade = wrap.querySelector('.ca-arch-sub-shade');
+            if (shade) shade.classList.add('opacity-0');
+            archEl('ca-arch-sub-sheet').classList.add('translate-y-full');
+            if (archSubTimer) clearTimeout(archSubTimer);
+            archSubTimer = setTimeout(() => wrap.classList.add('hidden'), 300);
+        }
         function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); setTimeout(() => { b.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); }
         function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; setTimeout(() => { b.classList.add('hidden'); }, 300); }
 
@@ -6440,10 +6763,11 @@ function getRegionForAirport(code) {
                     + '<span class="flex items-center gap-2"><span class="font-bold text-sia-gold">' + formatMoney(sub) + (filtered ? ' <span class="text-xs text-gray-500 font-normal">of ' + formatMoney(full) + '</span>' : '') + '</span><i data-lucide="chevron-down" class="ca-arch-chev w-4 h-4"></i></span></button>'
                     + '<div class="ca-arch-group-body">';
                 rows.forEach((e) => {
-                    html += '<div class="flex items-center gap-2 py-2 pl-3 border-b border-black/5 dark:border-white/5">'
+                    html += '<div class="ca-arch-row flex items-center gap-2 py-2 pl-3 border-b border-black/5 dark:border-white/5 cursor-pointer" data-id="' + e.id + '">'
                         + '<span class="font-bold">' + archRoute(e) + '</span>'
                         + '<span class="text-xs text-gray-500">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
                         + '<span class="ca-arch-amt ml-auto font-bold text-gray-800 dark:text-white">' + formatMoney(e.amount) + '</span>'
+                        + '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 shrink-0"></i>'
                         + '<button type="button" class="ca-arch-del text-gray-400 p-1" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 html += '</div></div>';
@@ -6452,7 +6776,40 @@ function getRegionForAirport(code) {
             try { lucide.createIcons(); } catch (e) {}
             list.scrollTop = keep;
             list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archExpandMk()); archState.collapsed[k] = !eff; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
-            list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', () => { archDeleteOne(b.getAttribute('data-id')); }));
+            list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archDeleteOne(b.getAttribute('data-id')); }));
+            list.querySelectorAll('.ca-arch-row').forEach((row) => row.addEventListener('click', (ev) => {
+                if (ev.target.closest('.ca-arch-del')) return;
+                openArchEntry(row.getAttribute('data-id'));
+            }));
+        }
+
+        // Tap a saved flight: reopen its whole summary — gold total, Flight
+        // Overview and both breakdowns — rebuilt from the frozen snapshot. Old
+        // entries (pre-v1.22.0) have no snapshot and say so honestly.
+        function openArchEntry(id) {
+            const e = loadArchive().find(x => x.id === id);
+            if (!e) return;
+            const head = archRoute(e) || (e.flightType || 'Flight');
+            let html = '<div class="flex items-baseline justify-between gap-2 mb-4">'
+                + '<h4 class="font-bold text-lg">' + head + '</h4>'
+                + '<span class="text-xs text-gray-500">' + (archiveDayLabel(e.sectorDate) || '') + (e.flightType ? ' · ' + e.flightType : '') + '</span></div>';
+            const s = e.detail;
+            if (s && s.sectors && s.sectors.length) {
+                html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
+                    + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
+                    + '<p class="text-4xl font-bold">' + formatMoney(s.grandTotal != null ? s.grandTotal : e.amount) + '</p></div>';
+                html += overviewBlock(flightOverviewText(s));
+                html += overviewDetailHtml(s);
+            } else {
+                html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
+                    + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
+                    + '<p class="text-4xl font-bold">' + formatMoney(e.amount) + '</p></div>'
+                    + "<p class=\"text-xs text-gray-500 text-center\">Saved before detailed summaries — the numbers are here, the story isn't.</p>";
+            }
+            const saved = String(e.savedAt || '').slice(0, 10);
+            if (saved) html += '<p class="text-[10px] text-gray-400 text-center pt-3">Saved ' + ovDay(saved) + '</p>';
+            openArchSub(html);
+            try { lucide.createIcons(); } catch (err) {}
         }
 
         function archNormalize(raw) {
@@ -6469,7 +6826,8 @@ function getRegionForAirport(code) {
                 sectorDate: date,
                 flightType: raw.flightType || '',
                 stationDisplay: route,
-                amount: amount
+                amount: amount,
+                detail: (raw.detail && typeof raw.detail === 'object') ? raw.detail : undefined
             };
         }
         function archKey(r, d, a) { return String(r || '').toLowerCase() + '|' + String(d || '') + '|' + Math.round((Number(a) || 0) * 100); }
