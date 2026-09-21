@@ -52,6 +52,21 @@ const { R, boot, wait, APP } = H;
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'Cancel keeps the entry');
   }
 
+  // empty archive: the earnings page opens anyway, no dead-end bubbles
+  {
+    const { w, d } = await boot(APP);
+    w.analyzeIntent('archive');
+    await wait(1600); // overlay at 400ms; the greeting bubble types for up to ~900ms
+    const chatTxt = d.getElementById('chat-container').textContent;
+    R.ok(!/piggy bank is empty/i.test(chatTxt), 'no piggy-bank bubble');
+    R.ok(!/keep track of everything/i.test(chatTxt), 'no follow-up guidance bubble');
+    R.ok(/Pulling up your earnings/.test(chatTxt), 'the opening bubble still greets');
+    R.ok(!d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 'earnings page opens with nothing saved');
+    const listTxt = d.getElementById('ca-arch-list').textContent;
+    R.ok(/No flights yet/.test(listTxt), 'empty state heading');
+    R.ok(/Run a COP calculation and hit save or tap the import arrow/.test(listTxt), 'empty state names both ways to fill it');
+  }
+
   // tap-through: rows reopen the saved summary; old entries say so honestly
   {
     const { w, d } = await boot(APP);
@@ -91,6 +106,11 @@ const { R, boot, wait, APP } = H;
     R.ok(/IFA Breakdown/.test(txt2) && /LMA Breakdown/.test(txt2), 'breakdowns rebuilt from the snapshot');
     R.ok(/SQ 442/.test(txt2) && /SQ 441/.test(txt2), 'flight numbers in the breakdown');
     R.ok(/Saved /.test(txt2), 'saved-at footer');
+    // tall summaries: the sheet is bounded + scrollable and opens at the TOP
+    const sheetEl = d.getElementById('ca-arch-sub-sheet');
+    R.ok(sheetEl.classList.contains('overflow-y-auto'), 'summary sheet is scrollable');
+    R.ok(Array.from(sheetEl.classList).some(c => c.indexOf('max-h-') === 0), 'summary sheet is height-bounded');
+    R.eq(sheetEl.scrollTop, 0, 'opens at the top, never auto-scrolled to the bottom');
     // the X deletes immediately (undo toast) without opening the sheet
     d.querySelector('[data-ca-arch-sub-close]').click();
     await wait(400);

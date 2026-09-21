@@ -979,7 +979,7 @@
         <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
             <div class="ca-arch-sub-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
-            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full translate-y-full transition-transform duration-300"></div>
+            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300"></div>
         </div>
 
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
@@ -1383,11 +1383,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.22.0';
+        const APP_VERSION = '1.22.2';
         const APP_WHAT_NEW = [
-            'Flight Overview: every summary now opens with a plain-English rundown of the trip — flight numbers, times, how IFA was derived, when you landed into and left each station, and what LMA covers.',
-            'Your earnings archive is now tappable: tap any saved flight to reopen its full summary, exactly as it was calculated that day.',
-            'Fixed: layovers in Kathmandu were skipping LMA — Nepal is now in the South Asia rate table.'
+            'Tapping a saved flight now opens a properly scrollable summary: tall ones stay on screen and start at the top, so you can read the Flight Overview first and scroll down through the breakdowns.'
         ];
 
         // State
@@ -2647,13 +2645,8 @@
                 renderFlightVerificationCard('menu');
             }
             else if (/archive|archives|history|earnings|earned|earn/.test(lowerText)) {
-                if (loadArchive().length === 0) {
-                    addBotMessage("Your piggy bank is empty. <i data-lucide=\"piggy-bank\" class=\"w-4 h-4 inline\"></i>");
-                    addBotMessage("Run a COP calculation and hit save, and I'll keep track of everything.");
-                } else {
-                    addBotMessage('Pulling up your earnings!');
-                    setTimeout(() => showArchiveOverlay(), 400);
-                }
+                addBotMessage('Pulling up your earnings!');
+                setTimeout(() => showArchiveOverlay(), 400);
             }
             else if (/roster|upload|import/.test(lowerText)) {
                 addBotMessage('Opening the roster picker — attach your <b>Crew Roster Report</b> PDF.');
@@ -6733,7 +6726,7 @@ function getRegionForAirport(code) {
             const clearBtn = archEl('ca-arch-clear');
             if (clearBtn) clearBtn.classList.toggle('hidden', !archState.search);
             if (!all.length) {
-                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Tap the import arrow to bring in a JSON backup.</span></div>';
+                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Run a COP calculation and hit save or tap the import arrow to bring in a JSON backup.</span></div>';
                 try { lucide.createIcons(); } catch (e) {}
                 return;
             }
