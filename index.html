@@ -979,7 +979,7 @@
         <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
             <div class="ca-arch-sub-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
-            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full translate-y-full transition-transform duration-300"></div>
+            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300"></div>
         </div>
 
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
@@ -1383,9 +1383,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.22.1';
+        const APP_VERSION = '1.22.2';
         const APP_WHAT_NEW = [
-            'The earnings page now opens even when nothing is saved yet — no more empty-piggy-bank dead end — and its empty state explains both ways to fill it.'
+            'Tapping a saved flight now opens a properly scrollable summary: tall ones stay on screen and start at the top, so you can read the Flight Overview first and scroll down through the breakdowns.'
         ];
 
         // State

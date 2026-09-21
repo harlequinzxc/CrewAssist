@@ -106,6 +106,11 @@ const { R, boot, wait, APP } = H;
     R.ok(/IFA Breakdown/.test(txt2) && /LMA Breakdown/.test(txt2), 'breakdowns rebuilt from the snapshot');
     R.ok(/SQ 442/.test(txt2) && /SQ 441/.test(txt2), 'flight numbers in the breakdown');
     R.ok(/Saved /.test(txt2), 'saved-at footer');
+    // tall summaries: the sheet is bounded + scrollable and opens at the TOP
+    const sheetEl = d.getElementById('ca-arch-sub-sheet');
+    R.ok(sheetEl.classList.contains('overflow-y-auto'), 'summary sheet is scrollable');
+    R.ok(Array.from(sheetEl.classList).some(c => c.indexOf('max-h-') === 0), 'summary sheet is height-bounded');
+    R.eq(sheetEl.scrollTop, 0, 'opens at the top, never auto-scrolled to the bottom');
     // the X deletes immediately (undo toast) without opening the sheet
     d.querySelector('[data-ca-arch-sub-close]').click();
     await wait(400);
