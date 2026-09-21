@@ -390,6 +390,58 @@ const MONTH = [
     R.ok(/Grand Total — 6 trips/.test(d.getElementById('results-content').textContent), 'all trips included after Build');
   }
 
+  // ---- UI: Flight Overview in the single-trip summary ----
+  {
+    const { w, d } = await boot(APP);
+    const parsed = w.rosterParse(buildRoster(MONTH));
+    w.renderRosterConfirm(parsed, 'Test Month.pdf');
+    await wait(100);
+    d.getElementById('chat-container').lastElementChild.querySelector('.roster-build-btn').click();
+    await wait(700);
+    d.getElementById('calc-1-btn-calc').click();
+    await wait(400);
+    const txt = d.getElementById('results-content').textContent;
+    R.ok(/Flight Overview/.test(txt), 'single summary carries the Flight Overview');
+    R.ok(/Kathmandu overnight/.test(txt), 'personal voice');
+    R.ok(/2155H/.test(txt), 'landing time in the Sat 5th Sep 1727H format');
+    R.ok(/just missing dinner/.test(txt), 'missed-meal aside with the window close time');
+    R.ok(/SDPs of 7H 26M and 6H 45M/.test(txt), 'SDP kept as a term');
+    R.ok(/\$13\.50\/hr/.test(txt), 'rank rate formatted to two decimals');
+    R.ok(/South Asia rates/.test(txt), 'KTM maps to South Asia (NP region fix)');
+    R.ok(/\$360\.72 altogether/.test(txt), 'grand total closes the paragraph');
+    d.getElementById('btn-close-results').click();
+    await wait(400);
+  }
+
+  // ---- UI: Flight Overview per trip in Calculate all + archive tap-through ----
+  {
+    const { w, d } = await boot(APP);
+    const parsed = w.rosterParse(buildRoster(MONTH));
+    w.renderRosterConfirm(parsed, 'Test Month.pdf');
+    await wait(100);
+    d.getElementById('chat-container').lastElementChild.querySelector('.roster-calc-all-btn').click();
+    await wait(1000);
+    R.eq(d.querySelectorAll('#results-content [data-lucide="sparkles"]').length, 6, 'one Flight Overview per trip');
+    const txt = d.getElementById('results-content').textContent;
+    R.ok(/The big one: Tokyo Narita and Los Angeles, Sat 5th Sep – Fri 11th Sep/.test(txt), 'multi-sector range spans to the last departure');
+    R.ok(/landing Sat 5th Sep 1727H/.test(txt), 'owner-locked date-time format');
+    R.ok(/no Direct US on this one/.test(txt) && /straight SIN–US–SIN/.test(txt), 'Direct US rule stated on multi-sector US trips');
+    R.ok(/two Tokyo Narita stays plus Los Angeles/.test(txt), 'station list phrase groups repeats');
+    R.ok(/two turnaround bonuses/.test(txt), 'bonus count in words');
+    // save all, then reopen one trip from the archive
+    d.getElementById('btn-results-action').click();
+    await wait(200);
+    const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arch.every(e => e.detail && e.detail.sectors && e.detail.sectors.length), 'every saved entry carries its snapshot');
+    w.showArchiveOverlay();
+    await wait(100);
+    d.querySelectorAll('.ca-arch-row')[0].click();
+    await wait(400);
+    const sheet = d.getElementById('ca-arch-sub-sheet').textContent;
+    R.ok(/Flight Overview/.test(sheet) && /IFA Breakdown/.test(sheet), 'archive reopen shows overview + breakdowns');
+    R.ok(/The big one:/.test(sheet), 'overview regenerated from the frozen snapshot');
+  }
+
   // ---- UI: Discard builds nothing ----
   {
     const { w, d } = await boot(APP);

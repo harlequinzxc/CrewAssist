@@ -52,5 +52,54 @@ const { R, boot, wait, APP } = H;
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'Cancel keeps the entry');
   }
 
+  // tap-through: rows reopen the saved summary; old entries say so honestly
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'NEW', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', flightType: 'Layover', stationDisplay: 'KTM', amount: 360.72,
+        detail: { v: 1, type: 'Layover', sectorCount: 2, rankRate: 13.5, tripSdpHm: '14H 11M', ifaTotal: 178.72, lmaTotal: 182, grandTotal: 360.72, bonusCount: 0, bonusAmount: 0,
+          sectors: [
+            { fn: '442', ftHm: '4H 56M', sdpHm: '7H 26M', mult: 1.3, amount: 86.58, paxing: false, directUs: false, isSg: true, dep: 'SIN', arr: 'KTM', depYmd: '2026-09-15', logic: 'Layover Bracket (SDP 7H 26M)' },
+            { fn: '441', ftHm: '5H 15M', sdpHm: '6H 45M', mult: 1.3, amount: 92.14, paxing: false, directUs: false, isSg: false, dep: 'KTM', arr: 'SIN', depYmd: '2026-09-16', logic: 'Layover Bracket (SDP 6H 45M)' }
+          ],
+          stations: [ { code: 'KTM', region: 'South Asia', inYmd: '2026-09-15', inHm: '21:55', outYmd: '2026-09-16', outHm: '22:59', total: 182, shuttle: false, skipped: '',
+            days: [ { ymd: '2026-09-15', b: 0, l: 0, d: 0, cost: 0 }, { ymd: '2026-09-16', b: 1, l: 1, d: 1, cost: 182 } ] } ],
+          meals: { b: 1, l: 1, d: 1, bAmt: 36, lAmt: 64, dAmt: 82 } } },
+      { id: 'OLD', savedAt: '2026-09-10T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-10', stationDisplay: 'HKT', amount: 154.35 }
+    ]));
+    w.showArchiveOverlay();
+    await wait(100);
+    const rows = d.querySelectorAll('.ca-arch-row');
+    R.eq(rows.length, 2, 'rows render with tap targets');
+    // sorted desc by sectorDate: NEW (15th) first, OLD (10th) second
+    rows[1].click();
+    await wait(400);
+    const sub = d.getElementById('ca-arch-sub');
+    const sheetTxt = d.getElementById('ca-arch-sub-sheet').textContent;
+    R.ok(!sub.classList.contains('hidden'), 'tapping a row opens the summary sheet');
+    R.ok(/Saved before detailed summaries/.test(sheetTxt), 'old entry says so honestly');
+    R.ok(/154\.35/.test(sheetTxt), 'old entry still shows its total');
+    d.querySelector('[data-ca-arch-sub-close]').click();
+    await wait(400);
+    R.ok(sub.classList.contains('hidden'), 'summary sheet closes');
+    // the detailed entry reopens the whole summary
+    d.querySelectorAll('.ca-arch-row')[0].click();
+    await wait(400);
+    const txt2 = d.getElementById('ca-arch-sub-sheet').textContent;
+    R.ok(/Flight Overview/.test(txt2), 'detailed entry shows the Flight Overview');
+    R.ok(/Kathmandu overnight/.test(txt2), 'overview reads in the personal voice');
+    R.ok(/IFA Breakdown/.test(txt2) && /LMA Breakdown/.test(txt2), 'breakdowns rebuilt from the snapshot');
+    R.ok(/SQ 442/.test(txt2) && /SQ 441/.test(txt2), 'flight numbers in the breakdown');
+    R.ok(/Saved /.test(txt2), 'saved-at footer');
+    // the X deletes immediately (undo toast) without opening the sheet
+    d.querySelector('[data-ca-arch-sub-close]').click();
+    await wait(400);
+    d.querySelector('.ca-arch-row .ca-arch-del').click();
+    await wait(100);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'X deletes the entry straight away');
+    R.ok(/Deleted/.test(d.getElementById('ca-arch-toast').textContent), 'undo toast confirms the delete');
+    R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'X does not open the summary sheet');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
