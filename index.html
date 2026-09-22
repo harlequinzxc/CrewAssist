@@ -1392,11 +1392,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.0';
+        const APP_VERSION = '1.23.1';
         const APP_WHAT_NEW = [
-            "Feature tour — a ninety-second walkthrough on first run, or type 'tour' anytime.",
-            'Watch a demo month run the whole flow: roster import, Calculate all, the earnings archive, both calculating modes, and the menu viewer.',
-            'Skippable at every step, and it never touches your own data.'
+            'The tour takes its time: Next-button reading pauses between the chapters, and a steadier pace throughout.',
+            'The Default demo flies SQ 632 out and SQ 633 home the day after, and the demo roster names its three flights up front.',
+            'Print your menu during the tour and it wraps itself up — the close button lights up and the chat signs off.'
         ];
 
         // State
@@ -10377,8 +10377,8 @@ function getRegionForAirport(code) {
                 enqueueBot(() => {
                     addMessage('bot',
                         '<div class="flex gap-2 mt-2">'
-                        + '<button type="button" class="ca-tour-next flex-1 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>' + (nextLabel || 'Next') + '</button>'
-                        + '<button type="button" class="ca-tour-skip flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5"></i>Skip tour</button>'
+                        + '<button type="button" class="ca-tour-next flex-1 min-w-0 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="arrow-right" class="w-3.5 h-3.5 shrink-0"></i>' + (nextLabel || 'Next') + '</button>'
+                        + '<button type="button" class="ca-tour-skip flex-1 min-w-0 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Skip tour</button>'
                         + '</div>');
                     caTourMarkLast();
                     const bubble = document.getElementById('chat-container').lastElementChild;
@@ -10492,8 +10492,10 @@ function getRegionForAirport(code) {
         }
 
         // The interactive menu step's narrator: watches the real flow the
-        // crew drives and glows/narrates each stage as it happens.
-        async function caTourMenuWatch(T) {
+        // crew drives and glows/narrates each stage as it happens. When the
+        // print preview opens it hands control back via onPrint, and the
+        // step concludes the tour around the close button.
+        async function caTourMenuWatch(T, onPrint) {
             const seen = { card: false, cabins: false, viewer: false, print: false, fail: false };
             const lastFv = () => {
                 const all = document.querySelectorAll('[id^="fv-mode-"]');
@@ -10527,8 +10529,7 @@ function getRegionForAirport(code) {
                 const pb = document.getElementById('print-backdrop');
                 if (pb && !pb.classList.contains('hidden') && !seen.print) {
                     seen.print = true;
-                    caTourClearGlow();
-                    await T.say('Your menu sheet — print it, share it, pin it up.');
+                    if (onPrint) onPrint();
                     return;
                 }
                 await T.wait(400);
@@ -10537,6 +10538,8 @@ function getRegionForAirport(code) {
 
         // The Default step's honest pivot when the schedule won't answer.
         var CA_TOUR_FETCH_PIVOT = "No connection just now — that's the honest answer, never a made-up number. Online, Fetch fills it all in; offline, the manual way — next step — always works.";
+        // The closing line, said bare (unmarked) so it outlives the cleanup.
+        var CA_TOUR_CLOSING = "That's the lot — roster to earnings, both ways of calculating, and your menu printed. Type <b>tour</b> anytime to see it again.";
 
         // ---- the steps registry (data, not code) ----
         CA_TOUR_STEPS = [
@@ -10549,21 +10552,21 @@ function getRegionForAirport(code) {
                 run: async function (T) {
                     const input = document.getElementById('chat-input');
                     T.glow(input ? (input.closest('.glass-panel') || input) : null);
-                    await T.wait(1500);
+                    await T.wait(2200);
                     if (!T.alive()) return;
                     T.glow(document.querySelector('.action-chip'));
-                    await T.wait(1300);
+                    await T.wait(2000);
                 }
             },
             {
                 id: 'roster',
                 say: [
                     "First, the showpiece. That paperclip down there reads your <b>Crew Roster Report</b> — attach the PDF and I do the rest, right on this device.",
-                    "Here's a demo month — synthetic, nobody's real roster — so you can watch the whole thing run."
+                    "Here's your demo roster — three different flights: a Kathmandu overnight on <b>SQ 442 and SQ 441</b>, a Phuket turnaround on <b>SQ 740 and SQ 739</b>, and a double Penang shuttle on <b>SQ 134, 133, 138 and 137</b>."
                 ],
                 run: async function (T) {
                     T.glow('#btn-roster');
-                    await T.wait(1400);
+                    await T.wait(2000);
                     if (!T.alive()) return;
                     await enqueueBot(() => renderRosterConfirm(caTourParsedDemo(), 'Demo month.pdf', ''));
                     const all = await T.until(() => {
@@ -10572,6 +10575,9 @@ function getRegionForAirport(code) {
                         return null;
                     });
                     if (!all) return;
+                    // Reading pause: let the trips list land before the demo runs.
+                    const gateA = await T.next();
+                    if (gateA === 'skip') return 'skip';
                     T.glow(all);
                     await T.say('One tap — <b>Calculate all</b> — and the whole month builds, fetches and totals itself.');
                     T.tap(all);
@@ -10580,21 +10586,24 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 15000);
                     if (!open) return;
-                    await T.wait(500);
+                    await T.wait(800);
                     await caTourSaveBeat(T, 'Every summary saves — one tap on the save icon and the month piles into your earnings.');
-                    await T.wait(300);
+                    await T.wait(400);
                     if (!T.alive()) return;
+                    // Reading pause: the month's total deserves a moment.
+                    const gateB = await T.next();
+                    if (gateB === 'skip') return 'skip';
                     const earn = await T.until(() => document.querySelector('.action-chip[data-intent="earn"]'));
                     if (!earn) return;
                     T.glow(earn);
-                    await T.wait(900);
+                    await T.wait(1500);
                     caTourDrive(() => earn.click());
                     const list = await T.until(() => {
                         const l = document.getElementById('ca-arch-list');
                         return (l && l.querySelector('.ca-arch-row')) ? l : null;
                     }, 10000);
                     if (!list) return;
-                    await T.wait(500);
+                    await T.wait(800);
                     T.glow(list.querySelector('.ca-arch-row'));
                     await T.say('Grouped by month, one combined total. Tap any flight — its whole summary reopens.');
                     T.tap(list.querySelector('.ca-arch-row'));
@@ -10603,7 +10612,7 @@ function getRegionForAirport(code) {
                         return (w && !w.classList.contains('hidden')) ? w : null;
                     }, 8000);
                     if (!sub) return;
-                    await T.wait(800);
+                    await T.wait(1200);
                     if (typeof closeArchSub === 'function') closeArchSub();
                     await T.wait(500);
                     if (typeof closeArchOverlay === 'function') closeArchOverlay();
@@ -10614,14 +10623,14 @@ function getRegionForAirport(code) {
                 id: 'default',
                 say: [
                     "Now the two ways of calculating. This is <b>Default</b> — flight number and date, and I fetch the rest.",
-                    "Watch: the chip, the card, then Fetch."
+                    "Watch: the chip, the card, then Fetch — <b>SQ 632</b> out and <b>SQ 633</b> home, the day after."
                 ],
                 run: async function (T) {
                     if (typeof setCalcUiMode === 'function' && caTourReadMode() !== 'default') setCalcUiMode('default', false);
                     const chip = await T.until(() => document.querySelector('.action-chip[data-intent="total"]'));
                     if (!chip) return;
                     T.glow(chip);
-                    await T.wait(900);
+                    await T.wait(1500);
                     // The card renders inside the bot queue ~900ms after the
                     // chip, so wait for a NEW card — not just the current last.
                     const beforeCards = document.querySelectorAll('[data-calc-card]').length;
@@ -10631,26 +10640,30 @@ function getRegionForAirport(code) {
                         return cs.length > beforeCards ? cs[cs.length - 1] : null;
                     }, 8000);
                     if (!card) return;
-                    await T.wait(450);
+                    await T.wait(600);
                     const fn1 = card.querySelector('input[id$="-ifa-fn1"]');
                     const id = fn1 ? fn1.id.slice(0, -'-ifa-fn1'.length) : '';
                     if (!id) return;
                     T.glow(fn1);
-                    await T.wait(800);
-                    const demoDate = caTourDemoDate(2);
-                    caTourSetVal(fn1, '11');
-                    caTourSetVal(document.getElementById(id + '-ifa-d1'), demoDate);
+                    await T.wait(1400);
+                    // SQ 632 out, SQ 633 home the day after — the classic pairing.
+                    caTourSetVal(fn1, '632');
+                    caTourSetVal(document.getElementById(id + '-ifa-d1'), caTourDemoDate(2));
                     const fn2 = document.getElementById(id + '-ifa-fn2');
                     if (fn2) {
-                        caTourSetVal(fn2, '11');
-                        caTourSetVal(document.getElementById(id + '-ifa-d2'), demoDate);
+                        caTourSetVal(fn2, '633');
+                        caTourSetVal(document.getElementById(id + '-ifa-d2'), caTourDemoDate(3));
                     }
-                    await T.wait(600);
+                    await T.wait(800);
                     if (!T.alive()) return;
+                    // Reading pause: the filled card, before Fetch runs.
+                    const gate = await T.next();
+                    if (gate === 'skip') return 'skip';
                     const fetchAll = document.getElementById(id + '-ifa-fetch-all');
                     if (!fetchAll) return;
                     T.glow(fetchAll);
                     await T.say('Fetch — the live schedule fills in the flight time. Any flight from two days ago to six weeks out.');
+                    await T.wait(800);
                     T.tap(fetchAll);
                     const outcome = await T.until(() => {
                         const dlg = document.getElementById('app-dialog-backdrop');
@@ -10663,7 +10676,7 @@ function getRegionForAirport(code) {
                         return (b && !b.disabled) ? 'ready' : null;
                     }, 15000);
                     if (outcome === 'dialog') {
-                        await T.wait(400);
+                        await T.wait(700);
                         T.tap(document.getElementById('app-dialog-ok'));
                         await T.say(CA_TOUR_FETCH_PIVOT);
                         return;
@@ -10681,7 +10694,7 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 12000);
                     if (!open) return;
-                    await T.wait(400);
+                    await T.wait(800);
                     await caTourSaveBeat(T, 'And it saves, like every summary.');
                 }
             },
@@ -10695,23 +10708,23 @@ function getRegionForAirport(code) {
                     const gear = document.getElementById('btn-settings');
                     if (!gear) return;
                     T.glow(gear);
-                    await T.wait(1000);
+                    await T.wait(1600);
                     T.tap(gear);
-                    await T.wait(600);
+                    await T.wait(800);
                     if (!T.alive()) return;
                     const pill = document.getElementById('calcui-pill-manual');
                     if (!pill) return;
                     T.glow(pill);
-                    await T.wait(900);
+                    await T.wait(1400);
                     T.tap(pill);
-                    await T.wait(500);
+                    await T.wait(800);
                     if (typeof closeSettings === 'function') closeSettings();
-                    await T.wait(400);
+                    await T.wait(600);
                     if (!T.alive()) return;
                     const chip = document.querySelector('.action-chip[data-intent="total"]');
                     if (!chip) return;
                     T.glow(chip);
-                    await T.wait(800);
+                    await T.wait(1400);
                     // Same as the Default step: wait for the NEW card.
                     const beforeCards = document.querySelectorAll('[data-calc-card]').length;
                     caTourDrive(() => chip.click());
@@ -10720,13 +10733,16 @@ function getRegionForAirport(code) {
                         return cs.length > beforeCards ? cs[cs.length - 1] : null;
                     }, 8000);
                     if (!card) return;
-                    await T.wait(450);
+                    await T.wait(600);
                     const fn1 = card.querySelector('input[id$="-ifa-fn1"]');
                     const id = fn1 ? fn1.id.slice(0, -'-ifa-fn1'.length) : '';
                     if (!id) return;
                     rosterPrefillCard(id, caTourKtmTrip());
-                    await T.wait(600);
+                    await T.wait(900);
                     if (!T.alive()) return;
+                    // Reading pause: the hand-typed card, before Calculate runs.
+                    const gate = await T.next();
+                    if (gate === 'skip') return 'skip';
                     const calc = document.getElementById(id + '-btn-calc');
                     T.glow(calc);
                     await T.say('Flight time, station, dates and times — all by hand. Same card, same math.');
@@ -10738,7 +10754,7 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 12000);
                     if (!open) return;
-                    await T.wait(400);
+                    await T.wait(800);
                     await caTourSaveBeat(T, 'Saves like everything else.');
                     if (typeof setCalcUiMode === 'function') setCalcUiMode(caTour.userMode, true);
                     await T.say("That's Manual — and I've put everything back the way I found it.");
@@ -10752,20 +10768,40 @@ function getRegionForAirport(code) {
                 ],
                 run: async function (T) {
                     const chip = document.querySelector('.action-chip[data-intent="menu"]');
-                    if (chip) { T.glow(chip); await T.wait(800); }
+                    if (chip) { T.glow(chip); await T.wait(1400); }
                     const input = document.getElementById('chat-input');
                     T.glow(input ? (input.closest('.glass-panel') || input) : null);
                     await T.say("Type <b>menu</b> — or tap that chip — then a flight number and a date. I'll pull what's onboard, and the printer up top formats it for the wardroom.");
                     // The crew drives this one: the buttons wait while the
                     // watcher narrates whatever they do with the real flow.
+                    // Tapping the printer ends it — the moment the print
+                    // preview opens, the close button lights up and the chat
+                    // concludes the tour.
+                    let printHit = null;
+                    const printP = new Promise((res) => { printHit = res; });
                     const nextP = caTourNextButtons(caTour.gen, 'Finish');
-                    caTourMenuWatch(T);
-                    const r = await nextP;
-                    if (r === 'skip') return 'skip';
+                    caTourMenuWatch(T, printHit);
+                    const r = await Promise.race([
+                        nextP.then((v) => ({ via: 'btn', v: v })),
+                        printP.then(() => ({ via: 'print', v: null }))
+                    ]);
+                    if (r.via === 'btn') {
+                        if (r.v === 'skip') return 'skip';
+                        if (r.v === 'dead') return null;
+                        caTourClearGlow();
+                        await enqueueBot(() => addMessage('bot', CA_TOUR_CLOSING));
+                        return 'done';
+                    }
+                    // Print preview is open: highlight its close button and
+                    // conclude in chat. The closing line is said bare so it
+                    // outlives the cleanup, and the glow is re-applied after
+                    // it so the highlighted close button stays lit.
+                    const closeBtn = document.getElementById('btn-close-print');
                     caTourClearGlow();
-                    // The closing line is said bare (unmarked) so it outlives
-                    // the cleanup, like the skip farewell does.
-                    await enqueueBot(() => addMessage('bot', "That's the lot — roster to earnings, both ways of calculating, and your menu printed. Type <b>tour</b> anytime to see it again."));
+                    if (closeBtn) closeBtn.classList.add('ca-tour-glow');
+                    await enqueueBot(() => addMessage('bot', CA_TOUR_CLOSING));
+                    await finishCaTour(true, false);
+                    if (closeBtn) closeBtn.classList.add('ca-tour-glow');
                     return 'done';
                 }
             }
@@ -10794,7 +10830,10 @@ function getRegionForAirport(code) {
                         // future feature change) skips itself; tour carries on.
                         if (console && console.warn) console.warn('[tour] step skipped:', st.id, err);
                     }
-                    caTourClearGlow();
+                    // Skip the between-steps clear when the step itself ended
+                    // the tour — the menu step leaves the print close button
+                    // highlighted on purpose, after the cleanup.
+                    if (caTour.on) caTourClearGlow();
                     if (skipped) break;
                     if (!T.alive()) { stopped = true; break; }
                     if (i < CA_TOUR_STEPS.length - 1) {
@@ -10924,8 +10963,8 @@ function getRegionForAirport(code) {
                 enqueueBot(() => {
                     addMessage('bot', 'New here? Let me show you around — ninety seconds, a demo month, and none of your own data. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>'
                         + '<div class="flex gap-2 mt-2">'
-                        + '<button type="button" class="ca-tour-offer-go flex-1 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5"></i>Show me around</button>'
-                        + '<button type="button" class="ca-tour-offer-skip flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5"></i>Not now</button>'
+                        + '<button type="button" class="ca-tour-offer-go flex-1 min-w-0 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5 shrink-0"></i>Show me around</button>'
+                        + '<button type="button" class="ca-tour-offer-skip flex-1 min-w-0 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Not now</button>'
                         + '</div>');
                     const bubble = document.getElementById('chat-container').lastElementChild;
                     bubble.querySelector('.ca-tour-offer-go').addEventListener('click', () => startCaTour(false));
