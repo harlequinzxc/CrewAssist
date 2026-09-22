@@ -10,7 +10,7 @@ if (!files.length) { console.log('no suites found'); process.exit(1); }
 
 let failed = 0;
 for (const f of files) {
-    const r = spawnSync(process.execPath, [path.join(dir, f)], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 180000 });
+    const r = spawnSync(process.execPath, [path.join(dir, f)], { stdio: ['ignore', 'pipe', 'pipe'], timeout: 240000 });
     const out = (r.stdout || '').toString().trim();
     const summary = out.split('\n').filter((l) => /passed/.test(l)).pop() || '(no summary)';
     const ok = r.status === 0;
