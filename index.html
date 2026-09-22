@@ -1392,11 +1392,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.3';
+        const APP_VERSION = '1.23.4';
         const APP_WHAT_NEW = [
-            "The welcome chat waits its turn: open the app to a what's-new sheet and the greeting begins only after you close it.",
-            "The tour offer says Let's go, and types both of its lines like a real conversation.",
-            'The tour lights the paperclip only after pointing it out, and the roster instructions name the source: your downloaded roster report/s from Crew App.'
+            'In the roster card, Calculate all is now the primary button and Build cards a secondary one beside Discard.',
+            'The tour summary beat breathes: a pause before the smooth scroll, a pause at the bottom, and a pause at every save step.',
+            'The earnings chapter is yours to drive — the chip is pointed out in chat, and the page opens only after you press Next.'
         ];
 
         // State
@@ -2459,14 +2459,14 @@
                 ${lines.map(l => `<p class="mb-1">${l}</p>`).join('')}
                 ${listHtml ? `<div class="mt-2 space-y-1.5 text-xs">${listHtml}</div>` : ''}
                 <div class="flex gap-2 mt-3">
-                    <button type="button" class="roster-build-btn flex-1 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                    <button type="button" class="roster-build-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
                         <i data-lucide="hammer" class="w-3.5 h-3.5"></i>Build cards
                     </button>
                     <button type="button" class="roster-discard-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
                         <i data-lucide="x" class="w-3.5 h-3.5"></i>Discard
                     </button>
                 </div>
-                <button type="button" class="roster-calc-all-btn mt-2 w-full py-2.5 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                <button type="button" class="roster-calc-all-btn mt-2 w-full py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
                     <i data-lucide="calculator" class="w-3.5 h-3.5"></i>Calculate all
                 </button>`;
             addMessage('bot', html, true);
@@ -10425,13 +10425,14 @@ function getRegionForAirport(code) {
             if (!el) { await T.wait(600); return; }
             const max = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
             if (max <= 0) { await T.wait(600); return; }
+            const glide = (y) => { try { el.scrollTo({ top: y, behavior: 'smooth' }); } catch (e) { el.scrollTop = y; } };
             const steps = 8;
             for (let i = 1; i <= steps; i++) {
-                el.scrollTop = Math.round((max * i) / steps);
+                glide(Math.round((max * i) / steps));
                 await T.wait(350);
                 if (!T.alive()) return;
             }
-            el.scrollTop = max;
+            glide(max);
             await T.wait(400);
         }
 
@@ -10633,11 +10634,12 @@ function getRegionForAirport(code) {
                     await T.say('Press <b>Build cards</b> to tweak your flight details (if any) or press <b>Calculate all</b> and let me compute your total allowance.');
                     const gate3 = await T.next();
                     if (gate3 === 'skip') return 'skip';
+                    // the star of this beat, lit before it is explained
+                    T.glow(all);
                     await T.say('Once the calculations are complete, a summary page will open — tap the <b>save</b> icon to archive your earnings.');
                     const gate4 = await T.next();
                     if (gate4 === 'skip') return 'skip';
-                    // -- only now does the demo press Calculate all --
-                    T.glow(all);
+                    // -- only now does the demo press the lit button --
                     await T.wait(600);
                     T.tap(all);
                     const open = await T.until(() => {
@@ -10645,17 +10647,18 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 15000);
                     if (!open) return;
-                    await T.wait(800);
-                    // -- a slow pass down the whole summary page --
+                    await T.wait(1600);
+                    // -- a slow, smooth pass down the whole page --
                     await caTourScrollResults(T);
-                    // -- at the bottom: save, acknowledge, exit --
+                    await T.wait(900);
+                    // -- at the bottom: save, a breath at every beat --
                     const ab = await T.until(() => {
                         const b = document.getElementById('btn-results-action');
                         return (b && !b.classList.contains('hidden') && !b.disabled) ? b : null;
                     }, 6000);
                     if (!ab) return;
                     T.glow(ab);
-                    await T.wait(800);
+                    await T.wait(1000);
                     if (!T.alive()) return;
                     T.tap(ab);
                     const dlg = await T.until(() => {
@@ -10663,42 +10666,52 @@ function getRegionForAirport(code) {
                         return (dd && !dd.classList.contains('hidden')) ? dd : null;
                     }, 6000);
                     if (dlg) {
-                        await T.wait(500);
+                        await T.wait(600);
                         T.tap(document.getElementById('app-dialog-ok'));
                     }
-                    await T.wait(1400);
+                    await T.wait(1500);
                     if (!T.alive()) return;
                     await T.say('<b>Saved.</b> July 2026 is filed under your earnings.');
-                    await T.wait(400);
+                    await T.wait(900);
                     const rb = document.getElementById('results-backdrop');
                     const rclose = document.getElementById('btn-close-results');
                     if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
-                    await T.wait(600);
+                    await T.wait(900);
+                    // -- the earn chip: said, lit, unlit — never auto-tapped.
+                    // The crew drives this one through the gate --
                     if (!T.alive()) return;
                     const earn = await T.until(() => document.querySelector('.action-chip[data-intent="earn"]'));
                     if (!earn) return;
+                    await T.say('Tap on <b>How much have I earned?</b> quick action chip to view your archived earning/s.');
                     T.glow(earn);
-                    await T.wait(1500);
+                    await T.wait(1800);
+                    caTourClearGlow();
+                    await T.say('Earnings are grouped by months. Tap on any flight and its whole summary reopens.');
+                    await T.wait(900);
+                    const gate5 = await T.next();
+                    if (gate5 === 'skip') return 'skip';
+                    // -- Next pressed: the demo drives the chip --
                     caTourDrive(() => earn.click());
                     const list = await T.until(() => {
                         const l = document.getElementById('ca-arch-list');
                         return (l && l.querySelector('.ca-arch-row')) ? l : null;
                     }, 10000);
                     if (!list) return;
-                    await T.wait(800);
+                    await T.wait(1400);
+                    // -- a flight, lit then opened --
                     T.glow(list.querySelector('.ca-arch-row'));
-                    await T.say('Grouped by month, one combined total. Tap any flight — its whole summary reopens.');
+                    await T.wait(1500);
                     T.tap(list.querySelector('.ca-arch-row'));
                     const sub = await T.until(() => {
                         const w = document.getElementById('ca-arch-sub');
                         return (w && !w.classList.contains('hidden')) ? w : null;
                     }, 8000);
                     if (!sub) return;
-                    await T.wait(1200);
+                    await T.wait(1400);
                     if (typeof closeArchSub === 'function') closeArchSub();
-                    await T.wait(500);
+                    await T.wait(600);
                     if (typeof closeArchOverlay === 'function') closeArchOverlay();
-                    await T.wait(400);
+                    await T.wait(600);
                 }
             },
             {
