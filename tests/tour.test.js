@@ -71,8 +71,8 @@ const clickLast = (d, sel) => {
     R.ok(d.querySelector('.roster-build-btn') && d.querySelector('.roster-build-btn').className.indexOf('border border-black/10') !== -1, 'Build cards is a secondary (outline) button');
     R.ok(await nextReady(4), 'gate: Build cards / Calculate all');
     clickLast(d, '.ca-tour-next');
-    R.ok(await until(() => d.querySelector('.roster-calc-all-btn.ca-tour-glow'), 10000), 'Calculate all lights up before the save step is explained');
-    R.ok(await until(() => chatText(d).indexOf('summary page will open') !== -1, 15000), 'the save step is explained before it happens');
+    R.ok(await until(() => chatText(d).indexOf('after tapping Calculate All') !== -1, 15000), 'the save step names the button that leads there');
+    R.ok(!d.querySelector('.roster-calc-all-btn.ca-tour-glow'), 'Calculate all is never highlighted');
     R.ok(await nextReady(5), 'gate: the summary opens only after Next');
     clickLast(d, '.ca-tour-next');
     R.ok(await until(() => !d.getElementById('results-backdrop').classList.contains('hidden'), 25000), 'only after Next does the summary page open');
@@ -82,7 +82,7 @@ const clickLast = (d, sel) => {
     R.ok(await until(() => chatText(d).indexOf('filed under your earnings') !== -1, 15000), 'the save is acknowledged');
     R.ok(await until(() => d.getElementById('results-backdrop').classList.contains('hidden'), 15000), 'the summary exits after the save');
     R.eq(w.localStorage.getItem('crewAssist.archive'), null, 'demo saves never touch localStorage');
-    R.ok(await until(() => chatText(d).indexOf('Tap on How much have I earned?') !== -1, 15000), 'the earn chip is introduced in chat');
+    R.ok(await until(() => chatText(d).indexOf('Tap on the "How much have I earned?"') !== -1, 15000), 'the earn chip is introduced in chat, by name');
     R.ok(await until(() => chatText(d).indexOf('Earnings are grouped by months') !== -1, 15000), 'the archive layout is explained');
     R.ok(d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 'the earn chip is not selected before Next');
     R.ok(await nextReady(6), 'gate: the earnings chapter waits for Next');
@@ -95,22 +95,33 @@ const clickLast = (d, sel) => {
     R.ok(await nextReady(7), 'roster step ends with Next');
     clickLast(d, '.ca-tour-next');
 
-    // step 2: Default — SQ 632 out, SQ 633 home, then offline pivot
-    R.ok(await nextReady(8), 'reading pause on the filled card (gate)');
+    // step 2: Default — the card to its top, 632 and 633 typed digit by
+    // digit, fetch all, then the honest offline pivot (no gate: the demo
+    // runs once the crew presses Next on the roster step's end)
+    R.ok(await until(() => chatText(d).indexOf('two ways of calculating allowances') !== -1, 30000), 'the Default opener lands');
+    R.ok(await until(() => {
+        const cards = d.querySelectorAll('[data-calc-card]');
+        const lastCard = cards[cards.length - 1];
+        return lastCard && lastCard.querySelector('input[id$="-ifa-fn1"]') && lastCard.querySelector('input[id$="-ifa-fn1"]').value === '632';
+    }, 30000), 'SQ 632 typed into sector 1, one digit at a time');
     const cards = d.querySelectorAll('[data-calc-card]');
     const lastCard = cards[cards.length - 1];
-    R.ok(lastCard && lastCard.querySelector('input[id$="-ifa-fn1"]') && lastCard.querySelector('input[id$="-ifa-fn1"]').value === '632', 'SQ 632 typed into sector 1');
-    R.ok(lastCard.querySelector('input[id$="-ifa-fn2"]') && lastCard.querySelector('input[id$="-ifa-fn2"]').value === '633', 'SQ 633 typed into sector 2');
+    R.ok(await until(() => {
+        const f = lastCard.querySelector('input[id$="-ifa-fn2"]');
+        return f && f.value === '633';
+    }, 20000), 'SQ 633 typed into sector 2, one digit at a time');
     const cid = lastCard.querySelector('input[id$="-ifa-fn1"]').id.slice(0, -'-ifa-fn1'.length);
-    R.eq(d.getElementById(cid + '-ifa-d2').value, w.caTourDemoDate(3), 'sector 2 departs the day after sector 1');
-    clickLast(d, '.ca-tour-next');
+    R.ok(await until(() => d.getElementById(cid + '-ifa-d2').value === w.caTourDemoDate(3), 15000), 'sector 2 departs the day after sector 1');
+    R.ok(await until(() => chatText(d).indexOf('Fetch all — only works for flights') !== -1, 20000), 'the fetch line explains its window');
     R.ok(await until(() => chatText(d).indexOf('never a made-up number') !== -1, 30000), 'offline Default step pivots honestly');
-    R.ok(await nextReady(9), 'Default step ends with Next');
+    R.eq(w.caTour.entries.length, 3, 'the Default demo saves nothing');
+    R.ok(await nextReady(8), 'Default step ends with Next');
     clickLast(d, '.ca-tour-next');
 
     // step 3: Manual — the real settings pill, KTM by hand, $360.72
+    R.ok(await until(() => chatText(d).indexOf('Next is Manual mode') !== -1, 20000), 'Manual introduces itself');
     R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'manual', 20000), 'Manual switched through the real settings pill');
-    R.ok(await nextReady(10), 'reading pause on the hand-typed card (gate)');
+    R.ok(await nextReady(9), 'reading pause on the hand-typed card (gate)');
     clickLast(d, '.ca-tour-next');
     R.ok(await until(() => {
         const rb = d.getElementById('results-backdrop');
@@ -118,12 +129,12 @@ const clickLast = (d, sel) => {
     }, 30000), 'the hand-typed KTM layover computes $360.72');
     R.ok(await until(() => w.caTour.entries.length === 4, 20000), 'the manual summary saves like every other');
     R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'default', 15000), "the crew's original mode is restored");
-    R.ok(await nextReady(11), 'Manual step ends with Next');
+    R.ok(await nextReady(10), 'Manual step ends with Next');
     clickLast(d, '.ca-tour-next');
 
     // step 4: menu + print — interactive; the crew's typing IS the demo
     R.ok(await until(() => chatText(d).indexOf('yours to drive') !== -1, 20000), 'menu step hands over the keys');
-    R.ok(await nextReady(12, 30000), 'Finish / Skip tour wait while the crew drives');
+    R.ok(await nextReady(11, 30000), 'Finish / Skip tour wait while the crew drives');
     w.processInput('menu');
     R.ok(await until('[id^="fv-mode-"]', 15000), 'typing menu mid-step does not interrupt — the real card opens');
     const fv = d.querySelector('[id^="fv-mode-"]');

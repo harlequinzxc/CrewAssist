@@ -1392,11 +1392,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.4';
+        const APP_VERSION = '1.23.5';
         const APP_WHAT_NEW = [
-            'In the roster card, Calculate all is now the primary button and Build cards a secondary one beside Discard.',
-            'The tour summary beat breathes: a pause before the smooth scroll, a pause at the bottom, and a pause at every save step.',
-            'The earnings chapter is yours to drive — the chip is pointed out in chat, and the page opens only after you press Next.'
+            'Typing dots now win the scroll war: after a tall card pins the view to its top, the typing bubble is always brought into sight.',
+            "The Default demo types SQ 632 and SQ 633 one digit at a time, fetches all, and — online — calculates through to the app's own total announcement.",
+            'The roster save beat breathes longer, the earn chip message quotes its name, and Manual mode introduces itself properly.'
         ];
 
         // State
@@ -1937,7 +1937,13 @@
             `;
             chatContainer.appendChild(div);
             updateScrollBottomBtn();
-            if (appPrefs.autoScroll) scrollToBottom();
+            // The dots are the conversation's live edge: they must beat a
+            // tall card's top-align scroll lock, or they render out of sight
+            // below it (the roster card hid them exactly this way).
+            if (appPrefs.autoScroll) {
+                scrollToBottomNow('smooth', true);
+                setTimeout(() => scrollToBottomNow('smooth', true), 150);
+            }
         }
 
         function hideTypingIndicator() {
@@ -2083,7 +2089,10 @@
             const tick = () => {
                 const hgt = el ? (el.offsetHeight || el.getBoundingClientRect().height) : 0;
                 const tall = isCard || (el && hgt > chatContainer.clientHeight);
-                if (tall) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1200); }
+                // A typing indicator means the conversation has moved on:
+                // the bottom (with its dots) wins over the card's top-align.
+                const typing = !!document.getElementById('typing-indicator');
+                if (tall && !typing) { scrollChatToElNow(el, 'smooth'); lockChatScroll(1200); }
                 else scrollToBottomNow('smooth', true);
                 tries += 1;
                 // Cards re-assert the top for ~2s so a late iOS bottom-scroll is
@@ -10321,6 +10330,18 @@ function getRegionForAirport(code) {
             document.querySelectorAll('.ca-tour-glow').forEach((el) => el.classList.remove('ca-tour-glow'));
         }
 
+        // Types text the way a person does: one character at a time, each
+        // keystroke a real input event the card's handlers react to.
+        async function caTourTypeInto(T, el, text) {
+            if (!el) return false;
+            for (let i = 1; i <= text.length; i++) {
+                el.value = text.slice(0, i);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                if (!await T.wait(450)) return false;
+            }
+            return true;
+        }
+
         // Mirrors rosterPrefillCard's setVal: value -> button label -> input
         // -> change, so every existing handler runs as if the crew typed it.
         function caTourSetVal(el, val) {
@@ -10634,12 +10655,10 @@ function getRegionForAirport(code) {
                     await T.say('Press <b>Build cards</b> to tweak your flight details (if any) or press <b>Calculate all</b> and let me compute your total allowance.');
                     const gate3 = await T.next();
                     if (gate3 === 'skip') return 'skip';
-                    // the star of this beat, lit before it is explained
-                    T.glow(all);
-                    await T.say('Once the calculations are complete, a summary page will open — tap the <b>save</b> icon to archive your earnings.');
+                    await T.say('Once the calculations are complete after tapping <b>Calculate All</b>, a summary page will open — tap the <b>save</b> icon to archive your earnings.');
                     const gate4 = await T.next();
                     if (gate4 === 'skip') return 'skip';
-                    // -- only now does the demo press the lit button --
+                    // -- only now does the demo press Calculate all --
                     await T.wait(600);
                     T.tap(all);
                     const open = await T.until(() => {
@@ -10647,18 +10666,19 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 15000);
                     if (!open) return;
-                    await T.wait(1600);
+                    await T.wait(2500);
                     // -- a slow, smooth pass down the whole page --
                     await caTourScrollResults(T);
-                    await T.wait(900);
-                    // -- at the bottom: save, a breath at every beat --
+                    await T.wait(1200);
+                    // -- at the bottom: save, a longer breath at every beat --
                     const ab = await T.until(() => {
                         const b = document.getElementById('btn-results-action');
                         return (b && !b.classList.contains('hidden') && !b.disabled) ? b : null;
                     }, 6000);
                     if (!ab) return;
                     T.glow(ab);
-                    await T.wait(1000);
+                    await T.wait(1200);
+                    caTourClearGlow();
                     if (!T.alive()) return;
                     T.tap(ab);
                     const dlg = await T.until(() => {
@@ -10666,28 +10686,29 @@ function getRegionForAirport(code) {
                         return (dd && !dd.classList.contains('hidden')) ? dd : null;
                     }, 6000);
                     if (dlg) {
-                        await T.wait(600);
+                        await T.wait(800);
                         T.tap(document.getElementById('app-dialog-ok'));
                     }
-                    await T.wait(1500);
+                    await T.wait(1800);
                     if (!T.alive()) return;
                     await T.say('<b>Saved.</b> July 2026 is filed under your earnings.');
-                    await T.wait(900);
+                    await T.wait(1200);
                     const rb = document.getElementById('results-backdrop');
                     const rclose = document.getElementById('btn-close-results');
                     if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
-                    await T.wait(900);
+                    await T.wait(1200);
                     // -- the earn chip: said, lit, unlit — never auto-tapped.
                     // The crew drives this one through the gate --
                     if (!T.alive()) return;
                     const earn = await T.until(() => document.querySelector('.action-chip[data-intent="earn"]'));
                     if (!earn) return;
-                    await T.say('Tap on <b>How much have I earned?</b> quick action chip to view your archived earning/s.');
+                    await T.say('Tap on the <b>"How much have I earned?"</b> quick action chip to view your archived earning/s.');
                     T.glow(earn);
                     await T.wait(1800);
                     caTourClearGlow();
+                    // The page opens only after this next bubble is up and the
+                    // crew presses Next — never before.
                     await T.say('Earnings are grouped by months. Tap on any flight and its whole summary reopens.');
-                    await T.wait(900);
                     const gate5 = await T.next();
                     if (gate5 === 'skip') return 'skip';
                     // -- Next pressed: the demo drives the chip --
@@ -10709,7 +10730,7 @@ function getRegionForAirport(code) {
                     if (!sub) return;
                     await T.wait(1400);
                     if (typeof closeArchSub === 'function') closeArchSub();
-                    await T.wait(600);
+                    await T.wait(1400);
                     if (typeof closeArchOverlay === 'function') closeArchOverlay();
                     await T.wait(600);
                 }
@@ -10717,7 +10738,7 @@ function getRegionForAirport(code) {
             {
                 id: 'default',
                 say: [
-                    "Now the two ways of calculating. This is <b>Default</b> — flight number and date, and I fetch the rest.",
+                    "Now there are two ways of calculating allowances. In <b>Default</b> mode — just enter your flight number and date, and I will fetch the rest.",
                     "Watch: the chip, the card, then Fetch — <b>SQ 632</b> out and <b>SQ 633</b> home, the day after."
                 ],
                 run: async function (T) {
@@ -10735,69 +10756,104 @@ function getRegionForAirport(code) {
                         return cs.length > beforeCards ? cs[cs.length - 1] : null;
                     }, 8000);
                     if (!card) return;
-                    await T.wait(600);
-                    const fn1 = card.querySelector('input[id$="-ifa-fn1"]');
-                    const id = fn1 ? fn1.id.slice(0, -'-ifa-fn1'.length) : '';
-                    if (!id) return;
+                    // The calculator header to the top of the view, both
+                    // flight numbers pristine, before the demo touches anything.
+                    const cardBubble = card.closest('.glass-bubble');
+                    if (cardBubble && typeof scrollChatToBubble === 'function') scrollChatToBubble(cardBubble);
+                    const fn1 = await T.until(() => {
+                        const f = card.querySelector('input[id$="-ifa-fn1"]');
+                        return (f && f.value === '') ? f : null;
+                    }, 6000);
+                    if (!fn1) return;
+                    const id = fn1.id.slice(0, -'-ifa-fn1'.length);
+                    const fn2 = await T.until(() => {
+                        const f = document.getElementById(id + '-ifa-fn2');
+                        return (f && f.value === '') ? f : null;
+                    }, 6000);
+                    if (!fn2) return;
+                    // -- sector 1: lit, typed one digit at a time, unlit --
                     T.glow(fn1);
-                    await T.wait(1400);
-                    // SQ 632 out, SQ 633 home the day after — the classic pairing.
-                    caTourSetVal(fn1, '632');
-                    caTourSetVal(document.getElementById(id + '-ifa-d1'), caTourDemoDate(2));
-                    const fn2 = document.getElementById(id + '-ifa-fn2');
-                    if (fn2) {
-                        caTourSetVal(fn2, '633');
-                        caTourSetVal(document.getElementById(id + '-ifa-d2'), caTourDemoDate(3));
-                    }
-                    await T.wait(800);
+                    await T.wait(1200);
+                    if (!await caTourTypeInto(T, fn1, '632')) return;
+                    await T.wait(900);
+                    caTourClearGlow();
+                    await T.wait(900);
                     if (!T.alive()) return;
-                    // Reading pause: the filled card, before Fetch runs.
-                    const gate = await T.next();
-                    if (gate === 'skip') return 'skip';
+                    // -- sector 2: the same ritual --
+                    T.glow(fn2);
+                    await T.wait(1200);
+                    if (!await caTourTypeInto(T, fn2, '633')) return;
+                    await T.wait(900);
+                    caTourClearGlow();
+                    await T.wait(900);
+                    if (!T.alive()) return;
+                    // dates set quietly: SQ 632 two days out, SQ 633 the day after
+                    caTourSetVal(document.getElementById(id + '-ifa-d1'), caTourDemoDate(2));
+                    caTourSetVal(document.getElementById(id + '-ifa-d2'), caTourDemoDate(3));
+                    await T.wait(600);
+                    // -- fetch all: lit, explained, unlit, then pressed --
                     const fetchAll = document.getElementById(id + '-ifa-fetch-all');
                     if (!fetchAll) return;
                     T.glow(fetchAll);
-                    await T.say('Fetch — the live schedule fills in the flight time. Any flight from two days ago to six weeks out.');
-                    await T.wait(800);
+                    await T.say('Fetch all — only works for flights from two days ago to six weeks out.');
+                    await T.wait(900);
+                    caTourClearGlow();
+                    await T.wait(900);
+                    if (!T.alive()) return;
                     T.tap(fetchAll);
+                    // online: both sectors fill and turn green; offline: the
+                    // honest pivot — never a made-up number.
                     const outcome = await T.until(() => {
                         const dlg = document.getElementById('app-dialog-backdrop');
                         if (dlg && !dlg.classList.contains('hidden')) return 'dialog';
-                        // Fetch all fails quietly (one message per trip, not per
-                        // sector), so the sector state is the offline signal.
-                        const err = document.querySelector('#' + id + '-ifa-sectors [data-ifa-state="error"]');
-                        if (err) return 'error';
-                        const b = document.getElementById(id + '-btn-calc');
-                        return (b && !b.disabled) ? 'ready' : null;
-                    }, 15000);
-                    if (outcome === 'dialog') {
-                        await T.wait(700);
-                        T.tap(document.getElementById('app-dialog-ok'));
+                        const sectors = document.querySelectorAll('#' + id + '-ifa-sectors [data-ifa-state]');
+                        let done = 0, err = 0;
+                        sectors.forEach((s) => {
+                            const st = s.getAttribute('data-ifa-state') || '';
+                            if (st === 'done') done++;
+                            if (st === 'error') err++;
+                        });
+                        if (err) return 'offline';
+                        if (done >= 2) return 'green';
+                        return null;
+                    }, 20000);
+                    if (outcome !== 'green') {
+                        if (outcome === 'dialog') {
+                            await T.wait(800);
+                            T.tap(document.getElementById('app-dialog-ok'));
+                        }
                         await T.say(CA_TOUR_FETCH_PIVOT);
                         return;
                     }
-                    if (outcome !== 'ready') {
-                        await T.say(CA_TOUR_FETCH_PIVOT);
-                        return;
-                    }
+                    // -- green: calculate; the app itself announces the total --
+                    await T.wait(1200);
                     const calc = document.getElementById(id + '-btn-calc');
+                    if (!calc) return;
                     T.glow(calc);
-                    await T.wait(600);
+                    await T.wait(1200);
+                    if (!T.alive()) return;
                     T.tap(calc);
                     const open = await T.until(() => {
                         const b = document.getElementById('results-backdrop');
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 12000);
                     if (!open) return;
-                    await T.wait(800);
-                    await caTourSaveBeat(T, 'And it saves, like every summary.');
+                    await T.wait(900);
+                    // The app posts "Your total COP Allowance is $…" in chat on
+                    // its own; the tour only adds the save hint — no save demo.
+                    await T.say('Similarly you may tap the <b>save</b> icon to archive your earnings.');
+                    await T.wait(1200);
+                    const rb = document.getElementById('results-backdrop');
+                    const rclose = document.getElementById('btn-close-results');
+                    if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
+                    await T.wait(900);
                 }
             },
             {
                 id: 'manual',
                 say: [
-                    "And this is <b>Manual</b> — no fetching at all. You type the flight time yourself, and the layover station's times and dates for LMA.",
-                    "The switch lives in Settings. Let me flip it."
+                    "Next is <b>Manual</b> mode — no fetching at all. You type the flight time, select the layover station IATA and the station's arrival and departure date and time yourself.",
+                    "The switch lives in Settings. Let me change it from <b>Default</b> to <b>Manual</b>."
                 ],
                 run: async function (T) {
                     const gear = document.getElementById('btn-settings');
