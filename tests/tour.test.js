@@ -41,37 +41,51 @@ const clickLast = (d, sel) => {
     w.processInput('tour');
 
     // step 0: chat basics
-    R.ok(await until(() => chatText(d).indexOf('This is your crew assistant') !== -1, 20000), 'step 0 narration types');
+    R.ok(await until(() => chatText(d).indexOf('I am your personal assistant') !== -1, 20000), 'step 0 narration types');
+    R.ok(await until(() => chatText(d).indexOf('quick action chip') !== -1, 20000), 'the opener runs all four lines');
+    R.ok(/How much is my allowance\?/.test(chatText(d)), 'the allowance example is quoted');
+    R.ok(/What are we serving onboard\?/.test(chatText(d)), 'the onboard example is quoted');
     R.ok(await nextReady(1), 'step 0 ends with Next / Skip tour');
     clickLast(d, '.ca-tour-next');
 
     // step 1: roster showpiece with the earnings thread woven in
-    R.ok(await until(() => chatText(d).indexOf('demo roster') !== -1, 20000), 'roster step announces the demo roster');
-    R.ok(/Kathmandu overnight/.test(chatText(d)) && /Phuket turnaround/.test(chatText(d)) && /double Penang shuttle/.test(chatText(d)), 'the three demo flights are named up front');
-    R.ok(await until('.ca-tour-glow', 15000), 'gold ring glow marks the narrated target');
+    R.ok(await until(() => chatText(d).indexOf('See that paperclip down there?') !== -1, 20000), 'the paperclip is pointed out');
+    R.ok(await until('.ca-tour-glow', 15000), 'gold ring glow marks the paperclip');
+    R.ok(await until(() => chatText(d).indexOf('roster report/s') !== -1, 20000), 'the attach instruction lands');
+    R.ok(await nextReady(2), 'gate: after the attach instructions');
+    clickLast(d, '.ca-tour-next');
+    R.ok(await until(() => chatText(d).indexOf('fictitious roster') !== -1, 20000), 'the demo attach is narrated');
+    R.ok(/Kathmandu layover/.test(chatText(d)) && /Phuket turnaround/.test(chatText(d)) && /four sector Penang shuttle/.test(chatText(d)), 'the three demo flights are named');
+    R.ok(await nextReady(3), 'gate: after the fictitious-roster narration');
+    clickLast(d, '.ca-tour-next');
     R.ok(await until('.roster-calc-all-btn', 20000), 'demo roster confirm bubble renders');
     const conf = chatText(d);
-    R.ok(conf.indexOf('Demo month.pdf') !== -1, 'demo roster is labelled as a file');
+    R.ok(conf.indexOf('July 2026 - Demo.pdf') !== -1, 'demo roster is labelled as a file');
     R.ok(/3 trips/.test(conf) && /8 sectors/.test(conf), 'three trips, eight sectors');
     R.ok(/Skipped \d+ non-flying day/.test(conf), 'non-flying days are reported honestly');
-    R.ok(await nextReady(2), 'reading pause after the trips list (gate A)');
+    R.ok(await until(() => chatText(d).indexOf('Build cards') !== -1, 15000), 'Build cards vs Calculate all is explained');
+    R.ok(await nextReady(4), 'gate: Build cards / Calculate all');
     clickLast(d, '.ca-tour-next');
-    R.ok(await until(() => !d.getElementById('results-backdrop').classList.contains('hidden'), 25000), 'Calculate all opens the combined summary');
-    R.ok(await until(() => chatText(d).indexOf('$823.23') !== -1, 15000), 'the month totals $823.23 (360.72 + 154.35 + 308.16)');
-    R.ok(await until(() => w.caTour.entries.length === 3, 20000), 'the save beat files three demo entries');
+    R.ok(await until(() => chatText(d).indexOf('summary page will open') !== -1, 15000), 'the save step is explained before it happens');
+    R.ok(await nextReady(5), 'gate: the summary opens only after Next');
+    clickLast(d, '.ca-tour-next');
+    R.ok(await until(() => !d.getElementById('results-backdrop').classList.contains('hidden'), 25000), 'only after Next does the summary page open');
+    R.ok(await until(() => chatText(d).indexOf('calculating every flight') !== -1, 15000), 'the real flow narrates every flight');
+    R.ok(await until(() => chatText(d).indexOf('$823.23') !== -1, 20000), 'the month totals $823.23 (360.72 + 154.35 + 308.16)');
+    R.ok(await until(() => w.caTour.entries.length === 3, 25000), 'the save at the bottom of the page files three demo entries');
+    R.ok(await until(() => chatText(d).indexOf('filed under your earnings') !== -1, 15000), 'the save is acknowledged');
+    R.ok(await until(() => d.getElementById('results-backdrop').classList.contains('hidden'), 15000), 'the summary exits after the save');
     R.eq(w.localStorage.getItem('crewAssist.archive'), null, 'demo saves never touch localStorage');
-    R.ok(await nextReady(3), 'reading pause after the save beat (gate B)');
-    clickLast(d, '.ca-tour-next');
     R.ok(await until(() => !d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 15000), 'the earn chip opens the earnings page');
     R.ok(await until(() => d.querySelectorAll('#ca-arch-list .ca-arch-row').length === 3, 10000), 'archive shows the three demo flights');
     R.ok(d.getElementById('ca-arch-list').textContent.indexOf('Jul 2026') !== -1, 'grouped under the demo month');
     R.ok(await until(() => !d.getElementById('ca-arch-sub').classList.contains('hidden'), 10000), 'tapping a row reopens its summary');
     R.ok(d.getElementById('ca-arch-sub-sheet').textContent.indexOf('Flight Overview') !== -1, 'reopened summary carries the Flight Overview');
-    R.ok(await nextReady(4), 'roster step ends with Next');
+    R.ok(await nextReady(6), 'roster step ends with Next');
     clickLast(d, '.ca-tour-next');
 
     // step 2: Default — SQ 632 out, SQ 633 home, then offline pivot
-    R.ok(await nextReady(5), 'reading pause on the filled card (gate)');
+    R.ok(await nextReady(7), 'reading pause on the filled card (gate)');
     const cards = d.querySelectorAll('[data-calc-card]');
     const lastCard = cards[cards.length - 1];
     R.ok(lastCard && lastCard.querySelector('input[id$="-ifa-fn1"]') && lastCard.querySelector('input[id$="-ifa-fn1"]').value === '632', 'SQ 632 typed into sector 1');
@@ -80,12 +94,12 @@ const clickLast = (d, sel) => {
     R.eq(d.getElementById(cid + '-ifa-d2').value, w.caTourDemoDate(3), 'sector 2 departs the day after sector 1');
     clickLast(d, '.ca-tour-next');
     R.ok(await until(() => chatText(d).indexOf('never a made-up number') !== -1, 30000), 'offline Default step pivots honestly');
-    R.ok(await nextReady(6), 'Default step ends with Next');
+    R.ok(await nextReady(8), 'Default step ends with Next');
     clickLast(d, '.ca-tour-next');
 
     // step 3: Manual — the real settings pill, KTM by hand, $360.72
     R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'manual', 20000), 'Manual switched through the real settings pill');
-    R.ok(await nextReady(7), 'reading pause on the hand-typed card (gate)');
+    R.ok(await nextReady(9), 'reading pause on the hand-typed card (gate)');
     clickLast(d, '.ca-tour-next');
     R.ok(await until(() => {
         const rb = d.getElementById('results-backdrop');
@@ -93,12 +107,12 @@ const clickLast = (d, sel) => {
     }, 30000), 'the hand-typed KTM layover computes $360.72');
     R.ok(await until(() => w.caTour.entries.length === 4, 20000), 'the manual summary saves like every other');
     R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'default', 15000), "the crew's original mode is restored");
-    R.ok(await nextReady(8), 'Manual step ends with Next');
+    R.ok(await nextReady(10), 'Manual step ends with Next');
     clickLast(d, '.ca-tour-next');
 
     // step 4: menu + print — interactive; the crew's typing IS the demo
     R.ok(await until(() => chatText(d).indexOf('yours to drive') !== -1, 20000), 'menu step hands over the keys');
-    R.ok(await nextReady(9, 30000), 'Finish / Skip tour wait while the crew drives');
+    R.ok(await nextReady(11, 30000), 'Finish / Skip tour wait while the crew drives');
     w.processInput('menu');
     R.ok(await until('[id^="fv-mode-"]', 15000), 'typing menu mid-step does not interrupt — the real card opens');
     const fv = d.querySelector('[id^="fv-mode-"]');
@@ -142,6 +156,8 @@ const clickLast = (d, sel) => {
     d.getElementById('ob-submit').click();
     const wn = d.getElementById('whatsnew-close');
     if (wn) wn.click();
+    R.ok(await until(() => chatText(d).indexOf('allow me to show you around') !== -1, 25000), 'the offer opens politely');
+    R.ok(await until(() => chatText(d).indexOf('Two minutes of your time') !== -1, 10000), 'the offer asks for two minutes');
     R.ok(await until('.ca-tour-offer-go', 25000), 'the offer lands after the greeting');
     R.ok(!!d.querySelector('.ca-tour-offer-skip'), 'the offer is skippable');
     d.querySelector('.ca-tour-offer-skip').click();
@@ -164,7 +180,7 @@ const clickLast = (d, sel) => {
     R.ok(chatText(d).indexOf("didn't quite catch that") !== -1, 'the question itself was answered first');
     R.ok(await until(() => nextCount() === 2 && !w.isChatBusy(), 15000), 'Resume / Skip tour offered');
     clickLast(d, '.ca-tour-next'); // Resume
-    R.ok(await until(() => chatText(d).split('This is your crew assistant').length === 3, 20000), 'resume restarts the same step fresh');
+    R.ok(await until(() => chatText(d).split('I am your personal assistant').length === 3, 20000), 'resume restarts the same step fresh');
     R.ok(await until(() => nextCount() === 3, 20000), 'the restarted step reaches its buttons');
     clickLast(d, '.ca-tour-skip'); // Skip tour
     R.ok(await until(() => w.caTour.on === false, 10000), 'skip ends the tour');
