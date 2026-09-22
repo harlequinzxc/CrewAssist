@@ -26,7 +26,7 @@ const R = {
 };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function boot() {
+async function boot(appPath, opts) {
     const html = fs.readFileSync(APP, 'utf8').replace(/<script\s+src=[^>]*><\/script>/g, '');
     const dom = new JSDOM(html, { url: 'https://crewassist.test/', pretendToBeVisual: true, runScripts: 'outside-only' });
     const w = dom.window, d = w.document;
@@ -57,6 +57,14 @@ async function boot() {
     for (const code of scripts) { try { w.eval(code); } catch (e) { if (!/serviceWorker|tailwind/.test(String(e))) console.log('script err: ' + e); } }
     // jsdom fires its own DOMContentLoaded while we wait; see the header comment.
     await wait(400);
+    // The what's-new sheet (fresh versions) holds the welcome chat until
+    // it's closed — close it like a user would, unless a suite asks to keep
+    // it open to test that deferral itself.
+    if (!(opts && opts.keepWhatsNew)) {
+        const wnBackdrop = d.getElementById('whatsnew-backdrop');
+        const wnClose = d.getElementById('whatsnew-close');
+        if (wnBackdrop && wnClose && !wnBackdrop.classList.contains('hidden')) wnClose.click();
+    }
     return { w, d };
 }
 

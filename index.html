@@ -1392,11 +1392,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.2';
+        const APP_VERSION = '1.23.3';
         const APP_WHAT_NEW = [
-            'The roster demo is fully paced: reading gates through every beat, the summary page opens only after you press Next, then a slow scroll to the bottom before the save.',
-            'New narration throughout — the paperclip, the fictitious demo roster, Build cards vs Calculate all — and the offer asks for two minutes of your time.',
-            'Tour buttons get real padding: no more clipped icons, and every label stays on one row.'
+            "The welcome chat waits its turn: open the app to a what's-new sheet and the greeting begins only after you close it.",
+            "The tour offer says Let's go, and types both of its lines like a real conversation.",
+            'The tour lights the paperclip only after pointing it out, and the roster instructions name the source: your downloaded roster report/s from Crew App.'
         ];
 
         // State
@@ -1761,16 +1761,37 @@
         function showMain() {
             elObView.classList.add('hidden');
             elMainView.classList.remove('hidden');
-            initChat();
-            maybeWhatsNewOverlay();
-            // Feature tour: one first-run offer, after the greeting settles.
-            if (typeof maybeOfferTour === 'function') setTimeout(maybeOfferTour, 1200);
+            // When the what's-new sheet opens it owns the stage: the welcome
+            // chat must not type away behind it — the chat (and the tour
+            // offer that follows it) begins only once the sheet is closed.
+            const startChat = () => {
+                initChat();
+                // Feature tour: one first-run offer, after the greeting settles.
+                if (typeof maybeOfferTour === 'function') setTimeout(maybeOfferTour, 1200);
+            };
+            if (whatsNewWillShow()) {
+                whatsNewOnClosed = startChat;
+                maybeWhatsNewOverlay();
+            } else {
+                startChat();
+            }
         }
 
-        function maybeWhatsNewOverlay() {
+        // Would the what's-new sheet open right now? Same condition the
+        // overlay itself uses, factored out so showMain can hold the welcome
+        // chat behind it.
+        function whatsNewWillShow() {
             const items = Array.isArray(APP_WHAT_NEW) ? APP_WHAT_NEW : (APP_WHAT_NEW ? [APP_WHAT_NEW] : []);
-            if (!items.length) return;
-            if (localStorage.getItem('crewAssist.hideWhatsNew') === APP_VERSION) return;
+            if (!items.length) return false;
+            if (localStorage.getItem('crewAssist.hideWhatsNew') === APP_VERSION) return false;
+            return !!(document.getElementById('whatsnew-backdrop') && document.getElementById('whatsnew-list'));
+        }
+
+        let whatsNewOnClosed = null;
+
+        function maybeWhatsNewOverlay() {
+            if (!whatsNewWillShow()) return;
+            const items = Array.isArray(APP_WHAT_NEW) ? APP_WHAT_NEW : (APP_WHAT_NEW ? [APP_WHAT_NEW] : []);
             const backdrop = document.getElementById('whatsnew-backdrop');
             const title = document.getElementById('whatsnew-title');
             const list = document.getElementById('whatsnew-list');
@@ -1802,6 +1823,10 @@
             if (!backdrop) return;
             backdrop.classList.add('opacity-0');
             setTimeout(() => backdrop.classList.add('hidden'), 200);
+            // If the welcome chat was held behind this sheet, start it now.
+            const cb = whatsNewOnClosed;
+            whatsNewOnClosed = null;
+            if (cb) cb();
         }
 
         // --- Chat Logic ---
@@ -10565,7 +10590,7 @@ function getRegionForAirport(code) {
             {
                 id: 'chat',
                 say: [
-                    "I am your personal assistant, ask me anything related to your flight.",
+                    "I am your personal assistant, ask me anything related to your flight in the chat box.",
                     "<i>“How much is my allowance?”</i>",
                     "<i>“What are we serving onboard?”</i>",
                     "Or tap on a quick action chip below."
@@ -10583,13 +10608,14 @@ function getRegionForAirport(code) {
                 id: 'roster',
                 say: [],
                 run: async function (T) {
-                    // -- the paperclip, pointed out and given a moment --
-                    T.glow('#btn-roster');
+                    // -- the paperclip: said first, lit next, unlit before
+                    // the instruction that follows --
                     await T.say('See that paperclip down there?');
+                    T.glow('#btn-roster');
                     await T.wait(1800);
-                    if (!T.alive()) return;
-                    await T.say('Attach your <b>roster report/s</b> and allow me to calculate your month/s allowance.');
                     caTourClearGlow();
+                    if (!T.alive()) return;
+                    await T.say('Attach your downloaded <b>roster report/s</b> from <b>Crew App</b> and allow me to calculate your month/s allowance.');
                     const gate1 = await T.next();
                     if (gate1 === 'skip') return 'skip';
                     // -- what the demo is about to attach --
@@ -11016,11 +11042,15 @@ function getRegionForAirport(code) {
             const t0 = Date.now();
             const go = () => {
                 try { localStorage.setItem('crewAssist.tourOffered', '1'); } catch (e) {}
+                // Two enqueued lines, so a typing bubble shows between them
+                // like every other exchange.
                 enqueueBot(() => {
                     addMessage('bot', 'Before we start, allow me to show you around. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>');
+                });
+                enqueueBot(() => {
                     addMessage('bot', 'Two minutes of your time, that is all I ask for.'
                         + '<div class="flex flex-wrap gap-2 mt-2">'
-                        + '<button type="button" class="ca-tour-offer-go flex-1 min-w-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5 shrink-0"></i>Show me around</button>'
+                        + '<button type="button" class="ca-tour-offer-go flex-1 min-w-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5 shrink-0"></i>Let\'s go</button>'
                         + '<button type="button" class="ca-tour-offer-skip flex-1 min-w-0 px-4 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Not now</button>'
                         + '</div>');
                     const bubble = document.getElementById('chat-container').lastElementChild;

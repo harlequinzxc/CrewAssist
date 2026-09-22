@@ -42,6 +42,7 @@ const clickLast = (d, sel) => {
 
     // step 0: chat basics
     R.ok(await until(() => chatText(d).indexOf('I am your personal assistant') !== -1, 20000), 'step 0 narration types');
+    R.ok(chatText(d).indexOf('related to your flight in the chat box') !== -1, 'the chat box is named in the opener');
     R.ok(await until(() => chatText(d).indexOf('quick action chip') !== -1, 20000), 'the opener runs all four lines');
     R.ok(/How much is my allowance\?/.test(chatText(d)), 'the allowance example is quoted');
     R.ok(/What are we serving onboard\?/.test(chatText(d)), 'the onboard example is quoted');
@@ -51,7 +52,8 @@ const clickLast = (d, sel) => {
     // step 1: roster showpiece with the earnings thread woven in
     R.ok(await until(() => chatText(d).indexOf('See that paperclip down there?') !== -1, 20000), 'the paperclip is pointed out');
     R.ok(await until('.ca-tour-glow', 15000), 'gold ring glow marks the paperclip');
-    R.ok(await until(() => chatText(d).indexOf('roster report/s') !== -1, 20000), 'the attach instruction lands');
+    R.ok(await until(() => chatText(d).indexOf('downloaded roster report/s') !== -1, 20000), 'the attach instruction lands');
+    R.ok(chatText(d).indexOf('from Crew App') !== -1, 'the source is named: Crew App');
     R.ok(await nextReady(2), 'gate: after the attach instructions');
     clickLast(d, '.ca-tour-next');
     R.ok(await until(() => chatText(d).indexOf('fictitious roster') !== -1, 20000), 'the demo attach is narrated');
@@ -159,6 +161,7 @@ const clickLast = (d, sel) => {
     R.ok(await until(() => chatText(d).indexOf('allow me to show you around') !== -1, 25000), 'the offer opens politely');
     R.ok(await until(() => chatText(d).indexOf('Two minutes of your time') !== -1, 10000), 'the offer asks for two minutes');
     R.ok(await until('.ca-tour-offer-go', 25000), 'the offer lands after the greeting');
+    R.eq(d.querySelector('.ca-tour-offer-go').textContent.trim(), "Let's go", "the offer button says Let's go");
     R.ok(!!d.querySelector('.ca-tour-offer-skip'), 'the offer is skippable');
     d.querySelector('.ca-tour-offer-skip').click();
     R.ok(await until(() => w.localStorage.getItem('crewAssist.tourDone') === '1', 5000), 'skip records tourDone');
@@ -166,6 +169,26 @@ const clickLast = (d, sel) => {
     w.maybeOfferTour();
     await wait(800);
     R.eq(d.querySelectorAll('.ca-tour-offer-go').length, 1, 'the offer never repeats');
+  }
+
+  // ---- the what's-new sheet holds the welcome chat until it's closed ----
+  {
+    const { w, d } = await boot(APP, { keepWhatsNew: true });
+    const until = mkUntil(d);
+    // complete onboarding the way a first-run crew would, so showMain runs
+    const name = d.getElementById('ob-name');
+    name.value = 'Sheet Tester';
+    name.dispatchEvent(new w.Event('input', { bubbles: true }));
+    d.querySelector('.ob-gender-btn').click();
+    await wait(150);
+    d.querySelector('.ob-rank-btn').click();
+    await wait(50);
+    d.getElementById('ob-submit').click();
+    R.ok(await until(() => !d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 5000), "the what's-new sheet opens");
+    await wait(2500);
+    R.eq(chatText(d).indexOf('How can I help you today?'), -1, 'no welcome chat types behind the sheet');
+    d.getElementById('whatsnew-close').click();
+    R.ok(await until(() => chatText(d).indexOf('How can I help you today?') !== -1, 20000), 'the welcome chat begins only after the sheet closes');
   }
 
   // ---- interruption: typing yields, resume restarts the same step ----
