@@ -118,48 +118,52 @@ const clickLast = (d, sel) => {
     R.ok(await nextReady(8), 'Default step ends with Next');
     clickLast(d, '.ca-tour-next');
 
-    // step 3: Manual — the real settings pill, KTM by hand, $360.72
+    // step 3: Manual — gate first, then 4:56 / 5:15 / KTM / 21:55 / 22:59 by hand
     R.ok(await until(() => chatText(d).indexOf('Next is Manual mode') !== -1, 20000), 'Manual introduces itself');
-    R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'manual', 20000), 'Manual switched through the real settings pill');
-    R.ok(await nextReady(9), 'reading pause on the hand-typed card (gate)');
+    R.ok(await nextReady(9), 'gate: right after the say lines');
     clickLast(d, '.ca-tour-next');
+    R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'manual', 20000), 'Manual switched through the real settings pill');
+    R.ok(await until(() => {
+        const cards = d.querySelectorAll('[data-calc-card]');
+        const c = cards[cards.length - 1];
+        return c && c.querySelector('input[id$="-ifa-t1"]') && c.querySelector('input[id$="-ifa-t1"]').value === '4:56';
+    }, 30000), 'sector 1 flight time typed digit by digit: 4:56');
+    const mcards = d.querySelectorAll('[data-calc-card]');
+    const mcard = mcards[mcards.length - 1];
+    const mid = mcard.querySelector('input[id$="-ifa-t1"]').id.slice(0, -'-ifa-t1'.length);
+    R.ok(await until(() => d.getElementById(mid + '-ifa-t2').value === '5:15', 20000), 'sector 2 flight time typed digit by digit: 5:15');
+    R.ok(await until(() => d.getElementById(mid + '-lma-iata1').value === 'KTM', 20000), 'station typed letter by letter: KTM');
+    R.ok(await until(() => d.getElementById(mid + '-lma-at1').value === '21:55', 20000), 'arrival time typed digit by digit: 21:55');
+    R.ok(await until(() => d.getElementById(mid + '-lma-dt1').value === '22:59', 20000), 'departure time typed digit by digit: 22:59');
     R.ok(await until(() => {
         const rb = d.getElementById('results-backdrop');
         return !rb.classList.contains('hidden') && d.getElementById('results-content').textContent.indexOf('360.72') !== -1;
     }, 30000), 'the hand-typed KTM layover computes $360.72');
-    R.ok(await until(() => w.caTour.entries.length === 4, 20000), 'the manual summary saves like every other');
+    R.ok(await until(() => d.getElementById('results-backdrop').classList.contains('hidden'), 15000), 'the summary closes without a save demo');
+    R.eq(w.caTour.entries.length, 3, 'the Manual demo saves nothing');
+    R.ok(await until(() => chatText(d).indexOf('reverted everything back to default') !== -1, 15000), 'Manual closes by reverting to default');
     R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'default', 15000), "the crew's original mode is restored");
     R.ok(await nextReady(10), 'Manual step ends with Next');
     clickLast(d, '.ca-tour-next');
 
-    // step 4: menu + print — interactive; the crew's typing IS the demo
-    R.ok(await until(() => chatText(d).indexOf('yours to drive') !== -1, 20000), 'menu step hands over the keys');
-    R.ok(await nextReady(11, 30000), 'Finish / Skip tour wait while the crew drives');
-    w.processInput('menu');
-    R.ok(await until('[id^="fv-mode-"]', 15000), 'typing menu mid-step does not interrupt — the real card opens');
-    const fv = d.querySelector('[id^="fv-mode-"]');
-    const uid = fv.id.replace('fv-mode-', '');
-    const finp = d.getElementById('fv-flight-' + uid);
-    finp.value = '632';
-    // the date pills carry inline onclick attributes, which jsdom's
-    // outside-only mode never compiles — call the handler directly instead
-    w.setDateAndFetch(uid, w.todayLocalYMD(), 'today');
-    R.ok(await until(() => chatText(d).indexOf('honest error') !== -1, 25000), 'the watcher pivots on the offline fetch error');
-    // the print preview concludes the tour: close button lit, chat signs off
-    w.openMenuPrinter('632', w.todayLocalYMD(), ['JCL']);
-    R.ok(await until(() => !d.getElementById('print-backdrop').classList.contains('hidden'), 15000), 'the print preview opens');
-    R.ok(await until(() => d.getElementById('btn-close-print').classList.contains('ca-tour-glow'), 15000), 'the print close button is highlighted');
-
-    // the tour packs itself up
-    R.ok(await until(() => w.caTour.on === false, 20000), 'the tour concludes itself in the print preview');
-    R.ok(await until(() => chatText(d).indexOf("That's the lot") !== -1, 15000), 'the closing line lands in chat');
-    // the re-applied glow lands after the cleanup finishes — poll for it
-    R.ok(await until(() => d.getElementById('btn-close-print').classList.contains('ca-tour-glow'), 15000), 'the highlighted close button outlives the cleanup');
+    // step 4: menu — the two ways in, lit alternately, then Finish
+    R.ok(await until(() => chatText(d).indexOf('Last functionality') !== -1, 20000), 'the finale introduces itself');
+    R.ok(await until(() => chatText(d).indexOf('key in flight number') !== -1, 20000), 'the menu invocation is spelled out');
+    R.ok(await nextReady(11, 30000), 'Finish / Skip tour wait at the finale');
+    // scrolling is locked while the tour runs — and only then
+    const wheelLocked = new w.Event('wheel', { cancelable: true, bubbles: true });
+    d.getElementById('chat-container').dispatchEvent(wheelLocked);
+    R.ok(wheelLocked.defaultPrevented, 'user scrolling is locked mid-tour');
+    clickLast(d, '.ca-tour-next'); // Finish
+    R.ok(await until(() => w.caTour.on === false, 20000), 'the tour finishes');
+    const wheelFree = new w.Event('wheel', { cancelable: true, bubbles: true });
+    d.getElementById('chat-container').dispatchEvent(wheelFree);
+    R.ok(!wheelFree.defaultPrevented, 'user scrolling is unlocked after the tour');
+    R.ok(await until(() => chatText(d).indexOf('Thank you so much for your time') !== -1, 15000), 'the thank-you line lands');
     R.eq(w.localStorage.getItem('crewAssist.tourDone'), '1', 'tourDone recorded');
     R.eq(w.localStorage.getItem('crewAssist.archive'), null, 'no demo data ever reached localStorage');
     R.eq(w.localStorage.getItem('crewAssist.calcUi'), 'default', 'calculator mode left as found');
     R.ok(await until(() => d.querySelectorAll('.ca-tour-bubble').length === 0, 10000), 'every demo bubble folded away');
-    R.ok(!!d.querySelector('[id^="fv-mode-"]'), "the crew's own menu card stays in the thread");
     R.eq(w.loadArchive().length, 0, 'the archive reads empty once the tour is over');
   }
 
