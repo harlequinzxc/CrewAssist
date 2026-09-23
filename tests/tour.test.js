@@ -67,6 +67,12 @@ const clickLast = (d, sel) => {
     R.ok(await nextReady(3), 'gate: after the fictitious-roster narration');
     clickLast(d, '.ca-tour-next');
     R.ok(await until('.roster-calc-all-btn', 20000), 'demo roster confirm bubble renders');
+    R.ok(await until(() => {
+        const b = d.getElementById('chat-container').lastElementChild;
+        return b && b.classList.contains('ca-tour-inert') && b.querySelector('.roster-build-btn');
+    }, 10000), 'the demo attach card is marked inert');
+    R.eq(w.getComputedStyle(d.querySelector('.roster-build-btn')).pointerEvents, 'none', 'the card\'s Build cards button is untappable');
+    R.eq(w.getComputedStyle(d.querySelector('.roster-calc-all-btn')).pointerEvents, 'none', 'the card\'s Calculate all button is untappable');
     const conf = chatText(d);
     R.ok(conf.indexOf('July 2026 - Demo.pdf') !== -1, 'demo roster is labelled as a file');
     R.ok(/3 trips/.test(conf) && /8 sectors/.test(conf), 'three trips, eight sectors');
@@ -126,6 +132,7 @@ const clickLast = (d, sel) => {
 
     // step 3: Manual — gate first, then 4:56 / 5:15 / KTM / 21:55 / 22:59 by hand
     R.ok(await until(() => chatText(d).indexOf('Next is Manual mode') !== -1, 20000), 'Manual introduces itself');
+    R.ok(await until(() => chatText(d).indexOf('allowance calculator interface from') !== -1, 20000), 'the settings switch is located and described');
     R.ok(await nextReady(9), 'gate: right after the say lines');
     clickLast(d, '.ca-tour-next');
     R.ok(await until(() => w.localStorage.getItem('crewAssist.calcUi') === 'manual', 20000), 'Manual switched through the real settings pill');
@@ -205,6 +212,8 @@ const clickLast = (d, sel) => {
     R.eq(d.querySelector('.ca-tour-offer-go').textContent.trim(), "Let's go", "the offer button says Let's go");
     R.ok(!!d.querySelector('.ca-tour-offer-skip'), 'the offer is skippable');
     d.querySelector('.ca-tour-offer-skip').click();
+    R.ok(await until(() => d.querySelector('.ca-tour-offer-go').disabled === true, 5000), 'a pressed offer retires its buttons');
+    R.ok(d.querySelector('.ca-tour-offer-skip').disabled === true, 'both offer buttons go inert');
     R.ok(await until(() => w.localStorage.getItem('crewAssist.tourDone') === '1', 5000), 'skip records tourDone');
     R.ok(await until(() => chatText(d).indexOf('No worries') !== -1, 8000), 'skip is acknowledged warmly');
     w.maybeOfferTour();

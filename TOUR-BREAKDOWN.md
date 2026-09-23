@@ -1,4 +1,4 @@
-# Feature Tour — Full Breakdown (v1.23.9)
+# Feature Tour — Full Breakdown (v1.23.10)
 
 Every beat from the first chat message to the last, with exact machine timings, numbered for reference. Quote the number (e.g. "2.14") when telling me what to modify, add or remove.
 
@@ -33,7 +33,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 0.2 | Welcome: *"Good morning/afternoon/evening, {rank} {name}!"* | [typing] |
 | 0.3 | *"How can I help you today?"* | [typing] |
 | 0.4 | ~1.2s after the greeting settles, the offer: *"Before we start, allow me to show you around."* | [typing] |
-| 0.5 | *"Two minutes of your time, that is all I ask for."* + **LET'S GO** / **NOT NOW** buttons | [typing], then [USER] |
+| 0.5 | *"Two minutes of your time, that is all I ask for."* + **LET'S GO** / **NOT NOW** buttons — the pair retires (dimmed, inert) once either is pressed | [typing], then [USER] |
 | 0.6 | NOT NOW → *"No worries — type **tour** whenever you want it."* (tour can be started any time by typing `tour` or `help`) | — |
 | 0.7 | LET'S GO → tour begins at Step 1. (If you started it by typing `tour` later, Phase 0 never happened.) | — |
 
@@ -69,7 +69,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 |---|---|---|
 | 2.6 | *"In this demo, I will attach a fictitious roster — with three different flights: **SQ442/441** a Kathmandu layover, **SQ740/739** a Phuket turnaround, and **SQ 134/133/138/137** a four sector Penang shuttle."* | [typing] |
 | 2.7 | **Next / Skip tour** | [USER] |
-| 2.8 | The demo "attaches": **roster confirm card** renders — "July 2026 - Demo.pdf — Jul 2026: 3 trips · 8 sectors", the three trips listed, **[Build cards] [Discard]** (secondary) and **[Calculate all]** (primary gold) | [typing] |
+| 2.8 | The demo "attaches": **roster confirm card** renders — "July 2026 - Demo.pdf — Jul 2026: 3 trips · 8 sectors", the three trips listed, **[Build cards] [Discard]** (secondary) and **[Calculate all]** (primary gold). All the card's buttons are dimmed and untappable — a prop, not a control panel; the demo does the driving | [typing] |
 
 ### 2C. Build vs Calculate
 | # | Beat | Timing |
@@ -86,8 +86,8 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.14 | Real app line: *"Building 3 cards and calculating every flight — results in a moment."* (3 cards build; offline they compute from the roster itself) | [typing] |
 | 2.15 | Combined **summary page** opens (month total **$823.23**) | — |
 | 2.16 | Hold on the fresh page | [wait 2.05s] |
-| 2.17 | **Slow smooth scroll** top → bottom of the whole page (40 hops) | 8.0s |
-| 2.18 | Pause at the bottom | [wait 1.2s] |
+| 2.17 | **Slow smooth scroll** top → bottom of the whole page (40 hops) | 4.0s |
+| 2.18 | Pause at the bottom | [wait 1.0s] |
 | 2.19 | Glow the **save icon** (top-right) | [wait 2.0s] |
 | 2.20 | Unglow, then tap **save** | [wait 1.2s inside glow] |
 | 2.21 | "Save to archives?" **confirm window** opens; held for a read | [wait 2.0s] |
@@ -137,7 +137,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 3.17 | Demo presses **Fetch all** → sectors fetch; **online** both fill in and turn green; **offline** the honest pivot: *"No connection just now — that's the honest answer, never a made-up number. Online, Fetch fills it all in; offline, the manual way — next step — always works."* → jump to 3.23 | — |
 | 3.18 | *(online)* Pause on the green sectors | [wait 1.2s] |
 | 3.19 | Glow the **Calculate** button | [wait 1.2s] |
-| 3.20 | Demo presses it → **summary opens**, and the app itself posts *"Your total COP Allowance is $…"* in chat | [wait 2.0s] |
+| 3.20 | Demo presses it → **summary opens**, and the app itself posts *"Your total COP Allowance is $…"* in chat | [wait 1.5s] |
 | 3.21 | *"Similarly you may tap the **save** icon to archive your earnings."* (no save demo) | [typing] |
 | 3.22 | Pause, close the summary | [wait 1.2s], [wait 0.9s] |
 | 3.23 | **Next / Skip tour** (step end) | [USER] |
@@ -149,7 +149,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | # | Beat | Timing |
 |---|---|---|
 | 4.1 | *"Next is **Manual** mode — no fetching at all. You type the flight time, select the layover station IATA and the station's arrival and departure date and time yourself."* | [typing] |
-| 4.2 | *"The switch lives in Settings. Let me change it from **Default** to **Manual**."* | [typing] |
+| 4.2 | *"The switch lives in Settings (top right of screen). Let me change the allowance calculator interface from **Default** to **Manual** mode."* | [typing] |
 | 4.3 | **Next / Skip tour** (lead gate — before anything moves) | [USER] |
 | 4.4 | Glow the **Settings gear** | [wait 1.6s] |
 | 4.5 | Open Settings, glow the **Manual pill** | [wait 0.8s], [wait 1.4s] |
@@ -205,5 +205,5 @@ Every beat from the first chat message to the last, with exact machine timings, 
 ## Pocket reference
 
 - **Gates where the tour waits for you:** 0.5 (offer), 1.7, 2.5, 2.7, 2.10, 2.12, 2.31, 2.37, 3.23, 4.3, 4.31, 5.9 — twelve in total (the finale's gate has only Finish).
-- **Machine-paced time between gates** (typing dots + waits, no user time): roughly 10s in Step 1, ~62s across Step 2, ~48s in Step 3, ~76s in Step 4, ~17s in Step 5.
+- **Machine-paced time between gates** (typing dots + waits, no user time): roughly 10s in Step 1, ~61s across Step 2, ~47.5s in Step 3, ~76s in Step 4, ~17s in Step 5.
 - **Code anchor:** tour module = 4th inline `<script>` in `index.html` (~lines 10630–11170); steps registry `CA_TOUR_STEPS`, pacing helpers `caTourWait`/`caTourTypeInto`/`caTourScrollHere`/`caTourGlowHere`/`caTourScrollResults`, gates `T.next(label, withSkip)` — pass `false` to omit the skip button — engine `caTourRun`.
