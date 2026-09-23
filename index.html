@@ -1408,11 +1408,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.11';
+        const APP_VERSION = '1.23.12';
         const APP_WHAT_NEW = [
-            'The roster summary glide now takes a full six seconds over its forty hops — read everything at ease.',
-            'Shorter breaths at the bottom of the summary and after the archive confirm.',
-            'Housekeeping: retired tour code paths removed, a lighter app under the hood.'
+            'Long-haul duties printed across three roster rows now merge into one complete sector — found on real rosters, where a SFO or LAX round trip previously broke apart.',
+            'Your real rosters now guard the parser: thirty months of actual Crew Roster Reports run through it on every test.',
+            'Positioning (TVL) sectors stay honestly flagged — the roster prints no flight time for them, and none is invented.'
         ];
 
         // State
@@ -2268,6 +2268,13 @@
                 const m = r.vals.sector.match(/^([A-Z]{3})-([A-Z]{3})$/);
                 if (!m) return;
                 const key = r.vals.fn + '|' + r.vals.sector;
+                // A long duty is echoed across follow-on day rows; some echo
+                // rows carry no times at all — just the running duty totals.
+                // Such a row is noise: creating a sector from it would leave
+                // a phantom and steal the echo-merge key from the real op
+                // row still waiting for its STA (seen on real rosters:
+                // SFO-SIN spread over three rows, the middle one empty).
+                if (!r.vals.std && !r.vals.sta && !r.vals.ft) return;
                 const prev = byKey[key];
                 if (prev) {
                     const gap = (new Date(r.ymd) - new Date(prev.ymd)) / 86400000;
