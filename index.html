@@ -296,6 +296,16 @@
             50% { box-shadow: 0 0 0 3px rgba(201,162,39,1), 0 0 0 11px rgba(201,162,39,.42); }
         }
         .ca-tour-glow { position: relative; z-index: 5; animation: caTourPulse 1.4s ease-in-out infinite; }
+        /* While the tour runs, the chrome around the chat is hands-off:
+           Settings, the clear-chat reset and the quick action chips answer
+           neither taps nor scrolls — the crew reads and presses the tour
+           buttons. Programmatic .click() from the tour itself is unaffected. */
+        html.ca-tour-on #btn-settings,
+        html.ca-tour-on #btn-reset,
+        html.ca-tour-on #action-chips {
+            pointer-events: none !important;
+            touch-action: none !important;
+        }
         .ca-fold-toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ca-fold-icon { transition: transform 0.3s ease; }
         .ca-folded .ca-fold-icon { transform: rotate(-90deg); }
@@ -826,7 +836,7 @@
                     </button>
                     
                     <!-- Quick Action Chips -->
-                    <div class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
+                    <div id="action-chips" class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
                             <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
                             Calculate my allowance.
@@ -1392,11 +1402,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.6';
+        const APP_VERSION = '1.23.7';
         const APP_WHAT_NEW = [
-            'While the tour runs, the chat is a movie — scrolling is locked and the tour does the scrolling for you.',
-            'Manual mode is now typed out live: 4:56 and 5:15 by hand, station KTM, arrival 21:55, departure 22:59 — then Calculate.',
-            'The finale points at the two ways to ask for a menu, and thanks you for your time.'
+            'More hands-off during the tour: Settings, the clear-chat button and the quick action chips answer neither taps nor scrolls until it ends.',
+            'The Manual demo slow-scrolls to the station, times and Calculate button before lighting each one up.',
+            'Pressing Finish clears the chat and signs off with a thank-you — and a fresh offer of help.'
         ];
 
         // State
@@ -10347,6 +10357,19 @@ function getRegionForAirport(code) {
             } catch (e) {}
         }
 
+        // A deep-card field needs the field itself in view, not the card's
+        // top: slow-scroll the target to the middle of the window, let it
+        // settle, then ring it — without T.glow's card re-scroll.
+        async function caTourGlowHere(T, el) {
+            if (!el || !T.alive()) return null;
+            if (el.scrollIntoView) { try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
+            await T.wait(800);
+            if (!T.alive()) return null;
+            caTourClearGlow();
+            el.classList.add('ca-tour-glow');
+            return el;
+        }
+
         // Types text the way a person does: one character at a time, each
         // keystroke a real input event the card's handlers react to.
         async function caTourTypeInto(T, el, text) {
@@ -10683,7 +10706,9 @@ function getRegionForAirport(code) {
                     await T.say('Earnings are grouped by months. Tap on any flight and its whole summary reopens.');
                     const gate5 = await T.next();
                     if (gate5 === 'skip') return 'skip';
-                    // -- Next pressed: the demo drives the chip --
+                    // -- Next pressed, the earnings message up: the demo
+                    // drives the chip --
+                    await T.wait(600);
                     caTourDrive(() => earn.click());
                     const list = await T.until(() => {
                         const l = document.getElementById('ca-arch-list');
@@ -10717,6 +10742,8 @@ function getRegionForAirport(code) {
                     if (typeof setCalcUiMode === 'function' && caTourReadMode() !== 'default') setCalcUiMode('default', false);
                     const chip = await T.until(() => document.querySelector('.action-chip[data-intent="total"]'));
                     if (!chip) return;
+                    // let the Watch message land before anything lights up
+                    await T.wait(1800);
                     T.glow(chip);
                     await T.wait(2400);
                     // The card renders inside the bot queue ~900ms after the
@@ -10912,24 +10939,24 @@ function getRegionForAirport(code) {
                     caTourClearGlow();
                     await T.wait(900);
                     if (!T.alive()) return;
-                    // -- the layover station: KTM, letter by letter --
-                    T.glow(iata);
+                    // -- the layover station: scrolled to, then KTM by hand --
+                    await caTourGlowHere(T, iata);
                     await T.wait(1200);
                     if (!await caTourTypeInto(T, iata, 'ktm')) return;
                     await T.wait(900);
                     caTourClearGlow();
                     await T.wait(900);
                     if (!T.alive()) return;
-                    // -- arrival 21:55 --
-                    T.glow(at);
+                    // -- arrival 21:55, scrolled into view first --
+                    await caTourGlowHere(T, at);
                     await T.wait(1200);
                     if (!await caTourTypeInto(T, at, '2155')) return;
                     await T.wait(900);
                     caTourClearGlow();
                     await T.wait(900);
                     if (!T.alive()) return;
-                    // -- departure 22:59 --
-                    T.glow(dt);
+                    // -- departure 22:59, scrolled into view first --
+                    await caTourGlowHere(T, dt);
                     await T.wait(1200);
                     if (!await caTourTypeInto(T, dt, '2259')) return;
                     await T.wait(900);
@@ -10942,7 +10969,8 @@ function getRegionForAirport(code) {
                         return (b && !b.disabled) ? b : null;
                     }, 8000);
                     if (!calc) return;
-                    T.glow(calc);
+                    // -- calculate, scrolled into view, lit, pressed --
+                    await caTourGlowHere(T, calc);
                     await T.wait(1200);
                     if (!T.alive()) return;
                     T.tap(calc);
@@ -10966,7 +10994,7 @@ function getRegionForAirport(code) {
                 expectsInput: true,
                 say: [
                     "Last functionality — and the most straightforward of them all..",
-                    "Type <b>\"menu\"</b> — or tap on the <b>\"What's being served?\"</b> chip — key in flight number and a date and I'll pull what's onboard."
+                    "Type <b>\"menu\"</b> in the chat bar or tap on the <b>\"What's being served?\"</b> quick action chip — key in flight number and a date and I'll pull the inflight menu onboard."
                 ],
                 run: async function (T) {
                     // Said first, then the two ways in — the chat bar and the
@@ -10990,9 +11018,14 @@ function getRegionForAirport(code) {
                     if (r === 'skip') return 'skip';
                     if (r === 'dead') return null;
                     caTourClearGlow();
-                    // The closing line is said bare (unmarked) so it outlives
-                    // the cleanup, like the skip farewell does.
+                    // Conclude: cleanup and locks released first, then the
+                    // entire chat cleared, and the farewell said bare on a
+                    // clean slate — tour's over, everything's tappable again.
+                    await finishCaTour(true, false);
+                    const chatEl = document.getElementById('chat-container');
+                    if (chatEl) Array.from(chatEl.children).forEach((n) => n.remove());
                     await enqueueBot(() => addMessage('bot', CA_TOUR_CLOSING));
+                    await enqueueBot(() => addMessage('bot', 'Is there anything I can assist you with?'));
                     return 'done';
                 }
             }
@@ -11082,6 +11115,7 @@ function getRegionForAirport(code) {
             if (!caTour.on) return;
             caTour.on = false;
             caTourLockScroll(false);
+            document.documentElement.classList.remove('ca-tour-on');
             caTour.gen++;
             caTourObserverDisconnect();
             caTourClearGlow();
@@ -11118,6 +11152,7 @@ function getRegionForAirport(code) {
             }
             caTour.on = true;
             caTourLockScroll(true);
+            document.documentElement.classList.add('ca-tour-on');
             caTour.gen++;
             caTour.entries = [];
             caTour.stepIdx = -1;
