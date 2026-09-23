@@ -149,7 +149,9 @@ const clickLast = (d, sel) => {
     // step 4: menu — the two ways in, lit alternately, then Finish
     R.ok(await until(() => chatText(d).indexOf('Last functionality') !== -1, 20000), 'the finale introduces itself');
     R.ok(await until(() => chatText(d).indexOf('inflight menu onboard') !== -1, 20000), 'the menu invocation is spelled out');
-    R.ok(await nextReady(11, 30000), 'Finish / Skip tour wait at the finale');
+    R.ok(await until(() => chatText(d).indexOf('With this, the feature tour has come to an end.') !== -1, 20000), 'the end is announced');
+    R.ok(await nextReady(11, 30000), 'Finish waits at the finale');
+    R.ok(d.getElementById('chat-container').lastElementChild.querySelector('.ca-tour-skip') === null, 'the finale offers only Finish — no skip at the door');
     // scrolling is locked while the tour runs — and only then
     const wheelLocked = new w.Event('wheel', { cancelable: true, bubbles: true });
     d.getElementById('chat-container').dispatchEvent(wheelLocked);
@@ -165,6 +167,7 @@ const clickLast = (d, sel) => {
     R.ok(!wheelFree.defaultPrevented, 'user scrolling is unlocked after the tour');
     R.ok(!d.documentElement.classList.contains('ca-tour-on'), 'the hands-off chrome class is off');
     R.ok(await until(() => chatText(d).indexOf('Thank you so much for your time') !== -1, 15000), 'the thank-you line lands');
+    R.ok(await until(() => chatText(d).indexOf('run the feature tour again') !== -1, 15000), 'the thank-you names the feature tour');
     R.ok(await until(() => chatText(d).indexOf('Is there anything I can assist you with?') !== -1, 15000), 'a fresh offer of help follows');
     R.eq(d.getElementById('chat-container').children.length, 2, 'the entire chat was cleared — only the two farewell bubbles remain');
     R.ok(chatText(d).indexOf('fictitious roster') === -1, 'no tour content survives the clear');
