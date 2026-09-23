@@ -1,4 +1,4 @@
-# Feature Tour — Full Breakdown (v1.23.10)
+# Feature Tour — Full Breakdown (v1.23.11)
 
 Every beat from the first chat message to the last, with exact machine timings, numbered for reference. Quote the number (e.g. "2.14") when telling me what to modify, add or remove.
 
@@ -86,12 +86,12 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.14 | Real app line: *"Building 3 cards and calculating every flight — results in a moment."* (3 cards build; offline they compute from the roster itself) | [typing] |
 | 2.15 | Combined **summary page** opens (month total **$823.23**) | — |
 | 2.16 | Hold on the fresh page | [wait 2.05s] |
-| 2.17 | **Slow smooth scroll** top → bottom of the whole page (40 hops) | 4.0s |
-| 2.18 | Pause at the bottom | [wait 1.0s] |
+| 2.17 | **Slow smooth scroll** top → bottom of the whole page (40 hops) | 6.0s |
+| 2.18 | Pause at the bottom | [wait 0.5s] |
 | 2.19 | Glow the **save icon** (top-right) | [wait 2.0s] |
 | 2.20 | Unglow, then tap **save** | [wait 1.2s inside glow] |
 | 2.21 | "Save to archives?" **confirm window** opens; held for a read | [wait 2.0s] |
-| 2.22 | Confirm (**OK**) → entry filed | [wait 1.8s] |
+| 2.22 | Confirm (**OK**) → entry filed | [wait 1.5s] |
 | 2.23 | *"<b>Saved.</b> July 2026 is filed under your earnings."* | [typing] |
 | 2.24 | Pause | [wait 0.5s] |
 | 2.25 | Close the summary window | — |
@@ -205,5 +205,5 @@ Every beat from the first chat message to the last, with exact machine timings, 
 ## Pocket reference
 
 - **Gates where the tour waits for you:** 0.5 (offer), 1.7, 2.5, 2.7, 2.10, 2.12, 2.31, 2.37, 3.23, 4.3, 4.31, 5.9 — twelve in total (the finale's gate has only Finish).
-- **Machine-paced time between gates** (typing dots + waits, no user time): roughly 10s in Step 1, ~61s across Step 2, ~47.5s in Step 3, ~76s in Step 4, ~17s in Step 5.
+- **Machine-paced time between gates** (typing dots + waits, no user time): roughly 10s in Step 1, ~62s across Step 2, ~47.5s in Step 3, ~76s in Step 4, ~17s in Step 5.
 - **Code anchor:** tour module = 4th inline `<script>` in `index.html` (~lines 10630–11170); steps registry `CA_TOUR_STEPS`, pacing helpers `caTourWait`/`caTourTypeInto`/`caTourScrollHere`/`caTourGlowHere`/`caTourScrollResults`, gates `T.next(label, withSkip)` — pass `false` to omit the skip button — engine `caTourRun`.
