@@ -27,6 +27,14 @@ const EXPECTED_FLAGS = {
     'Oct 2025.pdf': ['starts outside Singapore (roster begins mid-trip)'],
     'Dec 2025.pdf': ['does not return to Singapore before the roster ends'],
     'October 2026.pdf': ['does not return to Singapore before the roster ends'],
+    // 2026 completions: Jan/Apr/Nov begin mid-trip (completing sectors live in
+    // Dec 2025 / Mar / Oct), Mar ends mid-trip (completes in Apr), and Feb's
+    // Christchurch return is a TVL row — the roster prints no flight time.
+    'Jan 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
+    'Feb 2026.pdf': ['some times could not be read'],
+    'Mar 2026.pdf': ['does not return to Singapore before the roster ends'],
+    'Apr 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
+    'November 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
 };
 
 const MONTHS = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
