@@ -1402,11 +1402,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.8';
+        const APP_VERSION = '1.23.9';
         const APP_WHAT_NEW = [
-            'A longer, smoother glide down the roster summary — twenty hops over four seconds — and roomier holds across the roster, default and Fetch all beats.',
-            'The finale announces that the feature tour has come to an end, then offers a single Finish button.',
-            'The thank-you now invites you to run the feature tour again any time.'
+            'Gate buttons retire the moment you press them — dimmed and inert, never left looking pressable.',
+            'The roster summary glide is now forty unhurried hops, and the save line points you to the top right.',
+            'Fine-tuned holds: the summary page, the saved acknowledgement and the Manual summary all breathe to taste.'
         ];
 
         // State
@@ -10477,8 +10477,17 @@ function getRegionForAirport(code) {
                     const bubble = document.getElementById('chat-container').lastElementChild;
                     const nb = bubble.querySelector('.ca-tour-next');
                     const sb = bubble.querySelector('.ca-tour-skip');
-                    nb.addEventListener('click', () => finish('next'));
-                    if (sb) sb.addEventListener('click', () => finish('skip'));
+                    // Once either is pressed the pair goes inert — dimmed,
+                    // unclickable, nothing left looking pressable.
+                    const retire = () => {
+                        [nb, sb].forEach((b) => {
+                            if (!b) return;
+                            b.disabled = true;
+                            b.classList.add('opacity-40', 'pointer-events-none');
+                        });
+                    };
+                    nb.addEventListener('click', () => { retire(); finish('next'); });
+                    if (sb) sb.addEventListener('click', () => { retire(); finish('skip'); });
                     iv = setInterval(() => { if (!caTour.on || caTour.gen !== myGen) finish('dead'); }, 250);
                 });
             });
@@ -10494,7 +10503,7 @@ function getRegionForAirport(code) {
             const max = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
             if (max <= 0) { await T.wait(600); return; }
             const glide = (y) => { try { el.scrollTo({ top: y, behavior: 'smooth' }); } catch (e) { el.scrollTop = y; } };
-            const steps = 20;
+            const steps = 40;
             for (let i = 1; i <= steps; i++) {
                 glide(Math.round((max * i) / steps));
                 await T.wait(200);
@@ -10655,7 +10664,7 @@ function getRegionForAirport(code) {
                     await T.say('Press <b>Build cards</b> to tweak your flight details (if any) or press <b>Calculate all</b> and let me compute your total allowance.');
                     const gate3 = await T.next();
                     if (gate3 === 'skip') return 'skip';
-                    await T.say('Once the calculations are complete after tapping <b>Calculate All</b>, a summary page will open — tap the <b>save</b> icon to archive your earnings.');
+                    await T.say('Once the calculations are complete after tapping <b>Calculate All</b>, a summary page will open — tap the <b>save</b> icon on the top right to archive your earnings.');
                     const gate4 = await T.next();
                     if (gate4 === 'skip') return 'skip';
                     // -- only now does the demo press Calculate all --
@@ -10666,7 +10675,7 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 15000);
                     if (!open) return;
-                    await T.wait(2500);
+                    await T.wait(2050);
                     // -- a slow, smooth pass down the whole page --
                     await caTourScrollResults(T);
                     await T.wait(1200);
@@ -10692,7 +10701,7 @@ function getRegionForAirport(code) {
                     await T.wait(1800);
                     if (!T.alive()) return;
                     await T.say('<b>Saved.</b> July 2026 is filed under your earnings.');
-                    await T.wait(1200);
+                    await T.wait(500);
                     const rb = document.getElementById('results-backdrop');
                     const rclose = document.getElementById('btn-close-results');
                     if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
@@ -10987,7 +10996,7 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 12000);
                     if (!open) return;
-                    await T.wait(1200);
+                    await T.wait(2000);
                     const rb = document.getElementById('results-backdrop');
                     const rclose = document.getElementById('btn-close-results');
                     if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);

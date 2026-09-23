@@ -1,4 +1,4 @@
-# Feature Tour — Full Breakdown (v1.23.8)
+# Feature Tour — Full Breakdown (v1.23.9)
 
 Every beat from the first chat message to the last, with exact machine timings, numbered for reference. Quote the number (e.g. "2.14") when telling me what to modify, add or remove.
 
@@ -18,7 +18,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | A2 | While the tour runs: **Settings**, **clear-chat (↻)** and the **quick action chip row** ignore taps and horizontal scroll. Released the moment the tour ends. |
 | A3 | Gold pulsing ring (glow) marks the current target. It scrolls the target into view first (cards top-align; deep fields center via smooth scroll). |
 | A4 | Typing anything mid-tour (except during the finale) pauses the tour: your question gets answered, then "Of course — the tour can wait. Pick up where we left off?" with **Resume / Skip tour**. Resume restarts the *same step* from its beginning. |
-| A5 | Every step ends with a **Next / Skip tour** button pair — except the finale, which offers a single **Finish** button. |
+| A5 | Every step ends with a **Next / Skip tour** button pair — except the finale, which offers a single **Finish** button. The moment either is pressed, the pair retires: dimmed and inert, never left looking pressable. |
 | A6 | Skip at any point → cleanup, "No problem — type **tour** whenever you want it." |
 | A7 | All demo data is sandboxed — nothing you own is touched; the calculator mode is restored afterwards. |
 | A8 | The demo roster is fixed: SQ442/441 KTM layover, SQ740/739 Phuket turnaround, SQ 134/133/138/137 Penang shuttle — "July 2026 - Demo.pdf", 3 trips · 8 sectors, month total **$823.23**; the manual demo computes **$360.72**. |
@@ -76,7 +76,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 |---|---|---|
 | 2.9 | *"Press **Build cards** to tweak your flight details (if any) or press **Calculate all** and let me compute your total allowance."* | [typing] |
 | 2.10 | **Next / Skip tour** | [USER] |
-| 2.11 | *"Once the calculations are complete after tapping **Calculate All**, a summary page will open — tap the **save** icon to archive your earnings."* | [typing] |
+| 2.11 | *"Once the calculations are complete after tapping **Calculate All**, a summary page will open — tap the **save** icon on the top right to archive your earnings."* | [typing] |
 | 2.12 | **Next / Skip tour** | [USER] |
 
 ### 2D. The summary page (only after 2.12)
@@ -85,15 +85,15 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.13 | Nothing is highlighted. Demo presses **Calculate all** | [wait 0.6s] then tap |
 | 2.14 | Real app line: *"Building 3 cards and calculating every flight — results in a moment."* (3 cards build; offline they compute from the roster itself) | [typing] |
 | 2.15 | Combined **summary page** opens (month total **$823.23**) | — |
-| 2.16 | Hold on the fresh page | [wait 2.5s] |
-| 2.17 | **Slow smooth scroll** top → bottom of the whole page (20 hops) | 4.0s |
+| 2.16 | Hold on the fresh page | [wait 2.05s] |
+| 2.17 | **Slow smooth scroll** top → bottom of the whole page (40 hops) | 8.0s |
 | 2.18 | Pause at the bottom | [wait 1.2s] |
 | 2.19 | Glow the **save icon** (top-right) | [wait 2.0s] |
 | 2.20 | Unglow, then tap **save** | [wait 1.2s inside glow] |
 | 2.21 | "Save to archives?" **confirm window** opens; held for a read | [wait 2.0s] |
 | 2.22 | Confirm (**OK**) → entry filed | [wait 1.8s] |
 | 2.23 | *"<b>Saved.</b> July 2026 is filed under your earnings."* | [typing] |
-| 2.24 | Pause | [wait 1.2s] |
+| 2.24 | Pause | [wait 0.5s] |
 | 2.25 | Close the summary window | — |
 | 2.26 | Pause | [wait 1.2s] |
 
@@ -174,8 +174,8 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 4.24 | Type **2259** → **22:59** | 4 × 0.45s |
 | 4.25 | Pause, unglow, pause | [wait 0.9s] ×2 |
 | 4.26 | **Slow scroll** to the **Calculate** button, glow | ~0.8s, [wait 1.2s] |
-| 4.27 | Demo presses it → **summary opens** ($360.72) — no save icon demo | — |
-| 4.28 | Pause, close the summary | [wait 1.2s], [wait 0.9s] |
+| 4.27 | Demo presses it → **summary opens** ($360.72) — no save icon demo | [wait 2.0s] |
+| 4.28 | Close the summary | [wait 0.9s] |
 | 4.29 | Mode silently reverted to Default | — |
 | 4.30 | *"That's **Manual** mode — I have reverted everything back to **default**."* | [typing] |
 | 4.31 | **Next / Skip tour** (step end) | [USER] |
@@ -205,5 +205,5 @@ Every beat from the first chat message to the last, with exact machine timings, 
 ## Pocket reference
 
 - **Gates where the tour waits for you:** 0.5 (offer), 1.7, 2.5, 2.7, 2.10, 2.12, 2.31, 2.37, 3.23, 4.3, 4.31, 5.9 — twelve in total (the finale's gate has only Finish).
-- **Machine-paced time between gates** (typing dots + waits, no user time): roughly 10s in Step 1, ~59s across Step 2, ~48s in Step 3, ~75s in Step 4, ~17s in Step 5.
+- **Machine-paced time between gates** (typing dots + waits, no user time): roughly 10s in Step 1, ~62s across Step 2, ~48s in Step 3, ~76s in Step 4, ~17s in Step 5.
 - **Code anchor:** tour module = 4th inline `<script>` in `index.html` (~lines 10630–11170); steps registry `CA_TOUR_STEPS`, pacing helpers `caTourWait`/`caTourTypeInto`/`caTourScrollHere`/`caTourGlowHere`/`caTourScrollResults`, gates `T.next(label, withSkip)` — pass `false` to omit the skip button — engine `caTourRun`.

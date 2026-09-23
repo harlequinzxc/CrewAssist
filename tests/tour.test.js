@@ -48,6 +48,12 @@ const clickLast = (d, sel) => {
     R.ok(/What are we serving onboard\?/.test(chatText(d)), 'the onboard example is quoted');
     R.ok(await nextReady(1), 'step 0 ends with Next / Skip tour');
     clickLast(d, '.ca-tour-next');
+    // a pressed gate retires: both buttons dim and go inert
+    R.ok(await until(() => {
+        const spent = d.querySelector('.ca-tour-next');
+        return spent && spent.disabled === true;
+    }, 5000), 'the pressed Next button goes inert');
+    R.ok(d.querySelector('.ca-tour-skip').disabled === true, 'its Skip tour sibling is inert too');
 
     // step 1: roster showpiece with the earnings thread woven in
     R.ok(await until(() => chatText(d).indexOf('See that paperclip down there?') !== -1, 20000), 'the paperclip is pointed out');
