@@ -1,5 +1,7 @@
 // Earnings archive: SIN-only route stripping, real-current-month expansion,
 // and the settings-style delete confirmation with undo-safe cancel.
+// v1.24.0: segmented summary scopes, 12-month chart with projection stubs,
+// twelve insight cards, month badges + YoY arrows, search-scoped delete.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 (async () => {
@@ -119,6 +121,194 @@ const { R, boot, wait, APP } = H;
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'X deletes the entry straight away');
     R.ok(/Deleted/.test(d.getElementById('ca-arch-toast').textContent), 'undo toast confirms the delete');
     R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'X does not open the summary sheet');
+  }
+
+  // v1.24.0 earnings page: segmented summary, 12-month chart with projection,
+  // insight cards, badges/YoY in the month list, search-scoped delete.
+  // Anchored to a Sep 2026 run date (current real month partial, 24 of 30 days).
+  {
+    const { w, d } = await boot(APP);
+    const seedEntry = (id, sectorDate, st, amount, ty) => ({ id: id, savedAt: sectorDate + 'T20:00:00Z', monthKey: sectorDate.slice(0, 7), sectorDate: sectorDate, stationDisplay: st, amount: amount, flightType: ty });
+    // 19 entries, Aug 2025 → Sep 2026; Nov 2025 empty (chart stub); best Mar 2026
+    // $1,000, low Apr 2026 $200, busiest Jul 2026, Aug 2026 YoY +100%, longest
+    // break Oct→Dec 2025, top single SYD $900, Jul 20–22 flight streak.
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      seedEntry('A1', '2025-08-15', 'NRT', 400, 'Layover'),
+      seedEntry('A2', '2025-09-05', 'KTM', 360.72, 'Layover'),
+      seedEntry('A3', '2025-09-18', 'HKT', 339.28, 'Turnaround'),
+      seedEntry('A4', '2025-10-10', 'PEN', 300, 'Turnaround'),
+      seedEntry('A6', '2025-12-20', 'SYD', 900, 'Layover'),
+      seedEntry('A7', '2026-01-09', 'HKT', 400, 'Turnaround'),
+      seedEntry('A8', '2026-02-12', 'KTM', 350, 'Layover'),
+      seedEntry('A9', '2026-03-14', 'KTM', 400, 'Layover'),
+      seedEntry('A10', '2026-03-20', 'TPE', 600, 'Layover'),
+      seedEntry('A11', '2026-04-05', 'PEN', 200, 'Turnaround'),
+      seedEntry('A12', '2026-05-08', 'HKT', 600, 'Turnaround'),
+      seedEntry('A13', '2026-06-15', 'KTM', 450, 'Layover'),
+      seedEntry('A14', '2026-07-20', 'KTM', 274.41, 'Layover'),
+      seedEntry('A15', '2026-07-21', 'HKT', 300, 'Turnaround'),
+      seedEntry('A16', '2026-07-22', 'PEN', 248.82, 'Turnaround'),
+      seedEntry('A17', '2026-08-08', 'TPE', 500, 'Layover'),
+      seedEntry('A18', '2026-08-25', 'NRT', 300, 'Turnaround'),
+      seedEntry('A19', '2026-09-10', 'KTM', 300, 'Layover'),
+      seedEntry('A20', '2026-09-20', 'HKT', 200, 'Turnaround')
+    ]));
+    w.showArchiveOverlay();
+    await wait(150);
+
+    // Date anchor: the seed and expected figures below assume the run happens
+    // inside a partial September 2026 (same anchor the whole suite shares).
+    const now = new Date();
+    const ymdNow = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
+    R.ok(ymdNow.slice(0, 7) === '2026-09', 'run date anchors to Sep 2026 (reseed if the anchor month drifts)');
+    R.ok(now.getDate() < 30, 'current month still partial');
+    const tnum = now.getDate();
+    const fm = (n) => { const x = Number(n); const s = x < 0 ? '-' : ''; const p = Math.abs(x).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return s + '$' + p[0] + '.' + p[1]; };
+    const sepTotal = 500, sepFlights = 2, sepDays = 30;
+    const projTotal = Math.round(((sepTotal / tnum) * sepDays) * 100) / 100;
+    const projLeft = Math.max(0, projTotal - sepTotal);
+    const projFlights = Math.round((sepFlights / tnum) * sepDays);
+    const barPx = Math.round(120 * sepTotal / 1000);
+    const fullPx = Math.round(120 * projTotal / 1000);
+    const projPx = Math.max(0, Math.min(fullPx - barPx, 120 - barPx));
+
+    // -- sheet chrome: handle, header icon buttons, segmented control
+    R.ok(d.querySelector('#ca-arch-sheet .w-\\[44px\\].h-\\[4px\\]'), 'iOS-style sheet handle pill');
+    R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 4, 'four header icon buttons');
+    R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg').length, 3, 'three segmented scope buttons');
+    const segOf = (scope) => d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="' + scope + '"]');
+    R.ok(['month', 'year', 'all'].every((s) => !!segOf(s)), 'segmented buttons: month / year / all');
+    R.ok(segOf('all').classList.contains('ca-arch-segon'), 'All-time is the default scope');
+
+    // -- all-time gold card: $7,423.23 across 19 flights
+    R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'all-time total');
+    R.eq(d.getElementById('ca-arch-m-flights').textContent, '19', 'all-time flight count');
+    R.eq(d.getElementById('ca-arch-m-avg').textContent, '$390.70', 'all-time average per flight');
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Context', 'all-time context label');
+    const ctxAll = d.getElementById('ca-arch-m-ctx');
+    R.ok(ctxAll.textContent.indexOf('\u221228.6% vs LY') !== -1, 'current month down vs last year (real minus sign)');
+    R.ok(ctxAll.textContent.indexOf('proj. ' + fm(projTotal)) !== -1, 'all-time context carries the month projection');
+    R.ok(ctxAll.innerHTML.indexOf('trending-down') !== -1, 'down trend icon on the context line');
+
+    // -- 12-month chart: oldest left, stub month, projection segment, peak
+    const cols = d.querySelectorAll('#ca-arch-chart .ca-arch-barcol');
+    R.eq(cols.length, 12, 'twelve chart columns');
+    R.eq(cols[0].getAttribute('data-mk'), '2025-10', 'oldest column is 12 months back');
+    R.eq(cols[11].getAttribute('data-mk'), '2026-09', 'newest column is the current month');
+    R.eq(d.getElementById('ca-arch-peak').textContent, 'Peak: $1.0k', 'peak label above the chart');
+    R.eq(d.querySelector('.ca-arch-barcol[data-mk="2025-11"] .ca-arch-bar').style.height, '2px', 'empty month renders a 2px stub');
+    R.eq(d.querySelector('.ca-arch-barcol[data-mk="2026-03"] .ca-arch-bar').style.height, '120px', 'highest month fills the 120px track');
+    const projBars = d.querySelectorAll('#ca-arch-chart .ca-arch-barproj');
+    R.eq(projBars.length, 1, 'exactly one projection segment');
+    R.ok(projBars[0].closest('.ca-arch-barcol').getAttribute('data-mk') === '2026-09' && projBars[0].style.height === projPx + 'px', 'projection stacks on the partial month (' + barPx + 'px of ' + fullPx + 'px)');
+    R.ok(d.querySelector('.ca-arch-barcol[data-mk="2026-09"] .ca-arch-bartip').textContent.indexOf('\u2192 ' + fm(projTotal)) !== -1, 'column tooltip projects the month end');
+    // tapping a bar selects it and expands that month in the list
+    d.querySelector('.ca-arch-barcol[data-mk="2026-05"]').click();
+    await wait(50);
+    const onCols = d.querySelectorAll('#ca-arch-chart .ca-arch-barcol.ca-arch-baron');
+    R.eq(onCols.length, 1, 'one selected column after a tap');
+    R.ok(onCols[0].getAttribute('data-mk') === '2026-05', 'the tapped column is selected');
+    const grp = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]').closest('.ca-arch-group');
+    R.ok(grp('2026-05') && !grp('2026-05').classList.contains('ca-arch-collapsed'), 'tapping a bar expands that month group');
+    R.ok(grp('2026-04').classList.contains('ca-arch-collapsed'), 'other months stay collapsed');
+
+    // -- month list: groups, badges, YoY arrow, projected row, footer
+    R.eq(d.querySelectorAll('.ca-arch-group').length, 13, 'one group per month on record');
+    R.eq(d.querySelector('.ca-arch-group-head').getAttribute('data-mk'), '2026-09', 'newest month leads the list');
+    R.eq(d.querySelectorAll('.ca-arch-group-head .ca-arch-chev').length, 13, 'every group head carries a chevron');
+    const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(headOf('2026-03').querySelector('.ca-arch-badge-best') && headOf('2026-03').textContent.indexOf('Best') !== -1, 'Best badge on the top month');
+    R.ok(headOf('2026-04').querySelector('.ca-arch-badge-low') && headOf('2026-04').textContent.indexOf('Low') !== -1, 'Low badge on the weakest month');
+    R.ok(headOf('2026-09').querySelector('.ca-arch-badge-prog') && headOf('2026-09').textContent.indexOf('In progress') !== -1, 'In progress badge on the current month');
+    const up = d.querySelectorAll('.ca-arch-yoy-up'), down = d.querySelectorAll('.ca-arch-yoy-down');
+    R.eq(up.length, 1, 'one YoY arrow in the list');
+    R.ok(up[0].closest('.ca-arch-group-head').getAttribute('data-mk') === '2026-08' && up[0].textContent.indexOf('100.0%') !== -1, 'Aug 2026 up 100.0% vs Aug 2025');
+    R.eq(down.length, 0, 'no down arrows in this seed');
+    const sepBody = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
+    R.ok(sepBody.querySelector('.ca-arch-dot-hollow') && sepBody.textContent.indexOf('Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's')) !== -1 && sepBody.textContent.indexOf(fm(projTotal)) !== -1, 'partial month shows a hollow-dot projected row');
+    const listTxt = d.getElementById('ca-arch-list').textContent;
+    R.ok(listTxt.indexOf('End of records') !== -1 && listTxt.indexOf('Showing earnings since Aug 2025') !== -1, 'footer marks the end of records');
+    R.eq(d.querySelectorAll('.ca-arch-row').length, 19, 'every entry renders a row');
+
+    // -- insights: toggle flips, twelve cards, exact figures
+    const toggle = d.getElementById('ca-arch-ins-toggle');
+    R.ok(d.getElementById('ca-arch-insights').classList.contains('hidden'), 'insights hidden by default');
+    toggle.click();
+    await wait(50);
+    R.ok(!d.getElementById('ca-arch-insights').classList.contains('hidden'), 'toggle reveals the insights');
+    R.eq(d.getElementById('ca-arch-ins-toggle-label').textContent, 'Hide insights', 'toggle label flips to Hide');
+    R.eq(toggle.getAttribute('aria-expanded'), 'true', 'aria-expanded follows the toggle');
+    R.ok(toggle.classList.contains('ca-arch-insopen'), 'open state styled on the toggle');
+    R.eq(d.querySelectorAll('.ca-arch-inscard').length, 12, 'exactly twelve insight cards');
+    const card = (label) => {
+      const lab = Array.from(d.querySelectorAll('.ca-arch-inslabel')).find((el) => el.textContent === label);
+      return lab ? lab.closest('.ca-arch-inscard').textContent : '';
+    };
+    R.ok(card('Top earning month').indexOf('Mar 2026') !== -1 && card('Top earning month').indexOf('$1,000.00') !== -1, 'top earning month card');
+    R.ok(card('Lowest earning month').indexOf('Apr 2026') !== -1 && card('Lowest earning month').indexOf('$200.00') !== -1, 'lowest earning month card');
+    R.ok(card('Monthly average').indexOf('$576.94') !== -1 && card('Monthly average').indexOf('across 12 months') !== -1, 'monthly average over complete months only');
+    R.ok(card('Busiest month').indexOf('Jul 2026') !== -1 && card('Busiest month').indexOf('3 flights') !== -1, 'busiest month card');
+    R.ok(card('Current streak').indexOf('2 months') !== -1 && card('Current streak').indexOf('above $576.94') !== -1, 'streak counts months above average');
+    R.ok(card('Longest flight streak').indexOf('3 days') !== -1 && card('Longest flight streak').indexOf('since 20 Jul') !== -1, 'longest back-to-back flying days');
+    R.ok(card('Longest break').indexOf('70 days off') !== -1 && card('Longest break').indexOf('11 Oct\u201319 Dec') !== -1, 'longest break between flying days');
+    R.ok(card('Highest single flight').indexOf('$900.00') !== -1 && card('Highest single flight').indexOf('SYD 20 Dec') !== -1, 'highest single flight card');
+    R.ok(card('Per flying day').indexOf('$390.70') !== -1 && card('Per flying day').indexOf('across 19 flying days') !== -1, 'earnings per flying day');
+    R.ok(card('Nights away YTD').indexOf('7') !== -1 && card('Nights away YTD').indexOf('avg 0.8 / month') !== -1, 'nights away this year');
+    R.ok(card('Flying days this year').indexOf('14 / 365') !== -1 && card('Flying days this year').indexOf('96% of days off') !== -1, 'flying days this year');
+    R.ok(card('Busiest weekday').indexOf('Fridays') !== -1 && card('Busiest weekday').indexOf('16% of all flights') !== -1, 'busiest weekday card');
+    const insTxt = d.getElementById('ca-arch-insights').textContent;
+    R.ok(!/annual goal|long-haul|longhaul/i.test(insTxt), 'no annual-goal or long-haul leftovers from the old design');
+    toggle.click();
+    await wait(50);
+    R.ok(d.getElementById('ca-arch-insights').classList.contains('hidden') && d.getElementById('ca-arch-ins-toggle-label').textContent === 'View insights', 'toggle hides the insights again');
+
+    // -- segmented switching: month / year / all-time figures
+    segOf('month').click();
+    await wait(50);
+    R.ok(segOf('month').classList.contains('ca-arch-segon') && !segOf('all').classList.contains('ca-arch-segon'), 'active segment follows the tap');
+    R.eq(d.getElementById('ca-arch-total').textContent, '$500.00', 'month scope totals the current month');
+    R.eq(d.getElementById('ca-arch-m-flights').textContent, '2', 'month scope flight count');
+    R.eq(d.getElementById('ca-arch-m-avg').textContent, '$250.00', 'month scope average');
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'On track', 'partial month context label');
+    const ctxM = d.getElementById('ca-arch-m-ctx');
+    R.ok(ctxM.textContent.indexOf('On track for ' + fm(projTotal) + ' \u00b7 ' + fm(projLeft) + ' left') !== -1, 'on-track projection with what is left to earn');
+    R.ok(ctxM.innerHTML.indexOf('target') !== -1, 'on-track context uses the target icon');
+    R.eq(d.querySelectorAll('.ca-arch-group').length, 13, 'month scope never narrows the month list');
+    R.eq(d.querySelectorAll('.ca-arch-row').length, 19, 'month scope keeps every row visible');
+    segOf('year').click();
+    await wait(50);
+    R.eq(d.getElementById('ca-arch-total').textContent, '$5,123.23', 'year scope totals 2026');
+    R.eq(d.getElementById('ca-arch-m-flights').textContent, '14', 'year scope flight count');
+    R.eq(d.getElementById('ca-arch-m-avg').textContent, '$365.94', 'year scope average');
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, '2026 YTD', 'year context label');
+    const ctxY = d.getElementById('ca-arch-m-ctx');
+    R.ok(ctxY.textContent.indexOf('+122.7% vs LY') !== -1, 'year YoY vs the whole of 2025');
+    R.ok(ctxY.innerHTML.indexOf('trending-up') !== -1, 'year context uses the up icon');
+    segOf('all').click();
+    await wait(50);
+    R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'all-time scope restores the full total');
+
+    // -- search narrows the list only; trash deletes what search leaves visible
+    const search = d.getElementById('ca-arch-search');
+    search.value = 'KTM';
+    search.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.eq(d.querySelectorAll('.ca-arch-group').length, 6, 'search narrows the list to months with a match');
+    R.eq(d.querySelectorAll('.ca-arch-row').length, 6, 'only matching rows render');
+    R.ok(Array.from(d.querySelectorAll('.ca-arch-row')).every((r) => r.textContent.indexOf('KTM') !== -1), 'every visible row matches the search');
+    R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'search never narrows the summary');
+    R.ok(headOf('2025-09').textContent.indexOf('$360.72') !== -1 && headOf('2025-09').textContent.indexOf('of $700.00') !== -1, 'filtered month shows its share of the full month');
+    R.ok(d.getElementById('ca-arch-list').textContent.indexOf('End of records') !== -1, 'footer stays while entries exist');
+    R.ok(!d.getElementById('ca-arch-clear').classList.contains('hidden'), 'clear button appears with text in the search');
+    d.getElementById('ca-arch-trash').click();
+    await wait(50);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Delete 6 entries') !== -1, 'trash counts only the search-visible entries');
+    d.getElementById('app-dialog-ok').click();
+    await wait(100);
+    const after = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.eq(after.length, 13, 'delete removes exactly the six KTM entries');
+    R.ok(after.every((e) => e.stationDisplay !== 'KTM'), 'no KTM entries remain');
+    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Deleted 6 entries') !== -1, 'toast confirms the scoped delete');
   }
 
   process.exit(R.done() ? 1 : 0);
