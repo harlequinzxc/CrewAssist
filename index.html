@@ -1402,11 +1402,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.7';
+        const APP_VERSION = '1.23.8';
         const APP_WHAT_NEW = [
-            'More hands-off during the tour: Settings, the clear-chat button and the quick action chips answer neither taps nor scrolls until it ends.',
-            'The Manual demo slow-scrolls to the station, times and Calculate button before lighting each one up.',
-            'Pressing Finish clears the chat and signs off with a thank-you — and a fresh offer of help.'
+            'A longer, smoother glide down the roster summary — twenty hops over four seconds — and roomier holds across the roster, default and Fetch all beats.',
+            'The finale announces that the feature tour has come to an end, then offers a single Finish button.',
+            'The thank-you now invites you to run the feature tour again any time.'
         ];
 
         // State
@@ -10358,13 +10358,20 @@ function getRegionForAirport(code) {
         }
 
         // A deep-card field needs the field itself in view, not the card's
-        // top: slow-scroll the target to the middle of the window, let it
-        // settle, then ring it — without T.glow's card re-scroll.
-        async function caTourGlowHere(T, el) {
+        // top: slow-scroll the target to the middle of the window and let it
+        // settle. Scroll-only — the look of the guided beats, no ring.
+        async function caTourScrollHere(T, el) {
             if (!el || !T.alive()) return null;
             if (el.scrollIntoView) { try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
             await T.wait(800);
-            if (!T.alive()) return null;
+            return el;
+        }
+
+        // The same glide, then the ring: for the deep-card beats that are
+        // typed into or pressed.
+        async function caTourGlowHere(T, el) {
+            const target = await caTourScrollHere(T, el);
+            if (!target || !T.alive()) return null;
             caTourClearGlow();
             el.classList.add('ca-tour-glow');
             return el;
@@ -10450,12 +10457,12 @@ function getRegionForAirport(code) {
                 return null;
             };
             T.tap = function (el) { if (el && el.click) el.click(); };
-            T.next = function (label) { return caTourNextButtons(myGen, label); };
+            T.next = function (label, withSkip) { return caTourNextButtons(myGen, label, withSkip); };
             return T;
         }
 
         // The Next / Skip tour pair at the end of a step's bubble.
-        function caTourNextButtons(myGen, nextLabel) {
+        function caTourNextButtons(myGen, nextLabel, withSkip) {
             return new Promise((resolve) => {
                 let done = false;
                 let iv = null;
@@ -10464,14 +10471,14 @@ function getRegionForAirport(code) {
                     addMessage('bot',
                         '<div class="flex flex-wrap gap-2 mt-2">'
                         + '<button type="button" class="ca-tour-next flex-1 min-w-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="arrow-right" class="w-3.5 h-3.5 shrink-0"></i>' + (nextLabel || 'Next') + '</button>'
-                        + '<button type="button" class="ca-tour-skip flex-1 min-w-0 px-4 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Skip tour</button>'
+                        + (withSkip === false ? '' : '<button type="button" class="ca-tour-skip flex-1 min-w-0 px-4 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Skip tour</button>')
                         + '</div>');
                     caTourMarkLast();
                     const bubble = document.getElementById('chat-container').lastElementChild;
                     const nb = bubble.querySelector('.ca-tour-next');
                     const sb = bubble.querySelector('.ca-tour-skip');
                     nb.addEventListener('click', () => finish('next'));
-                    sb.addEventListener('click', () => finish('skip'));
+                    if (sb) sb.addEventListener('click', () => finish('skip'));
                     iv = setInterval(() => { if (!caTour.on || caTour.gen !== myGen) finish('dead'); }, 250);
                 });
             });
@@ -10487,14 +10494,12 @@ function getRegionForAirport(code) {
             const max = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
             if (max <= 0) { await T.wait(600); return; }
             const glide = (y) => { try { el.scrollTo({ top: y, behavior: 'smooth' }); } catch (e) { el.scrollTop = y; } };
-            const steps = 8;
+            const steps = 20;
             for (let i = 1; i <= steps; i++) {
                 glide(Math.round((max * i) / steps));
-                await T.wait(350);
+                await T.wait(200);
                 if (!T.alive()) return;
             }
-            glide(max);
-            await T.wait(400);
         }
 
         // Save beat shared by every calculating step: glow the save icon, tap,
@@ -10600,7 +10605,7 @@ function getRegionForAirport(code) {
         // The Default step's honest pivot when the schedule won't answer.
         var CA_TOUR_FETCH_PIVOT = "No connection just now — that's the honest answer, never a made-up number. Online, Fetch fills it all in; offline, the manual way — next step — always works.";
         // The closing line, said bare (unmarked) so it outlives the cleanup.
-        var CA_TOUR_CLOSING = "Thank you so much for your time. Type <b>\"tour\"</b> or <b>\"help\"</b> anytime if you would like me to run the tutorial again.";
+        var CA_TOUR_CLOSING = "Thank you so much for your time. Type <b>\"tour\"</b> or <b>\"help\"</b> anytime if you would like me to run the feature tour again.";
 
         // ---- the steps registry (data, not code) ----
         CA_TOUR_STEPS = [
@@ -10672,7 +10677,7 @@ function getRegionForAirport(code) {
                     }, 6000);
                     if (!ab) return;
                     T.glow(ab);
-                    await T.wait(1200);
+                    await T.wait(2000);
                     caTourClearGlow();
                     if (!T.alive()) return;
                     T.tap(ab);
@@ -10681,7 +10686,7 @@ function getRegionForAirport(code) {
                         return (dd && !dd.classList.contains('hidden')) ? dd : null;
                     }, 6000);
                     if (dlg) {
-                        await T.wait(1600);
+                        await T.wait(2000);
                         T.tap(document.getElementById('app-dialog-ok'));
                     }
                     await T.wait(1800);
@@ -10699,7 +10704,7 @@ function getRegionForAirport(code) {
                     if (!earn) return;
                     await T.say('Tap on the <b>"How much have I earned?"</b> quick action chip to view your archived earning/s.');
                     T.glow(earn);
-                    await T.wait(1800);
+                    await T.wait(2000);
                     caTourClearGlow();
                     // The page opens only after this next bubble is up and the
                     // crew presses Next — never before.
@@ -10708,14 +10713,14 @@ function getRegionForAirport(code) {
                     if (gate5 === 'skip') return 'skip';
                     // -- Next pressed, the earnings message up: the demo
                     // drives the chip --
-                    await T.wait(600);
+                    await T.wait(1000);
                     caTourDrive(() => earn.click());
                     const list = await T.until(() => {
                         const l = document.getElementById('ca-arch-list');
                         return (l && l.querySelector('.ca-arch-row')) ? l : null;
                     }, 10000);
                     if (!list) return;
-                    await T.wait(1400);
+                    await T.wait(2000);
                     // -- a flight, lit then opened --
                     T.glow(list.querySelector('.ca-arch-row'));
                     await T.wait(1500);
@@ -10725,11 +10730,11 @@ function getRegionForAirport(code) {
                         return (w && !w.classList.contains('hidden')) ? w : null;
                     }, 8000);
                     if (!sub) return;
-                    await T.wait(1400);
+                    await T.wait(2000);
                     if (typeof closeArchSub === 'function') closeArchSub();
-                    await T.wait(1400);
+                    await T.wait(2000);
                     if (typeof closeArchOverlay === 'function') closeArchOverlay();
-                    await T.wait(600);
+                    await T.wait(1000);
                 }
             },
             {
@@ -10743,7 +10748,7 @@ function getRegionForAirport(code) {
                     const chip = await T.until(() => document.querySelector('.action-chip[data-intent="total"]'));
                     if (!chip) return;
                     // let the Watch message land before anything lights up
-                    await T.wait(1800);
+                    await T.wait(2500);
                     T.glow(chip);
                     await T.wait(2400);
                     // The card renders inside the bot queue ~900ms after the
@@ -10799,6 +10804,9 @@ function getRegionForAirport(code) {
                     caTourClearGlow();
                     await T.wait(900);
                     if (!T.alive()) return;
+                    // -- a slow glide down to the button before the press --
+                    await caTourScrollHere(T, fetchAll);
+                    if (!T.alive()) return;
                     T.tap(fetchAll);
                     // online: both sectors fill and turn green; offline: the
                     // honest pivot — never a made-up number.
@@ -10837,7 +10845,7 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 12000);
                     if (!open) return;
-                    await T.wait(900);
+                    await T.wait(2000);
                     // The app posts "Your total COP Allowance is $…" in chat on
                     // its own; the tour only adds the save hint — no save demo.
                     await T.say('Similarly you may tap the <b>save</b> icon to archive your earnings.');
@@ -11013,8 +11021,10 @@ function getRegionForAirport(code) {
                     await T.wait(1400);
                     caTourClearGlow();
                     await T.wait(900);
-                    // The finale waits for the crew.
-                    const r = await T.next('Finish');
+                    // The end is announced, then one way out — no skip at
+                    // the door.
+                    await T.say('With this, the feature tour has come to an end.');
+                    const r = await T.next('Finish', false);
                     if (r === 'skip') return 'skip';
                     if (r === 'dead') return null;
                     caTourClearGlow();
