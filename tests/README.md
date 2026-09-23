@@ -35,3 +35,5 @@ npm test           # or: node run-all.js
 ## Harness stubs (`_harness.js`)
 
 `lucide.createIcons` (no-op) · `navigator.serviceWorker` (undefined) · `fetch` (repo `rates.json` served; `/api/sq` returns offline-failure) · `open` · scroll methods · `innerText` · canvas 2D context (absorbing Proxy). Anything new the app needs from a browser gets stubbed here, documented inline.
+
+- `roster-real.test.js` — every real roster PDF in `_inbox/` (the owner's 2024–2026 Crew Roster Reports) through the real pipeline: pdfjs-dist extraction (devDependency) into the booted app's `rosterParse`. Pins month labels, phantom-sector absence (the three-row duty-echo fix), an EXPECTED_FLAGS map of honest flags (month boundaries, TVL sectors without flight times), consecutive-month stitch resolution, and the Feb+Mar+Apr 2025 deep case. New uploads must parse fully clean or be recorded.

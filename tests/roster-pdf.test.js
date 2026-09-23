@@ -457,5 +457,30 @@ const MONTH = [
     R.ok(bubble.querySelector('.roster-calc-all-btn').disabled, 'Discard spends Calculate all');
   }
 
+  // ---- real-roster artifact (Jun 2025 SFO-SIN / Oct 2024 LAX-SIN): a long
+  // duty is echoed across three day-rows — the op row (STD+FT, no STA), an
+  // EMPTY echo row carrying only running totals, then the STA row two days
+  // later. The empty row must not spawn a phantom sector or steal the
+  // echo-merge key from the op row; the sector completes. ----
+  {
+    const { w } = await boot(APP, {});
+    const spread = buildRoster([
+      { date: '10Jun25', day: 'Tue' },
+      { fn: 'SQ 33', sector: 'SFO-SIN', std: '2157', ft: '16:11' },
+      { date: '11Jun25', day: 'Wed' },
+      { fn: 'SQ 33', sector: 'SFO-SIN' },
+      { date: '12Jun25', day: 'Thu' },
+      { fn: 'SQ 33', sector: 'SFO-SIN', sta: '0508' },
+    ]);
+    const sp = w.rosterParse(spread);
+    R.eq(sp.flights.length, 1, 'an empty echo row spawns no phantom sector');
+    const s = sp.flights[0];
+    R.eq(s.stdHm, '21:57', 'the op row keeps its STD');
+    R.eq(s.staHm, '05:08', 'the two-days-later STA merges in');
+    R.eq(s.ftHm, '16:11', 'the flight time carries over');
+    R.eq(s.depDate, '2025-06-10', 'departure dates from the op row');
+    R.eq(s.arrDate, '2025-06-12', 'arrival dates from the echo row');
+  }
+
   process.exit(R.done());
 })().catch(e => { console.error(e); process.exit(1); });
