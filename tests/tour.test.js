@@ -148,18 +148,26 @@ const clickLast = (d, sel) => {
 
     // step 4: menu — the two ways in, lit alternately, then Finish
     R.ok(await until(() => chatText(d).indexOf('Last functionality') !== -1, 20000), 'the finale introduces itself');
-    R.ok(await until(() => chatText(d).indexOf('key in flight number') !== -1, 20000), 'the menu invocation is spelled out');
+    R.ok(await until(() => chatText(d).indexOf('inflight menu onboard') !== -1, 20000), 'the menu invocation is spelled out');
     R.ok(await nextReady(11, 30000), 'Finish / Skip tour wait at the finale');
     // scrolling is locked while the tour runs — and only then
     const wheelLocked = new w.Event('wheel', { cancelable: true, bubbles: true });
     d.getElementById('chat-container').dispatchEvent(wheelLocked);
     R.ok(wheelLocked.defaultPrevented, 'user scrolling is locked mid-tour');
+    R.ok(d.documentElement.classList.contains('ca-tour-on'), 'the hands-off chrome class is on');
+    R.eq(w.getComputedStyle(d.getElementById('btn-settings')).pointerEvents, 'none', 'Settings is untappable mid-tour');
+    R.eq(w.getComputedStyle(d.getElementById('btn-reset')).pointerEvents, 'none', 'the clear-chat button is untappable mid-tour');
+    R.eq(w.getComputedStyle(d.getElementById('action-chips')).pointerEvents, 'none', 'the quick action chips are untappable mid-tour');
     clickLast(d, '.ca-tour-next'); // Finish
     R.ok(await until(() => w.caTour.on === false, 20000), 'the tour finishes');
     const wheelFree = new w.Event('wheel', { cancelable: true, bubbles: true });
     d.getElementById('chat-container').dispatchEvent(wheelFree);
     R.ok(!wheelFree.defaultPrevented, 'user scrolling is unlocked after the tour');
+    R.ok(!d.documentElement.classList.contains('ca-tour-on'), 'the hands-off chrome class is off');
     R.ok(await until(() => chatText(d).indexOf('Thank you so much for your time') !== -1, 15000), 'the thank-you line lands');
+    R.ok(await until(() => chatText(d).indexOf('Is there anything I can assist you with?') !== -1, 15000), 'a fresh offer of help follows');
+    R.eq(d.getElementById('chat-container').children.length, 2, 'the entire chat was cleared — only the two farewell bubbles remain');
+    R.ok(chatText(d).indexOf('fictitious roster') === -1, 'no tour content survives the clear');
     R.eq(w.localStorage.getItem('crewAssist.tourDone'), '1', 'tourDone recorded');
     R.eq(w.localStorage.getItem('crewAssist.archive'), null, 'no demo data ever reached localStorage');
     R.eq(w.localStorage.getItem('crewAssist.calcUi'), 'default', 'calculator mode left as found');
