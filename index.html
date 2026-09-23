@@ -306,6 +306,12 @@
             pointer-events: none !important;
             touch-action: none !important;
         }
+        /* The demo's attach card is a prop, not a control panel: its
+           buttons dim and answer no taps while the tour runs. */
+        html.ca-tour-on .ca-tour-inert button {
+            pointer-events: none !important;
+            opacity: 0.4 !important;
+        }
         .ca-fold-toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ca-fold-icon { transition: transform 0.3s ease; }
         .ca-folded .ca-fold-icon { transform: rotate(-90deg); }
@@ -1402,11 +1408,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.9';
+        const APP_VERSION = '1.23.10';
         const APP_WHAT_NEW = [
-            'Gate buttons retire the moment you press them — dimmed and inert, never left looking pressable.',
-            'The roster summary glide is now forty unhurried hops, and the save line points you to the top right.',
-            'Fine-tuned holds: the summary page, the saved acknowledgement and the Manual summary all breathe to taste.'
+            'The Let\'s go / Not now pair retires once you choose, and the demo attach card\'s buttons dim and go untappable while the tour runs.',
+            'The roster summary glide is forty hops over four seconds — smoother, not longer.',
+            'The Settings switch line now says where Settings lives and what it switches.'
         ];
 
         // State
@@ -10506,7 +10512,7 @@ function getRegionForAirport(code) {
             const steps = 40;
             for (let i = 1; i <= steps; i++) {
                 glide(Math.round((max * i) / steps));
-                await T.wait(200);
+                await T.wait(100);
                 if (!T.alive()) return;
             }
         }
@@ -10653,7 +10659,13 @@ function getRegionForAirport(code) {
                     await T.say('In this demo, I will attach a fictitious roster — with three different flights: <b>SQ442/441</b> a Kathmandu layover, <b>SQ740/739</b> a Phuket turnaround, and <b>SQ 134/133/138/137</b> a four sector Penang shuttle.');
                     const gate2 = await T.next();
                     if (gate2 === 'skip') return 'skip';
-                    await enqueueBot(() => renderRosterConfirm(caTourParsedDemo(), 'July 2026 - Demo.pdf', ''));
+                    await enqueueBot(() => {
+                        renderRosterConfirm(caTourParsedDemo(), 'July 2026 - Demo.pdf', '');
+                        // The demo card's buttons read, they don't press,
+                        // while the tour runs — the demo does the driving.
+                        const cb = document.getElementById('chat-container').lastElementChild;
+                        if (cb) cb.classList.add('ca-tour-inert');
+                    });
                     const all = await T.until(() => {
                         const bs = document.querySelectorAll('.roster-calc-all-btn');
                         for (let i = bs.length - 1; i >= 0; i--) if (!bs[i].disabled) return bs[i];
@@ -10678,7 +10690,7 @@ function getRegionForAirport(code) {
                     await T.wait(2050);
                     // -- a slow, smooth pass down the whole page --
                     await caTourScrollResults(T);
-                    await T.wait(1200);
+                    await T.wait(1000);
                     // -- at the bottom: save, a longer breath at every beat --
                     const ab = await T.until(() => {
                         const b = document.getElementById('btn-results-action');
@@ -10854,7 +10866,7 @@ function getRegionForAirport(code) {
                         return (b && !b.classList.contains('hidden')) ? b : null;
                     }, 12000);
                     if (!open) return;
-                    await T.wait(2000);
+                    await T.wait(1500);
                     // The app posts "Your total COP Allowance is $…" in chat on
                     // its own; the tour only adds the save hint — no save demo.
                     await T.say('Similarly you may tap the <b>save</b> icon to archive your earnings.');
@@ -10869,7 +10881,7 @@ function getRegionForAirport(code) {
                 id: 'manual',
                 say: [
                     "Next is <b>Manual</b> mode — no fetching at all. You type the flight time, select the layover station IATA and the station's arrival and departure date and time yourself.",
-                    "The switch lives in Settings. Let me change it from <b>Default</b> to <b>Manual</b>."
+                    "The switch lives in Settings (top right of screen). Let me change the allowance calculator interface from <b>Default</b> to <b>Manual</b> mode."
                 ],
                 run: async function (T) {
                     // The gate the owner asked for: right after the say lines,
@@ -11219,8 +11231,20 @@ function getRegionForAirport(code) {
                         + '<button type="button" class="ca-tour-offer-skip flex-1 min-w-0 px-4 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Not now</button>'
                         + '</div>');
                     const bubble = document.getElementById('chat-container').lastElementChild;
-                    bubble.querySelector('.ca-tour-offer-go').addEventListener('click', () => startCaTour(false));
-                    bubble.querySelector('.ca-tour-offer-skip').addEventListener('click', () => {
+                    const goBtn = bubble.querySelector('.ca-tour-offer-go');
+                    const skipBtn = bubble.querySelector('.ca-tour-offer-skip');
+                    // Either choice retires the pair — dimmed and inert,
+                    // same as the gates once pressed.
+                    const retire = () => {
+                        [goBtn, skipBtn].forEach((b) => {
+                            if (!b) return;
+                            b.disabled = true;
+                            b.classList.add('opacity-40', 'pointer-events-none');
+                        });
+                    };
+                    goBtn.addEventListener('click', () => { retire(); startCaTour(false); });
+                    skipBtn.addEventListener('click', () => {
+                        retire();
                         try { localStorage.setItem('crewAssist.tourDone', '1'); } catch (e) {}
                         addBotMessage('No worries — type <b>tour</b> whenever you want it.');
                     });
