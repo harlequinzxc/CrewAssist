@@ -55,6 +55,14 @@
             --glass-border: rgba(255, 255, 255, 0.05);
             --glass-bubble-bg: rgba(201, 162, 39, 0.15);
             --glass-sheet-bg: rgba(4, 7, 15, 0.95);
+            /* Earnings page surfaces (dark) */
+            --arch-surface: #141823;
+            --arch-surface-border: rgba(255, 255, 255, 0.05);
+            --arch-fg: #FFFFFF;
+            --arch-muted: rgba(255, 255, 255, 0.45);
+            --arch-hairline: rgba(255, 255, 255, 0.08);
+            --arch-press: rgba(255, 255, 255, 0.04);
+            --arch-badge-border: rgba(255, 255, 255, 0.15);
         }
 
         html:not(.dark) {
@@ -65,6 +73,14 @@
             --glass-border: rgba(0, 0, 0, 0.1);
             --glass-bubble-bg: rgba(201, 162, 39, 0.2);
             --glass-sheet-bg: rgba(246, 241, 232, 0.95);
+            /* Earnings page surfaces (light) */
+            --arch-surface: #FFFFFF;
+            --arch-surface-border: rgba(0, 0, 0, 0.07);
+            --arch-fg: #111827;
+            --arch-muted: rgba(17, 24, 39, 0.45);
+            --arch-hairline: rgba(0, 0, 0, 0.08);
+            --arch-press: rgba(0, 0, 0, 0.035);
+            --arch-badge-border: rgba(0, 0, 0, 0.12);
         }
 
         body {
@@ -270,13 +286,63 @@
         /* Earnings archive redesign (v1.19.13) */
         .ca-arch-search:focus { border-color: var(--sia-gold, #c9a227); }
         .ca-arch-amt { font-variant-numeric: tabular-nums; }
-        .ca-arch-bar { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: linear-gradient(90deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); color: #111; }
-        .ca-arch-pill { background: rgba(0,0,0,.15); border: none; color: #111; font-weight: 700; font-size: 11px; letter-spacing: .06em; padding: 6px 12px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .ca-arch-num { font-variant-numeric: tabular-nums; }
         .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
+        /* Earnings page (v1.24.0): gold summary card, 12-month trend, insights.
+           Dark surfaces follow the app theme — #141823 at night, the app's
+           light glass by day — so the page reads in both. */
+        .ca-arch-iconbtn { width: 38px; height: 38px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--arch-fg, #374151); transition: background .15s ease; -webkit-tap-highlight-color: transparent; }
+        .ca-arch-iconbtn:active { background: rgba(127,127,127,.15); }
+        .ca-arch-goldcard {
+            background: linear-gradient(135deg, #dcc163 0%, #c9a23e 60%, #b8942f 100%);
+            border-radius: 16px; color: #1a1300; position: relative;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 10px 28px -8px rgba(184,148,47,.55);
+        }
+        .ca-arch-segtrack { display: inline-flex; background: rgba(26,19,0,.1); border-radius: 999px; padding: 3px; gap: 2px; }
+        .ca-arch-seg { border: none; background: transparent; color: rgba(26,19,0,.65); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
+        .ca-arch-seg.ca-arch-segon { background: #1a1300; color: #e6c254; }
+        .ca-arch-metalabel { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; opacity: .55; }
+        .ca-arch-metaval { font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+        .ca-arch-metadot { opacity: .3; font-weight: 700; }
+        .ca-arch-surface { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
+        .ca-arch-barcol { border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex: 1 1 0; min-width: 0; }
+        .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold, #c9a227); }
+        .ca-arch-bararea { width: 100%; height: 120px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+        .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: rgba(212,175,55,.35); }
+        .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); }
+        .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed rgba(230,194,84,.75); background: repeating-linear-gradient(45deg, rgba(212,175,55,.28) 0 4px, rgba(212,175,55,.08) 4px 8px); }
+        .ca-arch-barlab { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
+        .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold, #c9a227); }
+        .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: #fff; padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+        .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+        .ca-arch-badge-best { color: #e6c254; border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
+        .ca-arch-badge-low { color: #f87171; border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
+        .ca-arch-badge-prog { color: var(--arch-muted); border: 1px solid var(--arch-badge-border); }
+        .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
+        .ca-arch-inslabel { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
+        .ca-arch-insval { font-size: 14px; font-weight: 700; color: var(--arch-fg); }
+        .ca-arch-inssub { font-size: 11px; margin-top: 2px; }
+        .ca-arch-yoy-up { color: #34d399; font-weight: 700; }
+        .ca-arch-yoy-down { color: #f87171; font-weight: 700; }
+        .ca-arch-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sia-gold, #c9a227); flex: none; }
+        .ca-arch-dot-hollow { width: 5px; height: 5px; border-radius: 999px; border: 1.5px solid var(--sia-gold, #c9a227); background: transparent; flex: none; }
+        .ca-arch-footline { height: 1px; flex: 1 1 0; background: var(--arch-hairline); }
         .ca-arch-chev { transition: transform .3s ease; }
-        .ca-arch-collapsed .ca-arch-chev { transform: rotate(-90deg); }
+        .ca-arch-group:not(.ca-arch-collapsed) .ca-arch-chev { transform: rotate(90deg); }
+        .ca-arch-chev2 { transition: transform .3s ease; }
+        .ca-arch-insopen .ca-arch-chev2 { transform: rotate(180deg); }
+        /* hover is a mouse-only luxury: never a stuck state on touch */
+        @media (hover:hover) {
+            .ca-arch-iconbtn:hover { background: rgba(127,127,127,.12); }
+            .ca-arch-seg:hover { color: #1a1300; }
+            .ca-arch-barcol:hover .ca-arch-bartip { display: block; }
+            .ca-arch-barcol.ca-arch-baron .ca-arch-bartip { display: block; }
+            .ca-arch-barcol:hover .ca-arch-barlab { color: var(--sia-gold, #c9a227); }
+            .ca-arch-group-head:hover { background: var(--arch-press); }
+            .ca-arch-row:hover { background: var(--arch-press); }
+        }
 
         /* A filled-in form should not outlive its result: cards fold to their
            header the moment their overlay opens, and the header re-expands on tap. */
@@ -982,24 +1048,79 @@
         <!-- Earnings archive overlay (v1.19.13 redesign) -->
         <div id="ca-arch-backdrop" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
         <div id="ca-arch-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
-            <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-black/5 dark:border-white/5">
+            <!-- iOS bottom-sheet handle -->
+            <div class="pt-2 pb-1 flex justify-center shrink-0"><div class="w-[44px] h-[4px] rounded-full bg-black/15 dark:bg-[#2a2f3d]"></div></div>
+            <div class="flex items-center justify-between px-5 pt-2 pb-3 border-b border-black/5 dark:border-white/5 shrink-0">
                 <h3 class="text-xl font-bold">Earnings</h3>
                 <div class="flex items-center gap-1">
-                    <button type="button" id="ca-arch-import" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Import backup"><i data-lucide="upload" class="w-5 h-5"></i></button>
-                    <button type="button" id="ca-arch-export" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Export backup"><i data-lucide="download" class="w-5 h-5"></i></button>
-                    <button type="button" id="ca-arch-trash" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Delete visible entries"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-                    <button type="button" id="ca-arch-close" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-import" class="ca-arch-iconbtn" aria-label="Import backup"><i data-lucide="upload" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-export" class="ca-arch-iconbtn" aria-label="Export backup"><i data-lucide="download" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-trash" class="ca-arch-iconbtn" aria-label="Delete visible entries"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-close" class="ca-arch-iconbtn" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
             </div>
-            <div id="ca-arch-bar" class="ca-arch-bar"></div>
-            <div class="px-5 pt-3">
-                <div class="relative">
-                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-                    <input id="ca-arch-search" type="text" placeholder="Search flights…" aria-label="Search flights" class="ca-arch-search w-full rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 pl-10 pr-9 py-2.5 text-sm outline-none" />
-                    <button type="button" id="ca-arch-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1" aria-label="Clear search"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <div id="ca-arch-scroll" class="overflow-y-auto flex-grow px-4 pb-10 pt-3">
+                <!-- 1. gold summary card -->
+                <div class="ca-arch-goldcard p-5" id="ca-arch-summary">
+                    <div class="flex justify-center">
+                        <div class="ca-arch-segtrack" role="tablist" aria-label="Earnings scope">
+                            <button type="button" class="ca-arch-seg" data-scope="month">Month</button>
+                            <button type="button" class="ca-arch-seg" data-scope="year">Year</button>
+                            <button type="button" class="ca-arch-seg" data-scope="all">All-time</button>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <div class="ca-arch-metalabel">Total earnings</div>
+                        <div class="ca-arch-num font-bold text-[34px] leading-tight tracking-tight" id="ca-arch-total">$0.00</div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t" style="border-color: rgba(26,19,0,.1)">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="text-left">
+                                <div class="ca-arch-metalabel">Flights</div>
+                                <div class="ca-arch-metaval" id="ca-arch-m-flights">0</div>
+                            </div>
+                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
+                            <div class="text-left">
+                                <div class="ca-arch-metalabel">Avg / flight</div>
+                                <div class="ca-arch-metaval" id="ca-arch-m-avg">—</div>
+                            </div>
+                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
+                            <div class="text-right min-w-0">
+                                <div class="ca-arch-metalabel" id="ca-arch-m-ctx-label">&nbsp;</div>
+                                <div class="ca-arch-metaval flex items-center justify-end gap-1" id="ca-arch-m-ctx"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                <!-- 2. 12-month trend -->
+                <div class="ca-arch-surface rounded-xl p-4 mt-3" id="ca-arch-trend">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-1.5">
+                            <i data-lucide="trending-up" class="w-3 h-3" style="color: var(--arch-muted)"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">12-Month Trend</span>
+                        </div>
+                        <span class="ca-arch-num text-[11px] font-bold" style="color: rgba(212,175,55,.7)" id="ca-arch-peak"></span>
+                    </div>
+                    <div class="flex items-end gap-1 mt-4" id="ca-arch-chart"></div>
+                </div>
+                <!-- 3. search -->
+                <div class="mt-3">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                        <input id="ca-arch-search" type="text" placeholder="Search flights…" aria-label="Search flights" class="ca-arch-search w-full h-11 rounded-full bg-black/5 dark:bg-[#141823] border border-black/10 dark:border-white/10 pl-10 pr-10 text-sm outline-none" />
+                        <button type="button" id="ca-arch-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1" aria-label="Clear search"><i data-lucide="x" class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+                <!-- 3b. insights -->
+                <button type="button" id="ca-arch-ins-toggle" class="w-full h-11 mt-3 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider rounded-full" style="color: var(--arch-muted)" aria-expanded="false">
+                    <i data-lucide="lightbulb" class="w-4 h-4" style="color: #d4af37"></i>
+                    <span id="ca-arch-ins-toggle-label">View insights</span>
+                    <i data-lucide="chevron-down" class="ca-arch-chev2 w-4 h-4"></i>
+                </button>
+                <div id="ca-arch-insights" class="hidden grid grid-cols-2 gap-2 mt-3"></div>
+                <!-- 4. month list -->
+                <div id="ca-arch-list" class="pt-2"></div>
             </div>
-            <div id="ca-arch-list" class="px-5 pb-8 pt-2 overflow-y-auto flex-grow"></div>
         </div>
         <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
@@ -1408,11 +1529,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.12';
+        const APP_VERSION = '1.24.0';
         const APP_WHAT_NEW = [
-            'Long-haul duties printed across three roster rows now merge into one complete sector — found on real rosters, where a SFO or LAX round trip previously broke apart.',
-            'Your real rosters now guard the parser: thirty months of actual Crew Roster Reports run through it on every test.',
-            'Positioning (TVL) sectors stay honestly flagged — the roster prints no flight time for them, and none is invented.'
+            'The Earnings page is rebuilt: a gold summary with Month / Year / All-time scopes, a twelve-month bar chart with the current month projected to month end, and a twelve-card insights panel behind a View insights toggle.',
+            'Month rows now carry Best / Low / In-progress badges and year-on-year arrows, and a partial month lists a projected total beside its flights.',
+            'Search narrows the list only — totals always read the whole archive, and delete removes exactly what the search leaves visible.'
         ];
 
         // State
@@ -6721,7 +6842,7 @@ function getRegionForAirport(code) {
             };
         }
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
-        const archState = { scope: 'all', search: '', collapsed: {} };
+        const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, chartSel: null };
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
@@ -6740,11 +6861,138 @@ function getRegionForAirport(code) {
             const nowMk = todayLocalYMD().slice(0, 7);
             return mks.indexOf(nowMk) !== -1 ? nowMk : (mks[0] || '');
         }
-        function archScopeLabel() {
-            const info = archScopeInfo();
-            if (archState.scope === 'year') return info.yr || 'ALL-TIME';
-            if (archState.scope === 'month') { const p = info.mk.split('-'); const m = parseInt(p[1], 10); return (isFinite(m) && ARCH_MU[m-1] ? ARCH_MU[m-1] : (p[1]||'')) + ' ' + (p[0]||''); }
-            return 'ALL-TIME';
+        // ---- earnings-page stats (v1.24.0): months, projection, YoY ----
+        function archMonthsMap(all) {
+            const map = {};
+            all.forEach((e) => {
+                const mk = String(e.monthKey || String(e.sectorDate || '').slice(0, 7));
+                if (!mk) return;
+                const m = (map[mk] = map[mk] || { total: 0, count: 0, rows: [] });
+                m.total += (Number(e.amount) || 0);
+                m.count += 1;
+                m.rows.push(e);
+            });
+            return map;
+        }
+        function archMonthAdd(mk, n) {
+            const y = parseInt(mk.slice(0, 4), 10), m = parseInt(mk.slice(5, 7), 10);
+            const d = new Date(y, m - 1 + n, 1);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+        function archCurrentMk() { return todayLocalYMD().slice(0, 7); }
+        // A partial month projects linearly: day 17 of 30 -> total/17*30.
+        function archProjection(totalNow, mk) {
+            const y = parseInt(mk.slice(0, 4), 10), m = parseInt(mk.slice(5, 7), 10);
+            const days = new Date(y, m, 0).getDate();
+            const today = parseInt(todayLocalYMD().slice(8, 10), 10);
+            if (!isFinite(today) || today >= days) return { partial: false, total: totalNow, days: days, today: today };
+            return { partial: true, total: Math.round(((totalNow / today) * days) * 100) / 100, days: days, today: today };
+        }
+        function archYoyPct(cur, prev) {
+            if (!(prev > 0) || !(cur > 0)) return null;
+            return Math.round(((cur - prev) / prev) * 1000) / 10;
+        }
+        function archKFmt(v) { return v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : formatMoney(v); }
+        function archPeakFmt(v) { return 'Peak: ' + archKFmt(v); }
+        // Twelve months, oldest on the left, ending at the newest entry month
+        // (or the current real month when it is later).
+        function archChartData(all) {
+            const map = archMonthsMap(all);
+            const currentMk = archCurrentMk();
+            const mksAll = Object.keys(map).sort();
+            const endMk = (mksAll.length && mksAll[mksAll.length - 1] > currentMk) ? mksAll[mksAll.length - 1] : currentMk;
+            const out = [];
+            for (let i = 11; i >= 0; i--) {
+                const mk = archMonthAdd(endMk, -i);
+                const m = map[mk] || { total: 0, count: 0 };
+                out.push({ mk: mk, total: m.total, count: m.count, isCurrent: mk === currentMk });
+            }
+            return out;
+        }
+        // Everything the twelve insight cards show, computed from real entries.
+        function archInsights(all) {
+            const map = archMonthsMap(all);
+            const mks = Object.keys(map).sort();
+            const currentMk = archCurrentMk();
+            const curYr = currentMk.slice(0, 4);
+            const complete = mks.filter((mk) => mk !== currentMk);
+            const cur = map[currentMk] || { total: 0, count: 0 };
+            // records
+            let bestMk = '', lowMk = '';
+            complete.forEach((mk) => {
+                if (!bestMk || map[mk].total > map[bestMk].total) bestMk = mk;
+                if (!lowMk || map[mk].total < map[lowMk].total) lowMk = mk;
+            });
+            if (!bestMk && mks.length) bestMk = mks[mks.length - 1];
+            const monthCount = complete.length || 1;
+            const avgMonth = (complete.reduce((s, mk) => s + map[mk].total, 0) + 0) / monthCount;
+            let busiestMk = '';
+            complete.forEach((mk) => { if (!busiestMk || map[mk].count > map[busiestMk].count) busiestMk = mk; });
+            if (!busiestMk && mks.length) busiestMk = mks[mks.length - 1];
+            // streak: months at or above the monthly average
+            let streak = 0;
+            if (cur.total >= avgMonth && avgMonth > 0) streak += 1;
+            for (let i = complete.length - 1; i >= 0; i--) {
+                if (map[complete[i]].total >= avgMonth && avgMonth > 0) streak += 1; else break;
+            }
+            // flying days: streaks, breaks, per-day rate
+            const days = [];
+            const seen = {};
+            all.forEach((e) => { const ymd = String(e.sectorDate || '').slice(0, 10); if (ymd && !seen[ymd]) { seen[ymd] = 1; days.push(ymd); } });
+            days.sort();
+            let flyRun = { len: 0, start: '' }, runStart = '', runLen = 0;
+            let offRun = { len: 0, from: '', to: '' };
+            for (let i = 0; i < days.length; i++) {
+                if (i === 0) { runStart = days[i]; runLen = 1; continue; }
+                const gap = Math.round((new Date(days[i]) - new Date(days[i - 1])) / 86400000);
+                if (gap === 1) runLen += 1;
+                else {
+                    if (gap - 1 > offRun.len) offRun = { len: gap - 1, before: days[i - 1], after: days[i] };
+                    runStart = days[i]; runLen = 1;
+                }
+                if (runLen > flyRun.len) flyRun = { len: runLen, start: runStart };
+            }
+            if (days.length === 1) flyRun = { len: 1, start: days[0] };
+            if (runLen > flyRun.len) flyRun = { len: runLen, start: runStart };
+            const allTotal = all.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+            let topEntry = null;
+            all.forEach((e) => { if (!topEntry || (Number(e.amount) || 0) > topEntry.amount) topEntry = { amount: Number(e.amount) || 0, e: e }; });
+            // nights away YTD: station days minus one per station, else a
+            // single night per layover
+            let nightsYtd = 0;
+            all.forEach((e) => {
+                if (String(e.monthKey || '').slice(0, 4) !== curYr) return;
+                const st = e.detail && e.detail.stations;
+                if (st && st.length) st.forEach((s) => { nightsYtd += Math.max(0, (s.days || []).length - 1); });
+                else if (e.flightType === 'Layover') nightsYtd += 1;
+            });
+            const ytdMonths = Math.max(1, parseInt(currentMk.slice(5, 7), 10));
+            // flying days this year + weekday rhythm
+            let flyDaysYtd = 0;
+            const wd = [0, 0, 0, 0, 0, 0, 0];
+            const WD = ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays'];
+            all.forEach((e) => {
+                const ymd = String(e.sectorDate || '').slice(0, 10);
+                if (ymd.slice(0, 4) !== curYr) return;
+                flyDaysYtd += 1;
+                const dt = new Date(ymd + 'T12:00:00');
+                if (!isNaN(dt)) wd[dt.getDay()] += 1;
+            });
+            const yearLen = (parseInt(curYr, 10) % 4 === 0) ? 366 : 365;
+            let wdTop = 0;
+            for (let i = 1; i < 7; i++) if (wd[i] > wd[wdTop]) wdTop = i;
+            return {
+                bestMk: bestMk, bestTotal: bestMk ? map[bestMk].total : 0,
+                lowMk: lowMk, lowTotal: lowMk ? map[lowMk].total : 0,
+                avgMonth: avgMonth, monthCount: complete.length,
+                busiestMk: busiestMk, busiestCount: busiestMk ? map[busiestMk].count : 0,
+                streak: streak, avgMonthLabel: avgMonth > 0 ? archKFmt(avgMonth) : '$0',
+                flyRun: flyRun, offRun: offRun,
+                topEntry: topEntry, allTotal: allTotal, flyDays: days.length,
+                nightsYtd: nightsYtd, ytdMonths: ytdMonths,
+                flyDaysYtd: flyDaysYtd, yearLen: yearLen,
+                wdName: WD[wdTop], wdPct: all.length ? Math.round(100 * wd[wdTop] / all.length) : 0
+            };
         }
         function archFiltered() {
             const info = archScopeInfo();
@@ -6797,66 +7045,272 @@ function getRegionForAirport(code) {
         function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; setTimeout(() => { b.classList.add('hidden'); }, 300); }
 
         function renderArch() {
-            const bar = archEl('ca-arch-bar'), list = archEl('ca-arch-list');
+            const list = archEl('ca-arch-list'), scroll = archEl('ca-arch-scroll');
             const all = loadArchive();
-            const keep = list.scrollTop;
-            const vis = archFiltered();
-            const total = vis.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-            bar.innerHTML = '<button type="button" id="ca-arch-pill" class="ca-arch-pill">' + archScopeLabel() + '</button>'
-                + '<span class="text-xs opacity-70 ml-auto">' + vis.length + ' flight' + (vis.length === 1 ? '' : 's') + '</span>'
-                + '<span class="font-bold pl-3">' + formatMoney(total) + '</span>';
-            archEl('ca-arch-pill').onclick = () => { archState.scope = archState.scope === 'all' ? 'year' : (archState.scope === 'year' ? 'month' : 'all'); renderArch(); };
+            const keep = scroll ? scroll.scrollTop : 0;
+            const q = archState.search.trim().toLowerCase();
+            // Search narrows the list; the summary, chart and insights always
+            // read the whole archive for their scope.
+            const vis = q ? all.filter((e) => String(e.stationDisplay || '').toLowerCase().indexOf(q) !== -1) : all.slice();
             const clearBtn = archEl('ca-arch-clear');
             if (clearBtn) clearBtn.classList.toggle('hidden', !archState.search);
+            archEl('ca-arch-trend').classList.toggle('hidden', !all.length);
+            archEl('ca-arch-ins-toggle').classList.toggle('hidden', !all.length);
+            if (all.length) renderArchSummary(all);
+            if (all.length) renderArchChart(all);
+            if (all.length) renderArchInsights(all);
             if (!all.length) {
+                archEl('ca-arch-insights').classList.add('hidden');
                 list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Run a COP calculation and hit save or tap the import arrow to bring in a JSON backup.</span></div>';
                 try { lucide.createIcons(); } catch (e) {}
                 return;
             }
             if (!vis.length) {
                 list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights found.<br><span class="text-xs">Try clearing the search or switching scope.</span><br><button type="button" id="ca-arch-reset" class="mt-3 px-4 py-2 rounded-full bg-black/10 dark:bg-white/10 text-xs font-bold">Reset</button></div>';
-                const r = archEl('ca-arch-reset'); if (r) r.onclick = () => { archState.search = ''; archState.scope = 'all'; const s = archEl('ca-arch-search'); if (s) s.value = ''; renderArch(); };
+                const r = archEl('ca-arch-reset'); if (r) r.onclick = () => { archState.search = ''; archState.scope = 'all'; archState.chartSel = null; const s = archEl('ca-arch-search'); if (s) s.value = ''; renderArch(); };
                 try { lucide.createIcons(); } catch (e) {}
                 return;
             }
             // Render-sorted only: flight date desc, ties by insertion order desc.
             const idx = {}; all.forEach((e, i) => { idx[e.id] = i; });
-            const fullMonth = {}; all.forEach((e) => { fullMonth[e.monthKey] = (fullMonth[e.monthKey] || 0) + (Number(e.amount) || 0); });
+            const statsAll = archMonthsMap(all);
             const groups = {};
             vis.forEach((e) => { (groups[e.monthKey] = groups[e.monthKey] || []).push(e); });
             const mks = Object.keys(groups).sort().reverse();
+            const currentMk = archCurrentMk();
+            const ins = archInsights(all);
             const newestMk = archExpandMk();
             let html = '';
             mks.forEach((mk) => {
                 const rows = groups[mk].slice().sort((a, b) => (String(b.sectorDate || '').localeCompare(String(a.sectorDate || ''))) || ((idx[b.id] || 0) - (idx[a.id] || 0)));
                 const sub = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-                const full = fullMonth[mk] || 0;
+                const full = (statsAll[mk] || { total: 0 }).total;
                 const filtered = Math.abs(full - sub) > 0.004;
                 const col = Object.prototype.hasOwnProperty.call(archState.collapsed, mk) ? !!archState.collapsed[mk] : (mk !== newestMk);
-                html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-3">'
-                    + '<button type="button" class="ca-arch-group-head w-full flex items-center justify-between py-2" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
-                    + '<span class="font-bold">' + archiveMonthLabel(mk) + (col ? ' <span class="text-xs text-gray-500 font-normal">· ' + rows.length + ' flight' + (rows.length === 1 ? '' : 's') + '</span>' : '') + '</span>'
-                    + '<span class="flex items-center gap-2"><span class="font-bold text-sia-gold">' + formatMoney(sub) + (filtered ? ' <span class="text-xs text-gray-500 font-normal">of ' + formatMoney(full) + '</span>' : '') + '</span><i data-lucide="chevron-down" class="ca-arch-chev w-4 h-4"></i></span></button>'
-                    + '<div class="ca-arch-group-body">';
+                const inProgress = mk === currentMk;
+                const yoy = inProgress ? null : archYoyPct(full, statsAll[archMonthAdd(mk, -12)] ? statsAll[archMonthAdd(mk, -12)].total : 0);
+                let badges = '';
+                if (mk === ins.bestMk && ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-best"><i data-lucide="trophy" class="w-2.5 h-2.5"></i>Best</span>';
+                if (mk === ins.lowMk && ins.lowMk && ins.lowMk !== ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-low"><i data-lucide="trending-down" class="w-2.5 h-2.5"></i>Low</span>';
+                if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog">In progress</span>';
+                html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2">'
+                    + '<button type="button" class="ca-arch-group-head w-full flex items-center gap-2.5 py-3 px-1 rounded-xl text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
+                    + '<i data-lucide="chevron-right" class="ca-arch-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
+                    + '<span class="flex-1 min-w-0">'
+                    + '<span class="flex items-center gap-1.5 flex-wrap"><span class="text-[17px] font-semibold leading-tight" style="color: var(--arch-fg)">' + archiveMonthLabel(mk) + '</span>' + badges + '</span>'
+                    + '<span class="block text-sm mt-0.5" style="color: var(--arch-muted)">' + rows.length + ' flight' + (rows.length === 1 ? '' : 's')
+                    + (yoy !== null ? ' <span class="ca-arch-yoy-' + (yoy >= 0 ? 'up' : 'down') + ' text-xs whitespace-nowrap"><i data-lucide="' + (yoy >= 0 ? 'arrow-up' : 'arrow-down') + '" class="w-3 h-3 inline"></i> ' + Math.abs(yoy).toFixed(1) + '%</span>' : '')
+                    + '</span></span>'
+                    + '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold, #c9a227)">' + formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '') + '</span>'
+                    + '</button>'
+                    + '<div class="ca-arch-group-body pl-4">';
                 rows.forEach((e) => {
-                    html += '<div class="ca-arch-row flex items-center gap-2 py-2 pl-3 border-b border-black/5 dark:border-white/5 cursor-pointer" data-id="' + e.id + '">'
-                        + '<span class="font-bold">' + archRoute(e) + '</span>'
-                        + '<span class="text-xs text-gray-500">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
-                        + '<span class="ca-arch-amt ml-auto font-bold text-gray-800 dark:text-white">' + formatMoney(e.amount) + '</span>'
-                        + '<i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 shrink-0"></i>'
-                        + '<button type="button" class="ca-arch-del text-gray-400 p-1" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                    html += '<div class="ca-arch-row flex items-center gap-2.5 py-2.5 px-1 rounded-lg cursor-pointer" data-id="' + e.id + '">'
+                        + '<span class="ca-arch-dot"></span>'
+                        + '<span class="font-bold text-sm" style="color: var(--arch-fg)">' + archRoute(e) + '</span>'
+                        + '<span class="text-xs" style="color: var(--arch-muted)">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
+                        + '<span class="ca-arch-amt ml-auto font-bold text-sm" style="color: var(--arch-fg)">' + formatMoney(e.amount) + '</span>'
+                        + '<button type="button" class="ca-arch-del p-1.5 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
+                if (inProgress) {
+                    const proj = archProjection(full, mk);
+                    const projFlights = Math.round((groups[mk].length / proj.today) * proj.days);
+                    if (proj.partial && proj.total > 0.004) {
+                        html += '<div class="flex items-center gap-2.5 py-2.5 px-1 italic" style="color: var(--arch-muted)">'
+                            + '<span class="ca-arch-dot-hollow"></span>'
+                            + '<span class="text-sm italic">Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's') + '</span>'
+                            + '<span class="ca-arch-amt ml-auto text-sm font-bold italic" style="color: var(--sia-gold, #c9a227)">' + formatMoney(proj.total) + '</span></div>';
+                    }
+                }
                 html += '</div></div>';
             });
+            // End of records
+            const firstMk = Object.keys(statsAll).sort()[0];
+            html += '<div class="flex items-center gap-3 mt-6 mb-2">'
+                + '<div class="ca-arch-footline"></div>'
+                + '<span class="text-[10px] font-bold uppercase tracking-[0.08em] whitespace-nowrap" style="color: var(--arch-muted)">End of records</span>'
+                + '<div class="ca-arch-footline"></div></div>'
+                + '<div class="text-center text-[11px] pb-2" style="color: var(--arch-muted)">Showing earnings since ' + archiveMonthLabel(firstMk) + '</div>';
             list.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
-            list.scrollTop = keep;
-            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => { const k = hd.getAttribute('data-mk'); const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archExpandMk()); archState.collapsed[k] = !eff; const g = hd.closest('.ca-arch-group'); g.classList.toggle('ca-arch-collapsed'); hd.setAttribute('aria-expanded', String(!archState.collapsed[k])); const n = parseInt(hd.getAttribute('data-count') || '0', 10); const left = hd.querySelector('span'); left.innerHTML = archiveMonthLabel(k) + (archState.collapsed[k] ? ' <span class="text-xs text-gray-500 font-normal">· ' + n + ' flight' + (n === 1 ? '' : 's') + '</span>' : ''); }));
+            if (scroll) scroll.scrollTop = keep;
+            list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => {
+                const k = hd.getAttribute('data-mk');
+                const eff = Object.prototype.hasOwnProperty.call(archState.collapsed, k) ? !!archState.collapsed[k] : (k !== archExpandMk());
+                archState.collapsed[k] = !eff;
+                const g = hd.closest('.ca-arch-group');
+                g.classList.toggle('ca-arch-collapsed');
+                hd.setAttribute('aria-expanded', String(!archState.collapsed[k]));
+            }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archDeleteOne(b.getAttribute('data-id')); }));
             list.querySelectorAll('.ca-arch-row').forEach((row) => row.addEventListener('click', (ev) => {
                 if (ev.target.closest('.ca-arch-del')) return;
                 openArchEntry(row.getAttribute('data-id'));
             }));
+        }
+
+        // The gold card: totals per scope plus the contextual line.
+        function renderArchSummary(all) {
+            const info = archScopeInfo();
+            const map = archMonthsMap(all);
+            const currentMk = archCurrentMk();
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg').forEach((b) => {
+                b.classList.toggle('ca-arch-segon', b.getAttribute('data-scope') === archState.scope);
+            });
+            let total = 0, count = 0, ctxLabel = '\u00a0', ctxHtml = '<span style="opacity:.4">\u2014</span>';
+            if (archState.scope === 'month') {
+                const mk = info.mk || currentMk;
+                const m = map[mk] || { total: 0, count: 0 };
+                total = m.total; count = m.count;
+                if (mk === currentMk) {
+                    const proj = archProjection(total, mk);
+                    if (proj.partial) {
+                        ctxLabel = 'On track';
+                        ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(proj.total) + ' \u00b7 ' + formatMoney(Math.max(0, proj.total - total)) + ' left</span>';
+                    } else {
+                        ctxLabel = 'Month total';
+                        ctxHtml = '<i data-lucide="check" class="w-3.5 h-3.5 shrink-0"></i><span>Month complete</span>';
+                    }
+                } else {
+                    const yoy = archYoyPct(total, statsLiFor(map, mk));
+                    ctxLabel = 'Vs last year';
+                    ctxHtml = yoy === null ? '<span style="opacity:.4">No ' + archiveMonthLabel(archMonthAdd(mk, -12)) + '</span>'
+                        : '<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>';
+                }
+            } else if (archState.scope === 'year') {
+                const yr = info.yr || currentMk.slice(0, 4);
+                const ytd = all.filter((e) => String(e.monthKey || '').slice(0, 4) === yr);
+                total = ytd.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                count = ytd.length;
+                const curYr = currentMk.slice(0, 4);
+                const capMk = (yr === curYr) ? currentMk : (yr + '-12');
+                const capMonth = parseInt(capMk.slice(5, 7), 10);
+                const sumTo = (yearStr) => all.filter((e) => {
+                    const mk = String(e.monthKey || '');
+                    if (mk.slice(0, 4) !== yearStr) return false;
+                    if (yearStr === curYr && parseInt(mk.slice(5, 7), 10) > capMonth) return false;
+                    return true;
+                }).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                const ly = sumTo(String(parseInt(yr, 10) - 1));
+                const yoy = archYoyPct(total, ly);
+                ctxLabel = yr + (yr === curYr ? ' YTD' : '');
+                ctxHtml = yoy === null ? '<span style="opacity:.4">' + (parseInt(yr, 10) - 1) + ' not on record</span>'
+                    : '<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>';
+            } else {
+                total = all.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                count = all.length;
+                const parts = [];
+                const curM = map[currentMk];
+                if (curM) {
+                    const proj = archProjection(curM.total, currentMk);
+                    const yoy = archYoyPct(curM.total, statsLiFor(map, currentMk));
+                    if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>');
+                    if (proj.partial && proj.total > 0.004) parts.push('<span>proj. ' + formatMoney(proj.total) + '</span>');
+                }
+                ctxLabel = 'Context';
+                ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">\u2014</span>';
+            }
+            archEl('ca-arch-total').textContent = formatMoney(total);
+            archEl('ca-arch-m-flights').textContent = String(count);
+            archEl('ca-arch-m-avg').textContent = count ? formatMoney(total / count) : '\u2014';
+            archEl('ca-arch-m-ctx-label').textContent = ctxLabel;
+            archEl('ca-arch-m-ctx').innerHTML = ctxHtml;
+            try { lucide.createIcons(); } catch (e) {}
+        }
+        function statsLiFor(map, mk) {
+            const li = map[archMonthAdd(mk, -12)];
+            return li ? li.total : 0;
+        }
+
+        // Twelve gold bars, oldest left; the partial month stacks its
+        // projection on top of the actual.
+        function renderArchChart(all) {
+            const chart = archEl('ca-arch-chart');
+            const months = archChartData(all);
+            const currentMk = archCurrentMk();
+            const info = archScopeInfo();
+            const selMk = archState.chartSel || (archState.scope === 'month' ? (info.mk || currentMk) : '');
+            let maxTotal = 0;
+            months.forEach((m) => { maxTotal = Math.max(maxTotal, m.total); });
+            archEl('ca-arch-peak').textContent = maxTotal > 0 ? archPeakFmt(maxTotal) : '';
+            const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            let html = '';
+            months.forEach((m) => {
+                const on = m.mk === selMk;
+                let projPx = 0, projTotal = 0;
+                let barPx = Math.round(120 * (m.total / (maxTotal || 1)));
+                if (m.isCurrent) {
+                    const proj = archProjection(m.total, m.mk);
+                    if (proj.partial && proj.total > 0.004) {
+                        projTotal = proj.total;
+                        const fullPx = Math.round(120 * (proj.total / (maxTotal || 1)));
+                        projPx = Math.max(0, Math.min(fullPx - barPx, 120 - barPx));
+                    }
+                }
+                const stub = (m.total <= 0 && projPx <= 0);
+                const label = MON3[parseInt(m.mk.slice(5, 7), 10) - 1] || '';
+                html += '<button type="button" class="ca-arch-barcol' + (on ? ' ca-arch-baron' : '') + '" data-mk="' + m.mk + '" aria-label="' + archiveMonthLabel(m.mk) + '">'
+                    + '<div class="ca-arch-bararea">'
+                    + '<span class="ca-arch-bartip">' + archiveMonthLabel(m.mk) + ' \u00b7 ' + formatMoney(m.total) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '</span>'
+                    + (projPx > 0 ? '<div class="ca-arch-barproj" style="height:' + projPx + 'px"></div>' : '')
+                    + '<div class="ca-arch-bar' + (on ? ' ca-arch-baron' : '') + '" style="height:' + (stub ? 2 : Math.max(2, barPx)) + 'px"></div>'
+                    + '</div>'
+                    + '<span class="ca-arch-barlab' + (on ? ' ca-arch-baron' : '') + '">' + label + '</span>'
+                    + '</button>';
+            });
+            chart.innerHTML = html;
+            try { lucide.createIcons(); } catch (e) {}
+            chart.querySelectorAll('.ca-arch-barcol').forEach((b) => b.addEventListener('click', () => {
+                const mk = b.getAttribute('data-mk');
+                archState.chartSel = mk;
+                archState.collapsed[mk] = false;
+                renderArch();
+                const g = archEl('ca-arch-list').querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+                const grp = g ? g.closest('.ca-arch-group') : null;
+                if (grp && grp.scrollIntoView) { try { grp.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
+            }));
+        }
+
+        // Twelve insight cards in four rows — no annual goal, no YTD
+        // allowances, no long-haul card.
+        function renderArchInsights(all) {
+            const box = archEl('ca-arch-insights');
+            const s = archInsights(all);
+            const MUTED = 'var(--arch-muted)', GOLD = '#d4af37', GREEN = '#34d399', RED = '#f87171';
+            const card = (icon, label, val, sub, iconColor, subColor) =>
+                '<div class="ca-arch-inscard">'
+                + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="' + icon + '" class="w-4 h-4 shrink-0" style="color:' + (iconColor || GOLD) + '"></i><span class="ca-arch-inslabel">' + label + '</span></div>'
+                + '<div class="ca-arch-insval">' + val + '</div>'
+                + (sub ? '<div class="ca-arch-inssub" style="color:' + (subColor || MUTED) + '">' + sub + '</div>' : '')
+                + '</div>';
+            const dayLbl = (ymd) => archiveDayLabel(ymd);
+            const offFrom = s.offRun.len ? dayLbl(ymdShift(s.offRun.before, 1)) : '';
+            const offTo = s.offRun.len ? dayLbl(ymdShift(s.offRun.after, -1)) : '';
+            let html = '';
+            // ROW 1 — earnings records
+            html += card('trophy', 'Top earning month', s.bestMk ? archiveMonthLabel(s.bestMk) : '\u2014', s.bestMk ? formatMoney(s.bestTotal) : 'No records yet');
+            html += card('trending-down', 'Lowest earning month', s.lowMk ? archiveMonthLabel(s.lowMk) : '\u2014', s.lowMk ? formatMoney(s.lowTotal) : 'No records yet', RED);
+            html += card('calendar', 'Monthly average', s.monthCount ? formatMoney(s.avgMonth) : '\u2014', s.monthCount ? 'across ' + s.monthCount + ' month' + (s.monthCount === 1 ? '' : 's') : 'No complete months yet');
+            html += card('plane', 'Busiest month', s.busiestMk ? archiveMonthLabel(s.busiestMk) : '\u2014', s.busiestMk ? s.busiestCount + ' flight' + (s.busiestCount === 1 ? '' : 's') : 'No records yet');
+            // ROW 2 — streaks and personal records
+            html += card('flame', 'Current streak', s.streak ? s.streak + ' month' + (s.streak === 1 ? '' : 's') : '\u2014', s.streak ? 'above ' + s.avgMonthLabel : 'Clear ' + s.avgMonthLabel + ' to start');
+            html += card('timer', 'Longest flight streak', s.flyRun.len ? s.flyRun.len + ' day' + (s.flyRun.len === 1 ? '' : 's') : '\u2014', s.flyRun.len ? 'since ' + dayLbl(s.flyRun.start) : 'No back-to-back days yet');
+            html += card('umbrella', 'Longest break', s.offRun.len ? s.offRun.len + ' day' + (s.offRun.len === 1 ? '' : 's') + ' off' : '\u2014', s.offRun.len ? '\u00b7 ' + offFrom + '\u2013' + offTo : 'No break between flying days');
+            html += card('briefcase', 'Highest single flight', s.topEntry ? formatMoney(s.topEntry.amount) : '\u2014', s.topEntry ? '\u00b7 ' + archRoute(s.topEntry.e) + ' ' + dayLbl(String(s.topEntry.e.sectorDate || '').slice(0, 10)) : 'No records yet');
+            // ROW 3 — earnings rate
+            html += card('dollar-sign', 'Per flying day', s.flyDays ? formatMoney(s.allTotal / s.flyDays) : '\u2014', s.flyDays ? 'across ' + s.flyDays + ' flying day' + (s.flyDays === 1 ? '' : 's') : 'No flying days yet');
+            html += card('hotel', 'Nights away YTD', s.nightsYtd ? String(s.nightsYtd) : '\u2014', s.nightsYtd ? 'avg ' + (Math.round((s.nightsYtd / s.ytdMonths) * 10) / 10) + ' / month' : 'No layovers this year yet');
+            // ROW 4 — lifestyle and routine
+            html += card('calendar-days', 'Flying days this year', s.flyDaysYtd ? s.flyDaysYtd + ' / ' + s.yearLen : '\u2014', s.flyDaysYtd ? Math.round(100 * (1 - s.flyDaysYtd / s.yearLen)) + '% of days off' : 'None yet this year', GOLD, GREEN);
+            html += card('bar-chart-3', 'Busiest weekday', s.wdPct ? s.wdName : '\u2014', s.wdPct ? Math.round(s.wdPct) + '% of all flights' : 'No records yet');
+            box.innerHTML = html;
+            box.classList.toggle('hidden', !archState.insightsOpen);
+            try { lucide.createIcons(); } catch (e) {}
+        }
+        function ymdShift(ymd, n) {
+            const d = new Date(ymd + 'T12:00:00');
+            d.setDate(d.getDate() + n);
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
 
         // Tap a saved flight: reopen its whole summary — gold total, Flight
@@ -6963,7 +7417,10 @@ function getRegionForAirport(code) {
             archEl('ca-sub-csv').onclick = () => archDoExport('csv');
         }
         function archTrash() {
-            const vis = archFiltered();
+            // The list is no longer scope-narrowed: trash deletes what the
+            // search leaves visible.
+            const q = archState.search.trim().toLowerCase();
+            const vis = q ? loadArchive().filter((e) => String(e.stationDisplay || '').toLowerCase().indexOf(q) !== -1) : loadArchive();
             if (!vis.length) { archToast('Nothing to delete', null); return; }
             appConfirm('Delete ' + vis.length + ' entr' + (vis.length === 1 ? 'y' : 'ies') + '? This can be undone.').then((ok) => {
                 if (!ok) return;
@@ -6976,7 +7433,7 @@ function getRegionForAirport(code) {
         }
 
         function showArchiveOverlay() {
-            archState.scope = 'all'; archState.search = ''; archState.collapsed = {};
+            archState.scope = 'all'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false;
             const s = archEl('ca-arch-search'); if (s) s.value = '';
             openArchOverlay();
         }
@@ -6988,6 +7445,18 @@ function getRegionForAirport(code) {
             archEl('ca-arch-export').addEventListener('click', archExport);
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg').forEach((b) => b.addEventListener('click', () => {
+                archState.scope = b.getAttribute('data-scope') || 'all';
+                archState.chartSel = null;
+                renderArch();
+            }));
+            archEl('ca-arch-ins-toggle').addEventListener('click', () => {
+                archState.insightsOpen = !archState.insightsOpen;
+                archEl('ca-arch-insights').classList.toggle('hidden', !archState.insightsOpen);
+                archEl('ca-arch-ins-toggle').classList.toggle('ca-arch-insopen', archState.insightsOpen);
+                archEl('ca-arch-ins-toggle').setAttribute('aria-expanded', String(archState.insightsOpen));
+                archEl('ca-arch-ins-toggle-label').textContent = archState.insightsOpen ? 'Hide insights' : 'View insights';
+            });
             archEl('ca-arch-clear').addEventListener('click', () => { const s = archEl('ca-arch-search'); s.value = ''; archState.search = ''; renderArch(); s.focus(); try { s.setSelectionRange(s.value.length, s.value.length); } catch (e) {} });
             document.querySelector('[data-ca-arch-sub-close]').addEventListener('click', closeArchSub);
         })();
