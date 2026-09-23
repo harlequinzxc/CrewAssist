@@ -1408,11 +1408,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.23.10';
+        const APP_VERSION = '1.23.11';
         const APP_WHAT_NEW = [
-            'The Let\'s go / Not now pair retires once you choose, and the demo attach card\'s buttons dim and go untappable while the tour runs.',
-            'The roster summary glide is forty hops over four seconds — smoother, not longer.',
-            'The Settings switch line now says where Settings lives and what it switches.'
+            'The roster summary glide now takes a full six seconds over its forty hops — read everything at ease.',
+            'Shorter breaths at the bottom of the summary and after the archive confirm.',
+            'Housekeeping: retired tour code paths removed, a lighter app under the hood.'
         ];
 
         // State
@@ -10512,38 +10512,13 @@ function getRegionForAirport(code) {
             const steps = 40;
             for (let i = 1; i <= steps; i++) {
                 glide(Math.round((max * i) / steps));
-                await T.wait(100);
+                await T.wait(150);
                 if (!T.alive()) return;
             }
         }
 
         // Save beat shared by every calculating step: glow the save icon, tap,
         // acknowledge the dialog, let the one-shot tick play out, close.
-        async function caTourSaveBeat(T, line) {
-            const ab = await T.until(() => {
-                const b = document.getElementById('btn-results-action');
-                return (b && !b.classList.contains('hidden') && !b.disabled) ? b : null;
-            }, 6000);
-            if (!ab) return;
-            T.glow(ab);
-            if (line) await T.say(line);
-            if (!T.alive()) return;
-            T.tap(ab);
-            const dlg = await T.until(() => {
-                const d = document.getElementById('app-dialog-backdrop');
-                return (d && !d.classList.contains('hidden')) ? d : null;
-            }, 6000);
-            if (dlg) {
-                await T.wait(500);
-                T.tap(document.getElementById('app-dialog-ok'));
-            }
-            await T.wait(1400);
-            if (!T.alive()) return;
-            const rb = document.getElementById('results-backdrop');
-            const close = document.getElementById('btn-close-results');
-            if (rb && !rb.classList.contains('hidden') && close) T.tap(close);
-            await T.wait(400);
-        }
 
         // ---- the synthetic demo month ----
         // Same geometry the parser test-suite uses (the real Crew Roster
@@ -10606,16 +10581,6 @@ function getRegionForAirport(code) {
 
         // The Manual step's trip: the same Kathmandu layover the roster demo
         // carries, filled through the same event path hand-typing uses.
-        function caTourKtmTrip() {
-            return {
-                type: 'Layover',
-                sectors: [
-                    { fn: 'SQ 442', dep: 'SIN', arr: 'KTM', depDate: '2026-07-01', arrDate: '2026-07-01', ftHm: '04:56', stdHm: '19:14', staHm: '21:55' },
-                    { fn: 'SQ 441', dep: 'KTM', arr: 'SIN', depDate: '2026-07-02', arrDate: '2026-07-03', ftHm: '05:15', stdHm: '22:59', staHm: '06:29' }
-                ],
-                stations: [{ code: 'KTM', inFn: '442', outFn: '441', inDate: '2026-07-01', inTime: '21:55', outDate: '2026-07-02', outTime: '22:59' }]
-            };
-        }
 
         // The Default step's honest pivot when the schedule won't answer.
         var CA_TOUR_FETCH_PIVOT = "No connection just now — that's the honest answer, never a made-up number. Online, Fetch fills it all in; offline, the manual way — next step — always works.";
@@ -10690,7 +10655,7 @@ function getRegionForAirport(code) {
                     await T.wait(2050);
                     // -- a slow, smooth pass down the whole page --
                     await caTourScrollResults(T);
-                    await T.wait(1000);
+                    await T.wait(500);
                     // -- at the bottom: save, a longer breath at every beat --
                     const ab = await T.until(() => {
                         const b = document.getElementById('btn-results-action');
@@ -10710,7 +10675,7 @@ function getRegionForAirport(code) {
                         await T.wait(2000);
                         T.tap(document.getElementById('app-dialog-ok'));
                     }
-                    await T.wait(1800);
+                    await T.wait(1500);
                     if (!T.alive()) return;
                     await T.say('<b>Saved.</b> July 2026 is filed under your earnings.');
                     await T.wait(500);
