@@ -30,7 +30,8 @@ npm test           # or: node run-all.js
 2. **New features bring their test block.** The feature's "verify" step becomes a permanent suite block, added in the same sitting as the feature.
 3. **Intentional behaviour changes update the matching block.** A failing test after a deliberate spec change is the net doing its job — re-sign the contract in the same commit. The cost stays proportional: minutes, never a rewrite.
 4. **IDs are contracts.** The app's element ids (`btn-dev-save`, `ca-arch-trash`, …) are stable and pinned by the owner's specs; tests may rely on them. classNames only where the spec pins them (colours, pill styling).
-5. **Timing:** the harness boots jsdom and waits 400ms — jsdom fires its own `DOMContentLoaded` exactly once. **Never dispatch it manually**; double-firing double-binds every listener (a real bug this suite caught). Dialog close fades take 200ms — wait ≥400ms after OK/Cancel before asserting `hidden`.
+5. **Date-anchored seeds.** Suites that depend on "today" (current-month expansion, partial-month projections, month badges) seed the real current calendar month and **compute date-derived expectations from the run date** — never hardcode the day. A calendar rollover fails them loudly on purpose: reseed the months and figures, never change app behaviour to match stale seeds. The sandbox clock is UTC while the owner is UTC+8 — jsdom's "today" can trail the owner's by a day; anchor asserts make this explicit.
+6. **Timing:** the harness boots jsdom and waits 400ms — jsdom fires its own `DOMContentLoaded` exactly once. **Never dispatch it manually**; double-firing double-binds every listener (a real bug this suite caught). Dialog close fades take 200ms — wait ≥400ms after OK/Cancel before asserting `hidden`.
 
 ## Harness stubs (`_harness.js`)
 
