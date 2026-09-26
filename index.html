@@ -867,8 +867,8 @@
                         <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
                         <button type="button" id="net-status-dot" aria-label="Connection status" aria-expanded="false" class="p-1 rounded-full transition-colors"><span id="net-status-dot-core" class="block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></button>
                     </div>
-                    <!-- Connection status popover (v1.26.0) -->
-                    <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-bubble border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left" role="dialog" aria-label="Connection status details"></div>
+                    <!-- Connection status popover (v1.26.0; v1.26.1 solid surface + animated) -->
+                    <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all duration-200 ease-out origin-top-left opacity-0 scale-95" role="dialog" aria-label="Connection status details"></div>
                     <!-- Right -->
                     <div class="flex items-center gap-2">
                         <button id="btn-theme" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
@@ -1522,11 +1522,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.26.0';
+        const APP_VERSION = '1.26.1';
         const APP_WHAT_NEW = [
-            'Menus you look up are now saved on your phone. In airplane mode later, ask for the same flight and the saved menu opens with an "Offline — menu saved" note — even after closing the app.',
-            'The little dot beside CrewAssist is now live: green pulse when online, steady amber when offline. Tap it to see what works offline — calculators, earnings, roster import and your saved menus. Live lookups need a connection.',
-            'Offline requests for menus you never opened now say so clearly instead of failing with a network error, and the app asks your phone to never auto-clear its saved data.'
+            'The connection popover beside the logo now fades and scales in and out — nothing in CrewAssist appears or vanishes instantly.',
+            'Its card now uses the solid sheet surface, so the chat behind it no longer shows through in either theme.'
         ];
 
         // State
@@ -1594,14 +1593,25 @@
                 '</div>';
             try { lucide.createIcons(); } catch (e) {}
         }
+        let netPopTimer = null;
         function toggleNetPopover(force) {
             const pop = document.getElementById('net-status-pop');
             const btn = document.getElementById('net-status-dot');
             if (!pop || !btn) return;
             const show = (force !== undefined) ? force : pop.classList.contains('hidden');
-            pop.classList.toggle('hidden', !show);
-            btn.setAttribute('aria-expanded', String(show));
-            if (show) updateNetStatus();
+            if (netPopTimer) { clearTimeout(netPopTimer); netPopTimer = null; }
+            if (show) {
+                if (pop.classList.contains('hidden')) {
+                    pop.classList.remove('hidden');
+                    requestAnimationFrame(() => requestAnimationFrame(() => pop.classList.remove('opacity-0', 'scale-95')));
+                }
+                btn.setAttribute('aria-expanded', 'true');
+                updateNetStatus();
+            } else {
+                pop.classList.add('opacity-0', 'scale-95');
+                btn.setAttribute('aria-expanded', 'false');
+                netPopTimer = setTimeout(() => { pop.classList.add('hidden'); netPopTimer = null; }, 200);
+            }
         }
         function requestPersistentStorage() {
             // Ask the OS never to auto-clear saved data (earnings, saved menus).
