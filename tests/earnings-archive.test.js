@@ -360,6 +360,36 @@ const fs = require('fs');
     R.ok(!d.getElementById('ca-arch-backup-nudge'), 'one month + never backed up → no nudge yet');
   }
 
+  // --- v1.27.1: insights must react to the FIRST tap (regression: a leftover
+  // `hidden` toggle in renderArchInsights kept the panel display:none until
+  // some unrelated re-render ran) ---
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'A', savedAt: '2026-09-05T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', stationDisplay: 'SIN/HND', amount: 200 }
+    ]));
+    w.showArchiveOverlay();
+    d.getElementById('ca-arch-ins-toggle').click();
+    const ins = d.getElementById('ca-arch-insights');
+    R.ok(ins.classList.contains('ca-arch-insopen'), 'first tap expands the insights');
+    R.ok(!ins.classList.contains('hidden'), 'first tap leaves no display:none behind (the v1.27.0 regression)');
+    R.ok(d.getElementById('ca-arch-ins-toggle-label').textContent === 'Hide insights', 'label flips on the first tap');
+    // a re-render while open (search typing) must keep it open
+    const si = d.getElementById('ca-arch-search');
+    si.value = 'HND'; si.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(60);
+    R.ok(ins.classList.contains('ca-arch-insopen') && !ins.classList.contains('hidden'), 're-render while open keeps the insights expanded');
+    // close + reopen resets the toggle completely (stale-label regression)
+    w.closeArchOverlay();
+    await wait(400);
+    w.showArchiveOverlay();
+    const ins2 = d.getElementById('ca-arch-insights');
+    R.ok(!ins2.classList.contains('ca-arch-insopen'), 'reopen collapses the insights');
+    R.ok(d.getElementById('ca-arch-ins-toggle-label').textContent === 'View insights', 'reopen resets the toggle label');
+    R.ok(d.getElementById('ca-arch-ins-toggle').getAttribute('aria-expanded') === 'false', 'reopen resets aria-expanded');
+    R.ok(!d.getElementById('ca-arch-ins-toggle').classList.contains('ca-arch-insopen'), 'reopen resets the chevron');
+  }
+
   // everything-moves ruling: the insights panel and search clear animate
   {
     const src = fs.readFileSync(APP, 'utf8');

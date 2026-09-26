@@ -142,68 +142,13 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.27.0';"), 'APP_VERSION stamped 1.27.0');
+    R.ok(src.includes("const APP_VERSION = '1.27.1';"), 'APP_VERSION stamped 1.27.1');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
-    R.ok(src.includes('share a roster PDF straight from your file manager'), 'what\'s-new documents the Android share-target import');
+    R.ok(src.includes('open on the very first tap'), 'what\'s-new documents the insights first-tap fix');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v137"), 'service-worker cache name bumped to v137');
+    R.ok(sw.includes("crewassist-v138"), 'service-worker cache name bumped to v138');
     R.ok(sw.includes('https://cdn.tailwindcss.com') && sw.includes('pdf.min.js'), 'Tailwind + pdf.js precached for first offline launch');
   }
 
-    // --- v1.27.0 Android share-target: SW stash → boot pickup → roster import ---
-  {
-    const src = fs.readFileSync(APP, 'utf8');
-    const mf = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'manifest.json'), 'utf8'));
-    R.ok(mf.share_target && mf.share_target.method === 'POST' && mf.share_target.params && mf.share_target.params.files && mf.share_target.params.files[0].name === 'roster', 'manifest declares the share_target POST with a roster file param');
-    R.ok(mf.share_target.params.files[0].accept.indexOf('application/pdf') >= 0, 'share sheet filters to PDFs only');
-    const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(sw.indexOf('multipart/form-data') >= 0 && sw.indexOf('__ca-shared-roster') >= 0, 'SW intercepts the share POST and stashes the file');
-    R.ok(sw.indexOf('key !== SHARE_CACHE') >= 0, 'SW version turnover keeps the share stash alive');
-    R.ok(src.indexOf('pickUpSharedRoster') >= 0, 'page picks up the shared roster on boot');
-    R.ok(src.indexOf("!('caches' in window)") >= 0, 'pickup guarded for browsers without the caches API');
-
-    // Runtime: fake the caches API, stash a PDF the way the SW does, and let
-    // the pickup hand it to the roster import.
-    const { w, d } = await boot(APP, { seed: (w) => w.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test', gender: 'M', rank: 'FS' })) });
-    const stash = new Map();
-    const fakeCache = {
-      match: async (u) => stash.get(String(u)) || null,
-      put: async (u, r) => { stash.set(String(u), r); return true; },
-      delete: async (u) => stash.delete(String(u))
-    };
-    Object.defineProperty(w, 'caches', { value: { open: async () => fakeCache }, configurable: true });
-    let captured = null;
-    w.handleRosterFiles = (files) => { captured = files; };
-    stash.set('/__ca-shared-roster', new Response('%PDF-1.4 fake roster', { headers: { 'Content-Type': 'application/pdf', 'X-CA-Filename': 'Sep 2026.pdf' } }));
-    await w.eval('pickUpSharedRoster()');
-    await wait(80);
-    R.ok(captured && captured.length === 1, 'shared PDF is handed to the roster import');
-    R.ok(captured && captured[0].name === 'Sep 2026.pdf', 'filename preserved from the stash');
-    R.ok(captured && String(captured[0].type).indexOf('pdf') >= 0, 'PDF type preserved from the stash');
-    R.ok(!stash.has('/__ca-shared-roster'), 'stash is consumed exactly once');
-    // A non-PDF share never reaches the import.
-    stash.set('/__ca-shared-roster', new Response('not a pdf', { headers: { 'Content-Type': 'text/plain', 'X-CA-Filename': 'notes.txt' } }));
-    captured = null;
-    await w.eval('pickUpSharedRoster()');
-    await wait(80);
-    R.ok(!captured, 'non-PDF share is dropped');
-    // A stash with no profile behind it stays put (onboarding guard): fresh
-    // boot with no seeded profile — the pickup must leave the stash for later.
-    const bare = await boot(APP);
-    const stash2 = new Map();
-    const fakeCache2 = {
-      match: async (u) => stash2.get(String(u)) || null,
-      put: async (u, r) => { stash2.set(String(u), r); return true; },
-      delete: async (u) => stash2.delete(String(u))
-    };
-    Object.defineProperty(bare.w, 'caches', { value: { open: async () => fakeCache2 }, configurable: true });
-    let captured2 = null;
-    bare.w.handleRosterFiles = (files) => { captured2 = files; };
-    stash2.set('/__ca-shared-roster', new Response('%PDF-1.4', { headers: { 'Content-Type': 'application/pdf', 'X-CA-Filename': 'x.pdf' } }));
-    await bare.w.eval('pickUpSharedRoster()');
-    await wait(80);
-    R.ok(!captured2 && stash2.has('/__ca-shared-roster'), 'no profile → stash left untouched for later');
-  }
-
-  process.exit(R.done() ? 1 : 0);
+    process.exit(R.done() ? 1 : 0);
 })();

@@ -1524,11 +1524,10 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.27.0';
+        const APP_VERSION = '1.27.1';
         const APP_WHAT_NEW = [
-            'On Android you can now share a roster PDF straight from your file manager to CrewAssist — the roster import starts by itself.',
             'The earnings page now reminds you to export a backup when months of new entries pile up un-exported.',
-            'Insights on the earnings page slide open and closed instead of popping.'
+            'Insights on the earnings page now open on the very first tap — and slide like everything else.'
         ];
 
         // State
@@ -1634,8 +1633,6 @@
             initUI();
             bindEvents();
             loadShippedRates();
-            bindLaunchQueue();
-            setTimeout(() => { pickUpSharedRoster(); }, 600);
 
             // Connection status dot + offline behaviour (v1.26.0)
             const netDotBtn = document.getElementById('net-status-dot');
@@ -2601,47 +2598,6 @@
             if (!inp) return;
             inp.value = '';
             inp.click();
-        }
-
-        // v1.27.0 Android share-target: the service worker stashed a PDF the
-        // owner shared from their file manager into the stable 'crewassist-share'
-        // cache. On boot we consume it and run the normal roster import.
-        async function pickUpSharedRoster() {
-            if (!('caches' in window)) return;
-            if (!(appProfile && appProfile.name && appProfile.gender && appProfile.rank)) return;
-            let cache = null, res = null;
-            try {
-                cache = await caches.open('crewassist-share');
-                res = await cache.match('/__ca-shared-roster');
-            } catch (e) { return; }
-            if (!res) return;
-            // Consume first so a crash mid-import can't loop the pickup.
-            try { await cache.delete('/__ca-shared-roster'); } catch (e) {}
-            let blob = null;
-            try { blob = await res.blob(); } catch (e) { return; }
-            const type = (res.headers && res.headers.get('Content-Type')) || 'application/pdf';
-            let name = (res.headers && res.headers.get('X-CA-Filename')) || 'roster.pdf';
-            if (String(type).indexOf('pdf') < 0 && !/\.pdf$/i.test(name)) return;
-            if (!/\.pdf$/i.test(name)) name += '.pdf';
-            const file = new File([blob], name, { type: String(type).indexOf('pdf') >= 0 ? type : 'application/pdf' });
-            handleRosterFiles([file]);
-        }
-
-        // File handlers ("Open with CrewAssist" in Android file managers) use
-        // the same pipeline through launchQueue.
-        function bindLaunchQueue() {
-            if (!('launchQueue' in window) || !window.launchQueue || !window.launchQueue.setConsumer) return;
-            window.launchQueue.setConsumer(async (lp) => {
-                try {
-                    if (!lp || !lp.files || !lp.files.length) return;
-                    if (!(appProfile && appProfile.name && appProfile.gender && appProfile.rank)) return;
-                    const files = [];
-                    for (const fh of lp.files) {
-                        try { files.push(await fh.getFile()); } catch (e) {}
-                    }
-                    if (files.length) handleRosterFiles(files);
-                } catch (e) {}
-            });
         }
 
         async function handleRosterFiles(fileList) {
@@ -7464,7 +7420,11 @@ function getRegionForAirport(code) {
             html += card('calendar-days', 'Flying days this year', s.flyDaysYtd ? s.flyDaysYtd + ' / ' + s.yearLen : '\u2014', s.flyDaysYtd ? Math.round(100 * (1 - s.flyDaysYtd / s.yearLen)) + '% of days off' : 'None yet this year', GOLD, GREEN);
             html += card('bar-chart-3', 'Busiest weekday', s.wdPct ? s.wdName : '\u2014', s.wdPct ? Math.round(s.wdPct) + '% of all flights' : 'No records yet');
             box.innerHTML = html;
-            box.classList.toggle('hidden', !archState.insightsOpen);
+            // Keep the class in sync on every re-render (search typing, scope
+            // changes) — visibility is owned by the animation classes, NEVER
+            // by Tailwind's `hidden` (v1.27.1: that leftover display:none
+            // made the first tap do nothing).
+            box.classList.toggle('ca-arch-insopen', archState.insightsOpen);
             try { lucide.createIcons(); } catch (e) {}
         }
         function ymdShift(ymd, n) {
@@ -7617,6 +7577,13 @@ function getRegionForAirport(code) {
         function showArchiveOverlay() {
             archState.scope = 'all'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false;
             const s = archEl('ca-arch-search'); if (s) s.value = '';
+            // Reset the insights toggle to its closed state too — closing with
+            // insights open used to leave a stale "Hide insights" label,
+            // rotated chevron and aria-expanded on reopen (v1.27.1).
+            archEl('ca-arch-insights').classList.remove('ca-arch-insopen');
+            archEl('ca-arch-ins-toggle').classList.remove('ca-arch-insopen');
+            archEl('ca-arch-ins-toggle').setAttribute('aria-expanded', 'false');
+            archEl('ca-arch-ins-toggle-label').textContent = 'View insights';
             openArchOverlay();
         }
 

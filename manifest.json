@@ -30,31 +30,5 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ],
-  "share_target": {
-    "action": "./index.html",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "files": [
-        {
-          "name": "roster",
-          "accept": [
-            "application/pdf"
-          ]
-        }
-      ]
-    }
-  },
-  "file_handlers": [
-    {
-      "action": "./index.html",
-      "accept": {
-        "application/pdf": [
-          ".pdf"
-        ]
-      },
-      "launch_type": "single-task"
-    }
   ]
 }
