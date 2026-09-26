@@ -1520,11 +1520,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.25.1';
+        const APP_VERSION = '1.25.2';
         const APP_WHAT_NEW = [
-            'When a main course’s name already contains a “with” (shown as Ẃ), the appended side now joins with AND instead of a second with — BAKED FISH Ẃ HERB SAUCE AND ROASTED POTATOES, never two Ẃ marks on one line.',
-            'The one-line additions still sit behind a Ẃ mark for every other dish: EGG OMELETTE STUFFED Ẃ MUSHROOMS AND PORK SAUSAGES AND POTATOES, SUKIYAKI — BEEF Ẃ STEAMED RICE.',
-            'Under the hood: retired unused code found by a repo-wide dead-code sweep. Additions remain verbatim menu text — nothing invented, no match means no addition.'
+            'Dish names that already contain AND now keep the Ẃ connector on the appended side, so AND never piles up: BRAISED CHICKEN Ẃ BABY ABALONE AND MOREL MUSHROOM Ẃ STEAMED RICE.',
+            'Names with a with (shown Ẃ) but no and still join their side with AND — BAKED FISH Ẃ HERB SAUCE AND ROASTED POTATOES. Every other dish appends behind a Ẃ mark as before.',
+            'The connector never repeats a word the name already shows. Additions stay verbatim menu text, frozen against the 1,139-dish corpus.'
         ];
 
         // State
@@ -9848,12 +9848,13 @@ function getRegionForAirport(code) {
         // Extracts the side/starch and hidden or primary proteins from a main
         // course's official description, then composes them as a one-line
         // grey addition behind the dish name: "Ẃ STEAMED RICE", "— BEEF Ẃ
-        // STEAMED RICE", "Ẃ PORK SAUSAGES AND POTATOES". When the dish name
-        // itself contains "with" (already rendered as Ẃ), the addition joins
-        // with AND instead — never two Ẃ connectors on one line. Verbatim
-        // description text only — nothing is generated; no match means no
-        // addition. Vocabulary and rules are frozen against the 1,139-pair
-        // corpus fixture in tests/menu-extraction.fixture.json.
+        // STEAMED RICE", "Ẃ PORK SAUSAGES AND POTATOES". Connector rules:
+        // a name containing "with" (rendered Ẃ) but no "and" joins its
+        // addition with AND; a name containing "and" keeps Ẃ — the connector
+        // never repeats a word the name already shows. Verbatim description
+        // text only — nothing is generated; no match means no addition.
+        // Vocabulary and rules are frozen against the 1,139-pair corpus
+        // fixture in tests/menu-extraction.fixture.json.
         const EX_STARCH_ALT = ['sweet potatoes', 'sweet potato', 'hash brown', 'white rice', 'white bread', 'potatoes', 'potato', 'rice', 'mash', 'mashed', 'noodles', 'noodle', 'pasta', 'penne', 'spaghetti', 'linguine', 'fettuccine', 'macaroni', 'vermicelli', 'gnocchi', 'udon', 'dumplings', 'dumpling', 'buns', 'bun', 'bread', 'brioche', 'sourdough', 'pita', 'paratha', 'tortilla', 'couscous', 'quinoa', 'polenta', 'risotto', 'barley', 'bulgur', 'oats', 'orzo', 'porridge', 'congee', 'yam', 'cornmeal', 'cornbread', 'wedges', 'wedge', 'gratin', 'dauphinoise', 'biryani', 'biriyani', 'teow', 'mee', 'laksa', 'roti', 'naan', 'idli', 'ramen', 'beehoon', 'bap', 'ciabatta'];
         const EX_STARCH_MOD = ['aromatic', 'baked', 'black', 'bok', 'brown', 'butter', 'buttered', 'choy', 'coconut', 'creamy', 'crispy', 'egg white', 'egg', 'fingerling', 'flour', 'fragrant', 'fried', 'garlic', 'grilled', 'jasmine', 'mashed', 'red', 'roasted', 'saffron', 'seasoned', 'soft', 'spiced', 'steamed', 'stir-fried', 'truffle', 'turmeric', 'warm', 'wheat', 'wide', 'wild', 'wok-fried'];
         const EX_PALT = ['anchovies', 'anchovy', 'abalone', 'bacon', 'beef', 'bream', 'caviar', 'char siew', 'chicken', 'chorizo', 'clams', 'cod', 'crab', 'duck', 'fish', 'ham', 'halibut', 'lamb', 'lobster', 'meat', 'meatball', 'meatballs', 'mutton', 'pork', 'prawn', 'prawns', 'roe', 'roes', 'salami', 'salmon', 'scallop', 'scallops', 'sausage', 'sausages', 'seabass', 'seafood', 'shrimp', 'shrimps', 'squid', 'steak', 'trout', 'tuna', 'turkey', 'veal', 'wagyu'];
@@ -9948,7 +9949,11 @@ function getRegionForAirport(code) {
             if (x.starch) flow.push(x.starch);
             let s = '';
             if (dash.length) s += '\u2014 ' + dash.map((x2) => x2.toUpperCase()).join(' AND ');
-            if (flow.length) s += (s ? ' ' : '') + (/\bwith\b/i.test(String(name || '')) ? 'AND ' : '\u1e82 ') + flow.map((x2) => exNormWs(x2).toUpperCase()).join(' AND ');
+            if (flow.length) {
+                const nm = String(name || '');
+                const flowConn = (/\bwith\b/i.test(nm) && !/\band\b/i.test(nm)) ? 'AND ' : '\u1e82 ';
+                s += (s ? ' ' : '') + flowConn + flow.map((x2) => exNormWs(x2).toUpperCase()).join(' AND ');
+            }
             return s || null;
         }
         function printIsMainCourse(label) {

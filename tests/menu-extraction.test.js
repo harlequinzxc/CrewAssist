@@ -5,6 +5,10 @@
 // v1.25.1: when the dish name itself contains "with" (rendered Ẃ), the
 // addition's connector is AND instead — never two Ẃ connectors on one line
 // (EGG OMELETTE STUFFED Ẃ MUSHROOMS AND PORK SAUSAGES AND POTATOES).
+// v1.25.2: when the name contains "and" (with or without a "with"), the
+// connector is Ẃ — never pile up ANDs (BRAISED CHICKEN Ẃ BABY ABALONE AND
+// MOREL MUSHROOM Ẃ STEAMED RICE). Full rule: AND only when the name has
+// "with" and no "and"; otherwise Ẃ.
 // The fixture (tests/menu-extraction.fixture.json) freezes the extractor's
 // output for all 1,139 unique (name, description) pairs harvested from the
 // official SQ main-course corpus (_inbox/menu/sq_main_courses.json). It was
@@ -50,6 +54,9 @@ const EMDASH = '\u2014'; // —
       `${WACUTE} STEAMED JASMINE RICE`, 'Tiger Prawns Ẃ line');
     R.eq(w.compactComposeAddition(find('Sukiyaki').n, find('Sukiyaki').d),
       `${EMDASH} BEEF ${WACUTE} STEAMED RICE`, 'Sukiyaki foreign-name protein line');
+    // v1.25.2: name with BOTH "with" and "and" keeps the Ẃ connector
+    R.eq(w.compactComposeAddition(find('Braised Chicken with Baby Abalone and Morel Mushroom').n, find('Braised Chicken with Baby Abalone and Morel Mushroom').d),
+      `${WACUTE} STEAMED RICE`, 'with+and name keeps Ẃ (AND never piles up)');
   }
 
   // --- rendered item HTML: name first, WITH → Ẃ, grey addition, inversion ---
@@ -96,10 +103,11 @@ const EMDASH = '\u2014'; // —
   // --- version stamps: app + service-worker cache bump together ---
   {
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.25.1';"), 'APP_VERSION stamped 1.25.1');
+    R.ok(src.includes("const APP_VERSION = '1.25.2';"), 'APP_VERSION stamped 1.25.2');
     R.ok(src.includes(`behind a ${WACUTE} mark`), 'what\'s-new copy mentions the Ẃ mark');
-    R.ok(src.includes('joins with AND instead of a second'), 'what\'s-new copy documents the AND-connector rule');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v133"), 'service-worker cache name bumped to v133');
+    R.ok(src.includes('AND never piles up'), 'what\'s-new copy documents the and-name connector rule');
+    R.ok(src.includes('join their side with AND'), 'what\'s-new copy documents the with-name connector rule');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v134"), 'service-worker cache name bumped to v134');
   }
 
   process.exit(R.done() ? 1 : 0);
