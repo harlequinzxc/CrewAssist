@@ -4,6 +4,7 @@
 // twelve insight cards, month badges + YoY arrows, search-scoped delete.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
+const fs = require('fs');
 (async () => {
   // route display + month expansion
   {
@@ -232,10 +233,10 @@ const { R, boot, wait, APP } = H;
 
     // -- insights: toggle flips, twelve cards, exact figures
     const toggle = d.getElementById('ca-arch-ins-toggle');
-    R.ok(d.getElementById('ca-arch-insights').classList.contains('hidden'), 'insights hidden by default');
+    R.ok(!d.getElementById('ca-arch-insights').classList.contains('ca-arch-insopen'), 'insights collapsed by default');
     toggle.click();
     await wait(50);
-    R.ok(!d.getElementById('ca-arch-insights').classList.contains('hidden'), 'toggle reveals the insights');
+    R.ok(d.getElementById('ca-arch-insights').classList.contains('ca-arch-insopen'), 'toggle expands the insights');
     R.eq(d.getElementById('ca-arch-ins-toggle-label').textContent, 'Hide insights', 'toggle label flips to Hide');
     R.eq(toggle.getAttribute('aria-expanded'), 'true', 'aria-expanded follows the toggle');
     R.ok(toggle.classList.contains('ca-arch-insopen'), 'open state styled on the toggle');
@@ -260,7 +261,7 @@ const { R, boot, wait, APP } = H;
     R.ok(!/annual goal|long-haul|longhaul/i.test(insTxt), 'no annual-goal or long-haul leftovers from the old design');
     toggle.click();
     await wait(50);
-    R.ok(d.getElementById('ca-arch-insights').classList.contains('hidden') && d.getElementById('ca-arch-ins-toggle-label').textContent === 'View insights', 'toggle hides the insights again');
+    R.ok(!d.getElementById('ca-arch-insights').classList.contains('ca-arch-insopen') && d.getElementById('ca-arch-ins-toggle-label').textContent === 'View insights', 'toggle collapses the insights again');
 
     // -- segmented switching: month / year / all-time figures
     segOf('month').click();
@@ -299,7 +300,7 @@ const { R, boot, wait, APP } = H;
     R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'search never narrows the summary');
     R.ok(headOf('2025-09').textContent.indexOf('$360.72') !== -1 && headOf('2025-09').textContent.indexOf('of $700.00') !== -1, 'filtered month shows its share of the full month');
     R.ok(d.getElementById('ca-arch-list').textContent.indexOf('End of records') !== -1, 'footer stays while entries exist');
-    R.ok(!d.getElementById('ca-arch-clear').classList.contains('hidden'), 'clear button appears with text in the search');
+    R.ok(!d.getElementById('ca-arch-clear').classList.contains('opacity-0'), 'clear button fades in with text in the search');
     d.getElementById('ca-arch-trash').click();
     await wait(50);
     R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Delete 6 entries') !== -1, 'trash counts only the search-visible entries');
@@ -309,6 +310,61 @@ const { R, boot, wait, APP } = H;
     R.eq(after.length, 13, 'delete removes exactly the six KTM entries');
     R.ok(after.every((e) => e.stationDisplay !== 'KTM'), 'no KTM entries remain');
     R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Deleted 6 entries') !== -1, 'toast confirms the scoped delete');
+  }
+
+    // --- v1.27.0 backup nudge ---
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'A', savedAt: '2026-08-02T10:00:00Z', monthKey: '2026-08', sectorDate: '2026-08-02', stationDisplay: 'SIN/ICN', amount: 100 },
+      { id: 'B', savedAt: '2026-09-05T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', stationDisplay: 'SIN/HND', amount: 200 }
+    ]));
+    w.showArchiveOverlay();
+    let card = d.getElementById('ca-arch-backup-nudge');
+    R.ok(card, 'never backed up + 2 months of entries → nudge card');
+    R.ok(card && card.textContent.indexOf('only on this phone') >= 0, 'never-backed-up copy');
+    R.ok(!!d.getElementById('ca-arch-nudge-export') && !!d.getElementById('ca-arch-nudge-snooze'), 'nudge carries Export + snooze buttons');
+    // snooze: the card animates away and the snooze is stamped
+    d.getElementById('ca-arch-nudge-snooze').click();
+    await wait(60);
+    card = d.getElementById('ca-arch-backup-nudge');
+    R.ok(card && card.style.opacity === '0', 'snooze fades the card out (no instant pop)');
+    await wait(420);
+    R.ok(!d.getElementById('ca-arch-backup-nudge'), 'card gone after the collapse animation');
+    R.ok(Number(w.localStorage.getItem('crewAssist.backupNudgeSnoozedAt')) > 0, 'snooze stamped');
+    // fresh backup (2 days old) with newer entries → no card
+    w.localStorage.setItem('crewAssist.lastBackupAt', String(Date.now() - 2 * 86400000));
+    w.localStorage.removeItem('crewAssist.backupNudgeSnoozedAt');
+    w.eval('renderArch()');
+    R.ok(!d.getElementById('ca-arch-backup-nudge'), 'backup 2 days old → no nudge despite new entries');
+    // stale backup (30 days) + entry saved after it → card with the month count
+    w.localStorage.setItem('crewAssist.lastBackupAt', String(Date.now() - 30 * 86400000));
+    w.eval('renderArch()');
+    card = d.getElementById('ca-arch-backup-nudge');
+    R.ok(card, 'backup 30 days old + new month → nudge card');
+    R.ok(card && card.textContent.indexOf('1 month of new entries since your last backup') >= 0, 'stale-backup copy counts the new months');
+    // exporting a JSON backup stamps it and clears the card
+    w.URL.createObjectURL = () => 'blob:test'; w.URL.revokeObjectURL = () => {};
+    w.eval("archDoExport('json')");
+    R.ok(Number(w.localStorage.getItem('crewAssist.lastBackupAt')) > Date.now() - 60000, 'JSON export stamps lastBackupAt');
+    w.eval('renderArch()');
+    R.ok(!d.getElementById('ca-arch-backup-nudge'), 'fresh export → no nudge');
+  }
+  {
+    // single month + never backed up → stays quiet
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'A', savedAt: '2026-09-05T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', stationDisplay: 'SIN/HND', amount: 200 }
+    ]));
+    w.showArchiveOverlay();
+    R.ok(!d.getElementById('ca-arch-backup-nudge'), 'one month + never backed up → no nudge yet');
+  }
+
+  // everything-moves ruling: the insights panel and search clear animate
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    R.ok(src.includes('.ca-arch-insights { overflow: hidden; max-height: 0; opacity: 0; margin-top: 0; transition: max-height .3s ease, opacity .3s ease, margin-top .3s ease; }'), 'insights panel has the expand/collapse transition');
+    R.ok(src.includes('transition-opacity duration-200'), 'search clear button fades');
   }
 
   process.exit(R.done() ? 1 : 0);

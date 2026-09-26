@@ -290,6 +290,8 @@
         .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
+        .ca-arch-insights { overflow: hidden; max-height: 0; opacity: 0; margin-top: 0; transition: max-height .3s ease, opacity .3s ease, margin-top .3s ease; }
+        .ca-arch-insights.ca-arch-insopen { max-height: 1400px; opacity: 1; margin-top: .75rem; }
         /* Earnings page (v1.24.0): gold summary card, 12-month trend, insights.
            Dark surfaces follow the app theme — #141823 at night, the app's
            light glass by day — so the page reads in both. */
@@ -1101,7 +1103,7 @@
                     <div class="relative">
                         <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                         <input id="ca-arch-search" type="text" placeholder="Search flights…" aria-label="Search flights" class="ca-arch-search w-full h-11 rounded-full bg-black/5 dark:bg-[#141823] border border-black/10 dark:border-white/10 pl-10 pr-10 text-sm outline-none" />
-                        <button type="button" id="ca-arch-clear" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1" aria-label="Clear search"><i data-lucide="x" class="w-4 h-4"></i></button>
+                        <button type="button" id="ca-arch-clear" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 p-1 opacity-0 pointer-events-none transition-opacity duration-200" aria-label="Clear search" aria-hidden="true"><i data-lucide="x" class="w-4 h-4"></i></button>
                     </div>
                 </div>
                 <!-- 3b. insights -->
@@ -1110,7 +1112,7 @@
                     <span id="ca-arch-ins-toggle-label">View insights</span>
                     <i data-lucide="chevron-down" class="ca-arch-chev2 w-4 h-4"></i>
                 </button>
-                <div id="ca-arch-insights" class="hidden grid grid-cols-2 gap-2 mt-3"></div>
+                <div id="ca-arch-insights" class="ca-arch-insights grid grid-cols-2 gap-2"></div>
                 <!-- 4. month list -->
                 <div id="ca-arch-list" class="pt-2"></div>
             </div>
@@ -1522,10 +1524,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.26.1';
+        const APP_VERSION = '1.27.0';
         const APP_WHAT_NEW = [
-            'The connection popover beside the logo now fades and scales in and out — nothing in CrewAssist appears or vanishes instantly.',
-            'Its card now uses the solid sheet surface, so the chat behind it no longer shows through in either theme.'
+            'On Android you can now share a roster PDF straight from your file manager to CrewAssist — the roster import starts by itself.',
+            'The earnings page now reminds you to export a backup when months of new entries pile up un-exported.',
+            'Insights on the earnings page slide open and closed instead of popping.'
         ];
 
         // State
@@ -1631,6 +1634,8 @@
             initUI();
             bindEvents();
             loadShippedRates();
+            bindLaunchQueue();
+            setTimeout(() => { pickUpSharedRoster(); }, 600);
 
             // Connection status dot + offline behaviour (v1.26.0)
             const netDotBtn = document.getElementById('net-status-dot');
@@ -2596,6 +2601,47 @@
             if (!inp) return;
             inp.value = '';
             inp.click();
+        }
+
+        // v1.27.0 Android share-target: the service worker stashed a PDF the
+        // owner shared from their file manager into the stable 'crewassist-share'
+        // cache. On boot we consume it and run the normal roster import.
+        async function pickUpSharedRoster() {
+            if (!('caches' in window)) return;
+            if (!(appProfile && appProfile.name && appProfile.gender && appProfile.rank)) return;
+            let cache = null, res = null;
+            try {
+                cache = await caches.open('crewassist-share');
+                res = await cache.match('/__ca-shared-roster');
+            } catch (e) { return; }
+            if (!res) return;
+            // Consume first so a crash mid-import can't loop the pickup.
+            try { await cache.delete('/__ca-shared-roster'); } catch (e) {}
+            let blob = null;
+            try { blob = await res.blob(); } catch (e) { return; }
+            const type = (res.headers && res.headers.get('Content-Type')) || 'application/pdf';
+            let name = (res.headers && res.headers.get('X-CA-Filename')) || 'roster.pdf';
+            if (String(type).indexOf('pdf') < 0 && !/\.pdf$/i.test(name)) return;
+            if (!/\.pdf$/i.test(name)) name += '.pdf';
+            const file = new File([blob], name, { type: String(type).indexOf('pdf') >= 0 ? type : 'application/pdf' });
+            handleRosterFiles([file]);
+        }
+
+        // File handlers ("Open with CrewAssist" in Android file managers) use
+        // the same pipeline through launchQueue.
+        function bindLaunchQueue() {
+            if (!('launchQueue' in window) || !window.launchQueue || !window.launchQueue.setConsumer) return;
+            window.launchQueue.setConsumer(async (lp) => {
+                try {
+                    if (!lp || !lp.files || !lp.files.length) return;
+                    if (!(appProfile && appProfile.name && appProfile.gender && appProfile.rank)) return;
+                    const files = [];
+                    for (const fh of lp.files) {
+                        try { files.push(await fh.getFile()); } catch (e) {}
+                    }
+                    if (files.length) handleRosterFiles(files);
+                } catch (e) {}
+            });
         }
 
         async function handleRosterFiles(fileList) {
@@ -7135,14 +7181,18 @@ function getRegionForAirport(code) {
             // read the whole archive for their scope.
             const vis = q ? all.filter((e) => String(e.stationDisplay || '').toLowerCase().indexOf(q) !== -1) : all.slice();
             const clearBtn = archEl('ca-arch-clear');
-            if (clearBtn) clearBtn.classList.toggle('hidden', !archState.search);
+            if (clearBtn) {
+                clearBtn.classList.toggle('opacity-0', !archState.search);
+                clearBtn.classList.toggle('pointer-events-none', !archState.search);
+                clearBtn.setAttribute('aria-hidden', String(!archState.search));
+            }
             archEl('ca-arch-trend').classList.toggle('hidden', !all.length);
             archEl('ca-arch-ins-toggle').classList.toggle('hidden', !all.length);
             if (all.length) renderArchSummary(all);
             if (all.length) renderArchChart(all);
             if (all.length) renderArchInsights(all);
             if (!all.length) {
-                archEl('ca-arch-insights').classList.add('hidden');
+                archEl('ca-arch-insights').classList.remove('ca-arch-insopen');
                 list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Run a COP calculation and hit save or tap the import arrow to bring in a JSON backup.</span></div>';
                 try { lucide.createIcons(); } catch (e) {}
                 return;
@@ -7162,7 +7212,20 @@ function getRegionForAirport(code) {
             const currentMk = archCurrentMk();
             const ins = archInsights(all);
             const newestMk = archExpandMk();
+            const nudge = archBackupNudgeInfo(all);
             let html = '';
+            if (nudge) {
+                html += '<div id="ca-arch-backup-nudge" class="mb-3 p-3 rounded-xl border border-amber-500/25 bg-amber-500/10 flex items-start gap-2.5" role="status">'
+                    + '<i data-lucide="hard-drive-download" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>'
+                    + '<div class="flex-1 min-w-0 text-[11px] font-semibold text-amber-700 dark:text-amber-400 leading-relaxed">'
+                    + (nudge.never
+                        ? 'Your earnings live only on this phone. Export a JSON backup — it takes a few seconds.'
+                        : (nudge.newMonths + ' month' + (nudge.newMonths === 1 ? '' : 's') + ' of new entries since your last backup — an export takes a few seconds.'))
+                    + '</div>'
+                    + '<button type="button" id="ca-arch-nudge-export" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-[10px] font-bold uppercase tracking-wider">Export</button>'
+                    + '<button type="button" id="ca-arch-nudge-snooze" aria-label="Snooze backup reminder" class="shrink-0 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
+                    + '</div>';
+            }
             mks.forEach((mk) => {
                 const rows = groups[mk].slice().sort((a, b) => (String(b.sectorDate || '').localeCompare(String(a.sectorDate || ''))) || ((idx[b.id] || 0) - (idx[a.id] || 0)));
                 const sub = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
@@ -7225,6 +7288,21 @@ function getRegionForAirport(code) {
                 hd.setAttribute('aria-expanded', String(!archState.collapsed[k]));
             }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archDeleteOne(b.getAttribute('data-id')); }));
+            const nudgeExport = list.querySelector('#ca-arch-nudge-export');
+            if (nudgeExport) nudgeExport.addEventListener('click', archExport);
+            const nudgeSnooze = list.querySelector('#ca-arch-nudge-snooze');
+            if (nudgeSnooze) nudgeSnooze.addEventListener('click', () => {
+                try { localStorage.setItem('crewAssist.backupNudgeSnoozedAt', String(Date.now())); } catch (e) {}
+                const card = list.querySelector('#ca-arch-backup-nudge');
+                if (card) {
+                    // everything-moves: the card collapses away before re-render
+                    card.style.transition = 'opacity .25s ease, max-height .25s ease, margin .25s ease';
+                    card.style.maxHeight = card.offsetHeight + 'px';
+                    card.style.overflow = 'hidden';
+                    requestAnimationFrame(() => { card.style.opacity = '0'; card.style.maxHeight = '0'; card.style.margin = '0'; });
+                    setTimeout(() => renderArch(), 280);
+                } else renderArch();
+            });
             list.querySelectorAll('.ca-arch-row').forEach((row) => row.addEventListener('click', (ev) => {
                 if (ev.target.closest('.ca-arch-del')) return;
                 openArchEntry(row.getAttribute('data-id'));
@@ -7483,6 +7561,7 @@ function getRegionForAirport(code) {
         function archDoExport(kind) {
             const data = archFiltered(); const suf = archScopeSuffix();
             if (kind === 'json') {
+                try { localStorage.setItem('crewAssist.lastBackupAt', String(Date.now())); localStorage.removeItem('crewAssist.backupNudgeSnoozedAt'); } catch (e) {}
                 archShareOrDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'crewassist-earnings-' + suf + '.json');
             } else {
                 let csv = 'route,date,type,amount\n';
@@ -7491,6 +7570,27 @@ function getRegionForAirport(code) {
             }
             closeArchSub();
         }
+        // v1.27.0 backup nudge: earnings live only in localStorage — remind
+        // the owner to export a JSON backup when a meaningful amount of new
+        // data has accumulated and the last export is old (or never happened).
+        function archBackupNudgeInfo(all) {
+            try {
+                const last = Number(localStorage.getItem('crewAssist.lastBackupAt') || 0);
+                const snoozed = Number(localStorage.getItem('crewAssist.backupNudgeSnoozedAt') || 0);
+                if (snoozed && Date.now() - snoozed < 14 * 24 * 3600 * 1000) return null;
+                if (!all || !all.length) return null;
+                const seen = {};
+                all.forEach((e) => { if (!last || new Date(e.savedAt || 0).getTime() > last) seen[e.monthKey] = 1; });
+                const newMonths = Object.keys(seen).length;
+                if (!last) {
+                    const totalMonths = new Set(all.map((e) => e.monthKey)).size;
+                    return totalMonths >= 2 ? { never: true, newMonths: totalMonths } : null;
+                }
+                if (Date.now() - last < 21 * 24 * 3600 * 1000) return null;
+                return newMonths >= 1 ? { never: false, newMonths } : null;
+            } catch (e) { return null; }
+        }
+
         function archExport() {
             openArchSub('<h4 class="font-bold text-lg mb-1">Export earnings</h4><p class="text-xs text-gray-500 mb-1">Keep this file private - it contains your pay data.</p>'
                 + '<button type="button" id="ca-sub-json" class="w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold">JSON - Full backup</button>'
@@ -7534,7 +7634,7 @@ function getRegionForAirport(code) {
             }));
             archEl('ca-arch-ins-toggle').addEventListener('click', () => {
                 archState.insightsOpen = !archState.insightsOpen;
-                archEl('ca-arch-insights').classList.toggle('hidden', !archState.insightsOpen);
+                archEl('ca-arch-insights').classList.toggle('ca-arch-insopen', archState.insightsOpen);
                 archEl('ca-arch-ins-toggle').classList.toggle('ca-arch-insopen', archState.insightsOpen);
                 archEl('ca-arch-ins-toggle').setAttribute('aria-expanded', String(archState.insightsOpen));
                 archEl('ca-arch-ins-toggle-label').textContent = archState.insightsOpen ? 'Hide insights' : 'View insights';

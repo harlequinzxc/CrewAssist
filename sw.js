@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v136';
+const CACHE_NAME = 'crewassist-v137';
 const ASSETS = [
     './',
     './index.html',
@@ -34,7 +34,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== CACHE_NAME) {
+                    if (key !== CACHE_NAME && key !== SHARE_CACHE) {
                         return caches.delete(key);
                     }
                 })
@@ -43,8 +43,44 @@ self.addEventListener('activate', (event) => {
     );
 });
 
+// Web Share Target stash: the POST the Android share sheet sends never reaches
+// the page, so the SW parks the shared PDF in its own STABLE cache (never
+// pruned on version turnover) and redirects to the app, which picks it up on
+// boot. Android/Chrome only — iOS Safari has no share_target support.
+const SHARE_CACHE = 'crewassist-share';
+const SHARE_KEY = '/__ca-shared-roster';
+
 self.addEventListener('fetch', (event) => {
     const req = event.request;
+
+    if (req.method === 'POST') {
+        const url = new URL(req.url);
+        const ct = String(req.headers && req.headers.get('content-type') || '');
+        if (ct.indexOf('multipart/form-data') >= 0 && url.pathname.indexOf('/api/') === -1) {
+            event.respondWith((async () => {
+                try {
+                    const fd = await req.formData();
+                    const file = fd.get('roster');
+                    if (file && ((file.type || '').indexOf('pdf') >= 0 || /\.pdf$/i.test(file.name || ''))) {
+                        const cache = await caches.open(SHARE_CACHE);
+                        await cache.put(SHARE_KEY, new Response(file, {
+                            headers: {
+                                'Content-Type': file.type || 'application/pdf',
+                                'X-CA-Filename': file.name || 'roster.pdf'
+                            }
+                        }));
+                    }
+                } catch (e) {
+                    // A failed stash just falls through to the redirect —
+                    // the app opens normally and the owner can attach the
+                    // PDF from chat.
+                }
+                return Response.redirect(new URL('./index.html', self.location.href).href, 303);
+            })());
+        }
+        return;
+    }
+
     if (req.method !== 'GET') return;
 
     const url = new URL(req.url);
