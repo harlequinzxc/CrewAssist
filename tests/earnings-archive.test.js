@@ -390,6 +390,43 @@ const fs = require('fs');
     R.ok(!d.getElementById('ca-arch-ins-toggle').classList.contains('ca-arch-insopen'), 'reopen resets the chevron');
   }
 
+  // --- v1.28.1: re-saving an already-saved trip updates it, never duplicates ---
+  {
+    const { w, d } = await boot(APP);
+    const base = { id: 'a1', savedAt: '2026-09-01T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', flightType: 'Layover', stationDisplay: 'CDG', amount: 100 };
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([base]));
+    // helper: same signature (month+date+type+stations) with a new amount → replace
+    const again = { id: 'a2', savedAt: '2026-09-20T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', flightType: 'Layover', stationDisplay: 'CDG', amount: 250 };
+    const res1 = w.eval('persistArchiveSaving(' + JSON.stringify([again]) + ')');
+    let arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arr.length === 1 && arr[0].amount === 250 && arr[0].id === 'a2', 'same trip saved again replaces the entry');
+    R.ok(res1.updated === 1 && res1.fresh === 0, 'save reports the update');
+    // a different trip appends
+    const other = { id: 'a3', savedAt: '2026-09-21T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-12', flightType: 'Turnaround', stationDisplay: 'ICN', amount: 80 };
+    const res2 = w.eval('persistArchiveSaving(' + JSON.stringify([other]) + ')');
+    arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arr.length === 2, 'a different trip still appends');
+    R.ok(res2.fresh === 1 && res2.updated === 0, 'save reports the new entry');
+    // same date + route but different type is a different duty
+    const ta = { id: 'a4', savedAt: '2026-09-22T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', flightType: 'Turnaround', stationDisplay: 'CDG', amount: 60 };
+    w.eval('persistArchiveSaving(' + JSON.stringify([ta]) + ')');
+    arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arr.length === 3, 'turnaround vs layover on the same day stay separate');
+    // the REAL single-summary save path updates too
+    const dup = { id: 'a9', savedAt: new Date().toISOString(), monthKey: '2026-09', sectorDate: '2026-09-12', flightType: 'Turnaround', stationDisplay: 'ICN', amount: 99 };
+    w.eval('showResultsOverlay(99, 99, 0, [], [], true, "both", ' + JSON.stringify(dup) + ', null)');
+    await wait(60);
+    const btn = d.getElementById('btn-results-action');
+    R.ok(btn && !btn.disabled, 'results overlay offers save');
+    btn.click();
+    await wait(60);
+    arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    const icn = arr.filter((e) => e.stationDisplay === 'ICN');
+    R.ok(icn.length === 1 && icn[0].amount === 99, 'saving from the summary updates the existing ICN entry');
+    R.ok(btn.dataset.done === '1', 'save is one-shot per summary');
+    void d;
+  }
+
   // everything-moves ruling: the insights panel and search clear animate
   {
     const src = fs.readFileSync(APP, 'utf8');

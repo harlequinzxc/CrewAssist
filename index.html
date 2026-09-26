@@ -1524,10 +1524,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.28.0';
+        const APP_VERSION = '1.28.1';
         const APP_WHAT_NEW = [
-            'The greeting now knows your roster — a next-flight card shows your next departure, one tap from its menus.',
-            'Before you fly, a reminder offers to save that flight\u2019s menus for offline use.'
+            'Saving a trip you had already saved now updates it — re-attaching a roster can no longer duplicate your earnings.'
         ];
 
         // State
@@ -3025,10 +3024,8 @@
             if (ab && payloads.length) {
                 ab.onclick = () => {
                     if (ab.disabled || ab.dataset.done) return;
-                    const arr = loadArchive();
-                    arr.push(...payloads);
-                    persistArchive(arr);
-                    appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved.`);
+                    const res = persistArchiveSaving(payloads);
+                    appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved${res.updated ? ' (' + res.updated + ' updated)' : ''}.`);
                     // One tap saves once: full-colour tick, then the save icon
                     // returns INACTIVE — same one-shot as a single summary.
                     ab.dataset.done = '1';
@@ -7004,10 +7001,8 @@ function getRegionForAirport(code) {
 
                 const doSave = (station) => {
                     if (station != null) archivePayload.stationDisplay = station;
-                    const arr = loadArchive();
-                    arr.push(archivePayload);
-                    persistArchive(arr);
-                    appAlert((archivePayload.stationDisplay || 'Earnings') + ' earnings saved.');
+                    const res = persistArchiveSaving([archivePayload]);
+                    appAlert((archivePayload.stationDisplay || 'Earnings') + ' earnings ' + (res.updated ? 'updated' : 'saved') + '.');
                     const prm = content.querySelector('#ca-station-prompt');
                     if (prm) prm.remove();
                     // One tap saves once: full-colour tick while untappable, then the
@@ -7136,6 +7131,26 @@ function getRegionForAirport(code) {
                 amount: Math.round(amount * 100) / 100,
             };
         }
+        // v1.28.1: a trip's signature — same month, first-sector date, type
+        // and stations = the same duty. Re-attaching a roster and saving again
+        // (now the normal workflow, since the greeting remembers rosters)
+        // must UPDATE the earlier entry, never stack a duplicate.
+        function archiveSignature(e) {
+            return [e.monthKey, e.sectorDate, e.flightType, e.stationDisplay].join('|');
+        }
+        function persistArchiveSaving(payloads) {
+            const arr = loadArchive();
+            let updated = 0, fresh = 0;
+            (payloads || []).forEach((p) => {
+                if (!p) return;
+                const i = arr.findIndex((x) => archiveSignature(x) === archiveSignature(p));
+                if (i >= 0) { arr[i] = p; updated++; }
+                else { arr.push(p); fresh++; }
+            });
+            persistArchive(arr);
+            return { fresh: fresh, updated: updated };
+        }
+
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
         const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, chartSel: null };
         let archUndoTimer = null;

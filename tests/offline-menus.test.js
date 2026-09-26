@@ -142,11 +142,11 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.28.0';"), 'APP_VERSION stamped 1.28.0');
+    R.ok(src.includes("const APP_VERSION = '1.28.1';"), 'APP_VERSION stamped 1.28.1');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
-    R.ok(src.includes('next-flight card shows your next departure'), 'what\'s-new documents the next-flight card');
+    R.ok(src.includes('re-attaching a roster can no longer duplicate'), 'what\'s-new documents the earnings dedupe fix');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v139"), 'service-worker cache name bumped to v139');
+    R.ok(sw.includes("crewassist-v140"), 'service-worker cache name bumped to v140');
     R.ok(sw.includes('https://cdn.tailwindcss.com') && sw.includes('pdf.min.js'), 'Tailwind + pdf.js precached for first offline launch');
   }
 
