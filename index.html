@@ -1529,11 +1529,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.24.0';
+        const APP_VERSION = '1.25.0';
         const APP_WHAT_NEW = [
-            'The Earnings page is rebuilt: a gold summary with Month / Year / All-time scopes, a twelve-month bar chart with the current month projected to month end, and a twelve-card insights panel behind a View insights toggle.',
-            'Month rows now carry Best / Low / In-progress badges and year-on-year arrows, and a partial month lists a projected total beside its flights.',
-            'Search narrows the list only — totals always read the whole archive, and delete removes exactly what the search leaves visible.'
+            'The compact menu print now reads a main course’s description and appends what comes with it on the same line, behind a Ẃ mark — for example EGG OMELETTE STUFFED Ẃ MUSHROOMS Ẃ PORK SAUSAGES AND POTATOES.',
+            'In main-course names the word WITH is replaced by Ẃ to match, and protein words stay inverted even inside the grey additions. Foreign-named dishes reveal their protein first: SUKIYAKI — BEEF Ẃ STEAMED RICE.',
+            'Additions are taken verbatim from the official menu descriptions — nothing is invented, and dishes without a match print exactly as before.'
         ];
 
         // State
@@ -9854,7 +9854,123 @@ function getRegionForAirport(code) {
             return String(n);
         }
 
-        function printCompactItems(key, items, asBites) {
+        // ---- Compact-print main-course extraction (phase 2) ----
+        // Extracts the side/starch and hidden or primary proteins from a main
+        // course's official description, then composes them as a one-line
+        // grey addition behind the dish name: "Ẃ STEAMED RICE", "— BEEF Ẃ
+        // STEAMED RICE", "Ẃ PORK SAUSAGES AND POTATOES". Verbatim description
+        // text only — nothing is generated; no match means no addition.
+        // Vocabulary and rules are frozen against the 1,139-pair corpus
+        // fixture in tests/menu-extraction.fixture.json.
+        const EX_STARCH_ALT = ['sweet potatoes', 'sweet potato', 'hash brown', 'white rice', 'white bread', 'potatoes', 'potato', 'rice', 'mash', 'mashed', 'noodles', 'noodle', 'pasta', 'penne', 'spaghetti', 'linguine', 'fettuccine', 'macaroni', 'vermicelli', 'gnocchi', 'udon', 'dumplings', 'dumpling', 'buns', 'bun', 'bread', 'brioche', 'sourdough', 'pita', 'paratha', 'tortilla', 'couscous', 'quinoa', 'polenta', 'risotto', 'barley', 'bulgur', 'oats', 'orzo', 'porridge', 'congee', 'yam', 'cornmeal', 'cornbread', 'wedges', 'wedge', 'gratin', 'dauphinoise', 'biryani', 'biriyani', 'teow', 'mee', 'laksa', 'roti', 'naan', 'idli', 'ramen', 'beehoon', 'bap', 'ciabatta'];
+        const EX_STARCH_MOD = ['aromatic', 'baked', 'black', 'bok', 'brown', 'butter', 'buttered', 'choy', 'coconut', 'creamy', 'crispy', 'egg white', 'egg', 'fingerling', 'flour', 'fragrant', 'fried', 'garlic', 'grilled', 'jasmine', 'mashed', 'red', 'roasted', 'saffron', 'seasoned', 'soft', 'spiced', 'steamed', 'stir-fried', 'truffle', 'turmeric', 'warm', 'wheat', 'wide', 'wild', 'wok-fried'];
+        const EX_PALT = ['anchovies', 'anchovy', 'abalone', 'bacon', 'beef', 'bream', 'caviar', 'char siew', 'chicken', 'chorizo', 'clams', 'cod', 'crab', 'duck', 'fish', 'ham', 'halibut', 'lamb', 'lobster', 'meat', 'meatball', 'meatballs', 'mutton', 'pork', 'prawn', 'prawns', 'roe', 'roes', 'salami', 'salmon', 'scallop', 'scallops', 'sausage', 'sausages', 'seabass', 'seafood', 'shrimp', 'shrimps', 'squid', 'steak', 'trout', 'tuna', 'turkey', 'veal', 'wagyu'];
+        const EX_PMOD = ['baby', 'braised', 'cured', 'delicate', 'fresh', 'grilled', 'japanese', 'local', 'marinated', 'minced', 'mild', 'pan-fried', 'roasted', 'seared', 'shredded', 'sliced', 'slow cooked', 'slow-cooked', 'smoked', 'soya-glazed', 'spicy', 'stir-fried', 'succulent', 'tender'];
+        const EX_CONN = ['with', 'accompanied', 'alongside', 'topped', 'plus'];
+        const EX_SAUCEY = ['chicken broth', 'chicken stock', 'fish broth', 'fish stock', 'fish sauce', 'oyster sauce', 'prawn paste', 'shrimp paste'];
+        const EX_WIN = 45;
+        const exEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const exAlt = (forms) => '(?:' + forms.slice().sort((a, b) => b.length - a.length).map(exEsc).join('|') + ')';
+        const EX_PALT_RE_SRC = exAlt(EX_PALT);
+        const EX_STARCH_RE = new RegExp('\\b(?:' + exAlt(EX_STARCH_MOD) + '\\s+){0,3}' + exAlt(EX_STARCH_ALT) + '(?:\\s+(?:pudding|cake|hash|crust|bites?))?\\b', 'gi');
+        const EX_PPHRASE_RE = new RegExp('\\b(?:' + exAlt(EX_PMOD) + '\\s+){0,3}' + EX_PALT_RE_SRC + '(?:[\\s\\-]+' + EX_PALT_RE_SRC + ')?\\b', 'gi');
+        const EX_NAME_STARCH_RE = new RegExp('\\b' + exAlt(EX_STARCH_ALT) + '\\b', 'i');
+        const EX_NAME_PROTEIN_RE = new RegExp('\\b' + EX_PALT_RE_SRC + '\\b', 'i');
+        const EX_SAUCEY_RE = new RegExp('\\b(?:' + EX_SAUCEY.map(exEsc).join('|') + ')\\b', 'gi');
+        const EX_CONN_RE = new RegExp('\\b(?:' + exAlt(EX_CONN) + ')\\b', 'i');
+        const EX_PALT_SET = new Set(EX_PALT.map((p) => p.toLowerCase()));
+        const exNormWs = (s) => String(s || '').trim().replace(/\s+/g, ' ');
+        function exHasConnBefore(desc, start) {
+            return EX_CONN_RE.test(desc.slice(Math.max(0, start - EX_WIN), start));
+        }
+        function exIsProteinWord(w) {
+            const c = String(w || '').toLowerCase();
+            if (!c) return false;
+            if (EX_PALT_SET.has(c)) return true;
+            if (c.length > 3 && c.slice(-1) === 's' && EX_PALT_SET.has(c.slice(0, -1))) return true;
+            if (c.length > 4 && c.slice(-2) === 'es' && EX_PALT_SET.has(c.slice(0, -2))) return true;
+            return false;
+        }
+        function exCoreKey(w) {
+            const c = String(w || '').toLowerCase();
+            if (c.length > 3 && c.slice(-1) === 's' && EX_PALT_SET.has(c.slice(0, -1))) return c.slice(0, -1);
+            return c;
+        }
+        function compactExtractAddition(name, desc) {
+            const d = String(desc || '');
+            const out = { starch: null, meats: [] };
+            if (!d.trim()) return out;
+            const nm = String(name || '');
+            const nameStarch = EX_NAME_STARCH_RE.test(nm);
+            const nameMeat = EX_NAME_PROTEIN_RE.test(nm);
+            if (!nameStarch) {
+                const uniq = [];
+                const seen = new Set();
+                for (const m of d.matchAll(EX_STARCH_RE)) {
+                    const p = exNormWs(m[0]);
+                    if (seen.has(p)) continue;
+                    seen.add(p); uniq.push([p, m.index]);
+                }
+                if (uniq.length) {
+                    const connHits = uniq.filter((c) => exHasConnBefore(d, c[1]));
+                    if (connHits.length) {
+                        const firstIdx = uniq.indexOf(connHits[0]);
+                        const earlyCores = new Set(uniq.slice(0, firstIdx).map((c) => c[0].split(/\s+/).pop().toLowerCase()));
+                        const kept = connHits.filter((c) => !earlyCores.has(c[0].split(/\s+/).pop().toLowerCase()));
+                        out.starch = (kept.length ? kept[kept.length - 1] : uniq[0])[0];
+                    } else out.starch = uniq[0][0];
+                }
+            }
+            if (!nameMeat) {
+                const masked = d.replace(EX_SAUCEY_RE, (mm) => '\u0000'.repeat(mm.length));
+                const mseen = new Set();
+                for (const m of masked.matchAll(EX_PPHRASE_RE)) {
+                    const phrase = exNormWs(m[0]);
+                    if (mseen.has(phrase)) continue;
+                    mseen.add(phrase);
+                    if (/\bthe\s*$/i.test(d.slice(Math.max(0, m.index - 4), m.index))) continue; // "the fish" = the dish itself
+                    out.meats.push({ phrase: phrase, hidden: exHasConnBefore(d, m.index) });
+                }
+            }
+            return out;
+        }
+        function compactComposeAddition(name, desc) {
+            const x = compactExtractAddition(name, desc);
+            const dash = [], flow = [], seen = new Set();
+            x.meats.forEach((mt) => {
+                if (mt.hidden) return;
+                const words = mt.phrase.split(/\s+/);
+                const bare = words.filter(exIsProteinWord);
+                const arr = bare.length ? bare : words;
+                const key = exCoreKey(arr[arr.length - 1]);
+                if (seen.has(key)) return;
+                seen.add(key); dash.push(arr.join(' '));
+            });
+            x.meats.forEach((mt) => {
+                if (!mt.hidden) return;
+                const words = mt.phrase.split(/\s+/);
+                const key = exCoreKey(words[words.length - 1]);
+                if (seen.has(key)) return;
+                seen.add(key); flow.push(mt.phrase);
+            });
+            if (x.starch) flow.push(x.starch);
+            let s = '';
+            if (dash.length) s += '\u2014 ' + dash.map((x2) => x2.toUpperCase()).join(' AND ');
+            if (flow.length) s += (s ? ' ' : '') + '\u1e82 ' + flow.map((x2) => exNormWs(x2).toUpperCase()).join(' AND ');
+            return s || null;
+        }
+        function printIsMainCourse(label) {
+            return /main|entr[eé]e|entree/i.test(String(label || ''));
+        }
+        function exAdditionHtml(add) {
+            return String(add || '').trim().split(/\s+/).map((w) => (
+                printIsProteinWord(w.replace(/[^a-zA-Z]/g, '').toLowerCase())
+                    ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>'
+                    : escapePrintHtml(w)
+            )).join(' ');
+        }
+
+        function printCompactItems(key, items, asBites, isMain) {
             if (!items || !items.length) return '';
             if (asBites) {
                 const line = items.map((it) => printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase())).join(', ');
@@ -9862,7 +9978,14 @@ function getRegionForAirport(code) {
             }
             let list = '';
             items.forEach((it, idx) => {
-                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase()) + '</div>';
+                let nameUp = String(printDisplayName(it.name) || '').toUpperCase();
+                if (isMain) nameUp = nameUp.replace(/\bWITH\b/g, '\u1e82');
+                let line = printHighlightProteins(nameUp);
+                if (isMain) {
+                    const add = compactComposeAddition(it.name, it.desc || '');
+                    if (add) line += ' <span class="pc-add">' + exAdditionHtml(add) + '</span>';
+                }
+                list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + line + '</div>';
             });
             return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-list">' + list + '</td></tr></table>';
         }
@@ -9876,7 +9999,7 @@ function getRegionForAirport(code) {
                         if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
-                        body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label)));
+                        body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label), printIsMainCourse(course.label)));
                     });
                     if (!body.length) return;
                     html += '<div class="pc-block">';
@@ -10392,7 +10515,7 @@ function getRegionForAirport(code) {
 
         function collectCompactBlocks(model, sector) {
             const blocks = [];
-            const takeItems = (list) => (list || []).map((it) => String(printDisplayName(it.name) || '').toUpperCase());
+            const takeItems = (list) => (list || []).map((it) => ({ name: String(printDisplayName(it.name) || '').toUpperCase(), desc: it.desc || '' }));
             printVisible(sector.cabins).forEach((cabin) => {
                 printVisible(cabin.services).forEach((svc) => {
                     const courses = [];
@@ -10403,7 +10526,8 @@ function getRegionForAirport(code) {
                         courses.push({
                             key: printCompactCourse(course.label),
                             items: takeItems(visItems),
-                            asBites: printIsLightBite(course.label)
+                            asBites: printIsLightBite(course.label),
+                            main: printIsMainCourse(course.label)
                         });
                     });
                     if (!courses.length) return;
@@ -10413,7 +10537,7 @@ function getRegionForAirport(code) {
                 if (!hasDelectableSvc && printVisible(cabin.delectables).length) {
                     blocks.push({
                         header: printCompactHeaderText(model, sector, cabin, 'DELECTABLES'),
-                        courses: [{ key: 'DELECTABLES', items: takeItems(printVisible(cabin.delectables)), asBites: false }]
+                        courses: [{ key: 'DELECTABLES', items: takeItems(printVisible(cabin.delectables)), asBites: false, main: false }]
                     });
                 }
                 const drinkCourses = [];
@@ -10421,7 +10545,7 @@ function getRegionForAirport(code) {
                     if (printIsHidden(g)) return;
                     const vis = printVisible(g.items);
                     if (!vis.length) return;
-                    drinkCourses.push({ key: printCompactCourse(g.name), items: takeItems(vis), asBites: false });
+                    drinkCourses.push({ key: printCompactCourse(g.name), items: takeItems(vis), asBites: false, main: false });
                 });
                 if (drinkCourses.length) {
                     blocks.push({
@@ -10441,11 +10565,29 @@ function getRegionForAirport(code) {
             });
         }
 
+        // One compact item's token stream: the (main-course: WITH→Ẃ) name plus
+        // the grey extraction addition, protein words inverted throughout.
+        function compactItemTokens(name, desc, isMain) {
+            const tokens = [];
+            const nm = isMain ? String(name || '').replace(/\bWITH\b/g, 'Ẃ') : String(name || '');
+            compactNameTokens(nm).forEach((t) => tokens.push(t));
+            if (isMain) {
+                const add = compactComposeAddition(name, desc);
+                if (add) {
+                    String(add).split(/\s+/).forEach((wd) => {
+                        tokens.push({ text: ' ', invert: false, add: true });
+                        tokens.push({ text: wd, invert: printIsProteinWord(wd.replace(/[^a-zA-Z]/g, '').toLowerCase()), add: true });
+                    });
+                }
+            }
+            return tokens;
+        }
+
         function compactBitesTokens(items) {
             const tokens = [];
-            (items || []).forEach((name, i) => {
+            (items || []).forEach((it, i) => {
                 if (i) tokens.push({ text: ', ', invert: false });
-                compactNameTokens(name).forEach((t) => tokens.push(t));
+                compactNameTokens(it && typeof it === 'object' ? it.name : it).forEach((t) => tokens.push(t));
             });
             return tokens;
         }
@@ -10470,7 +10612,7 @@ function getRegionForAirport(code) {
 
         function compactDrawTok(ctx, tok, x, baseline, fontPx, ascent, descent) {
             if (!tok.invert) {
-                ctx.fillStyle = '#000';
+                ctx.fillStyle = tok.add ? '#555' : '#000';
                 ctx.fillText(tok.text, x, baseline);
                 return ctx.measureText(tok.text).width;
             }
@@ -10562,7 +10704,10 @@ function getRegionForAirport(code) {
                             const lastB = compactDrawTokenRun(ctx, compactBitesTokens(course.items), textX, y + ascent, textX, maxX, lineH, fontPx, ascent, descent, draw);
                             y = lastB - ascent + lineH + fontPx * 0.08;
                         } else {
-                            (course.items || []).forEach((name, idx) => {
+                            (course.items || []).forEach((it, idx) => {
+                                const name = it && typeof it === 'object' ? it.name : it;
+                                const desc = it && typeof it === 'object' ? (it.desc || '') : '';
+                                const isMain = !!(course.main && it && typeof it === 'object');
                                 ctx.font = fontHead;
                                 const num = printCircledNum(idx + 1) + ' ';
                                 const numW = ctx.measureText(num).width;
@@ -10571,7 +10716,7 @@ function getRegionForAirport(code) {
                                     ctx.fillText(num, textX, y + ascent);
                                 }
                                 ctx.font = fontBody;
-                                const lastB = compactDrawTokenRun(ctx, compactNameTokens(name), textX + numW, y + ascent, textX + numW, maxX, lineH, fontPx, ascent, descent, draw);
+                                const lastB = compactDrawTokenRun(ctx, compactItemTokens(name, desc, isMain), textX + numW, y + ascent, textX + numW, maxX, lineH, fontPx, ascent, descent, draw);
                                 y = lastB - ascent + lineH;
                             });
                             y += fontPx * 0.08;
