@@ -520,16 +520,8 @@
             from { opacity: 0; transform: translateY(12px); }
             to { opacity: 1; transform: none; }
         }
-        @keyframes chat-anim-out {
-            from { opacity: 1; transform: none; }
-            to { opacity: 0; transform: translateY(-8px); }
-        }
         .chat-anim-in {
             animation: chat-anim-in 0.32s ease-out both;
-        }
-        .chat-anim-out {
-            animation: chat-anim-out 0.24s ease-in both;
-            pointer-events: none;
         }
         .menu-desc-chevron {
             transition: transform 0.3s ease;
@@ -646,8 +638,7 @@
         .print-edit-svc.is-hidden > :not(.print-edit-head),
         .print-edit-course.is-hidden > .print-edit-head > :not(.print-edit-eye),
         .print-edit-course.is-hidden > :not(.print-edit-head),
-        .print-edit-item.is-hidden > :not(.print-edit-x):not(.print-edit-eye),
-        .print-edit-block.is-hidden > :not(.print-edit-head) {
+        .print-edit-item.is-hidden > :not(.print-edit-x):not(.print-edit-eye) {
             opacity: 0.38;
             filter: grayscale(0.85);
         }
@@ -997,7 +988,7 @@
                     <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
                     <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
                         <div id="calcui-segmented" class="flex w-full flex-nowrap items-stretch rounded-xl bg-black/5 dark:bg-white/5 p-0.5 border border-black/10 dark:border-white/10" role="radiogroup" aria-label="Allowance calculator interface">
-                            <button type="button" id="calcui-pill-default" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 bg-sia-gold text-black"><i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> Default</button>
+                            <button type="button" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 bg-sia-gold text-black"><i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> Default</button>
                             <button type="button" id="calcui-pill-manual" data-calcui="manual" role="radio" aria-checked="false" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200"><i data-lucide="pen-line" class="w-3.5 h-3.5 shrink-0"></i> Manual</button>
                             <button type="button" id="calcui-pill-advanced" data-calcui="advanced" role="radio" aria-checked="false" class="calcui-pill hidden flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200"><i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 shrink-0"></i> Advanced</button>
                         </div>
@@ -1022,7 +1013,7 @@
                         </div>
                         <div id="dev-rates-root" class="flex flex-col gap-4"></div>
                         <div class="flex flex-col gap-2">
-                            <button type="button" id="btn-dev-save" class="dev-save w-full h-12 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-sm font-bold inline-flex items-center justify-center gap-2 transition-all" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span id="dev-save-label">Save rates</span></button>
+                            <button type="button" id="btn-dev-save" class="dev-save w-full h-12 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-sm font-bold inline-flex items-center justify-center gap-2 transition-all" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
                             <div class="flex gap-2">
                                 <button type="button" id="btn-dev-export" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
                                 <button type="button" id="btn-dev-import" class="flex-1 h-[42px] rounded-full bg-black/5 dark:bg-white/5 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="upload" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
@@ -1529,11 +1520,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.25.0';
+        const APP_VERSION = '1.25.1';
         const APP_WHAT_NEW = [
-            'The compact menu print now reads a main course’s description and appends what comes with it on the same line, behind a Ẃ mark — for example EGG OMELETTE STUFFED Ẃ MUSHROOMS Ẃ PORK SAUSAGES AND POTATOES.',
-            'In main-course names the word WITH is replaced by Ẃ to match, and protein words stay inverted even inside the grey additions. Foreign-named dishes reveal their protein first: SUKIYAKI — BEEF Ẃ STEAMED RICE.',
-            'Additions are taken verbatim from the official menu descriptions — nothing is invented, and dishes without a match print exactly as before.'
+            'When a main course’s name already contains a “with” (shown as Ẃ), the appended side now joins with AND instead of a second with — BAKED FISH Ẃ HERB SAUCE AND ROASTED POTATOES, never two Ẃ marks on one line.',
+            'The one-line additions still sit behind a Ẃ mark for every other dish: EGG OMELETTE STUFFED Ẃ MUSHROOMS AND PORK SAUSAGES AND POTATOES, SUKIYAKI — BEEF Ẃ STEAMED RICE.',
+            'Under the hood: retired unused code found by a repo-wide dead-code sweep. Additions remain verbatim menu text — nothing invented, no match means no addition.'
         ];
 
         // State
@@ -4072,7 +4063,7 @@ function getRegionForAirport(code) {
             if (!devSavedFlash) {
                 save.disabled = !devDirty;
                 save.classList.remove('is-saved');
-                save.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span id="dev-save-label">Save rates</span>';
+                save.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span>';
                 try { lucide.createIcons(); } catch (e) {}
             }
             root.querySelectorAll('input.dev-rate-input').forEach((el) => {
@@ -6846,7 +6837,6 @@ function getRegionForAirport(code) {
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
-        const ARCH_MU = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
         function archScopeInfo() {
             const es = loadArchive();
             if (!es.length) return { mk: '', yr: '' };
@@ -9858,10 +9848,12 @@ function getRegionForAirport(code) {
         // Extracts the side/starch and hidden or primary proteins from a main
         // course's official description, then composes them as a one-line
         // grey addition behind the dish name: "Ẃ STEAMED RICE", "— BEEF Ẃ
-        // STEAMED RICE", "Ẃ PORK SAUSAGES AND POTATOES". Verbatim description
-        // text only — nothing is generated; no match means no addition.
-        // Vocabulary and rules are frozen against the 1,139-pair corpus
-        // fixture in tests/menu-extraction.fixture.json.
+        // STEAMED RICE", "Ẃ PORK SAUSAGES AND POTATOES". When the dish name
+        // itself contains "with" (already rendered as Ẃ), the addition joins
+        // with AND instead — never two Ẃ connectors on one line. Verbatim
+        // description text only — nothing is generated; no match means no
+        // addition. Vocabulary and rules are frozen against the 1,139-pair
+        // corpus fixture in tests/menu-extraction.fixture.json.
         const EX_STARCH_ALT = ['sweet potatoes', 'sweet potato', 'hash brown', 'white rice', 'white bread', 'potatoes', 'potato', 'rice', 'mash', 'mashed', 'noodles', 'noodle', 'pasta', 'penne', 'spaghetti', 'linguine', 'fettuccine', 'macaroni', 'vermicelli', 'gnocchi', 'udon', 'dumplings', 'dumpling', 'buns', 'bun', 'bread', 'brioche', 'sourdough', 'pita', 'paratha', 'tortilla', 'couscous', 'quinoa', 'polenta', 'risotto', 'barley', 'bulgur', 'oats', 'orzo', 'porridge', 'congee', 'yam', 'cornmeal', 'cornbread', 'wedges', 'wedge', 'gratin', 'dauphinoise', 'biryani', 'biriyani', 'teow', 'mee', 'laksa', 'roti', 'naan', 'idli', 'ramen', 'beehoon', 'bap', 'ciabatta'];
         const EX_STARCH_MOD = ['aromatic', 'baked', 'black', 'bok', 'brown', 'butter', 'buttered', 'choy', 'coconut', 'creamy', 'crispy', 'egg white', 'egg', 'fingerling', 'flour', 'fragrant', 'fried', 'garlic', 'grilled', 'jasmine', 'mashed', 'red', 'roasted', 'saffron', 'seasoned', 'soft', 'spiced', 'steamed', 'stir-fried', 'truffle', 'turmeric', 'warm', 'wheat', 'wide', 'wild', 'wok-fried'];
         const EX_PALT = ['anchovies', 'anchovy', 'abalone', 'bacon', 'beef', 'bream', 'caviar', 'char siew', 'chicken', 'chorizo', 'clams', 'cod', 'crab', 'duck', 'fish', 'ham', 'halibut', 'lamb', 'lobster', 'meat', 'meatball', 'meatballs', 'mutton', 'pork', 'prawn', 'prawns', 'roe', 'roes', 'salami', 'salmon', 'scallop', 'scallops', 'sausage', 'sausages', 'seabass', 'seafood', 'shrimp', 'shrimps', 'squid', 'steak', 'trout', 'tuna', 'turkey', 'veal', 'wagyu'];
@@ -9956,7 +9948,7 @@ function getRegionForAirport(code) {
             if (x.starch) flow.push(x.starch);
             let s = '';
             if (dash.length) s += '\u2014 ' + dash.map((x2) => x2.toUpperCase()).join(' AND ');
-            if (flow.length) s += (s ? ' ' : '') + '\u1e82 ' + flow.map((x2) => exNormWs(x2).toUpperCase()).join(' AND ');
+            if (flow.length) s += (s ? ' ' : '') + (/\bwith\b/i.test(String(name || '')) ? 'AND ' : '\u1e82 ') + flow.map((x2) => exNormWs(x2).toUpperCase()).join(' AND ');
             return s || null;
         }
         function printIsMainCourse(label) {

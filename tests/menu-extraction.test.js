@@ -2,6 +2,9 @@
 // v1.25.0: one-line additions behind main-course names — Ẃ connector (U+1E82),
 // name's own WITH → Ẃ, AND joins, "— PROTEIN" for foreign-name dishes, grey
 // .pc-add with protein inversion, mains-only scope.
+// v1.25.1: when the dish name itself contains "with" (rendered Ẃ), the
+// addition's connector is AND instead — never two Ẃ connectors on one line
+// (EGG OMELETTE STUFFED Ẃ MUSHROOMS AND PORK SAUSAGES AND POTATOES).
 // The fixture (tests/menu-extraction.fixture.json) freezes the extractor's
 // output for all 1,139 unique (name, description) pairs harvested from the
 // official SQ main-course corpus (_inbox/menu/sq_main_courses.json). It was
@@ -42,7 +45,7 @@ const EMDASH = '\u2014'; // —
     R.eq(w.compactComposeAddition(find('Sweet and Sour Fish').n, find('Sweet and Sour Fish').d),
       `${WACUTE} FRAGRANT EGG FRIED RICE`, 'Sweet and Sour Fish Ẃ line');
     R.eq(w.compactComposeAddition(find('Egg Omelette Stuffed with Mushrooms').n, find('Egg Omelette Stuffed with Mushrooms').d),
-      `${WACUTE} PORK SAUSAGES AND POTATOES`, 'Egg Omelette hidden-meat + starch line');
+      `AND PORK SAUSAGES AND POTATOES`, 'Egg Omelette hidden-meat + starch line (name has "with" → AND connector)');
     R.eq(w.compactComposeAddition(find('Stir Fried Tiger Prawns in Ginger Garlic Sauce').n, find('Stir Fried Tiger Prawns in Ginger Garlic Sauce').d),
       `${WACUTE} STEAMED JASMINE RICE`, 'Tiger Prawns Ẃ line');
     R.eq(w.compactComposeAddition(find('Sukiyaki').n, find('Sukiyaki').d),
@@ -56,12 +59,12 @@ const EMDASH = '\u2014'; // —
       { name: 'Fried Rice with Vegetables', desc: 'Topped with mixed berry compote, honey and whipped cream' }
     ], false, true);
     const plain = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
-    R.ok(plain.includes(`EGG OMELETTE STUFFED ${WACUTE} MUSHROOMS ${WACUTE} PORK SAUSAGES AND POTATOES`), 'omelette renders name + Ẃ addition on one line');
+    R.ok(plain.includes(`EGG OMELETTE STUFFED ${WACUTE} MUSHROOMS AND PORK SAUSAGES AND POTATOES`), 'omelette renders name + AND-joined addition on one line (no second Ẃ)');
     R.ok(plain.includes(`FRIED RICE ${WACUTE} VEGETABLES`), 'name WITH becomes Ẃ even without an addition');
     const itemChunks = html.split('<div class="pc-item"').slice(1);
     R.ok(itemChunks.length === 2 && itemChunks[1].indexOf('pc-add') === -1, 'starch-in-name dish gains no addition span');
     R.ok(html.includes('<span class="pc-add">'), 'addition wrapped in grey .pc-add');
-    R.ok(html.includes(`<span class="pc-add">${WACUTE} <span class="pc-hl">PORK</span> <span class="pc-hl">SAUSAGES</span> AND POTATOES</span>`), 'protein words inverted inside the addition');
+    R.ok(html.includes(`<span class="pc-add">AND <span class="pc-hl">PORK</span> <span class="pc-hl">SAUSAGES</span> AND POTATOES</span>`), 'protein words inverted inside the addition');
     R.ok(!/<span class="pc-hl">POTATOES<\/span>/.test(html), 'starch words stay grey in the addition');
     // mains-only: a dessert keeps its WITH and never gains an addition
     const dessert = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
@@ -73,9 +76,13 @@ const EMDASH = '\u2014'; // —
   {
     const toks = w.compactItemTokens('POT ROASTED CHICKEN WITH MUSHROOM', 'Served with mashed potatoes', true);
     const text = toks.map((t) => t.text).join('');
-    R.ok(text.includes(`POT ROASTED CHICKEN ${WACUTE} MUSHROOM ${WACUTE} MASHED POTATOES`), 'canvas tokens carry the WITH→Ẃ name and the addition');
-    R.ok(toks.some((t) => t.add === true && t.text === WACUTE), 'addition tokens flagged grey (add)');
+    R.ok(text.includes(`POT ROASTED CHICKEN ${WACUTE} MUSHROOM AND MASHED POTATOES`), 'canvas tokens: WITH→Ẃ name, AND connector when the name has a with');
+    R.ok(toks.some((t) => t.add === true && t.text === 'AND'), 'addition tokens flagged grey (add)');
     R.ok(toks.some((t) => t.invert && t.text === 'CHICKEN'), 'name protein still inverted');
+    const t2 = w.compactItemTokens('STIR FRIED TIGER PRAWNS IN GINGER GARLIC SAUCE', FIX.find((f) => f.n === 'Stir Fried Tiger Prawns in Ginger Garlic Sauce').d, true);
+    const text2 = t2.map((t) => t.text).join('');
+    R.ok(text2.includes(`PRAWNS IN GINGER GARLIC SAUCE ${WACUTE} STEAMED JASMINE RICE`), 'canvas tokens: Ẃ connector when the name has no with');
+    R.ok(t2.some((t) => t.add === true && t.text === WACUTE), 'Ẃ connector token flagged grey');
     const noMain = w.compactItemTokens('POT ROASTED CHICKEN WITH MUSHROOM', 'Served with mashed potatoes', false);
     R.ok(noMain.every((t) => t.add !== true) && noMain.map((t) => t.text).join('').includes('WITH'), 'non-main canvas tokens untouched');
   }
@@ -89,9 +96,10 @@ const EMDASH = '\u2014'; // —
   // --- version stamps: app + service-worker cache bump together ---
   {
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.25.0';"), 'APP_VERSION stamped 1.25.0');
+    R.ok(src.includes("const APP_VERSION = '1.25.1';"), 'APP_VERSION stamped 1.25.1');
     R.ok(src.includes(`behind a ${WACUTE} mark`), 'what\'s-new copy mentions the Ẃ mark');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v132"), 'service-worker cache name bumped to v132');
+    R.ok(src.includes('joins with AND instead of a second'), 'what\'s-new copy documents the AND-connector rule');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v133"), 'service-worker cache name bumped to v133');
   }
 
   process.exit(R.done() ? 1 : 0);
