@@ -103,11 +103,8 @@ const EMDASH = '\u2014'; // —
   // --- version stamps: app + service-worker cache bump together ---
   {
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.25.2';"), 'APP_VERSION stamped 1.25.2');
-    R.ok(src.includes(`behind a ${WACUTE} mark`), 'what\'s-new copy mentions the Ẃ mark');
-    R.ok(src.includes('AND never piles up'), 'what\'s-new copy documents the and-name connector rule');
-    R.ok(src.includes('join their side with AND'), 'what\'s-new copy documents the with-name connector rule');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v134"), 'service-worker cache name bumped to v134');
+    R.ok(src.includes("const APP_VERSION = '1.26.0';"), 'APP_VERSION stamped 1.26.0');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v135"), 'service-worker cache name bumped to v135');
   }
 
   process.exit(R.done() ? 1 : 0);

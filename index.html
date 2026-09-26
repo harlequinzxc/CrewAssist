@@ -865,8 +865,10 @@
                     <div class="flex items-center gap-1 cursor-pointer select-none" id="header-brand">
                         <img src="icons/logo-192.png" class="w-10 h-10 -ml-1 drop-shadow-md" alt="Logo">
                         <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
-                        <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse ml-1"></div>
+                        <button type="button" id="net-status-dot" aria-label="Connection status" aria-expanded="false" class="p-1 rounded-full transition-colors"><span id="net-status-dot-core" class="block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></button>
                     </div>
+                    <!-- Connection status popover (v1.26.0) -->
+                    <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-bubble border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left" role="dialog" aria-label="Connection status details"></div>
                     <!-- Right -->
                     <div class="flex items-center gap-2">
                         <button id="btn-theme" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
@@ -1269,7 +1271,7 @@
                 <div id="menu-state-3" class="hidden">
                     
                     <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 mb-4 rounded-lg border border-amber-500/20">
-                        <i data-lucide="wifi-off" class="w-4 h-4"></i> Offline copy • may be outdated
+                        <i data-lucide="wifi-off" class="w-4 h-4"></i><span id="menu-offline-badge-txt">Offline copy • may be outdated</span>
                     </div>
 
                     <div id="menu-hero-content" class="mb-4"></div>
@@ -1520,11 +1522,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.25.2';
+        const APP_VERSION = '1.26.0';
         const APP_WHAT_NEW = [
-            'Dish names that already contain AND now keep the Ẃ connector on the appended side, so AND never piles up: BRAISED CHICKEN Ẃ BABY ABALONE AND MOREL MUSHROOM Ẃ STEAMED RICE.',
-            'Names with a with (shown Ẃ) but no and still join their side with AND — BAKED FISH Ẃ HERB SAUCE AND ROASTED POTATOES. Every other dish appends behind a Ẃ mark as before.',
-            'The connector never repeats a word the name already shows. Additions stay verbatim menu text, frozen against the 1,139-dish corpus.'
+            'Menus you look up are now saved on your phone. In airplane mode later, ask for the same flight and the saved menu opens with an "Offline — menu saved" note — even after closing the app.',
+            'The little dot beside CrewAssist is now live: green pulse when online, steady amber when offline. Tap it to see what works offline — calculators, earnings, roster import and your saved menus. Live lookups need a connection.',
+            'Offline requests for menus you never opened now say so clearly instead of failing with a network error, and the app asks your phone to never auto-clear its saved data.'
         ];
 
         // State
@@ -1546,6 +1548,71 @@
         const elMainView = document.getElementById('main-view');
         
         // Init
+        // ---- Connection status (v1.26.0) ----
+        // The green pulse dot beside the brand is now live: green pulse = online,
+        // steady amber = offline. Tapping it lists what works offline. The dot
+        // keys off navigator.onLine (instant, airplane mode) — a lying captive
+        // portal is covered separately by the menu/rates fallback paths.
+        const NET_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        function netPad2(n) { return (n < 10 ? '0' : '') + n; }
+        function netFmtTs(ts) {
+            const d = new Date(Number(ts));
+            if (!ts || !isFinite(d.getTime())) return '';
+            return d.getDate() + ' ' + NET_MONTHS[d.getMonth()] + ' ' + netPad2(d.getHours()) + ':' + netPad2(d.getMinutes());
+        }
+        function netIsOnline() { return navigator.onLine !== false; }
+        function netSavedFlightCount() {
+            try {
+                return loadRecentFlights().filter((x) => localStorage.getItem('SQ' + x.flight + ':' + x.date + ':CABINS')).length;
+            } catch (e) { return 0; }
+        }
+        function updateNetStatus() {
+            const core = document.getElementById('net-status-dot-core');
+            const btn = document.getElementById('net-status-dot');
+            const online = netIsOnline();
+            if (core) core.className = 'block w-2 h-2 rounded-full ' + (online ? 'bg-green-500 animate-pulse' : 'bg-amber-500');
+            if (btn) btn.setAttribute('aria-label', online ? 'Connection status: online' : 'Connection status: offline');
+            const pop = document.getElementById('net-status-pop');
+            if (!pop) return;
+            const saved = netSavedFlightCount();
+            const checkedRaw = Number(localStorage.getItem('crewAssist.ratesCheckedAt') || 0);
+            const rows = [
+                { ok: true, icon: 'calculator', label: 'Calculators — saved rates' },
+                { ok: true, icon: 'wallet', label: 'Earnings — stored on device' },
+                { ok: true, icon: 'file-text', label: 'Roster import — on device' },
+                { ok: saved > 0, icon: 'book-open', label: saved > 0 ? ('Saved menus — ' + saved + ' flight' + (saved === 1 ? '' : 's')) : 'Saved menus — none yet' },
+                { ok: online, icon: 'wifi', label: online ? 'Live menu lookups' : 'Live menu lookups — need a connection' }
+            ];
+            pop.innerHTML =
+                '<div class="flex items-center gap-2 text-xs font-bold mb-2 ' + (online ? 'text-green-600' : 'text-amber-600') + '">' +
+                '<i data-lucide="' + (online ? 'wifi' : 'wifi-off') + '" class="w-4 h-4 shrink-0"></i>' +
+                (online ? 'Online' : 'Offline — using saved data') + '</div>' +
+                '<div class="text-[11px] text-gray-500 dark:text-gray-400 mb-2">' +
+                (checkedRaw ? ('Rates last checked ' + netFmtTs(checkedRaw)) : 'Rates not checked yet') + '</div>' +
+                '<div class="flex flex-col gap-1.5">' +
+                rows.map((r) => '<div class="flex items-center gap-2 text-[11px] font-semibold ' + (r.ok ? 'text-gray-600 dark:text-gray-300' : 'text-amber-600') + '"><i data-lucide="' + (r.ok ? 'check' : 'x') + '" class="w-3.5 h-3.5 shrink-0"></i>' + r.label + '</div>').join('') +
+                '</div>';
+            try { lucide.createIcons(); } catch (e) {}
+        }
+        function toggleNetPopover(force) {
+            const pop = document.getElementById('net-status-pop');
+            const btn = document.getElementById('net-status-dot');
+            if (!pop || !btn) return;
+            const show = (force !== undefined) ? force : pop.classList.contains('hidden');
+            pop.classList.toggle('hidden', !show);
+            btn.setAttribute('aria-expanded', String(show));
+            if (show) updateNetStatus();
+        }
+        function requestPersistentStorage() {
+            // Ask the OS never to auto-clear saved data (earnings, saved menus).
+            // Android honours the promise; iOS home-screen apps are exempt from
+            // the 7-day sweep by default. Harmless everywhere else.
+            try {
+                if (navigator.storage && navigator.storage.persist) return navigator.storage.persist().catch(() => {});
+            } catch (e) {}
+            return Promise.resolve(false);
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             resize();
             animate();
@@ -1554,6 +1621,19 @@
             initUI();
             bindEvents();
             loadShippedRates();
+
+            // Connection status dot + offline behaviour (v1.26.0)
+            const netDotBtn = document.getElementById('net-status-dot');
+            if (netDotBtn) netDotBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleNetPopover(); });
+            document.addEventListener('click', (e) => {
+                if (e.target && e.target.closest && e.target.closest('#net-status-pop, #net-status-dot')) return;
+                toggleNetPopover(false);
+            });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleNetPopover(false); });
+            window.addEventListener('online', updateNetStatus);
+            window.addEventListener('offline', updateNetStatus);
+            updateNetStatus();
+            requestPersistentStorage();
 
             // Register Service Worker
             if ('serviceWorker' in navigator) {
@@ -4142,6 +4222,8 @@ function getRegionForAirport(code) {
                 const parsed = parseRates(await res.json());
                 if (!parsed) return;
                 shippedRates = parsed;
+                try { localStorage.setItem('crewAssist.ratesCheckedAt', String(Date.now())); } catch (e) {}
+                updateNetStatus();
                 if (!localStorage.getItem('crewAssist.rates')) {
                     devSnapshot = null;
                     applyRatesToEngine(shippedRates);
@@ -7485,6 +7567,21 @@ function getRegionForAirport(code) {
             if (!num || !date) return;
             const next = [{ flight: num, date: date }].concat(loadRecentFlights().filter((x) => !(x.flight === num && x.date === date))).slice(0, 5);
             localStorage.setItem('crewAssist.recentFlights', JSON.stringify(next));
+            pruneSqMenuCache();
+        }
+
+        // v1.26.0: saved menus live for the 5 most recent flights only —
+        // everything else is tidied away so storage stays small.
+        function pruneSqMenuCache() {
+            try {
+                const keep = loadRecentFlights().map((x) => 'SQ' + x.flight + ':' + x.date + ':');
+                const drop = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (/^SQ\d{1,4}[A-Z]?:\d{4}-\d{2}-\d{2}:/.test(k) && !keep.some((p) => k.indexOf(p) === 0)) drop.push(k);
+                }
+                drop.forEach((k) => localStorage.removeItem(k));
+            } catch (e) {}
         }
 
         function formatRecentFlightDate(ymd) {
@@ -7687,41 +7784,82 @@ function getRegionForAirport(code) {
             }
         }
 
-        async function executeFetchCabins(id, flightNumber, dateStr, mode) {
+        // ---- Saved-menu support (v1.26.0) ----
+        // The getcabin schedule is cached per flight+date under
+        // SQ<flight>:<date>:CABINS so the flight card can render offline; the
+        // per-cabin menu payloads already cache under SQ<flight>:<date>:<cabin>.
+        function sqCabinCacheKey(flightNumber, dateStr) {
+            return `SQ${flightNumber}:${dateStr}:CABINS`;
+        }
+        function readSavedCabinSchedule(flightNumber, dateStr) {
+            const s = localStorage.getItem(sqCabinCacheKey(flightNumber, dateStr));
+            if (!s) return null;
+            try {
+                const p = JSON.parse(s);
+                return (p && p.data && p.data.statusCode === 200 && Array.isArray(p.data.cabinClasses) && p.data.cabinClasses.length) ? p.data : null;
+            } catch (e) { return null; }
+        }
+        function offlineMenuNoCopyNotice(offline) {
+            return offline
+                ? '<div class="text-xs font-bold text-amber-600 bg-amber-500/10 p-3 rounded-lg border border-amber-500/20 flex items-start gap-2"><i data-lucide="wifi-off" class="w-4 h-4 shrink-0 mt-0.5"></i><span>You\'re offline and there\'s no saved menu for this flight. Look it up once with a connection and it will be available offline.</span></div>'
+                : '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Network error connecting to SQ system. No offline copy available.</div>';
+        }
+
+        async function executeFetchCabins(id, flightNumber, dateStr, mode, useSaved) {
             const actionArea = document.getElementById(`fv-action-area-${id}`);
             const loading = document.getElementById(`fv-loading-${id}`);
             
+            // v1.26.0: offline (or a retry after a failed fetch) renders the
+            // flight card from the saved cabin schedule; the per-cabin menus
+            // come from their own caches in the viewer/printer.
+            const fromSave = !!(useSaved || !navigator.onLine);
+            let savedCabin = null;
+            if (fromSave) {
+                savedCabin = readSavedCabinSchedule(flightNumber, dateStr);
+                if (!savedCabin) {
+                    loading.classList.add('hidden');
+                    actionArea.innerHTML = offlineMenuNoCopyNotice(!navigator.onLine);
+                    actionArea.classList.remove('hidden');
+                    playChatAnim(actionArea);
+                    lucide.createIcons();
+                    return;
+                }
+            }
+            
             try {
-                const payloadCabin = {
-                    carrierId: "SQ",
-                    flightNumber: flightNumber,
-                    flightDate: dateStr,
-                    sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
-                };
-
+                let data, menuGuess = null;
                 const guessCabin = 'JCL';
-                const payloadMenuGuess = { ...payloadCabin, cabinClass: guessCabin };
-                const sqOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
-                const [res, resMenuGuess] = await Promise.all([
-                    fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin }) }),
-                    fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'menu', payload: payloadMenuGuess }) })
-                ]);
-                
-                let data;
-                try {
-                    data = await res.json();
-                } catch(e) {
-                    throw new Error("Vercel Edge Proxy failed to return JSON.");
-                }
-                let menuGuess = null;
-                try {
-                    menuGuess = await resMenuGuess.json();
-                } catch (e) {
-                    menuGuess = null;
-                }
-                
-                if (data.error) {
-                    throw new Error(data.error);
+                if (savedCabin) {
+                    data = savedCabin;
+                } else {
+                    const payloadCabin = {
+                        carrierId: "SQ",
+                        flightNumber: flightNumber,
+                        flightDate: dateStr,
+                        sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
+                    };
+
+                    const payloadMenuGuess = { ...payloadCabin, cabinClass: guessCabin };
+                    const sqOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+                    const [res, resMenuGuess] = await Promise.all([
+                        fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin }) }),
+                        fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'menu', payload: payloadMenuGuess }) })
+                    ]);
+                    
+                    try {
+                        data = await res.json();
+                    } catch(e) {
+                        throw new Error("Vercel Edge Proxy failed to return JSON.");
+                    }
+                    try {
+                        menuGuess = await resMenuGuess.json();
+                    } catch (e) {
+                        menuGuess = null;
+                    }
+                    
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
                 }
                 
                 if (data.statusCode === 101) {
@@ -7733,6 +7871,7 @@ function getRegionForAirport(code) {
                     return;
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
+                    try { localStorage.setItem(sqCabinCacheKey(flightNumber, dateStr), JSON.stringify({ timestamp: Date.now(), data: data })); } catch (e) {}
                     
                     // Legs are flight-level; menu was fetched in parallel with JCL.
                     const firstCabin = data.cabinClasses[0];
@@ -7767,7 +7906,9 @@ function getRegionForAirport(code) {
                         }
                         cacheMenu(menuData);
                     };
-                    if (cabinLegs.length) {
+                    if (savedCabin) {
+                        // offline: per-cabin menus come from their own caches
+                    } else if (cabinLegs.length) {
                         fetchMenuIfNeeded().catch(() => {});
                     } else {
                         await fetchMenuIfNeeded();
@@ -7865,6 +8006,11 @@ function getRegionForAirport(code) {
                     playChatAnim(actionArea);
                 }
             } catch (err) {
+                if (!useSaved && readSavedCabinSchedule(flightNumber, dateStr)) {
+                    // The fetch failed while we thought we were online (captive
+                    // portal, SQ hiccup) — fall back to the saved schedule.
+                    return executeFetchCabins(id, flightNumber, dateStr, mode, true);
+                }
                 loading.classList.add('hidden');
                 actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Fetch crashed: ' + String(err.message || err) + '</div>';
                 if (err.message === 'UPSTREAM_TIMEOUT') {
@@ -8174,14 +8320,18 @@ function getRegionForAirport(code) {
             if (cachedStr) {
                 try {
                     const cachedData = JSON.parse(cachedStr);
-                    renderMenu(cachedData.data, true);
+                    renderMenu(cachedData.data, true, cachedData.timestamp);
                 } catch (e) {
                     showMenuState(2);
                     appAlert(errMsg);
                 }
             } else {
                 showMenuState(2);
-                appAlert(errMsg + ' No offline copy available.');
+                if (!navigator.onLine) {
+                    appAlert("You're offline and this cabin wasn't saved from an earlier lookup. Cabins you opened before will still work.");
+                } else {
+                    appAlert(errMsg + ' No offline copy available.');
+                }
             }
         }
         
@@ -8210,9 +8360,11 @@ function getRegionForAirport(code) {
             return shift > 0 ? `+${shift}d` : '';
         }
         
-        function renderMenu(data, isStale) {
+        function renderMenu(data, isStale, savedAtTs) {
             const badge = document.getElementById('menu-offline-badge');
             if (isStale) {
+                const badgeTxt = document.getElementById('menu-offline-badge-txt');
+                if (badgeTxt) badgeTxt.textContent = savedAtTs ? ('Offline — menu saved ' + netFmtTs(savedAtTs)) : 'Offline copy • may be outdated';
                 badge.classList.remove('hidden');
             } else {
                 badge.classList.add('hidden');
@@ -10446,8 +10598,13 @@ function getRegionForAirport(code) {
                 renderPrintView();
                 lucide.createIcons();
             } catch (err) {
-                showPrintError('Could not prepare the menu sheet. ' + String(err.message || err));
-                addBotMessage("I couldn't prepare the menu printer. Please try again.");
+                if (!navigator.onLine) {
+                    showPrintError("You're offline and this menu wasn't saved from an earlier lookup — open it once with a connection first.");
+                    addBotMessage("You're offline and this menu wasn't saved earlier — open it once with a connection first.");
+                } else {
+                    showPrintError('Could not prepare the menu sheet. ' + String(err.message || err));
+                    addBotMessage("I couldn't prepare the menu printer. Please try again.");
+                }
             }
         }
 

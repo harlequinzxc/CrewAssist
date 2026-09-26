@@ -36,11 +36,15 @@ async function boot(appPath, opts) {
     Object.defineProperty(w.navigator, 'serviceWorker', { value: undefined, configurable: true });
     // Network: repo rates.json for the shipped-rates fetch; everything else offline.
     const origFetch = w.fetch;
+    // jsdom's window has no Response constructor, so build the stubbed replies
+    // with Node's global Response (same .ok/.json() surface the app reads).
+    // The /api/sq branch intentionally still replies 500 offline-style —
+    // suites rely on offline/error paths exercising there.
     w.fetch = async (u) => {
         const url = typeof u === 'string' ? u : u.url;
-        if (url.indexOf('/rates.json') !== -1) return new w.Response(RATES, { status: 200 });
-        if (url.indexOf('/api/sq') !== -1 || url.indexOf('crewassist-sandpit') !== -1) return new w.Response(JSON.stringify({ success: false, message: 'offline in test' }), { status: 500 });
-        return origFetch ? origFetch(u) : new w.Response('{}', { status: 200 });
+        if (url.indexOf('/rates.json') !== -1) return new Response(RATES, { status: 200, headers: { 'Content-Type': 'application/json' } });
+        if (url.indexOf('/api/sq') !== -1 || url.indexOf('crewassist-sandpit') !== -1) return new Response(JSON.stringify({ success: false, message: 'offline in test' }), { status: 500 });
+        return origFetch ? origFetch(u) : new Response('{}', { status: 200 });
     };
     w.open = () => null;
     w.__scrollSpy = null;

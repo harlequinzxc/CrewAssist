@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v134';
+const CACHE_NAME = 'crewassist-v135';
 const ASSETS = [
     './',
     './index.html',
@@ -11,11 +11,20 @@ const ASSETS = [
     './icons/app-icon-192.png',
     './icons/app-icon-512.png'
 ];
+// Third-party assets the app needs on first offline launch (Tailwind runtime,
+// pdf.js for roster import). Fetched individually so a CDN hiccup can never
+// break the install of the core shell.
+const CDN_ASSETS = [
+    'https://cdn.tailwindcss.com',
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(ASSETS))
+            .then((cache) => cache.addAll(ASSETS)
+                .then(() => Promise.all(CDN_ASSETS.map((u) => cache.add(u).catch(() => null)))))
             .then(() => self.skipWaiting())
     );
 });
