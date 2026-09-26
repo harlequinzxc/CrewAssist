@@ -59,6 +59,11 @@ async function boot(appPath, opts) {
     // Evaluate every inline script in document order, like a browser would.
     const scripts = Array.from(d.querySelectorAll('script:not([src])')).map((s) => s.textContent);
     for (const code of scripts) { try { w.eval(code); } catch (e) { if (!/serviceWorker|tailwind/.test(String(e))) console.log('script err: ' + e); } }
+    // Seed hook: run before the app's DOMContentLoaded (which fires during the
+    // wait below) so a suite can pre-load localStorage — profiles, rosters,
+    // caches — exactly like a returning device would have them. (Re-added in
+    // v1.28.0 for next-flight awareness; it is a general harness capability.)
+    if (opts && opts.seed) { try { opts.seed(w, d); } catch (e) { console.log('seed err: ' + e); } }
     // jsdom fires its own DOMContentLoaded while we wait; see the header comment.
     await wait(400);
     // The what's-new sheet (fresh versions) holds the welcome chat until
