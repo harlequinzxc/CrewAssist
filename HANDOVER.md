@@ -260,6 +260,22 @@ Dedicated overlay (`#ca-arch-*`), not the shared results sheet: pinned gold summ
 
 **Owner sign-off 2026-09-19:** v1.19.22 accepted — all features through the v1.19.x series are complete and live.
 
+### Compact print additions (v1.25.0 — main-course extraction)
+
+The compact menu print appends what a main course comes with **on the same line**, extracted from the official description. Owner rulings locked over 2026-09-24/25 (digest v1.3 review + preview rounds):
+
+- **One line.** Dish name verbatim, uppercased, always first; additions appended behind it in grey (`.pc-add`, `#555`). Never a second line.
+- **Ẃ everywhere (U+1E82, capital w-acute).** The connector word "with" is replaced by `Ẃ` in main-course names **and** as the addition connector (`EGG OMELETTE STUFFED Ẃ MUSHROOMS Ẃ PORK SAUSAGES AND POTATOES`). Parts join with `AND`. Chosen to match the all-caps card; lowercase `ẃ` (U+1E83) was rejected.
+- **Foreign-name protein reveals** render as `— PROTEIN` (PMOD-stripped bare noun) directly after the name, before the Ẃ flow: `SUKIYAKI — BEEF Ẃ STEAMED RICE`. G-class reveals are **KEPT** (English protein hint); sauce-level traces are **IGNORED** (never counted, never displayed).
+- **Mains only** (`printIsMainCourse` = `/main|entr[eé]e|entree/i` on the course label). Other courses, drinks, delectables and light bites are untouched. No match → no addition (dish prints exactly as before, except the name's WITH→Ẃ which applies to all mains).
+- Protein words invert (`.pc-hl`) even inside additions; the canvas export mirrors this via `compactItemTokens` (`add`-flagged tokens draw `#555`).
+
+**Code:** `compactExtractAddition` / `compactComposeAddition` + `EX_*` vocabularies in `index.html` (just above `printCompactItems`). Extraction is two axes over the description: **starch** (`EX_STARCH_ALT` + `EX_STARCH_MOD` modifiers + pudding/cake/hash/crust/bites suffixes; winner = last candidate with a connector (`EX_CONN`) within 45 chars before it — skipping one whose last word repeats an earlier candidate's (Yaki Onigiri's `rice` vs `Grilled rice`), else the first candidate; a starch word in the NAME suppresses the starch) and **protein** (`EX_PALT` + `EX_PMOD`; phrase allows one adjacent protein token so "pork sausages"/"cod roes" hold together; saucey compounds (`EX_SAUCEY` — chicken broth etc.) masked first; a protein preceded by "the" is the dish itself, not an ingredient; exact-case dedupe; connector within 45 chars before the hit = **hidden** (full phrase in the Ẃ flow, before the starch), else **primary** (bare noun after the —); a protein word in the NAME suppresses the meat axis). Composition order: `— PRIMARY1 AND PRIMARY2`, then `Ẃ HIDDEN1 AND HIDDEN2 AND STARCH`. Display dedupes by core protein word (`prawns`≡`prawn`; first, richest phrase wins — `Bak Chor Mee` reads `Ẃ MINCED PORK`, not `Ẃ MINCED PORK AND PORK`).
+
+**Contract:** `tests/menu-extraction.fixture.json` freezes all **1,139 unique (name, description) pairs** from the official main-course corpus (`_inbox/menu/sq_main_courses.json`) with expected starch winner, meat list (phrase + style) and composed line — validated pair-by-pair against the owner-reviewed digest v1.3 (`_inbox/menu/extraction-digest.md`, untracked; regenerate, don't commit). `tests/menu-extraction.test.js` (24 asserts) sweeps the fixture, pins the four owner-approved signature lines (tiger prawns / sweet & sour fish / omelette / sukiyaki), the WITH→Ẃ name rule, mains-only scoping, canvas tokens and both version stamps. **A fixture mismatch means extraction drifted** — regenerating it is a deliberate act that ships in the same commit with a reason.
+
+**Known cosmetic deviations from the digest's section labels (rendering identical, winners + meats 100 %):** 2 A/B label diffs (Chicken Mayo Sandwich, Spiced Beef Short Rib — both would need "on" as a connector, which Wagyu Beef Burger contradicts) and 6 C→D diffs (name-starch words outside the frozen ALT list, none with description candidates). **Owner display decisions pending eyeball:** multi-meat joins (`— SAUSAGE AND VEAL AND PORK` on Bavarian Weisswurst), the core-protein display dedupe, and multi-starch showing only the primary (110 dishes). Ẃ sits in Plus Jakarta Sans's latin-ext subset (Google's latin-ext covers U+1E00–U+1E9F), so it renders in the print font; if a future font swap drops it, the per-glyph system fallback is near-identical at 6 px.
+
 ### Roster PDF import (v1.20.0; multi-month stitching v1.20.1; Calculate all v1.21.0; Flight Overview + tappable archive v1.22.0)
 
 Paperclip `#btn-roster` (left of `#chat-input`) + hidden `#roster-file-input` (accept `application/pdf,.pdf`, multiple) + intent `/roster|upload|import/` all open the picker. pdf.js 3.11.174 lazy-loads from cdnjs on first use (`ensurePdfJs`; `workerSrc` set after load, `standardFontDataUrl` passed to `getDocument`); corrupt/password PDFs and non-roster PDFs produce clean bubbles via `handleRosterFiles`. Parsing is 100% on-device.
@@ -354,6 +370,7 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 
 ## Recovery / dead ends (do not retry)
 
+- **Mid-turn file corruption (2026-09-25, once):** during a run of `edit_file` calls, `index.html` grew spliced lines (`document.getElementById('chat-input').vaER PDF IMPORT`), a garbled comment, a mangled airports entry and 22 duplicated lines past `</html>` — byte-level tearing, not a bad text match, and `node --check`-style parsing caught it (`Unexpected identifier 'PDF'`). Recovery: `git checkout HEAD -- <file>`, re-apply the edits with **python count-asserted replaces**, then verify — parse every inline script (`new vm.Script(code)`), `git diff | grep ^@@` to audit hunk locations, and grep the corruption signatures. After any bulk edit session, run the parse + hunk audit before committing.
 - Prefixing SQ relative images with `/assets/` 404ed thumbs.
 - Nested parent `url` / `path` / `src` scans assigned junk. `data-src` / `revealMenuImages` left thumbs without `src`.
 - Trusting HTTP status for IFE photos fails (200 HTML).
