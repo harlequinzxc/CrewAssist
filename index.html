@@ -1524,9 +1524,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.28.1';
+        const APP_VERSION = '1.28.2';
         const APP_WHAT_NEW = [
-            'Saving a trip you had already saved now updates it — re-attaching a roster can no longer duplicate your earnings.'
+            'Tapping your next flight (or its reminder) now opens the menus directly — every cabin is fetched and saved first when needed.'
         ];
 
         // State
@@ -2742,9 +2742,21 @@
                 + '</span></button></div>';
             chat.appendChild(el);
             try { lucide.createIcons(); } catch (e) {}
-            document.getElementById('ca-nextflight-tap').addEventListener('click', () => {
+            const nfBtn = document.getElementById('ca-nextflight-tap');
+            const nfBtnHtml = nfBtn.innerHTML;
+            nfBtn.addEventListener('click', () => {
                 if (isChatBusy()) return;
-                renderFlightVerificationCard('menu', { fn: f.fn, ymd: f.ymd });
+                // v1.28.2: saved → viewer straight from cache; otherwise fetch
+                // every cabin behind a spinner, then open. Works offline when
+                // the menus are already saved (the onboard scenario).
+                const setBusy = (busy) => {
+                    nfBtn.disabled = busy;
+                    nfBtn.innerHTML = busy
+                        ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(f.fn) + '\u2026</span></span>'
+                        : nfBtnHtml;
+                    try { lucide.createIcons(); } catch (e) {}
+                };
+                openNextFlightMenus(f.fn, f.ymd, setBusy);
             });
             scrollToBottom();
         }
@@ -2769,23 +2781,25 @@
             const copy = one
                 ? '<b>SQ ' + rosterEsc(flights[0].fn) + ' to ' + rosterEsc(flights[0].arr) + '</b> departs <b>' + nextFlightRel(flights[0].ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.'
                 : 'You have <b>' + flights.length + ' flights</b> in the next 2 days — save all their menus for offline.';
-            const rows = flights.map((f, i) =>
-                '<div class="ca-menunudge-row flex items-center gap-2 py-1" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '">'
+            const rows = flights.map((f) =>
+                '<button type="button" class="ca-menunudge-row w-full flex items-center gap-2 py-1 text-left' + (one ? ' hidden' : '') + '" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '">'
                 + '<i data-lucide="plane" class="w-3 h-3 shrink-0 text-amber-600"></i>'
                 + '<span class="text-xs font-bold">SQ ' + rosterEsc(f.fn) + '</span>'
                 + '<span class="text-xs text-gray-500 flex-1 min-w-0 truncate">' + rosterEsc(f.dep) + '-' + rosterEsc(f.arr) + ' &middot; ' + rosterShortDate(f.ymd) + '</span>'
-                + '<span class="ca-menunudge-state text-[10px] font-bold text-amber-700 dark:text-amber-400" data-state="wait">' + (one ? '' : 'waiting') + '</span>'
-                + '</div>').join('');
+                + '<span class="ca-menunudge-state text-[10px] font-bold text-amber-700 dark:text-amber-400" data-state="wait">waiting</span>'
+                + '<i data-lucide="chevron-right" class="w-3 h-3 shrink-0 opacity-0 transition-opacity" data-chev></i>'
+                + '</button>').join('');
             el.innerHTML =
-                '<div class="rounded-2xl rounded-tl-none w-[85%] shadow-sm p-3.5 border border-amber-500/25 bg-amber-500/10" role="status">'
-                + '<div class="flex items-start gap-2.5">'
-                + '<i data-lucide="wifi-off" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>'
+                '<div class="relative rounded-2xl rounded-tl-none w-[85%] shadow-sm p-3.5 border border-amber-500/25 bg-amber-500/10" role="status">'
+                + '<button type="button" id="ca-menunudge-x" aria-label="Dismiss reminder" class="absolute top-2 right-2 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
+                + '<div class="flex items-start gap-2.5 pr-8">'
+                + '<i data-lucide="plane" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>'
                 + '<div class="flex-1 min-w-0">'
                 + '<div class="text-xs font-semibold text-amber-700 dark:text-amber-400 leading-relaxed">' + copy + '</div>'
+                + '</div></div>'
                 + (one ? '' : '<div class="mt-1.5">' + rows + '</div>')
-                + '</div>'
-                + '<button type="button" id="ca-menunudge-go" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-[10px] font-bold uppercase tracking-wider">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
-                + '<button type="button" id="ca-menunudge-x" aria-label="Dismiss reminder" class="shrink-0 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
+                + '<div class="mt-2.5 flex justify-center">'
+                + '<button type="button" id="ca-menunudge-go" class="h-9 px-5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
                 + '</div></div>';
             chat.appendChild(el);
             try { lucide.createIcons(); } catch (e) {}
@@ -2805,56 +2819,112 @@
                     setTimeout(() => card.remove(), 280);
                 }
             });
-            document.getElementById('ca-menunudge-go').addEventListener('click', async () => {
+            const goBtn = document.getElementById('ca-menunudge-go');
+            const goHtml = goBtn.innerHTML;
+            goBtn.addEventListener('click', () => {
                 if (isChatBusy()) return;
-                setChatBusy(true);
-                try {
-                    for (const f of flights) {
-                        const row = el.querySelector('.ca-menunudge-row[data-nf="' + f.fn + '|' + f.ymd + '"] .ca-menunudge-state');
-                        if (row) { row.textContent = 'saving…'; row.dataset.state = 'saving'; }
-                        try {
-                            const r = await saveMenusForFlightOffline(f.fn, f.ymd);
-                            if (row) { row.textContent = r.ok + '/' + r.cabins + ' saved'; row.dataset.state = 'ok'; row.classList.add('text-emerald-600'); }
-                        } catch (e) {
-                            if (row) { row.textContent = 'failed'; row.dataset.state = 'fail'; row.classList.add('text-red-500'); }
-                        }
-                    }
-                } finally { setChatBusy(false); }
-                const card = document.getElementById('ca-menunudge-card');
-                if (card && !el.querySelector('.ca-menunudge-state[data-state="fail"]')) {
-                    card.style.transition = 'opacity .25s ease, max-height .25s ease';
-                    card.style.maxHeight = card.offsetHeight + 'px';
-                    card.style.overflow = 'hidden';
-                    requestAnimationFrame(() => { card.style.opacity = '0'; card.style.maxHeight = '0'; });
-                    setTimeout(() => card.remove(), 280);
+                if (one) {
+                    // single flight: fetch every cabin, then open the viewer
+                    const setBusy = (busy) => {
+                        goBtn.disabled = busy;
+                        goBtn.innerHTML = busy
+                            ? '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Fetching menus&hellip;'
+                            : goHtml;
+                        try { lucide.createIcons(); } catch (e) {}
+                    };
+                    openNextFlightMenus(flights[0].fn, flights[0].ymd, setBusy);
+                    return;
                 }
-                refreshNextFlightUi();
+                // multi-flight sweep: save-only, one flight at a time, rows
+                // tick green — and once a flight is saved its row opens the
+                // viewer directly (v1.28.2).
+                setChatBusy(true);
+                (async () => {
+                    try {
+                        for (const f of flights) {
+                            const row = el.querySelector('.ca-menunudge-row[data-nf="' + f.fn + '|' + f.ymd + '"]');
+                            const chip = row && row.querySelector('.ca-menunudge-state');
+                            if (chip) { chip.textContent = 'saving\u2026'; chip.dataset.state = 'saving'; }
+                            let r = { ok: false, reason: 'error', cabins: 0, saved: 0 };
+                            try { r = await saveMenusForFlightOffline(f.fn, f.ymd); } catch (e) {}
+                            if (r.ok && row) {
+                                chip.textContent = r.saved + '/' + r.cabins + ' saved';
+                                chip.dataset.state = 'ok';
+                                chip.classList.add('text-emerald-600');
+                                const chev = row.querySelector('[data-chev]');
+                                if (chev) chev.classList.remove('opacity-0');
+                                row.addEventListener('click', () => {
+                                    if (isChatBusy()) return;
+                                    openNextFlightMenus(f.fn, f.ymd);
+                                });
+                            } else if (chip) {
+                                chip.textContent = 'failed';
+                                chip.dataset.state = 'fail';
+                                chip.classList.add('text-red-500');
+                            }
+                        }
+                    } finally { setChatBusy(false); }
+                    if (!el.querySelector('.ca-menunudge-state[data-state="fail"]')) {
+                        // Everything saved: the reminder becomes a launcher —
+                        // its rows open the menus directly (v1.28.2). Renaming
+                        // the id detaches it from the nudge lifecycle so a
+                        // later re-render can't reap the tappable rows.
+                        el.id = 'ca-menulaunch-card';
+                        const box = el.querySelector('[data-nfbox]');
+                        if (box) {
+                            box.classList.remove('border-amber-500/25', 'bg-amber-500/10');
+                            box.classList.add('border-emerald-500/25', 'bg-emerald-500/5');
+                        }
+                        const txt = el.querySelector('.text-amber-700');
+                        if (txt) {
+                            txt.classList.remove('text-amber-700', 'dark:text-amber-400');
+                            txt.classList.add('text-emerald-700', 'dark:text-emerald-400');
+                            txt.innerHTML = 'Menus saved for <b>' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> — tap one to open.';
+                        }
+                        goBtn.style.transition = 'opacity .25s ease';
+                        goBtn.style.opacity = '0';
+                        goBtn.style.pointerEvents = 'none';
+                        goBtn.disabled = true;
+                        renderNextFlightCard(); // badge refresh only — the launcher stays
+                    }
+                    // failures keep the amber card and the retry button as-is
+                })();
             });
         }
+
         function refreshNextFlightUi() {
             renderNextFlightCard();
             renderMenuNudge();
         }
         // Bulk offline pre-save for one flight: cabin schedule + every cabin's
         // menu, all cached locally. Only ever runs from an explicit tap.
+        // Returns { ok, reason, cabins, saved } so callers can tell an
+        // unpublished flight from a network failure (never throws).
         async function saveMenusForFlightOffline(fn, ymd) {
             let data = null;
             try { data = readSavedCabinSchedule(fn, ymd); } catch (e) {}
             if (!data) {
                 const payload = { carrierId: 'SQ', flightNumber: fn, flightDate: ymd, sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479' };
-                const res = await fetch('/api/sq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: 'getcabin', payload }) });
-                data = await res.json();
-                if (data.error) throw new Error(data.error);
-                try { localStorage.setItem(sqCabinCacheKey(fn, ymd), JSON.stringify({ timestamp: Date.now(), data: data })); } catch (e) {}
+                let res = null;
+                try {
+                    res = await fetch('/api/sq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: 'getcabin', payload }) });
+                    data = await res.json();
+                } catch (e) { return { ok: false, reason: 'error', cabins: 0, saved: 0 }; }
+                if (data && data.statusCode === 101) return { ok: false, reason: 'unpublished', cabins: 0, saved: 0 };
+                if (data && data.error) return { ok: false, reason: 'error', cabins: 0, saved: 0 };
+                if (data && data.statusCode === 200 && Array.isArray(data.cabinClasses) && data.cabinClasses.length) {
+                    try { localStorage.setItem(sqCabinCacheKey(fn, ymd), JSON.stringify({ timestamp: Date.now(), data: data })); } catch (e) {}
+                }
             }
-            if (!data || data.statusCode !== 200 || !Array.isArray(data.cabinClasses) || !data.cabinClasses.length) throw new Error('no cabins');
-            let ok = 0;
+            if (!data || data.statusCode !== 200 || !Array.isArray(data.cabinClasses) || !data.cabinClasses.length) return { ok: false, reason: 'unpublished', cabins: 0, saved: 0 };
+            let saved = 0;
             for (const cabin of data.cabinClasses) {
-                try { const r = await fetchMenuForPrinter(fn, ymd, cabin); if (r && r.data && r.data.statusCode !== 101) ok++; } catch (e) {}
+                try { const r = await fetchMenuForPrinter(fn, ymd, cabin); if (r && r.data && r.data.statusCode !== 101) saved++; } catch (e) {}
             }
             rememberRecentFlight(fn, ymd);
-            return { cabins: data.cabinClasses.length, ok: ok };
+            return { ok: true, reason: '', cabins: data.cabinClasses.length, saved: saved };
         }
+
 
         // Concatenate report items into one timeline: pages are renumbered
         // continuously (rows and date anchors key off (page, x), so a restart
@@ -7941,7 +8011,7 @@ function getRegionForAirport(code) {
             checkAutoFetch(id, true);
         }
 
-        function renderFlightVerificationCard(mode, prefill) {
+        function renderFlightVerificationCard(mode) {
             const chatContainer = document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
             msgDiv.className = 'flex items-start gap-3 mt-4 w-full chat-anim-in';
@@ -8013,13 +8083,6 @@ function getRegionForAirport(code) {
             lucide.createIcons();
             renderRecentFlightChips(uniqueId);
             scrollChatToBubble(msgDiv);
-            // v1.28.0: the next-flight card taps straight into this flow with
-            // the flight + date already known — same card, nothing to type.
-            if (prefill && prefill.fn && prefill.ymd) {
-                const inp = document.getElementById('fv-flight-' + uniqueId);
-                if (inp) inp.value = String(prefill.fn).replace(/^SQ\s*/i, '');
-                setDateAndFetch(uniqueId, prefill.ymd, 'pick');
-            }
         }
 
         function showDatePickerUI(id) {
@@ -8482,6 +8545,50 @@ function getRegionForAirport(code) {
                 sheet.classList.remove('translate-y-full');
             }, 10);
         }
+
+        // v1.28.2: the unified "show me this flight's menus" action. Cached →
+        // viewer straight from the save (works offline, mid-flight). Not
+        // cached + online → fetch every cabin, then open. Never pops the
+        // flight-verification card — the roster already knows the flight.
+        function openNextFlightViewer(fn, ymd) {
+            let saved = null;
+            try { saved = readSavedCabinSchedule(fn, ymd); } catch (e) {}
+            if (!saved || !Array.isArray(saved.cabinClasses) || !saved.cabinClasses.length) return false;
+            currentMenuSearch.flightNumber = fn;
+            currentMenuSearch.date = ymd;
+            currentMenuSearch.cabins = saved.cabinClasses;
+            currentMenuSearch.selectedSector = '';
+            currentMenuSearch.aircraftType = saved.aircraftType || saved.aircraft || '';
+            openMenuViewerForCabins(fn, ymd, saved.cabinClasses);
+            return true;
+        }
+        async function openNextFlightMenus(fn, ymd, setBusy) {
+            if (menusSavedFor(fn, ymd)) {
+                if (!openNextFlightViewer(fn, ymd)) addBotMessage('Menus were saved for <b>SQ ' + rosterEsc(fn) + '</b> but the schedule could not be read — try re-saving them with a connection.');
+                return;
+            }
+            if (!navigator.onLine) {
+                addBotMessage('No menus saved for <b>SQ ' + rosterEsc(fn) + ' &middot; ' + rosterShortDate(ymd) + '</b> yet, and you\u2019re offline — connect once and tap again, and they\u2019ll be saved for the flight.');
+                return;
+            }
+            const side = menuDateSide(ymd);
+            if (side) { appAlert(menuDateFetchError(side)); return; }
+            let r = { ok: false, reason: 'error', cabins: 0, saved: 0 };
+            try {
+                if (setBusy) setBusy(true);
+                r = await saveMenusForFlightOffline(fn, ymd);
+            } catch (e) { r = { ok: false, reason: 'error', cabins: 0, saved: 0 }; }
+            finally { if (setBusy) setBusy(false); }
+            refreshNextFlightUi();
+            if (!r.ok) {
+                addBotMessage(r.reason === 'unpublished'
+                    ? 'Menus are not published for <b>SQ ' + rosterEsc(fn) + ' &middot; ' + rosterShortDate(ymd) + '</b> yet — try again closer to departure.'
+                    : 'I couldn\u2019t reach the menu service for <b>SQ ' + rosterEsc(fn) + '</b> — check your connection and tap again.');
+                return;
+            }
+            openNextFlightViewer(fn, ymd);
+        }
+
 
 
 // Inflight Menu Viewer Logic (Step 5)

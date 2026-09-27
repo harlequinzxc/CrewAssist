@@ -15,6 +15,11 @@ function mkStore(list) {
   list.forEach((f) => { (o[f.ymd.slice(0, 7)] = o[f.ymd.slice(0, 7)] || []).push(f); });
   return o;
 }
+// cached-menu shapes (same family as the offline-menus suite)
+const cabinPayload = JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL', 'YCL'], legs: [{ flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'CDG' } }] } });
+const menuPayloadData = JSON.stringify({ statusCode: 200, legs: [{ flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'CDG', departureLocalDate: '2026-09-27 23:15:00', arrivalLocalDate: '2026-09-28 06:05:00', departureUtcDate: '2026-09-27 15:15:00', arrivalUtcDate: '2026-09-27 22:05:00', flightDuration: '6h 50m' } }] });
+const menuPayload = JSON.stringify({ timestamp: Date.now(), data: JSON.parse(menuPayloadData) });
+
 const seedProfile = (w) => {
   // a settled returning device: onboarded, tour already offered/done
   w.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
@@ -90,25 +95,62 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(!d.getElementById('ca-nextflight-card'), 'profile but no roster → no card, no empty state');
   }
   {
+    // saved menus -> tap opens the cached viewer directly (works offline)
+    const { w, d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '336', dep: 'SIN', arr: 'CDG', ymd: ymd(1), std: '0017' }])));
+      x.localStorage.setItem('SQ336:' + ymd(1) + ':CABINS', cabinPayload);
+      x.localStorage.setItem('SQ336:' + ymd(1) + ':JCL', menuPayload);
+      x.localStorage.setItem('SQ336:' + ymd(1) + ':YCL', menuPayload);
+    } });
+    await wait(5600);
+    const card = d.getElementById('ca-nextflight-card');
+    R.ok(card, 'next-flight card appears under the greeting');
+    R.ok(card && card.textContent.indexOf('SQ 336') >= 0 && card.textContent.indexOf('CDG') >= 0, 'card shows flight + route');
+    R.ok(card && card.textContent.indexOf('tomorrow') >= 0, 'relative label reads tomorrow');
+    R.ok(card && /Menus saved/.test(card.textContent), 'saved badge present');
+    R.ok(await waitChatIdle(w), 'chat settles after the greeting');
+    d.getElementById('ca-nextflight-tap').click();
+    await wait(250);
+    R.ok(!d.getElementById('menu-backdrop').classList.contains('hidden'), 'tap with saved menus opens the viewer directly');
+    R.ok(!d.querySelector('[id^="fv-flight-"]'), 'no flight-verification card in the flow');
+    R.ok(d.getElementById('menu-cabin-label') && d.getElementById('menu-cabin-label').textContent === 'Business', 'viewer lands on the first cabin, switchable');
+  }
+  {
+    // not saved + online -> fetch EVERY cabin, then open the viewer
     const { w, d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
       x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '336', dep: 'SIN', arr: 'CDG', ymd: ymd(1), std: '0017' }])));
     } });
     await wait(5600);
-    const card = d.getElementById('ca-nextflight-card');
-    R.ok(card, 'next-flight card appears under the greeting');
-    R.ok(card && card.textContent.indexOf('SQ 336') >= 0 && card.textContent.indexOf('SIN') >= 0 && card.textContent.indexOf('CDG') >= 0, 'card shows flight + route');
-    R.ok(card && card.textContent.indexOf('tomorrow') >= 0, 'relative label reads tomorrow');
-    R.ok(!card || !/Menus saved/.test(card.textContent), 'no saved badge without a cache');
-    // tap → menu flow pre-filled (once the greeting queue has fully settled)
+    R.ok(await waitChatIdle(w), 'chat settles after the greeting');
+    w.fetch = async (u, opts) => {
+      const body = JSON.parse((opts && opts.body) || '{}');
+      if (body.endpoint === 'getcabin') return new Response(JSON.stringify({ statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL', 'YCL'] }), { status: 200 });
+      if (body.endpoint === 'menu') return new Response(menuPayloadData, { status: 200 });
+      return new Response('{}', { status: 200 });
+    };
+    d.getElementById('ca-nextflight-tap').click();
+    await wait(700);
+    R.ok(!!w.localStorage.getItem('SQ336:' + ymd(1) + ':CABINS'), 'tap caches the cabin schedule');
+    R.ok(!!w.localStorage.getItem('SQ336:' + ymd(1) + ':JCL') && !!w.localStorage.getItem('SQ336:' + ymd(1) + ':YCL'), 'tap fetches EVERY cabin menu, not just the guess');
+    R.ok(!d.getElementById('menu-backdrop').classList.contains('hidden'), 'viewer opens once every cabin is saved');
+  }
+  {
+    // not saved + offline -> honest notice, no viewer
+    const { w, d } = await boot(APP, { seed: (x) => {
+      Object.defineProperty(x.navigator, 'onLine', { value: false, configurable: true });
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '336', dep: 'SIN', arr: 'CDG', ymd: ymd(1), std: '0017' }])));
+    } });
+    await wait(5600);
     R.ok(await waitChatIdle(w), 'chat settles after the greeting');
     d.getElementById('ca-nextflight-tap').click();
-    await wait(250);
-    const fv = d.querySelector('[id^="fv-flight-"]');
-    R.ok(fv && fv.value === '336', 'tap opens the menu flow with the flight pre-filled');
-    const sel = d.querySelector('[id^="fv-selected-date-"]');
-    R.ok(sel && sel.value === ymd(1), 'departure date pre-filled from the roster');
+    await waitChatIdle(w);
+    R.ok(d.getElementById('chat-container').textContent.indexOf('offline — connect once') >= 0, 'offline tap explains instead of failing silently');
+    R.ok(d.getElementById('menu-backdrop').classList.contains('hidden'), 'no viewer without saved menus offline');
   }
+
   {
     // saved-schedule cache → badge + no nudge for that flight
     const { d } = await boot(APP, { seed: (w) => {
@@ -134,6 +176,10 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(nudge, 'flight inside the 48h window without saved menus → nudge appears');
     R.ok(nudge && nudge.textContent.indexOf('departs tomorrow') >= 0, 'single-flight copy names flight + timing');
     R.ok(nudge && nudge.textContent.indexOf('Open menus') >= 0, 'single-flight nudge offers Open menus');
+    R.ok(nudge && !!nudge.querySelector('[data-lucide="plane"]'), 'nudge carries the plane icon');
+    R.ok(nudge && nudge.innerHTML.indexOf('wifi-off') < 0, 'no wifi-off icon anymore');
+    R.ok(nudge && nudge.innerHTML.indexOf('departs tomorrow') < nudge.innerHTML.indexOf('ca-menunudge-go'), 'text sits above the button');
+    R.ok(nudge && nudge.querySelector('#ca-menunudge-go').parentElement.className.indexOf('justify-center') >= 0, 'button is centered below the text');
     // dismiss → animated away + remembered per flight
     R.ok(await waitChatIdle(w), 'chat settles before dismissing');
     d.getElementById('ca-menunudge-x').click();
@@ -175,7 +221,14 @@ function rosterItems(flight, sector, dateTok, opts) {
     const recent = JSON.parse(w.localStorage.getItem('crewAssist.recentFlights') || '[]');
     R.ok(recent.some((r) => r.flight === '301'), 'sweep registers the flight as recent (keeps the prune aligned)');
     await wait(500);
-    R.ok(!d.getElementById('ca-menunudge-card'), 'nudge collapses once everything is saved');
+    const launch = d.getElementById('ca-menulaunch-card');
+    R.ok(launch, 'a fully-saved sweep turns the reminder into a launcher');
+    R.ok(launch && launch.textContent.indexOf('Menus saved for 3 flights') >= 0, 'launcher copy counts the saved flights');
+    const goBtnAfter = launch && launch.querySelector('#ca-menunudge-go');
+    R.ok(goBtnAfter && goBtnAfter.style.pointerEvents === 'none', 'launcher button is inert');
+    launch.querySelector('.ca-menunudge-row').click();
+    await wait(300);
+    R.ok(!d.getElementById('menu-backdrop').classList.contains('hidden'), 'tapping a saved row opens that flight menus directly');
     const card = d.getElementById('ca-nextflight-card');
     R.ok(card && /Menus saved/.test(card.textContent), 'next-flight card now carries the saved badge');
   }

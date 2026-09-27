@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v140';
+const CACHE_NAME = 'crewassist-v141';
 const ASSETS = [
     './',
     './index.html',
