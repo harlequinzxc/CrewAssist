@@ -1524,8 +1524,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.28.2';
+        const APP_VERSION = '1.28.3';
         const APP_WHAT_NEW = [
+            'Menu print lines now read as tidy lists — "clams, prawns, scallop and wheat noodles" — and a protein mentioned twice collapses to its clearest wording.',
             'Tapping your next flight (or its reminder) now opens the menus directly — every cabin is fetched and saved first when needed.'
         ];
 
@@ -10497,30 +10498,39 @@ function getRegionForAirport(code) {
         }
         function compactComposeAddition(name, desc) {
             const x = compactExtractAddition(name, desc);
-            const dash = [], flow = [], seen = new Set();
+            // v1.28.3 rulings: ONE dedupe across both groups — the key is the
+            // core of the phrase's first protein word; when phrases share a
+            // core the LONGEST (most specific) wording survives, keeping the
+            // FIRST mention's slot ("— CHICKEN MEAT Ẃ FRAGRANT JASMINE RICE",
+            // "Ẃ PORK CHAR SIEW" — never "PORK AND PORK CHAR SIEW"). List
+            // joins read as a comma list without a serial comma ("CLAMS,
+            // PRAWNS, SCALLOP AND WHEAT NOODLES"); two items stay "A AND B".
+            const best = new Map();
             x.meats.forEach((mt) => {
-                if (mt.hidden) return;
+                const words = mt.phrase.split(/\s+/);
+                const pw = words.find(exIsProteinWord) || words[0];
+                const key = exCoreKey(pw);
+                const cur = best.get(key);
+                if (!cur) best.set(key, { phrase: mt.phrase, hidden: mt.hidden });
+                else if (words.length > cur.phrase.split(/\s+/).length) best.set(key, { phrase: mt.phrase, hidden: cur.hidden });
+            });
+            const dash = [], flow = [];
+            best.forEach((mt) => {
+                if (mt.hidden) { flow.push(exNormWs(mt.phrase)); return; }
                 const words = mt.phrase.split(/\s+/);
                 const bare = words.filter(exIsProteinWord);
-                const arr = bare.length ? bare : words;
-                const key = exCoreKey(arr[arr.length - 1]);
-                if (seen.has(key)) return;
-                seen.add(key); dash.push(arr.join(' '));
-            });
-            x.meats.forEach((mt) => {
-                if (!mt.hidden) return;
-                const words = mt.phrase.split(/\s+/);
-                const key = exCoreKey(words[words.length - 1]);
-                if (seen.has(key)) return;
-                seen.add(key); flow.push(mt.phrase);
+                dash.push((bare.length ? bare : words).join(' '));
             });
             if (x.starch) flow.push(x.starch);
+            const joinList = (arr) => arr.length < 3
+                ? arr.join(' AND ')
+                : arr.slice(0, -1).join(', ') + ' AND ' + arr[arr.length - 1];
             let s = '';
-            if (dash.length) s += '\u2014 ' + dash.map((x2) => x2.toUpperCase()).join(' AND ');
+            if (dash.length) s += '\u2014 ' + joinList(dash.map((x2) => x2.toUpperCase()));
             if (flow.length) {
                 const nm = String(name || '');
                 const flowConn = (/\bwith\b/i.test(nm) && !/\band\b/i.test(nm)) ? 'AND ' : '\u1e82 ';
-                s += (s ? ' ' : '') + flowConn + flow.map((x2) => exNormWs(x2).toUpperCase()).join(' AND ');
+                s += (s ? ' ' : '') + flowConn + joinList(flow.map((x2) => exNormWs(x2).toUpperCase()));
             }
             return s || null;
         }

@@ -9,6 +9,14 @@
 // connector is Ẃ — never pile up ANDs (BRAISED CHICKEN Ẃ BABY ABALONE AND
 // MOREL MUSHROOM Ẃ STEAMED RICE). Full rule: AND only when the name has
 // "with" and no "and"; otherwise Ẃ.
+// v1.28.3 (owner rulings): list joins read as a comma list without a serial
+// comma — "CLAMS, PRAWNS, SCALLOP AND WHEAT NOODLES" (two items stay
+// "A AND B"); and ONE dedupe across both groups, keyed on the phrase's first
+// protein word — when phrases share a core the LONGEST wording survives in
+// the FIRST mention's slot (KHAO THOM KAI — CHICKEN MEAT Ẃ FRAGRANT JASMINE
+// RICE; WANTON MEE Ẃ PORK CHAR SIEW; the donburi's SALMON ROE folds into
+// SALMON). Fixture regenerated in the same commit: 43 composed lines changed,
+// starch/meat axes untouched.
 // The fixture (tests/menu-extraction.fixture.json) freezes the extractor's
 // output for all 1,139 unique (name, description) pairs harvested from the
 // official SQ main-course corpus (_inbox/menu/sq_main_courses.json). It was
@@ -45,7 +53,7 @@ const EMDASH = '\u2014'; // —
 
   // --- the four owner-pinned signature dishes, exact lines ---
   {
-    const find = (n) => FIX.find((f) => f.n === n);
+    const find = (n, dd) => FIX.find((f) => f.n === n && (!dd || String(f.d).includes(dd)));
     R.eq(w.compactComposeAddition(find('Sweet and Sour Fish').n, find('Sweet and Sour Fish').d),
       `${WACUTE} FRAGRANT EGG FRIED RICE`, 'Sweet and Sour Fish Ẃ line');
     R.eq(w.compactComposeAddition(find('Egg Omelette Stuffed with Mushrooms').n, find('Egg Omelette Stuffed with Mushrooms').d),
@@ -57,6 +65,17 @@ const EMDASH = '\u2014'; // —
     // v1.25.2: name with BOTH "with" and "and" keeps the Ẃ connector
     R.eq(w.compactComposeAddition(find('Braised Chicken with Baby Abalone and Morel Mushroom').n, find('Braised Chicken with Baby Abalone and Morel Mushroom').d),
       `${WACUTE} STEAMED RICE`, 'with+and name keeps Ẃ (AND never piles up)');
+    // v1.28.3 rulings: comma lists + unified most-specific dedupe
+    R.eq(w.compactComposeAddition(find('Kalguksu').n, find('Kalguksu').d),
+      `${EMDASH} ANCHOVY ${WACUTE} CLAMS, PRAWNS, SCALLOP AND WHEAT NOODLES`, 'Kalguksu comma list without serial comma');
+    R.eq(w.compactComposeAddition(find('Wanton Mee', 'char siew').n, find('Wanton Mee', 'char siew').d),
+      `${WACUTE} PORK CHAR SIEW`, 'Wanton Mee keeps the specific wording, drops the repeated PORK');
+    R.eq(w.compactComposeAddition(find('Khao Thom Kai').n, find('Khao Thom Kai').d),
+      `${EMDASH} CHICKEN MEAT ${WACUTE} FRAGRANT JASMINE RICE`, 'Khao Thom Kai promotes CHICKEN MEAT to the primary slot');
+    R.eq(w.compactComposeAddition(find('Teriyaki Kaisen Donburi').n, find('Teriyaki Kaisen Donburi').d),
+      `${EMDASH} SALMON, SCALLOP, PRAWN AND CRAB ${WACUTE} STEAMED RICE`, 'donburi: SALMON ROE folds into SALMON under the same core');
+    R.eq(w.compactComposeAddition(find('Singapore Hokkien Mee').n, find('Singapore Hokkien Mee').d),
+      `${EMDASH} PRAWNS AND PORK ${WACUTE} TENDER SQUID`, 'Hokkien Mee: the specific fresh prawns beat the broth prawn');
   }
 
   // --- rendered item HTML: name first, WITH → Ẃ, grey addition, inversion ---
@@ -103,8 +122,8 @@ const EMDASH = '\u2014'; // —
   // --- version stamps: app + service-worker cache bump together ---
   {
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.28.2';"), 'APP_VERSION stamped 1.28.2');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v141"), 'service-worker cache name bumped to v141');
+    R.ok(src.includes("const APP_VERSION = '1.28.3';"), 'APP_VERSION stamped 1.28.3');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v142"), 'service-worker cache name bumped to v142');
   }
 
   process.exit(R.done() ? 1 : 0);
