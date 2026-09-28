@@ -40,6 +40,22 @@ const clickLast = (d, sel) => {
     const nextReady = async (n, ms) => until(() => nextCount() === n && !w.isChatBusy(), ms || 25000);
     w.processInput('tour');
 
+    // v1.28.4: the tour is exempt from the chat's fast lane — once the tour
+    // is on, typing dots keep the classic unhurried duration (>=400ms; the
+    // fast lane runs 150-250ms).
+    R.ok(await until(() => w.caTour.on === true, 20000), 'the tour is running');
+    {
+      const t0 = Date.now();
+      let seenAt = -1, goneAt = -1;
+      while (Date.now() - t0 < 20000 && goneAt < 0) {
+        if (seenAt < 0 && d.getElementById('typing-indicator')) seenAt = Date.now();
+        if (seenAt >= 0 && !d.getElementById('typing-indicator')) goneAt = Date.now();
+        await wait(30);
+      }
+      R.ok(seenAt >= 0 && goneAt > seenAt, 'tour narration still shows its typing indicator');
+      R.ok(goneAt - seenAt >= 400, 'tour typing dots keep the classic pace (tour is exempt from the fast lane)');
+    }
+
     // step 0: chat basics
     R.ok(await until(() => chatText(d).indexOf('I am your personal assistant') !== -1, 20000), 'step 0 narration types');
     R.ok(chatText(d).indexOf('related to your flight in the chat box') !== -1, 'the chat box is named in the opener');

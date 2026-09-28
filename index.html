@@ -1524,8 +1524,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.28.3';
+        const APP_VERSION = '1.28.4';
         const APP_WHAT_NEW = [
+            'The assistant now speaks more briskly — shorter typing pauses between messages, so your next flight is on screen seconds sooner.',
             'Menu print lines now read as tidy lists — "clams, prawns, scallop and wheat noodles" — and a protein mentioned twice collapses to its clearest wording.',
             'Tapping your next flight (or its reminder) now opens the menus directly — every cabin is fetched and saved first when needed.'
         ];
@@ -2183,6 +2184,12 @@
         let lastBubbleReady = Promise.resolve();
         const CHAT_ANIM_MS = 320;
         const CHAT_GAP_MS = 500;
+        // v1.28.4 (owner ruling: universal, not returning-gated): normal chat
+        // speaks briskly — short typing dots and a short gap between bubbles.
+        // The feature tour is EXEMPT: its hand-tuned pacing is locked, so
+        // while ca-tour-on is set the queue keeps the classic unhurried pace.
+        const CHAT_FAST_GAP_MS = 250;
+        const caTourPace = () => document.documentElement.classList.contains('ca-tour-on');
         let chatLockGen = 0;
 
         function isChatBusy() {
@@ -2195,7 +2202,7 @@
 
         function noteBubbleShown() {
             lastBubbleReady = new Promise((resolve) => {
-                setTimeout(resolve, CHAT_ANIM_MS + CHAT_GAP_MS);
+                setTimeout(resolve, CHAT_ANIM_MS + (caTourPace() ? CHAT_GAP_MS : CHAT_FAST_GAP_MS));
             });
             return lastBubbleReady;
         }
@@ -2210,7 +2217,7 @@
                         try { fn(); } catch (err) { console.error(err); }
                         resolve();
                     });
-                }, 550 + Math.random() * 350);
+                }, caTourPace() ? 550 + Math.random() * 350 : 150 + Math.random() * 100);
             })).then(() => lastBubbleReady).then(() => {
                 if (gen === chatLockGen) setChatBusy(false);
             });

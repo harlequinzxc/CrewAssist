@@ -95,6 +95,21 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(!d.getElementById('ca-nextflight-card'), 'profile but no roster → no card, no empty state');
   }
   {
+    // v1.28.4: the chat fast lane — greeting + card land in seconds, not the
+    // classic ~4.5s ceremony (dots 150-250ms, gap 250ms, animation unchanged)
+    const { d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '336', dep: 'SIN', arr: 'CDG', ymd: ymd(1), std: '0017' }])));
+    } });
+    const t0 = Date.now();
+    let cardAt = -1;
+    while (Date.now() - t0 < 8000) {
+      if (d.getElementById('ca-nextflight-card')) { cardAt = Date.now(); break; }
+      await wait(50);
+    }
+    R.ok(cardAt > 0 && (cardAt - t0) < 3200, 'next-flight card arrives on the fast lane (<3.2s; the classic pace took ~4.5s)');
+  }
+  {
     // saved menus -> tap opens the cached viewer directly (works offline)
     const { w, d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
