@@ -154,12 +154,21 @@ const { R, boot, wait, APP } = H;
     R.ok(src.includes('<p class="text-4xl font-bold ca-amt">'), 'hero money sets tabular digits (E5)');
     R.ok(src.includes('<span class="shrink-0 text-sm text-sia-gold ca-amt">'), 'review money steps up from micro to body size (E5)');
     R.ok(src.includes('<span class="font-bold text-[17px] ca-amt text-sia-gold">'), 'breakdown totals sit on the amount rung (E5)');
-    // E6: what's-new keeps to one plain sentence
-    const wn = src.match(/APP_WHAT_NEW = \[\s*'([^']*)'\s*\]/);
-    R.ok(!!wn, 'what\'s-new entry parses (E6)');
-    if (wn) {
-      R.ok(wn[1].indexOf('. ') === -1 && /[.!?]$/.test(wn[1]), 'what\'s-new is one sentence (E6)');
-      R.ok(wn[1].split(/\s+/).length <= 25, 'what\'s-new stays within twenty-five words (E6)');
+    // E5 (v1.32.1): LMA breakdown figures match IFA body size
+    R.ok(src.includes('<span class="ml-2 text-sm font-bold ca-amt text-gray-800 dark:text-gray-200">'), 'LMA day-cost figures step up to IFA body size (E5, v1.32.1)');
+    R.ok(src.includes('<span class="text-sia-gold ca-amt text-sm">'), 'LMA meal figures step up to IFA body size (E5, v1.32.1)');
+    // E6 (v1.32.1, owner revision): every change earns one concise pointer —
+    // one sentence each, twelve words at most, no accumulating old releases
+    const wnMatch = src.match(/APP_WHAT_NEW = \[([\s\S]*?)\];/);
+    R.ok(!!wnMatch, "what's-new parses as a list (E6)");
+    if (wnMatch) {
+      const items = [...wnMatch[1].matchAll(/'([^']*)'/g)].map((m) => m[1]);
+      R.ok(items.length >= 4, "what's-new carries one pointer per change (E6)");
+      items.forEach((line) => {
+        R.ok(line.indexOf('. ') === -1 && /[.!?]$/.test(line), `what's-new is one sentence: "${line}" (E6)`);
+        R.ok(line.split(/\s+/).length <= 12, `what's-new stays within twelve words: "${line}" (E6)`);
+      });
+      R.ok(!/v1\.3[01]/.test(wnMatch[1]), "what's-new never accumulates old releases (E6)");
     }
     // M1: surface tokens replaced the hand-mixed pairs everywhere
     R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');

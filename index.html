@@ -1608,14 +1608,19 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.32.0';
+        const APP_VERSION = '1.32.1';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
-        // v1.32.0 (E6): one sentence, plain words, twenty-five words at
-        // most — the outcome, never the mechanism. dev-ui holds the line.
+        // v1.32.1 (E6, owner revision): every change earns its own pointer —
+        // one short line each, plain words, the outcome. Still ONLY the
+        // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
+        // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
-            'Saving can now be undone from the toast, and the earnings chip is always within reach.'
+            'LMA breakdown figures now match IFA size.',
+            'Positioning flights build as paxing — Fetch fills their time.',
+            'Big multi-month batches calculate without freezing.',
+            'What’s New now lists every change.'
         ];
 
         // State
@@ -2661,6 +2666,11 @@
             });
             flights.forEach(f => {
                 f.stdHm = rosterHm(f.std); f.staHm = rosterHm(f.sta); f.ftHm = f.ft;
+                // v1.32.1 (owner report): the roster prints NO flight time for
+                // positioning/deadhead sectors (the PU/TVL duty rows). Such a
+                // sector pays the paxing rate, not its SDP bracket — mark it and
+                // let the trip build; its hours land from Fetch at calculate time.
+                f.paxing = !!f.pos && !f.ft;
                 f.depDate = f.std ? f.stdRowYmd : '';
                 if (f.sta) {
                     f.arrDate = (f.staRowYmd !== f.stdRowYmd || !f.std) ? f.staRowYmd
@@ -2691,7 +2701,7 @@
                 if (!t.startOk) { trip.ok = false; trip.reason = 'starts outside Singapore (roster begins mid-trip)'; }
                 else if (last.arr !== 'SIN') { trip.ok = false; trip.reason = 'does not return to Singapore before the roster ends'; }
                 else if (t.sectors.length !== 2 && t.sectors.length !== 4) { trip.ok = false; trip.reason = t.sectors.length + ' sectors (calculator supports 2 or 4)'; }
-                if (t.sectors.some(s => !s.stdHm || !s.staHm || !s.ftHm || !s.depDate || !s.arrDate)) {
+                if (t.sectors.some(s => !s.stdHm || !s.staHm || (!s.ftHm && !s.paxing) || !s.depDate || !s.arrDate)) {
                     trip.ok = false; trip.reason = (trip.reason ? trip.reason + '; ' : '') + 'some times could not be read';
                 }
                 if (!trip.ok) return trip;
@@ -3119,6 +3129,10 @@
             lines.push(`<b>${rosterEsc(fileName)}</b> — ${rosterEsc(displayMonth || rosterMonthName(parsed.monthLabel))}: <b>${tripsOk.length} trip${tripsOk.length === 1 ? '' : 's'} · ${sectors} sector${sectors === 1 ? '' : 's'}</b> across ${parsed.flyingDays} flying day${parsed.flyingDays === 1 ? '' : 's'}.`);
             if (parsed.skippedDays) lines.push(`Skipped ${parsed.skippedDays} non-flying day${parsed.skippedDays === 1 ? '' : 's'} (leave, off and standby rows).`);
             flagged.forEach(t => lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')} — ${t.reason}; not built.`));
+            // v1.32.1: positioning trips BUILD (paxing) instead of refusing —
+            // say so, and say where their missing flight time comes from.
+            const paxTrips = tripsOk.filter(t => t.sectors.some(s => s.paxing)).length;
+            if (paxTrips) lines.push(`${paxTrips} positioning trip${paxTrips === 1 ? ' is' : 's are'} marked <b>paxing</b> — the roster prints no flight time for them; Fetch fills it when calculating.`);
             const listHtml = tripsOk.map((t, i) => {
                 const s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
                 const route = t.sectors.map(s => s.dep).join('–') + '–' + sl.arr;
@@ -3171,13 +3185,35 @@
             calcAllBtn.addEventListener('click', () => { spendAll(); rosterCalculateAll(parsed, batch); });
         }
 
-        function rosterBuildCards(parsed, batch, silent) {
+        function rosterBuildCards(parsed, batch, silent, onDone) {
             const ok = parsed.trips.filter(t => t.ok);
-            if (!ok.length) { addBotMessage('Nothing to build — every trip was flagged.'); return; }
+            if (!ok.length) { addBotMessage('Nothing to build — every trip was flagged.'); if (onDone) onDone(); return; }
             if (!silent) addBotMessage(`Building ${ok.length} calculator card${ok.length === 1 ? '' : 's'} — check the times against your roster, then Calculate. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>`);
+            caBulkBuild++;
+            let bound = 0;
             ok.forEach(trip => renderCalculatorCard('both', (id) => {
                 if (batch) batch.ids.push({ id: id, trip: trip });
                 rosterPrefillCard(id, trip);
+                // The LAST bind ends bulk mode and runs the one sweep — every
+                // icon in one pass, one pill-fit, one UI sync, one validation
+                // per card. Calculate all waits for exactly this.
+                if (++bound === ok.length) {
+                    setTimeout(() => {
+                        caBulkBuild--;
+                        try { lucide.createIcons(); } catch (e) {}
+                        syncCalcUiAll();
+                        fitCalcPills();
+                        if (batch) {
+                            batch.swept = true;
+                            batch.ids.forEach((e) => {
+                                const btn = document.getElementById(e.id + '-btn-calc');
+                                const bub = btn && btn.closest('.glass-bubble');
+                                if (bub) bub.dispatchEvent(new Event('input'));
+                            });
+                        }
+                        if (onDone) onDone();
+                    }, 60);
+                }
             }));
             if (batch) batch.built = true;
         }
@@ -3188,29 +3224,46 @@
         function rosterCalculateAll(parsed, batch) {
             const ok = parsed.trips.filter(t => t.ok);
             if (!ok.length) { addBotMessage('Nothing to calculate — every trip was flagged.'); return; }
+            // v1.32.1 (perf, owner report): a 200-card batch used to compute in
+            // one synchronous loop after a fixed 250ms guess at when the build
+            // finished. Now the build reports completion itself (its sweep
+            // validates every card first), and the compute runs in ~40ms
+            // slices so the thread can breathe and paint between them.
+            const calculateBatch = () => {
+                const results = [];
+                let skipped = 0, i = 0;
+                const step = () => {
+                    const t0 = Date.now();
+                    while (i < batch.ids.length && Date.now() - t0 < 40) {
+                        const entry = batch.ids[i++];
+                        const btn = document.getElementById(`${entry.id}-btn-calc`);
+                        // Calculate's own gate: grey means the card is incomplete, and
+                        // an incomplete card is reported, never half-calculated.
+                        if (!btn || btn.disabled) { skipped++; continue; }
+                        results.push({ trip: entry.trip, res: computeCardResults(entry.id, 'both') });
+                        foldCard(btn.closest('.glass-bubble'));
+                    }
+                    if (i < batch.ids.length) { setTimeout(step, 0); return; }
+                    if (!results.length) {
+                        addBotMessage("The cards aren't complete enough to calculate yet — fill in what's missing, then Calculate.");
+                        return;
+                    }
+                    showRosterAllOverlay(results, skipped);
+                };
+                step();
+            };
             if (batch && !batch.built) {
                 addBotMessage(`Building ${ok.length} card${ok.length === 1 ? '' : 's'} and calculating every flight — results in a moment. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>`);
-                rosterBuildCards(parsed, batch, true);
+                rosterBuildCards(parsed, batch, true, calculateBatch);
+            } else {
+                // Built already (the crew pressed Build first): wait for the
+                // build's sweep before reading the gate states.
+                const waitSweep = () => {
+                    if (batch && !batch.swept) { setTimeout(waitSweep, 100); return; }
+                    calculateBatch();
+                };
+                waitSweep();
             }
-            // renderCalculatorCard binds and prefills on a ~10ms timeout; give
-            // every card a beat to finish before its inputs are read.
-            setTimeout(() => {
-                const results = [];
-                let skipped = 0;
-                (batch ? batch.ids : []).forEach(entry => {
-                    const btn = document.getElementById(`${entry.id}-btn-calc`);
-                    // Calculate's own gate: grey means the card is incomplete, and
-                    // an incomplete card is reported, never half-calculated.
-                    if (!btn || btn.disabled) { skipped++; return; }
-                    results.push({ trip: entry.trip, res: computeCardResults(entry.id, 'both') });
-                    foldCard(btn.closest('.glass-bubble'));
-                });
-                if (!results.length) {
-                    addBotMessage("The cards aren't complete enough to calculate yet — fill in what's missing, then Calculate.");
-                    return;
-                }
-                showRosterAllOverlay(results, skipped);
-            }, 250);
         }
 
         function showRosterAllOverlay(results, skipped) {
@@ -3354,6 +3407,10 @@
                 setVal(q(`ifa-fn${k}`), s.fn, true);
                 setVal(q(`ifa-d${k}`), s.depDate, true);
                 setVal(q(`ifa-t${k}`), s.ftHm, true);
+                // v1.32.1: a positioning sector arrives pre-marked Paxing — the
+                // roster prints no flight time for it, so the toggle is what
+                // keeps its pay honest (0.75×, SDP ignored).
+                if (s.paxing) { const px = q(`ifa-px${k}`); if (px && !px.checked) { px.checked = true; px.dispatchEvent(new Event('change', { bubbles: true })); } }
                 const blk = document.querySelector(`#${id}-ifa-sectors [data-ifa-sector="${k}"]`);
                 if (blk) {
                     if (s.dep) blk.setAttribute('data-dep-airport', s.dep);
@@ -4963,6 +5020,13 @@ function getRegionForAirport(code) {
         // "Turnaround" is the longest pill label and on a narrow card it can spill
         // out of the pill. When the full word no longer fits, shorten it to "Turn" —
         // the pill still carries data-value="Turnaround", only the label changes.
+        // v1.32.1 (perf, owner report): a multi-month batch builds 200+ cards,
+        // and each card used to run its own document-wide passes —
+        // lucide.createIcons, syncCalcUiAll and four fitCalcPills layout
+        // passes — plus a validation on every prefilled field. That is
+        // O(cards²) work: minutes of frozen UI on a big batch. During a bulk
+        // build every card skips its own passes and the batch runs ONE sweep.
+        let caBulkBuild = 0;
         function fitCalcPills() {
             document.querySelectorAll('.calc-pill[data-value="Turnaround"]').forEach((el) => {
                 el.textContent = 'Turnaround';
@@ -5121,7 +5185,7 @@ function getRegionForAirport(code) {
             ico.className = 'ca-fold-icon w-4 h-4 shrink-0';
             header.appendChild(ico);
             header.addEventListener('click', () => card.classList.toggle('ca-folded'));
-            try { lucide.createIcons(); } catch (e) {}
+            if (!caBulkBuild) { try { lucide.createIcons(); } catch (e) {} } // bulk: the end-of-batch sweep converts every icon once
         }
         function foldCard(card) {
             if (!card) return;
@@ -5247,12 +5311,14 @@ function getRegionForAirport(code) {
 
             // Wait a tick for DOM
             setTimeout(() => {
-                lucide.createIcons();
+                if (!caBulkBuild) lucide.createIcons();
                 bindCalculatorEvents(id, mode);
-                syncCalcUiAll();
-                fitCalcPills();
-                // the webfont usually lands after the first pass; re-measure a few times
-                [150, 400, 900].forEach((t) => setTimeout(fitCalcPills, t));
+                if (!caBulkBuild) {
+                    syncCalcUiAll();
+                    fitCalcPills();
+                    // the webfont usually lands after the first pass; re-measure a few times
+                    [150, 400, 900].forEach((t) => setTimeout(fitCalcPills, t));
+                }
                 // Roster import prefills through this hook once the card is bound.
                 if (typeof onReady === 'function') { try { onReady(id); } catch (e) { console.error(e); } }
                 // COP always scrolled to the top of the card. Now every card decides
@@ -5706,7 +5772,7 @@ function getRegionForAirport(code) {
                         `;
                     }
                     container.innerHTML = html;
-                    lucide.createIcons(); // flag / armchair live in the markup above
+                    if (!caBulkBuild) lucide.createIcons(); // flag / armchair live in the markup above
                     playChatAnim(container);
                     bindTimeInputs(id);
 
@@ -5877,14 +5943,14 @@ function getRegionForAirport(code) {
                         </div>
                     `;
                     container.appendChild(div);
-                    lucide.createIcons();
+                    if (!caBulkBuild) lucide.createIcons();
                     setTimeout(() => {
                         div.classList.remove('max-h-0', 'opacity-0', 'scale-95');
                         div.classList.add('max-h-[1200px]', 'opacity-100', 'scale-100');
                         if (appPrefs.autoScroll && idx > 1 && mode !== 'both' && !window.__caLmaQuietAdd) setTimeout(() => scrollToBottom(), 300);
                     }, 10);
                     bindTimeInputs(id);
-                    syncCalcUiAll();
+                    if (!caBulkBuild) syncCalcUiAll();
                     
                     if (idx === 3) btnAdd.classList.add('hidden'); // max 3
                     lmaPaintTripBar();
@@ -5978,6 +6044,7 @@ function getRegionForAirport(code) {
 
             // Validation logic
             const validateInputs = () => {
+                if (caBulkBuild) return; // bulk mode: the end-of-batch sweep validates every card once
                 let allFilled = true;
                 const containerNode = document.getElementById(`${id}-btn-calc`).closest('.glass-bubble');
                 if (!containerNode) return;
@@ -6091,7 +6158,15 @@ function getRegionForAirport(code) {
                 containerNode.addEventListener('input', staleEditListener);
                 containerNode.addEventListener('change', staleEditListener);
                 containerNode.addEventListener('click', () => setTimeout(validateInputs, 100)); // for add/remove buttons
-                setTimeout(validateInputs, 100);
+                // v1.32.1: in bulk mode the per-field validation storm is
+                // suppressed, but this one deferred pass is how each card arms
+                // itself right after its prefill — so it runs even mid-batch
+                // (validateInputs only ever touches this card's own bubble).
+                setTimeout(() => {
+                    const was = caBulkBuild;
+                    caBulkBuild = 0;
+                    try { validateInputs(); } finally { caBulkBuild = was; }
+                }, 100);
             }
 
             document.getElementById(`${id}-btn-calc`).addEventListener('click', (e) => {
@@ -6903,7 +6978,7 @@ function getRegionForAirport(code) {
                                         ${lmaMealBadge(bc > 0, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')}
                                         ${lmaMealBadge(lc > 0, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')}
                                         ${lmaMealBadge(dc > 0, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')}
-                                        <span class="ml-2 ca-micro font-bold ca-amt text-gray-800 dark:text-gray-200">${formatMoney(dayCost)}</span>
+                                        <span class="ml-2 text-sm font-bold ca-amt text-gray-800 dark:text-gray-200">${formatMoney(dayCost)}</span>
                                     </div>
                                 </div>
                             `);
@@ -6931,15 +7006,15 @@ function getRegionForAirport(code) {
                     <div class="flex justify-between items-center ca-micro font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">
                         <div class="flex flex-col items-center flex-1 border-r ca-hairline last:border-0">
                             <span class="tracking-wider"><span class="uppercase">Breakfast</span> (${mealB}x)</span>
-                            <span class="text-sia-gold ca-amt">${formatMoney(globalB)}</span>
+                            <span class="text-sia-gold ca-amt text-sm">${formatMoney(globalB)}</span>
                         </div>
                         <div class="flex flex-col items-center flex-1 border-r ca-hairline last:border-0">
                             <span class="tracking-wider"><span class="uppercase">Lunch</span> (${mealL}x)</span>
-                            <span class="text-sia-gold ca-amt">${formatMoney(globalL)}</span>
+                            <span class="text-sia-gold ca-amt text-sm">${formatMoney(globalL)}</span>
                         </div>
                         <div class="flex flex-col items-center flex-1">
                             <span class="tracking-wider"><span class="uppercase">Dinner</span> (${mealD}x)</span>
-                            <span class="text-sia-gold ca-amt">${formatMoney(globalD)}</span>
+                            <span class="text-sia-gold ca-amt text-sm">${formatMoney(globalD)}</span>
                         </div>
                     </div>
                 `);
@@ -7196,7 +7271,7 @@ function getRegionForAirport(code) {
                         + lmaMealBadge(!!x.b, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')
                         + lmaMealBadge(!!x.l, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')
                         + lmaMealBadge(!!x.d, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')
-                        + '<span class="ml-2 ca-micro font-bold ca-amt text-gray-800 dark:text-gray-200">' + formatMoney(x.cost) + '</span>'
+                        + '<span class="ml-2 text-sm font-bold ca-amt text-gray-800 dark:text-gray-200">' + formatMoney(x.cost) + '</span>'
                         + '</div></div>').join('');
                     html += '<div class="mb-3 p-3 ca-inset rounded-xl border ca-hairline">'
                         + '<div class="font-bold text-sm mb-2 border-b ca-hairline pb-2"><span>' + (st.code || 'Station') + (st.region ? ' (' + st.region + ')' : '') + '</span></div>'
@@ -7206,9 +7281,9 @@ function getRegionForAirport(code) {
                 const meals = s.meals;
                 if (meals && s.lmaTotal > 0) {
                     html += '<div class="flex justify-between items-center ca-micro font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">'
-                        + '<div class="flex flex-col items-center flex-1 border-r ca-hairline"><span class="tracking-wider"><span class="uppercase">Breakfast</span> (' + meals.b + 'x)</span><span class="text-sia-gold ca-amt">' + formatMoney(meals.bAmt) + '</span></div>'
-                        + '<div class="flex flex-col items-center flex-1 border-r ca-hairline"><span class="tracking-wider"><span class="uppercase">Lunch</span> (' + meals.l + 'x)</span><span class="text-sia-gold ca-amt">' + formatMoney(meals.lAmt) + '</span></div>'
-                        + '<div class="flex flex-col items-center flex-1"><span class="tracking-wider"><span class="uppercase">Dinner</span> (' + meals.d + 'x)</span><span class="text-sia-gold ca-amt">' + formatMoney(meals.dAmt) + '</span></div>'
+                        + '<div class="flex flex-col items-center flex-1 border-r ca-hairline"><span class="tracking-wider"><span class="uppercase">Breakfast</span> (' + meals.b + 'x)</span><span class="text-sia-gold ca-amt text-sm">' + formatMoney(meals.bAmt) + '</span></div>'
+                        + '<div class="flex flex-col items-center flex-1 border-r ca-hairline"><span class="tracking-wider"><span class="uppercase">Lunch</span> (' + meals.l + 'x)</span><span class="text-sia-gold ca-amt text-sm">' + formatMoney(meals.lAmt) + '</span></div>'
+                        + '<div class="flex flex-col items-center flex-1"><span class="tracking-wider"><span class="uppercase">Dinner</span> (' + meals.d + 'x)</span><span class="text-sia-gold ca-amt text-sm">' + formatMoney(meals.dAmt) + '</span></div>'
                         + '</div>';
                 }
                 html += '</div>';

@@ -417,6 +417,46 @@ const MONTH = [
     R.ok(backdrop.classList.contains('hidden'), 'combined summary closes');
   }
 
+  // ---- v1.32.1: positioning sectors build pre-marked paxing ----
+  {
+    // The roster prints no flight time for PU/TVL positioning sectors; the
+    // parser marks them paxing and the trip builds anyway. The card waits
+    // for its flight time (Fetch or hand entry) before it will calculate.
+    const trip = {
+      type: 'Layover', ok: true, stations: [],
+      sectors: [
+        { fn: 'SQ366', dep: 'SIN', arr: 'FCO', stdHm: '23:55', staHm: '06:20+1', ftHm: '', depDate: '2024-10-21', arrDate: '2024-10-22', paxing: true },
+        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30+1', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
+      ]
+    };
+    const { w, d } = await boot(APP);
+    let id = null;
+    w.eval('(function(){ window.__pxcb = null; renderCalculatorCard("both", function (cid) { window.__pxcb = cid; }); })()');
+    for (let i = 0; i < 60 && !id; i++) { id = w.eval('window.__pxcb'); if (!id) await wait(20); }
+    R.ok(!!id, 'the paxing card renders');
+    w.rosterPrefillCard(id, trip);
+    await wait(300);
+    const px1 = d.getElementById(id + '-ifa-px1');
+    const px2 = d.getElementById(id + '-ifa-px2');
+    R.ok(px1 && px1.checked, 'the positioning sector arrives pre-ticked paxing');
+    R.ok(px2 && !px2.checked, 'the operating sector stays full pay');
+    R.ok(d.getElementById(id + '-btn-calc').disabled, 'the card honestly waits for its missing flight time');
+    // hand-enter the positioning flight time and the card arms at 0.75×
+    const ft1 = d.getElementById(id + '-ifa-t1');
+    ft1.value = '12h25m';
+    ft1.dispatchEvent(new w.Event('input', { bubbles: true }));
+    ft1.dispatchEvent(new w.Event('change', { bubbles: true }));
+    await wait(250);
+    R.ok(!d.getElementById(id + '-btn-calc').disabled, 'the card arms once the flight time is in');
+    const res = w.computeCardResults(id, 'both');
+    const sec = res.detail.sectors[0];
+    const rate = res.detail.rankRate;
+    R.ok(sec.paxing === true, 'the computed sector records paxing');
+    R.ok(sec.logic === 'Paxing Override (SDP ignored)', 'paxing ignores the SDP brackets');
+    R.eq(sec.mult, 0.75, 'paxing pays the 0.75× multiplier (owner-ratified rate)');
+    R.eq(sec.amount, Math.round(745 / 60 * rate * sec.mult * 100) / 100, 'paxing amount = hours × rate × 0.75 (12h25m)');
+  }
+
   // ---- UI: Build first, Calculate all still available after ----
   {
     const { w, d } = await boot(APP);

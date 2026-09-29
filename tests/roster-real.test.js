@@ -6,9 +6,10 @@
 // New uploads default to "must parse fully clean": if a newly added roster
 // fails here, either it shows a pattern the parser doesn't know (fix the
 // parser) or it carries honest flags (record them in EXPECTED_FLAGS below).
-// Honest flags are of two kinds: month-boundary trips, which complete once
-// the neighbouring month is stitched in, and TVL positioning sectors, for
-// which the roster prints no flight time at all.
+// v1.32.1: the only honest flags left are month-boundary trips, which
+// complete once the neighbouring month is stitched in — TVL positioning
+// sectors now BUILD pre-marked paxing (the roster never prints their
+// flight time; Fetch fills it at calculate time).
 const H = require('./_harness');
 const { R, boot, APP } = H;
 const fs = require('fs');
@@ -17,21 +18,19 @@ const path = require('path');
 const EXPECTED_FLAGS = {
     'Feb 2025.pdf': ['does not return to Singapore before the roster ends'],
     'Mar 2025.pdf': ['starts outside Singapore (roster begins mid-trip)', 'does not return to Singapore before the roster ends'],
-    'Apr 2025.pdf': ['starts outside Singapore (roster begins mid-trip)', 'some times could not be read'],
-    'Jun 2025.pdf': ['some times could not be read'],
+    'Apr 2025.pdf': ['starts outside Singapore (roster begins mid-trip)'],
     'Aug 2024.pdf': ['does not return to Singapore before the roster ends'],
     'Sep 2024.pdf': ['starts outside Singapore (roster begins mid-trip)'],
-    'Oct 2024.pdf': ['some times could not be read'],
     'Aug 2025.pdf': ['does not return to Singapore before the roster ends'],
     'Sep 2025.pdf': ['starts outside Singapore (roster begins mid-trip)', 'does not return to Singapore before the roster ends'],
     'Oct 2025.pdf': ['starts outside Singapore (roster begins mid-trip)'],
     'Dec 2025.pdf': ['does not return to Singapore before the roster ends'],
     'October 2026.pdf': ['does not return to Singapore before the roster ends'],
     // 2026 completions: Jan/Apr/Nov begin mid-trip (completing sectors live in
-    // Dec 2025 / Mar / Oct), Mar ends mid-trip (completes in Apr), and Feb's
-    // Christchurch return is a TVL row — the roster prints no flight time.
+    // Dec 2025 / Mar / Oct), Mar ends mid-trip (completes in Apr). Feb's
+    // Christchurch return is a TVL positioning row — v1.32.1 builds it
+    // pre-marked paxing instead of flagging it.
     'Jan 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
-    'Feb 2026.pdf': ['some times could not be read'],
     'Mar 2026.pdf': ['does not return to Singapore before the roster ends'],
     'Apr 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
     'November 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
@@ -97,6 +96,21 @@ function expectedMonthLabel(f) {
         };
     }
 
+    // ---- v1.32.1: every real positioning sector builds pre-marked paxing ----
+    // These four are the only PU/TVL sectors across all fixtures; before
+    // v1.32.1 their whole trips were refused with 'some times could not be
+    // read' — the roster never prints their flight time.
+    for (const f of ['Oct 2024.pdf', 'Apr 2025.pdf', 'Jun 2025.pdf', 'Feb 2026.pdf']) {
+        const r = singles[f].parsed;
+        const pos = r.flights.filter(x => x.pos);
+        R.eq(pos.length, 1, `${f}: exactly one positioning sector`);
+        if (pos.length === 1) {
+            R.ok(pos[0].paxing === true, `${f}: the positioning sector is marked paxing`);
+            const trip = r.trips.find(t => t.sectors.indexOf(pos[0]) !== -1);
+            R.ok(!!trip && trip.ok, `${f}: the positioning trip builds instead of being flagged`);
+        }
+    }
+
     // ---- stitching: consecutive months complete their boundary trips ----
     // A pair's stitched output may keep 'starts outside' only if the FIRST
     // file alone started mid-trip (the completing sector is a month earlier
@@ -130,8 +144,9 @@ function expectedMonthLabel(f) {
             await extract(path.join(dir, 'Apr 2025.pdf')),
         ]));
         const flagged = (st.trips || []).filter(t => !t.ok);
-        R.eq(flagged.length, 1, 'Feb+Mar+Apr 2025 stitched: only the TVL trip stays flagged');
-        R.ok(flagged[0] && flagged[0].reason.indexOf('could not be read') !== -1, 'Feb+Mar+Apr 2025 stitched: the remaining flag is the TVL flight time');
+        R.eq(flagged.length, 0, 'Feb+Mar+Apr 2025 stitched: every trip builds (v1.32.1 builds the TVL sector paxing)');
+        const px = (st.trips || []).find(t => t.ok && t.sectors.some(s => s.paxing));
+        R.ok(!!px, 'Feb+Mar+Apr 2025 stitched: the TVL trip builds pre-marked paxing');
         const sfo = (st.trips || []).find(t => t.ok && t.sectors.some(s => s.dep === 'SFO' || s.arr === 'SFO'));
         R.ok(!!sfo, 'Feb+Mar+Apr 2025 stitched: the SFO round trip completes');
         const lhr = (st.trips || []).find(t => t.ok && t.sectors.some(s => s.dep === 'LHR' || s.arr === 'LHR'));
