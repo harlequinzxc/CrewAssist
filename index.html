@@ -3130,9 +3130,13 @@
             if (parsed.skippedDays) lines.push(`Skipped ${parsed.skippedDays} non-flying day${parsed.skippedDays === 1 ? '' : 's'} (leave, off and standby rows).`);
             flagged.forEach(t => lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')} — ${t.reason}; not built.`));
             // v1.32.1: positioning trips BUILD (paxing) instead of refusing —
-            // say so, and say where their missing flight time comes from.
-            const paxTrips = tripsOk.filter(t => t.sectors.some(s => s.paxing)).length;
-            if (paxTrips) lines.push(`${paxTrips} positioning trip${paxTrips === 1 ? ' is' : 's are'} marked <b>paxing</b> — the roster prints no flight time for them; Fetch fills it when calculating.`);
+            // say so, date them (the crew can find the duty on the paper
+            // roster), and say where the missing flight time comes from.
+            const paxList = tripsOk.filter(t => t.sectors.some(s => s.paxing));
+            if (paxList.length) {
+                const paxDates = paxList.map(t => rosterShortDate((t.sectors.find(s => s.paxing) || {}).depDate)).filter(Boolean).join(', ');
+                lines.push(`${paxList.length} positioning trip${paxList.length === 1 ? ' is' : 's are'} marked <b>paxing</b>${paxDates ? ' (' + paxDates + ')' : ''} — the roster prints no flight time for them; Fetch fills it when calculating.`);
+            }
             const listHtml = tripsOk.map((t, i) => {
                 const s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
                 const route = t.sectors.map(s => s.dep).join('–') + '–' + sl.arr;

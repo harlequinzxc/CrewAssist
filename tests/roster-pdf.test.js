@@ -455,6 +455,12 @@ const MONTH = [
     R.ok(sec.logic === 'Paxing Override (SDP ignored)', 'paxing ignores the SDP brackets');
     R.eq(sec.mult, 0.75, 'paxing pays the 0.75× multiplier (owner-ratified rate)');
     R.eq(sec.amount, Math.round(745 / 60 * rate * sec.mult * 100) / 100, 'paxing amount = hours × rate × 0.75 (12h25m)');
+    // the confirm bubble dates every positioning trip so the crew can find
+    // the duty on the paper roster
+    const parsedPx = { monthLabel: 'October 2024', trips: [trip], flights: trip.sectors, skippedDays: 0, flyingDays: 2 };
+    w.renderRosterConfirm(parsedPx, 'Oct 2024.pdf');
+    await wait(200);
+    R.ok(/1 positioning trip is marked paxing \(21 Oct\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip');
   }
 
   // ---- UI: Build first, Calculate all still available after ----
