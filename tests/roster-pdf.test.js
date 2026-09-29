@@ -449,7 +449,15 @@ const MONTH = [
     w.renderRosterConfirm(parsed, 'Test Month.pdf');
     await wait(100);
     const bubble = d.getElementById('chat-container').lastElementChild;
-    bubble.querySelector('.roster-discard-btn').click();
+    // v1.29.0: two-tap discard — the first tap arms, the second fires
+    const dBtn = bubble.querySelector('.roster-discard-btn');
+    dBtn.click();
+    await wait(100);
+    R.ok(dBtn.classList.contains('ca-twotap-armed'), 'first tap arms a red confirm instead of discarding');
+    R.ok(!dBtn.disabled && !dBtn.classList.contains('pointer-events-none'), 'arming spends nothing');
+    R.ok(!bubble.querySelector('.roster-build-btn').disabled, 'Build stays live while armed');
+    R.ok(bubble.querySelector('.roster-discard-btn').textContent.indexOf('Tap again') !== -1, 'armed label says Tap again');
+    dBtn.click();
     await wait(700);
     R.eq(d.querySelectorAll('[data-calc-card]').length, 0, 'Discard builds no cards');
     R.ok(bubble.querySelector('.roster-discard-btn').classList.contains('pointer-events-none'), 'Discard is one-shot');

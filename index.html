@@ -285,6 +285,10 @@
            only look. */
         /* Earnings archive redesign (v1.19.13) */
         .ca-arch-search:focus { border-color: var(--sia-gold, #c9a227); }
+        /* v1.29.0: two-tap armed state (owner design) — the same red family as
+        the clear-data pill, so day and night both read it as danger. */
+        .ca-twotap-armed { color: #dc2626 !important; border-color: rgba(239,68,68,0.55) !important; background: rgba(239,68,68,0.12) !important; }
+        html.dark .ca-twotap-armed { color: #ff4c4c !important; border-color: rgba(255,76,76,0.55) !important; background: rgba(255,76,76,0.12) !important; }
         .ca-arch-amt { font-variant-numeric: tabular-nums; }
         .ca-arch-num { font-variant-numeric: tabular-nums; }
         .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
@@ -1524,8 +1528,9 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.28.4';
+        const APP_VERSION = '1.29.0';
         const APP_WHAT_NEW = [
+            'Safety taps and small fixes: Discard and clear-chat now ask for a second tap, a failed save says so honestly, earnings amounts are tappable to correct, search now finds dates and amounts, and Enter hops to the next calculator field.',
             'The assistant now speaks more briskly — shorter typing pauses between messages, so your next flight is on screen seconds sooner.',
             'Menu print lines now read as tidy lists — "clams, prawns, scallop and wheat noodles" — and a protein mentioned twice collapses to its clearest wording.',
             'Tapping your next flight (or its reminder) now opens the menus directly — every cabin is fetched and saved first when needed.'
@@ -1744,6 +1749,31 @@
 
         function appAlert(message) { return showAppDialog(message, false); }
         function appConfirm(message) { return showAppDialog(message, true); }
+        // v1.29.0 (owner design): serious actions arm instead of firing. The
+        // first tap morphs the button into a red confirm state; the second tap
+        // fires. Five quiet seconds disarm it. The original look is restored
+        // verbatim (icons included), so the morph back is seamless.
+        function armTwoTap(btn, opts) {
+            if (!btn || btn.disabled) return;
+            if (btn.dataset.caArmed === '1') {
+                disarmTwoTap(btn);
+                if (opts && opts.confirm) opts.confirm();
+                return;
+            }
+            btn.dataset.caArmed = '1';
+            btn.dataset.caRestore = btn.innerHTML;
+            btn.classList.add('ca-twotap-armed');
+            btn.innerHTML = (opts && opts.armedHtml) || 'Tap again to confirm';
+            try { lucide.createIcons(); } catch (e) {}
+            btn.dataset.caTimer = String(setTimeout(() => disarmTwoTap(btn), 5000));
+        }
+        function disarmTwoTap(btn) {
+            if (!btn || btn.dataset.caArmed !== '1') return;
+            clearTimeout(Number(btn.dataset.caTimer || 0));
+            btn.classList.remove('ca-twotap-armed');
+            btn.innerHTML = btn.dataset.caRestore || btn.innerHTML;
+            delete btn.dataset.caArmed; delete btn.dataset.caRestore; delete btn.dataset.caTimer;
+        }
 
         function bindEvents() {
             const wnClose = document.getElementById('whatsnew-close');
@@ -1829,7 +1859,12 @@
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
             document.getElementById('btn-settings').addEventListener('click', openSettings);
             document.getElementById('btn-reset').addEventListener('click', () => {
-                initChat();
+                // v1.29.0: two-tap — an accidental tap must not wipe a session
+                // that still has built, unsaved cards in it.
+                armTwoTap(document.getElementById('btn-reset'), {
+                    armedHtml: '<i data-lucide="rotate-cw" class="w-5 h-5"></i>',
+                    confirm: () => initChat()
+                });
             });
             
             // Settings Events
@@ -1869,6 +1904,21 @@
                 if (isChatBusy()) return;
                 const input = document.getElementById('chat-input');
                 processInput(input.value);
+            });
+            // v1.29.0: inside a calculator card, Enter advances to the next
+            // field — typing a whole trip flows without leaving the keyboard.
+            document.addEventListener('keydown', (ev) => {
+                if (ev.key !== 'Enter') return;
+                const t = ev.target;
+                if (!t || t.tagName !== 'INPUT' || t.type !== 'text' || !t.classList || !t.classList.contains('ui-input')) return;
+                const root = t.closest('[data-calc-card]');
+                if (!root) return;
+                const fields = Array.from(root.querySelectorAll('input.ui-input')).filter((i) => i.type === 'text' && !i.disabled);
+                const k = fields.indexOf(t);
+                if (k < 0 || k === fields.length - 1) return;
+                ev.preventDefault();
+                fields[k + 1].focus();
+                try { fields[k + 1].select(); } catch (e) {}
             });
 
             // Roster PDF import (paperclip + hidden file input)
@@ -2985,7 +3035,7 @@
                     <button type="button" class="roster-build-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
                         <i data-lucide="hammer" class="w-3.5 h-3.5"></i>Build cards
                     </button>
-                    <button type="button" class="roster-discard-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
+                    <button type="button" class="roster-discard-btn flex-1 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform transition-colors inline-flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:pointer-events-none">
                         <i data-lucide="x" class="w-3.5 h-3.5"></i>Discard
                     </button>
                 </div>
@@ -3009,7 +3059,14 @@
             const spendBuildRow = () => { setSpent(buildBtn); setSpent(discardBtn); };
             const spendAll = () => { setSpent(buildBtn); setSpent(discardBtn); setSpent(calcAllBtn); };
             buildBtn.addEventListener('click', () => { spendBuildRow(); rosterBuildCards(parsed, batch); });
-            discardBtn.addEventListener('click', () => { spendAll(); addBotMessage('Discarded — nothing was built. Attach the roster again anytime.'); });
+            // v1.29.0: two-tap discard (owner design) — the first tap arms a
+            // red confirm state, the second discards. Arming spends nothing.
+            discardBtn.addEventListener('click', () => {
+                armTwoTap(discardBtn, {
+                    armedHtml: '<i data-lucide="x" class="w-3.5 h-3.5"></i>Tap again to discard',
+                    confirm: () => { spendAll(); addBotMessage('Discarded — nothing was built. Attach the roster again anytime.'); }
+                });
+            });
             calcAllBtn.addEventListener('click', () => { spendAll(); rosterCalculateAll(parsed, batch); });
         }
 
@@ -3103,6 +3160,7 @@
                 ab.onclick = () => {
                     if (ab.disabled || ab.dataset.done) return;
                     const res = persistArchiveSaving(payloads);
+                    if (res.ok === false) return; // persistArchive already explained; leave the button armed for a retry
                     appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved${res.updated ? ' (' + res.updated + ' updated)' : ''}.`);
                     // One tap saves once: full-colour tick, then the save icon
                     // returns INACTIVE — same one-shot as a single summary.
@@ -7080,6 +7138,7 @@ function getRegionForAirport(code) {
                 const doSave = (station) => {
                     if (station != null) archivePayload.stationDisplay = station;
                     const res = persistArchiveSaving([archivePayload]);
+                    if (res.ok === false) return; // persistArchive already explained; the save stays tappable for a retry
                     appAlert((archivePayload.stationDisplay || 'Earnings') + ' earnings ' + (res.updated ? 'updated' : 'saved') + '.');
                     const prm = content.querySelector('#ca-station-prompt');
                     if (prm) prm.remove();
@@ -7163,8 +7222,16 @@ function getRegionForAirport(code) {
         }
         function persistArchive(arr) {
             // Feature tour: demo saves land in the session store, never on disk.
-            if (window.caTourArchiveStore) { window.caTourArchiveStore.entries = Array.isArray(arr) ? arr : []; return; }
-            localStorage.setItem(ARCHIVE_KEY, JSON.stringify(arr));
+            if (window.caTourArchiveStore) { window.caTourArchiveStore.entries = Array.isArray(arr) ? arr : []; return true; }
+            // v1.29.0: a refused write must not pass silently — the crew is
+            // told honestly, and the caller knows not to claim "saved".
+            try {
+                localStorage.setItem(ARCHIVE_KEY, JSON.stringify(arr));
+                return true;
+            } catch (e) {
+                appAlert("Couldn't save — your phone's storage is full or unavailable. The change wasn't saved.");
+                return false;
+            }
         }
         function archiveMonthLabel(mk) {
             const p = String(mk || '').split('-');
@@ -7225,8 +7292,8 @@ function getRegionForAirport(code) {
                 if (i >= 0) { arr[i] = p; updated++; }
                 else { arr.push(p); fresh++; }
             });
-            persistArchive(arr);
-            return { fresh: fresh, updated: updated };
+            const ok = persistArchive(arr);
+            return { fresh: fresh, updated: updated, ok: ok };
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
@@ -7381,15 +7448,65 @@ function getRegionForAirport(code) {
                 wdName: WD[wdTop], wdPct: all.length ? Math.round(100 * wd[wdTop] / all.length) : 0
             };
         }
+        // v1.29.0: search matches route AND month/date AND flight type AND
+        // amount — "KTM", "September", "2026-09", "layover", "360" all find
+        // their entries. One haystack, used by both the list and the scope
+        // filters so they can never disagree.
+        function archEntryMatches(e, q) {
+            const p = String(e.monthKey || '').split('-');
+            const fullM = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][parseInt(p[1], 10) || 0] || '';
+            const hay = [archRoute(e), String(e.stationDisplay || ''), archiveMonthLabel(e.monthKey), fullM,
+                String(e.sectorDate || ''), String(e.flightType || ''),
+                (isFinite(e.amount) ? String(Math.round(e.amount * 100) / 100) : ''), formatMoney(e.amount)].join(' ').toLowerCase();
+            return hay.indexOf(q) !== -1;
+        }
         function archFiltered() {
             const info = archScopeInfo();
             const q = archState.search.trim().toLowerCase();
             return loadArchive().filter((e) => {
                 if (archState.scope === 'year' && String(e.monthKey || '').slice(0, 4) !== info.yr) return false;
                 if (archState.scope === 'month' && String(e.monthKey || '') !== info.mk) return false;
-                if (q && String(e.stationDisplay || '').toLowerCase().indexOf(q) === -1) return false;
+                if (q && !archEntryMatches(e, q)) return false;
                 return true;
             });
+        }
+        // v1.29.0: tap-an-amount-to-correct — no more delete-and-redo for a
+        // typo'd figure. Commit on Enter or blur, Escape cancels, the 6s undo
+        // toast restores the previous figure.
+        function archEditAmount(id) {
+            const list = archEl('ca-arch-list');
+            const btn = list && list.querySelector('.ca-arch-amt[data-amt="' + id + '"]');
+            if (!btn || btn.dataset.editing === '1') return;
+            const es = loadArchive();
+            const e = es.find((x) => String(x.id) === String(id));
+            if (!e) return;
+            btn.dataset.editing = '1';
+            const restore = btn.innerHTML;
+            btn.innerHTML = '<input type="text" inputmode="decimal" class="ca-arch-amt-input w-24 text-right bg-transparent outline-none border-b-2 border-sia-gold/70" style="color: var(--arch-fg)" value="' + (isFinite(e.amount) ? e.amount : '') + '" aria-label="New amount">';
+            const inp = btn.querySelector('input');
+            inp.focus(); try { inp.select(); } catch (err) {}
+            let done = false;
+            const close = (commit) => {
+                if (done) return;
+                done = true;
+                const v = parseFloat(String((inp && inp.value) || '').replace(/[^0-9.]/g, ''));
+                delete btn.dataset.editing;
+                btn.innerHTML = restore;
+                if (!commit || !isFinite(v) || Math.abs(v - e.amount) < 0.005) return;
+                const prev = e.amount;
+                e.amount = Math.round(v * 100) / 100;
+                if (persistArchive(es)) {
+                    renderArch();
+                    archToast('Amount corrected', () => { e.amount = prev; persistArchive(es); renderArch(); });
+                } else {
+                    e.amount = prev;
+                }
+            };
+            inp.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') { ev.preventDefault(); close(true); }
+                else if (ev.key === 'Escape') { ev.preventDefault(); close(false); }
+            });
+            inp.addEventListener('blur', () => close(true));
         }
         function archToast(msg, undoFn) {
             const t = archEl('ca-arch-toast'); t.innerHTML = '';
@@ -7436,9 +7553,9 @@ function getRegionForAirport(code) {
             const all = loadArchive();
             const keep = scroll ? scroll.scrollTop : 0;
             const q = archState.search.trim().toLowerCase();
-            // Search narrows the list; the summary, chart and insights always
-            // read the whole archive for their scope.
-            const vis = q ? all.filter((e) => String(e.stationDisplay || '').toLowerCase().indexOf(q) !== -1) : all.slice();
+            // Search narrows the list (route, month/date, type, amount);
+            // the summary, chart and insights always read the whole archive.
+            const vis = q ? all.filter((e) => archEntryMatches(e, q)) : all.slice();
             const clearBtn = archEl('ca-arch-clear');
             if (clearBtn) {
                 clearBtn.classList.toggle('opacity-0', !archState.search);
@@ -7513,7 +7630,7 @@ function getRegionForAirport(code) {
                         + '<span class="ca-arch-dot"></span>'
                         + '<span class="font-bold text-sm" style="color: var(--arch-fg)">' + archRoute(e) + '</span>'
                         + '<span class="text-xs" style="color: var(--arch-muted)">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
-                        + '<span class="ca-arch-amt ml-auto font-bold text-sm" style="color: var(--arch-fg)">' + formatMoney(e.amount) + '</span>'
+                        + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
                         + '<button type="button" class="ca-arch-del p-1.5 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 if (inProgress) {
@@ -7547,6 +7664,8 @@ function getRegionForAirport(code) {
                 hd.setAttribute('aria-expanded', String(!archState.collapsed[k]));
             }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archDeleteOne(b.getAttribute('data-id')); }));
+            // v1.29.0: tap an amount to correct it in place.
+            list.querySelectorAll('.ca-arch-amt[data-amt]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archEditAmount(b.getAttribute('data-amt')); }));
             const nudgeExport = list.querySelector('#ca-arch-nudge-export');
             if (nudgeExport) nudgeExport.addEventListener('click', archExport);
             const nudgeSnooze = list.querySelector('#ca-arch-nudge-snooze');
@@ -7563,7 +7682,7 @@ function getRegionForAirport(code) {
                 } else renderArch();
             });
             list.querySelectorAll('.ca-arch-row').forEach((row) => row.addEventListener('click', (ev) => {
-                if (ev.target.closest('.ca-arch-del')) return;
+                if (ev.target.closest('.ca-arch-del') || ev.target.closest('.ca-arch-amt[data-amt]') || ev.target.closest('.ca-arch-amt-input')) return;
                 openArchEntry(row.getAttribute('data-id'));
             }));
         }

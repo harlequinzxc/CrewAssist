@@ -427,6 +427,103 @@ const fs = require('fs');
     void d;
   }
 
+  // v1.29.0: tap-an-amount-to-correct — in place, with the 6s undo
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'E1', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', flightType: 'Layover', stationDisplay: 'KTM', amount: 100 }
+    ]));
+    w.showArchiveOverlay();
+    await wait(100);
+    const amtBtn = d.querySelector('.ca-arch-amt[data-amt="E1"]');
+    R.ok(amtBtn && amtBtn.textContent === '$100.00', 'amount renders as a tappable button');
+    amtBtn.click();
+    await wait(50);
+    const inp = d.querySelector('.ca-arch-amt-input');
+    R.ok(inp && inp.value === '100', 'tap turns the amount into a pre-filled input');
+    inp.value = '123.45';
+    inp.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await wait(100);
+    let arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arr.length === 1 && arr[0].amount === 123.45, 'Enter commits the corrected amount');
+    R.ok(d.querySelector('.ca-arch-amt[data-amt="E1"]').textContent === '$123.45', 'the row shows the new figure');
+    const toast = d.getElementById('ca-arch-toast');
+    R.ok(!toast.classList.contains('hidden') && toast.textContent.indexOf('Amount corrected') !== -1, 'correction toast appears');
+    toast.querySelector('button').click();
+    await wait(100);
+    arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arr[0].amount === 100, 'undo restores the previous figure');
+    R.ok(d.querySelector('.ca-arch-amt[data-amt="E1"]').textContent === '$100.00', 'the row shows the restored figure');
+    // Escape cancels without touching anything
+    d.querySelector('.ca-arch-amt[data-amt="E1"]').click();
+    await wait(50);
+    const inp2 = d.querySelector('.ca-arch-amt-input');
+    inp2.value = '999';
+    inp2.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await wait(50);
+    arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    R.ok(arr[0].amount === 100, 'Escape cancels the edit');
+    void d;
+  }
+
+  // v1.29.0: search matches month/date and amount, not just route
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'S1', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', flightType: 'Layover', stationDisplay: 'KTM', amount: 777.77 },
+      { id: 'S2', savedAt: '2026-10-20T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-20', flightType: 'Turnaround', stationDisplay: 'KTM', amount: 50 }
+    ]));
+    w.showArchiveOverlay();
+    await wait(100);
+    const search = d.getElementById('ca-arch-search');
+    const rows = () => d.querySelectorAll('.ca-arch-row').length;
+    search.value = 'september';
+    search.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.eq(rows(), 1, 'month name finds the September entry');
+    search.value = '2026-10';
+    search.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.eq(rows(), 1, 'month key finds the October entry');
+    search.value = '777';
+    search.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.eq(rows(), 1, 'amount finds the 777.77 entry');
+    search.value = 'layover';
+    search.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.eq(rows(), 1, 'flight type finds the layover');
+    search.value = 'KTM';
+    search.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.eq(rows(), 2, 'route search still works');
+    void d;
+  }
+
+  // v1.29.0: a refused save says so honestly — no silent loss, retry stays open
+  {
+    const { w, d } = await boot(APP);
+    const seed = [{ id: 'F1', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', flightType: 'Layover', stationDisplay: 'KTM', amount: 100 }];
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify(seed));
+    const origSet = w.Storage.prototype.setItem;
+    w.Storage.prototype.setItem = function (k, v) { if (k === 'crewAssist.archive') throw new Error('QuotaExceededError'); return origSet.call(this, k, v); };
+    w.eval('showResultsOverlay(99, 99, 0, [], [], true, "both", ' + JSON.stringify({ id: 'F2', savedAt: new Date().toISOString(), monthKey: '2026-09', sectorDate: '2026-09-16', flightType: 'Layover', stationDisplay: 'NRT', amount: 200 }) + ', null)');
+    await wait(60);
+    const btn = d.getElementById('btn-results-action');
+    R.ok(btn && !btn.disabled, 'results overlay offers save');
+    btn.click();
+    await wait(100);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf("Couldn't save") !== -1, 'a refused write says so honestly');
+    R.ok(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length === 1, 'nothing was added');
+    R.ok(!btn.dataset.done && !btn.disabled, 'the save stays armed for a retry');
+    w.Storage.prototype.setItem = origSet;
+    btn.click();
+    await wait(100);
+    R.ok(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length === 2, 'retry after freeing storage saves');
+    R.ok(btn.dataset.done === '1', 'and becomes one-shot');
+    void d;
+  }
+
   // everything-moves ruling: the insights panel and search clear animate
   {
     const src = fs.readFileSync(APP, 'utf8');

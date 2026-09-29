@@ -34,5 +34,40 @@ const { R, boot, wait, APP } = H;
   R.ok(!reset.classList.contains('hidden'), '10 taps reveal Reset pill');
   R.ok(!card.classList.contains('hidden'), '10 taps reveal dev section');
 
+  // v1.29.0: two-tap clear-chat + calculator Enter-advance + keypad coverage
+  {
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+    } });
+    await wait(3500); // fast lane: greeting settles
+    const resetBtn = d.getElementById('btn-reset');
+    const firstBubble = d.getElementById('chat-container').firstElementChild;
+    resetBtn.click();
+    await wait(100);
+    R.ok(resetBtn.classList.contains('ca-twotap-armed'), 'first clear-chat tap arms red, nothing cleared');
+    R.ok(firstBubble && firstBubble.isConnected, 'the conversation survives the first tap');
+    resetBtn.click();
+    await wait(3000);
+    R.ok(!firstBubble.isConnected, 'the second tap clears the chat');
+    R.ok(/, FS Test!/.test(d.getElementById('chat-container').textContent), 'and the greeting re-types');
+
+    // Enter hops to the next calculator field; every text field has a keypad
+    w.renderCalculatorCard('both');
+    await wait(120);
+    const card = d.querySelector('[data-calc-card]');
+    R.ok(!!card, 'calculator card renders');
+    const fields = Array.from(card.querySelectorAll('input.ui-input')).filter((i) => i.type === 'text');
+    R.ok(fields.length >= 2, 'card has text fields');
+    R.ok(fields.every((i) => /iata/.test(i.id) || i.getAttribute('inputmode')), 'every numeric calculator field summons a keypad; station-code fields are letters');
+    const first = fields[0];
+    first.focus();
+    first.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await wait(50);
+    R.ok(d.activeElement === fields[1], 'Enter advances to the next field');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

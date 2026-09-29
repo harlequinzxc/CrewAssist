@@ -122,8 +122,8 @@ const EMDASH = '\u2014'; // —
   // --- version stamps: app + service-worker cache bump together ---
   {
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.28.4';"), 'APP_VERSION stamped 1.28.4');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v143"), 'service-worker cache name bumped to v143');
+    R.ok(src.includes("const APP_VERSION = '1.29.0';"), 'APP_VERSION stamped 1.29.0');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v144"), 'service-worker cache name bumped to v144');
   }
 
   process.exit(R.done() ? 1 : 0);
