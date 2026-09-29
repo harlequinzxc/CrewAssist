@@ -103,5 +103,27 @@ const { R, boot, wait, APP } = H;
     void d;
   }
 
+  // v1.31.1: fixes from the owner's device pass
+  {
+    const fs = require('fs');
+    const src = fs.readFileSync(APP, 'utf8');
+    // the calculator interface selector follows the chosen mode (the Default
+    // pill was missing its id, so it never un-selected)
+    w.eval('setCalcUiMode("manual")');
+    await wait(60);
+    const dPill = d.getElementById('calcui-pill-default');
+    const mPill = d.getElementById('calcui-pill-manual');
+    R.ok(dPill && !dPill.classList.contains('bg-sia-gold') && dPill.getAttribute('aria-checked') === 'false', 'Default un-selects when Manual is chosen');
+    R.ok(mPill && mPill.classList.contains('bg-sia-gold') && mPill.getAttribute('aria-checked') === 'true', 'Manual takes the selection');
+    w.eval('setCalcUiMode("default")');
+    await wait(60);
+    R.ok(dPill.classList.contains('bg-sia-gold') && dPill.getAttribute('aria-checked') === 'true', 'Default re-selects on return');
+    // toasts: gold border always, bright pill in dark mode
+    R.ok(src.includes('border: 1.5px solid #d4af37'), 'every toast carries a gold border');
+    R.ok(src.includes('.dark .ca-arch-toast { background: #f6f1e8; color: #171d2b; }'), 'dark mode toasts invert to a bright pill');
+    R.ok(src.includes('.ca-arch-toast .ca-toast-undo'), 'the Undo action keeps a readable gold in both themes');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

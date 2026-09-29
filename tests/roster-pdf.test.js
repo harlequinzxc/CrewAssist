@@ -386,6 +386,19 @@ const MONTH = [
     ab.click();
     await wait(50);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, arch.length, 'second tap saves nothing');
+    // v1.31.1: the Block Time label follows its field in every mode
+    const tIn = d.getElementById('calc-1-ifa-t1');
+    const tLab = tIn && tIn.previousElementSibling;
+    R.ok(tIn && tIn.classList.contains('hidden') && tLab && tLab.classList.contains('hidden'), 'default mode hides the block-time field AND its label');
+    w.eval('setCalcUiMode("manual")');
+    await wait(60);
+    R.ok(!tIn.classList.contains('hidden') && !tLab.classList.contains('hidden'), 'manual mode shows the field AND its label');
+    w.eval('setCalcUiMode("default")');
+    await wait(60);
+    R.ok(tIn.classList.contains('hidden') && tLab.classList.contains('hidden'), 'back to default, both hide again');
+    // v1.31.1: the pinned totals bar is a direct extension of the sheet header
+    const stEl = d.getElementById('ca-roster-sticky');
+    R.ok(stEl && stEl.parentElement.id === 'results-sheet' && !stEl.classList.contains('hidden'), 'the totals bar sits under the sheet header, outside the scroll area');
     d.getElementById('btn-close-results').click();
     await wait(400);
     R.ok(backdrop.classList.contains('hidden'), 'combined summary closes');

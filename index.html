@@ -291,7 +291,13 @@
         html.dark .ca-twotap-armed { color: #ff4c4c !important; border-color: rgba(255,76,76,0.55) !important; background: rgba(255,76,76,0.12) !important; }
         .ca-arch-amt { font-variant-numeric: tabular-nums; }
         .ca-arch-num { font-variant-numeric: tabular-nums; }
-        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
+        /* v1.31.1 (owner report): the toast is always outlined in gold — and in
+           dark mode it inverts to a bright pill, because #111 on the dark app
+           barely read. Day mode keeps the classic dark pill. */
+        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; border: 1.5px solid #d4af37; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
+        .dark .ca-arch-toast { background: #f6f1e8; color: #171d2b; }
+        .ca-arch-toast .ca-toast-undo { color: #d4af37; font-weight: 700; }
+        .dark .ca-arch-toast .ca-toast-undo { color: #7d650f; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         .ca-arch-insights { overflow: hidden; max-height: 0; opacity: 0; margin-top: 0; transition: max-height .3s ease, opacity .3s ease, margin-top .3s ease; }
@@ -358,10 +364,13 @@
         .ca-trip-collapsed .ca-trip-body { max-height: 0; opacity: 0; }
         .ca-trip-chev { transition: transform .3s ease; }
         .ca-tripsec:not(.ca-trip-collapsed) .ca-trip-chev { transform: rotate(90deg); }
-        /* the totals bar pins above the trips once the hero card scrolls away */
-        .ca-roster-sticky { position: sticky; top: -1px; z-index: 10; display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 9px 14px; margin: 0 -6px 6px; border-radius: 0 0 16px 16px; background: rgba(255,255,255,.92); box-shadow: 0 2px 12px rgba(0,0,0,.08); opacity: 0; transform: translateY(-6px); transition: opacity .25s ease, transform .25s ease; }
-        .dark .ca-roster-sticky { background: rgba(11,26,58,.92); }
-        .ca-roster-sticky.ca-on { opacity: 1; transform: none; }
+        /* v1.31.1 (owner report): the totals bar is a direct extension of the
+           sheet header — it lives between the header and the scroll area, so
+           there is no possible gap, and it grows in place (everything moves)
+           once the hero card scrolls away. */
+        .ca-roster-sticky { display: flex; align-items: baseline; justify-content: center; gap: 8px; max-height: 0; opacity: 0; overflow: hidden; padding: 0 14px; border-bottom: 1px solid rgba(0,0,0,.06); background: rgba(255,255,255,.95); transition: max-height .25s ease, opacity .25s ease, padding .25s ease; }
+        .dark .ca-roster-sticky { background: rgba(11,26,58,.95); border-bottom-color: rgba(255,255,255,.06); }
+        .ca-roster-sticky.ca-on { max-height: 44px; opacity: 1; padding: 9px 14px; }
         /* v1.31.0: curated insights — the top four lead, the rest unfold */
         .ca-arch-insmore { overflow: hidden; max-height: 2400px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-insmore.ca-arch-insmore-hide { max-height: 0; opacity: 0; }
@@ -1038,7 +1047,7 @@
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
                     <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
                         <div id="calcui-segmented" class="flex w-full flex-nowrap items-stretch rounded-xl bg-black/5 dark:bg-white/5 p-0.5 border border-black/10 dark:border-white/10" role="radiogroup" aria-label="Allowance calculator interface">
-                            <button type="button" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 bg-sia-gold text-black"><i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> Default</button>
+                            <button type="button" id="calcui-pill-default" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 bg-sia-gold text-black"><i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> Default</button>
                             <button type="button" id="calcui-pill-manual" data-calcui="manual" role="radio" aria-checked="false" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200"><i data-lucide="pen-line" class="w-3.5 h-3.5 shrink-0"></i> Manual</button>
                             <button type="button" id="calcui-pill-advanced" data-calcui="advanced" role="radio" aria-checked="false" class="calcui-pill hidden flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200"><i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 shrink-0"></i> Advanced</button>
                         </div>
@@ -1183,6 +1192,7 @@
                     </button>
                 </div>
             </div>
+            <div id="ca-roster-sticky" class="ca-roster-sticky hidden" aria-hidden="true"></div>
             <div class="px-6 py-6 overflow-y-auto max-w-xl mx-auto w-full space-y-6 flex-grow" id="results-content">
                 <!-- Injected via JS -->
             </div>
@@ -1570,12 +1580,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.31.0';
+        const APP_VERSION = '1.31.1';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
         const APP_WHAT_NEW = [
-            'A visual refresh: Save is a labelled button that keeps its shape, saved confirmations are quiet toasts, gold text is darker and easier to read in light mode, tiny labels are bigger, long summaries pin the total and fold per trip, insights lead with what matters, and Settings can replay the feature tour.'
+            'Fixes from your testing: the calculator interface selector now follows Manual and Advanced, the block-time label hides with its field, the pinned totals bar sits flush under the header, toasts carry a gold border and brighten in dark mode, Show all 12 animates, and an out-and-back day lists both flights on the next-flight card.'
         ];
 
         // State
@@ -2831,41 +2841,51 @@
             const old = document.getElementById('ca-nextflight-card');
             if (old) old.remove();
             if (!nextFlightChatActive()) return;
-            const f = upcomingList()[0];
-            if (!f) return;
-            const saved = menusSavedFor(f.fn, f.ymd);
+            // v1.31.1 (owner report): an out-and-back day is ONE duty — the
+            // card lists every flight on the next flight's day (SQ106 out,
+            // SQ105 back), each with its own Menus badge and its own tap.
+            const all = upcomingList();
+            if (!all.length) return;
+            const day = all.filter((x) => x.ymd === all[0].ymd);
             const chat = document.getElementById('chat-container');
             const el = document.createElement('div');
             el.id = 'ca-nextflight-card';
             el.className = 'flex items-start gap-3 mt-2 w-full chat-anim-in';
-            el.innerHTML =
-                '<div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">'
-                + '<button type="button" id="ca-nextflight-tap" class="w-full text-left" aria-label="Open menus for SQ ' + rosterEsc(f.fn) + '">'
+            const rowHtml = (f, idx) =>
+                '<button type="button"' + (idx === 0 ? ' id="ca-nextflight-tap"' : '') + ' class="ca-nextflight-tap w-full text-left" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '" aria-label="Open menus for SQ ' + rosterEsc(f.fn) + '">'
                 + '<span class="flex items-center gap-2.5">'
                 + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                 + '<span class="flex-1 min-w-0">'
                 + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">SQ ' + rosterEsc(f.fn) + ' <span class="font-normal">&middot; ' + rosterEsc(f.dep) + ' &rarr; ' + rosterEsc(f.arr) + '</span></span>'
                 + '<span class="block text-xs mt-0.5 text-gray-500">' + rosterShortDate(f.ymd) + (f.std ? ' &middot; departs ' + rosterEsc(f.std) : '') + ' &middot; <b>' + nextFlightRel(f.ymd) + '</b></span>'
                 + '</span>'
-                + (saved ? '<span class="shrink-0 inline-flex items-center gap-1 ca-micro font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>' : '')
-                + '</span></button></div>';
+                + (menusSavedFor(f.fn, f.ymd) ? '<span class="shrink-0 inline-flex items-center gap-1 ca-micro font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>' : '')
+                + '</span></button>';
+            el.innerHTML =
+                '<div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">'
+                + (day.length > 1 ? '<p class="ca-micro font-bold uppercase tracking-wider text-gray-500 mb-1">' + day.length + ' flights ' + nextFlightRel(day[0].ymd) + '</p>' : '')
+                + day.map(rowHtml).join('<div class="border-t border-black/5 dark:border-white/5 my-1.5"></div>')
+                + '</div>';
             chat.appendChild(el);
             try { lucide.createIcons(); } catch (e) {}
-            const nfBtn = document.getElementById('ca-nextflight-tap');
-            const nfBtnHtml = nfBtn.innerHTML;
-            nfBtn.addEventListener('click', () => {
-                if (isChatBusy()) return;
-                // v1.28.2: saved → viewer straight from cache; otherwise fetch
-                // every cabin behind a spinner, then open. Works offline when
-                // the menus are already saved (the onboard scenario).
-                const setBusy = (busy) => {
-                    nfBtn.disabled = busy;
-                    nfBtn.innerHTML = busy
-                        ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(f.fn) + '\u2026</span></span>'
-                        : nfBtnHtml;
-                    try { lucide.createIcons(); } catch (e) {}
-                };
-                openNextFlightMenus(f.fn, f.ymd, setBusy);
+            el.querySelectorAll('.ca-nextflight-tap').forEach((btn) => {
+                const parts = (btn.getAttribute('data-nf') || '').split('|');
+                const fn = parts[0], ymd = parts[1];
+                const nfBtnHtml = btn.innerHTML;
+                btn.addEventListener('click', () => {
+                    if (isChatBusy()) return;
+                    // v1.28.2: saved → viewer straight from cache; otherwise fetch
+                    // every cabin behind a spinner, then open. Works offline when
+                    // the menus are already saved (the onboard scenario).
+                    const setBusy = (busy) => {
+                        btn.disabled = busy;
+                        btn.innerHTML = busy
+                            ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
+                            : nfBtnHtml;
+                        try { lucide.createIcons(); } catch (e) {}
+                    };
+                    openNextFlightMenus(fn, ymd, setBusy);
+                });
             });
             scrollToBottom();
         }
@@ -3170,10 +3190,6 @@
             const grand = results.reduce((n, r) => n + r.res.grandTotal, 0);
             const n = results.length;
             let html = `
-                <div id="ca-roster-sticky" class="ca-roster-sticky" aria-hidden="true">
-                    <span class="ca-micro font-bold uppercase tracking-wider">${n} trip${n === 1 ? '' : 's'}</span>
-                    <span class="text-sm font-bold text-sia-gold">${formatMoney(grand)}</span>
-                </div>
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total — ${n} trip${n === 1 ? '' : 's'}</p>
                     <p class="text-4xl font-bold">${formatMoney(grand)}</p>
@@ -3208,6 +3224,12 @@
             document.getElementById('results-title').textContent = 'Summary';
             content.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
+            const sticky = document.getElementById('ca-roster-sticky');
+            if (sticky) {
+                sticky.innerHTML = '<span class="ca-micro font-bold uppercase tracking-wider">' + n + ' trip' + (n === 1 ? '' : 's') + '</span><span class="text-sm font-bold text-sia-gold">' + formatMoney(grand) + '</span>';
+                sticky.classList.remove('hidden');
+                sticky.classList.remove('ca-on');
+            }
             // v1.31.0: trips fold like archive months; the totals pin on scroll.
             content.querySelectorAll('.ca-trip-head').forEach((h) => {
                 h.addEventListener('click', () => {
@@ -3512,7 +3534,7 @@
             if (!card) return;
             const isDefault = calcUiMode === 'default';
             const isManual = calcUiMode === 'manual';
-            card.querySelectorAll('.ifa-time-input').forEach((el) => el.classList.toggle('hidden', isDefault));
+            card.querySelectorAll('.ifa-time-input, .ifa-t-label').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.ifa-us-field').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.lma-iata-field, .lma-time-field').forEach((el) => el.classList.toggle('hidden', isDefault));
             card.querySelectorAll('.ifa-fetch-btn').forEach((el) => el.classList.toggle('hidden', isManual));
@@ -5607,7 +5629,7 @@ function getRegionForAirport(code) {
                                         <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(dfltDate)}</button>
                                     </div>
                                 </div>
-                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Block Time</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1 ifa-t-label">Block Time</label>
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="HH:MM">
                                 
                                 ${showUS ? `
@@ -7230,6 +7252,8 @@ function getRegionForAirport(code) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
+            const stv = document.getElementById('ca-roster-sticky');
+            if (stv) stv.classList.add('hidden'); // the pinned totals bar is the combined summary's alone
             
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
@@ -7705,7 +7729,7 @@ function getRegionForAirport(code) {
         function archToast(msg, undoFn) {
             const t = archEl('ca-arch-toast'); t.innerHTML = '';
             const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
-            if (undoFn) { const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'font-bold'; u.style.color = '#d4af37'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u); }
+            if (undoFn) { const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'ca-toast-undo'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u); }
             t.classList.remove('hidden');
             clearTimeout(archUndoTimer); archUndoTimer = setTimeout(hideArchToast, 6000);
         }
@@ -8047,7 +8071,12 @@ function getRegionForAirport(code) {
             const mt = box.querySelector('#ca-arch-ins-mtoggle');
             if (mt) mt.addEventListener('click', () => {
                 archState.insightsAll = !archState.insightsAll;
-                renderArchInsights(loadArchive());
+                // everything-moves: the wrapper unfolds in place — a re-render
+                // would rebuild the element and skip the transition entirely.
+                const mw = box.querySelector('.ca-arch-insmore');
+                if (mw) mw.classList.toggle('ca-arch-insmore-hide', !archState.insightsAll);
+                mt.innerHTML = '<i data-lucide="' + (archState.insightsAll ? 'chevron-up' : 'chevron-down') + '" class="w-3.5 h-3.5"></i><span id="ca-arch-ins-mtoggle-label">' + (archState.insightsAll ? 'Show less' : 'Show all 12') + '</span>';
+                try { lucide.createIcons(); } catch (e) {}
             });
             // Keep the class in sync on every re-render (search typing, scope
             // changes) — visibility is owned by the animation classes, NEVER
