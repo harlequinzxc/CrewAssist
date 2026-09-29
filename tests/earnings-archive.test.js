@@ -421,10 +421,65 @@ const fs = require('fs');
     R.ok(btn && !btn.disabled, 'results overlay offers save');
     btn.click();
     await wait(60);
+    // v1.30.0: the review step — nothing is written until Confirm
+    const rev = d.getElementById('ca-save-review');
+    R.ok(rev, 'tapping Save opens the review first');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 3, 'nothing is written while the review is open');
+    R.ok(rev.textContent.indexOf('Updated') !== -1 && rev.textContent.indexOf('$80.00') !== -1 && rev.textContent.indexOf('$99.00') !== -1, 'the review tags the ICN duty Updated, old amount struck through');
+    R.ok(rev.textContent.indexOf('1 updated') !== -1, 'the counts line reads one updated');
+    d.getElementById('ca-save-confirm').click();
+    await wait(60);
     arr = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
     const icn = arr.filter((e) => e.stationDisplay === 'ICN');
     R.ok(icn.length === 1 && icn[0].amount === 99, 'saving from the summary updates the existing ICN entry');
     R.ok(btn.dataset.done === '1', 'save is one-shot per summary');
+    void d;
+  }
+
+  // --- v1.30.0: the save review — New / Updated / No change before writing ---
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'G1', savedAt: '2026-09-01T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', flightType: 'Layover', stationDisplay: 'CDG', amount: 300 },
+      { id: 'G2', savedAt: '2026-09-01T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-12', flightType: 'Layover', stationDisplay: 'NRT', amount: 250 }
+    ]));
+    const payloads = JSON.stringify([
+      { id: 'g1', savedAt: '2026-09-25T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', flightType: 'Layover', stationDisplay: 'CDG', amount: 350 },
+      { id: 'g2', savedAt: '2026-09-25T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-12', flightType: 'Layover', stationDisplay: 'NRT', amount: 250 },
+      { id: 'g3', savedAt: '2026-09-25T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-20', flightType: 'Turnaround', stationDisplay: 'KTM', amount: 120 }
+    ]);
+    w.eval('showResultsOverlay(720, 720, 0, [], [], true, "both", { id: "z", savedAt: "2026-09-25T10:00:00Z", monthKey: "2026-09", sectorDate: "2026-09-25", flightType: "Layover", stationDisplay: "TPE", amount: 50 }, null)');
+    await wait(60);
+    w.eval('openSaveReviewPanel(document.getElementById("results-content"), ' + payloads + ', function () { window.__reviewConfirmed = true; })');
+    await wait(60);
+    const rev = d.getElementById('ca-save-review');
+    R.ok(rev, 'the review panel opens above the summary');
+    R.ok(rev.textContent.indexOf('1 new \u00b7 1 updated \u00b7 1 no change') !== -1, 'counts line names all three kinds');
+    const rows = rev.querySelectorAll('.ca-save-revrow');
+    R.eq(rows.length, 3, 'one row per payload');
+    R.ok(rows[0].textContent.indexOf('Updated') !== -1 && rows[0].textContent.indexOf('$300.00') !== -1 && rows[0].textContent.indexOf('$350.00') !== -1, 'updated row shows the old and new amounts');
+    R.ok(rows[0].querySelector('.line-through'), 'the old amount is struck through');
+    R.ok(rows[1].textContent.indexOf('No change') !== -1, 'an identical re-save reads No change');
+    R.ok(rows[2].textContent.indexOf('New') !== -1 && rows[2].textContent.indexOf('$120.00') !== -1, 'a fresh duty reads New with its amount');
+    R.ok(d.getElementById('btn-results-action').classList.contains('hidden'), 'the header Save steps aside while the review is open');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'nothing is written while the review is open');
+    d.getElementById('ca-save-cancel').click();
+    await wait(60);
+    R.ok(!d.getElementById('ca-save-review'), 'cancel closes the review');
+    R.ok(!d.getElementById('btn-results-action').classList.contains('hidden') && !d.getElementById('btn-results-action').disabled, 'cancel re-arms the Save button');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'cancel files nothing');
+    // the re-armed button must still WORK after the review hid it once
+    d.getElementById('btn-results-action').click();
+    await wait(60);
+    R.ok(d.getElementById('ca-save-review'), 'tapping Save after a cancel reopens the review');
+    d.getElementById('ca-save-cancel').click();
+    await wait(60);
+    w.eval('openSaveReviewPanel(document.getElementById("results-content"), ' + payloads + ', function () { window.__reviewConfirmed = true; })');
+    await wait(60);
+    d.getElementById('ca-save-confirm').click();
+    await wait(60);
+    R.ok(w.eval('window.__reviewConfirmed') === true, 'confirm runs the save');
+    R.ok(!d.getElementById('ca-save-review'), 'confirm closes the review');
     void d;
   }
 
@@ -514,11 +569,16 @@ const fs = require('fs');
     R.ok(btn && !btn.disabled, 'results overlay offers save');
     btn.click();
     await wait(100);
+    R.ok(d.getElementById('ca-save-review'), 'the review opens before anything is written');
+    d.getElementById('ca-save-confirm').click();
+    await wait(100);
     R.ok(d.getElementById('app-dialog-msg').textContent.indexOf("Couldn't save") !== -1, 'a refused write says so honestly');
     R.ok(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length === 1, 'nothing was added');
-    R.ok(!btn.dataset.done && !btn.disabled, 'the save stays armed for a retry');
+    R.ok(!btn.dataset.done && !btn.disabled && !btn.classList.contains('hidden'), 'the save stays armed and visible for a retry');
     w.Storage.prototype.setItem = origSet;
     btn.click();
+    await wait(100);
+    d.getElementById('ca-save-confirm').click();
     await wait(100);
     R.ok(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length === 2, 'retry after freeing storage saves');
     R.ok(btn.dataset.done === '1', 'and becomes one-shot');

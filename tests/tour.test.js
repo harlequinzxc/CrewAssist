@@ -106,7 +106,10 @@ const clickLast = (d, sel) => {
     R.ok(await until(() => !d.getElementById('results-backdrop').classList.contains('hidden'), 25000), 'only after Next does the summary page open');
     R.ok(await until(() => chatText(d).indexOf('calculating every flight') !== -1, 15000), 'the real flow narrates every flight');
     R.ok(await until(() => chatText(d).indexOf('$823.23') !== -1, 20000), 'the month totals $823.23 (360.72 + 154.35 + 308.16)');
-    R.ok(await until(() => w.caTour.entries.length === 3, 25000), 'the save at the bottom of the page files three demo entries');
+    R.ok(await until(() => !!d.getElementById('ca-save-review'), 15000), 'the save opens the review before anything is written');
+    R.ok(d.getElementById('ca-save-review').textContent.indexOf('3 new') !== -1, 'all three demo trips review as new');
+    R.ok(await until(() => chatText(d).indexOf('tagged') !== -1, 15000), 'the review beat explains the tags');
+    R.ok(await until(() => w.caTour.entries.length === 3, 25000), 'the confirmed save files three demo entries');
     R.ok(await until(() => chatText(d).indexOf('filed under your earnings') !== -1, 15000), 'the save is acknowledged');
     R.ok(await until(() => d.getElementById('results-backdrop').classList.contains('hidden'), 15000), 'the summary exits after the save');
     R.eq(w.localStorage.getItem('crewAssist.archive'), null, 'demo saves never touch localStorage');

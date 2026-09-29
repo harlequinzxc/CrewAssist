@@ -1528,12 +1528,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.29.2';
+        const APP_VERSION = '1.30.0';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
         const APP_WHAT_NEW = [
-            'Month progress now follows your flying: a month completes when its last flight lands — not at month end — and shows a full bar. Months with flights still to be flown show the projection, and saved-but-unflown future months read Upcoming.'
+            'Saving now shows a review first: every trip is tagged New, Updated (with the old amount) or No change, and nothing is written until you confirm.'
         ];
 
         // State
@@ -3159,15 +3159,20 @@
             if (ab && payloads.length) {
                 ab.onclick = () => {
                     if (ab.disabled || ab.dataset.done) return;
-                    const res = persistArchiveSaving(payloads);
-                    if (res.ok === false) return; // persistArchive already explained; leave the button armed for a retry
-                    appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved${res.updated ? ' (' + res.updated + ' updated)' : ''}.`);
-                    // One tap saves once: full-colour tick, then the save icon
-                    // returns INACTIVE — same one-shot as a single summary.
-                    ab.dataset.done = '1';
-                    setResultsAction('check', false);
-                    ab.disabled = true;
-                    setTimeout(() => setResultsAction('save', true), 1200);
+                    // v1.30.0: the roster save is reviewed trip by trip before
+                    // anything is written (owner ruling) — re-attaching a roster
+                    // shows exactly which trips are new, updated or unchanged.
+                    openSaveReviewPanel(content, payloads, () => {
+                        const res = persistArchiveSaving(payloads);
+                        if (res.ok === false) { setResultsAction('save', false); return; } // persistArchive already explained; the review closed, so Save re-arms for a retry
+                        appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved${res.updated ? ' (' + res.updated + ' updated)' : ''}.`);
+                        // One tap saves once: full-colour tick, then the save icon
+                        // returns INACTIVE — same one-shot as a single summary.
+                        ab.dataset.done = '1';
+                        setResultsAction('check', false);
+                        ab.disabled = true;
+                        setTimeout(() => setResultsAction('save', true), 1200);
+                    });
                 };
             }
             content.scrollTop = 0;
@@ -7086,6 +7091,65 @@ function getRegionForAirport(code) {
             try { lucide.createIcons(); } catch (e) {}
         }
 
+        // v1.30.0 (owner ruling): tapping Save never writes straight away.
+        // The review panel lists what the save will do — NEW entries, UPDATED
+        // duties (old -> new amount) and NO CHANGE re-saves — and Confirm
+        // commits it. Cancel closes the review and re-arms the Save button.
+        function openSaveReviewPanel(content, payloads, onConfirm) {
+            const prev = content.querySelector('#ca-save-review');
+            if (prev) prev.remove();
+            const pv = archiveSavePreview(payloads);
+            const counts = { new: 0, upd: 0, same: 0 };
+            pv.forEach((r) => { counts[r.kind]++; });
+            // setResultsAction(null) hides the header button AND clears its
+            // onclick — the review must step the icon aside without disarming
+            // Save, or a cancelled review / refused write would leave a dead
+            // button behind. Keep the handler.
+            const abKeep = document.getElementById('btn-results-action');
+            const keepClick = abKeep ? abKeep.onclick : null;
+            setResultsAction(null);
+            if (abKeep && keepClick) abKeep.onclick = keepClick;
+            const tagCls = { new: 'border-sia-gold/60 text-sia-gold', upd: 'border-amber-500/60 text-amber-600 dark:text-amber-400', same: 'border-black/20 dark:border-white/20 text-gray-500 dark:text-gray-400' };
+            const tagTxt = { new: 'New', upd: 'Updated', same: 'No change' };
+            const rows = pv.map((r) => {
+                const p = r.payload;
+                const label = archiveDayLabel(p.sectorDate) + ' \u00b7 ' + (p.stationDisplay || '\u2014') + ' \u00b7 ' + (p.flightType || '');
+                const amt = (r.kind === 'upd')
+                    ? '<span class="opacity-50 line-through mr-1">' + formatMoney(Number(r.old.amount) || 0) + '</span><span class="font-bold">' + formatMoney(Number(p.amount) || 0) + '</span>'
+                    : '<span class="font-bold">' + formatMoney(Number(p.amount) || 0) + '</span>';
+                return '<div class="ca-save-revrow flex items-center justify-between gap-2 py-1.5">'
+                    + '<div class="flex items-center gap-2 min-w-0">'
+                    + '<span class="shrink-0 px-1.5 py-0.5 rounded-md border text-[10px] font-bold uppercase ' + tagCls[r.kind] + '">' + tagTxt[r.kind] + '</span>'
+                    + '<span class="text-xs font-bold truncate">' + label + '</span></div>'
+                    + '<span class="shrink-0 text-xs text-sia-gold">' + amt + '</span></div>';
+            }).join('');
+            const parts = [];
+            if (counts.new) parts.push(counts.new + ' new');
+            if (counts.upd) parts.push(counts.upd + ' updated');
+            if (counts.same) parts.push(counts.same + ' no change');
+            const wrap = document.createElement('div');
+            wrap.id = 'ca-save-review';
+            wrap.className = 'chat-anim-in mb-4 p-4 rounded-2xl border border-sia-gold/40 bg-black/5 dark:bg-white/5';
+            wrap.innerHTML = '<p class="text-xs font-bold uppercase tracking-wide mb-1 text-sia-gold">Before you save</p>'
+                + '<p class="text-[11px] font-bold mb-2">' + (parts.join(' \u00b7 ') || 'nothing to save') + '</p>'
+                + '<div class="divide-y divide-black/5 dark:divide-white/5 mb-3">' + rows + '</div>'
+                + '<div class="flex gap-2">'
+                + '<button id="ca-save-confirm" type="button" class="flex-1 py-2 rounded-lg bg-sia-gold text-black text-xs font-bold uppercase tracking-wide">Confirm save</button>'
+                + '<button id="ca-save-cancel" type="button" class="flex-1 py-2 rounded-lg border border-white/20 text-xs font-bold uppercase tracking-wide">Cancel</button>'
+                + '</div>';
+            content.insertBefore(wrap, content.firstChild);
+            content.scrollTop = 0;
+            wrap.querySelector('#ca-save-confirm').addEventListener('click', () => { wrap.remove(); onConfirm(); });
+            wrap.querySelector('#ca-save-cancel').addEventListener('click', () => {
+                wrap.remove();
+                const sp = content.querySelector('#ca-station-prompt');
+                if (sp) sp.remove();
+                const ab = document.getElementById('btn-results-action');
+                if (ab) { delete ab.dataset.done; setResultsAction('save', false); }
+            });
+            return wrap;
+        }
+
         function showResultsOverlay(grandTotal, ifaTotal, lmaTotal, ifaDetails, lmaDetails, isTurnaround, mode, archivePayload, detail) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
@@ -7138,7 +7202,7 @@ function getRegionForAirport(code) {
                 const doSave = (station) => {
                     if (station != null) archivePayload.stationDisplay = station;
                     const res = persistArchiveSaving([archivePayload]);
-                    if (res.ok === false) return; // persistArchive already explained; the save stays tappable for a retry
+                    if (res.ok === false) { setResultsAction('save', false); return; } // persistArchive already explained; the review closed, so Save re-arms for a retry
                     appAlert((archivePayload.stationDisplay || 'Earnings') + ' earnings ' + (res.updated ? 'updated' : 'saved') + '.');
                     const prm = content.querySelector('#ca-station-prompt');
                     if (prm) prm.remove();
@@ -7168,16 +7232,23 @@ function getRegionForAirport(code) {
                     content.insertBefore(wrap, content.firstChild);
                     const inp = wrap.querySelector('#ca-station-input');
                     wrap.querySelector('#ca-station-save').addEventListener('click', () => {
-                        doSave((inp.value || '').trim() || '\u2014');
+                        openSaveReview((inp.value || '').trim() || '\u2014');
                     });
-                    wrap.querySelector('#ca-station-skip').addEventListener('click', () => doSave('\u2014'));
+                    wrap.querySelector('#ca-station-skip').addEventListener('click', () => openSaveReview('\u2014'));
                     if (inp.focus) inp.focus();
                 };
 
+                // v1.30.0: every save is reviewed first (owner ruling). The
+                // station, when the summary has none, is settled before the
+                // review so the preview reflects exactly what will be filed.
+                const openSaveReview = (station) => {
+                    const effective = (station != null) ? Object.assign({}, archivePayload, { stationDisplay: station }) : archivePayload;
+                    openSaveReviewPanel(content, [effective], () => doSave(station));
+                };
                 if (ab) ab.onclick = () => {
                     if (ab.disabled || ab.dataset.done) return;
                     if (archivePayload.stationDisplay === '\u2014') openStationPrompt();
-                    else doSave(null);
+                    else openSaveReview(null);
                 };
             } else {
                 setResultsAction(null);
@@ -7294,6 +7365,19 @@ function getRegionForAirport(code) {
             });
             const ok = persistArchive(arr);
             return { fresh: fresh, updated: updated, ok: ok };
+        }
+        // v1.30.0: what a save WILL do, without doing it — the read-only
+        // sibling of persistArchiveSaving. Same signature match: NEW appends,
+        // UPDATED overwrites (amount moved), NO CHANGE is an identical
+        // re-save (owner ruling: its own tag, never lumped in with updates).
+        function archiveSavePreview(payloads) {
+            const arr = loadArchive();
+            return (payloads || []).filter(Boolean).map((p) => {
+                const i = arr.findIndex((x) => archiveSignature(x) === archiveSignature(p));
+                if (i < 0) return { kind: 'new', payload: p };
+                const oldAmt = Number(arr[i].amount) || 0, newAmt = Number(p.amount) || 0;
+                return { kind: (Math.abs(oldAmt - newAmt) < 0.005) ? 'same' : 'upd', payload: p, old: arr[i] };
+            });
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
@@ -12029,6 +12113,18 @@ function getRegionForAirport(code) {
                     caTourClearGlow();
                     if (!T.alive()) return;
                     T.tap(ab);
+                    // -- v1.30.0: nothing writes until the review is confirmed --
+                    const rev = await T.until(() => document.getElementById('ca-save-review'), 6000);
+                    if (!rev) return;
+                    await T.say('Before anything is written, the review shows what this save will do — every trip tagged <b>New</b>, <b>Updated</b> or <b>No change</b>.');
+                    await T.wait(2000);
+                    const cf = document.getElementById('ca-save-confirm');
+                    if (!cf) return;
+                    T.glow(cf);
+                    await T.wait(2000);
+                    caTourClearGlow();
+                    if (!T.alive()) return;
+                    T.tap(cf);
                     const dlg = await T.until(() => {
                         const dd = document.getElementById('app-dialog-backdrop');
                         return (dd && !dd.classList.contains('hidden')) ? dd : null;

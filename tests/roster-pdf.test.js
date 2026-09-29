@@ -359,8 +359,14 @@ const MONTH = [
     R.ok(!ab.classList.contains('hidden'), 'save action offered on the combined summary');
     ab.click();
     await wait(150);
+    const rev = d.getElementById('ca-save-review');
+    R.ok(rev, 'the save opens the review first');
+    R.ok(rev.textContent.indexOf('6 new') !== -1, 'the review counts six new trips');
+    R.eq(rev.querySelectorAll('.ca-save-revrow').length, 6, 'one review row per trip');
+    d.getElementById('ca-save-confirm').click();
+    await wait(150);
     const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
-    R.eq(arch.length, 6, 'one tap saves six archive entries');
+    R.eq(arch.length, 6, 'one confirmed save files six archive entries');
     R.eq(arch.filter(e => e.monthKey === '2026-07').length, 4, 'July trips file under July');
     R.ok(arch.some(e => e.monthKey === '2026-09' && e.stationDisplay === 'NRT/LAX'), 'US trip files under its own sector-1 month');
     R.eq(ab.dataset.done, '1', 'combined save is one-shot');
@@ -430,6 +436,8 @@ const MONTH = [
     R.ok(/two turnaround bonuses/.test(txt), 'bonus count in words');
     // save all, then reopen one trip from the archive
     d.getElementById('btn-results-action').click();
+    await wait(150);
+    d.getElementById('ca-save-confirm').click();
     await wait(200);
     const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
     R.ok(arch.every(e => e.detail && e.detail.sectors && e.detail.sectors.length), 'every saved entry carries its snapshot');
