@@ -288,6 +288,7 @@ const MONTH = [
     R.ok(/Test Month\.pdf/.test(btxt), 'bubble names the file');
     R.ok(/6 trips/.test(btxt), 'bubble reports the trip count');
     R.ok(/SIN–AMD/.test(btxt) && /not built/.test(btxt), 'flagged trip reported in the bubble');
+    R.ok(/SIN–AMD \(31 Oct 2026\) — /.test(btxt), 'flagged line dates the trip to the day and year');
     const buildBtn = bubble.querySelector('.roster-build-btn');
     const discardBtn = bubble.querySelector('.roster-discard-btn');
     R.ok(!!buildBtn && !!discardBtn, 'Build and Discard buttons exist');

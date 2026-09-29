@@ -3128,7 +3128,13 @@
             const lines = [];
             lines.push(`<b>${rosterEsc(fileName)}</b> — ${rosterEsc(displayMonth || rosterMonthName(parsed.monthLabel))}: <b>${tripsOk.length} trip${tripsOk.length === 1 ? '' : 's'} · ${sectors} sector${sectors === 1 ? '' : 's'}</b> across ${parsed.flyingDays} flying day${parsed.flyingDays === 1 ? '' : 's'}.`);
             if (parsed.skippedDays) lines.push(`Skipped ${parsed.skippedDays} non-flying day${parsed.skippedDays === 1 ? '' : 's'} (leave, off and standby rows).`);
-            flagged.forEach(t => lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')} — ${t.reason}; not built.`));
+            // v1.32.1: flag lines carry the trip's date to the day and year,
+            // same as the paxing note — the crew can find the duty on the
+            // paper roster before deciding what to do about it.
+            flagged.forEach(t => {
+                const fd = rosterShortDate((t.sectors[0] || {}).depDate, true);
+                lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')}${fd ? ' (' + fd + ')' : ''} — ${t.reason}; not built.`);
+            });
             // v1.32.1: positioning trips BUILD (paxing) instead of refusing —
             // say so, date them (the crew can find the duty on the paper
             // roster), and say where the missing flight time comes from.
