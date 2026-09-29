@@ -456,7 +456,7 @@ const MONTH = [
     R.ok(dBtn.classList.contains('ca-twotap-armed'), 'first tap arms a red confirm instead of discarding');
     R.ok(!dBtn.disabled && !dBtn.classList.contains('pointer-events-none'), 'arming spends nothing');
     R.ok(!bubble.querySelector('.roster-build-btn').disabled, 'Build stays live while armed');
-    R.ok(bubble.querySelector('.roster-discard-btn').textContent.indexOf('Tap again') !== -1, 'armed label says Tap again');
+    R.ok(bubble.querySelector('.roster-discard-btn').textContent.trim() === 'Confirm', 'armed label reads simply Confirm');
     dBtn.click();
     await wait(700);
     R.eq(d.querySelectorAll('[data-calc-card]').length, 0, 'Discard builds no cards');

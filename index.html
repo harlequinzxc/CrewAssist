@@ -1528,12 +1528,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.29.0';
+        const APP_VERSION = '1.29.1';
+        // v1.29.1 (owner ruling): What's New carries ONLY the current
+        // release's note. Never accumulate previous entries — the sheet is
+        // "what changed in this version", not a changelog archive.
         const APP_WHAT_NEW = [
-            'Safety taps and small fixes: Discard and clear-chat now ask for a second tap, a failed save says so honestly, earnings amounts are tappable to correct, search now finds dates and amounts, and Enter hops to the next calculator field.',
-            'The assistant now speaks more briskly — shorter typing pauses between messages, so your next flight is on screen seconds sooner.',
-            'Menu print lines now read as tidy lists — "clams, prawns, scallop and wheat noodles" — and a protein mentioned twice collapses to its clearest wording.',
-            'Tapping your next flight (or its reminder) now opens the menus directly — every cabin is fetched and saved first when needed.'
+            'What\'s New now shows only this release\'s changes. The Month and Year scopes on the earnings page follow the current calendar month and year, and the discard button\'s confirm reads simply "Confirm".'
         ];
 
         // State
@@ -3063,7 +3063,7 @@
             // red confirm state, the second discards. Arming spends nothing.
             discardBtn.addEventListener('click', () => {
                 armTwoTap(discardBtn, {
-                    armedHtml: '<i data-lucide="x" class="w-3.5 h-3.5"></i>Tap again to discard',
+                    armedHtml: 'Confirm',
                     confirm: () => { spendAll(); addBotMessage('Discarded — nothing was built. Attach the roster again anytime.'); }
                 });
             });
@@ -7304,9 +7304,17 @@ function getRegionForAirport(code) {
         function archScopeInfo() {
             const es = loadArchive();
             if (!es.length) return { mk: '', yr: '' };
+            // v1.29.1 (owner ruling): Month and Year scope follow the real
+            // calendar — the current month/year — so the pill reads what the
+            // crew expect "this month" to mean. If the current month has
+            // nothing saved yet (early in a month), it falls back to the
+            // newest entry's month so the scope never shows a dead zero.
+            const nowMk = todayLocalYMD().slice(0, 7);
             const n = es.reduce((m, e) => (String(e.savedAt || '') > String(m.savedAt || '') ? e : m), es[0]);
-            const mk = n.monthKey || String(n.sectorDate || n.savedAt || '').slice(0, 7);
-            return { mk: mk, yr: mk.slice(0, 4) };
+            const newestMk = n.monthKey || String(n.sectorDate || n.savedAt || '').slice(0, 7);
+            const mk = es.some((e) => String(e.monthKey || '').slice(0, 7) === nowMk) ? nowMk : newestMk;
+            const yr = es.some((e) => String(e.monthKey || '').slice(0, 4) === nowMk.slice(0, 4)) ? nowMk.slice(0, 4) : newestMk.slice(0, 4);
+            return { mk: mk, yr: yr };
         }
         function archExpandMk() {
             const all = loadArchive();
