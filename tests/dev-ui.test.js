@@ -125,5 +125,14 @@ const { R, boot, wait, APP } = H;
     void d;
   }
 
+  // v1.31.2: the pinned totals bar can never clip its own text again
+  {
+    const fs = require('fs');
+    const src = fs.readFileSync(APP, 'utf8');
+    R.ok(src.includes('.ca-roster-sticky.ca-on { max-height: 96px; opacity: 1; padding: 9px 24px; }'), 'the height cap carries generous headroom');
+    R.ok(/\.ca-roster-sticky \{[^}]*line-height: 1\.2;/.test(src), 'the bar pins its line-height against font-metric surprises');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

@@ -368,9 +368,14 @@
            sheet header — it lives between the header and the scroll area, so
            there is no possible gap, and it grows in place (everything moves)
            once the hero card scrolls away. */
-        .ca-roster-sticky { display: flex; align-items: baseline; justify-content: center; gap: 8px; max-height: 0; opacity: 0; overflow: hidden; padding: 0 14px; border-bottom: 1px solid rgba(0,0,0,.06); background: rgba(255,255,255,.95); transition: max-height .25s ease, opacity .25s ease, padding .25s ease; }
+        /* v1.31.2 (owner report): the 44px cap clipped the bar's text in half
+           on device — real font metrics (and the offline fallback face) push
+           the line box past a hand-guessed cap. The cap now carries generous
+           headroom, the line-height is pinned, and the row centers instead of
+           baseline-aligning, so no font can outgrow it. */
+        .ca-roster-sticky { display: flex; align-items: center; justify-content: center; gap: 8px; max-height: 0; opacity: 0; overflow: hidden; padding: 0 24px; line-height: 1.2; border-bottom: 1px solid rgba(0,0,0,.06); background: rgba(255,255,255,.95); transition: max-height .25s ease, opacity .25s ease, padding .25s ease; }
         .dark .ca-roster-sticky { background: rgba(11,26,58,.95); border-bottom-color: rgba(255,255,255,.06); }
-        .ca-roster-sticky.ca-on { max-height: 44px; opacity: 1; padding: 9px 14px; }
+        .ca-roster-sticky.ca-on { max-height: 96px; opacity: 1; padding: 9px 24px; }
         /* v1.31.0: curated insights — the top four lead, the rest unfold */
         .ca-arch-insmore { overflow: hidden; max-height: 2400px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-insmore.ca-arch-insmore-hide { max-height: 0; opacity: 0; }
@@ -1580,12 +1585,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.31.1';
+        const APP_VERSION = '1.31.2';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
         const APP_WHAT_NEW = [
-            'Fixes from your testing: the calculator interface selector now follows Manual and Advanced, the block-time label hides with its field, the pinned totals bar sits flush under the header, toasts carry a gold border and brighten in dark mode, Show all 12 animates, and an out-and-back day lists both flights on the next-flight card.'
+            'The pinned totals bar now renders at full height — its previous fixed cap could clip the trip count and total in half on some devices.'
         ];
 
         // State
