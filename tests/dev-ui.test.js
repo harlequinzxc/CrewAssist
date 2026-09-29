@@ -134,5 +134,57 @@ const { R, boot, wait, APP } = H;
     void d;
   }
 
+  // ---- v1.32.0: the owner's eight-item review batch ----
+  {
+    const fs = require('fs');
+    const src = fs.readFileSync(APP, 'utf8');
+    const { w, d } = await boot(APP);
+    // E3: keyboards get a gold focus ring; thumbs never see it
+    R.ok(src.includes(':focus-visible:not(input):not(textarea):not(select) { outline: 2px solid var(--sia-gold-ink, #7d650f); outline-offset: 2px; }'), 'focus-visible paints a gold ring on every control (E3)');
+    // E4: the earnings chip is second, Print the menu last — both most-used
+    // actions on-screen at once on a 360px phone
+    const chips = d.querySelectorAll('.action-chip');
+    R.eq(chips.length, 4, 'four quick action chips');
+    R.eq(chips[1].getAttribute('data-intent'), 'earn', 'the earnings chip sits second (E4)');
+    R.eq(chips[2].getAttribute('data-intent'), 'menu', 'What\'s being served? is third (E4)');
+    R.eq(chips[3].getAttribute('data-intent'), 'print', 'Print the menu is last (E4)');
+    // E5: the money type ladder
+    R.ok(src.includes('.ca-amt { font-variant-numeric: tabular-nums; }'), 'the money ladder sets tabular digits (E5)');
+    R.ok(!src.includes('text-[34px]'), 'the gold-card total joins the heroes at 36px (E5)');
+    R.ok(src.includes('<p class="text-4xl font-bold ca-amt">'), 'hero money sets tabular digits (E5)');
+    R.ok(src.includes('<span class="shrink-0 text-sm text-sia-gold ca-amt">'), 'review money steps up from micro to body size (E5)');
+    R.ok(src.includes('<span class="font-bold text-[17px] ca-amt text-sia-gold">'), 'breakdown totals sit on the amount rung (E5)');
+    // E6: what's-new keeps to one plain sentence
+    const wn = src.match(/APP_WHAT_NEW = \[\s*'([^']*)'\s*\]/);
+    R.ok(!!wn, 'what\'s-new entry parses (E6)');
+    if (wn) {
+      R.ok(wn[1].indexOf('. ') === -1 && /[.!?]$/.test(wn[1]), 'what\'s-new is one sentence (E6)');
+      R.ok(wn[1].split(/\s+/).length <= 25, 'what\'s-new stays within twenty-five words (E6)');
+    }
+    // M1: surface tokens replaced the hand-mixed pairs everywhere
+    R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');
+    R.ok(src.includes('.ca-inset { background-color: var(--ca-surface-2); }'), 'the inset token class exists (M1)');
+    R.ok(src.split('bg-black/5 dark:bg-white/5').length === 1, 'no hand-mixed inset pairs remain (M1)');
+    R.ok(src.split('border-black/5 dark:border-white/5').length === 1, 'no hand-mixed hairline pairs remain (M1)');
+    // M3: sheets keep their modal promise — focus enters, Tab loops, focus returns
+    d.getElementById('btn-settings').focus();
+    w.eval('openSettings()');
+    const sh = d.getElementById('settings-sheet');
+    R.ok(d.activeElement === sh, 'opening a sheet moves focus into it (M3)');
+    const fSel = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const focusables = Array.from(sh.querySelectorAll(fSel)).filter((el) => !el.disabled && !el.closest('.hidden'));
+    R.ok(focusables.length > 1, 'the settings sheet offers keyboard controls');
+    focusables[focusables.length - 1].focus();
+    focusables[focusables.length - 1].dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+    R.ok(d.activeElement === focusables[0], 'Tab wraps from the last control back to the first (M3)');
+    focusables[0].focus();
+    focusables[0].dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true, shiftKey: true }));
+    R.ok(d.activeElement === focusables[focusables.length - 1], 'Shift+Tab wraps from the first control to the last (M3)');
+    w.eval('closeSettings()');
+    R.ok(d.activeElement === d.getElementById('btn-settings'), 'closing returns focus to the opener (M3)');
+    R.ok(src.includes('caSheetFocusIn(sheet);') && src.includes('caSheetFocusOut(sheet);') && src.includes('caSheetFocusIn(s);') && src.includes('caSheetFocusOut(s);') && src.includes("caSheetFocusIn(archEl('ca-arch-sub-sheet'));"), 'all four sheets wire the focus trap (M3)');
+    void w;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

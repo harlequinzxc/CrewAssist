@@ -386,6 +386,19 @@ const MONTH = [
     ab.click();
     await wait(50);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, arch.length, 'second tap saves nothing');
+    // v1.32.0 (E1, owner ruling): the whole-roster save can be taken back for ten seconds
+    const toastEl = d.getElementById('ca-arch-toast');
+    R.ok(!toastEl.classList.contains('hidden') && !!toastEl.querySelector('.ca-toast-undo'), 'the combined save toast carries an Undo');
+    toastEl.querySelector('.ca-toast-undo').click();
+    await wait(150);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 0, 'Undo takes back all six trips at once');
+    R.ok(ab.dataset.done !== '1' && !ab.disabled, 'Undo re-arms the header save');
+    ab.click();
+    await wait(150);
+    R.ok(!!d.getElementById('ca-save-review'), 'the crew can correct and re-save after an undo');
+    d.getElementById('ca-save-confirm').click();
+    await wait(150);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 6, 're-save after an undo files all six again');
     // v1.31.1: the Block Time label follows its field in every mode
     const tIn = d.getElementById('calc-1-ifa-t1');
     const tLab = tIn && tIn.previousElementSibling;
