@@ -32,6 +32,22 @@ const clickLast = (d, sel) => {
     R.ok(w.CA_TOUR_STEPS[4].expectsInput === true, 'the menu step is the interactive one');
   }
 
+  // ---- v1.31.0: the tour is one Settings tap away, forever ----
+  {
+    const { w, d } = await boot(APP);
+    const until = mkUntil(d);
+    d.getElementById('btn-settings').click();
+    await wait(150);
+    const rp = d.getElementById('btn-replay-tour');
+    R.ok(rp && rp.textContent.indexOf('Replay') !== -1, 'Settings offers a tour replay');
+    rp.click();
+    R.ok(w.caTour.on === true, 'Replay starts the tour');
+    R.ok(await until(() => d.getElementById('settings-backdrop').classList.contains('hidden'), 5000), 'settings closes first');
+    w.eval('finishCaTour(true)');
+    await wait(150);
+    R.ok(w.caTour.on === false, 'the replayed tour ends cleanly');
+  }
+
   // ---- full walk, started through the chat intent ----
   {
     const { w, d } = await boot(APP);

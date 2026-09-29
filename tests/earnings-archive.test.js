@@ -260,6 +260,21 @@ const fs = require('fs');
     R.ok(card('Busiest weekday').indexOf('Fridays') !== -1 && card('Busiest weekday').indexOf('16% of all flights') !== -1, 'busiest weekday card');
     const insTxt = d.getElementById('ca-arch-insights').textContent;
     R.ok(!/annual goal|long-haul|longhaul/i.test(insTxt), 'no annual-goal or long-haul leftovers from the old design');
+    // v1.31.0: curation — the top four lead, the rest unfold on demand
+    R.ok(d.querySelector('#ca-arch-insights .ca-arch-inscard .ca-arch-inslabel').textContent === 'Top earning month', 'all-time scope leads with the top month');
+    const moreWrap = d.querySelector('#ca-arch-insights .ca-arch-insmore');
+    R.ok(moreWrap && moreWrap.classList.contains('ca-arch-insmore-hide') && moreWrap.querySelectorAll('.ca-arch-inscard').length === 8, 'the remaining eight start folded');
+    R.eq(d.getElementById('ca-arch-ins-mtoggle-label').textContent, 'Show all 12', 'the disclosure invites the rest');
+    d.getElementById('ca-arch-ins-mtoggle').click();
+    await wait(60);
+    R.ok(!d.querySelector('#ca-arch-insights .ca-arch-insmore').classList.contains('ca-arch-insmore-hide'), 'all twelve unfold');
+    R.eq(d.getElementById('ca-arch-ins-mtoggle-label').textContent, 'Show less', 'the disclosure flips to Show less');
+    segOf('month').click();
+    await wait(80);
+    R.ok(d.querySelector('#ca-arch-insights .ca-arch-inscard .ca-arch-inslabel').textContent === 'Current streak', 'month scope re-curates: the streak leads');
+    segOf('all').click();
+    await wait(80);
+    R.ok(d.querySelector('#ca-arch-insights .ca-arch-inscard .ca-arch-inslabel').textContent === 'Top earning month', 'all-time leads with the records again');
     toggle.click();
     await wait(50);
     R.ok(!d.getElementById('ca-arch-insights').classList.contains('ca-arch-insopen') && d.getElementById('ca-arch-ins-toggle-label').textContent === 'View insights', 'toggle collapses the insights again');
@@ -433,6 +448,8 @@ const fs = require('fs');
     const icn = arr.filter((e) => e.stationDisplay === 'ICN');
     R.ok(icn.length === 1 && icn[0].amount === 99, 'saving from the summary updates the existing ICN entry');
     R.ok(btn.dataset.done === '1', 'save is one-shot per summary');
+    R.ok(!d.getElementById('ca-arch-toast').classList.contains('hidden') && d.getElementById('ca-arch-toast').textContent.indexOf('updated') !== -1, 'the save confirms with a quiet toast');
+    R.ok(d.getElementById('app-dialog-backdrop').classList.contains('hidden'), 'no pop-up after a confirmed save');
     void d;
   }
 
@@ -582,6 +599,7 @@ const fs = require('fs');
     await wait(100);
     R.ok(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length === 2, 'retry after freeing storage saves');
     R.ok(btn.dataset.done === '1', 'and becomes one-shot');
+    R.ok(!d.getElementById('ca-arch-toast').classList.contains('hidden') && d.getElementById('ca-arch-toast').textContent.indexOf('saved') !== -1, 'the retry lands as a toast too');
     void d;
   }
 

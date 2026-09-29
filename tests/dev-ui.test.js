@@ -69,5 +69,39 @@ const { R, boot, wait, APP } = H;
     void d;
   }
 
+  // v1.31.0: the UX-review release — labelled pill, aria, type floor, ink, hit areas
+  {
+    const fs = require('fs');
+    const src = fs.readFileSync(APP, 'utf8');
+    R.ok(!/text-\[(9|9\.5|10|11)px\]/.test(src), 'nothing renders below the 11px type floor');
+    R.ok(src.includes('.ca-micro { font-size: 11px; }'), 'the micro tier is one token');
+    R.ok(src.includes('--sia-gold-ink: #7d650f') && src.includes('html:not(.dark) .text-sia-gold'), 'light-mode gold text uses the measured ink');
+    R.ok(src.includes('min-w-[88px]') && src.includes("actionText = { save: 'Save', check: 'Saved'"), 'the save action is a labelled pill');
+    R.ok(src.includes('.ca-hit::after'), 'invisible hit-area growth exists');
+    R.ok(src.includes('py-3.5 text-xs font-bold whitespace-nowrap'), 'quick-action chips reach the 44px class');
+    R.ok(src.includes("div.setAttribute('aria-hidden', 'true');"), 'the typing dots stay quiet for screen readers');
+    R.eq(d.getElementById('chat-container').getAttribute('role'), 'log', 'the chat is a live log');
+    R.eq(d.getElementById('chat-container').getAttribute('aria-live'), 'polite', 'bot narration is announced politely');
+    R.eq(d.getElementById('results-sheet').getAttribute('role'), 'dialog', 'the summary sheet is a dialog');
+    R.eq(d.getElementById('settings-sheet').getAttribute('aria-modal'), 'true', 'settings reads as modal');
+    // the pill keeps its shape across states (owner ruling)
+    w.eval('setResultsAction("save", false)');
+    const ab = d.getElementById('btn-results-action');
+    R.ok(ab.textContent === 'Save' && ab.className.indexOf('min-w-[88px]') !== -1, 'save state reads Save');
+    w.eval('setResultsAction("check", false)');
+    R.ok(ab.textContent === 'Saved' && ab.className.indexOf('min-w-[88px]') !== -1, 'saved state reads Saved — same footprint');
+    // the tour is one Settings tap away
+    d.getElementById('btn-settings').click();
+    await wait(150);
+    const rp = d.getElementById('btn-replay-tour');
+    R.ok(rp && rp.textContent.indexOf('Replay') !== -1, 'Settings offers the feature tour replay');
+    rp.click();
+    R.ok(w.caTour.on === true, 'replay starts the tour');
+    w.eval('finishCaTour(true)');
+    await wait(150);
+    R.ok(w.caTour.on === false, 'the replayed tour ends cleanly');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

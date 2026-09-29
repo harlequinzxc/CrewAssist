@@ -2,5 +2,3 @@ node_modules/
 package-lock.json
 package.json
 icon-options/
-!tests/package.json
-.DS_Store

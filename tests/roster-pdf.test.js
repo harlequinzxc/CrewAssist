@@ -353,6 +353,18 @@ const MONTH = [
     R.ok(txt.indexOf(w.formatMoney(expect)) !== -1, 'combined grand total = sum of the per-trip totals');
     R.ok(/LMA is not eligible for Turnaround flights/.test(txt), 'turnaround trips keep the honest LMA note');
     R.ok(/SIN–KTM–SIN/.test(txt), 'per-trip sections carry their routes');
+    // v1.31.0: the IFA block time keeps its label; trips fold; totals pin
+    const t1 = d.getElementById('calc-1-ifa-t1');
+    R.ok(t1 && t1.placeholder === 'HH:MM' && /Block Time/.test(t1.closest('[data-calc-card]').textContent), 'IFA block time keeps its label, placeholder is just the format');
+    R.eq(d.querySelectorAll('.ca-trip-head').length, 6, 'every trip header is a fold toggle');
+    const rc = d.getElementById('results-content');
+    const st0 = d.getElementById('ca-roster-sticky');
+    R.ok(st0 && !st0.classList.contains('ca-on'), 'the totals bar starts quiet');
+    rc.scrollTop = 300;
+    rc.dispatchEvent(new w.Event('scroll'));
+    R.ok(st0.classList.contains('ca-on'), 'the totals bar pins once the hero scrolls away');
+    d.querySelectorAll('.ca-trip-head')[1].click();
+    R.eq(d.querySelectorAll('.ca-tripsec.ca-trip-collapsed').length, 1, 'a trip folds like an archive month, the rest stay open');
     R.ok(bubble.querySelector('.roster-build-btn').disabled && bubble.querySelector('.roster-discard-btn').disabled && calcAllBtn.disabled, 'Calculate all spends the whole footer');
     // Save: one tap files every trip as its own archive entry, one-shot
     const ab = d.getElementById('btn-results-action');
@@ -367,6 +379,7 @@ const MONTH = [
     await wait(150);
     const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
     R.eq(arch.length, 6, 'one confirmed save files six archive entries');
+    R.ok(!d.getElementById('ca-arch-toast').classList.contains('hidden') && d.getElementById('ca-arch-toast').textContent.indexOf('earnings saved') !== -1, 'the combined save confirms with a toast');
     R.eq(arch.filter(e => e.monthKey === '2026-07').length, 4, 'July trips file under July');
     R.ok(arch.some(e => e.monthKey === '2026-09' && e.stationDisplay === 'NRT/LAX'), 'US trip files under its own sector-1 month');
     R.eq(ab.dataset.done, '1', 'combined save is one-shot');
@@ -441,6 +454,7 @@ const MONTH = [
     await wait(200);
     const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
     R.ok(arch.every(e => e.detail && e.detail.sectors && e.detail.sectors.length), 'every saved entry carries its snapshot');
+    R.ok(!d.getElementById('ca-arch-toast').classList.contains('hidden'), 'the save lands as a toast, not a pop-up');
     w.showArchiveOverlay();
     await wait(100);
     d.querySelectorAll('.ca-arch-row')[0].click();

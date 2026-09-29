@@ -314,13 +314,13 @@
         .ca-arch-metadot { opacity: .3; font-weight: 700; }
         .ca-arch-surface { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-barcol { border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex: 1 1 0; min-width: 0; }
-        .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold, #c9a227); }
+        .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bararea { width: 100%; height: 120px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
         .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: rgba(212,175,55,.35); }
         .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); }
         .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed rgba(230,194,84,.75); background: repeating-linear-gradient(45deg, rgba(212,175,55,.28) 0 4px, rgba(212,175,55,.08) 4px 8px); }
         .ca-arch-barlab { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
-        .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold, #c9a227); }
+        .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: #fff; padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
         .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
         .ca-arch-badge-best { color: #e6c254; border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
@@ -337,6 +337,34 @@
         .ca-arch-footline { height: 1px; flex: 1 1 0; background: var(--arch-hairline); }
         .ca-arch-chev { transition: transform .3s ease; }
         .ca-arch-group:not(.ca-arch-collapsed) .ca-arch-chev { transform: rotate(90deg); }
+        /* v1.31.0 (owner-approved UX review): one micro-type token — nothing
+           renders below 11px anywhere in the app. Change the floor here, once. */
+        .ca-micro { font-size: 11px; }
+        /* v1.31.0: gold TEXT gets its own ink. The brand gold stays for fills,
+           borders and dark mode — but #c9a227 on white is 2.42:1 (WCAG AA needs
+           4.5:1), so light-mode text uses a measured 5.61:1 ink instead. */
+        :root { --sia-gold-ink: #7d650f; }
+        .dark { --sia-gold-ink: #c9a227; }
+        html:not(.dark) .text-sia-gold { color: var(--sia-gold-ink, #7d650f); }
+        /* v1.31.0: invisible hit-area growth — the icon keeps its visual size,
+           the tap zone grows 5px around it (44px-class targets). */
+        .ca-hit { position: relative; }
+        .ca-hit::after { content: ''; position: absolute; inset: -5px; }
+        .ca-arch-iconbtn { position: relative; }
+        .ca-arch-iconbtn::after { content: ''; position: absolute; inset: -5px; }
+        /* v1.31.0: collapsible trips in the combined summary — the archive's
+           group idiom, reused verbatim. */
+        .ca-trip-body { overflow: hidden; max-height: 8000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
+        .ca-trip-collapsed .ca-trip-body { max-height: 0; opacity: 0; }
+        .ca-trip-chev { transition: transform .3s ease; }
+        .ca-tripsec:not(.ca-trip-collapsed) .ca-trip-chev { transform: rotate(90deg); }
+        /* the totals bar pins above the trips once the hero card scrolls away */
+        .ca-roster-sticky { position: sticky; top: -1px; z-index: 10; display: flex; align-items: baseline; justify-content: center; gap: 8px; padding: 9px 14px; margin: 0 -6px 6px; border-radius: 0 0 16px 16px; background: rgba(255,255,255,.92); box-shadow: 0 2px 12px rgba(0,0,0,.08); opacity: 0; transform: translateY(-6px); transition: opacity .25s ease, transform .25s ease; }
+        .dark .ca-roster-sticky { background: rgba(11,26,58,.92); }
+        .ca-roster-sticky.ca-on { opacity: 1; transform: none; }
+        /* v1.31.0: curated insights — the top four lead, the rest unfold */
+        .ca-arch-insmore { overflow: hidden; max-height: 2400px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
+        .ca-arch-insmore.ca-arch-insmore-hide { max-height: 0; opacity: 0; }
         .ca-arch-chev2 { transition: transform .3s ease; }
         .ca-arch-insopen .ca-arch-chev2 { transform: rotate(180deg); }
         /* hover is a mouse-only luxury: never a stuck state on touch */
@@ -345,7 +373,7 @@
             .ca-arch-seg:hover { color: #1a1300; }
             .ca-arch-barcol:hover .ca-arch-bartip { display: block; }
             .ca-arch-barcol.ca-arch-baron .ca-arch-bartip { display: block; }
-            .ca-arch-barcol:hover .ca-arch-barlab { color: var(--sia-gold, #c9a227); }
+            .ca-arch-barcol:hover .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
             .ca-arch-group-head:hover { background: var(--arch-press); }
             .ca-arch-row:hover { background: var(--arch-press); }
         }
@@ -667,7 +695,7 @@
         .dev-save.is-saved { background: #1D2B1F; color: #6EE7A0; border: 1px solid rgba(110,231,160,.5); }
         .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
         .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
-        .dev-edited-tag { color: var(--sia-gold, #c9a227); font-size: 8px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
+        .dev-edited-tag { color: var(--sia-gold-ink, #7d650f); font-size: 11px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
         .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); margin-left: 6px; flex: 0 0 auto; }
         .dev-sec-dot.is-on { display: inline-block; }
         .dev-reset-pill { animation: devResetIn 280ms ease; }
@@ -795,7 +823,7 @@
                             <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
                             <div class="h-px w-full bg-sia-navy/20 dark:bg-white/15 mt-1.5"></div>
                         </div>
-                        <p class="mt-1 text-[10px] tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
+                        <p class="mt-1 ca-micro tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
                     </div>
                 </div>
             </div>
@@ -855,7 +883,7 @@
                             <button id="ob-submit" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
-                            <p id="app-semver" class="mt-4 text-[10px] tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none"></p>
+                            <p id="app-semver" class="mt-4 ca-micro tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none"></p>
                         </div>
                     </div>
                 </div>
@@ -877,11 +905,11 @@
                     <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all duration-200 ease-out origin-top-left opacity-0 scale-95" role="dialog" aria-label="Connection status details"></div>
                     <!-- Right -->
                     <div class="flex items-center gap-2">
-                        <button id="btn-theme" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-theme" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
                             <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
                         </button>
-                        <button id="btn-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-settings" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                         </button>
                         <button id="btn-reset" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
@@ -894,7 +922,7 @@
             </header>
 
             <!-- Chat Area -->
-            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full pb-36 no-scrollbar" id="chat-container">
+            <main class="flex-grow overflow-y-auto relative p-4 max-w-xl mx-auto w-full pb-36 no-scrollbar" id="chat-container" role="log" aria-live="polite">
                 <!-- Messages injected here via JS -->
             </main>
 
@@ -902,25 +930,25 @@
             <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
                 <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
-                    <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="absolute right-0 -top-11 z-30 w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
+                    <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="ca-hit absolute right-0 -top-11 z-30 w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
                     </button>
                     
                     <!-- Quick Action Chips -->
                     <div id="action-chips" class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
                             <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
                             Calculate my allowance.
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="menu">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="menu">
                             <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
                             What's being served?
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="print">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="print">
                             <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
                             Print the menu.
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-2.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="earn">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="earn">
                             <i data-lucide="piggy-bank" class="w-3.5 h-3.5 shrink-0"></i>
                             How much have I earned?
                         </button>
@@ -928,11 +956,11 @@
 
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
-                        <button id="btn-roster" type="button" title="Import roster PDF" aria-label="Import roster PDF" class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-gray-400 hover:text-sia-gold transition-colors active:scale-95">
+                        <button id="btn-roster" type="button" title="Import roster PDF" aria-label="Import roster PDF" class="ca-hit w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-gray-400 hover:text-sia-gold transition-colors active:scale-95">
                             <i data-lucide="paperclip" class="w-4 h-4"></i>
                         </button>
                         <input type="text" id="chat-input" placeholder="Try &quot;menu&quot;..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
+                        <button id="btn-send" class="ca-hit w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
@@ -951,7 +979,7 @@
 
         <!-- Settings Bottom Sheet -->
         <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="settings-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
@@ -959,14 +987,14 @@
                 <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
-                    <button id="btn-close-settings" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-settings" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
                 
                 <!-- Profile -->
                 <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex items-center gap-2.5">
                             <div class="w-8 h-8 rounded-full bg-black/5 dark:bg-white/5 flex items-center justify-center">
@@ -980,7 +1008,7 @@
 
                 <!-- Feedback and Support -->
                 <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feedback and Support</p>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feedback and Support</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold">Chat with the developer</span>
@@ -991,9 +1019,23 @@
                     </div>
                 </div>
 
+                <!-- v1.31.0: onboarding is perishable — the tour shouldn't be -->
+                <div>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Learn the app</p>
+                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold">Feature tour</span>
+                            <span class="ca-micro text-gray-500">The guided walkthrough, any time</span>
+                        </div>
+                        <button type="button" id="btn-replay-tour" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Replay
+                        </button>
+                    </div>
+                </div>
+
                 <!-- Allowance Calculator Interface -->
                 <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
                     <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
                         <div id="calcui-segmented" class="flex w-full flex-nowrap items-stretch rounded-xl bg-black/5 dark:bg-white/5 p-0.5 border border-black/10 dark:border-white/10" role="radiogroup" aria-label="Allowance calculator interface">
                             <button type="button" data-calcui="default" role="radio" aria-checked="true" class="calcui-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 bg-sia-gold text-black"><i data-lucide="sparkles" class="w-3.5 h-3.5 shrink-0"></i> Default</button>
@@ -1003,7 +1045,7 @@
                         <div class="flex items-center gap-2 mt-3.5">
                             <span id="calcui-desc-icon" class="shrink-0 text-sia-gold inline-flex"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
                             <p id="calcui-desc-title" class="text-sm font-bold">Smart automation</p>
-                            <span id="calcui-desc-badge" class="shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border border-sia-gold text-sia-gold whitespace-nowrap">★ Recommended</span>
+                            <span id="calcui-desc-badge" class="shrink-0 px-2 py-0.5 rounded-full ca-micro font-bold border border-sia-gold text-sia-gold whitespace-nowrap">★ Recommended</span>
                         </div>
                         <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">Flight number + date — flight time, station, arrival &amp; departure date &amp; time auto-filled.</p>
                     </div>
@@ -1011,13 +1053,13 @@
 
                 <!-- Developer Section -->
                 <div id="settings-developer" class="hidden">
-                    <p class="text-[10px] text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
+                    <p class="ca-micro text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
                         <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
                     </p>
                     <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
                         <div>
                             <span class="text-sm font-bold inline-flex items-center gap-2">IFA &amp; LMA rates <span id="dev-dirty-dot" class="hidden w-[7px] h-[7px] rounded-full bg-sia-gold inline-block"></span></span>
-                            <span id="dev-dirty-label" class="hidden text-[9.5px] font-bold text-sia-gold tracking-wider mt-0.5">UNSAVED EDITS</span>
+                            <span id="dev-dirty-label" class="hidden ca-micro font-bold text-sia-gold tracking-wider mt-0.5">UNSAVED EDITS</span>
                         </div>
                         <div id="dev-rates-root" class="flex flex-col gap-4"></div>
                         <div class="flex flex-col gap-2">
@@ -1032,7 +1074,7 @@
 
                 <!-- Data -->
                 <div>
-                    <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
                     <div class="flex flex-col gap-2">
                         <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to defaults"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to defaults</button>
                         <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
@@ -1046,7 +1088,7 @@
         <!-- Results Overlay Sheet -->
         <!-- Earnings archive overlay (v1.19.13 redesign) -->
         <div id="ca-arch-backdrop" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="ca-arch-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="ca-arch-sheet" role="dialog" aria-modal="true" aria-label="Earnings" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <!-- iOS bottom-sheet handle -->
             <div class="pt-2 pb-1 flex justify-center shrink-0"><div class="w-[44px] h-[4px] rounded-full bg-black/15 dark:bg-[#2a2f3d]"></div></div>
             <div class="flex items-center justify-between px-5 pt-2 pb-3 border-b border-black/5 dark:border-white/5 shrink-0">
@@ -1096,9 +1138,9 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-1.5">
                             <i data-lucide="trending-up" class="w-3 h-3" style="color: var(--arch-muted)"></i>
-                            <span class="text-[10px] font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">12-Month Trend</span>
+                            <span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">12-Month Trend</span>
                         </div>
-                        <span class="ca-arch-num text-[11px] font-bold" style="color: rgba(212,175,55,.7)" id="ca-arch-peak"></span>
+                        <span class="ca-arch-num ca-micro font-bold" style="color: rgba(212,175,55,.7)" id="ca-arch-peak"></span>
                     </div>
                     <div class="flex items-end gap-1 mt-4" id="ca-arch-chart"></div>
                 </div>
@@ -1124,19 +1166,19 @@
         <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
             <div class="ca-arch-sub-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
-            <div id="ca-arch-sub-sheet" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300"></div>
+            <div id="ca-arch-sub-sheet" role="dialog" aria-modal="true" aria-label="Flight details" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300"></div>
         </div>
 
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
-        <div id="results-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+        <div id="results-sheet" role="dialog" aria-modal="true" aria-label="Summary" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
             <div class="flex items-center justify-between px-6 pb-4 shrink-0 border-b border-black/5 dark:border-white/5">
                 <h3 class="text-xl font-bold" id="results-title">Summary</h3>
                 <div class="flex items-center gap-1">
-                    <button id="btn-results-action" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden" aria-label="Save"></button>
-                    <button id="btn-close-results" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-results-action" class="h-10 min-w-[88px] px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Save"></button>
+                    <button id="btn-close-results" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1158,7 +1200,7 @@
                     <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
+                    <p class="ca-micro font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
                     <p id="whatsnew-title" class="text-sm font-bold mb-3"></p>
                     <ul id="whatsnew-list" class="text-sm leading-relaxed space-y-2 pr-1"></ul>
                 </div>
@@ -1181,7 +1223,7 @@
 
         <div id="cadate-backdrop" class="fixed inset-0 z-[92] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <div id="cadate-panel" class="w-full max-w-sm rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-sia-gold">Select date</p>
+                <p class="ca-micro font-bold uppercase tracking-widest text-sia-gold">Select date</p>
                 <p id="cadate-heading" class="text-2xl font-bold mt-1"></p>
                 <div id="cadate-hairline"></div>
                 <div class="flex items-center justify-between mb-3">
@@ -1191,13 +1233,13 @@
                         <button type="button" id="cadate-next" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-lg font-bold" aria-label="Next month">›</button>
                     </div>
                 </div>
-                <div class="grid grid-cols-7 text-center text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">
+                <div class="grid grid-cols-7 text-center ca-micro font-bold uppercase tracking-wider text-gray-500 mb-1">
                     <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
                 </div>
                 <div id="cadate-grid-wrap">
                     <div id="cadate-grid"></div>
                 </div>
-                <div class="flex items-center gap-4 mt-3 text-[10px] font-bold text-gray-500">
+                <div class="flex items-center gap-4 mt-3 ca-micro font-bold text-gray-500">
                     <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch is-today cadate-day is-today"></span> Today</span>
                     <span class="inline-flex items-center gap-1.5"><span class="cadate-legend-swatch cadate-day is-sel"></span> Selected</span>
                 </div>
@@ -1308,7 +1350,7 @@
                 <div class="flex items-center gap-2">
                     <div class="flex-1 min-w-0">
                         <div id="print-title" class="text-xl font-bold truncate">Menu Printer</div>
-                        <div id="print-subtitle" class="text-[10px] text-gray-500 truncate"></div>
+                        <div id="print-subtitle" class="ca-micro text-gray-500 truncate"></div>
                     </div>
                     <button type="button" id="print-btn-view" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 shrink-0" aria-label="View menu">
                         <i data-lucide="book-open" class="w-4 h-4"></i>
@@ -1528,12 +1570,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.30.0';
+        const APP_VERSION = '1.31.0';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
         const APP_WHAT_NEW = [
-            'Saving now shows a review first: every trip is tagged New, Updated (with the old amount) or No change, and nothing is written until you confirm.'
+            'A visual refresh: Save is a labelled button that keeps its shape, saved confirmations are quiet toasts, gold text is darker and easier to read in light mode, tiny labels are bigger, long summaries pin the total and fold per trip, insights lead with what matters, and Settings can replay the feature tour.'
         ];
 
         // State
@@ -1594,10 +1636,10 @@
                 '<div class="flex items-center gap-2 text-xs font-bold mb-2 ' + (online ? 'text-green-600' : 'text-amber-600') + '">' +
                 '<i data-lucide="' + (online ? 'wifi' : 'wifi-off') + '" class="w-4 h-4 shrink-0"></i>' +
                 (online ? 'Online' : 'Offline — using saved data') + '</div>' +
-                '<div class="text-[11px] text-gray-500 dark:text-gray-400 mb-2">' +
+                '<div class="ca-micro text-gray-500 dark:text-gray-400 mb-2">' +
                 (checkedRaw ? ('Rates last checked ' + netFmtTs(checkedRaw)) : 'Rates not checked yet') + '</div>' +
                 '<div class="flex flex-col gap-1.5">' +
-                rows.map((r) => '<div class="flex items-center gap-2 text-[11px] font-semibold ' + (r.ok ? 'text-gray-600 dark:text-gray-300' : 'text-amber-600') + '"><i data-lucide="' + (r.ok ? 'check' : 'x') + '" class="w-3.5 h-3.5 shrink-0"></i>' + r.label + '</div>').join('') +
+                rows.map((r) => '<div class="flex items-center gap-2 ca-micro font-semibold ' + (r.ok ? 'text-gray-600 dark:text-gray-300' : 'text-amber-600') + '"><i data-lucide="' + (r.ok ? 'check' : 'x') + '" class="w-3.5 h-3.5 shrink-0"></i>' + r.label + '</div>').join('') +
                 '</div>';
             try { lucide.createIcons(); } catch (e) {}
         }
@@ -1845,11 +1887,11 @@
                         pane.classList.remove('hidden');
                         resetPill.classList.remove('hidden');
                         renderDevRatesEditor();
-                        appAlert('Developer Mode Enabled');
+                        archToast('Developer Mode Enabled');
                     } else {
                         pane.classList.add('hidden');
                         resetPill.classList.add('hidden');
-                        appAlert('Developer Mode Disabled');
+                        archToast('Developer Mode Disabled');
                     }
                     syncCalcUiDevMode();
                     devTapCount = 0;
@@ -1858,6 +1900,7 @@
 
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
             document.getElementById('btn-settings').addEventListener('click', openSettings);
+            document.getElementById('btn-reset').classList.add('ca-hit');
             document.getElementById('btn-reset').addEventListener('click', () => {
                 // v1.29.0: two-tap — an accidental tap must not wipe a session
                 // that still has built, unsaved cards in it.
@@ -1878,6 +1921,13 @@
             document.getElementById('btn-edit-profile').addEventListener('click', () => {
                 closeSettings();
                 showOnboarding();
+            });
+
+            // v1.31.0: the tour is recoverable forever — a first-run offer
+            // alone leaves every later feature unexplained.
+            document.getElementById('btn-replay-tour').addEventListener('click', () => {
+                closeSettings();
+                startCaTour(true);
             });
 
             document.getElementById('btn-clear-data').addEventListener('click', () => {
@@ -2202,6 +2252,7 @@
             const chatContainer = document.getElementById('chat-container');
             const div = document.createElement('div');
             div.id = 'typing-indicator';
+            div.setAttribute('aria-hidden', 'true');
             div.className = 'flex items-start gap-3 mt-4 chat-anim-in';
             div.innerHTML = `
                 <div class="glass-bubble p-3 rounded-2xl rounded-tl-none flex items-center gap-1.5 h-10 shadow-sm">
@@ -2796,7 +2847,7 @@
                 + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">SQ ' + rosterEsc(f.fn) + ' <span class="font-normal">&middot; ' + rosterEsc(f.dep) + ' &rarr; ' + rosterEsc(f.arr) + '</span></span>'
                 + '<span class="block text-xs mt-0.5 text-gray-500">' + rosterShortDate(f.ymd) + (f.std ? ' &middot; departs ' + rosterEsc(f.std) : '') + ' &middot; <b>' + nextFlightRel(f.ymd) + '</b></span>'
                 + '</span>'
-                + (saved ? '<span class="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>' : '')
+                + (saved ? '<span class="shrink-0 inline-flex items-center gap-1 ca-micro font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>' : '')
                 + '</span></button></div>';
             chat.appendChild(el);
             try { lucide.createIcons(); } catch (e) {}
@@ -2844,7 +2895,7 @@
                 + '<i data-lucide="plane" class="w-3 h-3 shrink-0 text-amber-600"></i>'
                 + '<span class="text-xs font-bold">SQ ' + rosterEsc(f.fn) + '</span>'
                 + '<span class="text-xs text-gray-500 flex-1 min-w-0 truncate">' + rosterEsc(f.dep) + '-' + rosterEsc(f.arr) + ' &middot; ' + rosterShortDate(f.ymd) + '</span>'
-                + '<span class="ca-menunudge-state text-[10px] font-bold text-amber-700 dark:text-amber-400" data-state="wait">waiting</span>'
+                + '<span class="ca-menunudge-state ca-micro font-bold text-amber-700 dark:text-amber-400" data-state="wait">waiting</span>'
                 + '<i data-lucide="chevron-right" class="w-3 h-3 shrink-0 opacity-0 transition-opacity" data-chev></i>'
                 + '</button>').join('');
             el.innerHTML =
@@ -2857,7 +2908,7 @@
                 + '</div></div>'
                 + (one ? '' : '<div class="mt-1.5">' + rows + '</div>')
                 + '<div class="mt-2.5 flex justify-center">'
-                + '<button type="button" id="ca-menunudge-go" class="h-9 px-5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
+                + '<button type="button" id="ca-menunudge-go" class="h-9 px-5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
                 + '</div></div>';
             chat.appendChild(el);
             try { lucide.createIcons(); } catch (e) {}
@@ -3025,7 +3076,7 @@
                     <span class="text-gray-400">${i + 1}.</span>
                     <span class="font-bold truncate">${route}</span>
                     <span class="ml-auto shrink-0 text-gray-500">${rosterShortDate(s0.depDate)} – ${rosterShortDate(sl.arrDate)}</span>
-                    <span class="shrink-0 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-bold uppercase">${t.type === 'Turnaround' ? 'T/A' : 'Layover'}</span>
+                    <span class="shrink-0 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 ca-micro font-bold uppercase">${t.type === 'Turnaround' ? 'T/A' : 'Layover'}</span>
                 </div>`;
             }).join('');
             const html = `
@@ -3119,6 +3170,10 @@
             const grand = results.reduce((n, r) => n + r.res.grandTotal, 0);
             const n = results.length;
             let html = `
+                <div id="ca-roster-sticky" class="ca-roster-sticky" aria-hidden="true">
+                    <span class="ca-micro font-bold uppercase tracking-wider">${n} trip${n === 1 ? '' : 's'}</span>
+                    <span class="text-sm font-bold text-sia-gold">${formatMoney(grand)}</span>
+                </div>
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total — ${n} trip${n === 1 ? '' : 's'}</p>
                     <p class="text-4xl font-bold">${formatMoney(grand)}</p>
@@ -3129,25 +3184,41 @@
                 const t = r.trip, s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
                 const route = t.sectors.map(s => s.dep).join('–') + '–' + sl.arr;
                 html += `
-                <div class="mb-6">
-                    <div class="flex items-baseline justify-between gap-2 border-b border-black/10 dark:border-white/10 pb-2 mb-3">
+                <div class="ca-tripsec mb-6">
+                    <button type="button" class="ca-trip-head w-full text-left bg-transparent border-0 p-0 flex items-baseline justify-between gap-2 border-b border-black/10 dark:border-white/10 pb-2 mb-3">
                         <div class="min-w-0">
                             <span class="font-bold text-sm">${route}</span>
-                            <span class="text-[11px] text-gray-500 ml-1.5">${rosterShortDate(s0.depDate)} – ${rosterShortDate(sl.arrDate)}</span>
-                            <span class="ml-1.5 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 text-[10px] font-bold uppercase">${t.type === 'Turnaround' ? 'T/A' : 'Layover'}</span>
+                            <span class="ca-micro text-gray-500 ml-1.5">${rosterShortDate(s0.depDate)} – ${rosterShortDate(sl.arrDate)}</span>
+                            <span class="ml-1.5 px-1.5 py-0.5 rounded-md bg-black/5 dark:bg-white/10 ca-micro font-bold uppercase">${t.type === 'Turnaround' ? 'T/A' : 'Layover'}</span>
                         </div>
-                        <span class="shrink-0 font-bold text-sia-gold">${formatMoney(r.res.grandTotal)}</span>
-                    </div>
+                        <span class="flex items-center shrink-0 gap-1.5">
+                            <span class="font-bold text-sia-gold">${formatMoney(r.res.grandTotal)}</span>
+                            <i data-lucide="chevron-right" class="ca-trip-chev w-4 h-4 shrink-0" style="color: var(--arch-muted, #6b7280)"></i>
+                        </span>
+                    </button>
+                    <div class="ca-trip-body">
                     ${overviewBlock(flightOverviewText(r.res.detail))}
                     ${r.res.ifaDetails.join('')}
                     ${r.res.isTurnaround
                         ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
                         : r.res.lmaDetails.join('')}
+                    </div>
                 </div>`;
             });
             document.getElementById('results-title').textContent = 'Summary';
             content.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
+            // v1.31.0: trips fold like archive months; the totals pin on scroll.
+            content.querySelectorAll('.ca-trip-head').forEach((h) => {
+                h.addEventListener('click', () => {
+                    const sec = h.closest('.ca-tripsec');
+                    if (sec) sec.classList.toggle('ca-trip-collapsed');
+                });
+            });
+            content.onscroll = () => {
+                const st = document.getElementById('ca-roster-sticky');
+                if (st) st.classList.toggle('ca-on', content.scrollTop > 140);
+            };
             // One tap saves every trip as its own archive entry — the same
             // entries the crew would get by saving each summary by hand. Roster
             // cards already carry their stations, so the single-summary station
@@ -3165,7 +3236,7 @@
                     openSaveReviewPanel(content, payloads, () => {
                         const res = persistArchiveSaving(payloads);
                         if (res.ok === false) { setResultsAction('save', false); return; } // persistArchive already explained; the review closed, so Save re-arms for a retry
-                        appAlert(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved${res.updated ? ' (' + res.updated + ' updated)' : ''}.`);
+                        archToast(`${payloads.length} trip${payloads.length === 1 ? "'s" : "s'"} earnings saved${res.updated ? ' (' + res.updated + ' updated)' : ''}`);
                         // One tap saves once: full-colour tick, then the save icon
                         // returns INACTIVE — same one-shot as a single summary.
                         ab.dataset.done = '1';
@@ -4326,9 +4397,9 @@ function getRegionForAirport(code) {
                     '</div>';
             };
             let html = '';
-            html += '<p class="text-[10px] text-gray-500 leading-relaxed">Save applies on this device only. To update every install, Export and replace <span class="font-mono">rates.json</span> on GitHub.</p>';
+            html += '<p class="ca-micro text-gray-500 leading-relaxed">Save applies on this device only. To update every install, Export and replace <span class="font-mono">rates.json</span> on GitHub.</p>';
             if (localStorage.getItem('crewAssist.rates')) {
-                html += '<p class="text-[10px] font-bold text-sia-gold">This device has saved overrides.</p>';
+                html += '<p class="ca-micro font-bold text-sia-gold">This device has saved overrides.</p>';
             }
             let rankBody = '<table class="dev-rate-table"><thead><tr><th>Rank</th><th>Rate</th></tr></thead><tbody>';
             IFA_RATE_GROUPS.forEach((g) => {
@@ -5033,7 +5104,7 @@ function getRegionForAirport(code) {
                             <!-- Flight Type pills. The hidden input keeps the old
                                  value + change-event contract, so nothing downstream changed. -->
                             <div class="flex-1 min-w-0">
-                                <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
+                                <p class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Flight Type</p>
                                 <div id="${id}-flight-type-pills" data-calc-pill="flight-type" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
                                     <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="Layover">Layover</button>
                                     <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="Turnaround">Turnaround</button>
@@ -5042,7 +5113,7 @@ function getRegionForAirport(code) {
                             </div>
                             <!-- Sector Count pills -->
                             <div class="flex-1 min-w-0">
-                                <p class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
+                                <p class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Sector Count</p>
                                 <div id="${id}-sector-count-pills" data-calc-pill="sector-count" class="calc-pill-group flex gap-1 p-1 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
                                     <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap bg-sia-gold text-black" data-value="2">2</button>
                                     <button type="button" class="calc-pill flex-1 min-w-0 overflow-hidden rounded-lg py-1.5 px-2 text-xs font-bold transition-colors whitespace-nowrap text-gray-500" data-value="4">4</button>
@@ -5054,9 +5125,9 @@ function getRegionForAirport(code) {
                         <div class="ifa-trip-bar mb-3 p-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10">
                             <div id="${id}-ifa-trip-route" class="ifa-trip-route flex flex-nowrap items-center gap-x-1.5 overflow-x-auto text-xs font-bold"></div>
                             <div class="flex items-center gap-2 mt-1.5">
-                                <p id="${id}-ifa-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-500"></p>
-                                <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden shrink-0 text-[10px] font-bold text-sia-gold underline">Expand all</button>
-                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all relative shrink-0 ml-auto h-10 px-3 rounded-full text-[9px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none">
+                                <p id="${id}-ifa-trip-progress" class="shrink-0 ca-micro font-bold text-gray-500"></p>
+                                <button type="button" id="${id}-ifa-expand-all" class="ifa-expand-all hidden shrink-0 ca-micro font-bold text-sia-gold underline">Expand all</button>
+                                <button type="button" id="${id}-ifa-fetch-all" class="ifa-fetch-btn ifa-fetch-all relative shrink-0 ml-auto h-10 px-3 rounded-full ca-micro font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none">
                                     <span class="fetch-idle inline-flex items-center gap-1 transition-opacity"><i data-lucide="download" class="w-3 h-3 shrink-0"></i><span class="ifa-fetch-all-label">Fetch all</span></span>
                                     <span class="fetch-busy fetch-face"><span class="fetch-spin-ring"></span></span>
                                 </button>
@@ -5074,16 +5145,16 @@ function getRegionForAirport(code) {
                             <h4 class="text-sm font-bold flex items-center gap-1.5"><i data-lucide="utensils" class="w-4 h-4"></i> ${lmaHeader}</h4>
                         </div>
                         <div class="lma-trip-bar mb-2.5 px-2.5 py-2 rounded-xl border border-sia-gold/40 bg-sia-gold/5">
-                            <div id="${id}-lma-trip-route" class="lma-trip-route flex items-center gap-1 flex-nowrap overflow-x-auto text-[11px] font-bold text-sia-navy dark:text-white"></div>
+                            <div id="${id}-lma-trip-route" class="lma-trip-route flex items-center gap-1 flex-nowrap overflow-x-auto ca-micro font-bold text-sia-navy dark:text-white"></div>
                             <div class="flex items-center gap-2 mt-2">
-                                <p id="${id}-lma-trip-progress" class="shrink-0 text-[10px] font-bold text-gray-400">0 of 0 fetched</p>
-                                <button type="button" id="${id}-lma-expand-all" class="lma-expand-all hidden shrink-0 text-[10px] font-bold uppercase tracking-wide text-sia-gold">Expand all</button>
-                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all relative shrink-0 ml-auto h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none"><span class="fetch-idle inline-flex items-center gap-1 transition-opacity"><i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i><span class="lma-fetch-all-label">Fetch all</span></span><span class="fetch-busy fetch-face"><span class="fetch-spin-ring"></span></span></button>
+                                <p id="${id}-lma-trip-progress" class="shrink-0 ca-micro font-bold text-gray-400">0 of 0 fetched</p>
+                                <button type="button" id="${id}-lma-expand-all" class="lma-expand-all hidden shrink-0 ca-micro font-bold uppercase tracking-wide text-sia-gold">Expand all</button>
+                                <button type="button" id="${id}-lma-fetch-all" class="lma-fetch-all relative shrink-0 ml-auto h-10 px-3 rounded-full ca-micro font-bold uppercase tracking-normal whitespace-nowrap border border-sia-gold/70 text-sia-gold inline-flex items-center gap-1 disabled:opacity-50 disabled:pointer-events-none"><span class="fetch-idle inline-flex items-center gap-1 transition-opacity"><i data-lucide="download" class="w-3.5 h-3.5 shrink-0"></i><span class="lma-fetch-all-label">Fetch all</span></span><span class="fetch-busy fetch-face"><span class="fetch-spin-ring"></span></span></button>
                             </div>
                         </div>
                         <div id="${id}-lma-sectors" class="space-y-3"></div>
                         <button id="${id}-btn-add-lma" class="w-full py-2 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 text-xs font-bold text-gray-500 mt-2 hover:border-sia-gold hover:text-sia-gold transition-colors">+ Add Layover Station</button>
-                        <p id="${id}-lma-calc-hint" class="lma-calc-hint hidden text-[10px] font-bold text-gray-500 dark:text-gray-400 mt-1"></p>
+                        <p id="${id}-lma-calc-hint" class="lma-calc-hint hidden ca-micro font-bold text-gray-500 dark:text-gray-400 mt-1"></p>
                     </div>
                 `;
             }
@@ -5099,7 +5170,7 @@ function getRegionForAirport(code) {
                     <button id="${id}-btn-calc" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none mt-2">
                         Calculate
                     </button>
-                    <p id="${id}-calc-hint" class="calc-hint empty:hidden text-[10px] font-bold text-gray-500 text-center mt-2"></p>
+                    <p id="${id}-calc-hint" class="calc-hint empty:hidden ca-micro font-bold text-gray-500 text-center mt-2"></p>
                 </div>
             `;
             
@@ -5228,7 +5299,7 @@ function getRegionForAirport(code) {
                         : fetched[k]
                             ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
                             : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
-                    const baseCls = 'lma-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold transition-colors duration-200 ';
+                    const baseCls = 'lma-trip-node shrink-0 px-2 py-1 rounded-lg border ca-micro font-bold transition-colors duration-200 ';
                     if (route.childElementCount === nodes.length * 2 - 1) {
                         // same shape: update in place so fetched boxes turn green smoothly
                         nodes.forEach((n, k) => {
@@ -5399,7 +5470,7 @@ function getRegionForAirport(code) {
                         : fetched[k]
                             ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
                             : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
-                    const baseCls = 'ifa-trip-node shrink-0 px-2 py-1 rounded-lg border text-[11px] font-bold transition-colors duration-200 ';
+                    const baseCls = 'ifa-trip-node shrink-0 px-2 py-1 rounded-lg border ca-micro font-bold transition-colors duration-200 ';
                     if (route.childElementCount === nodes.length * 2 - 1) {
                         // same shape: update in place so fetched boxes turn green smoothly
                         nodes.forEach((n, k) => {
@@ -5516,34 +5587,35 @@ function getRegionForAirport(code) {
                                 </button>
                                 <div class="ifa-edit-area">
                                 <div class="flex items-center justify-between gap-2 mb-2">
-                                    <p class="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Sector ${i} (${label})</p>
+                                    <p class="ca-micro uppercase font-bold text-gray-500 tracking-wider">Sector ${i} (${label})</p>
                                     <span class="flex items-center gap-2 shrink-0">
                                         <span class="ifa-status-dot hidden w-2 h-2 rounded-full"></span>
-                                        <button type="button" class="ifa-retry-btn hidden text-[10px] font-bold text-red-500 underline" data-idx="${i}">Retry</button>
+                                        <button type="button" class="ifa-retry-btn hidden ca-micro font-bold text-red-500 underline" data-idx="${i}">Retry</button>
                                     </span>
                                 </div>
                                 <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
                                     <div class="flex-1 min-w-0">
-                                        <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
+                                        <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
+                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 ca-micro font-bold text-gray-400">SQ</span>
                                             <input type="text" id="${id}-ifa-fn${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-fn-input" placeholder="${fnHints[i - 1]}">
                                         </div>
                                     </div>
                                     <div class="flex-1 min-w-0">
-                                        <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
+                                        <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Date</label>
                                         <input type="hidden" id="${id}-ifa-d${i}" value="${dfltDate}" class="ca-date-input ifa-date-cascade" data-idx="${i}">
                                         <button type="button" id="${id}-ifa-d${i}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-ifa-d${i}">${formatDateBtn(dfltDate)}</button>
                                     </div>
                                 </div>
-                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="Flight Time Duration (HH:MM)">
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Block Time</label>
+                                <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="HH:MM">
                                 
                                 ${showUS ? `
                                 <div class="ifa-us-field flex items-center justify-between gap-3 mt-2">
                                     <span class="flex items-center gap-1.5 min-w-0">
                                         <i data-lucide="flag" class="w-4 h-4 shrink-0 text-sia-gold"></i>
                                         <span class="text-xs font-bold whitespace-nowrap">Direct US</span>
-                                        <span class="text-[10px] text-gray-500 truncate">ULR flight — ${IFA_CONFIG.directUSMultiplier}×</span>
+                                        <span class="ca-micro text-gray-500 truncate">ULR flight — ${IFA_CONFIG.directUSMultiplier}×</span>
                                     </span>
                                     <label class="inline-flex items-center cursor-pointer shrink-0">
                                         <input type="checkbox" id="${id}-ifa-us${i}" class="ifa-us-input ca-switch-input sr-only">
@@ -5555,7 +5627,7 @@ function getRegionForAirport(code) {
                                     <span class="flex items-center gap-1.5 min-w-0">
                                         <i data-lucide="armchair" class="w-4 h-4 shrink-0 text-sia-gold"></i>
                                         <span class="text-xs font-bold whitespace-nowrap">Paxing</span>
-                                        <span class="text-[10px] text-gray-500 truncate">Deadheading — ${IFA_CONFIG.paxingMultiplier}×</span>
+                                        <span class="ca-micro text-gray-500 truncate">Deadheading — ${IFA_CONFIG.paxingMultiplier}×</span>
                                     </span>
                                     <label class="inline-flex items-center cursor-pointer shrink-0">
                                         <input type="checkbox" id="${id}-ifa-px${i}" class="ifa-px-input ca-switch-input sr-only">
@@ -5644,12 +5716,12 @@ function getRegionForAirport(code) {
 
                     // Fetch all on the trip bar covers every station, so a station only
                     // gets its own button back when one of its legs actually failed.
-                    const lmaRetryBtn = (leg) => `<button type="button" class="lma-retry-btn hidden shrink-0 h-10 px-3 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-500/10 text-red-500 inline-flex items-center gap-1" data-idx="${idx}" data-leg="${leg}">Retry</button>`;
+                    const lmaRetryBtn = (leg) => `<button type="button" class="lma-retry-btn hidden shrink-0 h-10 px-3 rounded-full ca-micro font-bold uppercase tracking-wide bg-red-500/10 text-red-500 inline-flex items-center gap-1" data-idx="${idx}" data-leg="${leg}">Retry</button>`;
                     const lmaFnField = (which) => `
                                     <div class="flex-1 min-w-0">
-                                        <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
+                                        <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
                                         <div class="relative">
-                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400">SQ</span>
+                                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 ca-micro font-bold text-gray-400">SQ</span>
                                             <input type="text" id="${id}-lma-${which}fn${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 pl-8 pr-2 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none lma-fn-input" placeholder="265">
                                         </div>
                                     </div>`;
@@ -5657,49 +5729,49 @@ function getRegionForAirport(code) {
                         <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('a')}
                             <div class="flex-1 min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
                                 <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
                             ${lmaRetryBtn('arr')}
                         </div>
                         <div class="lma-time-field mb-3">
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Time</label>
+                            <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Time</label>
                             <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
                         <div class="flex gap-1 items-end mb-2 flex-nowrap">
                             ${lmaFnField('d')}
                             <div class="flex-1 min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Date</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Date</label>
                                 <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
                             ${lmaRetryBtn('dep')}
                         </div>
                         <div class="lma-time-field mb-2">
-                            <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Time</label>
+                            <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Departure Time</label>
                             <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 py-2 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                         </div>
                     ` : `
                         <div class="grid grid-cols-2 gap-2 mb-2 min-w-0">
                             <div class="min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Arrival Date</label>
                                 <input type="hidden" id="${id}-lma-a${idx}" value="${defaultArr}" class="ca-date-input date-cascade" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-a${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-a${idx}">${formatDateBtn(defaultArr)}</button>
                             </div>
                             <div class="min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
                                 <input type="text" id="${id}-lma-at${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2 min-w-0">
                             <div class="min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Dep Date</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Dep Date</label>
                                 <input type="hidden" id="${id}-lma-d${idx}" value="${defaultDep}" class="ca-date-input date-cascade-dep" data-idx="${idx}">
                                 <button type="button" id="${id}-lma-d${idx}-btn" class="ca-date-btn ui-input w-full rounded-lg px-2 py-2 text-sm font-bold text-left" data-date-input="${id}-lma-d${idx}">${formatDateBtn(defaultDep)}</button>
                             </div>
                             <div class="min-w-0">
-                                <label class="block text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
+                                <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Time</label>
                                 <input type="text" id="${id}-lma-dt${idx}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg px-3 text-sm font-bold border border-transparent dark:border-white/10 outline-none lma-time-input" placeholder="HH:MM">
                             </div>
                         </div>
@@ -5711,16 +5783,16 @@ function getRegionForAirport(code) {
                                 <i data-lucide="check" class="w-2.5 h-2.5 text-white"></i>
                             </span>
                             <span class="lma-sum-fns text-xs font-bold text-sia-navy dark:text-white truncate"></span>
-                            <span class="lma-sum-iata shrink-0 ml-auto px-2 py-1 rounded-lg border text-[11px] font-bold border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-sia-navy dark:text-white">\u00b7\u00b7\u00b7</span>
+                            <span class="lma-sum-iata shrink-0 ml-auto px-2 py-1 rounded-lg border ca-micro font-bold border-black/10 dark:border-white/15 bg-white dark:bg-white/10 text-sia-navy dark:text-white">\u00b7\u00b7\u00b7</span>
                         </button>
                         <div class="lma-edit-area">
                         <div class="lma-iata-field mb-3">
-                            <label class="flex items-center gap-1.5 text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1"><span class="lma-status-dot shrink-0 w-2 h-2 rounded-full bg-sia-gold animate-pulse hidden"></span>Station IATA</label>
+                            <label class="flex items-center gap-1.5 ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1"><span class="lma-status-dot shrink-0 w-2 h-2 rounded-full bg-sia-gold animate-pulse hidden"></span>Station IATA</label>
                             <div class="relative">
                                 <input type="text" id="${id}-lma-iata${idx}" class="ui-input w-full rounded-lg py-2 px-3 pr-8 text-sm font-bold uppercase border border-transparent dark:border-white/10 outline-none lma-iata-input" placeholder="e.g. BNE" maxlength="3">
                                 <i data-lucide="check" class="w-4 h-4 text-green-500 absolute right-3 top-2.5 hidden" id="${id}-lma-iata-check${idx}"></i>
                             </div>
-                            <div id="${id}-lma-iata-info${idx}" class="text-[10px] font-bold mt-1 empty:hidden"></div>
+                            <div id="${id}-lma-iata-info${idx}" class="ca-micro font-bold mt-1 empty:hidden"></div>
                         </div>
                         ${lmaTimesHtml}
                         ${idx === 2 ? `
@@ -5728,7 +5800,7 @@ function getRegionForAirport(code) {
                             <span class="flex items-center gap-1.5 min-w-0">
                                 <i data-lucide="repeat" class="w-4 h-4 shrink-0 text-sia-gold"></i>
                                 <span class="text-xs font-bold whitespace-nowrap">Shuttle</span>
-                                <span class="text-[10px] text-gray-500 truncate">1-stop connection — <em>no LMA</em></span>
+                                <span class="ca-micro text-gray-500 truncate">1-stop connection — <em>no LMA</em></span>
                             </span>
                             <label class="inline-flex items-center cursor-pointer shrink-0">
                                 <input type="checkbox" id="${id}-lma-sh${idx}" class="lma-shuttle-input ca-switch-input sr-only">
@@ -6506,9 +6578,9 @@ function getRegionForAirport(code) {
 
         function lmaMealBadge(on, letter, onCls) {
             if (on) {
-                return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold ' + onCls + '">' + letter + '</span>';
+                return '<span class="inline-flex w-6 h-5 items-center justify-center rounded ca-micro font-bold ' + onCls + '">' + letter + '</span>';
             }
-            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded text-[10px] font-bold bg-black/10 dark:bg-white/10 text-gray-400">' + LUCIDE_X_SVG + '</span>';
+            return '<span class="inline-flex w-6 h-5 items-center justify-center rounded ca-micro font-bold bg-black/10 dark:bg-white/10 text-gray-400">' + LUCIDE_X_SVG + '</span>';
         }
 
         function getLayoverMultiplier(sdp) {
@@ -6619,7 +6691,7 @@ function getRegionForAirport(code) {
                                 <span>${ifaSectorLabel(idx)}${sec.paxing ? ' (Paxing)' : ''}</span>
                                 <span>${formatMoney(allowance)}</span>
                             </div>
-                            <p class="text-[10px] text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
+                            <p class="ca-micro text-gray-500">${formatHoursHM(sec.hours)} × $${rankRate} × ${mult}×</p>
                             <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${logic}</p>
                         </div>
                     `);
@@ -6670,7 +6742,7 @@ function getRegionForAirport(code) {
                                     <span>${iata || ('Station ' + idxStr)} (Shuttle)</span>
                                     <span>${formatMoney(0)}</span>
                                 </div>
-                                <p class="text-[10px] text-gray-500 mt-1">No LMA on shuttle ground time</p>
+                                <p class="ca-micro text-gray-500 mt-1">No LMA on shuttle ground time</p>
                             </div>
                         `);
                         return;
@@ -6759,12 +6831,12 @@ function getRegionForAirport(code) {
                         if (bc>0 || lc>0 || dc>0) {
                             dayRows.push(`
                                 <div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">
-                                    <span class="text-[11px] text-gray-600 dark:text-gray-400">${formatLmaDay(currDt)}</span>
+                                    <span class="ca-micro text-gray-600 dark:text-gray-400">${formatLmaDay(currDt)}</span>
                                     <div class="flex items-center gap-1.5">
                                         ${lmaMealBadge(bc > 0, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')}
                                         ${lmaMealBadge(lc > 0, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')}
                                         ${lmaMealBadge(dc > 0, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')}
-                                        <span class="ml-2 text-[11px] font-bold tabular-nums text-gray-800 dark:text-gray-200">${formatMoney(dayCost)}</span>
+                                        <span class="ml-2 ca-micro font-bold tabular-nums text-gray-800 dark:text-gray-200">${formatMoney(dayCost)}</span>
                                     </div>
                                 </div>
                             `);
@@ -6789,7 +6861,7 @@ function getRegionForAirport(code) {
 
             if (lmaTotal > 0 && !isTurnaround) {
                 lmaDetails.push(`
-                    <div class="flex justify-between items-center text-[10px] font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">
+                    <div class="flex justify-between items-center ca-micro font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">
                         <div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5 last:border-0">
                             <span class="tracking-wider"><span class="uppercase">Breakfast</span> (${mealB}x)</span>
                             <span class="text-sia-gold">${formatMoney(globalB)}</span>
@@ -7019,7 +7091,7 @@ function getRegionForAirport(code) {
         function overviewBlock(text) {
             if (!text) return '';
             return '<div class="mb-6">'
-                + '<div class="flex items-center gap-1.5 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-sia-gold"></i><span class="text-[10px] font-bold uppercase tracking-wider text-sia-gold">Flight Overview</span></div>'
+                + '<div class="flex items-center gap-1.5 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-sia-gold"></i><span class="ca-micro font-bold uppercase tracking-wider text-sia-gold">Flight Overview</span></div>'
                 + '<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">' + text + '</p>'
                 + '</div>';
         }
@@ -7031,7 +7103,7 @@ function getRegionForAirport(code) {
             s.sectors.forEach((x, i) => {
                 html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">'
                     + '<div class="flex justify-between font-bold text-sm mb-1"><span>' + ifaSectorLabel(i) + (x.fn ? ' — SQ ' + x.fn : '') + (x.paxing ? ' (Paxing)' : '') + '</span><span>' + formatMoney(x.amount) + '</span></div>'
-                    + '<p class="text-[10px] text-gray-500">' + x.ftHm + ' × $' + s.rankRate + ' × ' + x.mult + '×</p>'
+                    + '<p class="ca-micro text-gray-500">' + x.ftHm + ' × $' + s.rankRate + ' × ' + x.mult + '×</p>'
                     + '<p class="text-xs text-gray-600 dark:text-gray-400 mt-1">' + (x.logic || '') + '</p>'
                     + '</div>';
             });
@@ -7043,7 +7115,7 @@ function getRegionForAirport(code) {
                 html += '<div class="mt-6 border-t border-black/5 dark:border-white/5 pt-6"><div class="flex justify-between items-center mb-3"><h4 class="font-bold">LMA Breakdown</h4><span class="font-bold text-sia-gold">' + formatMoney(s.lmaTotal) + '</span></div>';
                 (s.stations || []).forEach(st => {
                     if (st.shuttle) {
-                        html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5"><div class="flex justify-between font-bold text-sm"><span>' + (ovCity(st.code) || st.code) + ' (Shuttle)</span><span>' + formatMoney(0) + '</span></div><p class="text-[10px] text-gray-500 mt-1">No LMA on shuttle ground time</p></div>';
+                        html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5"><div class="flex justify-between font-bold text-sm"><span>' + (ovCity(st.code) || st.code) + ' (Shuttle)</span><span>' + formatMoney(0) + '</span></div><p class="ca-micro text-gray-500 mt-1">No LMA on shuttle ground time</p></div>';
                         return;
                     }
                     if (st.skipped) {
@@ -7052,12 +7124,12 @@ function getRegionForAirport(code) {
                     }
                     const dayRows = (st.days || []).filter(x => x.b || x.l || x.d).map(x =>
                         '<div class="flex justify-between items-center py-1.5 border-b border-black/5 dark:border-white/5 last:border-0">'
-                        + '<span class="text-[11px] text-gray-600 dark:text-gray-400">' + formatLmaDay(ovYmdDate(x.ymd) || new Date()) + '</span>'
+                        + '<span class="ca-micro text-gray-600 dark:text-gray-400">' + formatLmaDay(ovYmdDate(x.ymd) || new Date()) + '</span>'
                         + '<div class="flex items-center gap-1.5">'
                         + lmaMealBadge(!!x.b, 'B', 'bg-orange-500/20 text-orange-600 dark:text-orange-400')
                         + lmaMealBadge(!!x.l, 'L', 'bg-blue-500/20 text-blue-600 dark:text-blue-400')
                         + lmaMealBadge(!!x.d, 'D', 'bg-purple-500/20 text-purple-600 dark:text-purple-400')
-                        + '<span class="ml-2 text-[11px] font-bold tabular-nums text-gray-800 dark:text-gray-200">' + formatMoney(x.cost) + '</span>'
+                        + '<span class="ml-2 ca-micro font-bold tabular-nums text-gray-800 dark:text-gray-200">' + formatMoney(x.cost) + '</span>'
                         + '</div></div>').join('');
                     html += '<div class="mb-3 p-3 bg-black/5 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5">'
                         + '<div class="font-bold text-sm mb-2 border-b border-black/5 dark:border-white/5 pb-2"><span>' + (st.code || 'Station') + (st.region ? ' (' + st.region + ')' : '') + '</span></div>'
@@ -7066,7 +7138,7 @@ function getRegionForAirport(code) {
                 });
                 const meals = s.meals;
                 if (meals && s.lmaTotal > 0) {
-                    html += '<div class="flex justify-between items-center text-[10px] font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">'
+                    html += '<div class="flex justify-between items-center ca-micro font-bold text-gray-500 bg-black/5 dark:bg-white/5 p-2 rounded-xl mt-1 mb-1 border border-black/5 dark:border-white/5">'
                         + '<div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5"><span class="tracking-wider"><span class="uppercase">Breakfast</span> (' + meals.b + 'x)</span><span class="text-sia-gold">' + formatMoney(meals.bAmt) + '</span></div>'
                         + '<div class="flex flex-col items-center flex-1 border-r border-black/5 dark:border-white/5"><span class="tracking-wider"><span class="uppercase">Lunch</span> (' + meals.l + 'x)</span><span class="text-sia-gold">' + formatMoney(meals.lAmt) + '</span></div>'
                         + '<div class="flex flex-col items-center flex-1"><span class="tracking-wider"><span class="uppercase">Dinner</span> (' + meals.d + 'x)</span><span class="text-sia-gold">' + formatMoney(meals.dAmt) + '</span></div>'
@@ -7082,7 +7154,11 @@ function getRegionForAirport(code) {
             if (!b) return;
             if (!kind) { b.classList.add('hidden'); b.innerHTML = ''; b.onclick = null; return; }
             b.classList.remove('hidden');
-            b.innerHTML = '<i data-lucide="' + kind + '" class="w-5 h-5"></i>';
+            // v1.31.0 (owner ruling): the action is a labelled pill — and it
+            // NEVER changes shape between states: Save -> Saved keeps the
+            // exact same footprint, so the header doesn't dance on save.
+            const actionText = { save: 'Save', check: 'Saved', trash: 'Clear' };
+            b.innerHTML = '<i data-lucide="' + kind + '" class="w-4 h-4 shrink-0"></i><span class="ca-micro font-bold uppercase tracking-wider">' + (actionText[kind] || '') + '</span>';
             const actionLabels = { save: 'Save to archives', check: 'Saved to archives', trash: 'Clear saved earnings' };
             b.setAttribute('aria-label', actionLabels[kind] || kind);
             b.disabled = !!disabled;
@@ -7119,7 +7195,7 @@ function getRegionForAirport(code) {
                     : '<span class="font-bold">' + formatMoney(Number(p.amount) || 0) + '</span>';
                 return '<div class="ca-save-revrow flex items-center justify-between gap-2 py-1.5">'
                     + '<div class="flex items-center gap-2 min-w-0">'
-                    + '<span class="shrink-0 px-1.5 py-0.5 rounded-md border text-[10px] font-bold uppercase ' + tagCls[r.kind] + '">' + tagTxt[r.kind] + '</span>'
+                    + '<span class="shrink-0 px-1.5 py-0.5 rounded-md border ca-micro font-bold uppercase ' + tagCls[r.kind] + '">' + tagTxt[r.kind] + '</span>'
                     + '<span class="text-xs font-bold truncate">' + label + '</span></div>'
                     + '<span class="shrink-0 text-xs text-sia-gold">' + amt + '</span></div>';
             }).join('');
@@ -7131,7 +7207,7 @@ function getRegionForAirport(code) {
             wrap.id = 'ca-save-review';
             wrap.className = 'chat-anim-in mb-4 p-4 rounded-2xl border border-sia-gold/40 bg-black/5 dark:bg-white/5';
             wrap.innerHTML = '<p class="text-xs font-bold uppercase tracking-wide mb-1 text-sia-gold">Before you save</p>'
-                + '<p class="text-[11px] font-bold mb-2">' + (parts.join(' \u00b7 ') || 'nothing to save') + '</p>'
+                + '<p class="ca-micro font-bold mb-2">' + (parts.join(' \u00b7 ') || 'nothing to save') + '</p>'
                 + '<div class="divide-y divide-black/5 dark:divide-white/5 mb-3">' + rows + '</div>'
                 + '<div class="flex gap-2">'
                 + '<button id="ca-save-confirm" type="button" class="flex-1 py-2 rounded-lg bg-sia-gold text-black text-xs font-bold uppercase tracking-wide">Confirm save</button>'
@@ -7203,7 +7279,7 @@ function getRegionForAirport(code) {
                     if (station != null) archivePayload.stationDisplay = station;
                     const res = persistArchiveSaving([archivePayload]);
                     if (res.ok === false) { setResultsAction('save', false); return; } // persistArchive already explained; the review closed, so Save re-arms for a retry
-                    appAlert((archivePayload.stationDisplay || 'Earnings') + ' earnings ' + (res.updated ? 'updated' : 'saved') + '.');
+                    archToast((archivePayload.stationDisplay || 'Earnings') + ' earnings ' + (res.updated ? 'updated' : 'saved'));
                     const prm = content.querySelector('#ca-station-prompt');
                     if (prm) prm.remove();
                     // One tap saves once: full-colour tick while untappable, then the
@@ -7381,7 +7457,7 @@ function getRegionForAirport(code) {
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
-        const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, chartSel: null };
+        const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, insightsAll: false, chartSel: null };
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
@@ -7629,7 +7705,7 @@ function getRegionForAirport(code) {
         function archToast(msg, undoFn) {
             const t = archEl('ca-arch-toast'); t.innerHTML = '';
             const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
-            if (undoFn) { const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'font-bold text-sia-gold'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u); }
+            if (undoFn) { const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'font-bold'; u.style.color = '#d4af37'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u); }
             t.classList.remove('hidden');
             clearTimeout(archUndoTimer); archUndoTimer = setTimeout(hideArchToast, 6000);
         }
@@ -7711,12 +7787,12 @@ function getRegionForAirport(code) {
             if (nudge) {
                 html += '<div id="ca-arch-backup-nudge" class="mb-3 p-3 rounded-xl border border-amber-500/25 bg-amber-500/10 flex items-start gap-2.5" role="status">'
                     + '<i data-lucide="hard-drive-download" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>'
-                    + '<div class="flex-1 min-w-0 text-[11px] font-semibold text-amber-700 dark:text-amber-400 leading-relaxed">'
+                    + '<div class="flex-1 min-w-0 ca-micro font-semibold text-amber-700 dark:text-amber-400 leading-relaxed">'
                     + (nudge.never
                         ? 'Your earnings live only on this phone. Export a JSON backup — it takes a few seconds.'
                         : (nudge.newMonths + ' month' + (nudge.newMonths === 1 ? '' : 's') + ' of new entries since your last backup — an export takes a few seconds.'))
                     + '</div>'
-                    + '<button type="button" id="ca-arch-nudge-export" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-[10px] font-bold uppercase tracking-wider">Export</button>'
+                    + '<button type="button" id="ca-arch-nudge-export" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider">Export</button>'
                     + '<button type="button" id="ca-arch-nudge-snooze" aria-label="Snooze backup reminder" class="shrink-0 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
                     + '</div>';
             }
@@ -7742,7 +7818,7 @@ function getRegionForAirport(code) {
                     + '<span class="block text-sm mt-0.5" style="color: var(--arch-muted)">' + rows.length + ' flight' + (rows.length === 1 ? '' : 's')
                     + (yoy !== null ? ' <span class="ca-arch-yoy-' + (yoy >= 0 ? 'up' : 'down') + ' text-xs whitespace-nowrap"><i data-lucide="' + (yoy >= 0 ? 'arrow-up' : 'arrow-down') + '" class="w-3 h-3 inline"></i> ' + Math.abs(yoy).toFixed(1) + '%</span>' : '')
                     + '</span></span>'
-                    + '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold, #c9a227)">' + formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '') + '</span>'
+                    + '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '') + '</span>'
                     + '</button>'
                     + '<div class="ca-arch-group-body pl-4">';
                 rows.forEach((e) => {
@@ -7751,14 +7827,14 @@ function getRegionForAirport(code) {
                         + '<span class="font-bold text-sm" style="color: var(--arch-fg)">' + archRoute(e) + '</span>'
                         + '<span class="text-xs" style="color: var(--arch-muted)">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
                         + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
-                        + '<button type="button" class="ca-arch-del p-1.5 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                        + '<button type="button" class="ca-arch-del ca-hit p-1.5 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 if (inProgress && ms.unflownCount > 0 && ms.total > 0.004) {
                     const projFlights = ms.count;
                     html += '<div class="flex items-center gap-2.5 py-2.5 px-1 italic" style="color: var(--arch-muted)">'
                         + '<span class="ca-arch-dot-hollow"></span>'
                         + '<span class="text-sm italic">Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's') + '</span>'
-                        + '<span class="ca-arch-amt ml-auto text-sm font-bold italic" style="color: var(--sia-gold, #c9a227)">' + formatMoney(ms.total) + '</span></div>';
+                        + '<span class="ca-arch-amt ml-auto text-sm font-bold italic" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(ms.total) + '</span></div>';
                 }
                 html += '</div></div>';
             });
@@ -7766,9 +7842,9 @@ function getRegionForAirport(code) {
             const firstMk = Object.keys(statsAll).sort()[0];
             html += '<div class="flex items-center gap-3 mt-6 mb-2">'
                 + '<div class="ca-arch-footline"></div>'
-                + '<span class="text-[10px] font-bold uppercase tracking-[0.08em] whitespace-nowrap" style="color: var(--arch-muted)">End of records</span>'
+                + '<span class="ca-micro font-bold uppercase tracking-[0.08em] whitespace-nowrap" style="color: var(--arch-muted)">End of records</span>'
                 + '<div class="ca-arch-footline"></div></div>'
-                + '<div class="text-center text-[11px] pb-2" style="color: var(--arch-muted)">Showing earnings since ' + archiveMonthLabel(firstMk) + '</div>';
+                + '<div class="text-center ca-micro pb-2" style="color: var(--arch-muted)">Showing earnings since ' + archiveMonthLabel(firstMk) + '</div>';
             list.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
             if (scroll) scroll.scrollTop = keep;
@@ -7943,24 +8019,36 @@ function getRegionForAirport(code) {
             const dayLbl = (ymd) => archiveDayLabel(ymd);
             const offFrom = s.offRun.len ? dayLbl(ymdShift(s.offRun.before, 1)) : '';
             const offTo = s.offRun.len ? dayLbl(ymdShift(s.offRun.after, -1)) : '';
-            let html = '';
-            // ROW 1 — earnings records
-            html += card('trophy', 'Top earning month', s.bestMk ? archiveMonthLabel(s.bestMk) : '\u2014', s.bestMk ? formatMoney(s.bestTotal) : 'No records yet');
-            html += card('trending-down', 'Lowest earning month', s.lowMk ? archiveMonthLabel(s.lowMk) : '\u2014', s.lowMk ? formatMoney(s.lowTotal) : 'No records yet', RED);
-            html += card('calendar', 'Monthly average', s.monthCount ? formatMoney(s.avgMonth) : '\u2014', s.monthCount ? 'across ' + s.monthCount + ' month' + (s.monthCount === 1 ? '' : 's') : 'No complete months yet');
-            html += card('plane', 'Busiest month', s.busiestMk ? archiveMonthLabel(s.busiestMk) : '\u2014', s.busiestMk ? s.busiestCount + ' flight' + (s.busiestCount === 1 ? '' : 's') : 'No records yet');
-            // ROW 2 — streaks and personal records
-            html += card('flame', 'Current streak', s.streak ? s.streak + ' month' + (s.streak === 1 ? '' : 's') : '\u2014', s.streak ? 'above ' + s.avgMonthLabel : 'Clear ' + s.avgMonthLabel + ' to start');
-            html += card('timer', 'Longest flight streak', s.flyRun.len ? s.flyRun.len + ' day' + (s.flyRun.len === 1 ? '' : 's') : '\u2014', s.flyRun.len ? 'since ' + dayLbl(s.flyRun.start) : 'No back-to-back days yet');
-            html += card('umbrella', 'Longest break', s.offRun.len ? s.offRun.len + ' day' + (s.offRun.len === 1 ? '' : 's') + ' off' : '\u2014', s.offRun.len ? '\u00b7 ' + offFrom + '\u2013' + offTo : 'No break between flying days');
-            html += card('briefcase', 'Highest single flight', s.topEntry ? formatMoney(s.topEntry.amount) : '\u2014', s.topEntry ? '\u00b7 ' + archRoute(s.topEntry.e) + ' ' + dayLbl(String(s.topEntry.e.sectorDate || '').slice(0, 10)) : 'No records yet');
-            // ROW 3 — earnings rate
-            html += card('dollar-sign', 'Per flying day', s.flyDays ? formatMoney(s.allTotal / s.flyDays) : '\u2014', s.flyDays ? 'across ' + s.flyDays + ' flying day' + (s.flyDays === 1 ? '' : 's') : 'No flying days yet');
-            html += card('hotel', 'Nights away YTD', s.nightsYtd ? String(s.nightsYtd) : '\u2014', s.nightsYtd ? 'avg ' + (Math.round((s.nightsYtd / s.ytdMonths) * 10) / 10) + ' / month' : 'No layovers this year yet');
-            // ROW 4 — lifestyle and routine
-            html += card('calendar-days', 'Flying days this year', s.flyDaysYtd ? s.flyDaysYtd + ' / ' + s.yearLen : '\u2014', s.flyDaysYtd ? Math.round(100 * (1 - s.flyDaysYtd / s.yearLen)) + '% of days off' : 'None yet this year', GOLD, GREEN);
-            html += card('bar-chart-3', 'Busiest weekday', s.wdPct ? s.wdName : '\u2014', s.wdPct ? Math.round(s.wdPct) + '% of all flights' : 'No records yet');
+            // v1.31.0 (owner-approved curation): the top four lead with what
+            // matters to the selected scope — this month's rhythm, or the
+            // records — and the remaining eight unfold on demand. All twelve
+            // always render (tests and honesty depend on that).
+            const cards = {
+                top: card('trophy', 'Top earning month', s.bestMk ? archiveMonthLabel(s.bestMk) : '\u2014', s.bestMk ? formatMoney(s.bestTotal) : 'No records yet'),
+                low: card('trending-down', 'Lowest earning month', s.lowMk ? archiveMonthLabel(s.lowMk) : '\u2014', s.lowMk ? formatMoney(s.lowTotal) : 'No records yet', RED),
+                avg: card('calendar', 'Monthly average', s.monthCount ? formatMoney(s.avgMonth) : '\u2014', s.monthCount ? 'across ' + s.monthCount + ' month' + (s.monthCount === 1 ? '' : 's') : 'No complete months yet'),
+                busiest: card('plane', 'Busiest month', s.busiestMk ? archiveMonthLabel(s.busiestMk) : '\u2014', s.busiestMk ? s.busiestCount + ' flight' + (s.busiestCount === 1 ? '' : 's') : 'No records yet'),
+                streak: card('flame', 'Current streak', s.streak ? s.streak + ' month' + (s.streak === 1 ? '' : 's') : '\u2014', s.streak ? 'above ' + s.avgMonthLabel : 'Clear ' + s.avgMonthLabel + ' to start'),
+                flyrun: card('timer', 'Longest flight streak', s.flyRun.len ? s.flyRun.len + ' day' + (s.flyRun.len === 1 ? '' : 's') : '\u2014', s.flyRun.len ? 'since ' + dayLbl(s.flyRun.start) : 'No back-to-back days yet'),
+                offrun: card('umbrella', 'Longest break', s.offRun.len ? s.offRun.len + ' day' + (s.offRun.len === 1 ? '' : 's') + ' off' : '\u2014', s.offRun.len ? '\u00b7 ' + offFrom + '\u2013' + offTo : 'No break between flying days'),
+                topflight: card('briefcase', 'Highest single flight', s.topEntry ? formatMoney(s.topEntry.amount) : '\u2014', s.topEntry ? '\u00b7 ' + archRoute(s.topEntry.e) + ' ' + dayLbl(String(s.topEntry.e.sectorDate || '').slice(0, 10)) : 'No records yet'),
+                perday: card('dollar-sign', 'Per flying day', s.flyDays ? formatMoney(s.allTotal / s.flyDays) : '\u2014', s.flyDays ? 'across ' + s.flyDays + ' flying day' + (s.flyDays === 1 ? '' : 's') : 'No flying days yet'),
+                nights: card('hotel', 'Nights away YTD', s.nightsYtd ? String(s.nightsYtd) : '\u2014', s.nightsYtd ? 'avg ' + (Math.round((s.nightsYtd / s.ytdMonths) * 10) / 10) + ' / month' : 'No layovers this year yet'),
+                flydays: card('calendar-days', 'Flying days this year', s.flyDaysYtd ? s.flyDaysYtd + ' / ' + s.yearLen : '\u2014', s.flyDaysYtd ? Math.round(100 * (1 - s.flyDaysYtd / s.yearLen)) + '% of days off' : 'None yet this year', GOLD, GREEN),
+                weekday: card('bar-chart-3', 'Busiest weekday', s.wdPct ? s.wdName : '\u2014', s.wdPct ? Math.round(s.wdPct) + '% of all flights' : 'No records yet')
+            };
+            const order = (archState.scope === 'month')
+                ? ['streak', 'perday', 'weekday', 'avg', 'top', 'topflight', 'busiest', 'nights', 'flydays', 'flyrun', 'offrun', 'low']
+                : ['top', 'avg', 'streak', 'topflight', 'perday', 'busiest', 'offrun', 'nights', 'flydays', 'flyrun', 'weekday', 'low'];
+            let html = order.slice(0, 4).map((k) => cards[k]).join('');
+            html += '<div class="ca-arch-insmore grid grid-cols-2 gap-2 col-span-2' + (archState.insightsAll ? '' : ' ca-arch-insmore-hide') + '">' + order.slice(4).map((k) => cards[k]).join('') + '</div>';
+            html += '<button type="button" id="ca-arch-ins-mtoggle" class="col-span-2 w-full h-9 mt-1 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider" style="color: var(--arch-muted)"><i data-lucide="' + (archState.insightsAll ? 'chevron-up' : 'chevron-down') + '" class="w-3.5 h-3.5"></i><span id="ca-arch-ins-mtoggle-label">' + (archState.insightsAll ? 'Show less' : 'Show all 12') + '</span></button>';
             box.innerHTML = html;
+            const mt = box.querySelector('#ca-arch-ins-mtoggle');
+            if (mt) mt.addEventListener('click', () => {
+                archState.insightsAll = !archState.insightsAll;
+                renderArchInsights(loadArchive());
+            });
             // Keep the class in sync on every re-render (search typing, scope
             // changes) — visibility is owned by the animation classes, NEVER
             // by Tailwind's `hidden` (v1.27.1: that leftover display:none
@@ -7998,7 +8086,7 @@ function getRegionForAirport(code) {
                     + "<p class=\"text-xs text-gray-500 text-center\">Saved before detailed summaries — the numbers are here, the story isn't.</p>";
             }
             const saved = String(e.savedAt || '').slice(0, 10);
-            if (saved) html += '<p class="text-[10px] text-gray-400 text-center pt-3">Saved ' + ovDay(saved) + '</p>';
+            if (saved) html += '<p class="ca-micro text-gray-400 text-center pt-3">Saved ' + ovDay(saved) + '</p>';
             openArchSub(html);
             try { lucide.createIcons(); } catch (err) {}
         }
@@ -8116,7 +8204,7 @@ function getRegionForAirport(code) {
         }
 
         function showArchiveOverlay() {
-            archState.scope = 'all'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false;
+            archState.scope = 'all'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false; archState.insightsAll = false;
             const s = archEl('ca-arch-search'); if (s) s.value = '';
             // Reset the insights toggle to its closed state too — closing with
             // insights open used to leave a stale "Hide insights" label,
@@ -8225,7 +8313,7 @@ function getRegionForAirport(code) {
             list.forEach((item) => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'shrink-0 glass-panel rounded-full px-3 py-1.5 text-[11px] font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20';
+                btn.className = 'shrink-0 glass-panel rounded-full px-3 py-1.5 ca-micro font-bold whitespace-nowrap transition-colors hover:bg-sia-gold/20';
                 btn.textContent = 'SQ' + item.flight + ' · ' + formatRecentFlightDate(item.date);
                 btn.addEventListener('click', () => applyRecentFlight(cardId, item.flight, item.date));
                 row.appendChild(btn);
@@ -8287,7 +8375,7 @@ function getRegionForAirport(code) {
                     
                     <div class="space-y-4">
                         <div class="relative">
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
+                            <label class="block ca-micro font-semibold uppercase tracking-wider text-gray-500 mb-1">Flight Number</label>
                             <div class="flex items-center relative">
                                 <span class="absolute left-3 text-gray-400 font-bold text-sm">SQ</span>
                                 <input type="text" id="fv-flight-${uniqueId}" inputmode="numeric" pattern="[0-9]*" enterkeyhint="done" autocomplete="off" oninput="checkAutoFetch('${uniqueId}')" class="ui-input w-full rounded-xl py-2.5 pl-10 pr-4 text-sm font-bold border border-transparent dark:border-white/10 outline-none" placeholder="e.g. 11">
@@ -8298,7 +8386,7 @@ function getRegionForAirport(code) {
                         </div>
                         
                         <div id="fv-date-area-${uniqueId}" class="space-y-2 transition-all duration-300">
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
+                            <label class="block ca-micro font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
                                 <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Today</button>
@@ -8551,7 +8639,7 @@ function getRegionForAirport(code) {
                     if (isMultiSector) {
                         contentHtml += `
                             <div id="fv-sectors-section-${id}">
-                                <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Sector/s</label>
+                                <label class="block ca-micro font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Sector/s</label>
                                 <div class="flex flex-wrap gap-2 mb-4" id="fv-sectors-container-${id}">
                         `;
                         legs.forEach(leg => {
@@ -8570,7 +8658,7 @@ function getRegionForAirport(code) {
                     // 2. Cabins
                     contentHtml += `
                         <div id="fv-cabins-section-${id}">
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabin/s</label>
+                            <label class="block ca-micro font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabin/s</label>
                             <div class="flex flex-wrap gap-2 mb-4" id="fv-cabins-container-${id}">
                     `;
                     
@@ -9111,7 +9199,7 @@ function getRegionForAirport(code) {
                     <div class="menu-desc-clip">
                         <div class="menu-desc-text text-xs text-gray-500 leading-relaxed">${description}</div>
                     </div>
-                    <button type="button" class="menu-desc-toggle hidden mt-1 text-[11px] font-bold text-sia-gold inline-flex items-center gap-0.5">
+                    <button type="button" class="menu-desc-toggle hidden mt-1 ca-micro font-bold text-sia-gold inline-flex items-center gap-0.5">
                         <span class="menu-desc-toggle-label">More</span>
                         <i data-lucide="chevron-down" class="menu-desc-chevron w-3 h-3"></i>
                     </button>
@@ -9194,9 +9282,9 @@ function getRegionForAirport(code) {
             let iconsHtml = '';
             if (item && item.icons && item.icons.length > 0) {
                 item.icons.forEach(icon => {
-                    if (icon === 'VGT') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-green-500/20 text-green-600 text-[10px] font-bold">V</span>`;
-                    if (icon === 'WLSGD') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-600 text-[10px] font-bold">Wellness</span>`;
-                    if (icon === 'ICP') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-600 text-[10px] font-bold">Chef</span>`;
+                    if (icon === 'VGT') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-green-500/20 text-green-600 ca-micro font-bold">V</span>`;
+                    if (icon === 'WLSGD') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-600 ca-micro font-bold">Wellness</span>`;
+                    if (icon === 'ICP') iconsHtml += `<span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-600 ca-micro font-bold">Chef</span>`;
                 });
             }
             return iconsHtml;
@@ -9604,14 +9692,14 @@ function getRegionForAirport(code) {
             
             const headerHtml = `
                 <div class="bg-gradient-to-br from-[#F3E6C8] to-[#FBF7F0] text-sia-navy dark:from-[#081021] dark:to-black dark:text-white rounded-3xl p-5 relative overflow-hidden shadow-xl border border-sia-gold/30 dark:border-white/10 mb-4">
-                    <div class="text-center text-[10px] uppercase tracking-[0.2em] font-bold text-sia-gold mb-5 opacity-90">
+                    <div class="text-center ca-micro uppercase tracking-[0.2em] font-bold text-sia-gold mb-5 opacity-90">
                         ${topHeader}
                     </div>
                     <div class="flex justify-between items-start relative z-10">
                         <!-- Left Zone: Origin -->
                         <div class="flex flex-col flex-1 items-end text-right">
                             <div class="text-3xl font-bold tracking-tight">${fd.departureAirportCode}</div>
-                            <div class="text-[10px] uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
+                            <div class="ca-micro uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
                             <div class="text-2xl font-bold">${depTime}</div>
                         </div>
                         
@@ -9624,7 +9712,7 @@ function getRegionForAirport(code) {
                                 <i data-lucide="plane" class="w-5 h-5 fill-current"></i>
                             </div>
                             <!-- Duration Pill -->
-                            <div class="bg-sia-navy/5 dark:bg-white/10 backdrop-blur-md border border-sia-navy/10 dark:border-white/10 px-3 py-1 rounded-full text-[10px] font-bold tracking-wider mt-10">
+                            <div class="bg-sia-navy/5 dark:bg-white/10 backdrop-blur-md border border-sia-navy/10 dark:border-white/10 px-3 py-1 rounded-full ca-micro font-bold tracking-wider mt-10">
                                 ${dur}
                             </div>
                         </div>
@@ -9632,10 +9720,10 @@ function getRegionForAirport(code) {
                         <!-- Right Zone: Destination -->
                         <div class="flex flex-col items-start flex-1 text-left">
                             <div class="text-3xl font-bold tracking-tight">${fd.arrivalAirportCode}</div>
-                            <div class="text-[10px] uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
+                            <div class="ca-micro uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
                             <div class="text-2xl font-bold relative">
                                 ${arrTime}
-                                ${dayShift ? `<span class="absolute -top-1 -right-6 text-[10px] text-sia-gold font-bold">${dayShift}</span>` : ''}
+                                ${dayShift ? `<span class="absolute -top-1 -right-6 ca-micro text-sia-gold font-bold">${dayShift}</span>` : ''}
                             </div>
                         </div>
                     </div>
@@ -11078,7 +11166,7 @@ function getRegionForAirport(code) {
             const head = document.createElement('div');
             head.className = 'print-edit-head';
             const h = document.createElement('div');
-            h.className = 'text-[11px] font-bold text-sia-gold';
+            h.className = 'ca-micro font-bold text-sia-gold';
             h.textContent = title;
             head.appendChild(h);
             if (obj) head.appendChild(printEditToggle(obj, row));
@@ -11475,7 +11563,7 @@ function getRegionForAirport(code) {
             const model = printState.model;
             const sector = currentPrintSector();
             if (!model || !sector) {
-                await appAlert('Nothing to export yet.');
+                archToast('Nothing to export yet.');
                 return;
             }
             if (document.fonts && document.fonts.ready) await document.fonts.ready;
@@ -11583,7 +11671,7 @@ function getRegionForAirport(code) {
             }
             const paper = document.getElementById('print-paper');
             if (!paper) {
-                await appAlert('Nothing to export yet.');
+                archToast('Nothing to export yet.');
                 return;
             }
             const prevTransform = paper.style.transform;
@@ -11631,7 +11719,7 @@ function getRegionForAirport(code) {
         function exportPrintWord() {
             const paper = document.getElementById('print-paper');
             if (!paper) {
-                appAlert('Nothing to export yet.');
+                archToast('Nothing to export yet.');
                 return;
             }
             const clone = paper.cloneNode(true);
@@ -12087,7 +12175,7 @@ function getRegionForAirport(code) {
                     await T.say('Press <b>Build cards</b> to tweak your flight details (if any) or press <b>Calculate all</b> and let me compute your total allowance.');
                     const gate3 = await T.next();
                     if (gate3 === 'skip') return 'skip';
-                    await T.say('Once the calculations are complete after tapping <b>Calculate All</b>, a summary page will open — tap the <b>save</b> icon on the top right to archive your earnings.');
+                    await T.say('Once the calculations are complete after tapping <b>Calculate All</b>, a summary page will open — tap <b>Save</b> on the top right to archive your earnings.');
                     const gate4 = await T.next();
                     if (gate4 === 'skip') return 'skip';
                     // -- only now does the demo press Calculate all --
@@ -12125,14 +12213,9 @@ function getRegionForAirport(code) {
                     caTourClearGlow();
                     if (!T.alive()) return;
                     T.tap(cf);
-                    const dlg = await T.until(() => {
-                        const dd = document.getElementById('app-dialog-backdrop');
-                        return (dd && !dd.classList.contains('hidden')) ? dd : null;
-                    }, 6000);
-                    if (dlg) {
-                        await T.wait(2000);
-                        T.tap(document.getElementById('app-dialog-ok'));
-                    }
+                    // v1.31.0: the save lands as a quiet toast — no pop-up to
+                    // dismiss; the review already carried the confirmation.
+                    await T.wait(2200);
                     await T.wait(1500);
                     if (!T.alive()) return;
                     await T.say('<b>Saved.</b> July 2026 is filed under your earnings.');
