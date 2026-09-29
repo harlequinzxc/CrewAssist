@@ -152,24 +152,25 @@ const fs = require('fs');
       seedEntry('A17', '2026-08-08', 'TPE', 500, 'Layover'),
       seedEntry('A18', '2026-08-25', 'NRT', 300, 'Turnaround'),
       seedEntry('A19', '2026-09-10', 'KTM', 300, 'Layover'),
-      seedEntry('A20', '2026-09-20', 'HKT', 200, 'Turnaround')
+      seedEntry('A20', '2026-09-30', 'HKT', 200, 'Turnaround')
     ]));
     w.showArchiveOverlay();
     await wait(150);
 
     // Date anchor: the seed and expected figures below assume the run happens
-    // inside a partial September 2026 (same anchor the whole suite shares).
+    // inside a late September 2026 (same anchor the whole suite shares).
     const now = new Date();
     const ymdNow = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
     R.ok(ymdNow.slice(0, 7) === '2026-09', 'run date anchors to Sep 2026 (reseed if the anchor month drifts)');
-    R.ok(now.getDate() < 30, 'current month still partial');
-    const tnum = now.getDate();
+    R.ok(now.getDate() < 30, 'A20 (Sep 30) must still be un-flown');
     const fm = (n) => { const x = Number(n); const s = x < 0 ? '-' : ''; const p = Math.abs(x).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return s + '$' + p[0] + '.' + p[1]; };
-    const sepTotal = 500, sepFlights = 2, sepDays = 30;
-    const projTotal = Math.round(((sepTotal / tnum) * sepDays) * 100) / 100;
-    const projLeft = Math.max(0, projTotal - sepTotal);
-    const projFlights = Math.round((sepFlights / tnum) * sepDays);
-    const barPx = Math.round(120 * sepTotal / 1000);
+    // v1.29.2 schedule model: A19 ($300, Sep 10) flown, A20 ($200, Sep 30)
+    // still to be flown — Sep is in progress with a KNOWN $500 month.
+    const sepFlown = 300;
+    const projTotal = 500;          // the month's known schedule total
+    const projLeft = 200;           // the un-flown remainder
+    const projFlights = 2;          // the month's saved flight count
+    const barPx = Math.round(120 * sepFlown / 1000);   // solid = flown only
     const fullPx = Math.round(120 * projTotal / 1000);
     const projPx = Math.max(0, Math.min(fullPx - barPx, 120 - barPx));
 
@@ -521,6 +522,35 @@ const fs = require('fs');
     await wait(100);
     R.ok(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length === 2, 'retry after freeing storage saves');
     R.ok(btn.dataset.done === '1', 'and becomes one-shot');
+    void d;
+  }
+
+  // v1.29.2: flight-based progress — a fully-flown month reads Completed with
+  // a full bar; a pre-saved future month reads Upcoming with its projection
+  {
+    const { w, d } = await boot(APP);
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'C1', savedAt: '2026-09-11T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-10', flightType: 'Layover', stationDisplay: 'KTM', amount: 300 },
+      { id: 'C2', savedAt: '2026-09-21T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-20', flightType: 'Turnaround', stationDisplay: 'HKT', amount: 200 },
+      { id: 'C3', savedAt: '2026-09-25T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-05', flightType: 'Layover', stationDisplay: 'NRT', amount: 400 }
+    ]));
+    w.showArchiveOverlay();
+    await wait(150);
+    const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    const bodyOf = (mk) => headOf(mk).closest('.ca-arch-group').querySelector('.ca-arch-group-body');
+    R.ok(headOf('2026-09').textContent.indexOf('Completed') !== -1, 'fully-flown current month reads Completed');
+    R.ok(!bodyOf('2026-09').querySelector('.ca-arch-dot-hollow'), 'no projected row once every flight has landed');
+    R.ok(headOf('2026-10').textContent.indexOf('Upcoming') !== -1, 'future month with saved flights reads Upcoming');
+    R.ok(bodyOf('2026-10').querySelector('.ca-arch-dot-hollow') && bodyOf('2026-10').textContent.indexOf('Projected \u00b7 1 flight') !== -1 && bodyOf('2026-10').textContent.indexOf('$400.00') !== -1, 'upcoming month shows its projected schedule');
+    const sepCol = d.querySelector('.ca-arch-barcol[data-mk="2026-09"]');
+    const octCol = d.querySelector('.ca-arch-barcol[data-mk="2026-10"]');
+    R.ok(sepCol && !sepCol.querySelector('.ca-arch-barproj') && sepCol.querySelector('.ca-arch-bar').style.height === '120px', 'completed month is a full solid bar');
+    R.ok(octCol && octCol.querySelector('.ca-arch-barproj') && octCol.querySelector('.ca-arch-barproj').style.height === Math.round(120 * 400 / 500) + 'px', 'upcoming month renders the un-flown remainder as stripe');
+    R.ok(octCol.querySelector('.ca-arch-bartip').textContent.indexOf('$0.00 \u2192 $400.00') !== -1, 'upcoming tooltip reads flown to projected');
+    d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="month"]').click();
+    await wait(50);
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Month total', 'completed current month context label');
+    R.ok(d.getElementById('ca-arch-m-ctx').textContent.indexOf('Month complete') !== -1, 'Month complete line once the last flight has landed');
     void d;
   }
 

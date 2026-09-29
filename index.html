@@ -1528,12 +1528,12 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.29.1';
+        const APP_VERSION = '1.29.2';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
         const APP_WHAT_NEW = [
-            'What\'s New now shows only this release\'s changes. The Month and Year scopes on the earnings page follow the current calendar month and year, and the discard button\'s confirm reads simply "Confirm".'
+            'Month progress now follows your flying: a month completes when its last flight lands — not at month end — and shows a full bar. Months with flights still to be flown show the projection, and saved-but-unflown future months read Upcoming.'
         ];
 
         // State
@@ -7343,12 +7343,38 @@ function getRegionForAirport(code) {
         }
         function archCurrentMk() { return todayLocalYMD().slice(0, 7); }
         // A partial month projects linearly: day 17 of 30 -> total/17*30.
-        function archProjection(totalNow, mk) {
-            const y = parseInt(mk.slice(0, 4), 10), m = parseInt(mk.slice(5, 7), 10);
-            const days = new Date(y, m, 0).getDate();
-            const today = parseInt(todayLocalYMD().slice(8, 10), 10);
-            if (!isFinite(today) || today >= days) return { partial: false, total: totalNow, days: days, today: today };
-            return { partial: true, total: Math.round(((totalNow / today) * days) * 100) / 100, days: days, today: today };
+        // v1.29.2 (owner spec): month progress tracks the LAST FLIGHT — the
+        // latest flight date among the month's saved entries, plus the
+        // roster-remembered upcoming flights as the "more is coming" signal —
+        // never the last day of the calendar month. All flights flown ->
+        // completed (full solid bar, no projection) even with days left;
+        // flights still to be flown -> in progress, with the projection
+        // reading the month's KNOWN schedule total instead of pace math.
+        // Future months read "Upcoming" (owner ruling).
+        function archMonthState(mk, entries) {
+            const today = todayLocalYMD();
+            const es = (entries || []).filter((e) => String(e.monthKey || '').slice(0, 7) === String(mk).slice(0, 7));
+            let flown = 0, unflown = 0, unflownCount = 0, last = '', hasDates = false, totalAll = 0;
+            es.forEach((e) => {
+                totalAll += Number(e.amount) || 0;
+                const sd = String(e.sectorDate || '');
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return;
+                hasDates = true;
+                if (sd > last) last = sd;
+                if (sd < today) flown += Number(e.amount) || 0;
+                else { unflown += Number(e.amount) || 0; unflownCount++; }
+            });
+            let upcomingLeft = 0;
+            try {
+                if (typeof upcomingList === 'function') {
+                    upcomingList().forEach((f) => {
+                        const y = String((f && f.ymd) || '');
+                        if (y.slice(0, 7) === String(mk).slice(0, 7) && y >= today) upcomingLeft++;
+                    });
+                }
+            } catch (err) {}
+            const inProgress = unflownCount > 0 || upcomingLeft > 0 || (String(mk) === archCurrentMk() && !hasDates);
+            return { inProgress: inProgress, flown: flown, unflown: unflown, unflownCount: unflownCount, upcomingLeft: upcomingLeft, lastYmd: last, count: es.length, total: totalAll };
         }
         function archYoyPct(cur, prev) {
             if (!(prev > 0) || !(cur > 0)) return null;
@@ -7616,12 +7642,14 @@ function getRegionForAirport(code) {
                 const full = (statsAll[mk] || { total: 0 }).total;
                 const filtered = Math.abs(full - sub) > 0.004;
                 const col = Object.prototype.hasOwnProperty.call(archState.collapsed, mk) ? !!archState.collapsed[mk] : (mk !== newestMk);
-                const inProgress = mk === currentMk;
+                const ms = archMonthState(mk, all);
+                const inProgress = ms.inProgress;
                 const yoy = inProgress ? null : archYoyPct(full, statsAll[archMonthAdd(mk, -12)] ? statsAll[archMonthAdd(mk, -12)].total : 0);
                 let badges = '';
                 if (mk === ins.bestMk && ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-best"><i data-lucide="trophy" class="w-2.5 h-2.5"></i>Best</span>';
                 if (mk === ins.lowMk && ins.lowMk && ins.lowMk !== ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-low"><i data-lucide="trending-down" class="w-2.5 h-2.5"></i>Low</span>';
-                if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog">In progress</span>';
+                if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog">' + (mk > currentMk ? 'Upcoming' : 'In progress') + '</span>';
+                else if (mk === currentMk) badges += '<span class="ca-arch-badge ca-arch-badge-prog">Completed</span>';
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2">'
                     + '<button type="button" class="ca-arch-group-head w-full flex items-center gap-2.5 py-3 px-1 rounded-xl text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
                     + '<i data-lucide="chevron-right" class="ca-arch-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
@@ -7641,15 +7669,12 @@ function getRegionForAirport(code) {
                         + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
                         + '<button type="button" class="ca-arch-del p-1.5 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
-                if (inProgress) {
-                    const proj = archProjection(full, mk);
-                    const projFlights = Math.round((groups[mk].length / proj.today) * proj.days);
-                    if (proj.partial && proj.total > 0.004) {
-                        html += '<div class="flex items-center gap-2.5 py-2.5 px-1 italic" style="color: var(--arch-muted)">'
-                            + '<span class="ca-arch-dot-hollow"></span>'
-                            + '<span class="text-sm italic">Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's') + '</span>'
-                            + '<span class="ca-arch-amt ml-auto text-sm font-bold italic" style="color: var(--sia-gold, #c9a227)">' + formatMoney(proj.total) + '</span></div>';
-                    }
+                if (inProgress && ms.unflownCount > 0 && ms.total > 0.004) {
+                    const projFlights = ms.count;
+                    html += '<div class="flex items-center gap-2.5 py-2.5 px-1 italic" style="color: var(--arch-muted)">'
+                        + '<span class="ca-arch-dot-hollow"></span>'
+                        + '<span class="text-sm italic">Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's') + '</span>'
+                        + '<span class="ca-arch-amt ml-auto text-sm font-bold italic" style="color: var(--sia-gold, #c9a227)">' + formatMoney(ms.total) + '</span></div>';
                 }
                 html += '</div></div>';
             });
@@ -7709,10 +7734,10 @@ function getRegionForAirport(code) {
                 const m = map[mk] || { total: 0, count: 0 };
                 total = m.total; count = m.count;
                 if (mk === currentMk) {
-                    const proj = archProjection(total, mk);
-                    if (proj.partial) {
+                    const ms = archMonthState(mk, all);
+                    if (ms.inProgress && ms.unflownCount > 0) {
                         ctxLabel = 'On track';
-                        ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(proj.total) + ' \u00b7 ' + formatMoney(Math.max(0, proj.total - total)) + ' left</span>';
+                        ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(ms.total) + ' \u00b7 ' + formatMoney(ms.unflown) + ' left</span>';
                     } else {
                         ctxLabel = 'Month total';
                         ctxHtml = '<i data-lucide="check" class="w-3.5 h-3.5 shrink-0"></i><span>Month complete</span>';
@@ -7748,10 +7773,10 @@ function getRegionForAirport(code) {
                 const parts = [];
                 const curM = map[currentMk];
                 if (curM) {
-                    const proj = archProjection(curM.total, currentMk);
+                    const ms = archMonthState(currentMk, all);
                     const yoy = archYoyPct(curM.total, statsLiFor(map, currentMk));
                     if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>');
-                    if (proj.partial && proj.total > 0.004) parts.push('<span>proj. ' + formatMoney(proj.total) + '</span>');
+                    if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004) parts.push('<span>proj. ' + formatMoney(ms.total) + '</span>');
                 }
                 ctxLabel = 'Context';
                 ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">\u2014</span>';
@@ -7783,21 +7808,23 @@ function getRegionForAirport(code) {
             let html = '';
             months.forEach((m) => {
                 const on = m.mk === selMk;
-                let projPx = 0, projTotal = 0;
-                let barPx = Math.round(120 * (m.total / (maxTotal || 1)));
-                if (m.isCurrent) {
-                    const proj = archProjection(m.total, m.mk);
-                    if (proj.partial && proj.total > 0.004) {
-                        projTotal = proj.total;
-                        const fullPx = Math.round(120 * (proj.total / (maxTotal || 1)));
-                        projPx = Math.max(0, Math.min(fullPx - barPx, 120 - barPx));
-                    }
+                let projPx = 0, projTotal = 0, tipNow = m.total;
+                const ms = archMonthState(m.mk, all);
+                let barPx;
+                if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004) {
+                    projTotal = ms.total;
+                    barPx = Math.round(120 * (ms.flown / (maxTotal || 1)));
+                    const fullPx = Math.round(120 * (ms.total / (maxTotal || 1)));
+                    projPx = Math.max(0, Math.min(fullPx - barPx, 120 - barPx));
+                    tipNow = ms.flown;
+                } else {
+                    barPx = Math.round(120 * (m.total / (maxTotal || 1)));
                 }
                 const stub = (m.total <= 0 && projPx <= 0);
                 const label = MON3[parseInt(m.mk.slice(5, 7), 10) - 1] || '';
                 html += '<button type="button" class="ca-arch-barcol' + (on ? ' ca-arch-baron' : '') + '" data-mk="' + m.mk + '" aria-label="' + archiveMonthLabel(m.mk) + '">'
                     + '<div class="ca-arch-bararea">'
-                    + '<span class="ca-arch-bartip">' + archiveMonthLabel(m.mk) + ' \u00b7 ' + formatMoney(m.total) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '</span>'
+                    + '<span class="ca-arch-bartip">' + archiveMonthLabel(m.mk) + ' \u00b7 ' + formatMoney(tipNow) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '</span>'
                     + (projPx > 0 ? '<div class="ca-arch-barproj" style="height:' + projPx + 'px"></div>' : '')
                     + '<div class="ca-arch-bar' + (on ? ' ca-arch-baron' : '') + '" style="height:' + (stub ? 2 : Math.max(2, barPx)) + 'px"></div>'
                     + '</div>'
