@@ -3115,10 +3115,10 @@
             if (!m) return '';
             return (typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[parseInt(m[2], 10) - 1] : m[1] + '-' + m[2]) + ' ' + m[1];
         }
-        function rosterShortDate(ymd) {
+        function rosterShortDate(ymd, withYear) {
             const m = String(ymd || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
             if (!m) return '';
-            return parseInt(m[3], 10) + ' ' + (typeof CA_MONTHS_SHORT !== 'undefined' ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] : m[2]);
+            return parseInt(m[3], 10) + ' ' + (typeof CA_MONTHS_SHORT !== 'undefined' ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] : m[2]) + (withYear ? ' ' + m[1] : '');
         }
 
         function renderRosterConfirm(parsed, fileName, displayMonth) {
@@ -3134,7 +3134,7 @@
             // roster), and say where the missing flight time comes from.
             const paxList = tripsOk.filter(t => t.sectors.some(s => s.paxing));
             if (paxList.length) {
-                const paxDates = paxList.map(t => rosterShortDate((t.sectors.find(s => s.paxing) || {}).depDate)).filter(Boolean).join(', ');
+                const paxDates = paxList.map(t => rosterShortDate((t.sectors.find(s => s.paxing) || {}).depDate, true)).filter(Boolean).join(', ');
                 lines.push(`${paxList.length} positioning trip${paxList.length === 1 ? ' is' : 's are'} marked <b>paxing</b>${paxDates ? ' (' + paxDates + ')' : ''} — the roster prints no flight time for them; Fetch fills it when calculating.`);
             }
             const listHtml = tripsOk.map((t, i) => {

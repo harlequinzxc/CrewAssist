@@ -460,7 +460,7 @@ const MONTH = [
     const parsedPx = { monthLabel: 'October 2024', trips: [trip], flights: trip.sectors, skippedDays: 0, flyingDays: 2 };
     w.renderRosterConfirm(parsedPx, 'Oct 2024.pdf');
     await wait(200);
-    R.ok(/1 positioning trip is marked paxing \(21 Oct\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip');
+    R.ok(/1 positioning trip is marked paxing \(21 Oct 2024\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip to the day and year');
   }
 
   // ---- UI: Build first, Calculate all still available after ----
