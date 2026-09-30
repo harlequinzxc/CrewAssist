@@ -56,6 +56,18 @@ async function boot(appPath, opts) {
     // Canvas: return a Proxy that absorbs any 2D-context call (charts, exports).
     const mkCtx = () => { const grad = { addColorStop() {} }; const fn = () => grad; return new Proxy({}, { get: (t, k) => (k in t ? t[k] : fn), set: (t, k, v) => { t[k] = v; return true; } }); };
     w.HTMLCanvasElement.prototype.getContext = function () { return mkCtx(); };
+    // Optional fixed clock: pass { now: '2026-09-20T12:00:00+08:00' } to freeze
+    // the page's Date (new Date() and Date.now()) at that instant — date-anchored
+    // suites (earnings-archive's Sep 2026 seed) stay stable across real-time drift.
+    if (opts && opts.now) {
+        const fixed = new Date(opts.now).getTime();
+        const RealDate = w.Date;
+        class FixedDate extends RealDate {
+            constructor(...args) { super(...(args.length ? args : [fixed])); }
+            static now() { return fixed; }
+        }
+        w.Date = FixedDate;
+    }
     // Evaluate every inline script in document order, like a browser would.
     const scripts = Array.from(d.querySelectorAll('script:not([src])')).map((s) => s.textContent);
     for (const code of scripts) { try { w.eval(code); } catch (e) { if (!/serviceWorker|tailwind/.test(String(e))) console.log('script err: ' + e); } }

@@ -344,7 +344,10 @@ const MONTH = [
     await wait(1000);
     const cards = Array.from(d.querySelectorAll('[data-calc-card]'));
     R.eq(cards.length, 6, 'Calculate all builds the cards too');
+    for (let i = 0; i < 120 && !cards.every(c => c.classList.contains('ca-folded')); i++) await wait(50);
     R.ok(cards.every(c => c.classList.contains('ca-folded')), 'every card folded, like a manual Calculate');
+    // the combined summary arrives via the typed queue — wait for all six sections
+    for (let i = 0; i < 120 && d.querySelectorAll('.ca-trip-head').length < 6; i++) await wait(50);
     const backdrop = d.getElementById('results-backdrop');
     R.ok(!backdrop.classList.contains('hidden'), 'combined summary opens');
     const txt = d.getElementById('results-content').textContent;
@@ -464,6 +467,131 @@ const MONTH = [
     R.ok(/1 positioning trip is marked paxing \(21 Oct 2024\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip to the day and year');
   }
 
+  // ---- v1.33.0: review batch — rate guard, month groups, offline hints, CSV ----
+  {
+    // (1) a missing rank rate refuses to calculate — never a silent $13.50
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test', gender: 'M', rank: 'ZZ' }));
+    }});
+    const zz = {
+      type: 'Layover', ok: true, stations: [],
+      sectors: [
+        { fn: 'SQ 442', dep: 'SIN', arr: 'KTM', stdHm: '1914', staHm: '2155', ftHm: '04:56', depDate: '2026-07-01', arrDate: '2026-07-01' },
+        { fn: 'SQ 441', dep: 'KTM', arr: 'SIN', stdHm: '2259', staHm: '0629', ftHm: '05:15', depDate: '2026-07-02', arrDate: '2026-07-03' }
+      ]
+    };
+    let zid = null;
+    w.eval('(function(){ window.__zz = null; renderCalculatorCard("both", function (cid) { window.__zz = cid; }); })()');
+    for (let i = 0; i < 60 && !zid; i++) { zid = w.eval('window.__zz'); if (!zid) await wait(20); }
+    w.rosterPrefillCard(zid, zz);
+    await wait(300);
+    R.ok(!d.getElementById(zid + '-btn-calc').disabled, 'the card arms on complete inputs');
+    d.getElementById(zid + '-btn-calc').click();
+    await wait(250);
+    R.ok(d.getElementById('results-backdrop').classList.contains('hidden'), 'no summary opens on a rate-blocked card');
+    R.ok(/rank’s rate isn’t set/.test(d.getElementById(zid + '-calc-hint').textContent), 'the card hint names the missing rank rate');
+    // Calculate all reports the block instead of half-calculating
+    const zp = w.rosterParse(buildRoster(MONTH));
+    w.renderRosterConfirm(zp, 'Test Month.pdf');
+    for (let i = 0; i < 60 && !d.querySelector('.roster-build-btn'); i++) await wait(50);
+    d.querySelector('.roster-build-btn').click();
+    await wait(1500);
+    const zBtn = d.querySelector('.roster-calc-all-btn');
+    if (zBtn) zBtn.click();
+    let zchat = '';
+    for (let i = 0; i < 160 && !/Every card is blocked/.test(zchat); i++) { zchat = d.getElementById('chat-container').textContent; if (!/Every card is blocked/.test(zchat)) await wait(50); }
+    R.ok(/Every card is blocked — your rank’s rate isn’t set/.test(zchat), 'Calculate all reports the rate block honestly');
+    R.ok(d.getElementById('results-backdrop').classList.contains('hidden'), 'nothing is half-calculated into a summary');
+  }
+  {
+    // (2) multi-month results group by month with subtotals
+    const { w, d } = await boot(APP);
+    const june = buildRoster([
+      { date: '03Jun26', day: 'Wed' },
+      { fn: 'SQ 740', sector: 'SIN-HKT', std: '1912', sta: '2000', ft: '01:48' },
+      { fn: 'SQ 739', sector: 'HKT-SIN', std: '2048', sta: '2340', ft: '01:52' },
+      { date: '29Jun26', day: 'Mon' },
+      { fn: 'SQ 324', sector: 'SIN-AMS', std: '2350', sta: '0742', ft: '13:30' }
+    ]);
+    const july = buildRoster([
+      { date: '02Jul26', day: 'Thu' },
+      { fn: 'SQ 323', sector: 'AMS-SIN', std: '1030', sta: '0445', ft: '12:15' },
+      { date: '22Jul26', day: 'Wed' },
+      { fn: 'SQ 134', sector: 'SIN-PEN', std: '0937', sta: '1102', ft: '01:25' },
+      { fn: 'SQ 133', sector: 'PEN-SIN', std: '1153', sta: '1321', ft: '01:28' }
+    ]);
+    w.rosterReadPdf = async (f) => (/July/.test(f.name) ? july : june);
+    await w.handleRosterFiles([
+      { name: 'July 2026.pdf', type: 'application/pdf' },
+      { name: 'June 2026.pdf', type: 'application/pdf' }
+    ]);
+    await wait(1600);
+    d.querySelector('.roster-calc-all-btn').click();
+    await wait(1500);
+    const txt = d.getElementById('results-content').textContent;
+    R.ok(/June 2026/.test(txt) && /2 trips/.test(txt), 'June group header with its trip count');
+    R.ok(/July 2026/.test(txt) && /1 trip ·/.test(txt), 'July group header with its trip count');
+    const junes = [];
+    for (let n = 1; n <= 3; n++) {
+      const r = w.computeCardResults('calc-' + n, 'both');
+      if (r && r.detail && r.detail.sectors && r.detail.sectors.length && String(r.detail.sectors[0].depYmd || '').slice(0, 7) === '2026-06') junes.push(r.grandTotal);
+    }
+    R.eq(junes.length, 2, 'two of the built cards start in June');
+    R.ok(txt.indexOf(w.formatMoney(junes.reduce((a, b) => a + b, 0))) !== -1, 'the June subtotal equals its cards\u2019 totals');
+    R.ok(/Grand Total — 3 trips/.test(txt), 'the batch total still covers every trip');
+  }
+  {
+    // (3) offline hint + (4) CSV + (5) switch label is the tap target + (6) zero-flight PDFs
+    // (a profile is seeded so the boot skips onboarding and the main view is
+    // visible — hints stay suppressed inside hidden blocks by design)
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test', gender: 'F', rank: 'FS' }));
+    }});
+    w.eval('Object.defineProperty(navigator, "onLine", { configurable: true, get: function () { return window.__online !== false; } }); window.__online = false;');
+    const trip = {
+      type: 'Layover', ok: true, stations: [],
+      sectors: [
+        { fn: 'SQ366', dep: 'SIN', arr: 'FCO', stdHm: '23:55', staHm: '06:20+1', ftHm: '', depDate: '2024-10-21', arrDate: '2024-10-22' },
+        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30+1', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
+      ]
+    };
+    let id = null;
+    w.eval('(function(){ window.__cb33 = null; renderCalculatorCard("both", function (cid) { window.__cb33 = cid; }); })()');
+    for (let i = 0; i < 60 && !id; i++) { id = w.eval('window.__cb33'); if (!id) await wait(20); }
+    w.rosterPrefillCard(id, trip);
+    await wait(300);
+    const hint1 = d.querySelector(`#${id}-ifa-sectors [data-ifa-sector="1"] .ifa-time-hint`);
+    R.ok(hint1 && !hint1.classList.contains('hidden') && /Offline — type the flight time/.test(hint1.textContent), 'an offline empty sector explains the way out');
+    const hint2 = d.querySelector(`#${id}-ifa-sectors [data-ifa-sector="2"] .ifa-time-hint`);
+    R.ok(!hint2 || hint2.classList.contains('hidden'), 'a filled sector stays quiet');
+    w.eval('window.__online = true;');
+    const t1 = d.getElementById(id + '-ifa-t1');
+    t1.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(120);
+    R.ok(/Fetch fills this flight time/.test(hint1.textContent), 'back online the hint points at Fetch');
+    t1.value = '12h25m';
+    t1.dispatchEvent(new w.Event('input', { bubbles: true }));
+    t1.dispatchEvent(new w.Event('change', { bubbles: true }));
+    await wait(200);
+    R.ok(hint1.classList.contains('hidden'), 'the hint clears once the time is in');
+    // the switch text rides inside the label — the whole row is tappable
+    const px1 = d.getElementById(id + '-ifa-px1');
+    R.ok(px1 && /Paxing/.test(px1.closest('label').textContent), 'the Paxing label text is part of the tap target');
+    // CSV: sector rows, trip total, grand total, plain numbers
+    const res = w.computeCardResults(id, 'both');
+    const csv = w.rosterResultsCsv([{ trip: trip, res: res }]);
+    R.ok(/^Month,Date,Flight,From,To,Type,Hours,Multiplier,Paxing,Direct US,Amount USD/.test(csv), 'CSV header row');
+    R.ok(csv.indexOf('SQ366') !== -1 && csv.indexOf('SIN,FCO'.replace(',', ',') ) !== -1, 'CSV carries the sector rows');
+    R.ok(/TRIP TOTAL,,,,,,,/.test(csv.split('\r\n').map(l => l).join('\n')) || csv.indexOf('TRIP TOTAL') !== -1, 'CSV carries a trip-total row');
+    R.ok(new RegExp('GRAND TOTAL.*' + (Number(res.grandTotal) || 0).toFixed(2)).test(csv), 'CSV grand total matches the computed total as a plain number');
+    // a flightless PDF is told it is not a roster
+    w.rosterReadPdf = async () => buildRoster([]);
+    await w.handleRosterFiles([{ name: 'not-a-roster.pdf', type: 'application/pdf' }]);
+    let zftxt = '';
+    for (let i = 0; i < 140 && !/doesn't look like a Crew Roster Report/.test(zftxt); i++) { zftxt = d.getElementById('chat-container').textContent; if (!/doesn't look like a Crew Roster Report/.test(zftxt)) await wait(50); }
+    R.ok(/doesn't look like a Crew Roster Report/.test(zftxt), 'a flightless PDF gets the honest message');
+  }
+
   // ---- UI: Build first, Calculate all still available after ----
   {
     const { w, d } = await boot(APP);
@@ -522,7 +650,13 @@ const MONTH = [
     R.ok(/two turnaround bonuses/.test(txt), 'bonus count in words');
     // save all, then reopen one trip from the archive
     d.getElementById('btn-results-action').click();
-    await wait(150);
+    // jsdom's typed queue occasionally delivers this click before the overlay
+    // wires the button — re-tap until the review panel actually opens (the
+    // panel render is idempotent, so a double-tap is harmless).
+    for (let i = 0; i < 100 && !d.getElementById('ca-save-confirm'); i++) {
+      if (i > 0 && i % 20 === 0) d.getElementById('btn-results-action').click();
+      await wait(50);
+    }
     d.getElementById('ca-save-confirm').click();
     await wait(200);
     const arch = JSON.parse(w.localStorage.getItem('crewAssist.archive'));

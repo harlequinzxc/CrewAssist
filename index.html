@@ -324,7 +324,7 @@
         /* Earnings page (v1.24.0): gold summary card, 12-month trend, insights.
            Dark surfaces follow the app theme — #141823 at night, the app's
            light glass by day — so the page reads in both. */
-        .ca-arch-iconbtn { width: 38px; height: 38px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--arch-fg, #374151); transition: background .15s ease; -webkit-tap-highlight-color: transparent; }
+        .ca-arch-iconbtn { width: 48px; height: 48px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--arch-fg, #374151); transition: background .15s ease; -webkit-tap-highlight-color: transparent; }
         .ca-arch-iconbtn:active { background: rgba(127,127,127,.15); }
         .ca-arch-goldcard {
             background: linear-gradient(135deg, #dcc163 0%, #c9a23e 60%, #b8942f 100%);
@@ -365,6 +365,10 @@
         /* v1.31.0 (owner-approved UX review): one micro-type token — nothing
            renders below 11px anywhere in the app. Change the floor here, once. */
         .ca-micro { font-size: 11px; }
+        /* v1.33.0 (owner-approved): 11px gray-500 was the light theme's least
+           legible pair (4.6:1, zero headroom) — micro labels on light surfaces
+           step up to gray-600. Dark theme is untouched (7.5:1 there). */
+        html:not(.dark) .ca-micro.text-gray-500 { color: #4b5563; }
         /* v1.31.0: gold TEXT gets its own ink. The brand gold stays for fills,
            borders and dark mode — but #c9a227 on white is 2.42:1 (WCAG AA needs
            4.5:1), so light-mode text uses a measured 5.61:1 ink instead. */
@@ -899,10 +903,10 @@
                             <div>
                                 <label class="block text-sm font-bold mb-2">Gender</label>
                                 <div class="flex gap-3">
-                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-400 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="M">
+                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-600 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="M">
                                         <i data-lucide="user" class="w-4 h-4"></i> Male
                                     </button>
-                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-400 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="F">
+                                    <button class="flex-1 py-3 px-4 rounded-xl text-sm font-bold ui-input text-gray-600 ob-gender-btn flex items-center justify-center gap-2 transition-all" data-value="F">
                                         <i data-lucide="user" class="w-4 h-4"></i> Female
                                     </button>
                                 </div>
@@ -941,14 +945,14 @@
                     <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all duration-200 ease-out origin-top-left opacity-0 scale-95" role="dialog" aria-label="Connection status details"></div>
                     <!-- Right -->
                     <div class="flex items-center gap-2">
-                        <button id="btn-theme" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-theme" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
                             <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
                         </button>
-                        <button id="btn-settings" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-settings" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-reset" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-reset" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="rotate-cw" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -966,25 +970,25 @@
             <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
                 <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
-                    <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="ca-hit absolute right-0 -top-11 z-30 w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
+                    <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="ca-hit absolute right-0 -top-11 z-30 w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
                     </button>
                     
                     <!-- Quick Action Chips -->
                     <div id="action-chips" class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
                             <i data-lucide="wallet" class="w-3.5 h-3.5 shrink-0"></i>
                             Calculate my allowance.
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="earn">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="earn">
                             <i data-lucide="piggy-bank" class="w-3.5 h-3.5 shrink-0"></i>
                             How much have I earned?
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="menu">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="menu">
                             <i data-lucide="utensils" class="w-3.5 h-3.5 shrink-0"></i>
                             What's being served?
                         </button>
-                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="print">
+                        <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="print">
                             <i data-lucide="printer" class="w-3.5 h-3.5 shrink-0"></i>
                             Print the menu.
                         </button>
@@ -992,11 +996,11 @@
 
                     <!-- Chat Input -->
                     <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
-                        <button id="btn-roster" type="button" title="Import roster PDF" aria-label="Import roster PDF" class="ca-hit w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-gray-400 hover:text-sia-gold transition-colors active:scale-95">
+                        <button id="btn-roster" type="button" title="Import roster PDF" aria-label="Import roster PDF" class="ca-hit w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-gray-400 hover:text-sia-gold transition-colors active:scale-95">
                             <i data-lucide="paperclip" class="w-4 h-4"></i>
                         </button>
                         <input type="text" id="chat-input" placeholder="Try &quot;menu&quot;..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="ca-hit w-9 h-9 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
+                        <button id="btn-send" class="ca-hit w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
@@ -1023,7 +1027,7 @@
                 <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
-                    <button id="btn-close-settings" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-settings" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1215,7 +1219,8 @@
                 <h3 class="text-xl font-bold" id="results-title">Summary</h3>
                 <div class="flex items-center gap-1">
                     <button id="btn-results-action" class="h-10 min-w-[88px] px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Save"></button>
-                    <button id="btn-close-results" class="ca-hit p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-results-csv" class="ca-hit h-10 px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Export CSV"><i data-lucide="file-down" class="w-4 h-4 shrink-0"></i><span class="ca-micro font-bold uppercase tracking-wider">CSV</span></button>
+                    <button id="btn-close-results" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1608,19 +1613,28 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.32.1';
+        const APP_VERSION = '1.33.0';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.33.0 (E6): one pointer per change, still only this release.
         // v1.32.1 (E6, owner revision): every change earns its own pointer —
         // one short line each, plain words, the outcome. Still ONLY the
         // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
         // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
-            'LMA breakdown figures now match IFA size.',
-            'Positioning flights build as paxing — Fetch fills their time.',
-            'Big multi-month batches calculate without freezing.',
-            'What’s New now lists every change.'
+            'Onboarding choices are legible in daylight.',
+            'A missing rank rate refuses to calculate.',
+            'Undo toasts speak their deadline to screen readers.',
+            'Every control meets the 48-pixel tap standard.',
+            'Multi-month results group by month with subtotals.',
+            'Small labels grow bolder in the light theme.',
+            'Summaries export to CSV.',
+            'Offline cards explain how to fill missing times.',
+            'Big batches paint their icons progressively.',
+            'The chat box suggests what to ask next.',
+            'Rates remember when they were last edited.',
+            'Month totals compare against the month before.'
         ];
 
         // State
@@ -1677,6 +1691,7 @@
                 { ok: saved > 0, icon: 'book-open', label: saved > 0 ? ('Saved menus — ' + saved + ' flight' + (saved === 1 ? '' : 's')) : 'Saved menus — none yet' },
                 { ok: online, icon: 'wifi', label: online ? 'Live menu lookups' : 'Live menu lookups — need a connection' }
             ];
+            paintIfaTimeHints(document); // v1.33.0: connectivity flips re-teach every waiting sector
             pop.innerHTML =
                 '<div class="flex items-center gap-2 text-xs font-bold mb-2 ' + (online ? 'text-green-600' : 'text-amber-600') + '">' +
                 '<i data-lucide="' + (online ? 'wifi' : 'wifi-off') + '" class="w-4 h-4 shrink-0"></i>' +
@@ -1887,12 +1902,12 @@
                 btn.addEventListener('click', (e) => {
                     document.querySelectorAll('.ob-gender-btn').forEach(b => {
                         b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                        b.classList.add('ui-input', 'text-gray-400');
+                        b.classList.add('ui-input', 'text-gray-600');
                         const icon = b.querySelector('svg') || b.querySelector('i');
                         if(icon) icon.classList.remove('text-black');
                     });
                     const target = e.currentTarget;
-                    target.classList.remove('ui-input', 'text-gray-400');
+                    target.classList.remove('ui-input', 'text-gray-600');
                     target.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
                     const icon = target.querySelector('svg') || target.querySelector('i');
                     if(icon) icon.classList.add('text-black');
@@ -1944,8 +1959,18 @@
             });
 
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
+            // v1.33.0 (owner-approved): the input teaches its own vocabulary —
+            // three examples rotate while the box is empty and unfocused, and
+            // never change under a typist's thumbs.
+            const CA_CHAT_PLACEHOLDERS = ['Try "menu"...', 'Try "How much is my allowance?"...', 'Try "What are we serving onboard?"...'];
+            let caPlaceholderIdx = 0;
+            setInterval(() => {
+                const inp = document.getElementById('chat-input');
+                if (!inp || document.hidden || inp.value !== '' || document.activeElement === inp) return;
+                caPlaceholderIdx = (caPlaceholderIdx + 1) % CA_CHAT_PLACEHOLDERS.length;
+                inp.placeholder = CA_CHAT_PLACEHOLDERS[caPlaceholderIdx];
+            }, 4000);
             document.getElementById('btn-settings').addEventListener('click', openSettings);
-            document.getElementById('btn-reset').classList.add('ca-hit');
             document.getElementById('btn-reset').addEventListener('click', () => {
                 // v1.29.0: two-tap — an accidental tap must not wipe a session
                 // that still has built, unsaved cards in it.
@@ -2060,21 +2085,21 @@
             
             ranks[gender].forEach(r => {
                 const btn = document.createElement('button');
-                btn.className = 'py-3 px-5 rounded-full text-sm font-bold ui-input text-gray-400 transition-all ob-rank-btn';
+                btn.className = 'py-3 px-5 rounded-full text-sm font-bold ui-input text-gray-600 transition-all ob-rank-btn';
                 btn.textContent = r;
                 btn.dataset.value = r;
                 
                 if (tempProfile.rank === r) {
-                    btn.classList.remove('text-gray-400', 'ui-input');
+                    btn.classList.remove('text-gray-600', 'ui-input');
                     btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
                 }
 
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.ob-rank-btn').forEach(b => {
                         b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                        b.classList.add('text-gray-400', 'ui-input');
+                        b.classList.add('text-gray-600', 'ui-input');
                     });
-                    btn.classList.remove('text-gray-400', 'ui-input');
+                    btn.classList.remove('text-gray-600', 'ui-input');
                     btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
                     
                     tempProfile.rank = r;
@@ -2113,7 +2138,7 @@
                 document.getElementById('ob-name').value = '';
                 document.querySelectorAll('.ob-gender-btn').forEach(b => {
                     b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    b.classList.add('ui-input', 'text-gray-400');
+                    b.classList.add('ui-input', 'text-gray-600');
                     const icon = b.querySelector('svg') || b.querySelector('i');
                     if(icon) icon.classList.remove('text-black');
                 });
@@ -3204,6 +3229,9 @@
             ok.forEach(trip => renderCalculatorCard('both', (id) => {
                 if (batch) batch.ids.push({ id: id, trip: trip });
                 rosterPrefillCard(id, trip);
+                // v1.33.0: icons paint progressively — one pass every 15 cards
+                // beats a long empty-icon window before the sweep.
+                if (bound % 15 === 0) { try { lucide.createIcons(); } catch (e) {} }
                 // The LAST bind ends bulk mode and runs the one sweep — every
                 // icon in one pass, one pill-fit, one UI sync, one validation
                 // per card. Calculate all waits for exactly this.
@@ -3241,7 +3269,7 @@
             // slices so the thread can breathe and paint between them.
             const calculateBatch = () => {
                 const results = [];
-                let skipped = 0, i = 0;
+                let skipped = 0, rateBlocked = 0, i = 0;
                 const step = () => {
                     const t0 = Date.now();
                     while (i < batch.ids.length && Date.now() - t0 < 40) {
@@ -3250,15 +3278,23 @@
                         // Calculate's own gate: grey means the card is incomplete, and
                         // an incomplete card is reported, never half-calculated.
                         if (!btn || btn.disabled) { skipped++; continue; }
-                        results.push({ trip: entry.trip, res: computeCardResults(entry.id, 'both') });
+                        const res = computeCardResults(entry.id, 'both');
+                        // v1.33.0: a rank-rate-blocked card is reported, never
+                        // half-calculated into the combined total.
+                        if (res.rateMissing) { rateBlocked++; continue; }
+                        results.push({ trip: entry.trip, res: res });
                         foldCard(btn.closest('.glass-bubble'));
                     }
                     if (i < batch.ids.length) { setTimeout(step, 0); return; }
                     if (!results.length) {
-                        addBotMessage("The cards aren't complete enough to calculate yet — fill in what's missing, then Calculate.");
+                        // v1.33.0: a fully blocked batch gets the rate
+                        // explanation, not the generic incomplete-fields line.
+                        addBotMessage(rateBlocked
+                            ? `Every card is blocked — your rank\u2019s rate isn\u2019t set. Settings \u2192 Rates, then Calculate again.`
+                            : "The cards aren't complete enough to calculate yet — fill in what's missing, then Calculate.");
                         return;
                     }
-                    showRosterAllOverlay(results, skipped);
+                    showRosterAllOverlay(results, skipped, rateBlocked);
                 };
                 step();
             };
@@ -3276,7 +3312,30 @@
             }
         }
 
-        function showRosterAllOverlay(results, skipped) {
+        // v1.33.0 (owner-approved): the combined summary exports as CSV — one
+        // row per sector, a trip-total row per trip, the batch grand total last.
+        // Amounts are plain numbers so any spreadsheet can sum them; the UTF-8
+        // BOM (added at download) keeps Excel from mangling it.
+        function rosterResultsCsv(results) {
+            const rows = [['Month', 'Date', 'Flight', 'From', 'To', 'Type', 'Hours', 'Multiplier', 'Paxing', 'Direct US', 'Amount USD']];
+            results.forEach((r) => {
+                const t = r.trip;
+                const sectors = (r.res.detail && r.res.detail.sectors) || [];
+                sectors.forEach((sx) => {
+                    rows.push([
+                        String(sx.depYmd || '').slice(0, 7), sx.depYmd || '', sx.fn || '', sx.dep || '', sx.arr || '',
+                        t.type || '', sx.ftHm || '', String(sx.mult == null ? '' : sx.mult), sx.paxing ? 'yes' : 'no', sx.directUs ? 'yes' : 'no',
+                        (Number(sx.amount) || 0).toFixed(2)
+                    ]);
+                });
+                if (r.res.lmaTotal > 0) rows.push(['', '', '', '', '', 'LMA', '', '', '', '', (Number(r.res.lmaTotal) || 0).toFixed(2)]);
+                rows.push(['', '', '', '', '', 'TRIP TOTAL', '', '', '', '', (Number(r.res.grandTotal) || 0).toFixed(2)]);
+            });
+            rows.push(['', '', '', '', '', 'GRAND TOTAL', '', '', '', '', results.reduce((n, r) => n + (Number(r.res.grandTotal) || 0), 0).toFixed(2)]);
+            return rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
+        }
+
+        function showRosterAllOverlay(results, skipped, rateBlocked) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             const content = document.getElementById('results-content');
@@ -3289,9 +3348,29 @@
                 </div>`;
             if (skipped) html += `
                 <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl border border-amber-500/20 text-center mb-4">${skipped} card${skipped === 1 ? '' : 's'} skipped — incomplete fields. Calculate ${skipped === 1 ? 'it' : 'them'} individually once filled.</div>`;
+            if (rateBlocked) html += `
+                <div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center mb-4">${rateBlocked} card${rateBlocked === 1 ? '' : 's'} blocked — rank rate isn\u2019t set. Settings \u2192 Rates, then Calculate again.</div>`;
+            // v1.33.0 (owner-approved): a multi-month batch groups by month —
+            // each header carries the month's trip count and its subtotal, so
+            // "how much did I earn in June?" reads straight off the sheet.
+            // Single-month rosters render exactly as before.
+            const monthOf = (r) => String((r.trip.sectors[0] || {}).depDate || '').slice(0, 7);
+            const monthsSeen = new Set(results.map(monthOf).filter(Boolean));
+            let lastMk = null;
             results.forEach(r => {
                 const t = r.trip, s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
                 const route = t.sectors.map(s => s.dep).join('–') + '–' + sl.arr;
+                const mk = monthOf(r);
+                if (mk && monthsSeen.size > 1 && mk !== lastMk) {
+                    const group = results.filter(x => monthOf(x) === mk);
+                    const sub = group.reduce((n, x) => n + x.res.grandTotal, 0);
+                    html += `
+                <div class="flex items-baseline justify-between gap-2 mt-2 mb-1 pb-1 border-b-2 border-sia-gold/40">
+                    <span class="font-bold text-sm">${rosterMonthName(mk)}</span>
+                    <span class="ca-micro font-bold text-gray-500">${group.length} trip${group.length === 1 ? '' : 's'} · <span class="text-sia-gold ca-amt">${formatMoney(sub)}</span></span>
+                </div>`;
+                    lastMk = mk;
+                }
                 html += `
                 <div class="ca-tripsec mb-6">
                     <button type="button" class="ca-trip-head w-full text-left bg-transparent border-0 p-0 flex items-baseline justify-between gap-2 border-b border-black/10 dark:border-white/10 pb-2 mb-3">
@@ -3338,6 +3417,14 @@
             // entries the crew would get by saving each summary by hand. Roster
             // cards already carry their stations, so the single-summary station
             // prompt doesn't apply; station-less trips keep the dash (4.11).
+            // v1.33.0: CSV rides in the overlay header for combined summaries.
+            const csvBtn = document.getElementById('btn-results-csv');
+            if (csvBtn) {
+                csvBtn.classList.remove('hidden');
+                csvBtn.onclick = () => {
+                    archShareOrDownload(new Blob(['\ufeff' + rosterResultsCsv(results)], { type: 'text/csv' }), 'crewassist-summary.csv');
+                };
+            }
             const payloads = results.map(r => r.res.archivePayload).filter(Boolean);
             const ab = document.getElementById('btn-results-action');
             setResultsAction(payloads.length ? 'save' : null, false);
@@ -4531,6 +4618,8 @@ function getRegionForAirport(code) {
                     '</div>';
             };
             let html = '';
+            const editedRaw = Number(localStorage.getItem('crewAssist.ratesUpdatedAt') || 0);
+            if (editedRaw) html += '<p class="ca-micro font-bold text-gray-500 dark:text-gray-400">Rates last edited ' + netFmtTs(editedRaw) + '</p>';
             html += '<p class="ca-micro text-gray-500 leading-relaxed">Save applies on this device only. To update every install, Export and replace <span class="font-mono">rates.json</span> on GitHub.</p>';
             if (localStorage.getItem('crewAssist.rates')) {
                 html += '<p class="ca-micro font-bold text-sia-gold">This device has saved overrides.</p>';
@@ -4737,6 +4826,7 @@ function getRegionForAirport(code) {
             if (!parsed) { await appAlert('Could not read rates from the tables.'); return; }
             applyRatesToEngine(parsed);
             localStorage.setItem('crewAssist.rates', JSON.stringify(parsed));
+            try { localStorage.setItem('crewAssist.ratesUpdatedAt', String(Date.now())); } catch (e) {} // v1.33.0: honest staleness
             devSnapshot = cloneRates(parsed);
             activeRates = cloneRates(parsed);
             const save = document.getElementById('btn-dev-save');
@@ -5030,6 +5120,26 @@ function getRegionForAirport(code) {
         // "Turnaround" is the longest pill label and on a narrow card it can spill
         // out of the pill. When the full word no longer fits, shorten it to "Turn" —
         // the pill still carries data-value="Turnaround", only the label changes.
+        // v1.33.0 (owner-approved): a sector without its flight time says WHY
+        // it is waiting and what will fill it — offline, the message teaches the
+        // manual way out instead of a silent dead card.
+        function paintIfaTimeHints(scope) {
+            (scope || document).querySelectorAll('[data-ifa-sector]').forEach((blk) => {
+                const hintEl = blk.querySelector('.ifa-time-hint');
+                if (!hintEl) return;
+                if (blk.closest('.hidden') || blk.closest('.max-h-0')) { hintEl.classList.add('hidden'); return; }
+                const tInp = blk.querySelector('.ifa-time-input');
+                if (!tInp || (tInp.value || '').trim().length >= 4) { hintEl.classList.add('hidden'); hintEl.textContent = ''; return; }
+                const online = !!(typeof navigator !== 'undefined' && navigator.onLine);
+                hintEl.textContent = online ? 'Fetch fills this flight time from the schedule.'
+                    : 'Offline — type the flight time from your roster, or Fetch once connected.';
+                hintEl.classList.toggle('text-amber-600', !online);
+                hintEl.classList.toggle('dark:text-amber-400', !online);
+                hintEl.classList.toggle('text-gray-500', online);
+                hintEl.classList.remove('hidden');
+            });
+        }
+
         // v1.32.1 (perf, owner report): a multi-month batch builds 200+ cards,
         // and each card used to run its own document-wide passes —
         // lucide.createIcons, syncCalcUiAll and four fitCalcPills layout
@@ -5736,6 +5846,7 @@ function getRegionForAirport(code) {
                                         <button type="button" class="ifa-retry-btn hidden ca-micro font-bold text-red-500 underline" data-idx="${i}">Retry</button>
                                     </span>
                                 </div>
+                                <p class="ifa-time-hint ca-micro font-bold mt-1 hidden"></p>
                                 <div class="flex gap-1.5 items-end mb-2 flex-nowrap">
                                     <div class="flex-1 min-w-0">
                                         <label class="block ca-micro uppercase font-bold text-gray-500 tracking-wider mb-1">Flight</label>
@@ -5754,27 +5865,31 @@ function getRegionForAirport(code) {
                                 <input type="text" id="${id}-ifa-t${i}" inputmode="numeric" enterkeyhint="done" autocomplete="off" class="ui-input w-full rounded-lg py-2 px-3 text-sm font-bold placeholder-gray-400 border border-transparent dark:border-white/10 outline-none ifa-time-input" placeholder="HH:MM">
                                 
                                 ${showUS ? `
-                                <div class="ifa-us-field flex items-center justify-between gap-3 mt-2">
-                                    <span class="flex items-center gap-1.5 min-w-0">
-                                        <i data-lucide="flag" class="w-4 h-4 shrink-0 text-sia-gold"></i>
-                                        <span class="text-xs font-bold whitespace-nowrap">Direct US</span>
-                                        <span class="ca-micro text-gray-500 truncate">ULR flight — ${IFA_CONFIG.directUSMultiplier}×</span>
-                                    </span>
-                                    <label class="inline-flex items-center cursor-pointer shrink-0">
-                                        <input type="checkbox" id="${id}-ifa-us${i}" class="ifa-us-input ca-switch-input sr-only">
-                                        <span class="ca-switch"></span>
+                                <div class="ifa-us-field mt-2">
+                                    <label class="flex items-center justify-between gap-3 w-full cursor-pointer">
+                                        <span class="flex items-center gap-1.5 min-w-0">
+                                            <i data-lucide="flag" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                            <span class="text-xs font-bold whitespace-nowrap">Direct US</span>
+                                            <span class="ca-micro text-gray-500 truncate">ULR flight — ${IFA_CONFIG.directUSMultiplier}×</span>
+                                        </span>
+                                        <span class="flex items-center shrink-0">
+                                            <input type="checkbox" id="${id}-ifa-us${i}" class="ifa-us-input ca-switch-input sr-only">
+                                            <span class="ca-switch"></span>
+                                        </span>
                                     </label>
                                 </div>` : ''}
                                 ${showPax ? `
-                                <div class="ifa-px-field flex items-center justify-between gap-3 mt-2">
-                                    <span class="flex items-center gap-1.5 min-w-0">
-                                        <i data-lucide="armchair" class="w-4 h-4 shrink-0 text-sia-gold"></i>
-                                        <span class="text-xs font-bold whitespace-nowrap">Paxing</span>
-                                        <span class="ca-micro text-gray-500 truncate">Deadheading — ${IFA_CONFIG.paxingMultiplier}×</span>
-                                    </span>
-                                    <label class="inline-flex items-center cursor-pointer shrink-0">
-                                        <input type="checkbox" id="${id}-ifa-px${i}" class="ifa-px-input ca-switch-input sr-only">
-                                        <span class="ca-switch"></span>
+                                <div class="ifa-px-field mt-2">
+                                    <label class="flex items-center justify-between gap-3 w-full cursor-pointer">
+                                        <span class="flex items-center gap-1.5 min-w-0">
+                                            <i data-lucide="armchair" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                            <span class="text-xs font-bold whitespace-nowrap">Paxing</span>
+                                            <span class="ca-micro text-gray-500 truncate">Deadheading — ${IFA_CONFIG.paxingMultiplier}×</span>
+                                        </span>
+                                        <span class="flex items-center shrink-0">
+                                            <input type="checkbox" id="${id}-ifa-px${i}" class="ifa-px-input ca-switch-input sr-only">
+                                            <span class="ca-switch"></span>
+                                        </span>
                                     </label>
                                 </div>` : ''}
                                 </div>
@@ -5939,15 +6054,17 @@ function getRegionForAirport(code) {
                         </div>
                         ${lmaTimesHtml}
                         ${idx === 2 ? `
-                        <div class="lma-shuttle-row flex items-center justify-between gap-3 mt-3">
-                            <span class="flex items-center gap-1.5 min-w-0">
-                                <i data-lucide="repeat" class="w-4 h-4 shrink-0 text-sia-gold"></i>
-                                <span class="text-xs font-bold whitespace-nowrap">Shuttle</span>
-                                <span class="ca-micro text-gray-500 truncate">1-stop connection — <em>no LMA</em></span>
-                            </span>
-                            <label class="inline-flex items-center cursor-pointer shrink-0">
-                                <input type="checkbox" id="${id}-lma-sh${idx}" class="lma-shuttle-input ca-switch-input sr-only">
-                                <span class="ca-switch"></span>
+                        <div class="lma-shuttle-row mt-3">
+                            <label class="flex items-center justify-between gap-3 w-full cursor-pointer">
+                                <span class="flex items-center gap-1.5 min-w-0">
+                                    <i data-lucide="repeat" class="w-4 h-4 shrink-0 text-sia-gold"></i>
+                                    <span class="text-xs font-bold whitespace-nowrap">Shuttle</span>
+                                    <span class="ca-micro text-gray-500 truncate">1-stop connection — <em>no LMA</em></span>
+                                </span>
+                                <span class="flex items-center shrink-0">
+                                    <input type="checkbox" id="${id}-lma-sh${idx}" class="lma-shuttle-input ca-switch-input sr-only">
+                                    <span class="ca-switch"></span>
+                                </span>
                             </label>
                         </div>` : ''}
                         </div>
@@ -6137,6 +6254,7 @@ function getRegionForAirport(code) {
                 if (calcBtn) {
                     calcBtn.disabled = !allFilled;
                 }
+                paintIfaTimeHints(containerNode);
             };
 
             // Editing a flight number or a date marks that sector stale; typing a
@@ -6765,7 +6883,15 @@ function getRegionForAirport(code) {
                 isTurnaround = type === 'Turnaround';
                 const is4 = count === 4;
 
-                const rankRate = (appProfile && IFA_CONFIG.baseRates[appProfile.rank]) || 13.5;
+                // v1.33.0 (owner-approved): a profile whose rank has NO rate
+                // REFUSES to price IFA — never a silent $13.50 guess (the trap
+                // was a dev-rates edit leaving a rank unratable). A missing
+                // PROFILE cannot happen past onboarding, so it keeps the FS
+                // default. LMA always computes (region rates, not rank).
+                const rankRate = appProfile
+                    ? IFA_CONFIG.baseRates[appProfile.rank]
+                    : (IFA_CONFIG.baseRates.FS || 13.5);
+                if (appProfile && !rankRate) snap.rateMissing = true;
                 snap.type = isTurnaround ? 'Turnaround' : 'Layover';
                 snap.sectorCount = count;
                 snap.rankRate = rankRate;
@@ -6778,7 +6904,7 @@ function getRegionForAirport(code) {
                 let sectors = [];
                 let tripSdp = 0;
 
-                for (let i = 1; i <= count; i++) {
+                for (let i = 1; !snap.rateMissing && i <= count; i++) {
                     const tInp = document.getElementById(`${id}-ifa-t${i}`);
                     const usInp = document.getElementById(`${id}-ifa-us${i}`);
                     const pxInp = document.getElementById(`${id}-ifa-px${i}`);
@@ -6850,7 +6976,7 @@ function getRegionForAirport(code) {
                 });
 
                 // Bonus
-                if (isTurnaround) {
+                if (isTurnaround && !snap.rateMissing) {
                     const bonusCount = is4 ? 2 : 1;
                     const bonus = bonusCount * IFA_CONFIG.turnaroundBonusAmount;
                     ifaTotal += bonus;
@@ -7013,7 +7139,7 @@ function getRegionForAirport(code) {
 
             if (lmaTotal > 0 && !isTurnaround) {
                 lmaDetails.push(`
-                    <div class="flex justify-between items-center ca-micro font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">
+                    <div class="flex justify-between items-center text-xs font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">
                         <div class="flex flex-col items-center flex-1 border-r ca-hairline last:border-0">
                             <span class="tracking-wider"><span class="uppercase">Breakfast</span> (${mealB}x)</span>
                             <span class="text-sia-gold ca-amt text-sm">${formatMoney(globalB)}</span>
@@ -7033,7 +7159,8 @@ function getRegionForAirport(code) {
             snap.lmaTotal = Math.round(lmaTotal * 100) / 100;
             snap.grandTotal = Math.round((ifaTotal + lmaTotal) * 100) / 100;
             snap.meals = { b: mealB, l: mealL, d: mealD, bAmt: Math.round(globalB * 100) / 100, lAmt: Math.round(globalL * 100) / 100, dAmt: Math.round(globalD * 100) / 100 };
-            const snapPayload = (mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null;
+            // v1.33.0: a rate-blocked card never saves a half-priced trip.
+            const snapPayload = (!snap.rateMissing && mode === 'both') ? buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) : null;
             if (snapPayload) snapPayload.detail = snap;
             return {
                 grandTotal: ifaTotal + lmaTotal,
@@ -7042,6 +7169,7 @@ function getRegionForAirport(code) {
                 ifaDetails: ifaDetails,
                 lmaDetails: lmaDetails,
                 isTurnaround: isTurnaround,
+                rateMissing: !!snap.rateMissing,
                 archivePayload: snapPayload,
                 detail: snap
             };
@@ -7049,6 +7177,14 @@ function getRegionForAirport(code) {
 
         function executeCalculation(id, mode) {
             const r = computeCardResults(id, mode);
+            // v1.33.0: a missing rank rate blocks the IFA side — say so on the
+            // card and in a toast, never a half-priced summary.
+            if (r.rateMissing) {
+                const hint = document.getElementById(id + '-calc-hint');
+                if (hint) hint.textContent = 'Your rank\u2019s rate isn\u2019t set \u2014 add it in Settings \u2192 Rates, then Calculate.';
+                archToast('Your rank\u2019s rate isn\u2019t set \u2014 Settings \u2192 Rates', null);
+                return;
+            }
             showResultsOverlay(r.grandTotal, r.ifaTotal, r.lmaTotal, r.ifaDetails, r.lmaDetails, r.isTurnaround, mode, r.archivePayload, r.detail);
             const ccBtn = document.getElementById(id + '-btn-calc');
             if (ccBtn) foldCard(ccBtn.closest('.glass-bubble'));
@@ -7290,7 +7426,7 @@ function getRegionForAirport(code) {
                 });
                 const meals = s.meals;
                 if (meals && s.lmaTotal > 0) {
-                    html += '<div class="flex justify-between items-center ca-micro font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">'
+                    html += '<div class="flex justify-between items-center text-xs font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">'
                         + '<div class="flex flex-col items-center flex-1 border-r ca-hairline"><span class="tracking-wider"><span class="uppercase">Breakfast</span> (' + meals.b + 'x)</span><span class="text-sia-gold ca-amt text-sm">' + formatMoney(meals.bAmt) + '</span></div>'
                         + '<div class="flex flex-col items-center flex-1 border-r ca-hairline"><span class="tracking-wider"><span class="uppercase">Lunch</span> (' + meals.l + 'x)</span><span class="text-sia-gold ca-amt text-sm">' + formatMoney(meals.lAmt) + '</span></div>'
                         + '<div class="flex flex-col items-center flex-1"><span class="tracking-wider"><span class="uppercase">Dinner</span> (' + meals.d + 'x)</span><span class="text-sia-gold ca-amt text-sm">' + formatMoney(meals.dAmt) + '</span></div>'
@@ -7384,6 +7520,8 @@ function getRegionForAirport(code) {
             const content = document.getElementById('results-content');
             const stv = document.getElementById('ca-roster-sticky');
             if (stv) stv.classList.add('hidden'); // the pinned totals bar is the combined summary's alone
+            const csvBtnSingle = document.getElementById('btn-results-csv');
+            if (csvBtnSingle) csvBtnSingle.classList.add('hidden'); // v1.33.0: CSV is the combined summary's
             
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
@@ -7874,7 +8012,12 @@ function getRegionForAirport(code) {
         function archToast(msg, undoFn, ms) {
             const t = archEl('ca-arch-toast'); t.innerHTML = '';
             const s = document.createElement('span'); s.textContent = msg; t.appendChild(s);
-            if (undoFn) { const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'ca-toast-undo'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u); }
+            if (undoFn) {
+                const u = document.createElement('button'); u.type = 'button'; u.textContent = 'Undo'; u.className = 'ca-toast-undo'; u.onclick = () => { hideArchToast(); undoFn(); }; t.appendChild(u);
+                // v1.33.0: the undo is TIMED — screen readers need the deadline
+                // in words, not a countdown they can't see.
+                const sr = document.createElement('span'); sr.className = 'sr-only'; sr.textContent = ' \u2014 Undo available for ' + Math.round((ms || 6000) / 1000) + ' seconds.'; t.appendChild(sr);
+            }
             t.classList.remove('hidden');
             // v1.32.0 (E1): bigger actions get a longer regret window — saves
             // hold their Undo for ten seconds, everything else stays at six.
@@ -8053,7 +8196,7 @@ function getRegionForAirport(code) {
                         + '<span class="font-bold text-sm" style="color: var(--arch-fg)">' + archRoute(e) + '</span>'
                         + '<span class="text-xs" style="color: var(--arch-muted)">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
                         + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
-                        + '<button type="button" class="ca-arch-del ca-hit p-1.5 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                        + '<button type="button" class="ca-arch-del ca-hit p-3 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 if (inProgress && ms.unflownCount > 0 && ms.total > 0.004) {
                     const projFlights = ms.count;
@@ -8130,9 +8273,18 @@ function getRegionForAirport(code) {
                     }
                 } else {
                     const yoy = archYoyPct(total, statsLiFor(map, mk));
-                    ctxLabel = 'Vs last year';
-                    ctxHtml = yoy === null ? '<span style="opacity:.4">No ' + archiveMonthLabel(archMonthAdd(mk, -12)) + '</span>'
-                        : '<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>';
+                    // v1.33.0 (owner-approved): the month's delta against the
+                    // month before, in dollars — YoY keeps its place beside it.
+                    const prevMk = archMonthAdd(mk, -1);
+                    const prevM = map[prevMk];
+                    const parts = [];
+                    if (prevM && prevM.total > 0.004) {
+                        const d = total - prevM.total;
+                        parts.push('<i data-lucide="' + (d >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (d >= 0 ? '+' : '\u2212') + formatMoney(Math.abs(d)) + ' vs ' + archiveMonthLabel(prevMk) + '</span>');
+                    }
+                    if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>');
+                    ctxLabel = 'Context';
+                    ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">No ' + archiveMonthLabel(prevMk) + ' on record</span>';
                 }
             } else if (archState.scope === 'year') {
                 const yr = info.yr || currentMk.slice(0, 4);

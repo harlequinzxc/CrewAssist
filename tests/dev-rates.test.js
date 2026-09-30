@@ -56,5 +56,17 @@ const { R, boot, wait, APP } = H;
   await wait(400);
   R.eq(d.querySelector('[data-ifa-field="sgBuffer"]').value, initialVal, 'OK restores default rates');
 
+  // ---- v1.33.0: rates remember when they were last edited ----
+  {
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.ratesUpdatedAt', String(Date.now() - 3600 * 1000));
+    }});
+    w.renderDevRatesEditor();
+    await wait(50);
+    const stamp = d.querySelector('#dev-rates-root > p.ca-micro.font-bold');
+    R.ok(stamp && /Rates last edited /.test(stamp.textContent), 'the editor stamps when rates were last edited');
+    R.ok(stamp && !/NaN|Invalid/.test(stamp.textContent), 'the stamp formats as a real timestamp');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

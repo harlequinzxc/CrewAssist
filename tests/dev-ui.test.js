@@ -78,7 +78,7 @@ const { R, boot, wait, APP } = H;
     R.ok(src.includes('--sia-gold-ink: #7d650f') && src.includes('html:not(.dark) .text-sia-gold'), 'light-mode gold text uses the measured ink');
     R.ok(src.includes('min-w-[88px]') && src.includes("actionText = { save: 'Save', check: 'Saved'"), 'the save action is a labelled pill');
     R.ok(src.includes('.ca-hit::after'), 'invisible hit-area growth exists');
-    R.ok(src.includes('py-3.5 text-xs font-bold whitespace-nowrap'), 'quick-action chips reach the 44px class');
+    R.ok(src.includes('px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap'), 'quick-action chips reach the 48px standard');
     R.ok(src.includes("div.setAttribute('aria-hidden', 'true');"), 'the typing dots stay quiet for screen readers');
     R.eq(d.getElementById('chat-container').getAttribute('role'), 'log', 'the chat is a live log');
     R.eq(d.getElementById('chat-container').getAttribute('aria-live'), 'polite', 'bot narration is announced politely');
@@ -170,6 +170,26 @@ const { R, boot, wait, APP } = H;
       });
       R.ok(!/v1\.3[01]/.test(wnMatch[1]), "what's-new never accumulates old releases (E6)");
     }
+    // ---- v1.33.0: the review batch (contrast, targets, SR, CSV, hints) ----
+    R.ok(src.includes('ui-input text-gray-600 ob-gender-btn'), 'unselected onboarding buttons read at gray-600 (was 2.26:1)');
+    R.ok(src.includes("sr.className = 'sr-only'; sr.textContent = ' "), 'undo toasts speak their deadline to screen readers');
+    R.ok(src.includes('.ca-arch-iconbtn { width: 48px; height: 48px;'), 'archive icon buttons are 48px');
+    R.ok(src.split('px-4 py-3.5 min-h-[48px] text-xs').length === 5, 'all four quick chips are min-48px tall');
+    R.ok(src.includes('class="p-3.5 rounded-full'), 'header and sheet close buttons are 48px');
+    R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
+    R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
+    R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');
+    R.ok(src.includes('html:not(.dark) .ca-micro.text-gray-500 { color: #4b5563; }'), 'light-theme micro labels step up to gray-600');
+    R.ok(src.split('text-xs font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1').length === 3, 'the B/L/D strip reads at 12px in both render paths');
+    R.ok(src.includes('CA_CHAT_PLACEHOLDERS') && src.includes('How much is my allowance?'), 'the chat input rotates three example asks');
+    R.ok(src.includes("'crewAssist.ratesUpdatedAt'"), 'rates record when they were last edited');
+    R.ok(src.includes('function rosterResultsCsv'), 'the combined summary serialises as CSV');
+    R.ok(src.includes('id="btn-results-csv"'), 'the CSV button lives in the results header');
+    R.ok(src.includes('function paintIfaTimeHints'), 'sectors without a flight time explain themselves');
+    R.ok(src.includes('Offline — type the flight time from your roster'), 'the offline hint teaches the manual way out');
+    R.ok(src.includes('if (bound % 15 === 0)'), 'bulk builds paint icons every 15 cards');
+    R.ok(src.includes('const monthOf = (r) =>'), 'combined summaries group by month');
+    R.ok(src.includes("doesn't look like a Crew Roster Report"), 'a flightless PDF is told it is not a roster');
     // M1: surface tokens replaced the hand-mixed pairs everywhere
     R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');
     R.ok(src.includes('.ca-inset { background-color: var(--ca-surface-2); }'), 'the inset token class exists (M1)');

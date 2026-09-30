@@ -128,7 +128,10 @@ const fs = require('fs');
   // insight cards, badges/YoY in the month list, search-scoped delete.
   // Anchored to a Sep 2026 run date (current real month partial, 24 of 30 days).
   {
-    const { w, d } = await boot(APP);
+    // The whole block runs on a frozen mid-September clock so its figures hold
+    // on any real run date (v1.33.0: the harness now supports a fixed clock).
+    const ARCH_NOW = '2026-09-20T12:00:00+08:00';
+    const { w, d } = await boot(APP, { now: ARCH_NOW });
     const seedEntry = (id, sectorDate, st, amount, ty) => ({ id: id, savedAt: sectorDate + 'T20:00:00Z', monthKey: sectorDate.slice(0, 7), sectorDate: sectorDate, stationDisplay: st, amount: amount, flightType: ty });
     // 19 entries, Aug 2025 → Sep 2026; Nov 2025 empty (chart stub); best Mar 2026
     // $1,000, low Apr 2026 $200, busiest Jul 2026, Aug 2026 YoY +100%, longest
@@ -159,9 +162,9 @@ const fs = require('fs');
 
     // Date anchor: the seed and expected figures below assume the run happens
     // inside a late September 2026 (same anchor the whole suite shares).
-    const now = new Date();
+    const now = new Date(ARCH_NOW);
     const ymdNow = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-    R.ok(ymdNow.slice(0, 7) === '2026-09', 'run date anchors to Sep 2026 (reseed if the anchor month drifts)');
+    R.ok(ymdNow.slice(0, 7) === '2026-09', 'the frozen clock anchors the block to Sep 2026');
     R.ok(now.getDate() < 30, 'A20 (Sep 30) must still be un-flown');
     const fm = (n) => { const x = Number(n); const s = x < 0 ? '-' : ''; const p = Math.abs(x).toFixed(2).split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); return s + '$' + p[0] + '.' + p[1]; };
     // v1.29.2 schedule model: A19 ($300, Sep 10) flown, A20 ($200, Sep 30)
@@ -730,4 +733,23 @@ const fs = require('fs');
   }
 
   process.exit(R.done() ? 1 : 0);
+  // ---- v1.33.0: the month context compares against the month before ----
+  {
+    // Month scope follows the real calendar (owner ruling): a quiet current
+    // month shows the NEWEST saved month — that summary now carries the
+    // dollar delta against the month before it (MoM), YoY alongside.
+    const { w, d } = await boot(APP, { now: '2026-09-20T12:00:00+08:00' });
+    const seed = (id, sectorDate, amount) => ({ id: id, savedAt: sectorDate + 'T20:00:00Z', monthKey: sectorDate.slice(0, 7), sectorDate: sectorDate, stationDisplay: 'KTM', amount: amount, flightType: 'Layover' });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      seed('M1', '2026-04-05', 200),
+      seed('M2', '2026-05-08', 600)
+    ]));
+    w.showArchiveOverlay();
+    await wait(300);
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Context', 'the newest month leads the context');
+    const ctx = d.getElementById('ca-arch-m-ctx').textContent;
+    R.ok(ctx.indexOf('+$400.00 vs Apr 2026') !== -1, 'May carries +$400.00 vs April (MoM in dollars)');
+    R.ok(ctx.indexOf('vs LY') === -1, 'no LY chip without a year-ago record to cite');
+    R.ok(d.getElementById('ca-arch-m-ctx').innerHTML.indexOf('trending-up') !== -1, 'the up-month shows its trend icon');
+  }
 })();
