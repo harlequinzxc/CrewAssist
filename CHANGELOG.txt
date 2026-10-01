@@ -1,0 +1,279 @@
+CREWASSIST - CHANGELOG OF FEATURES
+Project inception (v1.5.9, first signed-off build) to current (v1.35.0)
+================================================================
+
+v1.5.9
+  - Calendar and layover date fixes, signed off.
+
+v1.5.10
+  - A calendar hairline.
+
+v1.6.0
+  - Settings gains the calculator interface picker.
+
+v1.7.0
+  - Calculator modes hide what they don’t need.
+
+v1.8.0
+  - LMA labels, shuttle switches and calculate gates.
+
+v1.9.0
+  - Lucide icons replace every emoji.
+
+v1.10.0
+  - Flight-number hints and downhill sector dates.
+
+v1.11.0
+  - Scroll rules and smarter flight hints.
+
+v1.12.0
+  - The trip bar and the sequential fetch-all.
+
+v1.13.0
+  - Sector pills, calculate gates and route cards.
+
+v1.14.0
+  - LMA cards get the trip bar and fetch-all.
+
+v1.15.0
+  - The trip bar reads cleanly in two rows.
+
+v1.16.0
+  - Animated card folds and shorter Turnaround labels.
+
+v1.16.1
+  - Pill fit tests made reliable.
+
+v1.17.0
+  - The allowances archive with monthly totals.
+
+v1.18.0
+  - The earnings chip and archive intents arrive.
+
+v1.18.1
+  - Chips keep their look when tapped.
+
+v1.19.0
+  - Edited sectors must be re-fetched before calculating.
+
+v1.19.1
+  - Calculate re-arms the moment a fetch lands.
+
+v1.19.2
+  - Chips lose their hover tint on touch.
+
+v1.19.3
+  - Auto-scroll animates; saves are one-shot.
+
+v1.19.5
+  - Save asks for the station when missing.
+
+v1.19.6
+  - Archive rows show the flight date.
+
+v1.19.7
+  - Cards fold when their overlay opens.
+
+v1.19.8
+  - Cards fold on every new message.
+
+v1.19.9
+  - Scroll decisions sample a stable height.
+
+v1.19.10
+  - Top-scrolling animation rebuilt for iOS.
+
+v1.19.11
+  - Calculator cards always scroll to their top.
+
+v1.19.13
+  - The earnings archive redesign lands.
+
+v1.19.14
+  - Archive search gains focus and a clear button.
+
+v1.19.15
+  - Rows indent under months; newest month opens.
+
+v1.19.16
+  - Route display keeps its middle stops.
+
+v1.19.17
+  - The archive opens on the real current month.
+
+v1.19.18
+  - Every export uses the phone’s share sheet.
+
+v1.19.19
+  - Section dots and share gates tidied.
+
+v1.19.20
+  - Exports retry sharing as plain text.
+
+v1.19.21
+  - Android share gates read file extensions.
+
+v1.19.22
+  - Exports fall back safely when sharing fails.
+
+v1.20.0
+  - Import a roster PDF; the cards build themselves.
+
+v1.20.1
+  - Multi-month rosters stitch into one timeline.
+
+v1.21.0
+  - Calculate all handles every trip at once.
+
+v1.22.0
+  - Flight Overview tells each duty’s story.
+  - Archive rows reopen their whole summary.
+
+v1.22.1
+  - The Earnings page opens even when empty.
+
+v1.22.2
+  - The reopen sheet scrolls within its bounds.
+
+v1.23.0
+  - The guided feature tour debuts.
+
+v1.23.1
+  - Tour buttons breathe; labels never wrap.
+
+v1.23.2
+  - The tour, re-narrated step by step.
+
+v1.23.3
+  - What’s new holds the stage until closed.
+
+v1.23.4
+  - Calculate all becomes the primary button.
+
+v1.23.5
+  - The typing bubble never goes missing.
+
+v1.23.6
+  - Scrolling locks while the tour runs.
+
+v1.23.7
+  - Hands-off chrome while the tour plays.
+
+v1.23.8
+  - The tour’s summary glide finds its pace.
+
+v1.23.9
+  - Tour gate buttons retire when pressed.
+
+v1.23.10
+  - The tour offer retires once answered.
+
+v1.23.11
+  - Tour pacing tuned end to end.
+
+v1.23.12
+  - All of 2024 and 2025 verified through the pipeline.
+
+v1.24.0
+  - The Earnings page: gold summary, trend chart, insights.
+
+v1.25.0
+  - Compact menu sheets print hidden proteins and starches.
+
+v1.25.1
+  - Compact print polish and a dead-code sweep.
+
+v1.25.2
+  - No stray ANDs in menu additions.
+
+v1.26.0
+  - Menus save for offline use, with a status dot.
+
+v1.26.1
+  - The status popover animates in.
+
+v1.27.0
+  - Earnings insights and backup reminders.
+
+v1.27.1
+  - Insights open on the very first tap.
+
+v1.28.0
+  - A next-flight card with a saved-menus badge.
+
+v1.28.1
+  - Re-saving a duty updates it, never duplicates.
+
+v1.28.2
+  - The menu nudge card gets its locked design.
+
+v1.28.3
+  - Menu additions read as clean comma lists.
+
+v1.28.4
+  - The assistant replies at a brisker pace.
+
+v1.29.0
+  - Tap any amount to correct it.
+  - Discard asks for a second tap.
+
+v1.29.1
+  - Month and Year follow the real calendar.
+
+v1.29.2
+  - Month progress follows your last flight.
+
+v1.30.0
+  - Saving shows a review first — new, updated, unchanged.
+
+v1.31.0
+  - Gold text gets a readable ink in daylight.
+  - The save button keeps its shape; sheets hold focus.
+
+v1.31.1
+  - Calculator mode pills and pop-ups fixed on device.
+
+v1.31.2
+  - The pinned totals bar stops clipping its text.
+
+v1.32.0
+  - Every save can be undone for ten seconds.
+  - Sheets and toasts polished from the third review.
+
+v1.32.1
+  - Breakdown figures and labels sized for reading.
+
+v1.33.0
+  - A dozen readability fixes from the first review.
+
+v1.33.1
+  - Light mode fixes for onboarding and pop-ups.
+  - The next-flight card reads landing times live.
+
+v1.33.2
+  - Earnings track each duty to its landing.
+
+v1.33.3
+  - Printed sheets keep their protein highlights.
+
+v1.34.0
+  - Protein can print in brackets instead of boxes.
+  - Hidden proteins surface on cold refreshments too.
+
+v1.34.1
+  - Duty menus survive any number of menu searches.
+
+v1.34.2
+  - Pop-up alerts are readable in light mode.
+  - The duty card always opens its own menu.
+  - Deleting earnings keeps a longer Undo.
+
+v1.34.3
+  - What’s new lists only the current version.
+  - Fish cake and rice noodles read correctly.
+
+v1.35.0
+  - What’s new shows only versions you missed.
+  - Long what’s-new lists scroll under version headers.
+  - Settings opens the full changelog.
+  - What’s new returns every launch until you dismiss it.
