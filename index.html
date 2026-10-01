@@ -1640,10 +1640,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.34.0';
+        const APP_VERSION = '1.34.1';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.34.1 (E6): one pointer per change, still only this release.
         // v1.34.0 (E6): one pointer per change, still only this release.
         // v1.33.3 (E6): one pointer per change, still only this release.
         // v1.33.2 (E6): one pointer per change, still only this release.
@@ -1655,7 +1656,8 @@
         // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
             'Protein can print in brackets instead of boxes.',
-            'Hidden proteins surface on cold refreshments too.'
+            'Hidden proteins surface on cold refreshments too.',
+            'Duty menus survive any number of menu searches.'
         ];
 
         // State
@@ -8798,6 +8800,14 @@ function getRegionForAirport(code) {
         function pruneSqMenuCache() {
             try {
                 const keep = loadRecentFlights().map((x) => 'SQ' + x.flight + ':' + x.date + ':');
+                // v1.34.1 (owner report): searching other flights evicted the
+                // duty's saved menus once the recents list filled — yet the
+                // next-flight card promises those menus offline (SQ736 out,
+                // SQ735 back, both wiped by one unrelated lookup). Upcoming
+                // roster flights are always in the keep-set; after a duty
+                // lands it falls out of upcoming and the 5-recents cap tidies
+                // its menus away exactly as before.
+                try { upcomingList().forEach((f) => keep.push('SQ' + f.fn + ':' + f.ymd + ':')); } catch (e) {}
                 const drop = [];
                 for (let i = 0; i < localStorage.length; i++) {
                     const k = localStorage.key(i);

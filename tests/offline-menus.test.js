@@ -3,7 +3,8 @@
 // the brand dot reflects connectivity and its popover lists what works.
 // The per-cabin cache itself predates v1.26.0 — these tests freeze the whole
 // offline story together, including the new CABINS schedule cache, the
-// honest refusals, the 5-flight prune and the status dot.
+// honest refusals, the 5-flight prune (duty flights protected since v1.34.1)
+// and the status dot.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 const fs = require('fs');
@@ -102,6 +103,30 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(w.localStorage.getItem(CABIN_KEY) !== null, 'the looked-up flight keeps its schedule cache');
   }
 
+  // --- v1.34.1 (owner report): the duty's menus survive unrelated searches ---
+  {
+    const DUTY = '2026-12-25'; // far enough ahead to stay upcoming at any test time
+    w.eval('upcomingRemember(' + JSON.stringify({ flights: [
+      { ymd: DUTY, fn: '736', dep: 'SIN', arr: 'HKT', stdHm: '09:00', staHm: '10:15' },
+      { ymd: DUTY, fn: '735', dep: 'HKT', arr: 'SIN', stdHm: '16:40', staHm: '19:55' }
+    ] }) + ')');
+    w.localStorage.setItem('SQ736:' + DUTY + ':CABINS', cabinPayload(2));
+    w.localStorage.setItem('SQ735:' + DUTY + ':CABINS', cabinPayload(3));
+    w.localStorage.setItem('SQ735:' + DUTY + ':JCL', menuPayload(4));
+    // five unrelated menu searches fill the recents list past its 5-cap
+    ['101', '102', '103', '104', '106'].forEach((fn2) => w.eval("rememberRecentFlight('" + fn2 + "','" + DUTY + "')"));
+    w.eval('pruneSqMenuCache()');
+    R.ok(w.localStorage.getItem('SQ736:' + DUTY + ':CABINS') !== null, 'SQ736 menus survive a full recents list (owner report: wiped by other searches)');
+    R.ok(w.localStorage.getItem('SQ735:' + DUTY + ':JCL') !== null, 'the return leg keeps its saved cabin menu');
+    R.ok(w.eval("menusSavedFor('736','" + DUTY + "')"), 'the next-flight card keeps its Menus saved badge');
+    // once the duty is no longer upcoming, the recents cap tidies as before
+    w.eval('upcomingRemember(' + JSON.stringify({ flights: [
+      { ymd: DUTY, fn: '999', dep: 'SIN', arr: 'NRT', stdHm: '23:50', staHm: '23:55' }
+    ] }) + ')');
+    w.eval('pruneSqMenuCache()');
+    R.ok(w.localStorage.getItem('SQ736:' + DUTY + ':CABINS') === null && w.localStorage.getItem('SQ735:' + DUTY + ':JCL') === null, 'a flown duty still tidies away (storage stays bounded)');
+  }
+
   // --- the status dot + capability popover ---
   {
     setOnline(true);
@@ -142,11 +167,11 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.34.0';"), 'APP_VERSION stamped 1.34.0');
+    R.ok(src.includes("const APP_VERSION = '1.34.1';"), 'APP_VERSION stamped 1.34.1');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
-    R.ok(src.includes('Hidden proteins surface on cold refreshments too.'), 'what\'s-new carries this release\'s print promise (offline installs included)');
+    R.ok(src.includes('Duty menus survive any number of menu searches.'), 'what\'s-new carries this release\'s print promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v157"), 'service-worker cache name bumped to v157');
+    R.ok(sw.includes("crewassist-v158"), 'service-worker cache name bumped to v158');
     R.ok(sw.includes('https://cdn.tailwindcss.com') && sw.includes('pdf.min.js'), 'Tailwind + pdf.js precached for first offline launch');
   }
 
