@@ -177,7 +177,7 @@ const mkUntil = (d) => async (cond, ms) => {
     const clMatch = src.match(/const APP_CHANGELOG = \[([\s\S]*?)\n\s*\];/);
     R.ok(!!clMatch, 'the changelog parses as a list (E6)');
     if (clMatch) {
-      const entries = [...clMatch[1].matchAll(/v:\s*'([^']+)',\s*items:\s*\[([\s\S]*?)\]/g)].map((m) => ({ v: m[1], items: [...m[2].matchAll(/'([^']*)'/g)].map((x) => x[1]) }));
+      const entries = [...clMatch[1].matchAll(/v:\s*'([^']+)'(?:,\s*d:\s*'([^']*)')?,\s*items:\s*\[([\s\S]*?)\]/g)].map((m) => ({ v: m[1], d: m[2] || '', items: [...m[3].matchAll(/\{ c:\s*'([^']+)', t:\s*'([^']*)' \}/g)].map((x) => ({ c: x[1], t: x[2] })) }));
       R.ok(entries.length >= 60, `the changelog covers every version since inception (${entries.length} entries) (E6)`);
       R.eq(entries[0].v, appVer, 'the newest changelog entry is the current release (E6)');
       for (let i = 1; i < entries.length; i++) {
@@ -186,16 +186,28 @@ const mkUntil = (d) => async (cond, ms) => {
         R.ok(descending > 0, `changelog versions run strictly descending: v${entries[i - 1].v} then v${entries[i].v} (E6)`);
       }
       R.ok(entries[0].items.length >= 1, 'the current release carries at least one pointer (E6)');
-      entries[0].items.forEach((line) => {
-        R.ok(line.indexOf('. ') === -1 && /[.!?]$/.test(line), `current-release pointer is one sentence: "${line}" (E6)`);
-        R.ok(line.split(/\s+/).length <= 12, `current-release pointer stays within twelve words: "${line}" (E6)`);
+      entries[0].items.forEach((it) => {
+        R.ok(['new', 'fix', 'imp', 'fun'].indexOf(it.c) !== -1, `current-release pointer is categorised: "${it.t}" (E6)`);
+        R.ok(it.t.indexOf('. ') === -1 && /[.!?]$/.test(it.t), `current-release pointer is one sentence: "${it.t}" (E6)`);
+        R.ok(it.t.split(/\s+/).length <= 12, `current-release pointer stays within twelve words: "${it.t}" (E6)`);
       });
+      const cmpV = (x, y) => { const A = x.split('.').map(Number), B = y.split('.').map(Number); return (A[0] - B[0]) || (A[1] - B[1]) || (A[2] - B[2]); };
+      const badCat = [], badDate = [];
+      entries.forEach((en) => {
+        en.items.forEach((it) => { if (['new', 'fix', 'imp', 'fun'].indexOf(it.c) === -1) badCat.push(en.v + ':' + it.c); });
+        if (cmpV(en.v, '1.5.9') >= 0) { if (!/^\d{4}-\d{2}-\d{2}$/.test(en.d)) badDate.push(en.v + ' (missing date)'); }
+        else if (en.d) badDate.push(en.v + ' (unexpected date)');
+      });
+      R.ok(badCat.length === 0, `every changelog pointer carries a valid category (E6)${badCat.length ? ': ' + badCat.slice(0, 5).join(', ') : ''}`);
+      R.ok(badDate.length === 0, `versions since v1.5.9 carry dates, pre-history stays undated (E6)${badDate.length ? ': ' + badDate.slice(0, 5).join(', ') : ''}`);
+      R.ok(entries.filter((en) => en.d).length === 88, `the dated run covers exactly v1.5.9 -> current, 88 versions (E6)`);
     }
     // the delta machinery + the scrollable, headered list (owner spec)
     R.ok(src.includes('function wnPendingEntries') && src.includes("localStorage.getItem('crewAssist.wnSeen')"), "what's new tracks the version the crew last saw (E6)");
     R.ok(src.includes('function wnSeenVersion') && src.includes('APP_CHANGELOG[1] && APP_CHANGELOG[1].v'), 'a pre-changelog device defaults to the release before current (E6)');
     R.ok(/id="whatsnew-list"[^>]*max-h-\[50vh\] overflow-y-auto/.test(src), "the what's-new list scrolls when a big jump brings many versions (E6)");
-    R.ok(src.includes('function renderChangelogInto'), 'one renderer draws both the delta and the changelog overlay (E6)');
+    R.ok(src.includes('function renderChangelogInto'), "the What's New delta keeps its renderer (E6)");
+    R.ok(src.includes('function renderChangelogSheet') && src.includes('id="ca-cl-chips"') && src.includes('id="ca-cl-sort"') && src.includes('id="ca-cl-summary"'), 'the Settings changelog renders its own filterable, sortable view (E6)');
     R.ok(src.includes('id="ca-changelog-sheet"') && src.includes('id="btn-changelog"'), 'Settings opens the full changelog overlay (E6)');
     // ---- v1.33.0: the review batch (contrast, targets, SR, CSV, hints) ----
     R.ok(src.includes('ui-input text-gray-600 ob-gender-btn'), 'unselected onboarding buttons read at gray-600 (was 2.26:1)');
@@ -323,6 +335,40 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(clHeads[0].includes(c.w.APP_VERSION), 'the changelog opens on the current version');
     R.ok(clHeads[clHeads.length - 1].includes('1.0.0'), 'the changelog reaches back to inception (v1.0.0)');
     R.ok((c.d.getElementById('ca-changelog-cur') || {}).textContent === c.w.APP_VERSION, 'the changelog names the running version');
+    // --- v1.35.0 hotfix 3: the redesigned sheet (filters, sort, summary, badges) ---
+    const vheads = () => [...c.d.querySelectorAll('#ca-changelog-list .ca-cl-vhead')];
+    const headCount = vheads().length;
+    R.ok(headCount >= 60, `the redesigned list groups every version (${headCount} headers)`);
+    R.ok(vheads()[0].textContent.includes('CURRENT'), 'an up-to-date device sees the CURRENT badge on the running version');
+    R.ok(vheads().every((h) => !h.textContent.includes('NEW')), 'an up-to-date device sees no NEW badges');
+    R.ok(vheads()[headCount - 1].textContent.trim() === 'v1.0.0', 'the oldest header is bare: pre-history stays undated');
+    R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('caught up'), 'the summary card reads all-caught-up for an up-to-date device');
+    R.ok((c.d.getElementById('ca-cl-sumpills') || {}).childElementCount >= 1, 'the summary card breaks the current release into category pills');
+    R.ok(c.d.defaultView.getComputedStyle(vheads()[0]).position === 'sticky', 'version headers stick to the top while scrolling');
+    // a device one release behind: NEW badge + missed-updates summary
+    c.w.eval('closeChangelog()');
+    await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
+    c.w.localStorage.setItem('crewAssist.wnSeen', '1.34.3');
+    c.w.eval('openChangelog()');
+    await cUntil(() => !c.d.getElementById('ca-changelog-sheet').classList.contains('hidden'), 3000);
+    await cUntil(() => (c.d.getElementById('ca-changelog-list') || {}).childElementCount > 50, 3000);
+    R.ok(vheads()[0].textContent.includes('NEW'), 'a device behind one release sees the NEW badge on the current version');
+    R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('You missed 5 updates'), 'the summary card counts the missed updates');
+    // filter chips narrow the list; groups without matches hide
+    c.d.querySelector('#ca-cl-chips [data-filter="fix"]').click();
+    const fixHeads = vheads();
+    R.ok(fixHeads.length >= 1 && fixHeads.length < headCount, `the Fixes filter narrows the list (${fixHeads.length} of ${headCount} versions)`);
+    R.ok([...c.d.querySelectorAll('#ca-changelog-list .ca-cl-tag')].every((t) => t.className.includes('ca-cl-tag-fix')), 'every visible row carries the FIX tag');
+    // sort toggle flips to oldest-first
+    c.d.getElementById('ca-cl-sort').click();
+    R.ok(vheads()[vheads().length - 1].textContent.includes(c.w.APP_VERSION), 'the sort flip puts the current version last');
+    R.ok((c.d.querySelector('#ca-cl-sort i[data-lucide]') || {}).getAttribute('data-lucide') === 'arrow-up-wide-narrow', 'the sort icon flips to oldest-first');
+    // empty state (the same branch a real empty filter result takes)
+    c.w.eval("changelogState.filter = 'none'; renderChangelogSheet();");
+    R.ok(!c.d.getElementById('ca-cl-empty').classList.contains('hidden'), 'a filter with no matches shows the empty state');
+    R.ok((c.d.getElementById('ca-cl-empty') || {}).textContent.includes('No '), 'the empty state says so');
+    // restore + close
+    c.w.eval("changelogState.filter = 'all'; changelogState.sort = 'new'; renderChangelogSheet();");
     c.d.getElementById('ca-changelog-close').click();
     await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
   }

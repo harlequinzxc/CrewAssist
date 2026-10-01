@@ -875,6 +875,49 @@
         .ca-switch-input:checked ~ .ca-switch { background: #C9A227; }
         .ca-switch-input:checked ~ .ca-switch::after { transform: translateX(1rem); }
         .ca-inline-icon { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
+
+        /* ---- Changelog sheet (v1.35.0 hotfix-3 redesign) ---- */
+        .ca-cl-chips { scrollbar-width: none; }
+        .ca-cl-chips::-webkit-scrollbar { display: none; }
+        .ca-cl-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; border: 1px solid rgba(168, 162, 158, 0.35); color: #a8a29e; background: transparent; min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+        .ca-cl-chip svg { width: 12px; height: 12px; }
+        html:not(.dark) .ca-cl-chip { color: #57534e; border-color: rgba(87, 83, 78, 0.3); }
+        .ca-cl-chip:active { background: rgba(201, 162, 39, 0.18); }
+        .ca-cl-chip.ca-cl-chipon { background: #C9A227; border-color: #C9A227; color: #0B1A3A; }
+        @media (hover: hover) { .ca-cl-chip:hover { border-color: rgba(201, 162, 39, 0.55); } }
+        .ca-cl-sumcard { border-radius: 1rem; padding: 12px 14px; border: 1px solid rgba(201, 162, 39, 0.35); background: rgba(201, 162, 39, 0.10); box-shadow: 0 0 24px rgba(201, 162, 39, 0.12); }
+        html:not(.dark) .ca-cl-sumcard { background: rgba(201, 162, 39, 0.14); }
+        .ca-cl-sumbadge { width: 40px; height: 40px; border-radius: 9999px; background: linear-gradient(135deg, #C9A227, #a9861f); color: #0B1A3A; display: flex; align-items: center; justify-content: center; }
+        .ca-cl-sumpill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: rgba(11, 26, 58, 0.35); color: #E7D9B0; border: 1px solid rgba(201, 162, 39, 0.3); }
+        html:not(.dark) .ca-cl-sumpill { background: rgba(255, 255, 255, 0.6); color: #6b5613; }
+        .ca-cl-sumpill svg { width: 11px; height: 11px; }
+        .ca-cl-group { animation: caClGroupIn .35s ease both; }
+        @keyframes caClGroupIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ca-cl-group { animation: none; } }
+        .ca-cl-vhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: rgba(4, 7, 15, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(201, 162, 39, 0.35); }
+        html:not(.dark) .ca-cl-vhead { background: rgba(246, 241, 232, 0.92); }
+        .ca-cl-vdate { margin-left: auto; font-size: 11px; color: #a8a29e; }
+        html:not(.dark) .ca-cl-vdate { color: #78716c; }
+        .ca-cl-badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 9999px; }
+        .ca-cl-badge-new { background: #C9A227; color: #0B1A3A; animation: caClSoftPulse 2.2s ease-in-out infinite; }
+        @keyframes caClSoftPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+        .ca-cl-badge-cur { border: 1px solid rgba(168, 162, 158, 0.5); color: #a8a29e; }
+        html:not(.dark) .ca-cl-badge-cur { color: #78716c; }
+        .ca-cl-row { position: relative; display: flex; align-items: baseline; padding: 5px 8px 5px 22px; border-radius: .5rem; transition: background-color .15s ease; }
+        .ca-cl-row:active { background: rgba(201, 162, 39, 0.12); }
+        @media (hover: hover) { .ca-cl-row:hover { background: rgba(201, 162, 39, 0.08); } }
+        .ca-cl-dot { position: absolute; left: 9px; top: calc(5px + 0.55em); width: 6px; height: 6px; border-radius: 9999px; background: #C9A227; }
+        .ca-cl-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; margin-right: 7px; flex-shrink: 0; border: 1px solid transparent; }
+        .ca-cl-tag svg { width: 10px; height: 10px; }
+        .ca-cl-tag-new { color: #d4af37; background: rgba(201, 162, 39, 0.16); border-color: rgba(201, 162, 39, 0.4); }
+        html:not(.dark) .ca-cl-tag-new { color: #7d650f; }
+        .ca-cl-tag-fix { color: #f87171; background: rgba(248, 113, 113, 0.14); border-color: rgba(248, 113, 113, 0.35); }
+        html:not(.dark) .ca-cl-tag-fix { color: #b91c1c; }
+        .ca-cl-tag-imp { color: #7dd3fc; background: rgba(125, 211, 252, 0.13); border-color: rgba(125, 211, 252, 0.32); }
+        html:not(.dark) .ca-cl-tag-imp { color: #0369a1; }
+        .ca-cl-tag-fun { color: #f0abfc; background: rgba(240, 171, 252, 0.13); border-color: rgba(240, 171, 252, 0.32); }
+        html:not(.dark) .ca-cl-tag-fun { color: #a21caf; }
+        .ca-cl-text { flex: 1; min-width: 0; }
     </style>
 </head>
 <body class="antialiased w-full h-full min-h-screen flex flex-col">
@@ -1166,22 +1209,58 @@
             </div>
         </div>
 
-        <!-- Changelog overlay (v1.35.0): the full version history -->
+        <!-- Changelog overlay (v1.35.0; redesigned in the v1.35.0 hotfix-3 round: filter chips, sort toggle, summary card, sticky version headers) -->
         <div id="ca-changelog-backdrop" class="fixed inset-0 bg-black/60 z-[63] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
         <div id="ca-changelog-sheet" role="dialog" aria-modal="true" aria-label="Changelog" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[64] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
-            <div class="flex items-center justify-between px-5 pt-1 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
-                <h3 class="text-xl font-bold">Changelog</h3>
-                <button type="button" id="ca-changelog-close" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
+            <!-- header: title, installed version, close -->
+            <div class="flex items-start justify-between px-5 pt-1 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
+                <div class="min-w-0">
+                    <h3 class="text-xl font-bold">Changelog</h3>
+                    <p class="ca-micro mt-1 flex items-center gap-1.5 text-gray-500">
+                        <i data-lucide="rocket" class="w-3.5 h-3.5 shrink-0"></i>
+                        <span>You are on <span class="font-bold text-sia-gold">v<span id="ca-changelog-cur"></span></span></span>
+                    </p>
+                </div>
+                <button type="button" id="ca-changelog-close" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors" aria-label="Close">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div id="ca-changelog-scroll" class="overflow-y-auto flex-grow px-5 pb-10 pt-4 max-w-xl mx-auto w-full">
-                <p class="ca-micro font-bold uppercase tracking-wider text-gray-500 mb-3">You are on v<span id="ca-changelog-cur"></span> \u2014 newest first</p>
-                <div id="ca-changelog-list" class="text-sm leading-relaxed space-y-2"></div>
+            <!-- controls: filter chips + sort toggle -->
+            <div class="flex items-center gap-2 px-5 py-2.5 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
+                <div id="ca-cl-chips" class="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0 ca-cl-chips" aria-label="Filter changelog">
+                    <button type="button" class="ca-cl-chip ca-cl-chipon" data-filter="all" aria-pressed="true">All</button>
+                    <button type="button" class="ca-cl-chip" data-filter="new" aria-pressed="false"><i data-lucide="sparkles" class="w-3 h-3"></i><span>New</span></button>
+                    <button type="button" class="ca-cl-chip" data-filter="fix" aria-pressed="false"><i data-lucide="bug" class="w-3 h-3"></i><span>Fixes</span></button>
+                    <button type="button" class="ca-cl-chip" data-filter="imp" aria-pressed="false"><i data-lucide="wrench" class="w-3 h-3"></i><span>Improvements</span></button>
+                </div>
+                <button type="button" id="ca-cl-sort" class="p-3 rounded-full shrink-0 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors" aria-label="Newest first. Tap for oldest first.">
+                    <i data-lucide="arrow-down-wide-narrow" class="w-4 h-4"></i>
+                </button>
             </div>
+            <!-- "What's new for you" summary card -->
+            <div class="px-5 pt-3 shrink-0 max-w-xl mx-auto w-full">
+                <div id="ca-cl-summary" class="ca-cl-sumcard flex items-center gap-3">
+                    <div class="ca-cl-sumbadge shrink-0"><i data-lucide="party-popper" class="w-5 h-5"></i></div>
+                    <div class="min-w-0 flex-1">
+                        <p class="ca-micro font-bold uppercase tracking-wider text-sia-gold">What’s new for you</p>
+                        <p id="ca-cl-sumline" class="text-sm leading-snug mt-0.5"></p>
+                        <div id="ca-cl-sumpills" class="flex flex-wrap gap-1.5 mt-1.5"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- scrollable, grouped list -->
+            <div id="ca-changelog-scroll" class="overflow-y-auto flex-grow px-5 pt-3 max-w-xl mx-auto w-full">
+                <div id="ca-changelog-list" class="text-sm leading-relaxed"></div>
+                <div id="ca-cl-empty" class="hidden flex-col items-center justify-center text-center py-14 gap-2">
+                    <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
+                    <p class="text-sm text-gray-500">No matching entries.</p>
+                </div>
+            </div>
+            <!-- bottom safe-area padding -->
+            <div class="shrink-0 h-[env(safe-area-inset-bottom,0px)]"></div>
         </div>
 
         <!-- Results Overlay Sheet -->
@@ -1690,442 +1769,448 @@
         // sentence of at most twelve words, tagged with their release.
         // v1.35.0 hotfix 2 (owner-supplied pre-history, no version bump):
         // entries now span v1.0.0 -> current; one pointer one sentence.
+        // v1.35.0 hotfix 3 (changelog redesign, no version bump): every
+        // pointer is categorised { c: new|fix|imp|fun, t: text } and every
+        // version since v1.5.9 carries d - an approximate release date from
+        // the development log (owner-approved); pre-v1.5.9 releases stay
+        // undated because no record exists.
         const APP_CHANGELOG = [
-            { v: '1.35.0', items: [
-                'What’s new shows only versions you missed.',
-                'Long what’s-new lists scroll under version headers.',
-                'Settings opens the full changelog.',
-                'The sheet returns every launch until you dismiss it.'
+            { v: '1.35.0', d: '2026-10-02', items: [
+                { c: 'new', t: 'What’s new shows only versions you missed.' },
+                { c: 'new', t: 'Long what’s-new lists scroll under version headers.' },
+                { c: 'new', t: 'Settings opens the full changelog.' },
+                { c: 'fix', t: 'The sheet returns every launch until you dismiss it.' },
+                { c: 'new', t: 'Changelog sheet redesigned: category filters, sort toggle, and a highlights card.' },
             ] },
-            { v: '1.34.3', items: [
-                'What’s new lists only the current version.',
-                'Fish cake and rice noodles read correctly.'
+            { v: '1.34.3', d: '2026-10-01', items: [
+                { c: 'fix', t: 'What’s new lists only the current version.' },
+                { c: 'fun', t: 'Fish cake and rice noodles read correctly.' },
             ] },
-            { v: '1.34.2', items: [
-                'Pop-up alerts are readable in light mode.',
-                'The duty card always opens its own menu.',
-                'Deleting earnings keeps a longer Undo.'
+            { v: '1.34.2', d: '2026-10-01', items: [
+                { c: 'fix', t: 'Pop-up alerts are readable in light mode.' },
+                { c: 'fix', t: 'The duty card always opens its own menu.' },
+                { c: 'imp', t: 'Deleting earnings keeps a longer Undo.' },
             ] },
-            { v: '1.34.1', items: [
-                'Duty menus survive any number of menu searches.'
+            { v: '1.34.1', d: '2026-10-01', items: [
+                { c: 'fix', t: 'Duty menus survive any number of menu searches.' },
             ] },
-            { v: '1.34.0', items: [
-                'Protein can print in brackets instead of boxes.',
-                'Hidden proteins surface on cold refreshments too.'
+            { v: '1.34.0', d: '2026-10-01', items: [
+                { c: 'new', t: 'Protein can print in brackets instead of boxes.' },
+                { c: 'new', t: 'Hidden proteins surface on cold refreshments too.' },
             ] },
-            { v: '1.33.3', items: [
-                'Printed sheets keep their protein highlights.'
+            { v: '1.33.3', d: '2026-10-01', items: [
+                { c: 'fix', t: 'Printed sheets keep their protein highlights.' },
             ] },
-            { v: '1.33.2', items: [
-                'Earnings track each duty to its landing, in real time.',
-                'A duty reads Completed the moment it lands.'
+            { v: '1.33.2', d: '2026-10-01', items: [
+                { c: 'new', t: 'Earnings track each duty to its landing, in real time.' },
+                { c: 'new', t: 'A duty reads Completed the moment it lands.' },
             ] },
-            { v: '1.33.1', items: [
-                'Light mode fixes for onboarding and pop-ups.',
-                'The next-flight card reads landing times live.'
+            { v: '1.33.1', d: '2026-10-01', items: [
+                { c: 'fix', t: 'Light mode fixes for onboarding and pop-ups.' },
+                { c: 'new', t: 'The next-flight card reads landing times live.' },
             ] },
-            { v: '1.33.0', items: [
-                'A dozen readability fixes from the first review.',
-                'Combined summaries export as CSV.',
-                'The chat input rotates three example asks.'
+            { v: '1.33.0', d: '2026-10-01', items: [
+                { c: 'fix', t: 'A dozen readability fixes from the first review.' },
+                { c: 'new', t: 'Combined summaries export as CSV.' },
+                { c: 'new', t: 'The chat input rotates three example asks.' },
             ] },
-            { v: '1.32.1', items: [
-                'Breakdown figures and labels sized for reading.',
-                'Calculate all no longer freezes on big rosters.',
-                'Paxing sectors pre-tick and explain themselves.'
+            { v: '1.32.1', d: '2026-10-01', items: [
+                { c: 'imp', t: 'Breakdown figures and labels sized for reading.' },
+                { c: 'fix', t: 'Calculate all no longer freezes on big rosters.' },
+                { c: 'fix', t: 'Paxing sectors pre-tick and explain themselves.' },
             ] },
-            { v: '1.32.0', items: [
-                'Every save can be undone for ten seconds.',
-                'Sheets and toasts polished from the third review.'
+            { v: '1.32.0', d: '2026-09-30', items: [
+                { c: 'new', t: 'Every save can be undone for ten seconds.' },
+                { c: 'imp', t: 'Sheets and toasts polished from the third review.' },
             ] },
-            { v: '1.31.2', items: [
-                'The pinned totals bar stops clipping its text.'
+            { v: '1.31.2', d: '2026-09-30', items: [
+                { c: 'fix', t: 'The pinned totals bar stops clipping its text.' },
             ] },
-            { v: '1.31.1', items: [
-                'Calculator mode pills and pop-ups fixed on device.'
+            { v: '1.31.1', d: '2026-09-30', items: [
+                { c: 'fix', t: 'Calculator mode pills and pop-ups fixed on device.' },
             ] },
-            { v: '1.31.0', items: [
-                'Gold text gets a readable ink in daylight.',
-                'The save button keeps its shape; sheets hold focus.'
+            { v: '1.31.0', d: '2026-09-30', items: [
+                { c: 'imp', t: 'Gold text gets a readable ink in daylight.' },
+                { c: 'imp', t: 'The save button keeps its shape; sheets hold focus.' },
             ] },
-            { v: '1.30.0', items: [
-                'Saving shows a review first — new, updated, unchanged.'
+            { v: '1.30.0', d: '2026-09-30', items: [
+                { c: 'new', t: 'Saving shows a review first — new, updated, unchanged.' },
             ] },
-            { v: '1.29.2', items: [
-                'Month progress follows your last flight.'
+            { v: '1.29.2', d: '2026-09-29', items: [
+                { c: 'new', t: 'Month progress follows your last flight.' },
             ] },
-            { v: '1.29.1', items: [
-                'Month and Year follow the real calendar.'
+            { v: '1.29.1', d: '2026-09-29', items: [
+                { c: 'fix', t: 'Month and Year follow the real calendar.' },
             ] },
-            { v: '1.29.0', items: [
-                'Tap any amount to correct it.',
-                'Discard asks for a second tap.',
-                'Enter advances to the next calculator field.'
+            { v: '1.29.0', d: '2026-09-29', items: [
+                { c: 'new', t: 'Tap any amount to correct it.' },
+                { c: 'new', t: 'Discard asks for a second tap.' },
+                { c: 'new', t: 'Enter advances to the next calculator field.' },
             ] },
-            { v: '1.28.4', items: [
-                'The assistant replies at a brisker pace.',
-                'The feature tour keeps its classic pacing.'
+            { v: '1.28.4', d: '2026-09-28', items: [
+                { c: 'imp', t: 'The assistant replies at a brisker pace.' },
+                { c: 'imp', t: 'The feature tour keeps its classic pacing.' },
             ] },
-            { v: '1.28.3', items: [
-                'Menu additions read as clean comma lists.',
-                'Duplicate proteins fold into their longest wording.'
+            { v: '1.28.3', d: '2026-09-28', items: [
+                { c: 'imp', t: 'Menu additions read as clean comma lists.' },
+                { c: 'imp', t: 'Duplicate proteins fold into their longest wording.' },
             ] },
-            { v: '1.28.2', items: [
-                'The menu nudge card gets its locked design.'
+            { v: '1.28.2', d: '2026-09-28', items: [
+                { c: 'imp', t: 'The menu nudge card gets its locked design.' },
             ] },
-            { v: '1.28.1', items: [
-                'Re-saving a duty updates it, never duplicates.'
+            { v: '1.28.1', d: '2026-09-28', items: [
+                { c: 'fix', t: 'Re-saving a duty updates it, never duplicates.' },
             ] },
-            { v: '1.28.0', items: [
-                'A next-flight card with a saved-menus badge.',
-                'An out-and-back day reads as one duty.'
+            { v: '1.28.0', d: '2026-09-28', items: [
+                { c: 'new', t: 'A next-flight card with a saved-menus badge.' },
+                { c: 'new', t: 'An out-and-back day reads as one duty.' },
             ] },
-            { v: '1.27.1', items: [
-                'Insights open on the very first tap.'
+            { v: '1.27.1', d: '2026-09-27', items: [
+                { c: 'fix', t: 'Insights open on the very first tap.' },
             ] },
-            { v: '1.27.0', items: [
-                'Earnings insights and backup reminders.',
-                'The archive nudges you to export a JSON backup.'
+            { v: '1.27.0', d: '2026-09-27', items: [
+                { c: 'new', t: 'Earnings insights and backup reminders.' },
+                { c: 'new', t: 'The archive nudges you to export a JSON backup.' },
             ] },
-            { v: '1.26.1', items: [
-                'The status popover animates in.'
+            { v: '1.26.1', d: '2026-09-26', items: [
+                { c: 'imp', t: 'The status popover animates in.' },
             ] },
-            { v: '1.26.0', items: [
-                'Menus save for offline use, with a status dot.',
-                'The shell precaches Tailwind and pdf.js for first offline launch.'
+            { v: '1.26.0', d: '2026-09-26', items: [
+                { c: 'new', t: 'Menus save for offline use, with a status dot.' },
+                { c: 'new', t: 'The shell precaches Tailwind and pdf.js for first offline launch.' },
             ] },
-            { v: '1.25.2', items: [
-                'No stray ANDs in menu additions.'
+            { v: '1.25.2', d: '2026-09-26', items: [
+                { c: 'fun', t: 'No stray ANDs in menu additions.' },
             ] },
-            { v: '1.25.1', items: [
-                'Compact print polish and a dead-code sweep.'
+            { v: '1.25.1', d: '2026-09-26', items: [
+                { c: 'imp', t: 'Compact print polish and a dead-code sweep.' },
             ] },
-            { v: '1.25.0', items: [
-                'Compact menu sheets print hidden proteins and starches.'
+            { v: '1.25.0', d: '2026-09-25', items: [
+                { c: 'new', t: 'Compact menu sheets print hidden proteins and starches.' },
             ] },
-            { v: '1.24.0', items: [
-                'The Earnings page: gold summary, trend chart, insights.',
-                'Month, Year and All-time scopes with projection context.',
-                'Twelve insight cards behind a View insights toggle.'
+            { v: '1.24.0', d: '2026-09-24', items: [
+                { c: 'new', t: 'The Earnings page: gold summary, trend chart, insights.' },
+                { c: 'new', t: 'Month, Year and All-time scopes with projection context.' },
+                { c: 'new', t: 'Twelve insight cards behind a View insights toggle.' },
             ] },
-            { v: '1.23.12', items: [
-                'All of 2024 and 2025 verified through the pipeline.'
+            { v: '1.23.12', d: '2026-09-24', items: [
+                { c: 'imp', t: 'All of 2024 and 2025 verified through the pipeline.' },
             ] },
-            { v: '1.23.11', items: [
-                'Tour pacing tuned end to end.'
+            { v: '1.23.11', d: '2026-09-24', items: [
+                { c: 'imp', t: 'Tour pacing tuned end to end.' },
             ] },
-            { v: '1.23.10', items: [
-                'The tour offer retires once answered.'
+            { v: '1.23.10', d: '2026-09-24', items: [
+                { c: 'imp', t: 'The tour offer retires once answered.' },
             ] },
-            { v: '1.23.9', items: [
-                'Tour gate buttons retire when pressed.'
+            { v: '1.23.9', d: '2026-09-24', items: [
+                { c: 'imp', t: 'Tour gate buttons retire when pressed.' },
             ] },
-            { v: '1.23.8', items: [
-                'The tour’s summary glide finds its pace.'
+            { v: '1.23.8', d: '2026-09-24', items: [
+                { c: 'imp', t: 'The tour’s summary glide finds its pace.' },
             ] },
-            { v: '1.23.7', items: [
-                'Hands-off chrome while the tour plays.'
+            { v: '1.23.7', d: '2026-09-23', items: [
+                { c: 'imp', t: 'Hands-off chrome while the tour plays.' },
             ] },
-            { v: '1.23.6', items: [
-                'Scrolling locks while the tour runs.'
+            { v: '1.23.6', d: '2026-09-23', items: [
+                { c: 'imp', t: 'Scrolling locks while the tour runs.' },
             ] },
-            { v: '1.23.5', items: [
-                'The typing bubble never goes missing.'
+            { v: '1.23.5', d: '2026-09-23', items: [
+                { c: 'fix', t: 'The typing bubble never goes missing.' },
             ] },
-            { v: '1.23.4', items: [
-                'Calculate all becomes the primary button.'
+            { v: '1.23.4', d: '2026-09-23', items: [
+                { c: 'imp', t: 'Calculate all becomes the primary button.' },
             ] },
-            { v: '1.23.3', items: [
-                'What’s new holds the stage until closed.'
+            { v: '1.23.3', d: '2026-09-23', items: [
+                { c: 'imp', t: 'What’s new holds the stage until closed.' },
             ] },
-            { v: '1.23.2', items: [
-                'The tour, re-narrated step by step.'
+            { v: '1.23.2', d: '2026-09-23', items: [
+                { c: 'imp', t: 'The tour, re-narrated step by step.' },
             ] },
-            { v: '1.23.1', items: [
-                'Tour buttons breathe; labels never wrap.'
+            { v: '1.23.1', d: '2026-09-22', items: [
+                { c: 'imp', t: 'Tour buttons breathe; labels never wrap.' },
             ] },
-            { v: '1.23.0', items: [
-                'The guided feature tour debuts.'
+            { v: '1.23.0', d: '2026-09-22', items: [
+                { c: 'new', t: 'The guided feature tour debuts.' },
             ] },
-            { v: '1.22.2', items: [
-                'The reopen sheet scrolls within its bounds.'
+            { v: '1.22.2', d: '2026-09-22', items: [
+                { c: 'fix', t: 'The reopen sheet scrolls within its bounds.' },
             ] },
-            { v: '1.22.1', items: [
-                'The Earnings page opens even when empty.'
+            { v: '1.22.1', d: '2026-09-22', items: [
+                { c: 'fix', t: 'The Earnings page opens even when empty.' },
             ] },
-            { v: '1.22.0', items: [
-                'Flight Overview tells each duty’s story.',
-                'Archive rows reopen their whole summary.',
-                'KTM layovers finally earn LMA (Nepal region fix).'
+            { v: '1.22.0', d: '2026-09-21', items: [
+                { c: 'new', t: 'Flight Overview tells each duty’s story.' },
+                { c: 'new', t: 'Archive rows reopen their whole summary.' },
+                { c: 'fix', t: 'KTM layovers finally earn LMA (Nepal region fix).' },
             ] },
-            { v: '1.21.0', items: [
-                'Calculate all handles every trip at once.',
-                'One combined summary with a grand total.'
+            { v: '1.21.0', d: '2026-09-21', items: [
+                { c: 'new', t: 'Calculate all handles every trip at once.' },
+                { c: 'new', t: 'One combined summary with a grand total.' },
             ] },
-            { v: '1.20.1', items: [
-                'Multi-month rosters stitch into one timeline.'
+            { v: '1.20.1', d: '2026-09-20', items: [
+                { c: 'new', t: 'Multi-month rosters stitch into one timeline.' },
             ] },
-            { v: '1.20.0', items: [
-                'Import a roster PDF; the cards build themselves.'
+            { v: '1.20.0', d: '2026-09-20', items: [
+                { c: 'new', t: 'Import a roster PDF; the cards build themselves.' },
             ] },
-            { v: '1.19.22', items: [
-                'Exports fall back safely when sharing fails.',
-                'Trip bar boxes turn green when fetched.'
+            { v: '1.19.22', d: '2026-09-19', items: [
+                { c: 'fix', t: 'Exports fall back safely when sharing fails.' },
+                { c: 'imp', t: 'Trip bar boxes turn green when fetched.' },
             ] },
-            { v: '1.19.21', items: [
-                'Android share gates read file extensions.',
-                'JSON exports retry as a .txt twin.'
+            { v: '1.19.21', d: '2026-09-19', items: [
+                { c: 'fix', t: 'Android share gates read file extensions.' },
+                { c: 'fix', t: 'JSON exports retry as a .txt twin.' },
             ] },
-            { v: '1.19.20', items: [
-                'Exports retry sharing as plain text.',
-                'Reset moves to Data Management.'
+            { v: '1.19.20', d: '2026-09-19', items: [
+                { c: 'fix', t: 'Exports retry sharing as plain text.' },
+                { c: 'imp', t: 'Reset moves to Data Management.' },
             ] },
-            { v: '1.19.19', items: [
-                'Section dots and share gates tidied.'
+            { v: '1.19.19', d: '2026-09-19', items: [
+                { c: 'imp', t: 'Section dots and share gates tidied.' },
             ] },
-            { v: '1.19.18', items: [
-                'Every export uses the phone’s share sheet.'
+            { v: '1.19.18', d: '2026-09-19', items: [
+                { c: 'new', t: 'Every export uses the phone’s share sheet.' },
             ] },
-            { v: '1.19.17', items: [
-                'The archive opens on the real current month.'
+            { v: '1.19.17', d: '2026-09-19', items: [
+                { c: 'fix', t: 'The archive opens on the real current month.' },
             ] },
-            { v: '1.19.16', items: [
-                'Route display keeps its middle stops.',
-                'Dev rates get a split footer with dirty state.'
+            { v: '1.19.16', d: '2026-09-19', items: [
+                { c: 'fix', t: 'Route display keeps its middle stops.' },
+                { c: 'imp', t: 'Dev rates get a split footer with dirty state.' },
             ] },
-            { v: '1.19.15', items: [
-                'Rows indent under months; newest month opens.'
+            { v: '1.19.15', d: '2026-09-19', items: [
+                { c: 'imp', t: 'Rows indent under months; newest month opens.' },
             ] },
-            { v: '1.19.14', items: [
-                'Archive search gains focus and a clear button.',
-                'Collapsed month headers show counts.'
+            { v: '1.19.14', d: '2026-09-19', items: [
+                { c: 'imp', t: 'Archive search gains focus and a clear button.' },
+                { c: 'imp', t: 'Collapsed month headers show counts.' },
             ] },
-            { v: '1.19.13', items: [
-                'The earnings archive redesign lands.'
+            { v: '1.19.13', d: '2026-09-19', items: [
+                { c: 'new', t: 'The earnings archive redesign lands.' },
             ] },
-            { v: '1.19.11', items: [
-                'Calculator cards always scroll to their top.'
+            { v: '1.19.11', d: '2026-09-18', items: [
+                { c: 'fix', t: 'Calculator cards always scroll to their top.' },
             ] },
-            { v: '1.19.10', items: [
-                'Top-scrolling animation rebuilt for iOS.'
+            { v: '1.19.10', d: '2026-09-18', items: [
+                { c: 'fix', t: 'Top-scrolling animation rebuilt for iOS.' },
             ] },
-            { v: '1.19.9', items: [
-                'Scroll decisions sample a stable height.'
+            { v: '1.19.9', d: '2026-09-18', items: [
+                { c: 'fix', t: 'Scroll decisions sample a stable height.' },
             ] },
-            { v: '1.19.8', items: [
-                'Cards fold on every new message.'
+            { v: '1.19.8', d: '2026-09-18', items: [
+                { c: 'imp', t: 'Cards fold on every new message.' },
             ] },
-            { v: '1.19.7', items: [
-                'Cards fold when their overlay opens.'
+            { v: '1.19.7', d: '2026-09-18', items: [
+                { c: 'new', t: 'Cards fold when their overlay opens.' },
             ] },
-            { v: '1.19.6', items: [
-                'Archive rows show the flight date.'
+            { v: '1.19.6', d: '2026-09-18', items: [
+                { c: 'imp', t: 'Archive rows show the flight date.' },
             ] },
-            { v: '1.19.5', items: [
-                'Save asks for the station when missing.'
+            { v: '1.19.5', d: '2026-09-18', items: [
+                { c: 'new', t: 'Save asks for the station when missing.' },
             ] },
-            { v: '1.19.3', items: [
-                'Auto-scroll animates; saves are one-shot.',
-                'The archive reads oldest-first.'
+            { v: '1.19.3', d: '2026-09-18', items: [
+                { c: 'imp', t: 'Auto-scroll animates; saves are one-shot.' },
+                { c: 'imp', t: 'The archive reads oldest-first.' },
             ] },
-            { v: '1.19.2', items: [
-                'Chips lose their hover tint on touch.'
+            { v: '1.19.2', d: '2026-09-17', items: [
+                { c: 'fix', t: 'Chips lose their hover tint on touch.' },
             ] },
-            { v: '1.19.1', items: [
-                'Calculate re-arms the moment a fetch lands.'
+            { v: '1.19.1', d: '2026-09-17', items: [
+                { c: 'fix', t: 'Calculate re-arms the moment a fetch lands.' },
             ] },
-            { v: '1.19.0', items: [
-                'Edited sectors must be re-fetched before calculating.'
+            { v: '1.19.0', d: '2026-09-17', items: [
+                { c: 'new', t: 'Edited sectors must be re-fetched before calculating.' },
             ] },
-            { v: '1.18.1', items: [
-                'Chips keep their look when tapped.'
+            { v: '1.18.1', d: '2026-09-17', items: [
+                { c: 'fix', t: 'Chips keep their look when tapped.' },
             ] },
-            { v: '1.18.0', items: [
-                'The earnings chip and archive intents arrive.',
-                'Circular save and trash buttons beside the close.'
+            { v: '1.18.0', d: '2026-09-17', items: [
+                { c: 'new', t: 'The earnings chip and archive intents arrive.' },
+                { c: 'new', t: 'Circular save and trash buttons beside the close.' },
             ] },
-            { v: '1.17.0', items: [
-                'The allowances archive with COP-only Save.',
-                'Per-month totals and a Fetch-all loading circle.'
+            { v: '1.17.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'The allowances archive with COP-only Save.' },
+                { c: 'new', t: 'Per-month totals and a Fetch-all loading circle.' },
             ] },
-            { v: '1.16.1', items: [
-                'Pill fit tests made reliable.'
+            { v: '1.16.1', d: '2026-09-16', items: [
+                { c: 'fix', t: 'Pill fit tests made reliable.' },
             ] },
-            { v: '1.16.0', items: [
-                'Animated sector-card collapse.',
-                'Turnaround auto-shortens to Turn.'
+            { v: '1.16.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'Animated sector-card collapse.' },
+                { c: 'imp', t: 'Turnaround auto-shortens to Turn.' },
             ] },
-            { v: '1.15.0', items: [
-                'The trip bar reads cleanly in two rows.',
-                'LMA gates Calculate on a station code plus both times.'
+            { v: '1.15.0', d: '2026-09-16', items: [
+                { c: 'fix', t: 'The trip bar reads cleanly in two rows.' },
+                { c: 'new', t: 'LMA gates Calculate on a station code plus both times.' },
             ] },
-            { v: '1.14.0', items: [
-                'LMA cards get the trip bar, Fetch all, dots and Retry.',
-                'Cards fold to their header.'
+            { v: '1.14.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'LMA cards get the trip bar, Fetch all, dots and Retry.' },
+                { c: 'new', t: 'Cards fold to their header.' },
             ] },
-            { v: '1.13.0', items: [
-                'Sector pills read 2 / 4.',
-                'Calculate requires a flight time.',
-                'The calendar refuses a date before the sector above.',
-                'Durations read 2h 15m; route nodes are cards.'
+            { v: '1.13.0', d: '2026-09-16', items: [
+                { c: 'imp', t: 'Sector pills read 2 / 4.' },
+                { c: 'new', t: 'Calculate requires a flight time.' },
+                { c: 'new', t: 'The calendar refuses a date before the sector above.' },
+                { c: 'imp', t: 'Durations read 2h 15m; route nodes are cards.' },
             ] },
-            { v: '1.12.0', items: [
-                'The trip bar and the sequential fetch-all.',
-                'Sector cards collapse; dates cascade like LMA.'
+            { v: '1.12.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'The trip bar and the sequential fetch-all.' },
+                { c: 'new', t: 'Sector cards collapse; dates cascade like LMA.' },
             ] },
-            { v: '1.11.0', items: [
-                'Scroll rules follow the bubble’s height.',
-                'Turnaround hints read SQ 852 / 853.'
+            { v: '1.11.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'Scroll rules follow the bubble’s height.' },
+                { c: 'imp', t: 'Turnaround hints read SQ 852 / 853.' },
             ] },
-            { v: '1.10.0', items: [
-                'Flight-number hints per pairing.',
-                'Sector dates run downhill with a no-past rule.'
+            { v: '1.10.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'Flight-number hints per pairing.' },
+                { c: 'new', t: 'Sector dates run downhill with a no-past rule.' },
             ] },
-            { v: '1.9.0', items: [
-                'Lucide icons replace every emoji.',
-                'Shuttle, Direct US and Paxing become toggle switches.',
-                'Calculator dropdowns become pill selectors.'
+            { v: '1.9.0', d: '2026-09-16', items: [
+                { c: 'imp', t: 'Lucide icons replace every emoji.' },
+                { c: 'imp', t: 'Shuttle, Direct US and Paxing become toggle switches.' },
+                { c: 'imp', t: 'Calculator dropdowns become pill selectors.' },
             ] },
-            { v: '1.8.0', items: [
-                'LMA labels and the Shuttle switch.',
-                'Dropdowns reset the card; Default gates Calculate.'
+            { v: '1.8.0', d: '2026-09-16', items: [
+                { c: 'new', t: 'LMA labels and the Shuttle switch.' },
+                { c: 'imp', t: 'Dropdowns reset the card; Default gates Calculate.' },
             ] },
-            { v: '1.7.0', items: [
-                'Calculator modes hide what they don’t need.',
-                'Mode pills carry icons, titles and a Recommended badge.'
+            { v: '1.7.0', d: '2026-09-15', items: [
+                { c: 'new', t: 'Calculator modes hide what they don’t need.' },
+                { c: 'imp', t: 'Mode pills carry icons, titles and a Recommended badge.' },
             ] },
-            { v: '1.6.0', items: [
-                'Settings gains the calculator interface picker.'
+            { v: '1.6.0', d: '2026-09-15', items: [
+                { c: 'new', t: 'Settings gains the calculator interface picker.' },
             ] },
-            { v: '1.5.10', items: [
-                'A calendar hairline.'
+            { v: '1.5.10', d: '2026-09-15', items: [
+                { c: 'imp', t: 'A calendar hairline.' },
             ] },
-            { v: '1.5.9', items: [
-                'LMA out-date uses the next sector’s typed date, so overnight SQ11 never pushes layover-out a day.',
-                'The calendar header reads e.g. Sat, 26 Sept 2026 with a gold hairline.',
-                'A Today / Selected legend with a Today button bottom-left.',
-                'A fixed six-week grid so the window never resizes.',
-                'Month change, day tap and Today animate; Cancel is muted and OK is gold.'
+            { v: '1.5.9', d: '2026-09-15', items: [
+                { c: 'fix', t: 'LMA out-date uses the next sector’s typed date, so overnight SQ11 never pushes layover-out a day.' },
+                { c: 'imp', t: 'The calendar header reads e.g. Sat, 26 Sept 2026 with a gold hairline.' },
+                { c: 'imp', t: 'A Today / Selected legend with a Today button bottom-left.' },
+                { c: 'fix', t: 'A fixed six-week grid so the window never resizes.' },
+                { c: 'imp', t: 'Month change, day tap and Today animate; Cancel is muted and OK is gold.' },
             ] },
             { v: '1.5.8', items: [
-                'Station local times parse as local so LMA dates do not jump a day.',
-                'The Fetch spinner rotates in place.',
-                'Pick Date shows DD/MM/YYYY and stays selected until Today or Tomorrow.',
-                'Shorter past and too-far-ahead Fetch copy.'
+                { c: 'fix', t: 'Station local times parse as local so LMA dates do not jump a day.' },
+                { c: 'imp', t: 'The Fetch spinner rotates in place.' },
+                { c: 'imp', t: 'Pick Date shows DD/MM/YYYY and stays selected until Today or Tomorrow.' },
+                { c: 'imp', t: 'Shorter past and too-far-ahead Fetch copy.' },
             ] },
             { v: '1.5.7', items: [
-                'Fetch no longer rewrites the date you typed.',
-                'The Fetch button cycles Fetch, spinner, tick, Fetch.',
-                'Days outside today−2 to today+6 weeks are crossed out.',
-                'The inflight menu Pick Date uses the same calendar.'
+                { c: 'fix', t: 'Fetch no longer rewrites the date you typed.' },
+                { c: 'imp', t: 'The Fetch button cycles Fetch, spinner, tick, Fetch.' },
+                { c: 'imp', t: 'Days outside today−2 to today+6 weeks are crossed out.' },
+                { c: 'new', t: 'The inflight menu Pick Date uses the same calendar.' },
             ] },
             { v: '1.5.6', items: [
-                'The light-theme calendar is opaque cream, not gold glass.',
-                'Days are tappable again.',
-                'Calculator cards match the inflight-menu width.',
-                'Flight and date share equal width with matching labels.'
+                { c: 'fix', t: 'The light-theme calendar is opaque cream, not gold glass.' },
+                { c: 'fix', t: 'Days are tappable again.' },
+                { c: 'imp', t: 'Calculator cards match the inflight-menu width.' },
+                { c: 'imp', t: 'Flight and date share equal width with matching labels.' },
             ] },
             { v: '1.5.5', items: [
-                'The CrewAssist calendar replaces the system date picker everywhere.',
-                'The first 4-sector Fetch no longer jumps the chat.',
-                'Summaries always open at the top.',
-                'Multi-leg menus pick the unused leg so sectors never repeat.'
+                { c: 'new', t: 'The CrewAssist calendar replaces the system date picker everywhere.' },
+                { c: 'fix', t: 'The first 4-sector Fetch no longer jumps the chat.' },
+                { c: 'fix', t: 'Summaries always open at the top.' },
+                { c: 'fix', t: 'Multi-leg menus pick the unused leg so sectors never repeat.' },
             ] },
             { v: '1.5.4', items: [
-                'Do-not-show-again sits bottom-left of the overlay on one row.',
-                'Direct US ticks if either end of the fetched sector is US.',
-                'LMA Fetch also lands on COP.',
-                'The flight field narrows so the date can show.'
+                { c: 'imp', t: 'Do-not-show-again sits bottom-left of the overlay on one row.' },
+                { c: 'new', t: 'Direct US ticks if either end of the fetched sector is US.' },
+                { c: 'new', t: 'LMA Fetch also lands on COP.' },
+                { c: 'imp', t: 'The flight field narrows so the date can show.' },
             ] },
             { v: '1.5.3', items: [
-                'COP opens at the top of the calculator, not the bottom of the thread.',
-                'Flight, date and Fetch on each IFA sector.',
-                'The LMA calculator can Fetch inbound and outbound or be typed.',
-                'Fetch shows a spinner instead of three dots.'
+                { c: 'imp', t: 'COP opens at the top of the calculator, not the bottom of the thread.' },
+                { c: 'new', t: 'Flight, date and Fetch on each IFA sector.' },
+                { c: 'new', t: 'The LMA calculator can Fetch inbound and outbound or be typed.' },
+                { c: 'imp', t: 'Fetch shows a spinner instead of three dots.' },
             ] },
             { v: '1.5.2', items: [
-                'Per-sector Fetch fills the same hours and layover fields you can still type.',
-                'Per-station Shuttle zeros that station’s LMA only; no hardcoded flight numbers.',
-                'Fetch may pre-tick shuttle on same-day or under-6-hour grounds.'
+                { c: 'new', t: 'Per-sector Fetch fills the same hours and layover fields you can still type.' },
+                { c: 'new', t: 'Per-station Shuttle zeros that station’s LMA only; no hardcoded flight numbers.' },
+                { c: 'new', t: 'Fetch may pre-tick shuttle on same-day or under-6-hour grounds.' },
             ] },
             { v: '1.5.1', items: [
-                'What’s new is a dismissible overlay, not a chat bubble.',
-                'The unofficial tagline sits one row under a CrewAssist-width hairline.',
-                'Summaries show (Paxing); old modifier storage removed.'
+                { c: 'new', t: 'What’s new is a dismissible overlay, not a chat bubble.' },
+                { c: 'imp', t: 'The unofficial tagline sits one row under a CrewAssist-width hairline.' },
+                { c: 'imp', t: 'Summaries show (Paxing); old modifier storage removed.' },
             ] },
             { v: '1.5.0', items: [
-                'The What’s new overlay, turnaround dates and last-5 flight chips.',
-                'Calculator date and timezone fixes.'
+                { c: 'new', t: 'The What’s new overlay, turnaround dates and last-5 flight chips.' },
+                { c: 'fix', t: 'Calculator date and timezone fixes.' },
             ] },
             { v: '1.4.29', items: [
-                'The developer rates editor: paired ranks, shared SDP thresholds, iOS-safe collapsed accordions.'
+                { c: 'new', t: 'The developer rates editor: paired ranks, shared SDP thresholds, iOS-safe collapsed accordions.' },
             ] },
             { v: '1.4.26', items: [
-                'Summary overlay polish: money formatting, aligned B/L/D badges, IFA sector labels.'
+                { c: 'imp', t: 'Summary overlay polish: money formatting, aligned B/L/D badges, IFA sector labels.' },
             ] },
             { v: '1.4.24', items: [
-                'Printer and viewer signed off as a pair: view/print switch, sector tabs, zoom flags, compact invert and export.'
+                { c: 'new', t: 'Printer and viewer signed off as a pair: view/print switch, sector tabs, zoom flags, compact invert and export.' },
             ] },
             { v: '1.4.23', items: [
-                'Multi-staged scrolling snaps the chat to new content on mobile.',
-                'Safe HTML insertion ends the null-reference crashes on iOS.',
-                'Dropdowns push content down instead of blocking text.'
+                { c: 'new', t: 'Multi-staged scrolling snaps the chat to new content on mobile.' },
+                { c: 'fix', t: 'Safe HTML insertion ends the null-reference crashes on iOS.' },
+                { c: 'imp', t: 'Dropdowns push content down instead of blocking text.' },
             ] },
             { v: '1.4.19', items: [
-                'All primary buttons share the premium navy-and-gold pill design.',
-                'Calculator buttons stay disabled until every visible field is filled.'
+                { c: 'imp', t: 'All primary buttons share the premium navy-and-gold pill design.' },
+                { c: 'new', t: 'Calculator buttons stay disabled until every visible field is filled.' },
             ] },
             { v: '1.4.15', items: [
-                'Pills and tabs switch Meals, Drinks, Snacks and Amenities.',
-                'Single-service flights hide the tab menu.',
-                'Menus categorise strictly as International or Ethnic.'
+                { c: 'new', t: 'Pills and tabs switch Meals, Drinks, Snacks and Amenities.' },
+                { c: 'imp', t: 'Single-service flights hide the tab menu.' },
+                { c: 'imp', t: 'Menus categorise strictly as International or Ethnic.' },
             ] },
             { v: '1.4.9', items: [
-                'A full-screen, scrollable glassmorphic menu sheet.',
-                'The Route Hero Card: times, IATA codes, cities, a dotted flight arc and UTC duration.',
-                'A sticky navigation header and Cabin, Sector and Cuisine dropdowns.'
+                { c: 'new', t: 'A full-screen, scrollable glassmorphic menu sheet.' },
+                { c: 'new', t: 'The Route Hero Card: times, IATA codes, cities, a dotted flight arc and UTC duration.' },
+                { c: 'new', t: 'A sticky navigation header and Cabin, Sector and Cuisine dropdowns.' },
             ] },
             { v: '1.4.0', items: [
-                'A Vercel Edge proxy securely fetches live menu JSON past CORS and firewalls.',
-                'A step-by-step chat flow asks flight number, date and cabin before querying.'
+                { c: 'new', t: 'A Vercel Edge proxy securely fetches live menu JSON past CORS and firewalls.' },
+                { c: 'new', t: 'A step-by-step chat flow asks flight number, date and cabin before querying.' },
             ] },
             { v: '1.3.12', items: [
-                'A glassmorphic breakdown screen for calculated allowances.',
-                'Day-by-day breakfast, lunch and dinner stipends beneath the grand total.'
+                { c: 'new', t: 'A glassmorphic breakdown screen for calculated allowances.' },
+                { c: 'new', t: 'Day-by-day breakfast, lunch and dinner stipends beneath the grand total.' },
             ] },
             { v: '1.3.7', items: [
-                'A local IATA airport database fills city and country as you type.',
-                'SIA business rules compute exact IFA and LMA, with cascading layover dates and multi-station routing.'
+                { c: 'new', t: 'A local IATA airport database fills city and country as you type.' },
+                { c: 'new', t: 'SIA business rules compute exact IFA and LMA, with cascading layover dates and multi-station routing.' },
             ] },
             { v: '1.3.0', items: [
-                'Interactive chat forms for COP, IFA and LMA calculations.',
-                'Time inputs auto-format to HH:MM within valid 24-hour limits.'
+                { c: 'new', t: 'Interactive chat forms for COP, IFA and LMA calculations.' },
+                { c: 'new', t: 'Time inputs auto-format to HH:MM within valid 24-hour limits.' },
             ] },
             { v: '1.2.3', items: [
-                'A scrollable row of quick-action chips.',
-                'A keyword parser routes text input to the right feature.'
+                { c: 'new', t: 'A scrollable row of quick-action chips.' },
+                { c: 'new', t: 'A keyword parser routes text input to the right feature.' },
             ] },
             { v: '1.2.0', items: [
-                'The home screen becomes a mobile-first chat for all interactions.',
-                'Time-aware greetings that use your name and rank.'
+                { c: 'new', t: 'The home screen becomes a mobile-first chat for all interactions.' },
+                { c: 'new', t: 'Time-aware greetings that use your name and rank.' },
             ] },
             { v: '1.1.4', items: [
-                'A Feedback and Support section with a Telegram button.',
-                'Hidden Developer Mode, unlocked by ten logo taps, edits calculation modifiers via JSON.'
+                { c: 'new', t: 'A Feedback and Support section with a Telegram button.' },
+                { c: 'new', t: 'Hidden Developer Mode, unlocked by ten logo taps, edits calculation modifiers via JSON.' },
             ] },
             { v: '1.1.0', items: [
-                'The onboarding screen captures Name, Gender and Crew Rank.',
-                'A glassmorphic bottom-sheet settings menu.'
+                { c: 'new', t: 'The onboarding screen captures Name, Gender and Crew Rank.' },
+                { c: 'new', t: 'A glassmorphic bottom-sheet settings menu.' },
             ] },
             { v: '1.0.0', items: [
-                'Initial release of the Progressive Web App framework.',
-                'Offline caching and mobile installation support.',
-                'The official SIA palette: navy, charcoal and gold accents.',
-                'An animated starry night sky canvas background.',
-                'Light and Dark mode toggles.',
-                'The custom gold folded paper plane logo.'
-            ] }
-        ];
+                { c: 'new', t: 'Initial release of the Progressive Web App framework.' },
+                { c: 'new', t: 'Offline caching and mobile installation support.' },
+                { c: 'new', t: 'The official SIA palette: navy, charcoal and gold accents.' },
+                { c: 'new', t: 'An animated starry night sky canvas background.' },
+                { c: 'new', t: 'Light and Dark mode toggles.' },
+                { c: 'new', t: 'The custom gold folded paper plane logo.' },
+            ] },
+        ];;
 
         function semverCmp(a, b) {
             const pa = String(a || '').split('.').map(Number), pb = String(b || '').split('.').map(Number);
@@ -2498,6 +2583,20 @@
             if (clClose) clClose.addEventListener('click', closeChangelog);
             const clBackdrop = document.getElementById('ca-changelog-backdrop');
             if (clBackdrop) clBackdrop.addEventListener('click', closeChangelog);
+            const clChips = document.getElementById('ca-cl-chips');
+            if (clChips) clChips.addEventListener('click', (e) => {
+                const chip = e.target && e.target.closest ? e.target.closest('.ca-cl-chip') : null;
+                if (!chip) return;
+                changelogState.filter = chip.getAttribute('data-filter') || 'all';
+                clPaintControls();
+                renderChangelogSheet();
+            });
+            const clSortBtn = document.getElementById('ca-cl-sort');
+            if (clSortBtn) clSortBtn.addEventListener('click', () => {
+                changelogState.sort = changelogState.sort === 'new' ? 'old' : 'new';
+                clPaintControls();
+                renderChangelogSheet();
+            });
             document.getElementById('btn-reset').addEventListener('click', () => {
                 // v1.29.0: two-tap — an accidental tap must not wipe a session
                 // that still has built, unsaved cards in it.
@@ -2724,13 +2823,14 @@
                 head.className = 'ca-micro font-bold uppercase tracking-wider text-sia-gold pt-2 mt-1 border-t ca-hairline' + (i === 0 ? ' border-t-0 pt-0 mt-0' : '');
                 head.textContent = 'v' + en.v;
                 list.appendChild(head);
-                en.items.forEach((line) => {
+                en.items.forEach((it) => {
+                    if (!it || !it.t) return;
                     const row = document.createElement('p');
                     row.className = 'pl-3 relative';
                     const dot = document.createElement('span');
                     dot.className = 'absolute left-0 top-[0.55em] w-1.5 h-1.5 rounded-full bg-sia-gold';
                     row.appendChild(dot);
-                    row.appendChild(document.createTextNode(line));
+                    row.appendChild(document.createTextNode(it.t));
                     list.appendChild(row);
                 });
             });
@@ -2752,17 +2852,162 @@
             try { lucide.createIcons(); } catch (e) {}
         }
 
-        // v1.35.0: Settings \u2192 Changelog — every release since inception,
-        // newest first, from the same APP_CHANGELOG the What's New delta
-        // reads. Extended every release by appending one entry at the top.
+        // v1.35.0 hotfix 3 (owner spec, no version bump): the Settings
+        // changelog is redesigned into a self-contained viewer over the same
+        // APP_CHANGELOG the What's New delta reads - filter chips (All / New /
+        // Fixes / Improvements), a newest-first vs oldest-first sort toggle,
+        // a "What's new for you" summary card (the unseen delta, or the
+        // current release when caught up), sticky version headers with
+        // NEW / CURRENT badges and relative dates, categorised rows
+        // (new / fix / imp / fun) and an empty state. State resets on every
+        // open; What's New itself keeps the plain renderChangelogInto.
+        var changelogState = { filter: 'all', sort: 'new' };
+        const CL_CATS = {
+            new: { label: 'New', tag: 'NEW', icon: 'sparkles' },
+            fix: { label: 'Fixes', tag: 'FIX', icon: 'bug' },
+            imp: { label: 'Improvements', tag: 'IMPROVE', icon: 'wrench' },
+            fun: { label: 'Fun', tag: 'FUN', icon: 'smile' }
+        };
+        const CL_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
+        function clRelDate(d) {
+            // Relative release date: Today / Yesterday / N days ago / Month Year.
+            // Pre-v1.5.9 releases carry no date and render nothing.
+            if (!d) return '';
+            const p = d.split('-').map(Number);
+            const then = new Date(p[0], p[1] - 1, p[2]);
+            const now = new Date();
+            const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const diff = Math.round((t0 - then) / 86400000);
+            if (diff <= 0) return 'Today';
+            if (diff === 1) return 'Yesterday';
+            if (diff <= 6) return diff + ' days ago';
+            return CL_MONTHS[p[1] - 1] + ' ' + p[0];
+        }
+        function clEntriesForRender() {
+            let list = APP_CHANGELOG.filter((en) => en && en.v && en.items && en.items.length);
+            if (changelogState.filter !== 'all') {
+                list = list.map((en) => ({ v: en.v, d: en.d, items: en.items.filter((it) => it && it.c === changelogState.filter) })).filter((en) => en.items.length);
+            }
+            return changelogState.sort === 'old' ? list.slice().reverse() : list;
+        }
+        function clPaintControls() {
+            document.querySelectorAll('#ca-cl-chips .ca-cl-chip').forEach((chip) => {
+                const on = chip.getAttribute('data-filter') === changelogState.filter;
+                chip.classList.toggle('ca-cl-chipon', on);
+                chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            const sort = document.getElementById('ca-cl-sort');
+            if (sort) {
+                sort.innerHTML = changelogState.sort === 'new'
+                    ? '<i data-lucide="arrow-down-wide-narrow" class="w-4 h-4"></i>'
+                    : '<i data-lucide="arrow-up-wide-narrow" class="w-4 h-4"></i>';
+                sort.setAttribute('aria-label', changelogState.sort === 'new' ? 'Newest first. Tap for oldest first.' : 'Oldest first. Tap for newest first.');
+            }
+        }
+        function renderClSummary() {
+            const line = document.getElementById('ca-cl-sumline');
+            const pills = document.getElementById('ca-cl-sumpills');
+            if (!line || !pills) return;
+            const delta = wnPendingEntries();
+            const scope = delta.length ? delta : [APP_CHANGELOG[0]];
+            const n = scope.reduce((a, en) => a + (en.items ? en.items.length : 0), 0);
+            if (delta.length) {
+                line.textContent = delta.length === 1
+                    ? 'You missed ' + n + (n === 1 ? ' update' : ' updates') + ' in v' + APP_VERSION + '.'
+                    : 'You missed ' + n + ' updates across v' + delta[delta.length - 1].v + ' \u2192 v' + APP_VERSION + '.';
+            } else {
+                line.textContent = 'You are all caught up on v' + APP_VERSION + '.';
+            }
+            pills.textContent = '';
+            const counts = { new: 0, fix: 0, imp: 0, fun: 0 };
+            scope.forEach((en) => (en.items || []).forEach((it) => { if (it && counts[it.c] !== undefined) counts[it.c]++; }));
+            [['new', 'new feature'], ['imp', 'improvement']].forEach((pair) => {
+                if (!counts[pair[0]]) return;
+                const pill = document.createElement('span');
+                pill.className = 'ca-cl-sumpill';
+                pill.innerHTML = '<i data-lucide="' + CL_CATS[pair[0]].icon + '"></i>' + counts[pair[0]] + ' ' + pair[1] + (counts[pair[0]] === 1 ? '' : 's');
+                pills.appendChild(pill);
+            });
+        }
+        function renderChangelogSheet() {
+            const list = document.getElementById('ca-changelog-list');
+            const empty = document.getElementById('ca-cl-empty');
+            if (!list) return;
+            list.textContent = '';
+            const seen = wnSeenVersion();
+            const entries = clEntriesForRender();
+            entries.forEach((en, gi) => {
+                const group = document.createElement('div');
+                group.className = 'ca-cl-group';
+                group.style.animationDelay = Math.min(gi * 25, 350) + 'ms';
+                const head = document.createElement('div');
+                head.className = 'ca-cl-vhead';
+                const vnum = document.createElement('span');
+                vnum.className = 'ca-micro font-bold uppercase tracking-wider text-sia-gold';
+                vnum.textContent = 'v' + en.v;
+                head.appendChild(vnum);
+                if (semverCmp(en.v, seen) > 0) {
+                    const b = document.createElement('span');
+                    b.className = 'ca-cl-badge ca-cl-badge-new';
+                    b.textContent = 'NEW';
+                    head.appendChild(b);
+                } else if (en.v === APP_VERSION) {
+                    const b = document.createElement('span');
+                    b.className = 'ca-cl-badge ca-cl-badge-cur';
+                    b.textContent = 'CURRENT';
+                    head.appendChild(b);
+                }
+                const rel = clRelDate(en.d);
+                if (rel) {
+                    const r = document.createElement('span');
+                    r.className = 'ca-cl-vdate';
+                    r.textContent = rel;
+                    head.appendChild(r);
+                }
+                group.appendChild(head);
+                en.items.forEach((it) => {
+                    const meta = CL_CATS[it && it.c] || CL_CATS.imp;
+                    const row = document.createElement('div');
+                    row.className = 'ca-cl-row';
+                    const dot = document.createElement('span');
+                    dot.className = 'ca-cl-dot';
+                    row.appendChild(dot);
+                    const tag = document.createElement('span');
+                    tag.className = 'ca-cl-tag ca-cl-tag-' + ((it && it.c) || 'imp');
+                    tag.innerHTML = '<i data-lucide="' + meta.icon + '"></i>' + meta.tag;
+                    row.appendChild(tag);
+                    const txt = document.createElement('span');
+                    txt.className = 'ca-cl-text';
+                    txt.textContent = it.t;
+                    row.appendChild(txt);
+                    group.appendChild(row);
+                });
+                list.appendChild(group);
+            });
+            if (empty) {
+                if (entries.length) {
+                    empty.classList.add('hidden');
+                    empty.classList.remove('flex');
+                } else {
+                    empty.classList.remove('hidden');
+                    empty.classList.add('flex');
+                    const msg = empty.querySelector('p');
+                    if (msg) msg.textContent = 'No ' + String((CL_CATS[changelogState.filter] || {}).label || 'matching').toLowerCase() + ' entries.';
+                }
+            }
+            try { lucide.createIcons(); } catch (e) {}
+        }
         function openChangelog() {
             const backdrop = document.getElementById('ca-changelog-backdrop');
             const sheet = document.getElementById('ca-changelog-sheet');
             const list = document.getElementById('ca-changelog-list');
             const cur = document.getElementById('ca-changelog-cur');
             if (!backdrop || !sheet || !list) return;
+            changelogState = { filter: 'all', sort: 'new' };
+            clPaintControls();
             if (cur) cur.textContent = APP_VERSION;
-            renderChangelogInto(list, APP_CHANGELOG);
+            renderClSummary();
+            renderChangelogSheet();
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             backdrop.classList.remove('hidden');
             setTimeout(() => {
@@ -2771,7 +3016,6 @@
             }, 10);
             try { lucide.createIcons(); } catch (e) {}
         }
-
         function closeChangelog() {
             const backdrop = document.getElementById('ca-changelog-backdrop');
             const sheet = document.getElementById('ca-changelog-sheet');
