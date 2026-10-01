@@ -2,6 +2,17 @@
 // pills (gold Reset above red Clear All Data) and the 10-tap dev-mode reveal.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
+
+const mkUntil = (d) => async (cond, ms) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < (ms || 10000)) {
+        let ok = false;
+        try { ok = (typeof cond === 'string') ? !!d.querySelector(cond) : !!cond(); } catch (e) { ok = false; }
+        if (ok) return true;
+        await wait(100);
+    }
+    return false;
+};
 (async () => {
   const { w, d } = await boot(APP);
   const card = d.getElementById('settings-developer');
@@ -157,26 +168,35 @@ const { R, boot, wait, APP } = H;
     // E5 (v1.32.1): LMA breakdown figures match IFA body size
     R.ok(src.includes('<span class="ml-2 text-sm font-bold ca-amt text-gray-800 dark:text-gray-200">'), 'LMA day-cost figures step up to IFA body size (E5, v1.32.1)');
     R.ok(src.includes('<span class="text-sia-gold ca-amt text-sm">'), 'LMA meal figures step up to IFA body size (E5, v1.32.1)');
-    // E6 (v1.32.1, owner revision): every change earns one concise pointer —
-    // one sentence each, twelve words at most, no accumulating old releases
-    const wnMatch = src.match(/APP_WHAT_NEW = \[([\s\S]*?)\];/);
-    R.ok(!!wnMatch, "what's-new parses as a list (E6)");
-    if (wnMatch) {
-      const items = [...wnMatch[1].matchAll(/'([^']*)'/g)].map((m) => m[1]);
-      R.ok(items.length >= 1, "what's-new carries one pointer per change (E6)");
-      items.forEach((line) => {
-        R.ok(line.indexOf('. ') === -1 && /[.!?]$/.test(line), `what's-new is one sentence: "${line}" (E6)`);
-        R.ok(line.split(/\s+/).length <= 12, `what's-new stays within twelve words: "${line}" (E6)`);
+    // E6 (v1.35.0, owner ruling): the versioned APP_CHANGELOG drives both the
+    // What's New delta and the Settings changelog. The CURRENT release's
+    // pointers stay one sentence of at most twelve words; versions run
+    // strictly descending, newest first; the delta machinery tracks what the
+    // crew has seen (crewAssist.wnSeen) so no release replays.
+    const appVer = (src.match(/(?:const|var) APP_VERSION = '([^']+)';/) || [])[1];
+    const clMatch = src.match(/const APP_CHANGELOG = \[([\s\S]*?)\n\s*\];/);
+    R.ok(!!clMatch, 'the changelog parses as a list (E6)');
+    if (clMatch) {
+      const entries = [...clMatch[1].matchAll(/v:\s*'([^']+)',\s*items:\s*\[([\s\S]*?)\]/g)].map((m) => ({ v: m[1], items: [...m[2].matchAll(/'([^']*)'/g)].map((x) => x[1]) }));
+      R.ok(entries.length >= 60, `the changelog covers every version since inception (${entries.length} entries) (E6)`);
+      R.eq(entries[0].v, appVer, 'the newest changelog entry is the current release (E6)');
+      for (let i = 1; i < entries.length; i++) {
+        const [a, b] = [entries[i - 1].v, entries[i].v].map((v2) => v2.split('.').map(Number));
+        const descending = (a[0] - b[0]) || (a[1] - b[1]) || (a[2] - b[2]);
+        R.ok(descending > 0, `changelog versions run strictly descending: v${entries[i - 1].v} then v${entries[i].v} (E6)`);
+      }
+      R.ok(entries[0].items.length >= 1, 'the current release carries at least one pointer (E6)');
+      entries[0].items.forEach((line) => {
+        R.ok(line.indexOf('. ') === -1 && /[.!?]$/.test(line), `current-release pointer is one sentence: "${line}" (E6)`);
+        R.ok(line.split(/\s+/).length <= 12, `current-release pointer stays within twelve words: "${line}" (E6)`);
       });
-      R.ok(!/v1\.3[01]/.test(wnMatch[1]), "what's-new never accumulates old releases (E6)");
-      // v1.34.3 (owner ruling): the list holds ONLY the current release —
-      // every line is tagged, and a line tagged with any other version
-      // (including a carry-over from the release before) fails here.
-      const appVer = (src.match(/const APP_VERSION = '([^']+)';/) || [])[1];
-      const tagged = [...wnMatch[1].matchAll(/'([^']*)'[^\n]*\/\/\s*(v[0-9.]+)/g)];
-      R.eq(tagged.length, items.length, "every what's-new line carries its release tag (E6)");
-      tagged.forEach((t) => R.eq(t[2], 'v' + appVer, `what's-new line is from the current release: "${t[1]}" (E6)`));
     }
+    // the delta machinery + the scrollable, headered list (owner spec)
+    R.ok(src.includes('function wnPendingEntries') && src.includes("localStorage.getItem('crewAssist.wnSeen')"), "what's new tracks the version the crew last saw (E6)");
+    R.ok(src.includes('function wnSeenVersion') && src.includes('APP_CHANGELOG[1] && APP_CHANGELOG[1].v'), 'a pre-changelog device defaults to the release before current (E6)');
+    R.ok(/id="whatsnew-list"[^>]*max-h-\[50vh\] overflow-y-auto/.test(src), "the what's-new list scrolls when a big jump brings many versions (E6)");
+    R.ok(src.includes('function renderChangelogInto'), 'one renderer draws both the delta and the changelog overlay (E6)');
+    R.ok(src.includes('id="ca-changelog-sheet"') && src.includes('id="btn-changelog"'), 'Settings opens the full changelog overlay (E6)');
     // ---- v1.33.0: the review batch (contrast, targets, SR, CSV, hints) ----
     R.ok(src.includes('ui-input text-gray-600 ob-gender-btn'), 'unselected onboarding buttons read at gray-600 (was 2.26:1)');
     R.ok(src.includes("sr.className = 'sr-only'; sr.textContent = ' "), 'undo toasts speak their deadline to screen readers');
@@ -237,6 +257,70 @@ const { R, boot, wait, APP } = H;
     R.ok(d.activeElement === d.getElementById('btn-settings'), 'closing returns focus to the opener (M3)');
     R.ok(src.includes('caSheetFocusIn(sheet);') && src.includes('caSheetFocusOut(sheet);') && src.includes('caSheetFocusIn(s);') && src.includes('caSheetFocusOut(s);') && src.includes("caSheetFocusIn(archEl('ca-arch-sub-sheet'));"), 'all four sheets wire the focus trap (M3)');
     void w;
+  }
+
+  // --- v1.35.0: what's-new delta + the Settings changelog ---
+  {
+    // fresh stamp (returning device, no wnSeen): the delta is exactly the current release
+    const a = await boot(APP, { keepWhatsNew: true, seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+    } });
+    const aUntil = mkUntil(a.d);
+    R.ok(await aUntil(() => !a.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 5000), "a fresh device sees the what's-new sheet");
+    await aUntil(() => (a.d.getElementById('whatsnew-list') || {}).childElementCount > 0, 3000);
+    const heads = a.d.querySelectorAll('#whatsnew-list .ca-micro');
+    R.eq(heads.length, 1, 'a device without a stamp sees only the current release (the pre-changelog default)');
+    R.ok((heads[0].textContent || '').includes(a.w.APP_VERSION), 'the header names the current version');
+    R.eq(a.w.localStorage.getItem('crewAssist.wnSeen'), a.w.APP_VERSION, 'opening the sheet stamps the seen version');
+    a.d.getElementById('whatsnew-close').click();
+    await aUntil(() => a.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 3000);
+    a.w.eval('maybeWhatsNewOverlay()');
+    await a.w.eval('new Promise((r) => requestAnimationFrame(r))');
+    R.ok(a.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 'closing counts as seen — no replay on the next launch');
+  }
+  {
+    // a device last seen on 1.29.0: the delta spans every version since
+    const b = await boot(APP, { keepWhatsNew: true, seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', '1.29.0');
+    } });
+    const bUntil = mkUntil(b.d);
+    R.ok(await bUntil(() => !b.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 5000), 'the sheet opens for a big version jump');
+    await bUntil(() => (b.d.getElementById('whatsnew-list') || {}).childElementCount > 10, 3000);
+    const heads = [...b.d.querySelectorAll('#whatsnew-list .ca-micro')].map((h) => h.textContent);
+    R.ok(heads.length >= 17, `a 1.29.0 device sees every version since (${heads.length} headers)`);
+    R.ok(heads[0].includes(b.w.APP_VERSION) && heads[heads.length - 1].includes('1.29.1'), 'the delta runs newest first down to the first missed release');
+    const listEl = b.d.getElementById('whatsnew-list');
+    R.ok(listEl.className.includes('max-h-[50vh]') && listEl.className.includes('overflow-y-auto'), 'the long list is scrollable');
+    // "Do not show again" now means for good
+    b.d.getElementById('whatsnew-hide').checked = true;
+    b.d.getElementById('whatsnew-close').click();
+    await bUntil(() => b.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 3000);
+    R.eq(b.w.localStorage.getItem('crewAssist.hideWhatsNew'), '1', 'the checkbox writes the hide-forever stamp');
+  }
+  {
+    // up-to-date device: no sheet at all
+    const c = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
+    } });
+    const cUntil = mkUntil(c.d);
+    await cUntil(() => !c.d.getElementById('main-view') || true, 100);
+    R.ok(c.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 'an up-to-date device sees no sheet');
+    R.eq(String(c.w.eval('wnPendingEntries().length')), '0', 'the delta is empty on the current version');
+    // the Settings changelog: every version since inception
+    c.w.eval('openSettings()');
+    await cUntil(() => !c.d.getElementById('settings-backdrop').classList.contains('hidden'), 3000);
+    c.d.getElementById('btn-changelog').click();
+    await cUntil(() => !c.d.getElementById('ca-changelog-sheet').classList.contains('hidden'), 3000);
+    await cUntil(() => (c.d.getElementById('ca-changelog-list') || {}).childElementCount > 50, 3000);
+    const clHeads = [...c.d.querySelectorAll('#ca-changelog-list .ca-micro')].map((h) => h.textContent);
+    R.ok(clHeads.length >= 60, `the changelog lists every version (${clHeads.length} headers)`);
+    R.ok(clHeads[0].includes(c.w.APP_VERSION), 'the changelog opens on the current version');
+    R.ok(clHeads[clHeads.length - 1].includes('1.5.9'), 'the changelog reaches back to the first signed-off release');
+    R.ok((c.d.getElementById('ca-changelog-cur') || {}).textContent === c.w.APP_VERSION, 'the changelog names the running version');
+    c.d.getElementById('ca-changelog-close').click();
+    await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
   }
 
   process.exit(R.done() ? 1 : 0);
