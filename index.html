@@ -383,6 +383,14 @@
         html:not(.dark) #whatsnew-backdrop .glass-bubble {
             background: rgba(246, 241, 232, 0.96); /* a cream card on the dim scrim */
         }
+        /* v1.34.2 (owner report): every pop-up alert rides the same glass
+           over the same scrim — the gold tint composites to dark olive with
+           near-black text (about 3.4:1). Alerts and confirms get the cream
+           card too, so "Delete all entries?" is READABLE in light mode
+           before anyone taps OK. */
+        html:not(.dark) #app-dialog-backdrop .glass-bubble {
+            background: rgba(246, 241, 232, 0.96);
+        }
         /* v1.31.0: gold TEXT gets its own ink. The brand gold stays for fills,
            borders and dark mode — but #c9a227 on white is 2.42:1 (WCAG AA needs
            4.5:1), so light-mode text uses a measured 5.61:1 ink instead. */
@@ -1640,10 +1648,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.34.1';
+        const APP_VERSION = '1.34.2';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.34.2 (E6): one pointer per change, still only this release.
         // v1.34.1 (E6): one pointer per change, still only this release.
         // v1.34.0 (E6): one pointer per change, still only this release.
         // v1.33.3 (E6): one pointer per change, still only this release.
@@ -1657,7 +1666,10 @@
         const APP_WHAT_NEW = [
             'Protein can print in brackets instead of boxes.',
             'Hidden proteins surface on cold refreshments too.',
-            'Duty menus survive any number of menu searches.'
+            'Duty menus survive any number of menu searches.',
+            'Pop-up alerts are readable in light mode.',
+            'The duty card always opens its own menu.',
+            'Deleting earnings keeps a longer Undo.'
         ];
 
         // State
@@ -8716,7 +8728,10 @@ function getRegionForAirport(code) {
                 const ids = {}; vis.forEach((e) => { ids[e.id] = 1; });
                 const removed = loadArchive().filter((x) => ids[x.id]);
                 persistArchive(loadArchive().filter((x) => !ids[x.id]));
-                archToast('Deleted ' + removed.length + ' entr' + (removed.length === 1 ? 'y' : 'ies'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
+                // v1.34.2: the whole-archive delete is the biggest action
+                // there is — it holds its Undo for the full ten seconds, the
+                // E1 window a whole-roster save gets.
+                archToast('Deleted ' + removed.length + ' entr' + (removed.length === 1 ? 'y' : 'ies'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); }, 10000);
                 renderArch();
             });
         }
@@ -9418,6 +9433,11 @@ function getRegionForAirport(code) {
             currentMenuSearch.flightNumber = fn;
             currentMenuSearch.date = ymd;
             currentMenuSearch.cabins = saved.cabinClasses;
+            // v1.34.2 (owner report): a searched flight leaves its sector
+            // picks on currentMenuSearch — the duty's legs then filtered out
+            // and the sheet kept showing the OTHER flight's menu until
+            // restart. The card opens the WHOLE duty: no inherited filter.
+            currentMenuSearch.selectedSectors = [];
             currentMenuSearch.selectedSector = '';
             currentMenuSearch.aircraftType = saved.aircraftType || saved.aircraft || '';
             openMenuViewerForCabins(fn, ymd, saved.cabinClasses);
@@ -9454,7 +9474,7 @@ function getRegionForAirport(code) {
 
 // Inflight Menu Viewer Logic (Step 5)
         
-        let currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', selectedSector: '', imageByName: Object.create(null), imageIdByName: Object.create(null) };
+        var currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', selectedSector: '', imageByName: Object.create(null), imageIdByName: Object.create(null) }; // var: the sector-filter state is reachable by the tests
         let menuViewState = { category: 'meals', mealTab: 0 };
         let currentMealServices = [];
         let menuLoadGen = 0;
@@ -9661,6 +9681,9 @@ function getRegionForAirport(code) {
                 const code = leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
                 return currentMenuSearch.selectedSectors.includes(code);
             });
+            // v1.34.2: a sector filter that matches nothing must never leave
+            // the previous flight's menu on screen — fall back to every leg.
+            if (!filteredLegs.length && data.legs.length) filteredLegs.push(...data.legs);
             
             const legCode = (leg) => leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
             const wanted = currentMenuSearch.selectedSector;
@@ -10846,6 +10869,14 @@ function getRegionForAirport(code) {
         }
 
         function filterPrintLegs(legs) {
+            // v1.34.2: an empty match must not produce an empty sheet —
+            // same fallback as the viewer.
+            if (Array.isArray(legs) && legs.length && currentMenuSearch.selectedSectors && currentMenuSearch.selectedSectors.length) {
+                const kept = legs.filter((leg) => currentMenuSearch.selectedSectors.includes(
+                    leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode));
+                if (kept.length) return kept;
+                return legs;
+            }
             if (!currentMenuSearch.selectedSectors || currentMenuSearch.selectedSectors.length === 0) {
                 return legs || [];
             }

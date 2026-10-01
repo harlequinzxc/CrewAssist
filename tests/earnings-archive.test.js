@@ -645,6 +645,15 @@ const fs = require('fs');
     R.ok(src.includes('transition-opacity duration-200'), 'search clear button fades');
   }
 
+  // --- v1.34.2 (owner report): light-mode pop-ups readable + whole-archive delete holds a 10s Undo ---
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    // the gold-tint glass over the dim scrim composites to dark olive with
+    // near-black text (~3.4:1) — unreadable confirms ("Delete all entries?")
+    R.ok(/html:not\(\.dark\) #app-dialog-backdrop \.glass-bubble\s*{[^}]*rgba\(246, 241, 232, 0\.96\)/.test(src), 'the alert/confirm pop-up gets the cream card in light mode');
+    R.ok(src.includes("archToast('Deleted ' + removed.length + ' entr' + (removed.length === 1 ? 'y' : 'ies'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); }, 10000)"), 'deleting entries holds its Undo for the ten-second window');
+  }
+
   // --- v1.32.0 (E1, owner ruling): a confirmed save can be taken back for ten seconds ---
   {
     const { w, d } = await boot(APP);
