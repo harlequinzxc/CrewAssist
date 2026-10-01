@@ -309,7 +309,8 @@ function rosterItems(flight, sector, dateTok, opts) {
       return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
     };
     const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-390), sta: hm(-330), staYmd: ymd(0) };
-    const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: hm(120), staYmd: ymd(0) };
+    const inAirSta = hm(120); // pinned once — a minute roll between seed and assert must not rewrite it
+    const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: inAirSta, staYmd: ymd(0) };
     const statless = { fn: '321', dep: 'SIN', arr: 'HKT', ymd: ymd(0), std: hm(-720) };
     const { d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
@@ -321,7 +322,7 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(!!card, 'the day\u2019s remaining flights render a card');
     const txt = card ? card.textContent : '';
     R.ok(txt.indexOf('SQ 118') === -1, 'a flight that landed hours ago is gone from the card');
-    R.ok(txt.indexOf('SQ 105') >= 0 && txt.indexOf('lands ' + hm(120)) >= 0, 'a leg in the air shows its landing time');
+    R.ok(txt.indexOf('SQ 105') >= 0 && txt.indexOf('lands ' + inAirSta) >= 0, 'a leg in the air shows its landing time');
     R.ok(txt.indexOf('SQ 321') >= 0, 'a flight with no arrival on record is kept for the day');
     R.ok(txt.indexOf('SQ 336') === -1 || txt.indexOf('CDG') === -1, 'the card stays on the current day, not tomorrow');
   }

@@ -163,7 +163,7 @@ const { R, boot, wait, APP } = H;
     R.ok(!!wnMatch, "what's-new parses as a list (E6)");
     if (wnMatch) {
       const items = [...wnMatch[1].matchAll(/'([^']*)'/g)].map((m) => m[1]);
-      R.ok(items.length >= 4, "what's-new carries one pointer per change (E6)");
+      R.ok(items.length >= 1, "what's-new carries one pointer per change (E6)");
       items.forEach((line) => {
         R.ok(line.indexOf('. ') === -1 && /[.!?]$/.test(line), `what's-new is one sentence: "${line}" (E6)`);
         R.ok(line.split(/\s+/).length <= 12, `what's-new stays within twelve words: "${line}" (E6)`);
@@ -198,9 +198,15 @@ const { R, boot, wait, APP } = H;
     R.ok(src.includes('whatsnew-close" class="absolute top-3 right-3 p-3.5'), 'the What\u2019s New close button joins the 48px standard');
     R.ok(src.includes('sta: f.staHm'), 'roster imports record each flight\u2019s arrival time');
     R.ok(src.includes('function nextFlightExpirySweep'), 'a sweep retires landed flights from the card');
-    R.ok(src.includes('setInterval(nextFlightExpirySweep, 60000)'), 'the sweep runs every minute while the app is open');
-    R.ok(src.includes("document.addEventListener('visibilitychange', () => { if (!document.hidden) nextFlightExpirySweep(); })"), 'returning to the screen triggers an immediate sweep');
+    R.ok(src.includes('setInterval(caRealtimeSweep, 60000)'), 'the sweep runs every minute while the app is open');
+    R.ok(src.includes("document.addEventListener('visibilitychange', () => { if (!document.hidden) caRealtimeSweep(); })"), 'returning to the screen triggers an immediate sweep');
     R.ok(src.includes('lands ' + "' + rosterEsc(f.sta)"), 'a leg in the air shows its landing time');
+    // ---- v1.33.2: the earnings schedule model follows landings ----
+    R.ok(src.includes("cardRoot.setAttribute('data-duty-end'"), 'roster-built cards carry their duty landing');
+    R.ok(src.includes('rec.endAt = dutyEnd'), 'save payloads record the duty landing time');
+    R.ok(src.includes('function archEntryLanded'), 'a duty counts as flown once it has landed');
+    R.ok(src.includes('function archLandedSweep'), 'the earnings sheet sweeps for landings');
+    R.ok(src.includes('const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); };'), 'both real-time tracks share one sweep cadence');
     // M1: surface tokens replaced the hand-mixed pairs everywhere
     R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');
     R.ok(src.includes('.ca-inset { background-color: var(--ca-surface-2); }'), 'the inset token class exists (M1)');

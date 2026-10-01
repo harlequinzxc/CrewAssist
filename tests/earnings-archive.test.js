@@ -735,7 +735,75 @@ const fs = require('fs');
     void d;
   }
 
-  process.exit(R.done() ? 1 : 0);
+function todayYmd() {
+  const t = new Date();
+  return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+}
+
+  // ---- v1.33.2: a duty counts as flown when it LANDS, not at midnight ----
+  {
+    // Frozen midday Sep 26: both duties are TODAY, so the old date rule
+    // would call them both un-flown; the landing times say otherwise.
+    const { w, d } = await boot(APP, { now: '2026-09-26T12:00:00+08:00' });
+    const seed = (id, endAtIso, amount) => ({ id: id, savedAt: '2026-09-26T08:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-26', flightType: 'Layover', stationDisplay: 'KTM', amount: amount, endAt: new Date(endAtIso).getTime() });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      seed('E1', '2026-09-26T03:45:00Z', 300), // landed 11:45am local — the owner's case
+      seed('E2', '2026-09-26T15:30:00Z', 200)  // still in the air / to be flown
+    ]));
+    w.showArchiveOverlay();
+    await wait(300);
+    const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(/In progress/.test(headOf('2026-09').textContent), 'one duty still out — the month stays in progress');
+    d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="month"]').click();
+    await wait(60);
+    const ctxM = d.getElementById('ca-arch-m-ctx');
+    R.ok(ctxM.textContent.indexOf('On track for $500.00') !== -1 && ctxM.textContent.indexOf('$200.00 left') !== -1, 'the landed duty counts as earned, the airborne one as left');
+    const body = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
+    R.ok(body.textContent.indexOf('Projected') !== -1, 'the un-landed duty still projects');
+  }
+  {
+    // every duty today has landed → Completed on the day itself (the date
+    // rule alone would have kept it "In progress" until midnight)
+    const { w, d } = await boot(APP, { now: '2026-09-26T12:00:00+08:00' });
+    const seed = (id, endAtIso, amount) => ({ id: id, savedAt: '2026-09-26T08:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-26', flightType: 'Layover', stationDisplay: 'KTM', amount: amount, endAt: new Date(endAtIso).getTime() });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      seed('E1', '2026-09-26T03:45:00Z', 300),
+      seed('E3', '2026-09-26T00:10:00Z', 250)
+    ]));
+    w.showArchiveOverlay();
+    await wait(300);
+    const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(/Completed/.test(headOf('2026-09').textContent), 'a same-day duty that landed reads Completed, not In progress');
+    const body = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
+    R.ok(!body.querySelector('.ca-arch-dot-hollow'), 'no projected row once the day\u2019s duties have landed');
+    // entries without an arrival on record keep the date rule
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'E9', savedAt: '2026-09-26T08:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-26', flightType: 'Layover', stationDisplay: 'HKT', amount: 100 }
+    ]));
+    w.renderArch();
+    await wait(200);
+    R.ok(/In progress/.test(headOf('2026-09').textContent), 'an entry with no arrival on record keeps the date rule (kept for the day)');
+  }
+  {
+    // the live sweep: a duty that lands while the sheet is open flips the
+    // badge in place — the store is aged and the app woken, no reload.
+    const { w, d } = await boot(APP);
+    const base = { id: 'E1', savedAt: new Date().toISOString(), monthKey: String(new Date().getFullYear()) + '-' + String(new Date().getMonth() + 1).padStart(2, '0'), sectorDate: todayYmd(), flightType: 'Layover', stationDisplay: 'KTM', amount: 300 };
+    const mk = base.monthKey;
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([Object.assign({}, base, { endAt: Date.now() + 90000 })]));
+    w.showArchiveOverlay();
+    await wait(300);
+    const headOf = () => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(/In progress/.test(headOf().textContent), 'the still-out duty keeps the month in progress');
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([Object.assign({}, base, { endAt: Date.now() - 60000 })]));
+    d.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(300);
+    R.ok(/Completed/.test(headOf().textContent), 'returning to the screen after the landing flips the badge in place');
+    const rows = d.querySelectorAll('.ca-arch-row').length;
+    R.ok(rows >= 1, 'the re-render keeps the entries visible');
+    void rows;
+  }
+
   // ---- v1.33.0: the month context compares against the month before ----
   {
     // Month scope follows the real calendar (owner ruling): a quiet current
@@ -749,10 +817,15 @@ const fs = require('fs');
     ]));
     w.showArchiveOverlay();
     await wait(300);
+    // the MoM line lives in the month-scope summary — with a quiet current
+    // month it falls back to the newest saved month (May)
+    d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="month"]').click();
+    await wait(60);
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Context', 'the newest month leads the context');
     const ctx = d.getElementById('ca-arch-m-ctx').textContent;
     R.ok(ctx.indexOf('+$400.00 vs Apr 2026') !== -1, 'May carries +$400.00 vs April (MoM in dollars)');
     R.ok(ctx.indexOf('vs LY') === -1, 'no LY chip without a year-ago record to cite');
     R.ok(d.getElementById('ca-arch-m-ctx').innerHTML.indexOf('trending-up') !== -1, 'the up-month shows its trend icon');
   }
+  process.exit(R.done() ? 1 : 0);
 })();

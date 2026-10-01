@@ -1627,10 +1627,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.33.1';
+        const APP_VERSION = '1.33.2';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.33.2 (E6): one pointer per change, still only this release.
         // v1.33.1 (E6): one pointer per change, still only this release.
         // v1.33.0 (E6): one pointer per change, still only this release.
         // v1.32.1 (E6, owner revision): every change earns its own pointer —
@@ -1638,11 +1639,8 @@
         // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
         // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
-            'Light mode fixes faint onboarding and popup text.',
-            'Onboarding fields get visible borders in daylight.',
-            'The popup close button grows to a 48-pixel target.',
-            'Landed flights leave the next-flight card.',
-            'Flights in the air show their landing time.'
+            'Earnings follows each duty to its landing.',
+            'The earnings page updates itself as flights land.'
         ];
 
         // State
@@ -1969,9 +1967,12 @@
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
             // v1.33.1: the next-flight card follows real time — a sweep every
             // minute, plus one the instant the app comes back to the screen
-            // (the 5:58pm unlock after an 11:45am landing).
-            setInterval(nextFlightExpirySweep, 60000);
-            document.addEventListener('visibilitychange', () => { if (!document.hidden) nextFlightExpirySweep(); });
+            // (the 5:58pm unlock after an 11:45am landing). v1.33.2: the
+            // earnings sheet rides the same triggers — a duty that lands while
+            // the page is open flips the badges, projection and bars in place.
+            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); };
+            setInterval(caRealtimeSweep, 60000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) caRealtimeSweep(); });
             // v1.33.0 (owner-approved): the input teaches its own vocabulary —
             // three examples rotate while the box is empty and unfocused, and
             // never change under a typist's thumbs.
@@ -3537,6 +3538,27 @@
 
         function rosterPrefillCard(id, trip) {
             const q = (suf) => document.getElementById(`${id}-${suf}`);
+            // v1.33.2 (owner report): the earnings schedule model follows the
+            // duty's LANDING, not the calendar midnight — the roster's
+            // last-sector arrival rides on the card so a save can record when
+            // the duty actually ends. Hand-built cards carry nothing and keep
+            // the date rule (never guess a time the roster never printed).
+            try {
+                const secs = (trip && trip.sectors) || [];
+                const ls = secs[secs.length - 1];
+                const cardRoot = q('btn-calc') && q('btn-calc').closest('[data-calc-card]');
+                let endMs = 0;
+                if (ls && ls.staHm && cardRoot) {
+                    const base = /^\d{4}-\d{2}-\d{2}$/.test(String(ls.arrDate || '')) ? ls.arrDate : ls.depDate;
+                    const hm = String(ls.staHm).replace(':', '');
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(String(base || '')) && /^\d{4}$/.test(hm)) {
+                        const t0 = new Date(base + 'T00:00:00').getTime();
+                        if (!isNaN(t0)) endMs = t0 + (parseInt(hm.slice(0, 2), 10) * 3600 + parseInt(hm.slice(2), 10) * 60) * 1000;
+                    }
+                }
+                if (endMs > 0) cardRoot.setAttribute('data-duty-end', String(endMs));
+                else if (cardRoot) cardRoot.removeAttribute('data-duty-end');
+            } catch (e) {}
             // Mirrors the calendar-commit path (value -> button label -> input
             // -> change), so every existing handler — cascades, trip bars,
             // Fetch-all re-arm — runs exactly as if the crew typed it.
@@ -7782,7 +7804,10 @@ function getRegionForAirport(code) {
                     if (v && v.trim()) codes.push(v.trim().toUpperCase());
                 });
             }
-            return {
+            // v1.33.2: the duty's landing time, when the roster printed one
+            const cardRoot = document.getElementById(`${id}-btn-calc`);
+            const dutyEnd = cardRoot ? Number(cardRoot.closest('[data-calc-card]').getAttribute('data-duty-end') || 0) : 0;
+            const rec = {
                 id: 'a' + Date.now().toString(36) + Math.floor(Math.random() * 10000),
                 savedAt: new Date().toISOString(),
                 monthKey,
@@ -7791,6 +7816,8 @@ function getRegionForAirport(code) {
                 stationDisplay: codes.length ? codes.join('/') : '\u2014', // 4.11
                 amount: Math.round(amount * 100) / 100,
             };
+            if (dutyEnd > 0) rec.endAt = dutyEnd;
+            return rec;
         }
         // v1.28.1: a trip's signature — same month, first-sector date, type
         // and stations = the same duty. Re-attaching a roster and saving again
@@ -7826,7 +7853,7 @@ function getRegionForAirport(code) {
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
-        const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, insightsAll: false, chartSel: null };
+        const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '' };
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
@@ -7880,8 +7907,19 @@ function getRegionForAirport(code) {
         // flights still to be flown -> in progress, with the projection
         // reading the month's KNOWN schedule total instead of pace math.
         // Future months read "Upcoming" (owner ruling).
+        // v1.33.2 (owner report, same rule as the next-flight card): a duty
+        // counts as flown once it has LANDED — its recorded arrival time —
+        // not at midnight. Entries saved before v1.33.2 have no arrival on
+        // record and keep the date rule; a bad/missing date is never "landed".
+        function archEntryLanded(e, nowMs, today) {
+            const ea = Number(e && e.endAt) || 0;
+            if (ea > 0) return nowMs >= ea;
+            const sd = String((e && e.sectorDate) || '');
+            return /^\d{4}-\d{2}-\d{2}$/.test(sd) ? sd < today : false;
+        }
         function archMonthState(mk, entries) {
             const today = todayLocalYMD();
+            const nowMs = Date.now();
             const es = (entries || []).filter((e) => String(e.monthKey || '').slice(0, 7) === String(mk).slice(0, 7));
             let flown = 0, unflown = 0, unflownCount = 0, last = '', hasDates = false, totalAll = 0;
             es.forEach((e) => {
@@ -7890,7 +7928,7 @@ function getRegionForAirport(code) {
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return;
                 hasDates = true;
                 if (sd > last) last = sd;
-                if (sd < today) flown += Number(e.amount) || 0;
+                if (archEntryLanded(e, nowMs, today)) flown += Number(e.amount) || 0;
                 else { unflown += Number(e.amount) || 0; unflownCount++; }
             });
             let upcomingLeft = 0;
@@ -8173,9 +8211,24 @@ function getRegionForAirport(code) {
         function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); setTimeout(() => { b.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); }
         function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; setTimeout(() => { b.classList.add('hidden'); }, 300); }
 
+        // v1.33.2: a fingerprint of which duties have landed — renderArch
+        // stamps it, the sweep compares it, and the earnings page only
+        // re-renders when a tracked duty actually crosses its landing, so an
+        // open list never scrolls under the crew's thumb.
+        function archLandedSig() {
+            const nowMs = Date.now(), today = todayLocalYMD();
+            return loadArchive().map((e) => (archEntryLanded(e, nowMs, today) ? 1 : 0)).join('');
+        }
+        function archLandedSweep() {
+            const sheet = archEl('ca-arch-backdrop');
+            if (!sheet || sheet.classList.contains('hidden')) return;
+            if (archLandedSig() === archState.landedSig) return;
+            renderArch();
+        }
         function renderArch() {
             const list = archEl('ca-arch-list'), scroll = archEl('ca-arch-scroll');
             const all = loadArchive();
+            archState.landedSig = archLandedSig();
             const keep = scroll ? scroll.scrollTop : 0;
             const q = archState.search.trim().toLowerCase();
             // Search narrows the list (route, month/date, type, amount);

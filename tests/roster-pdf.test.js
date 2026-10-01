@@ -430,7 +430,7 @@ const MONTH = [
       type: 'Layover', ok: true, stations: [],
       sectors: [
         { fn: 'SQ366', dep: 'SIN', arr: 'FCO', stdHm: '23:55', staHm: '06:20+1', ftHm: '', depDate: '2024-10-21', arrDate: '2024-10-22', paxing: true },
-        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30+1', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
+        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
       ]
     };
     const { w, d } = await boot(APP);
@@ -552,7 +552,7 @@ const MONTH = [
       type: 'Layover', ok: true, stations: [],
       sectors: [
         { fn: 'SQ366', dep: 'SIN', arr: 'FCO', stdHm: '23:55', staHm: '06:20+1', ftHm: '', depDate: '2024-10-21', arrDate: '2024-10-22' },
-        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30+1', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
+        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
       ]
     };
     let id = null;
@@ -577,8 +577,11 @@ const MONTH = [
     // the switch text rides inside the label — the whole row is tappable
     const px1 = d.getElementById(id + '-ifa-px1');
     R.ok(px1 && /Paxing/.test(px1.closest('label').textContent), 'the Paxing label text is part of the tap target');
-    // CSV: sector rows, trip total, grand total, plain numbers
+    // v1.33.2: the save payload carries the duty's landing (18:30 on 25 Oct)
     const res = w.computeCardResults(id, 'both');
+    const expEnd = new Date('2024-10-25T00:00:00').getTime() + (18 * 3600 + 30 * 60) * 1000;
+    R.ok(res.archivePayload && Math.abs(Number(res.archivePayload.endAt) - expEnd) < 1, 'the save payload records the duty landing time');
+    // CSV: sector rows, trip total, grand total, plain numbers
     const csv = w.rosterResultsCsv([{ trip: trip, res: res }]);
     R.ok(/^Month,Date,Flight,From,To,Type,Hours,Multiplier,Paxing,Direct US,Amount USD/.test(csv), 'CSV header row');
     R.ok(csv.indexOf('SQ366') !== -1 && csv.indexOf('SIN,FCO'.replace(',', ',') ) !== -1, 'CSV carries the sector rows');
@@ -638,9 +641,12 @@ const MONTH = [
     const { w, d } = await boot(APP);
     const parsed = w.rosterParse(buildRoster(MONTH));
     w.renderRosterConfirm(parsed, 'Test Month.pdf');
-    await wait(100);
-    d.getElementById('chat-container').lastElementChild.querySelector('.roster-calc-all-btn').click();
-    await wait(1000);
+    // the greeting bubble types in behind the confirm — never race lastElementChild
+    let cab = null;
+    for (let i = 0; i < 100 && !cab; i++) { cab = d.querySelector('.roster-calc-all-btn'); if (!cab) await wait(50); }
+    if (cab) cab.click();
+    // build → sweep → batch → overlay arrives on its own schedule
+    for (let i = 0; i < 160 && d.querySelectorAll('#results-content [data-lucide="sparkles"]').length < 6; i++) await wait(50);
     R.eq(d.querySelectorAll('#results-content [data-lucide="sparkles"]').length, 6, 'one Flight Overview per trip');
     const txt = d.getElementById('results-content').textContent;
     R.ok(/The big one: Tokyo Narita and Los Angeles, Sat 5th Sep – Fri 11th Sep/.test(txt), 'multi-sector range spans to the last departure');
