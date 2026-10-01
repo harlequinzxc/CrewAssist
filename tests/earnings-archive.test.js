@@ -8,7 +8,9 @@ const fs = require('fs');
 (async () => {
   // route display + month expansion
   {
-    const { w, d } = await boot(APP);
+    // frozen clock: the block's "current/future month" expectations are
+    // pinned to Sep 2026 and must not drift with the real date
+    const { w, d } = await boot(APP, { now: '2026-09-20T12:00:00+08:00' });
     w.localStorage.setItem('crewAssist.archive', JSON.stringify([
       { id: 'T', savedAt: '2026-10-29T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-29', stationDisplay: 'JNB/SIN', amount: 100 },
       { id: 'M', savedAt: '2026-10-20T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-20', stationDisplay: 'JNB/CPT', amount: 50 },
@@ -609,7 +611,8 @@ const fs = require('fs');
   // v1.29.2: flight-based progress — a fully-flown month reads Completed with
   // a full bar; a pre-saved future month reads Upcoming with its projection
   {
-    const { w, d } = await boot(APP);
+    // frozen late-Sep clock: Sep must stay the current, fully-flown month
+    const { w, d } = await boot(APP, { now: '2026-09-26T12:00:00+08:00' });
     w.localStorage.setItem('crewAssist.archive', JSON.stringify([
       { id: 'C1', savedAt: '2026-09-11T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-10', flightType: 'Layover', stationDisplay: 'KTM', amount: 300 },
       { id: 'C2', savedAt: '2026-09-21T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-20', flightType: 'Turnaround', stationDisplay: 'HKT', amount: 200 },

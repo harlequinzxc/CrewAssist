@@ -190,6 +190,17 @@ const { R, boot, wait, APP } = H;
     R.ok(src.includes('if (bound % 15 === 0)'), 'bulk builds paint icons every 15 cards');
     R.ok(src.includes('const monthOf = (r) =>'), 'combined summaries group by month');
     R.ok(src.includes("doesn't look like a Crew Roster Report"), 'a flightless PDF is told it is not a roster');
+    // ---- v1.33.1: light-mode surfaces + arrival-time next-flight ----
+    R.ok(src.includes('html:not(.dark) #onboarding-view .ui-input'), 'onboarding fields get a light-mode surface and border');
+    R.ok(src.includes('html:not(.dark) #whatsnew-backdrop .glass-bubble'), 'the What\u2019s New bubble gets a light-mode surface');
+    R.ok((src.match(/text-sia-navy\/70 dark:text-white\/15/g) || []).length === 2, 'the tagline and semver step up from navy/20 (1.4:1) to navy/70');
+    R.ok(src.includes('placeholder-gray-600 dark:placeholder-gray-400'), 'the onboarding name placeholder reads at gray-600 in daylight');
+    R.ok(src.includes('whatsnew-close" class="absolute top-3 right-3 p-3.5'), 'the What\u2019s New close button joins the 48px standard');
+    R.ok(src.includes('sta: f.staHm'), 'roster imports record each flight\u2019s arrival time');
+    R.ok(src.includes('function nextFlightExpirySweep'), 'a sweep retires landed flights from the card');
+    R.ok(src.includes('setInterval(nextFlightExpirySweep, 60000)'), 'the sweep runs every minute while the app is open');
+    R.ok(src.includes("document.addEventListener('visibilitychange', () => { if (!document.hidden) nextFlightExpirySweep(); })"), 'returning to the screen triggers an immediate sweep');
+    R.ok(src.includes('lands ' + "' + rosterEsc(f.sta)"), 'a leg in the air shows its landing time');
     // M1: surface tokens replaced the hand-mixed pairs everywhere
     R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');
     R.ok(src.includes('.ca-inset { background-color: var(--ca-surface-2); }'), 'the inset token class exists (M1)');

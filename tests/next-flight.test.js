@@ -298,5 +298,84 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(card && !/Menus saved/.test(card.textContent), 'no badge until a flight is actually saved');
   }
 
+  
+  // --- v1.33.1: a landed flight leaves the card; the air shows its landing ---
+  {
+    // The owner's exact case: a KUL turnaround that landed at 11:45 still
+    // showed in the card at 17:58. Times are seeded relative to the real
+    // clock so the case holds on any run date.
+    const hm = (offMin) => {
+      const t = new Date(Date.now() + offMin * 60000);
+      return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+    };
+    const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-390), sta: hm(-330), staYmd: ymd(0) };
+    const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: hm(120), staYmd: ymd(0) };
+    const statless = { fn: '321', dep: 'SIN', arr: 'HKT', ymd: ymd(0), std: hm(-720) };
+    const { d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([landed, inAir, statless])));
+    } });
+    let card = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 8000 && !(card = d.getElementById('ca-nextflight-card'))) await wait(50);
+    R.ok(!!card, 'the day\u2019s remaining flights render a card');
+    const txt = card ? card.textContent : '';
+    R.ok(txt.indexOf('SQ 118') === -1, 'a flight that landed hours ago is gone from the card');
+    R.ok(txt.indexOf('SQ 105') >= 0 && txt.indexOf('lands ' + hm(120)) >= 0, 'a leg in the air shows its landing time');
+    R.ok(txt.indexOf('SQ 321') >= 0, 'a flight with no arrival on record is kept for the day');
+    R.ok(txt.indexOf('SQ 336') === -1 || txt.indexOf('CDG') === -1, 'the card stays on the current day, not tomorrow');
+  }
+  {
+    // everything today has landed → tomorrow leads, and the store remembers
+    // arrival times for the future (re-attaching a roster records STA + date).
+    const hm = (offMin) => {
+      const t = new Date(Date.now() + offMin * 60000);
+      return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+    };
+    const { w, d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-390), sta: hm(-330), staYmd: ymd(0) }
+      ])));
+    } });
+    let card = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 8000 && !(card = d.getElementById('ca-nextflight-card'))) await wait(50);
+    R.ok(!card, 'a day whose every flight has landed renders no card');
+    w.eval('upcomingRemember(' + JSON.stringify({ flights: [{ fn: '106', dep: 'SIN', arr: 'KUL', ymd: ymd(1), std: '09:45', sta: '11:45', stdHm: '09:45', staHm: '11:45', staRowYmd: null, pos: false }] }) + ')');
+    const store = JSON.parse(w.localStorage.getItem('crewAssist.upcoming'));
+    const key = ymd(1).slice(0, 7);
+    R.ok(store[key] && store[key].some((f) => f.sta === '11:45' && f.staYmd === ''), 'a re-attach records the arrival time and its row date');
+  }
+  {
+    // the sweep: a flight that lands while the app is open disappears the
+    // moment the screen comes back (visibilitychange) — no reload needed.
+    // The card is seeded on a flight still ~2 minutes out, then the store is
+    // aged to "landed an hour ago" and the app woken — deterministic, no
+    // wall-clock race.
+    const hm = (offMin) => {
+      const t = new Date(Date.now() + offMin * 60000);
+      return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+    };
+    const { w, d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: hm(2), staYmd: ymd(0) }
+      ])));
+    } });
+    let card = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 8000 && !(card = d.getElementById('ca-nextflight-card'))) await wait(50);
+    R.ok(!!card, 'the not-yet-landed flight shows its card');
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+      { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-180), sta: hm(-60), staYmd: ymd(0) }
+    ])));
+    d.dispatchEvent(new w.Event('visibilitychange'));
+    await wait(300);
+    R.ok(!d.getElementById('ca-nextflight-card'), 'the sweep retires the card the moment the flight lands');
+    const store = JSON.parse(w.localStorage.getItem('crewAssist.upcoming'));
+    R.ok(!JSON.stringify(store).match(/"105"/), 'the landed flight is pruned from storage too');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

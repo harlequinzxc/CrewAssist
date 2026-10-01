@@ -369,6 +369,20 @@
            legible pair (4.6:1, zero headroom) — micro labels on light surfaces
            step up to gray-600. Dark theme is untouched (7.5:1 there). */
         html:not(.dark) .ca-micro.text-gray-500 { color: #4b5563; }
+        /* v1.33.1 (owner report "unable to see" in light mode): three surfaces
+           carried dark-theme looks into daylight. Onboarding fields kept the
+           dark .ui-input border (white/10 — invisible on cream) and no surface;
+           the watermark tagline and semver sat at navy/20 (1.4:1); the What's
+           New bubble kept its gold-tint glass, which over the black/60 scrim
+           composites to dark olive — under near-black light-mode text (3.4:1).
+           Dark mode is untouched by every rule below. */
+        html:not(.dark) #onboarding-view .ui-input {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(17, 24, 39, 0.2);
+        }
+        html:not(.dark) #whatsnew-backdrop .glass-bubble {
+            background: rgba(246, 241, 232, 0.96); /* a cream card on the dim scrim */
+        }
         /* v1.31.0: gold TEXT gets its own ink. The brand gold stays for fills,
            borders and dark mode — but #c9a227 on white is 2.42:1 (WCAG AA needs
            4.5:1), so light-mode text uses a measured 5.61:1 ink instead. */
@@ -861,9 +875,9 @@
                     <div class="inline-flex flex-col items-center">
                         <div class="inline-flex flex-col">
                             <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
-                            <div class="h-px w-full bg-sia-navy/20 dark:bg-white/15 mt-1.5"></div>
+                            <div class="h-px w-full bg-sia-navy/30 dark:bg-white/15 mt-1.5"></div>
                         </div>
-                        <p class="mt-1 ca-micro tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
+                        <p class="mt-1 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/15 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
                     </div>
                 </div>
             </div>
@@ -894,9 +908,9 @@
                                 <label class="block text-sm font-bold mb-2">Name</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+                                        <i data-lucide="user" class="w-4 h-4 text-gray-600"></i>
                                     </div>
-                                    <input type="text" id="ob-name" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="e.g. Johnathan">
+                                    <input type="text" id="ob-name" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold placeholder-gray-600 dark:placeholder-gray-400 focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="e.g. Johnathan">
                                 </div>
                             </div>
                             <!-- Gender -->
@@ -923,7 +937,7 @@
                             <button id="ob-submit" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
-                            <p id="app-semver" class="mt-4 ca-micro tracking-[0.18em] text-center text-sia-navy/20 dark:text-white/15 select-none"></p>
+                            <p id="app-semver" class="mt-4 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/15 select-none"></p>
                         </div>
                     </div>
                 </div>
@@ -1240,7 +1254,7 @@
         <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
             <div class="w-full max-w-sm">
                 <div class="glass-bubble w-full rounded-3xl p-5 pt-6 border border-sia-gold/20 shadow-2xl relative" onclick="event.stopPropagation()">
-                    <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
+                    <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                     <p class="ca-micro font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
@@ -1613,28 +1627,22 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.33.0';
+        const APP_VERSION = '1.33.1';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.33.1 (E6): one pointer per change, still only this release.
         // v1.33.0 (E6): one pointer per change, still only this release.
         // v1.32.1 (E6, owner revision): every change earns its own pointer —
         // one short line each, plain words, the outcome. Still ONLY the
         // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
         // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
-            'Onboarding choices are legible in daylight.',
-            'A missing rank rate refuses to calculate.',
-            'Undo toasts speak their deadline to screen readers.',
-            'Every control meets the 48-pixel tap standard.',
-            'Multi-month results group by month with subtotals.',
-            'Small labels grow bolder in the light theme.',
-            'Summaries export to CSV.',
-            'Offline cards explain how to fill missing times.',
-            'Big batches paint their icons progressively.',
-            'The chat box suggests what to ask next.',
-            'Rates remember when they were last edited.',
-            'Month totals compare against the month before.'
+            'Light mode fixes faint onboarding and popup text.',
+            'Onboarding fields get visible borders in daylight.',
+            'The popup close button grows to a 48-pixel target.',
+            'Landed flights leave the next-flight card.',
+            'Flights in the air show their landing time.'
         ];
 
         // State
@@ -1959,6 +1967,11 @@
             });
 
             document.getElementById('btn-theme').addEventListener('click', toggleThemeShutter);
+            // v1.33.1: the next-flight card follows real time — a sweep every
+            // minute, plus one the instant the app comes back to the screen
+            // (the 5:58pm unlock after an 11:45am landing).
+            setInterval(nextFlightExpirySweep, 60000);
+            document.addEventListener('visibilitychange', () => { if (!document.hidden) nextFlightExpirySweep(); });
             // v1.33.0 (owner-approved): the input teaches its own vocabulary —
             // three examples rotate while the box is empty and unfocused, and
             // never change under a typist's thumbs.
@@ -2857,14 +2870,49 @@
         function loadUpcoming() {
             try { const v = JSON.parse(localStorage.getItem(UP_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
         }
-        function upcomingPrune(store) {
+        // v1.33.1 (owner report: a KUL turnaround that landed at 11:45 still
+        // showed in the card at 17:58): a flight is OVER once it has landed,
+        // not at midnight. The roster's own STA is the trigger; when no
+        // arrival is on record the old date-granular rule applies (kept for
+        // the day — never guess a duration the roster never printed).
+        function nfArrivalMs(f) {
+            if (!f || !f.sta) return null;
+            const base = /^\d{4}-\d{2}-\d{2}$/.test(String(f.staYmd || '')) ? f.staYmd : f.ymd;
+            const hm = String(f.sta).replace(':', '');
+            if (!/^\d{4}$/.test(hm) || !/^\d{4}-\d{2}-\d{2}$/.test(String(base || ''))) return null;
+            let ms = new Date(base + 'T00:00:00').getTime();
+            if (isNaN(ms)) return null;
+            // an arrival earlier on the clock than the departure lands the
+            // next day (overnight legs); an STA printed on a LATER row is
+            // already the true arrival date and is taken as-is.
+            if (f.std && String(f.std).replace(':', '') > hm && String(f.staYmd || f.ymd) === String(f.ymd)) ms += 86400000;
+            return ms + (parseInt(hm.slice(0, 2), 10) * 3600 + parseInt(hm.slice(2), 10) * 60) * 1000;
+        }
+        function nfFlightEnded(f, nowMs) {
+            if (!f || !f.ymd) return true;
             const today = todayLocalYMD();
+            if (f.ymd < today) return true;
+            const arr = nfArrivalMs(f);
+            if (arr === null) return false; // no arrival on record — keep for the day
+            return nowMs >= arr;
+        }
+        function upcomingPrune(store) {
+            const nowMs = Date.now();
             const out = {};
             Object.keys(store).forEach((mk) => {
-                const keep = (store[mk] || []).filter((f) => f && f.ymd >= today);
+                const keep = (store[mk] || []).filter((f) => f && !nfFlightEnded(f, nowMs));
                 if (keep.length) out[mk] = keep;
             });
             return out;
+        }
+        // The card keeps itself honest while the app is open: landed legs are
+        // pruned from storage, and a change re-renders card and nudge in place.
+        function nextFlightExpirySweep() {
+            const store = loadUpcoming();
+            const pruned = upcomingPrune(store);
+            if (JSON.stringify(pruned) === JSON.stringify(store)) return;
+            try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
+            refreshNextFlightUi();
         }
         function upcomingList() {
             const store = upcomingPrune(loadUpcoming());
@@ -2883,7 +2931,10 @@
             flights.forEach((f) => {
                 const k = f.fn + '|' + f.ymd;
                 if (seen[k]) return; seen[k] = 1;
-                store[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '' });
+                // v1.33.1: the arrival time (and the date its STA was printed
+                // on — echo rows carry the next day) rides along so the card
+                // can retire a flight once it has landed.
+                store[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '', sta: f.staHm || '', staYmd: f.staRowYmd || '' });
             });
             const pruned = upcomingPrune(store);
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
@@ -2892,6 +2943,17 @@
         }
         function menusSavedFor(fn, ymd) {
             try { return !!localStorage.getItem(sqCabinCacheKey(fn, ymd)); } catch (e) { return false; }
+        }
+        // v1.33.1: between departure and landing the leg reads "lands 11:45" —
+        // the card reflects the duty as it happens, not as it was printed.
+        function nfInAir(f) {
+            if (!f || !f.std || !f.sta) return false;
+            const hm = String(f.std).replace(':', '');
+            if (!/^\d{4}$/.test(hm) || !/^\d{4}-\d{2}-\d{2}$/.test(String(f.ymd || ''))) return false;
+            const dep = new Date(f.ymd + 'T00:00:00').getTime() + (parseInt(hm.slice(0, 2), 10) * 3600 + parseInt(hm.slice(2), 10) * 60) * 1000;
+            const arr = nfArrivalMs(f);
+            const now = Date.now();
+            return arr !== null && now >= dep && now < arr;
         }
         function nextFlightRel(ymd) {
             const d = Math.round((new Date(ymd + 'T12:00:00') - new Date(todayLocalYMD() + 'T12:00:00')) / 86400000);
@@ -2922,7 +2984,7 @@
                 + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                 + '<span class="flex-1 min-w-0">'
                 + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">SQ ' + rosterEsc(f.fn) + ' <span class="font-normal">&middot; ' + rosterEsc(f.dep) + ' &rarr; ' + rosterEsc(f.arr) + '</span></span>'
-                + '<span class="block text-xs mt-0.5 text-gray-500">' + rosterShortDate(f.ymd) + (f.std ? ' &middot; departs ' + rosterEsc(f.std) : '') + ' &middot; <b>' + nextFlightRel(f.ymd) + '</b></span>'
+                + '<span class="block text-xs mt-0.5 text-gray-500">' + rosterShortDate(f.ymd) + (nfInAir(f) ? ' &middot; lands ' + rosterEsc(f.sta) : (f.std ? ' &middot; departs ' + rosterEsc(f.std) : '')) + ' &middot; <b>' + nextFlightRel(f.ymd) + '</b></span>'
                 + '</span>'
                 + (menusSavedFor(f.fn, f.ymd) ? '<span class="shrink-0 inline-flex items-center gap-1 ca-micro font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>' : '')
                 + '</span></button>';
