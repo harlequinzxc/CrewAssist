@@ -195,12 +195,11 @@ const mkUntil = (d) => async (cond, ms) => {
       const badCat = [], badDate = [];
       entries.forEach((en) => {
         en.items.forEach((it) => { if (['new', 'fix', 'imp', 'fun'].indexOf(it.c) === -1) badCat.push(en.v + ':' + it.c); });
-        if (cmpV(en.v, '1.5.9') >= 0) { if (!/^\d{4}-\d{2}-\d{2}$/.test(en.d)) badDate.push(en.v + ' (missing date)'); }
-        else if (en.d) badDate.push(en.v + ' (unexpected date)');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(en.d)) badDate.push(en.v + ' (missing date)');
       });
       R.ok(badCat.length === 0, `every changelog pointer carries a valid category (E6)${badCat.length ? ': ' + badCat.slice(0, 5).join(', ') : ''}`);
-      R.ok(badDate.length === 0, `versions since v1.5.9 carry dates, pre-history stays undated (E6)${badDate.length ? ': ' + badDate.slice(0, 5).join(', ') : ''}`);
-      R.ok(entries.filter((en) => en.d).length === 88, `the dated run covers exactly v1.5.9 -> current, 88 versions (E6)`);
+      R.ok(badDate.length === 0, `every changelog version carries a release date (E6)${badDate.length ? ': ' + badDate.slice(0, 5).join(', ') : ''}`);
+      R.ok(entries.filter((en) => en.d).length === entries.length, `the owner-supplied inception timeline dates the pre-history too - all ${entries.length} versions (E6)`);
     }
     // the delta machinery + the scrollable, headered list (owner spec)
     R.ok(src.includes('function wnPendingEntries') && src.includes("localStorage.getItem('crewAssist.wnSeen')"), "what's new tracks the version the crew last saw (E6)");
@@ -341,7 +340,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(headCount >= 60, `the redesigned list groups every version (${headCount} headers)`);
     R.ok(vheads()[0].textContent.includes('CURRENT'), 'an up-to-date device sees the CURRENT badge on the running version');
     R.ok(vheads().every((h) => !h.textContent.includes('NEW')), 'an up-to-date device sees no NEW badges');
-    R.ok(vheads()[headCount - 1].textContent.trim() === 'v1.0.0', 'the oldest header is bare: pre-history stays undated');
+    R.ok(vheads()[headCount - 1].textContent.includes('1.0.0') && vheads()[headCount - 1].textContent.includes('Sept 2026'), 'the oldest header carries its inception date (Sept 2026)');
     R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('caught up'), 'the summary card reads all-caught-up for an up-to-date device');
     R.ok((c.d.getElementById('ca-cl-sumpills') || {}).childElementCount >= 1, 'the summary card breaks the current release into category pills');
     R.ok(c.d.defaultView.getComputedStyle(vheads()[0]).position === 'sticky', 'version headers stick to the top while scrolling');

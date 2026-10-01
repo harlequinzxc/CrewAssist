@@ -903,9 +903,7 @@
         @keyframes caClSoftPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
         .ca-cl-badge-cur { border: 1px solid rgba(168, 162, 158, 0.5); color: #a8a29e; }
         html:not(.dark) .ca-cl-badge-cur { color: #78716c; }
-        .ca-cl-row { position: relative; display: flex; align-items: baseline; padding: 5px 8px 5px 22px; border-radius: .5rem; transition: background-color .15s ease; }
-        .ca-cl-row:active { background: rgba(201, 162, 39, 0.12); }
-        @media (hover: hover) { .ca-cl-row:hover { background: rgba(201, 162, 39, 0.08); } }
+        .ca-cl-row { position: relative; display: flex; align-items: baseline; padding: 5px 8px 5px 22px; }
         .ca-cl-dot { position: absolute; left: 9px; top: calc(5px + 0.55em); width: 6px; height: 6px; border-radius: 9999px; background: #C9A227; }
         .ca-cl-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; margin-right: 7px; flex-shrink: 0; border: 1px solid transparent; }
         .ca-cl-tag svg { width: 10px; height: 10px; }
@@ -1252,7 +1250,7 @@
                 </div>
             </div>
             <!-- scrollable, grouped list -->
-            <div id="ca-changelog-scroll" class="overflow-y-auto flex-grow px-5 pt-3 max-w-xl mx-auto w-full">
+            <div id="ca-changelog-scroll" class="overflow-y-auto flex-grow px-5 max-w-xl mx-auto w-full">
                 <div id="ca-changelog-list" class="text-sm leading-relaxed"></div>
                 <div id="ca-cl-empty" class="hidden flex-col items-center justify-center text-center py-14 gap-2">
                     <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
@@ -2092,117 +2090,117 @@
                 { c: 'fix', t: 'A fixed six-week grid so the window never resizes.' },
                 { c: 'imp', t: 'Month change, day tap and Today animate; Cancel is muted and OK is gold.' },
             ] },
-            { v: '1.5.8', items: [
+            { v: '1.5.8', d: '2026-09-15', items: [
                 { c: 'fix', t: 'Station local times parse as local so LMA dates do not jump a day.' },
                 { c: 'imp', t: 'The Fetch spinner rotates in place.' },
                 { c: 'imp', t: 'Pick Date shows DD/MM/YYYY and stays selected until Today or Tomorrow.' },
                 { c: 'imp', t: 'Shorter past and too-far-ahead Fetch copy.' },
             ] },
-            { v: '1.5.7', items: [
+            { v: '1.5.7', d: '2026-09-15', items: [
                 { c: 'fix', t: 'Fetch no longer rewrites the date you typed.' },
                 { c: 'imp', t: 'The Fetch button cycles Fetch, spinner, tick, Fetch.' },
                 { c: 'imp', t: 'Days outside today−2 to today+6 weeks are crossed out.' },
                 { c: 'new', t: 'The inflight menu Pick Date uses the same calendar.' },
             ] },
-            { v: '1.5.6', items: [
+            { v: '1.5.6', d: '2026-09-15', items: [
                 { c: 'fix', t: 'The light-theme calendar is opaque cream, not gold glass.' },
                 { c: 'fix', t: 'Days are tappable again.' },
                 { c: 'imp', t: 'Calculator cards match the inflight-menu width.' },
                 { c: 'imp', t: 'Flight and date share equal width with matching labels.' },
             ] },
-            { v: '1.5.5', items: [
+            { v: '1.5.5', d: '2026-09-15', items: [
                 { c: 'new', t: 'The CrewAssist calendar replaces the system date picker everywhere.' },
                 { c: 'fix', t: 'The first 4-sector Fetch no longer jumps the chat.' },
                 { c: 'fix', t: 'Summaries always open at the top.' },
                 { c: 'fix', t: 'Multi-leg menus pick the unused leg so sectors never repeat.' },
             ] },
-            { v: '1.5.4', items: [
+            { v: '1.5.4', d: '2026-09-14', items: [
                 { c: 'imp', t: 'Do-not-show-again sits bottom-left of the overlay on one row.' },
                 { c: 'new', t: 'Direct US ticks if either end of the fetched sector is US.' },
                 { c: 'new', t: 'LMA Fetch also lands on COP.' },
                 { c: 'imp', t: 'The flight field narrows so the date can show.' },
             ] },
-            { v: '1.5.3', items: [
+            { v: '1.5.3', d: '2026-09-14', items: [
                 { c: 'imp', t: 'COP opens at the top of the calculator, not the bottom of the thread.' },
                 { c: 'new', t: 'Flight, date and Fetch on each IFA sector.' },
                 { c: 'new', t: 'The LMA calculator can Fetch inbound and outbound or be typed.' },
                 { c: 'imp', t: 'Fetch shows a spinner instead of three dots.' },
             ] },
-            { v: '1.5.2', items: [
+            { v: '1.5.2', d: '2026-09-14', items: [
                 { c: 'new', t: 'Per-sector Fetch fills the same hours and layover fields you can still type.' },
                 { c: 'new', t: 'Per-station Shuttle zeros that station’s LMA only; no hardcoded flight numbers.' },
                 { c: 'new', t: 'Fetch may pre-tick shuttle on same-day or under-6-hour grounds.' },
             ] },
-            { v: '1.5.1', items: [
+            { v: '1.5.1', d: '2026-09-14', items: [
                 { c: 'new', t: 'What’s new is a dismissible overlay, not a chat bubble.' },
                 { c: 'imp', t: 'The unofficial tagline sits one row under a CrewAssist-width hairline.' },
                 { c: 'imp', t: 'Summaries show (Paxing); old modifier storage removed.' },
             ] },
-            { v: '1.5.0', items: [
+            { v: '1.5.0', d: '2026-09-14', items: [
                 { c: 'new', t: 'The What’s new overlay, turnaround dates and last-5 flight chips.' },
                 { c: 'fix', t: 'Calculator date and timezone fixes.' },
             ] },
-            { v: '1.4.29', items: [
+            { v: '1.4.29', d: '2026-09-13', items: [
                 { c: 'new', t: 'The developer rates editor: paired ranks, shared SDP thresholds, iOS-safe collapsed accordions.' },
             ] },
-            { v: '1.4.26', items: [
+            { v: '1.4.26', d: '2026-09-13', items: [
                 { c: 'imp', t: 'Summary overlay polish: money formatting, aligned B/L/D badges, IFA sector labels.' },
             ] },
-            { v: '1.4.24', items: [
+            { v: '1.4.24', d: '2026-09-11', items: [
                 { c: 'new', t: 'Printer and viewer signed off as a pair: view/print switch, sector tabs, zoom flags, compact invert and export.' },
             ] },
-            { v: '1.4.23', items: [
+            { v: '1.4.23', d: '2026-09-11', items: [
                 { c: 'new', t: 'Multi-staged scrolling snaps the chat to new content on mobile.' },
                 { c: 'fix', t: 'Safe HTML insertion ends the null-reference crashes on iOS.' },
                 { c: 'imp', t: 'Dropdowns push content down instead of blocking text.' },
             ] },
-            { v: '1.4.19', items: [
+            { v: '1.4.19', d: '2026-09-11', items: [
                 { c: 'imp', t: 'All primary buttons share the premium navy-and-gold pill design.' },
                 { c: 'new', t: 'Calculator buttons stay disabled until every visible field is filled.' },
             ] },
-            { v: '1.4.15', items: [
+            { v: '1.4.15', d: '2026-09-10', items: [
                 { c: 'new', t: 'Pills and tabs switch Meals, Drinks, Snacks and Amenities.' },
                 { c: 'imp', t: 'Single-service flights hide the tab menu.' },
                 { c: 'imp', t: 'Menus categorise strictly as International or Ethnic.' },
             ] },
-            { v: '1.4.9', items: [
+            { v: '1.4.9', d: '2026-09-10', items: [
                 { c: 'new', t: 'A full-screen, scrollable glassmorphic menu sheet.' },
                 { c: 'new', t: 'The Route Hero Card: times, IATA codes, cities, a dotted flight arc and UTC duration.' },
                 { c: 'new', t: 'A sticky navigation header and Cabin, Sector and Cuisine dropdowns.' },
             ] },
-            { v: '1.4.0', items: [
+            { v: '1.4.0', d: '2026-09-10', items: [
                 { c: 'new', t: 'A Vercel Edge proxy securely fetches live menu JSON past CORS and firewalls.' },
                 { c: 'new', t: 'A step-by-step chat flow asks flight number, date and cabin before querying.' },
             ] },
-            { v: '1.3.12', items: [
+            { v: '1.3.12', d: '2026-09-06', items: [
                 { c: 'new', t: 'A glassmorphic breakdown screen for calculated allowances.' },
                 { c: 'new', t: 'Day-by-day breakfast, lunch and dinner stipends beneath the grand total.' },
             ] },
-            { v: '1.3.7', items: [
+            { v: '1.3.7', d: '2026-09-05', items: [
                 { c: 'new', t: 'A local IATA airport database fills city and country as you type.' },
                 { c: 'new', t: 'SIA business rules compute exact IFA and LMA, with cascading layover dates and multi-station routing.' },
             ] },
-            { v: '1.3.0', items: [
+            { v: '1.3.0', d: '2026-09-05', items: [
                 { c: 'new', t: 'Interactive chat forms for COP, IFA and LMA calculations.' },
                 { c: 'new', t: 'Time inputs auto-format to HH:MM within valid 24-hour limits.' },
             ] },
-            { v: '1.2.3', items: [
+            { v: '1.2.3', d: '2026-09-05', items: [
                 { c: 'new', t: 'A scrollable row of quick-action chips.' },
                 { c: 'new', t: 'A keyword parser routes text input to the right feature.' },
             ] },
-            { v: '1.2.0', items: [
+            { v: '1.2.0', d: '2026-09-05', items: [
                 { c: 'new', t: 'The home screen becomes a mobile-first chat for all interactions.' },
                 { c: 'new', t: 'Time-aware greetings that use your name and rank.' },
             ] },
-            { v: '1.1.4', items: [
+            { v: '1.1.4', d: '2026-09-04', items: [
                 { c: 'new', t: 'A Feedback and Support section with a Telegram button.' },
                 { c: 'new', t: 'Hidden Developer Mode, unlocked by ten logo taps, edits calculation modifiers via JSON.' },
             ] },
-            { v: '1.1.0', items: [
+            { v: '1.1.0', d: '2026-09-04', items: [
                 { c: 'new', t: 'The onboarding screen captures Name, Gender and Crew Rank.' },
                 { c: 'new', t: 'A glassmorphic bottom-sheet settings menu.' },
             ] },
-            { v: '1.0.0', items: [
+            { v: '1.0.0', d: '2026-09-04', items: [
                 { c: 'new', t: 'Initial release of the Progressive Web App framework.' },
                 { c: 'new', t: 'Offline caching and mobile installation support.' },
                 { c: 'new', t: 'The official SIA palette: navy, charcoal and gold accents.' },
