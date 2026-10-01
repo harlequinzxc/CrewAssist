@@ -2383,12 +2383,15 @@
         // overlay itself uses, factored out so showMain can hold the welcome
         // chat behind it.
         function whatsNewWillShow() {
-            // v1.35.0 (owner ruling): only the versions the crew has NOT seen
-            // — the delta since crewAssist.wnSeen. Closing the sheet counts
-            // as seen (the stamp is written when it opens); "Do not show
-            // again" (hideWhatsNew = '1') suppresses it for good.
+            // v1.35.0 hotfix (owner ruling): only the versions the crew has
+            // not seen — the delta since crewAssist.wnSeen — and the sheet
+            // KEEPS RETURNING on every launch until the crew explicitly taps
+            // "Do not show again". Merely opening or closing it never counts
+            // as seen; only the checkbox stamps wnSeen (and hideWhatsNew —
+            // per version, so a future release's news shows again even after
+            // this one was dismissed).
             if (!wnPendingEntries().length) return false;
-            try { if (localStorage.getItem('crewAssist.hideWhatsNew') === '1') return false; } catch (e) {}
+            try { if (localStorage.getItem('crewAssist.hideWhatsNew') === APP_VERSION) return false; } catch (e) {}
             return !!(document.getElementById('whatsnew-backdrop') && document.getElementById('whatsnew-list'));
         }
 
@@ -2427,10 +2430,6 @@
             if (title) title.textContent = entries.length === 1 ? 'v' + APP_VERSION : 'v' + entries[entries.length - 1].v + ' \u2192 v' + APP_VERSION;
             renderChangelogInto(list, entries);
             if (hide) hide.checked = false;
-            // The display counts as seen the moment it opens — closing
-            // without the checkbox must not replay it on every launch
-            // (the owner's "past features" report).
-            try { localStorage.setItem('crewAssist.wnSeen', APP_VERSION); } catch (e) {}
             backdrop.classList.remove('hidden');
             requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
             try { lucide.createIcons(); } catch (e) {}
@@ -2470,9 +2469,13 @@
             const backdrop = document.getElementById('whatsnew-backdrop');
             const hide = document.getElementById('whatsnew-hide');
             if (hide && hide.checked) {
-                // v1.35.0: "Do not show again" means for good — the Settings
-                // changelog is the catch-up from now on.
-                try { localStorage.setItem('crewAssist.hideWhatsNew', '1'); } catch (e) {}
+                // v1.35.0 hotfix: the ONLY "seen" there is — both stamps.
+                // hideWhatsNew is per version: a future release's news shows
+                // again even after this one was dismissed.
+                try {
+                    localStorage.setItem('crewAssist.hideWhatsNew', APP_VERSION);
+                    localStorage.setItem('crewAssist.wnSeen', APP_VERSION);
+                } catch (e) {}
             }
             if (!backdrop) return;
             backdrop.classList.add('opacity-0');

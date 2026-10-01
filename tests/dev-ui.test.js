@@ -271,12 +271,12 @@ const mkUntil = (d) => async (cond, ms) => {
     const heads = a.d.querySelectorAll('#whatsnew-list .ca-micro');
     R.eq(heads.length, 1, 'a device without a stamp sees only the current release (the pre-changelog default)');
     R.ok((heads[0].textContent || '').includes(a.w.APP_VERSION), 'the header names the current version');
-    R.eq(a.w.localStorage.getItem('crewAssist.wnSeen'), a.w.APP_VERSION, 'opening the sheet stamps the seen version');
+    R.eq(a.w.localStorage.getItem('crewAssist.wnSeen'), null, 'merely opening the sheet never stamps it seen');
     a.d.getElementById('whatsnew-close').click();
     await aUntil(() => a.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 3000);
     a.w.eval('maybeWhatsNewOverlay()');
     await a.w.eval('new Promise((r) => requestAnimationFrame(r))');
-    R.ok(a.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 'closing counts as seen — no replay on the next launch');
+    R.ok(!a.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 'the sheet returns on the next launch until "Do not show again" is tapped (v1.35.0 hotfix)');
   }
   {
     // a device last seen on 1.29.0: the delta spans every version since
@@ -292,11 +292,15 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(heads[0].includes(b.w.APP_VERSION) && heads[heads.length - 1].includes('1.29.1'), 'the delta runs newest first down to the first missed release');
     const listEl = b.d.getElementById('whatsnew-list');
     R.ok(listEl.className.includes('max-h-[50vh]') && listEl.className.includes('overflow-y-auto'), 'the long list is scrollable');
-    // "Do not show again" now means for good
+    // "Do not show again" is the ONLY thing that dismisses it for good
     b.d.getElementById('whatsnew-hide').checked = true;
     b.d.getElementById('whatsnew-close').click();
     await bUntil(() => b.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 3000);
-    R.eq(b.w.localStorage.getItem('crewAssist.hideWhatsNew'), '1', 'the checkbox writes the hide-forever stamp');
+    R.eq(b.w.localStorage.getItem('crewAssist.hideWhatsNew'), b.w.APP_VERSION, 'the checkbox writes the per-version hide stamp');
+    R.eq(b.w.localStorage.getItem('crewAssist.wnSeen'), b.w.APP_VERSION, 'the checkbox is the only thing that stamps the seen version');
+    b.w.eval('maybeWhatsNewOverlay()');
+    await b.w.eval('new Promise((r) => requestAnimationFrame(r))');
+    R.ok(b.d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 'a ticked dismissal keeps the sheet away');
   }
   {
     // up-to-date device: no sheet at all
