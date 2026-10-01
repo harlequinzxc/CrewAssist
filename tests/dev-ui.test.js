@@ -321,7 +321,7 @@ const mkUntil = (d) => async (cond, ms) => {
     const clHeads = [...c.d.querySelectorAll('#ca-changelog-list .ca-micro')].map((h) => h.textContent);
     R.ok(clHeads.length >= 60, `the changelog lists every version (${clHeads.length} headers)`);
     R.ok(clHeads[0].includes(c.w.APP_VERSION), 'the changelog opens on the current version');
-    R.ok(clHeads[clHeads.length - 1].includes('1.5.9'), 'the changelog reaches back to the first signed-off release');
+    R.ok(clHeads[clHeads.length - 1].includes('1.0.0'), 'the changelog reaches back to inception (v1.0.0)');
     R.ok((c.d.getElementById('ca-changelog-cur') || {}).textContent === c.w.APP_VERSION, 'the changelog names the running version');
     c.d.getElementById('ca-changelog-close').click();
     await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
