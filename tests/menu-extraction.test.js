@@ -80,6 +80,9 @@ const EMDASH = '\u2014'; // —
 
   // --- rendered item HTML: name first, WITH → Ẃ, grey addition, inversion ---
   {
+    // v1.34.0: brackets is the new default marking mode — force the square
+    // to keep pinning the invert path.
+    w.printState.proteinMode = 'square';
     const html = w.printCompactItems('MAIN COURSE:', [
       { name: 'Egg Omelette Stuffed with Mushrooms', desc: 'Served with creamy onion sauce, pork sausages, roasted tomato and potatoes' },
       { name: 'Fried Rice with Vegetables', desc: 'Topped with mixed berry compote, honey and whipped cream' }
@@ -96,6 +99,40 @@ const EMDASH = '\u2014'; // —
     const dessert = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
     const dplain = dessert.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
     R.ok(dplain.includes('CAKE WITH CREAM') && !dplain.includes(WACUTE), 'non-main courses keep WITH and gain no addition');
+    w.printState.proteinMode = 'brackets';
+  }
+
+  // --- v1.34.0: brackets marking mode + hidden proteins on non-mains (SQ106) ---
+  {
+    R.eq(w.printState.proteinMode, 'brackets', 'brackets is the default marking mode');
+    R.eq(w.printHighlightProteins('GRILLED CHICKEN BREAST'), 'GRILLED [CHICKEN] BREAST', 'brackets mode wraps the protein word, plain black text');
+    // SQ106: the cold refreshment hid its sliced smoked chicken in the description
+    const html = w.printCompactItems('COLD REFRESHMENT:', [
+      { name: 'Open-Faced Sandwich', desc: 'Topped with sliced smoked chicken and herb mayonnaise' }
+    ], false, false);
+    R.ok(html.includes('<span class="pc-add">' + WACUTE + ' SLICED SMOKED [CHICKEN]</span>'), 'SQ106 hidden protein surfaces as a brackets-marked addition');
+    R.ok(html.indexOf('pc-hl') === -1, 'brackets mode renders no invert spans');
+    // a primary-style description reads dash-style, like the sandwich mains
+    const html2 = w.printCompactItems('COLD REFRESHMENT:', [
+      { name: 'Open-Faced Sandwich', desc: 'Sliced smoked chicken, lettuce, herb mayonnaise' }
+    ], false, false);
+    R.ok(html2.includes('<span class="pc-add">\u2014 [CHICKEN]</span>'), 'primary protein on a non-main reads dash-style');
+    // the square restores the black invert everywhere
+    w.printState.proteinMode = 'square';
+    const html3 = w.printCompactItems('COLD REFRESHMENT:', [
+      { name: 'Open-Faced Sandwich', desc: 'Topped with sliced smoked chicken and herb mayonnaise' }
+    ], false, false);
+    R.ok(html3.includes('<span class="pc-hl">CHICKEN</span>'), 'square mode restores the black invert');
+    w.printState.proteinMode = 'brackets';
+    // the canvas export carries the same hidden protein
+    const toks = w.compactItemTokens('OPEN-FACED SANDWICH', 'Topped with sliced smoked chicken', false);
+    R.ok(toks.some((t) => t.add && t.invert && t.text === 'CHICKEN'), 'canvas tokens carry the hidden protein as an invert token');
+    // a name that already shows its protein gains no addition
+    const html4 = w.printCompactItems('COLD REFRESHMENT:', [{ name: 'Smoked Chicken Sandwich', desc: 'with pickles' }], false, false);
+    R.ok(html4.indexOf('pc-add') === -1 && html4.includes('SMOKED [CHICKEN] SANDWICH'), 'no addition when the name already shows the protein; the name itself brackets');
+    // starches never surface on non-mains (the dessert ruling stands)
+    const html5 = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
+    R.ok(html5.indexOf('pc-add') === -1, 'non-main additions stay protein-only (no starch lines on desserts)');
   }
 
   // --- canvas export token stream: grey add tokens, inversion preserved ---
@@ -125,8 +162,12 @@ const EMDASH = '\u2014'; // —
     // v1.33.3 (owner report): printed compact sheets lost the white-on-black
     // protein words — browsers drop background graphics by default.
     R.ok(/\.pc-hl\s*{[^}]*-webkit-print-color-adjust:\s*exact/s.test(src) && /\.pc-hl\s*{[^}]*print-color-adjust:\s*exact/s.test(src), 'the protein highlight forces its black fill through every print engine');
-    R.ok(src.includes("const APP_VERSION = '1.33.3';"), 'APP_VERSION stamped 1.33.3');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v156"), 'service-worker cache name bumped to v156');
+    // v1.34.0 (owner ruling): protein marking is a mode — [brackets] default,
+    // black square invert opt-in; hidden proteins surface on non-mains too.
+    R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
+    R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
+    R.ok(src.includes("const APP_VERSION = '1.34.0';"), 'APP_VERSION stamped 1.34.0');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v157"), 'service-worker cache name bumped to v157');
   }
 
   process.exit(R.done() ? 1 : 0);

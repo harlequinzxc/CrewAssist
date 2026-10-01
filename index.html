@@ -1449,6 +1449,10 @@
                         <span id="print-zoom-label" class="w-10 text-center text-gray-500">100%</span>
                         <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full ca-inset border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
+                    <div id="print-protein-seg" class="flex ca-inset rounded-full p-0.5 shrink-0 border border-black/10 dark:border-white/10" role="group" aria-label="Protein marking style">
+                        <button type="button" id="print-protein-brackets" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein in brackets"><i data-lucide="brackets" class="w-4 h-4"></i></button>
+                        <button type="button" id="print-protein-square" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein highlighted black"><i data-lucide="square" class="w-4 h-4"></i></button>
+                    </div>
                     <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Bounds</span></button>
                     <button type="button" id="print-opt-desc" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Descriptions</span></button>
                     <button type="button" id="print-opt-grey" class="h-9 px-3 rounded-full text-xs font-bold border border-black/10 dark:border-white/15 text-gray-500 shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5 hidden"></i><span class="opt-txt">Greyscale</span></button>
@@ -1636,10 +1640,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.33.3';
+        const APP_VERSION = '1.34.0';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.34.0 (E6): one pointer per change, still only this release.
         // v1.33.3 (E6): one pointer per change, still only this release.
         // v1.33.2 (E6): one pointer per change, still only this release.
         // v1.33.1 (E6): one pointer per change, still only this release.
@@ -1649,7 +1654,8 @@
         // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
         // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
-            'Printed compact sheets keep their protein highlights.'
+            'Protein can print in brackets instead of boxes.',
+            'Hidden proteins surface on cold refreshments too.'
         ];
 
         // State
@@ -10644,9 +10650,10 @@ function getRegionForAirport(code) {
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
         const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'grouper', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
         let lastPrintStale = false;
-        let printState = {
+        var printState = { // var: the marking mode is state the tests (and window) can reach
             layout: 'elegant',
             paper: 'a4',
+            proteinMode: 'brackets',
             zoomElegant: 100,
             zoomCompact: 100,
             greyscale: false,
@@ -11076,7 +11083,10 @@ function getRegionForAirport(code) {
         }
 
         function printHighlightProteins(name) {
-            return printMarkProteins(name, 'invert');
+            // v1.34.0 (owner ruling): compact protein marking is a MODE —
+            // [brackets] by default (plain black text, print-safe on every
+            // engine), or the black invert when the crew picks the square.
+            return printMarkProteins(name, printState.proteinMode === 'square' ? 'invert' : 'brackets');
         }
 
         function printIsProteinWord(core) {
@@ -11095,6 +11105,7 @@ function getRegionForAirport(code) {
                 if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
                 if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
+                if (mode === 'brackets') return '[' + inner + ']';
                 return '<s>' + inner + '</s>';
             }).join('');
         }
@@ -11381,10 +11392,46 @@ function getRegionForAirport(code) {
         function printIsMainCourse(label) {
             return /main|entr[eé]e|entree/i.test(String(label || ''));
         }
+        // v1.34.0 (owner report, SQ106): a cold refreshment "open-faced
+        // sandwich" hid its sliced smoked chicken in the description — mains
+        // got the full addition engine, every other course got nothing.
+        // Non-mains surface PROTEINS ONLY (no starch lines on desserts and
+        // drinks), only when the name itself shows no protein; the same
+        // frozen vocabulary, dash/flow connectors and dedupe as mains.
+        function compactNonMainProtein(name, desc) {
+            const nm = String(name || '');
+            if (!String(desc || '').trim() || EX_NAME_PROTEIN_RE.test(nm)) return null;
+            const best = new Map();
+            compactExtractAddition(nm, desc).meats.forEach((mt) => {
+                const words = mt.phrase.split(/\s+/);
+                const pw = words.find(exIsProteinWord) || words[0];
+                const key = exCoreKey(pw);
+                const cur = best.get(key);
+                if (!cur) best.set(key, mt);
+                else if (words.length > cur.phrase.split(/\s+/).length) best.set(key, { phrase: mt.phrase, hidden: cur.hidden });
+            });
+            if (!best.size) return null;
+            const dash = [], flow = [];
+            best.forEach((mt) => {
+                if (mt.hidden) { flow.push(exNormWs(mt.phrase)); return; }
+                const words = mt.phrase.split(/\s+/);
+                const bare = words.filter(exIsProteinWord);
+                dash.push((bare.length ? bare : words).join(' '));
+            });
+            const joinList = (arr) => arr.length < 3
+                ? arr.join(' AND ')
+                : arr.slice(0, -1).join(', ') + ' AND ' + arr[arr.length - 1];
+            let out = '';
+            if (dash.length) out += '\u2014 ' + joinList(dash.map((x2) => x2.toUpperCase()));
+            if (flow.length) out += (out ? ' ' : '') + '\u1e82 ' + joinList(flow.map((x2) => exNormWs(x2).toUpperCase()));
+            return out || null;
+        }
         function exAdditionHtml(add) {
+            // v1.34.0: addition proteins follow the same marking mode as names.
+            const square = printState.proteinMode === 'square';
             return String(add || '').trim().split(/\s+/).map((w) => (
                 printIsProteinWord(w.replace(/[^a-zA-Z]/g, '').toLowerCase())
-                    ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>'
+                    ? (square ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>' : '[' + escapePrintHtml(w) + ']')
                     : escapePrintHtml(w)
             )).join(' ');
         }
@@ -11400,10 +11447,12 @@ function getRegionForAirport(code) {
                 let nameUp = String(printDisplayName(it.name) || '').toUpperCase();
                 if (isMain) nameUp = nameUp.replace(/\bWITH\b/g, '\u1e82');
                 let line = printHighlightProteins(nameUp);
-                if (isMain) {
-                    const add = compactComposeAddition(it.name, it.desc || '');
-                    if (add) line += ' <span class="pc-add">' + exAdditionHtml(add) + '</span>';
-                }
+                // v1.34.0 (owner report, SQ106): mains keep the full addition
+                // engine; every other course surfaces hidden proteins only.
+                const add = isMain
+                    ? compactComposeAddition(it.name, it.desc || '')
+                    : compactNonMainProtein(it.name, it.desc || '');
+                if (add) line += ' <span class="pc-add">' + exAdditionHtml(add) + '</span>';
                 list += '<div class="pc-item"><span class="pc-num">' + printCircledNum(idx + 1) + '</span> ' + line + '</div>';
             });
             return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-list">' + list + '</td></tr></table>';
@@ -11507,6 +11556,7 @@ function getRegionForAirport(code) {
             };
             setSeg('print-layout-elegant', 'print-layout-compact', printState.layout === 'elegant');
             setSeg('print-paper-a4', 'print-paper-a6', printState.paper === 'a4');
+            setSeg('print-protein-brackets', 'print-protein-square', printState.proteinMode === 'brackets');
             const compactOn = printState.layout === 'compact';
             const paintOpt = (el, on, label) => {
                 if (!el) return;
@@ -11530,6 +11580,8 @@ function getRegionForAirport(code) {
             paintOpt(bounds, printState.showBounds, 'Bounds');
             if (grey) grey.classList.toggle('hidden', compactOn);
             if (desc) desc.classList.toggle('hidden', compactOn);
+            const proteinSeg = document.getElementById('print-protein-seg');
+            if (proteinSeg) proteinSeg.classList.toggle('hidden', !compactOn); // the marking modes are a compact feature
             const tabSheet = document.getElementById('print-tab-sheet');
             const tabEdit = document.getElementById('print-tab-edit');
             const sheetOn = printState.tab === 'sheet';
@@ -11995,14 +12047,15 @@ function getRegionForAirport(code) {
             const tokens = [];
             const nm = isMain ? String(name || '').replace(/\bWITH\b/g, 'Ẃ') : String(name || '');
             compactNameTokens(nm).forEach((t) => tokens.push(t));
-            if (isMain) {
-                const add = compactComposeAddition(name, desc);
-                if (add) {
-                    String(add).split(/\s+/).forEach((wd) => {
-                        tokens.push({ text: ' ', invert: false, add: true });
-                        tokens.push({ text: wd, invert: printIsProteinWord(wd.replace(/[^a-zA-Z]/g, '').toLowerCase()), add: true });
-                    });
-                }
+            // v1.34.0: non-mains surface hidden proteins too (SQ106)
+            const add = isMain
+                ? compactComposeAddition(name, desc)
+                : compactNonMainProtein(name, desc);
+            if (add) {
+                String(add).split(/\s+/).forEach((wd) => {
+                    tokens.push({ text: ' ', invert: false, add: true });
+                    tokens.push({ text: wd, invert: printIsProteinWord(wd.replace(/[^a-zA-Z]/g, '').toLowerCase()), add: true });
+                });
             }
             return tokens;
         }
@@ -12029,16 +12082,24 @@ function getRegionForAirport(code) {
             return lines.length ? lines : [String(text || '')];
         }
 
+        // v1.34.0: brackets mode renders protein as [WORD] in the item's own
+        // colour — no fill, so every print engine and the canvas export agree.
+        function compactTokRectOn() {
+            return printState.proteinMode !== 'brackets';
+        }
+        function compactTokText(tok) {
+            return (tok.invert && !compactTokRectOn()) ? '[' + tok.text + ']' : tok.text;
+        }
         function compactTokWidth(ctx, tok, fontPx) {
-            const w = ctx.measureText(tok.text).width;
-            return tok.invert ? w + fontPx * 0.28 : w;
+            const w = ctx.measureText(compactTokText(tok)).width;
+            return (tok.invert && compactTokRectOn()) ? w + fontPx * 0.28 : w;
         }
 
         function compactDrawTok(ctx, tok, x, baseline, fontPx, ascent, descent) {
-            if (!tok.invert) {
+            if (!tok.invert || !compactTokRectOn()) {
                 ctx.fillStyle = tok.add ? '#555' : '#000';
-                ctx.fillText(tok.text, x, baseline);
-                return ctx.measureText(tok.text).width;
+                ctx.fillText(compactTokText(tok), x, baseline);
+                return ctx.measureText(compactTokText(tok)).width;
             }
             const pad = fontPx * 0.14;
             const m = ctx.measureText(tok.text);
@@ -12267,6 +12328,8 @@ function getRegionForAirport(code) {
                 renderPrintView(true);
             });
             document.getElementById('print-paper-a4').addEventListener('click', () => { printState.paper = 'a4'; renderPrintView(true); });
+            document.getElementById('print-protein-brackets').addEventListener('click', () => { if (printState.proteinMode !== 'brackets') { printState.proteinMode = 'brackets'; renderPrintView(true); } });
+            document.getElementById('print-protein-square').addEventListener('click', () => { if (printState.proteinMode !== 'square') { printState.proteinMode = 'square'; renderPrintView(true); } });
             document.getElementById('print-paper-a6').addEventListener('click', () => { printState.paper = 'a6'; renderPrintView(true); });
             document.getElementById('print-zoom-out').addEventListener('click', () => {
                 setPrintZoom(Math.max(70, printZoom() - 10));
