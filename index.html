@@ -1648,28 +1648,20 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.34.2';
+        const APP_VERSION = '1.34.3';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
-        // v1.34.2 (E6): one pointer per change, still only this release.
-        // v1.34.1 (E6): one pointer per change, still only this release.
-        // v1.34.0 (E6): one pointer per change, still only this release.
-        // v1.33.3 (E6): one pointer per change, still only this release.
-        // v1.33.2 (E6): one pointer per change, still only this release.
-        // v1.33.1 (E6): one pointer per change, still only this release.
-        // v1.33.0 (E6): one pointer per change, still only this release.
-        // v1.32.1 (E6, owner revision): every change earns its own pointer —
-        // one short line each, plain words, the outcome. Still ONLY the
-        // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
-        // holds every line to one sentence of at most twelve words.
+        // v1.34.3 (E6, owner ruling restated): the what's-new list holds
+        // ONLY the current release — on every version bump the list is
+        // REPLACED, never accumulated (v1.29.1 ruling; it regressed in
+        // v1.34.1-v1.34.2 and showed past features again). Every line is
+        // tagged with its release; dev-ui rejects any line not tagged with
+        // the current APP_VERSION. One short line per change, plain words,
+        // the outcome, at most twelve words.
         const APP_WHAT_NEW = [
-            'Protein can print in brackets instead of boxes.',
-            'Hidden proteins surface on cold refreshments too.',
-            'Duty menus survive any number of menu searches.',
-            'Pop-up alerts are readable in light mode.',
-            'The duty card always opens its own menu.',
-            'Deleting earnings keeps a longer Undo.'
+            'What\u2019s new lists only the current version.', // v1.34.3
+            'Fish cake and rice noodles read correctly.' // v1.34.3
         ];
 
         // State
@@ -11320,12 +11312,19 @@ function getRegionForAirport(code) {
         // text only — nothing is generated; no match means no addition.
         // Vocabulary and rules are frozen against the 1,139-pair corpus
         // fixture in tests/menu-extraction.fixture.json.
-        const EX_STARCH_ALT = ['sweet potatoes', 'sweet potato', 'hash brown', 'white rice', 'white bread', 'potatoes', 'potato', 'rice', 'mash', 'mashed', 'noodles', 'noodle', 'pasta', 'penne', 'spaghetti', 'linguine', 'fettuccine', 'macaroni', 'vermicelli', 'gnocchi', 'udon', 'dumplings', 'dumpling', 'buns', 'bun', 'bread', 'brioche', 'sourdough', 'pita', 'paratha', 'tortilla', 'couscous', 'quinoa', 'polenta', 'risotto', 'barley', 'bulgur', 'oats', 'orzo', 'porridge', 'congee', 'yam', 'cornmeal', 'cornbread', 'wedges', 'wedge', 'gratin', 'dauphinoise', 'biryani', 'biriyani', 'teow', 'mee', 'laksa', 'roti', 'naan', 'idli', 'ramen', 'beehoon', 'bap', 'ciabatta'];
+        // v1.34.3 (owner ruling): "rice noodles" is its own starch — a beef
+        // hor fun surfaced "RICE" from "rice noodles" in its description.
+        // The compound rides ahead of bare "rice" in the longest-first
+        // alternation, so "Ẃ RICE" becomes "Ẃ RICE NOODLES".
+        const EX_STARCH_ALT = ['sweet potatoes', 'sweet potato', 'hash brown', 'white rice', 'white bread', 'rice noodles', 'rice noodle', 'potatoes', 'potato', 'rice', 'mash', 'mashed', 'noodles', 'noodle', 'pasta', 'penne', 'spaghetti', 'linguine', 'fettuccine', 'macaroni', 'vermicelli', 'gnocchi', 'udon', 'dumplings', 'dumpling', 'buns', 'bun', 'bread', 'brioche', 'sourdough', 'pita', 'paratha', 'tortilla', 'couscous', 'quinoa', 'polenta', 'risotto', 'barley', 'bulgur', 'oats', 'orzo', 'porridge', 'congee', 'yam', 'cornmeal', 'cornbread', 'wedges', 'wedge', 'gratin', 'dauphinoise', 'biryani', 'biriyani', 'teow', 'mee', 'laksa', 'roti', 'naan', 'idli', 'ramen', 'beehoon', 'bap', 'ciabatta'];
         const EX_STARCH_MOD = ['aromatic', 'baked', 'black', 'bok', 'brown', 'butter', 'buttered', 'choy', 'coconut', 'creamy', 'crispy', 'egg white', 'egg', 'fingerling', 'flour', 'fragrant', 'fried', 'garlic', 'grilled', 'jasmine', 'mashed', 'red', 'roasted', 'saffron', 'seasoned', 'soft', 'spiced', 'steamed', 'stir-fried', 'truffle', 'turmeric', 'warm', 'wheat', 'wide', 'wild', 'wok-fried'];
         const EX_PALT = ['anchovies', 'anchovy', 'abalone', 'bacon', 'beef', 'bream', 'caviar', 'char siew', 'chicken', 'chorizo', 'clams', 'cod', 'crab', 'duck', 'fish', 'ham', 'halibut', 'lamb', 'lobster', 'meat', 'meatball', 'meatballs', 'mutton', 'pork', 'prawn', 'prawns', 'roe', 'roes', 'salami', 'salmon', 'scallop', 'scallops', 'sausage', 'sausages', 'seabass', 'seafood', 'shrimp', 'shrimps', 'squid', 'steak', 'trout', 'tuna', 'turkey', 'veal', 'wagyu'];
         const EX_PMOD = ['baby', 'braised', 'cured', 'delicate', 'fresh', 'grilled', 'japanese', 'local', 'marinated', 'minced', 'mild', 'pan-fried', 'roasted', 'seared', 'shredded', 'sliced', 'slow cooked', 'slow-cooked', 'smoked', 'soya-glazed', 'spicy', 'stir-fried', 'succulent', 'tender'];
         const EX_CONN = ['with', 'accompanied', 'alongside', 'topped', 'plus'];
-        const EX_SAUCEY = ['chicken broth', 'chicken stock', 'fish broth', 'fish stock', 'fish sauce', 'oyster sauce', 'prawn paste', 'shrimp paste'];
+        // v1.34.3 (owner ruling): fish cake is MADE with fish but is not a
+        // whole seafood protein — the same class as the sauce/broth masks.
+        // Masked phrases never yield a protein token.
+        const EX_SAUCEY = ['chicken broth', 'chicken stock', 'fish broth', 'fish stock', 'fish sauce', 'oyster sauce', 'prawn paste', 'shrimp paste', 'fish cake', 'fish cakes', 'fish ball', 'fish balls'];
         const EX_WIN = 45;
         const exEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const exAlt = (forms) => '(?:' + forms.slice().sort((a, b) => b.length - a.length).map(exEsc).join('|') + ')';

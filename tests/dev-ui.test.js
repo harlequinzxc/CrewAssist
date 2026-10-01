@@ -169,6 +169,13 @@ const { R, boot, wait, APP } = H;
         R.ok(line.split(/\s+/).length <= 12, `what's-new stays within twelve words: "${line}" (E6)`);
       });
       R.ok(!/v1\.3[01]/.test(wnMatch[1]), "what's-new never accumulates old releases (E6)");
+      // v1.34.3 (owner ruling): the list holds ONLY the current release —
+      // every line is tagged, and a line tagged with any other version
+      // (including a carry-over from the release before) fails here.
+      const appVer = (src.match(/const APP_VERSION = '([^']+)';/) || [])[1];
+      const tagged = [...wnMatch[1].matchAll(/'([^']*)'[^\n]*\/\/\s*(v[0-9.]+)/g)];
+      R.eq(tagged.length, items.length, "every what's-new line carries its release tag (E6)");
+      tagged.forEach((t) => R.eq(t[2], 'v' + appVer, `what's-new line is from the current release: "${t[1]}" (E6)`));
     }
     // ---- v1.33.0: the review batch (contrast, targets, SR, CSV, hints) ----
     R.ok(src.includes('ui-input text-gray-600 ob-gender-btn'), 'unselected onboarding buttons read at gray-600 (was 2.26:1)');

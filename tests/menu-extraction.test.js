@@ -23,6 +23,10 @@
 // validated pair-by-pair against the reviewed digest v1.3. If a vocabulary or
 // rule change is ever deliberate, regenerate the fixture in the same commit
 // and say so — a mismatch here means extraction drifted.
+// v1.34.3 (owner ruling, regenerated): "rice noodles" is its own starch (was
+// surfacing RICE/NOODLES), and "fish cake" is not a whole seafood protein
+// (masked, like fish sauce) — 22 pairs changed, all in exactly those two
+// classes; every other pair is byte-identical.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 const fs = require('fs');
@@ -76,6 +80,17 @@ const EMDASH = '\u2014'; // —
       `${EMDASH} SALMON, SCALLOP, PRAWN AND CRAB ${WACUTE} STEAMED RICE`, 'donburi: SALMON ROE folds into SALMON under the same core');
     R.eq(w.compactComposeAddition(find('Singapore Hokkien Mee').n, find('Singapore Hokkien Mee').d),
       `${EMDASH} PRAWNS AND PORK ${WACUTE} TENDER SQUID`, 'Hokkien Mee: the specific fresh prawns beat the broth prawn');
+    // v1.34.3 rulings: rice noodles read whole; fish cake is not a protein
+    R.eq(w.compactComposeAddition(find('Beef Hor Fun').n, find('Beef Hor Fun').d),
+      `${WACUTE} RICE NOODLES`, 'Beef Hor Fun: rice noodles read as RICE NOODLES, never bare RICE (owner ruling)');
+    R.eq(w.compactComposeAddition(find('Laksa', 'fish cake').n, find('Laksa', 'fish cake').d),
+      `${WACUTE} PRAWNS`, 'Laksa: fish cake is masked — made with fish, not a whole seafood protein');
+    R.eq(w.compactComposeAddition(find('Khao Thom', 'fish cake').n, find('Khao Thom', 'fish cake').d),
+      `${WACUTE} TENDER PORK, MEATBALLS AND RICE`, 'Khao Thom keeps pork and meatballs, drops the fish cake');
+    R.eq(w.compactExtractAddition('Beef Hor Fun', 'stir-fried with wide rice noodles').starch,
+      'wide rice noodles', 'the starch winner keeps the compound: wide RICE NOODLES');
+    R.eq(JSON.stringify(w.compactExtractAddition('Laksa Special', 'with fish cake and prawns').meats.map((mm) => mm.phrase)),
+      JSON.stringify(['prawns']), 'fish cake never yields a protein token; the prawns still do');
   }
 
   // --- rendered item HTML: name first, WITH → Ẃ, grey addition, inversion ---
@@ -166,8 +181,8 @@ const EMDASH = '\u2014'; // —
     // black square invert opt-in; hidden proteins surface on non-mains too.
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("const APP_VERSION = '1.34.2';"), 'APP_VERSION stamped 1.34.2');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v159"), 'service-worker cache name bumped to v159');
+    R.ok(src.includes("const APP_VERSION = '1.34.3';"), 'APP_VERSION stamped 1.34.3');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v160"), 'service-worker cache name bumped to v160');
   }
 
   process.exit(R.done() ? 1 : 0);
