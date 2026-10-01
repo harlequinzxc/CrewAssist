@@ -709,7 +709,16 @@
         .pc-list, .pc-bites { min-width: 0; font-weight: 600; line-height: 1.28; }
         .pc-item { line-height: 1.28; font-weight: 600; color: #000; margin: 0; }
         .pc-num { display: inline-block; width: 1.35em; font-weight: 800; }
-        .pc-hl { background: #000; color: #fff; padding: 0 0.12em; }
+        /* v1.33.3 (owner report): printed compact sheets lost the protein
+           words — browsers print with background graphics OFF by default, so
+           the black fill vanished and left white text on white paper.
+           print-color-adjust: exact forces the fill through every print
+           engine (WebKit included). Screen and canvas export are unchanged. */
+        .pc-hl {
+            background: #000; color: #fff; padding: 0 0.12em;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
         .print-a6 .pc-head,
         .print-a6 .pc-course { font-size: calc(6px * var(--print-type, 1)); }
         .print-bounds {
@@ -1627,10 +1636,11 @@
             requestAnimationFrame(animate);
         }
 
-        const APP_VERSION = '1.33.2';
+        const APP_VERSION = '1.33.3';
         // v1.29.1 (owner ruling): What's New carries ONLY the current
         // release's note. Never accumulate previous entries — the sheet is
         // "what changed in this version", not a changelog archive.
+        // v1.33.3 (E6): one pointer per change, still only this release.
         // v1.33.2 (E6): one pointer per change, still only this release.
         // v1.33.1 (E6): one pointer per change, still only this release.
         // v1.33.0 (E6): one pointer per change, still only this release.
@@ -1639,8 +1649,7 @@
         // current release (the v1.29.1 no-accumulate ruling stands); dev-ui
         // holds every line to one sentence of at most twelve words.
         const APP_WHAT_NEW = [
-            'Earnings follows each duty to its landing.',
-            'The earnings page updates itself as flights land.'
+            'Printed compact sheets keep their protein highlights.'
         ];
 
         // State

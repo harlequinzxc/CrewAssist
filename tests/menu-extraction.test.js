@@ -122,8 +122,11 @@ const EMDASH = '\u2014'; // —
   // --- version stamps: app + service-worker cache bump together ---
   {
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(src.includes("const APP_VERSION = '1.33.2';"), 'APP_VERSION stamped 1.33.2');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v155"), 'service-worker cache name bumped to v155');
+    // v1.33.3 (owner report): printed compact sheets lost the white-on-black
+    // protein words — browsers drop background graphics by default.
+    R.ok(/\.pc-hl\s*{[^}]*-webkit-print-color-adjust:\s*exact/s.test(src) && /\.pc-hl\s*{[^}]*print-color-adjust:\s*exact/s.test(src), 'the protein highlight forces its black fill through every print engine');
+    R.ok(src.includes("const APP_VERSION = '1.33.3';"), 'APP_VERSION stamped 1.33.3');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v156"), 'service-worker cache name bumped to v156');
   }
 
   process.exit(R.done() ? 1 : 0);
