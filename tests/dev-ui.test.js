@@ -326,6 +326,21 @@ const mkUntil = (d) => async (cond, ms) => {
     // the Settings changelog: every version since inception
     c.w.eval('openSettings()');
     await cUntil(() => !c.d.getElementById('settings-backdrop').classList.contains('hidden'), 3000);
+    // --- v1.35.0 hotfix 5: settings polish ---
+    R.ok((c.d.getElementById('settings-avatar') || {}).textContent === 'T', 'the profile row shows a gold-ringed avatar with the initial');
+    R.ok((c.d.getElementById('settings-semver') || {}).textContent === 'CrewAssist v' + c.w.APP_VERSION, 'settings carries a CrewAssist vX footer');
+    const learnCopy = c.d.getElementById('settings-scroll').textContent;
+    R.ok(learnCopy.includes('Usually replies within a few hours'), 'the developer row sets reply expectations');
+    R.ok(learnCopy.includes('See everything the app can do in 90 seconds'), 'the tour row sells the 90-second walkthrough');
+    R.ok(learnCopy.includes('New features, fixes, and improvements'), 'the changelog row subtitles its categories');
+    R.ok(require('fs').readFileSync(APP, 'utf8').includes('border-t ca-hairline my-2.5'), 'a thin divider separates Feature tour from Changelog');
+    R.ok((c.d.querySelector('#btn-replay-tour i[data-lucide]') || {}).getAttribute('data-lucide') === 'play', 'the tour button uses the play icon');
+    R.ok((c.d.querySelector('a[href="https://t.me/harlequinzxc"] i[data-lucide]') || {}).getAttribute('data-lucide') === 'send', 'the Telegram button uses the send icon');
+    const clBadge = c.d.getElementById('calcui-desc-badge');
+    R.ok(clBadge && clBadge.textContent.includes('Recommended'), 'the Default badge still says Recommended');
+    R.ok(clBadge.className.includes('ca-badge-green'), 'the Recommended badge is the green pill');
+    R.ok((clBadge.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide') === 'star', 'the badge star is a lucide star');
+    R.ok((c.d.getElementById('calcui-desc') || {}).textContent.includes('fill in automatically'), 'the Smart automation description is the owner copy');
     c.d.getElementById('btn-changelog').click();
     await cUntil(() => !c.d.getElementById('ca-changelog-sheet').classList.contains('hidden'), 3000);
     await cUntil(() => (c.d.getElementById('ca-changelog-list') || {}).childElementCount > 50, 3000);
@@ -340,7 +355,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(headCount >= 60, `the redesigned list groups every version (${headCount} headers)`);
     R.ok(vheads()[0].textContent.includes('CURRENT'), 'an up-to-date device sees the CURRENT badge on the running version');
     R.ok(vheads().every((h) => !h.textContent.includes('NEW')), 'an up-to-date device sees no NEW badges');
-    R.ok(vheads()[headCount - 1].textContent.includes('1.0.0') && vheads()[headCount - 1].textContent.includes('Sept 2026'), 'the oldest header carries its inception date (Sept 2026)');
+    R.ok(vheads()[headCount - 1].textContent.includes('1.0.0'), 'the oldest header is the inception release');
     R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('caught up'), 'the summary card reads all-caught-up for an up-to-date device');
     R.ok((c.d.getElementById('ca-cl-sumpills') || {}).childElementCount >= 1, 'the summary card breaks the current release into category pills');
     R.ok(c.d.defaultView.getComputedStyle(vheads()[0]).position === 'sticky', 'version headers stick to the top while scrolling');
@@ -366,8 +381,21 @@ const mkUntil = (d) => async (cond, ms) => {
     c.w.eval("changelogState.filter = 'none'; renderChangelogSheet();");
     R.ok(!c.d.getElementById('ca-cl-empty').classList.contains('hidden'), 'a filter with no matches shows the empty state');
     R.ok((c.d.getElementById('ca-cl-empty') || {}).textContent.includes('No '), 'the empty state says so');
-    // restore + close
+    // restore, then v1.35.0 hotfix 5: the relative-date ladder
     c.w.eval("changelogState.filter = 'all'; changelogState.sort = 'new'; renderChangelogSheet();");
+    R.eq(c.w.eval("clRelDate('2026-10-02', new Date(2026, 9, 2, 15, 0))"), 'Today', 'ladder: same calendar day reads Today');
+    R.eq(c.w.eval("clRelDate('2026-10-01', new Date(2026, 9, 2, 0, 30))"), 'Yesterday', 'ladder: calendar-day math, not clock math');
+    R.eq(c.w.eval("clRelDate('2026-09-30', new Date(2026, 9, 2, 15, 0))"), '2 days ago', 'ladder: two days ago');
+    R.eq(c.w.eval("clRelDate('2026-09-25', new Date(2026, 9, 2, 15, 0))"), 'Last week', 'ladder: seven days reads Last week');
+    R.eq(c.w.eval("clRelDate('2026-09-18', new Date(2026, 9, 2, 15, 0))"), '2 weeks ago', 'ladder: fourteen days reads 2 weeks ago');
+    R.eq(c.w.eval("clRelDate('2026-05-14', new Date(2026, 9, 2, 15, 0))"), 'May 14', 'ladder: older this year reads short month + day');
+    R.eq(c.w.eval("clRelDate('2025-03-20', new Date(2026, 9, 2, 15, 0))"), 'Mar 2025', 'ladder: previous years read short month + year');
+    R.eq(c.w.eval("clRelDate('2026-10-02T10:00:00', new Date(2026, 9, 2, 10, 1))"), 'Just now', 'ladder: under two minutes reads Just now');
+    R.eq(c.w.eval("clRelDate('2026-10-02T10:00:00', new Date(2026, 9, 2, 10, 2))"), 'Today', 'ladder: two minutes on the dot reads Today');
+    // labels freeze at the open-time stamp and never switch while the sheet is up
+    c.w.eval('clNow = new Date(2026, 9, 2, 12, 0, 0); renderChangelogSheet();');
+    R.ok(vheads()[0].textContent.includes('Today'), 'the current release reads Today against the open-time stamp');
+    R.ok(vheads()[headCount - 1].textContent.includes('4 weeks ago'), 'the inception reads 4 weeks ago against the open-time stamp');
     c.d.getElementById('ca-changelog-close').click();
     await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
   }

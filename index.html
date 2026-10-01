@@ -916,6 +916,8 @@
         .ca-cl-tag-fun { color: #f0abfc; background: rgba(240, 171, 252, 0.13); border-color: rgba(240, 171, 252, 0.32); }
         html:not(.dark) .ca-cl-tag-fun { color: #a21caf; }
         .ca-cl-text { flex: 1; min-width: 0; }
+        .ca-badge-green { background: rgba(34, 197, 94, 0.16); border: 1px solid rgba(34, 197, 94, 0.45); color: #22c55e; }
+        html:not(.dark) .ca-badge-green { color: #15803d; }
     </style>
 </head>
 <body class="antialiased w-full h-full min-h-screen flex flex-col">
@@ -1109,9 +1111,7 @@
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-full ca-inset flex items-center justify-center">
-                                <i data-lucide="user-round" class="w-4 h-4 text-gray-600 dark:text-gray-300"></i>
-                            </div>
+                            <div id="settings-avatar" class="w-9 h-9 rounded-full flex items-center justify-center border border-sia-gold/70 bg-sia-gold/10 text-sia-gold font-bold text-base select-none" aria-hidden="true">J</div>
                             <p class="font-bold text-base" id="settings-profile-name">Johnathan</p>
                         </div>
                         <button id="btn-edit-profile" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
@@ -1124,9 +1124,10 @@
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold">Chat with the developer</span>
+                            <span class="ca-micro text-gray-500">Usually replies within a few hours</span>
                         </div>
                         <a href="https://t.me/harlequinzxc" target="_blank" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                            <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Telegram
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> Telegram
                         </a>
                     </div>
                 </div>
@@ -1137,17 +1138,18 @@
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold">Feature tour</span>
-                            <span class="ca-micro text-gray-500">The guided walkthrough, any time</span>
+                            <span class="ca-micro text-gray-500">See everything the app can do in 90 seconds</span>
                         </div>
                         <button type="button" id="btn-replay-tour" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Replay
+                            <i data-lucide="play" class="w-3.5 h-3.5"></i> Replay
                         </button>
                     </div>
+                    <div class="border-t ca-hairline my-2.5" aria-hidden="true"></div>
                     <!-- v1.35.0: the whole version history, newest first -->
-                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5 mt-2">
+                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold">Changelog</span>
-                            <span class="ca-micro text-gray-500">Every version, newest first</span>
+                            <span class="ca-micro text-gray-500">New features, fixes, and improvements</span>
                         </div>
                         <button type="button" id="btn-changelog" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
                             <i data-lucide="history" class="w-3.5 h-3.5"></i> View
@@ -1167,9 +1169,9 @@
                         <div class="flex items-center gap-2 mt-3.5">
                             <span id="calcui-desc-icon" class="shrink-0 text-sia-gold inline-flex"><i data-lucide="sparkles" class="w-4 h-4"></i></span>
                             <p id="calcui-desc-title" class="text-sm font-bold">Smart automation</p>
-                            <span id="calcui-desc-badge" class="shrink-0 px-2 py-0.5 rounded-full ca-micro font-bold border border-sia-gold text-sia-gold whitespace-nowrap">★ Recommended</span>
+                            <span id="calcui-desc-badge" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full ca-micro font-bold whitespace-nowrap ca-badge-green"><i data-lucide="star" class="w-3 h-3 fill-current"></i>Recommended</span>
                         </div>
-                        <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">Flight number + date — flight time, station, arrival &amp; departure date &amp; time auto-filled.</p>
+                        <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">Just enter your flight number and date — sector time, stations, and arrival/departure times fill in automatically.</p>
                     </div>
                 </div>
 
@@ -1204,6 +1206,9 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- v1.35.0 hotfix 5: version footer -->
+                <p id="settings-semver" class="ca-micro text-gray-500 text-center pt-1">CrewAssist v1.35.0</p>
             </div>
         </div>
 
@@ -2406,9 +2411,13 @@
             }
             if (appProfile) {
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
+                const avatar = document.getElementById('settings-avatar');
+                if (avatar) avatar.textContent = (String(appProfile.name || 'C').trim().charAt(0) || 'C').toUpperCase();
             }
             const semver = document.getElementById('app-semver');
             if (semver) semver.textContent = 'v' + APP_VERSION;
+            const sSemver = document.getElementById('settings-semver');
+            if (sSemver) sSemver.textContent = 'CrewAssist v' + APP_VERSION;
             syncCalcUiPills();
         }
 
@@ -2523,6 +2532,8 @@
                 localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
                 
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
+                const avatar2 = document.getElementById('settings-avatar');
+                if (avatar2) avatar2.textContent = (String(appProfile.name || 'C').trim().charAt(0) || 'C').toUpperCase();
                 
                 showMain();
             });
@@ -2867,19 +2878,34 @@
             fun: { label: 'Fun', tag: 'FUN', icon: 'smile' }
         };
         const CL_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
-        function clRelDate(d) {
-            // Relative release date: Today / Yesterday / N days ago / Month Year.
-            // Pre-v1.5.9 releases carry no date and render nothing.
+        // v1.35.0 hotfix 5: labels are computed against the moment the sheet
+        // OPENED (clNow) and never switch while it is on screen.
+        var clNow = null;
+        function clRelDate(d, nowRef) {
+            // Owner spec: Just now (< 2 min) / Today (same calendar day) /
+            // Yesterday / X days ago (2-6) / Last week (7-13) / X weeks ago
+            // (14-30) / short month + day (older this year) / short month +
+            // year (previous years). Calendar-day math, never clock math; no
+            // times, hours or minutes are ever shown. Date-only entries
+            // anchor to local midnight (a time-carrying d would work too).
             if (!d) return '';
-            const p = d.split('-').map(Number);
-            const then = new Date(p[0], p[1] - 1, p[2]);
-            const now = new Date();
+            const ds = String(d);
+            const rel = ds.indexOf('T') !== -1 ? new Date(ds) : new Date(+ds.slice(0, 4), +ds.slice(5, 7) - 1, +ds.slice(8, 10));
+            if (isNaN(rel.getTime())) return '';
+            const now = nowRef || new Date();
+            const age = now - rel;
+            if (age >= 0 && age < 120000) return 'Just now';
+            const relMid = new Date(rel.getFullYear(), rel.getMonth(), rel.getDate());
             const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-            const diff = Math.round((t0 - then) / 86400000);
-            if (diff <= 0) return 'Today';
-            if (diff === 1) return 'Yesterday';
-            if (diff <= 6) return diff + ' days ago';
-            return CL_MONTHS[p[1] - 1] + ' ' + p[0];
+            const dayDiff = Math.round((t0 - relMid) / 86400000);
+            if (dayDiff <= 0) return 'Today';
+            if (dayDiff === 1) return 'Yesterday';
+            if (dayDiff <= 6) return dayDiff + ' days ago';
+            if (dayDiff <= 13) return 'Last week';
+            if (dayDiff <= 30) return Math.floor(dayDiff / 7) + ' weeks ago';
+            return rel.getFullYear() === now.getFullYear()
+                ? CL_MONTHS[rel.getMonth()] + ' ' + rel.getDate()
+                : CL_MONTHS[rel.getMonth()] + ' ' + rel.getFullYear();
         }
         function clEntriesForRender() {
             let list = APP_CHANGELOG.filter((en) => en && en.v && en.items && en.items.length);
@@ -2955,7 +2981,7 @@
                     b.textContent = 'CURRENT';
                     head.appendChild(b);
                 }
-                const rel = clRelDate(en.d);
+                const rel = clRelDate(en.d, clNow);
                 if (rel) {
                     const r = document.createElement('span');
                     r.className = 'ca-cl-vdate';
@@ -3002,6 +3028,7 @@
             const cur = document.getElementById('ca-changelog-cur');
             if (!backdrop || !sheet || !list) return;
             changelogState = { filter: 'all', sort: 'new' };
+            clNow = new Date(); // labels freeze at open - they never switch while the sheet is on screen
             clPaintControls();
             if (cur) cur.textContent = APP_VERSION;
             renderClSummary();
@@ -4553,8 +4580,8 @@
             default: {
                 icon: 'sparkles',
                 title: 'Smart automation',
-                badge: '★ Recommended',
-                desc: 'Flight number + date — flight time, station, arrival & departure date & time auto-filled.'
+                badge: 'Recommended',
+                desc: 'Just enter your flight number and date — sector time, stations, and arrival/departure times fill in automatically.'
             },
             manual: {
                 icon: 'pen-line',
@@ -4600,8 +4627,9 @@
             if (title) title.textContent = meta.title;
             const badge = document.getElementById('calcui-desc-badge');
             if (badge) {
-                badge.textContent = meta.badge;
+                badge.innerHTML = meta.badge ? '<i data-lucide="star" class="w-3 h-3 fill-current"></i>' + meta.badge : '';
                 badge.classList.toggle('hidden', !meta.badge);
+                if (meta.badge) { try { lucide.createIcons(); } catch (e) {} }
             }
             const iconWrap = document.getElementById('calcui-desc-icon');
             if (iconWrap && iconWrap.getAttribute('data-icon') !== meta.icon) {
