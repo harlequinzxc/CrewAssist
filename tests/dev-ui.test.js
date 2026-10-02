@@ -356,7 +356,16 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(vheads().every((h) => !h.textContent.includes('NEW')), 'an up-to-date device sees no NEW badges');
     R.ok(vheads()[headCount - 1].textContent.includes('1.0.0'), 'the oldest header is the inception release');
     R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('caught up'), 'the summary card reads all-caught-up for an up-to-date device');
-    R.ok((c.d.getElementById('ca-cl-sumpills') || {}).childElementCount >= 1, 'the summary card breaks the current release into category pills');
+    {
+      // v1.36.0: pills appear only when the current release carries new/imp
+      // items — a fixes-only release honestly shows zero. Derive from source.
+      const fs = require('fs');
+      const clSrc = fs.readFileSync(APP, 'utf8');
+      const firstBlock = (clSrc.match(/APP_CHANGELOG = \[\s*\{ v: '[^']+', d: '[^']*', items: \[([\s\S]*?)\n\s*\]/) || [])[1] || '';
+      const expectPills = /c: '(new|imp)'/.test(firstBlock);
+      const pillCount = (c.d.getElementById('ca-cl-sumpills') || {}).childElementCount;
+      R.ok(expectPills ? pillCount >= 1 : pillCount === 0, `the summary card pills match the current release (feature items: ${expectPills}, pills: ${pillCount})`);
+    }
     R.ok(c.d.defaultView.getComputedStyle(vheads()[0]).position === 'sticky', 'version headers stick to the top while scrolling');
     // a device one release behind: NEW badge + missed-updates summary
     c.w.eval('closeChangelog()');
@@ -366,7 +375,16 @@ const mkUntil = (d) => async (cond, ms) => {
     await cUntil(() => !c.d.getElementById('ca-changelog-sheet').classList.contains('hidden'), 3000);
     await cUntil(() => (c.d.getElementById('ca-changelog-list') || {}).childElementCount > 50, 3000);
     R.ok(vheads()[0].textContent.includes('NEW'), 'a device behind one release sees the NEW badge on the current version');
-    R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('You missed 5 updates'), 'the summary card counts the missed updates');
+    {
+      // v1.36.0: the missed count grows with every release — derive it from
+      // the source changelog instead of hardcoding one release's item count.
+      const fs = require('fs');
+      const clSrc = fs.readFileSync(APP, 'utf8');
+      const blocks = [...clSrc.matchAll(/\{ v: '([\d.]+)', d: '[^']*', items: \[([\s\S]*?)\] \}/g)];
+      const cmp = (x, y) => { const A = x.split('.').map(Number), B = y.split('.').map(Number); return (A[0] - B[0]) || (A[1] - B[1]) || (A[2] - B[2]); };
+      const n = blocks.filter((m) => cmp(m[1], '1.34.3') > 0).reduce((a, m) => a + (m[2].match(/\{ c: '/g) || []).length, 0);
+      R.ok((c.d.getElementById('ca-cl-sumline') || {}).textContent.includes('You missed ' + n + ' updates'), `the summary card counts the missed updates (${n})`);
+    }
     // filter chips narrow the list; groups without matches hide
     c.d.querySelector('#ca-cl-chips [data-filter="fix"]').click();
     const fixHeads = vheads();

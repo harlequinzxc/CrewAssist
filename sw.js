@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v167';
+const CACHE_NAME = 'crewassist-v168';
 const ASSETS = [
     './',
     './index.html',
@@ -12,19 +12,33 @@ const ASSETS = [
     './icons/app-icon-512.png'
 ];
 // Third-party assets the app needs on first offline launch (Tailwind runtime,
-// pdf.js for roster import). Fetched individually so a CDN hiccup can never
-// break the install of the core shell.
+// pdf.js for roster import, lucide icons, Google Fonts). Fetched individually
+// so a CDN hiccup can never break the install of the core shell.
 const CDN_ASSETS = [
     'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
+    'https://unpkg.com/lucide@latest',
+    'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap'
 ];
+// v1.36.0: a flaky CDN during install used to leave styles/icons silently
+// missing offline (the old code swallowed the failure). Retry each CDN asset
+// a few times; the app-side shell guard turns a still-missing Tailwind into
+// an honest repair screen instead of an unstyled page.
+const CDN_RETRIES = 3;
+
+function addWithRetry(cache, url, tries) {
+    const attempt = (left) => cache.add(url).catch(() =>
+        left > 1 ? new Promise((resolve) => setTimeout(resolve, 800)).then(() => attempt(left - 1)) : null
+    );
+    return attempt(tries);
+}
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => cache.addAll(ASSETS)
-                .then(() => Promise.all(CDN_ASSETS.map((u) => cache.add(u).catch(() => null)))))
+                .then(() => Promise.all(CDN_ASSETS.map((u) => addWithRetry(cache, u, CDN_RETRIES)))))
             .then(() => self.skipWaiting())
     );
 });
@@ -42,6 +56,17 @@ self.addEventListener('activate', (event) => {
         }).then(() => self.clients.claim())
     );
 });
+
+// v1.36.0: runtime backfill — first-party files and known CDNs are cached
+// as they are used while online, so fonts, icons and late-loaded libraries
+// survive offline even when the install-time precache missed them.
+const RUNTIME_CACHE_HOSTS = [
+    'fonts.googleapis.com',
+    'fonts.gstatic.com',
+    'unpkg.com',
+    'cdnjs.cloudflare.com',
+    'cdn.tailwindcss.com'
+];
 
 self.addEventListener('fetch', (event) => {
     const req = event.request;
@@ -75,7 +100,19 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    const runtimeCacheable =
+        url.origin === self.location.origin || RUNTIME_CACHE_HOSTS.indexOf(url.hostname) !== -1;
+
     event.respondWith(
-        caches.match(req).then((cached) => cached || fetch(req))
+        caches.match(req).then((cached) => {
+            if (cached) return cached;
+            return fetch(req).then((res) => {
+                if (res && (res.ok || res.type === 'opaque') && runtimeCacheable) {
+                    const copy = res.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+                }
+                return res;
+            });
+        })
     );
 });

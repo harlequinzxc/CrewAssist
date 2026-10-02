@@ -194,12 +194,21 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.35.0';"), 'APP_VERSION stamped 1.35.0');
+    R.ok(src.includes("var APP_VERSION = '1.36.0';"), 'APP_VERSION stamped 1.36.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v167"), 'service-worker cache name bumped to v167');
+    R.ok(sw.includes("crewassist-v168"), 'service-worker cache name bumped to v168');
     R.ok(sw.includes('https://cdn.tailwindcss.com') && sw.includes('pdf.min.js'), 'Tailwind + pdf.js precached for first offline launch');
+    // v1.36.0: the airplane-mode shell hardening (owner report: unstyled
+    // onboarding + lost icons on offline launch).
+    R.ok(sw.includes('https://unpkg.com/lucide@latest'), 'lucide icons precached — they were never cached before, so every offline launch lost its icons');
+    R.ok(sw.includes('fonts.googleapis.com'), 'Google Fonts CSS precached');
+    R.ok(sw.includes('function addWithRetry'), 'CDN precache retries a few times instead of silently swallowing failures');
+    R.ok(sw.includes('RUNTIME_CACHE_HOSTS') && sw.includes('fonts.gstatic.com'), 'fonts/icons/lib downloads are backfilled into the cache as they are used online');
+    R.ok(sw.includes("res.type === 'opaque'"), 'cross-origin CDN responses (opaque) are runtime-cacheable');
+    R.ok(src.includes('id="ca-shell-fail"') && src.includes('function shellGuard()'), 'missing-Tailwind boot shows the honest repair screen (shell guard)');
+    R.ok(src.includes("if (window.tailwind) return;"), 'the guard stays silent when Tailwind loads fine');
   }
 
     process.exit(R.done() ? 1 : 0);

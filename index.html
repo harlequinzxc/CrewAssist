@@ -921,6 +921,19 @@
     </style>
 </head>
 <body class="antialiased w-full h-full min-h-screen flex flex-col">
+    <!-- v1.36.0: shell guard overlay. Inline styles ONLY — this must render
+         correctly even when the Tailwind runtime is the thing that's missing.
+         Hidden via inline display:none (the Tailwind `hidden` class cannot be
+         relied on here); shellGuard() flips it to flex when needed. -->
+    <div id="ca-shell-fail" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:#04070F;color:#EDE1C4;font-family:system-ui,-apple-system,sans-serif;padding:2rem;text-align:center;">
+        <div style="max-width:26rem;">
+            <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:#C9A227;margin-bottom:0.75rem;">CREWASSIST</div>
+            <p style="font-size:0.95rem;line-height:1.6;opacity:0.9;margin:0 0 1.25rem;">This device's offline copy of the app is missing its style files, so the app can't render properly. <strong>Your data is safe.</strong></p>
+            <p style="font-size:0.85rem;line-height:1.6;opacity:0.65;margin:0 0 1.5rem;">Connect to the internet once and reopen the app — it repairs itself automatically.</p>
+            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,#C9A227);color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.8rem;cursor:pointer;">Try again</button>
+        </div>
+    </div>
+
     <!-- Starry Sky Background -->
     <canvas id="sky-canvas"></canvas>
 
@@ -1763,7 +1776,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.35.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.36.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -1781,6 +1794,10 @@
         // the development log (owner-approved); pre-v1.5.9 releases stay
         // undated because no record exists.
         const APP_CHANGELOG = [
+            { v: '1.36.0', d: '2026-10-03', items: [
+                { c: 'fix', t: 'Offline launches now cache styles, icons and fonts reliably.' },
+                { c: 'fix', t: 'Missing offline files now show an honest repair screen.' },
+            ] },
             { v: '1.35.0', d: '2026-10-02', items: [
                 { c: 'new', t: 'What’s new shows only versions you missed.' },
                 { c: 'new', t: 'Long what’s-new lists scroll under version headers.' },
@@ -2378,6 +2395,29 @@
                 });
             }
         });
+
+        // v1.36.0: shell guard — the whole app is styled by the Tailwind CDN
+        // runtime. If it isn't loaded, an offline launch would render unstyled
+        // (broken layout, default-sized SVGs, no icons). Detect that and show
+        // the honest repair overlay instead. The overlay itself is inline-
+        // styled so it renders no matter what is missing.
+        function shellGuard() {
+            if (window.tailwind) return;
+            const fail = document.getElementById('ca-shell-fail');
+            if (!fail) return;
+            const show = () => { fail.style.display = 'flex'; };
+            if (!navigator.onLine) {
+                show();
+                // When the user reconnects, reload once — network-first shell
+                // + the retried service-worker install repair everything.
+                window.addEventListener('online', () => { try { location.reload(); } catch (e) {} }, { once: true });
+            } else {
+                // Online: give a slow CDN a fair chance before declaring failure.
+                setTimeout(() => { if (!window.tailwind) show(); }, 6000);
+            }
+            const retry = document.getElementById('ca-shell-retry');
+            if (retry) retry.addEventListener('click', () => { try { location.reload(); } catch (e) {} });
+        }
 
         function initData() {
             try {
