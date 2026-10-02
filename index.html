@@ -1144,9 +1144,8 @@
                             <i data-lucide="play" class="w-3.5 h-3.5"></i> Replay
                         </button>
                     </div>
-                    <div class="border-t ca-hairline my-2.5" aria-hidden="true"></div>
                     <!-- v1.35.0: the whole version history, newest first -->
-                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
+                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5 mt-2">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold">Changelog</span>
                             <span class="ca-micro text-gray-500">New features, fixes, and improvements</span>
@@ -1264,6 +1263,10 @@
             </div>
             <!-- bottom safe-area padding -->
             <div class="shrink-0 h-[env(safe-area-inset-bottom,0px)]"></div>
+            <!-- v1.35.0 hotfix 6: the chat jump-to-latest button's twin, arrow up, smooth scroll to top -->
+            <button type="button" id="ca-cl-top" aria-label="Scroll to top" class="ca-hit absolute right-5 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-[5] w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
+                <i data-lucide="chevron-up" class="w-4 h-4"></i>
+            </button>
         </div>
 
         <!-- Results Overlay Sheet -->
@@ -2606,6 +2609,14 @@
                 clPaintControls();
                 renderChangelogSheet();
             });
+            const clScrollEl = document.getElementById('ca-changelog-scroll');
+            if (clScrollEl) clScrollEl.addEventListener('scroll', clPaintTopBtn, { passive: true });
+            const clTopBtn = document.getElementById('ca-cl-top');
+            if (clTopBtn) clTopBtn.addEventListener('click', () => {
+                const scroller = document.getElementById('ca-changelog-scroll');
+                if (!scroller) return;
+                try { scroller.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { scroller.scrollTop = 0; }
+            });
             document.getElementById('btn-reset').addEventListener('click', () => {
                 // v1.29.0: two-tap — an accidental tap must not wipe a session
                 // that still has built, unsaved cards in it.
@@ -2914,6 +2925,21 @@
             }
             return changelogState.sort === 'old' ? list.slice().reverse() : list;
         }
+        function clPaintTopBtn() {
+            // The chat jump-to-latest button's twin: visible only while the
+            // list is scrolled away from its top, tap smooth-scrolls home.
+            const scroller = document.getElementById('ca-changelog-scroll');
+            const btn = document.getElementById('ca-cl-top');
+            if (!scroller || !btn) return;
+            const show = scroller.scrollTop > 48;
+            if (show) {
+                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+            } else {
+                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+            }
+        }
         function clPaintControls() {
             document.querySelectorAll('#ca-cl-chips .ca-cl-chip').forEach((chip) => {
                 const on = chip.getAttribute('data-filter') === changelogState.filter;
@@ -3019,6 +3045,11 @@
                     if (msg) msg.textContent = 'No ' + String((CL_CATS[changelogState.filter] || {}).label || 'matching').toLowerCase() + ' entries.';
                 }
             }
+            // v1.35.0 hotfix 6: a re-render (open, filter, sort) jumps the
+            // list back to the top, like the print preview does on view change.
+            const clScroller = document.getElementById('ca-changelog-scroll');
+            if (clScroller) clScroller.scrollTop = 0;
+            clPaintTopBtn();
             try { lucide.createIcons(); } catch (e) {}
         }
         function openChangelog() {

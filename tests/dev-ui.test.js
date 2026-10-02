@@ -333,7 +333,6 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(learnCopy.includes('Usually replies within a few hours'), 'the developer row sets reply expectations');
     R.ok(learnCopy.includes('See everything the app can do in 90 seconds'), 'the tour row sells the 90-second walkthrough');
     R.ok(learnCopy.includes('New features, fixes, and improvements'), 'the changelog row subtitles its categories');
-    R.ok(require('fs').readFileSync(APP, 'utf8').includes('border-t ca-hairline my-2.5'), 'a thin divider separates Feature tour from Changelog');
     R.ok((c.d.querySelector('#btn-replay-tour i[data-lucide]') || {}).getAttribute('data-lucide') === 'play', 'the tour button uses the play icon');
     R.ok((c.d.querySelector('a[href="https://t.me/harlequinzxc"] i[data-lucide]') || {}).getAttribute('data-lucide') === 'send', 'the Telegram button uses the send icon');
     const clBadge = c.d.getElementById('calcui-desc-badge');
@@ -396,6 +395,27 @@ const mkUntil = (d) => async (cond, ms) => {
     c.w.eval('clNow = new Date(2026, 9, 2, 12, 0, 0); renderChangelogSheet();');
     R.ok(vheads()[0].textContent.includes('Today'), 'the current release reads Today against the open-time stamp');
     R.ok(vheads()[headCount - 1].textContent.includes('4 weeks ago'), 'the inception reads 4 weeks ago against the open-time stamp');
+    // --- v1.35.0 hotfix 6: the scroll-to-top button ---
+    const clScroll = c.d.getElementById('ca-changelog-scroll');
+    const clTop = c.d.getElementById('ca-cl-top');
+    R.ok(!!clTop && clTop.className.includes('opacity-0'), 'the scroll-to-top button starts hidden at the top');
+    R.ok((clTop.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide') === 'chevron-up', 'the scroll-to-top button points up');
+    clScroll.scrollTop = 600;
+    clScroll.dispatchEvent(new c.w.Event('scroll'));
+    R.ok(clTop.className.includes('opacity-100'), 'the scroll-to-top button appears once the list is scrolled');
+    const origScrollTo = clScroll.scrollTo;
+    let scrollToArgs = null;
+    clScroll.scrollTo = (opt) => { scrollToArgs = opt; };
+    clTop.click();
+    R.ok(scrollToArgs && scrollToArgs.top === 0 && scrollToArgs.behavior === 'smooth', 'tapping it smooth-scrolls the list to the top');
+    clScroll.scrollTo = origScrollTo;
+    clScroll.scrollTop = 0;
+    clScroll.dispatchEvent(new c.w.Event('scroll'));
+    R.ok(clTop.className.includes('opacity-0'), 'the button hides again at the top');
+    clScroll.scrollTop = 600;
+    clScroll.dispatchEvent(new c.w.Event('scroll'));
+    c.w.eval('renderChangelogSheet()');
+    R.ok(clScroll.scrollTop === 0 && clTop.className.includes('opacity-0'), 'a re-render jumps the list back to the top and hides the button');
     c.d.getElementById('ca-changelog-close').click();
     await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
   }

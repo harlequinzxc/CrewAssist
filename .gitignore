@@ -4,3 +4,4 @@ package.json
 icon-options/
 !tests/package.json
 .DS_Store
+_screenshots/
