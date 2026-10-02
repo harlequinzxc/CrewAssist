@@ -1288,7 +1288,7 @@
         <div id="ca-arch-sheet" role="dialog" aria-modal="true" aria-label="Earnings" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <!-- iOS bottom-sheet handle -->
             <div class="pt-2 pb-1 flex justify-center shrink-0"><div class="w-[44px] h-[4px] rounded-full bg-black/15 dark:bg-[#2a2f3d]"></div></div>
-            <div class="flex items-center justify-between px-5 pt-2 pb-3 border-b ca-hairline shrink-0">
+            <div class="flex items-center justify-between px-5 pt-2 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <h3 class="text-xl font-bold">Earnings</h3>
                 <div class="flex items-center gap-1">
                     <button type="button" id="ca-arch-import" class="ca-arch-iconbtn" aria-label="Import backup"><i data-lucide="upload" class="w-5 h-5"></i></button>
@@ -1298,7 +1298,7 @@
                     <button type="button" id="ca-arch-close" class="ca-arch-iconbtn" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
             </div>
-            <div id="ca-arch-scroll" class="overflow-y-auto flex-grow px-4 pb-10 pt-3">
+            <div id="ca-arch-scroll" class="overflow-y-auto flex-grow px-4 pb-10 pt-3 max-w-xl mx-auto w-full">
                 <!-- 1. gold summary card -->
                 <div class="ca-arch-goldcard p-5" id="ca-arch-summary">
                     <div class="flex justify-center">
@@ -1776,7 +1776,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.36.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.36.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -1794,6 +1794,9 @@
         // the development log (owner-approved); pre-v1.5.9 releases stay
         // undated because no record exists.
         const APP_CHANGELOG = [
+            { v: '1.36.1', d: '2026-10-03', items: [
+                { c: 'imp', t: 'Earnings joins the reading tier, centered on wide screens.' },
+            ] },
             { v: '1.36.0', d: '2026-10-03', items: [
                 { c: 'fix', t: 'Offline launches now cache styles, icons and fonts reliably.' },
                 { c: 'fix', t: 'Missing offline files now show an honest repair screen.' },
@@ -14266,5 +14269,8 @@ function getRegionForAirport(code) {
             setTimeout(tick, 2500);
         }
     </script>
+</body>
+</html>
+script>
 </body>
 </html>

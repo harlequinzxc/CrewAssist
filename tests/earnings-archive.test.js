@@ -181,6 +181,8 @@ const fs = require('fs');
 
     // -- sheet chrome: handle, header icon buttons, segmented control
     R.ok(d.querySelector('#ca-arch-sheet .w-\\[44px\\].h-\\[4px\\]'), 'iOS-style sheet handle pill');
+    R.ok(d.querySelector('#ca-arch-sheet > div.max-w-xl.mx-auto.w-full.flex.items-center.justify-between'), 'v1.36.1: the earnings header joins the centered reading column (owner tier ruling)');
+    R.ok(d.querySelector('#ca-arch-scroll.max-w-xl.mx-auto.w-full'), 'v1.36.1: the earnings content scrolls inside the reading column, so flight taps open a same-width summary');
     R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 4, 'four header icon buttons');
     R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg').length, 3, 'three segmented scope buttons');
     const segOf = (scope) => d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="' + scope + '"]');

@@ -392,7 +392,14 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok([...c.d.querySelectorAll('#ca-changelog-list .ca-cl-tag')].every((t) => t.className.includes('ca-cl-tag-fix')), 'every visible row carries the FIX tag');
     // sort toggle flips to oldest-first
     c.d.getElementById('ca-cl-sort').click();
-    R.ok(vheads()[vheads().length - 1].textContent.includes(c.w.APP_VERSION), 'the sort flip puts the current version last');
+    {
+      // v1.36.1: the view is still Fixes-filtered and the current release may
+      // carry no fix pointers — expect the newest version that has one.
+      const fs = require('fs');
+      const fblocks = [...fs.readFileSync(APP, 'utf8').matchAll(/\{ v: '([\d.]+)', d: '[^']*', items: \[([\s\S]*?)\] \}/g)];
+      const newestFix = ((fblocks.find((m) => /c: 'fix'/.test(m[2])) || [])[1]);
+      R.ok(newestFix && vheads()[vheads().length - 1].textContent.includes(newestFix), `the sort flip puts the newest matching release last (${newestFix})`);
+    }
     R.ok((c.d.querySelector('#ca-cl-sort i[data-lucide]') || {}).getAttribute('data-lucide') === 'arrow-up-wide-narrow', 'the sort icon flips to oldest-first');
     // empty state (the same branch a real empty filter result takes)
     c.w.eval("changelogState.filter = 'none'; renderChangelogSheet();");
