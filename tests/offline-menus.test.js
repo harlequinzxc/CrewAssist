@@ -198,7 +198,7 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v174"), 'service-worker cache name bumped to v174 (A5 diff, B7 commands, B6 calendar)');
+    R.ok(sw.includes("crewassist-v175"), 'service-worker cache name bumped to v175 (calendar-sheet nesting hotfix, no version bump)');
     // v1.38.0 review: forecast toggle, SGT conversions, storage panel
     R.ok(src.includes('ca-arch-proj-btn') && src.includes('ca-arch-proj-wrap'), 'the month total is a still-to-fly toggle (A1)');
     R.ok(src.includes("const AIRPORT_TZ = {"), 'a curated station-to-IANA-zone table powers SGT conversions (A2)');

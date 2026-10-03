@@ -100,6 +100,11 @@ const synthItems = [].concat(
     await wait(500);
     const wrap = d.getElementById('ca-roster-cal');
     R.ok(wrap && !wrap.classList.contains('hidden'), 'the header calendar opens the sheet');
+    // hotfix regression (owner report): the sheet once lived INSIDE the archive
+    // sub-sheet wrapper — its own hidden class was gone, but the wrapper's kept
+    // it blind. Visibility is asserted through the whole ancestor chain.
+    R.ok(wrap && wrap.closest('.hidden') === null, 'no hidden ancestor keeps the calendar blind');
+    R.ok(wrap && !wrap.closest('#ca-arch-sub') && !wrap.closest('#ca-arch-sheet'), 'the calendar sheet is never nested inside another sheet');
     R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'it opens on the current month');
     const cells = Array.from(d.querySelectorAll('.ca-rc-cell[data-ymd]'));
     R.ok(cells.length >= 25, 'every duty day gets a cell');
@@ -141,11 +146,18 @@ const synthItems = [].concat(
     R.ok(wrap.classList.contains('hidden'), 'Escape closes the roster calendar');
   }
 
-  // ---- a clean device: honest empty state ----
+  // ---- a clean device: honest empty state, driven by the real button ----
   {
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
     } });
+    let idleOk = false;
+    for (let t = 0; t < 50 && !idleOk; t++) { await wait(200); idleOk = !!w.eval('!isChatBusy()'); }
+    d.getElementById('btn-roster-cal').click();
+    await wait(500);
+    const wrapClean = d.getElementById('ca-roster-cal');
+    R.ok(wrapClean && !wrapClean.classList.contains('hidden') && wrapClean.closest('.hidden') === null, 'tapping the header icon opens the calendar — through the real click, no hidden ancestor');
+    R.ok(!d.getElementById('ca-rc-sheet').classList.contains('translate-y-full'), 'the sheet has slid up');
     w.eval('openRosterCalendar()');
     await wait(500);
     R.ok(!d.getElementById('ca-roster-cal').classList.contains('hidden'), 'the calendar opens even with no roster');
