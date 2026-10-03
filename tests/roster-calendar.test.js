@@ -2,7 +2,7 @@
 // flying days, layover days with their station, the OFF family, annual leave,
 // standby and course codes — into a duty-day store, and the header's calendar
 // icon opens a month grid of the whole roster. Tapping a flying day reopens
-// its saved earnings entry or prefills its duty card.
+// its saved earnings entry; unsaved duties pop up an honest roster summary.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 const fs = require('fs');
@@ -112,17 +112,21 @@ const synthItems = [].concat(
     R.ok(first && first.textContent.indexOf('SQ 106') >= 0, 'a turnaround day names both flights');
     R.ok(!!cells.find(c => c.classList.contains('is-today')), 'today carries the gold ring');
     R.ok(d.getElementById('ca-rc-legend').textContent.indexOf('Standby') >= 0, 'the legend explains every chip');
-    // a flying day that has not flown prefills its duty card
+    // a flying day that has not flown pops up its summary — never a calculator card
     const future = cells.find(c => c.getAttribute('data-ymd') === '2026-10-27');
     R.ok(!!future, '27 Oct is on the calendar');
+    const cardsBefore = d.querySelectorAll('[data-calc-card]').length;
     future.click();
-    await wait(900);
-    const cards = d.querySelectorAll('[data-calc-card]');
-    R.ok(cards.length >= 1, 'tapping a flying day builds its duty card');
-    const newest = cards[cards.length - 1];
-    R.eq((newest.querySelector('input[id$="-ifa-fn1"]') || {}).value, '164', 'the card prefills the duty\\u2019s first sector');
-    R.eq((newest.querySelector('input[id$="-ifa-fn2"]') || {}).value, '163', 'and its homebound sector');
-    R.ok(wrap.classList.contains('hidden'), 'the calendar steps aside for the card');
+    await wait(600);
+    R.eq(d.querySelectorAll('[data-calc-card]').length, cardsBefore, 'tapping a flying day never builds a calculator card (owner order)');
+    const sub = d.getElementById('ca-arch-sub');
+    R.ok(sub && !sub.classList.contains('hidden'), 'the flight summary pops up over the calendar');
+    const subTxt = (d.getElementById('ca-arch-sub-sheet').textContent || '').replace(/\s+/g, ' ');
+    R.ok(subTxt.indexOf('SQ 164') >= 0 && subTxt.indexOf('SQ 163') >= 0, 'the summary names every leg of the duty');
+    R.ok(subTxt.indexOf('Turnaround') >= 0, 'a same-day out-and-back reads Turnaround');
+    R.ok(subTxt.indexOf('SIN \u2192 SAI \u2192 SIN') >= 0, 'the summary shows the full route');
+    R.ok(subTxt.indexOf('0840H') >= 0 && subTxt.indexOf('0955H') >= 0, 'times read in the 24-hour HHMMH house format');
+    R.ok(!wrap.classList.contains('hidden'), 'the calendar stays open beneath the popup');
     // a saved entry reopens in place of the card
     w.eval("persistArchive([{ id: 'e1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-29', flightType: 'Layover', stationDisplay: 'HKT', amount: 318.55 }])");
     w.eval('openRosterCalendar()');

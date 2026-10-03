@@ -1058,19 +1058,22 @@
                     <!-- Connection status popover (v1.26.0; v1.26.1 solid surface + animated) -->
                     <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all duration-200 ease-out origin-top-left opacity-0 scale-95" role="dialog" aria-label="Connection status details"></div>
                     <!-- Right -->
-                    <div class="flex items-center gap-2">
-                        <!-- v1.39.0 (B6): the roster calendar -->
-                        <button id="btn-roster-cal" aria-label="Roster calendar" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                    <!-- v1.39.0 hotfix (owner order): the four icons pack
+                         tighter — 44px targets at gap-1 — so the row stops
+                         eating into the title and the online dot. Sheet close
+                         buttons elsewhere keep the roomier 48px. -->
+                    <div class="flex items-center gap-1">
+                        <button id="btn-roster-cal" aria-label="Roster calendar" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="calendar-days" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-theme" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-theme" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
                             <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
                         </button>
-                        <button id="btn-settings" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-settings" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-reset" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-reset" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="rotate-cw" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -1415,7 +1418,7 @@
              direct child of <body>, never inside another sheet. -->
         <div id="ca-roster-cal" class="fixed inset-0 z-[60] hidden">
             <div class="ca-rc-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-rc-close></div>
-            <div id="ca-rc-sheet" role="dialog" aria-modal="true" aria-label="Roster calendar" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-5 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-90px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300">
+            <div id="ca-rc-sheet" role="dialog" aria-modal="true" aria-label="Roster calendar" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl p-5 pb-8 space-y-3 max-w-xl mx-auto w-full overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300">
                 <div class="flex items-center justify-between gap-1">
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit p-3 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -1867,6 +1870,9 @@
                 { c: 'new', t: 'Type “ifa sq802 4 oct” to prefill calculators from chat.' },
                 { c: 'new', t: 'The menu viewer diffs against your last lookup.' },
                 { c: 'fix', t: 'Hotfix: the calendar now opens from its header icon.' },
+                { c: 'fix', t: 'Hotfix: the calendar fills the page like other overlays.' },
+                { c: 'fix', t: 'Hotfix: tapping a day pops up its flight summary.' },
+                { c: 'fix', t: 'Hotfix: header icons pack tighter, freeing the title.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -4190,23 +4196,40 @@
             }
             return legs;
         }
+        // v1.39.0 hotfix (owner order): tapping a day pops up the flight's
+        // SUMMARY — never a calculator card. Saved duties reopen their full
+        // earnings summary; unsaved ones get this honest roster summary in
+        // the same sheet, built only from what the roster printed.
+        function rosterCalFlightSummaryHtml(legs) {
+            const first = legs[0], last = legs[legs.length - 1];
+            const stops = legs.map(l => l.dep).concat([last.arr]).filter((v, i, a) => i === 0 || v !== a[i - 1]);
+            const type = (first.dep === 'SIN' && last.arr === 'SIN' && (last.staYmd || last.ymd) === first.ymd)
+                ? 'Turnaround' : (last.arr === 'SIN' ? 'Layover' : 'Duty');
+            let html = '<div class="space-y-3">'
+                + '<div class="flex items-center justify-between gap-2">'
+                + '<h3 class="font-bold text-base">SQ ' + rosterEsc(legs.map(l => l.fn).join(' \u00b7 ')) + '</h3>'
+                + '<span class="ca-micro font-bold uppercase tracking-wide text-sia-gold">' + type + '</span>'
+                + '</div>'
+                + '<p class="text-sm font-bold">' + rosterEsc(stops.join(' \u2192 ')) + ' \u00b7 ' + rosterShortDate(first.ymd) + (last.ymd !== first.ymd ? ' \u2013 ' + rosterShortDate(last.ymd) : '') + '</p>'
+                + '<div class="glass-panel rounded-2xl overflow-hidden">';
+            legs.forEach((l, i) => {
+                html += '<div class="flex items-center justify-between gap-3 px-4 py-3' + (i ? ' border-t ca-hairline' : '') + '">'
+                    + '<span class="text-sm font-bold whitespace-nowrap">SQ ' + rosterEsc(l.fn) + ' \u00b7 ' + rosterEsc(l.dep) + ' \u2192 ' + rosterEsc(l.arr) + '</span>'
+                    + '<span class="ca-micro font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(l.ymd)
+                    + (l.std ? ' \u00b7 ' + hmH(l.std) : '') + (l.sta ? ' \u2192 ' + hmH(l.sta) : '') + '</span>'
+                    + '</div>';
+            });
+            html += '</div></div>';
+            return html;
+        }
         function rosterCalOpenDay(ymd) {
             const day = rcMonthData(String(ymd).slice(0, 7))[ymd];
             if (day && day.kind === 'fly') {
-                // a saved earnings entry reopens first (owner: "that duty's card / saved entry")
+                // a saved earnings entry reopens its full summary first
                 const entry = loadArchive().find((e) => e && e.sectorDate === ymd);
                 if (entry) { openArchEntry(entry.id); return; }
                 const legs = rosterCalDutyFlights(ymd);
-                if (legs.length) {
-                    const use = legs.slice(0, 4);
-                    const cmd = { pairs: use.map((f) => ({ fn: f.fn, ymd: f.ymd })) };
-                    const infos = use.map((f) => ({ dep: f.dep, arr: f.arr, std: f.std || '', sta: f.sta || '', staYmd: f.staYmd || f.ymd }));
-                    const trip = natBuildTrip(cmd, infos);
-                    addBotMessage('Here is the duty of ' + rosterShortDate(ymd) + ' \u2014 prefilled.' + (legs.length > 4 ? ' (The calculator card holds four sectors \u2014 the first four are in.)' : ''));
-                    renderCalculatorCard('both', (id) => { rosterPrefillCard(id, trip); });
-                    closeRosterCalendar();
-                    return;
-                }
+                if (legs.length) { openArchSub(rosterCalFlightSummaryHtml(legs)); return; }
                 addBotMessage('That duty has flown and wasn\u2019t saved to your earnings \u2014 nothing to reopen.');
                 return;
             }

@@ -213,7 +213,8 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes("sr.className = 'sr-only'; sr.textContent = ' "), 'undo toasts speak their deadline to screen readers');
     R.ok(src.includes('.ca-arch-iconbtn { width: 48px; height: 48px;'), 'archive icon buttons are 48px');
     R.ok(src.split('px-4 py-3.5 min-h-[48px] text-xs').length === 5, 'all four quick chips are min-48px tall');
-    R.ok(src.includes('class="p-3.5 rounded-full'), 'header and sheet close buttons are 48px');
+    R.ok(src.includes('class="p-3.5 rounded-full'), 'sheet close buttons are 48px');
+    R.ok((src.match(/class="p-3 rounded-full hover:bg-black\/5 dark:hover:bg-white\/5 transition-colors text-gray-600 dark:text-gray-300"/g) || []).length === 4, 'v1.39.0 hotfix: the four header icons pack at 44px so they stop eating the title');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');
