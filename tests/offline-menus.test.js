@@ -194,11 +194,11 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.38.0';"), 'APP_VERSION stamped 1.38.0');
+    R.ok(src.includes("var APP_VERSION = '1.39.0';"), 'APP_VERSION stamped 1.39.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v173"), 'service-worker cache name bumped to v173 (two-part card hotfix, no version bump)');
+    R.ok(sw.includes("crewassist-v174"), 'service-worker cache name bumped to v174 (A5 diff, B7 commands, B6 calendar)');
     // v1.38.0 review: forecast toggle, SGT conversions, storage panel
     R.ok(src.includes('ca-arch-proj-btn') && src.includes('ca-arch-proj-wrap'), 'the month total is a still-to-fly toggle (A1)');
     R.ok(src.includes("const AIRPORT_TZ = {"), 'a curated station-to-IANA-zone table powers SGT conversions (A2)');
@@ -222,6 +222,56 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(sw.includes("res.type === 'opaque'"), 'cross-origin CDN responses (opaque) are runtime-cacheable');
     R.ok(src.includes('id="ca-shell-fail"') && src.includes('function shellGuard()'), 'missing-Tailwind boot shows the honest repair screen (shell guard)');
     R.ok(src.includes("if (window.tailwind) return;"), 'the guard stays silent when Tailwind loads fine');
+  }
+
+  // ---- v1.39.0 (A5): the menu viewer's honest route-diff ----
+  // Same flight number, a later date: the viewer compares the menu on screen
+  // against the crew's most recent OTHER-date lookup of the same flight,
+  // same cabin — built entirely from the saved cache. No second date, no row.
+  {
+    const diffMenu = (mains, desserts) => JSON.stringify({ timestamp: Date.now(), data: {
+        statusCode: 200,
+        legs: [{ flightDetails: {
+            departureAirportCode: 'SIN', arrivalAirportCode: 'NRT',
+            departureLocalDate: '2026-09-26 09:20:00', arrivalLocalDate: '2026-09-26 16:05:00',
+            departureUtcDate: '2026-09-26 01:20:00', arrivalUtcDate: '2026-09-26 08:05:00'
+        },
+        menu: { language: { EN_UK: { meals: [{ mealServiceNumber: '1', mealServiceCode: 'DINR', mealServiceName: 'After Take-Off',
+            selectionDetails: [{ name: 'Main', mealCourses: [
+                { category: 'Main Course', items: mains.map((n) => ({ id: n, name: n, description: 'd' })) },
+                { category: 'Dessert', items: desserts.map((n) => ({ id: n, name: n, description: 'd' })) }
+            ] }] }] } } } }]
+    } });
+    const PREV_KEY = 'SQ322:2026-09-19:JCL';
+    w.localStorage.setItem(CABIN_KEY, cabinPayload(Date.now()));
+    w.localStorage.setItem(MENU_KEY, diffMenu(['Beef with Rice', 'Fish with Noodles'], ['Chocolate Cake']));
+    w.localStorage.setItem(PREV_KEY, diffMenu(['Beef with Rice', 'Chicken with Pasta'], ['Chocolate Cake']));
+    R.ok(w.eval("openNextFlightViewer('322','2026-09-26')"), 'the viewer opens from the saved schedule');
+    await wait(500);
+    const row = d.getElementById('menu-diff-row');
+    R.ok(!!row, 'the diff row exists in the viewer');
+    const txt = row ? row.textContent.trim() : '';
+    R.ok(txt.indexOf('vs your 19 Sept lookup') === 0, 'the diff names the previous lookup date');
+    R.ok(txt.indexOf('2 mains changed') >= 0 && txt.indexOf('same desserts') >= 0, 'the diff counts changed mains and notes unchanged desserts');
+    R.ok(!row.classList.contains('max-h-0') && !row.classList.contains('opacity-0'), 'the row reveals with the animated max-height/opacity pattern');
+    // identical menus -> the honest "same" line
+    w.localStorage.setItem(PREV_KEY, diffMenu(['Beef with Rice', 'Fish with Noodles'], ['Chocolate Cake']));
+    w.eval("openNextFlightViewer('322','2026-09-26')");
+    await wait(500);
+    R.ok(d.getElementById('menu-diff-row').textContent.trim().indexOf('Same menu as your 19 Sept lookup.') === 0, 'identical menus read as one honest line');
+    // only one date cached -> no row, no guesswork
+    w.localStorage.removeItem(PREV_KEY);
+    w.eval("openNextFlightViewer('322','2026-09-26')");
+    await wait(500);
+    R.ok(d.getElementById('menu-diff-row').classList.contains('max-h-0'), 'a first-ever lookup shows no diff row');
+    // a different flight's cache never counts as a previous lookup
+    w.localStorage.setItem('SQ321:2026-09-19:JCL', diffMenu(['Beef with Rice'], ['Chocolate Cake']));
+    w.eval("openNextFlightViewer('322','2026-09-26')");
+    await wait(500);
+    R.ok(d.getElementById('menu-diff-row').classList.contains('max-h-0'), 'another flight number\u2019s cache is not a previous lookup');
+    w.localStorage.removeItem('SQ321:2026-09-19:JCL');
+    w.localStorage.removeItem(MENU_KEY);
+    w.localStorage.removeItem(CABIN_KEY);
   }
 
     process.exit(R.done() ? 1 : 0);

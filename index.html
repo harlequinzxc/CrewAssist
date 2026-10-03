@@ -245,6 +245,18 @@
             grid-template-rows: repeat(6, 2.25rem);
             place-items: center;
         }
+        /* v1.39.0 (B6): roster calendar cells */
+        .ca-rc-cell { min-height: 62px; border-radius: 0.9rem; padding: 0.35rem; display: flex; flex-direction: column; align-items: flex-start; gap: 0.25rem; border: 1px solid rgba(130,130,130,.22); transition: background-color .2s ease, border-color .2s ease, transform .2s ease, opacity .2s ease; text-align: left; }
+        .ca-rc-cell:active { transform: scale(.96); }
+        .ca-rc-cell.is-today { border-color: #c9a227; box-shadow: 0 0 0 1.5px rgba(201,162,39,.4); }
+        .ca-rc-num { font-size: 10px; font-weight: 800; opacity: .55; }
+        .ca-rc-chip { font-size: 9.5px; font-weight: 800; line-height: 1.2; padding: 3px 6px; border-radius: 999px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ca-rc-chip.is-fly { background: linear-gradient(90deg, #e3c96b, #c9a227); color: #000; }
+        .ca-rc-chip.is-lo { border: 1px solid rgba(130,130,130,.4); }
+        .ca-rc-chip.is-off, .ca-rc-chip.is-al { background: rgba(130,130,130,.16); }
+        .ca-rc-chip.is-duty { border: 1px solid rgba(217,119,6,.55); color: #b45309; }
+        html.dark .ca-rc-chip.is-duty { color: #fbbf24; }
+        @media (hover:hover) { .ca-rc-cell:hover { border-color: #c9a227; } }
         .cadate-day {
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
@@ -477,6 +489,7 @@
            neither taps nor scrolls — the crew reads and presses the tour
            buttons. Programmatic .click() from the tour itself is unaffected. */
         html.ca-tour-on #btn-settings,
+        html.ca-tour-on #btn-roster-cal,
         html.ca-tour-on #btn-reset,
         html.ca-tour-on #action-chips {
             pointer-events: none !important;
@@ -1046,6 +1059,10 @@
                     <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all duration-200 ease-out origin-top-left opacity-0 scale-95" role="dialog" aria-label="Connection status details"></div>
                     <!-- Right -->
                     <div class="flex items-center gap-2">
+                        <!-- v1.39.0 (B6): the roster calendar -->
+                        <button id="btn-roster-cal" aria-label="Roster calendar" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                            <i data-lucide="calendar-days" class="w-5 h-5"></i>
+                        </button>
                         <button id="btn-theme" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
                             <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
@@ -1389,6 +1406,24 @@
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
             <div class="ca-arch-sub-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
             <div id="ca-arch-sub-sheet" role="dialog" aria-modal="true" aria-label="Flight details" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300"></div>
+        <!-- v1.39.0 (B6): the roster calendar — a month of duties at a glance -->
+        <div id="ca-roster-cal" class="fixed inset-0 z-[60] hidden">
+            <div class="ca-rc-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-rc-close></div>
+            <div id="ca-rc-sheet" role="dialog" aria-modal="true" aria-label="Roster calendar" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-5 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-90px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300">
+                <div class="flex items-center justify-between gap-1">
+                    <div class="flex items-center">
+                        <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit p-3 -ml-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <h3 id="ca-rc-month" class="font-bold text-base w-32 text-center"></h3>
+                        <button type="button" id="ca-rc-next" aria-label="Next month" class="ca-hit p-3 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                    </div>
+                    <button type="button" id="ca-rc-today" class="h-9 px-4 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform">Today</button>
+                    <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="ca-rc-grid" class="grid grid-cols-7 gap-1.5 transition-opacity duration-200"></div>
+                <div id="ca-rc-legend" class="flex flex-wrap gap-x-4 gap-y-1.5 ca-micro font-bold text-gray-500 dark:text-gray-400 pt-2 border-t ca-hairline"></div>
+                <p id="ca-rc-empty" class="hidden text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3"></p>
+            </div>
+        </div>
         </div>
 
         <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
@@ -1499,6 +1534,10 @@
             </div>
             <!-- Filters sit flush under the title (no scroll gap) -->
             <div id="menu-sticky-header" class="hidden shrink-0 px-6 pb-2 max-w-2xl mx-auto w-full border-b ca-hairline">
+                        <!-- v1.39.0 (A5): honest diff vs the crew's most recent
+                             other-date lookup of the SAME flight number. Fed
+                             entirely by the saved menu cache — no cache, no row. -->
+                        <div id="menu-diff-row" class="flex items-start gap-1.5 ca-micro font-bold text-gray-500 dark:text-gray-400 overflow-hidden max-h-0 opacity-0 transition-all duration-300"></div>
                         <!-- Filter Dropdowns -->
                         <div id="menu-dropdown-row" class="flex flex-nowrap gap-2 relative z-20 items-center overflow-x-auto overflow-y-hidden">
                             <!-- Cabin Wrap -->
@@ -1800,7 +1839,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.38.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.39.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -1818,10 +1857,19 @@
         // the development log (owner-approved); pre-v1.5.9 releases stay
         // undated because no record exists.
         const APP_CHANGELOG = [
+            { v: '1.39.0', d: '2026-10-04', items: [
+                { c: 'new', t: 'Roster calendar: duties, layovers, OFF and standby days.' },
+                { c: 'new', t: 'Type “ifa sq802 4 oct” to prefill calculators from chat.' },
+                { c: 'new', t: 'The menu viewer diffs against your last lookup.' },
+            ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
                 { c: 'new', t: 'Flight Overview rows convert landing times to Singapore time.' },
                 { c: 'new', t: 'Settings shows honest storage numbers and clears saved menus.' },
+                { c: 'fix', t: 'Hotfix: the next-flight card shows one duty part at a time.' },
+                { c: 'fix', t: 'Hotfix: suggested alarm for Singapore departures, in HHMMH.' },
+                { c: 'fix', t: 'Hotfix: a layover clock card while you are at the station.' },
+                { c: 'fix', t: 'Hotfix: overnight arrival dates stitch right on Singapore phones.' },
             ] },
             { v: '1.37.0', d: '2026-10-03', items: [
                 { c: 'imp', t: 'Light-mode gold text now passes contrast standards.' },
@@ -2428,6 +2476,7 @@
                     ['ca-changelog-sheet', closeChangelog],
                     ['ca-arch-sheet', closeArchOverlay],
                     ['settings-sheet', closeSettings],
+                    ['ca-roster-cal', closeRosterCalendar],
                     ['menu-sheet', closeMenuViewer],
                     ['print-overlay', closeMenuPrinter],
                     ['results-sheet', function () {
@@ -2849,6 +2898,12 @@
             document.getElementById('btn-roster').addEventListener('click', () => {
                 if (isChatBusy()) return;
                 openRosterPicker();
+            });
+            // v1.39.0 (B6): the roster calendar
+            const rcBtn = document.getElementById('btn-roster-cal');
+            if (rcBtn) rcBtn.addEventListener('click', () => {
+                if (isChatBusy()) return;
+                openRosterCalendar();
             });
             document.getElementById('roster-file-input').addEventListener('change', (e) => {
                 // Snapshot the files BEFORE clearing: e.target.files is a LIVE
@@ -3661,6 +3716,25 @@
                     if (v.str !== 'Flight') return;
                     if (its.some(w => w.str === 'Time' && Math.abs(w.y - v.y) <= 3)) ftY = v.y;
                 });
+                // v1.39.0 (B6): the Duty column and the Sector column's bare
+                // station codes (SIN on an OFF row, MEL on a layover day) feed
+                // the roster calendar. Column headers repeat per page; the
+                // code column is the LOWEST-y 'Duty' (the Duty-Time pair sits
+                // further along the page), the sector column the lowest-y
+                // 'Sector' (the Sector-Duty sub-column sits further along).
+                // The report ends with a Duty Codes LEGEND page (code →
+                // description rows) — its rows must never become calendar
+                // days. Detected by its own headers.
+                const isLegendPage = its.some(v => v.str === 'Duty Codes' || v.str === 'Duty Desc');
+                let dutyY = null, locY = null;
+                if (!isLegendPage) {
+                    its.forEach(v => { if (v.str === 'Duty' && (dutyY === null || v.y < dutyY)) dutyY = v.y; });
+                    its.forEach(v => { if (v.str === 'Sector' && (locY === null || v.y < locY)) locY = v.y; });
+                }
+                its.forEach(v => {
+                    if (dutyY != null && Math.abs(v.y - dutyY) <= 12 && /^[A-Z]{2,5}\d{0,2}$/.test(v.str)) pool.push({ key: 'duty', str: v.str, x: v.x, page: p });
+                    else if (locY != null && Math.abs(v.y - locY) <= 10 && /^[A-Z]{3}$/.test(v.str)) pool.push({ key: 'loc', str: v.str, x: v.x, page: p });
+                });
                 const digitAnchors = [[rptY, 'rpt'], [stdY, 'std'], [staY, 'sta']].filter(a => a[0] != null);
                 its.forEach(v => {
                     if (RO_IS.hhmm(v.str) && digitAnchors.length) {
@@ -3802,7 +3876,38 @@
                 if (!flyingDates.has(ymd)) skippedDays++;
             });
             const monthLabel = anchors.length ? rosterDateToYmd(anchors[0].date).slice(0, 7) : '';
-            return { monthLabel, trips, flights, skippedDays, flyingDays: seen.size - skippedDays };
+            // ---- v1.39.0 (B6): duty days, the roster calendar's material ----
+            // FLY is already covered by the flights pass; every OTHER code —
+            // LO (a layover day at the printed station), the OFF family
+            // (owner's list: ATDO/OFFD/EXDO/RQ99/RX99), AALV annual leave,
+            // and any standby or course code — becomes a calendar day, the
+            // code itself the label. Rows the generator prints without a
+            // date (layover continuation rows do this) carry forward one day
+            // from the last seen date — a calendar inference, never a guess
+            // about a flight.
+            const RO_OFF = new Set(['ATDO', 'OFFD', 'EXDO', 'RQ99', 'RX99']);
+            const dayMap = {};
+            const dayOf = (ymd) => (dayMap[ymd] = dayMap[ymd] || { ymd, kind: '', code: '', loc: '', fns: [] });
+            flights.forEach(f => { if (!f.ymd) return; const t = dayOf(f.ymd); t.kind = 'fly'; if (f.fn && t.fns.indexOf(f.fn) < 0) t.fns.push(f.fn); });
+            let lastSeenYmd = '';
+            rowList.forEach(r => {
+                const duty = r.vals.duty || '';
+                if (!duty) return;
+                if (r.vals.fn || r.vals.sector || duty === 'FLY') { if (r.ymd) lastSeenYmd = r.ymd; return; }
+                let ymd = r.ymd;
+                const ownDate = anchors.some(a => a.page === r.page && Math.abs(a.x - r.x) <= 3);
+                if (!ownDate && lastSeenYmd) ymd = rosterYmAdd(lastSeenYmd, 1);
+                if (!ymd) return;
+                lastSeenYmd = ymd;
+                const t = dayOf(ymd);
+                const loc = /^[A-Z]{3}$/.test(r.vals.loc || '') ? r.vals.loc : '';
+                if (duty === 'LO') { if (t.kind !== 'fly') { t.kind = 'lo'; if (loc) t.loc = loc; } }
+                else if (RO_OFF.has(duty)) { if (!t.kind) { t.kind = 'off'; t.code = duty; } }
+                else if (duty === 'AALV') { if (!t.kind) { t.kind = 'al'; t.code = duty; } }
+                else if (!t.kind) { t.kind = 'duty'; t.code = duty; }
+            });
+            const days = Object.keys(dayMap).sort().map(k => dayMap[k]);
+            return { monthLabel, trips, flights, skippedDays, flyingDays: seen.size - skippedDays, days };
         }
 
         async function ensurePdfJs() {
@@ -3965,8 +4070,195 @@
             });
             const pruned = upcomingPrune(store);
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
+            dutyRemember(parsed);
             refreshNextFlightUi();
             return pruned;
+        }
+        // v1.39.0 (B6): the duty-day store behind the roster calendar —
+        // keyed by month like the upcoming store, replaced per covered month
+        // on re-import, never touched by the menu clear (it is roster data,
+        // not cache).
+        const DUTY_KEY = 'crewAssist.dutyDays';
+        function loadDutyDays() {
+            try { const v = JSON.parse(localStorage.getItem(DUTY_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+        }
+        function dutyRemember(parsed) {
+            const days = (parsed && parsed.days) || [];
+            if (!days.length) return loadDutyDays();
+            const store = loadDutyDays();
+            const months = {};
+            days.forEach(d => { months[String(d.ymd).slice(0, 7)] = 1; });
+            Object.keys(months).forEach((mk) => { store[mk] = []; });
+            days.forEach(d => { store[String(d.ymd).slice(0, 7)].push(d); });
+            try { localStorage.setItem(DUTY_KEY, JSON.stringify(store)); } catch (e) {}
+            return store;
+        }
+
+        // ================= v1.39.0 (B6): the roster calendar =================
+        // A month grid of the crew's roster: flying duties (gold, flight
+        // numbers on the chip), layover days (station code), OFF, annual
+        // leave, and standby/course codes. Tap a flying day for its saved
+        // earnings entry — or, if it hasn't flown, a prefilled duty card.
+        let rcViewYm = '';
+        function rosterCalMonths() {
+            const set = {};
+            Object.keys(loadDutyDays()).forEach((mk) => { if (/^\d{4}-\d{2}$/.test(mk)) set[mk] = 1; });
+            Object.keys(loadUpcoming()).forEach((mk) => { if (/^\d{4}-\d{2}$/.test(mk)) set[mk] = 1; });
+            set[todayLocalYMD().slice(0, 7)] = 1;
+            return Object.keys(set).sort();
+        }
+        function rcMonthData(ym) {
+            const byDay = {};
+            (loadDutyDays()[ym] || []).forEach((d) => { if (d && d.ymd) byDay[d.ymd] = { ymd: d.ymd, kind: d.kind || '', code: d.code || '', loc: d.loc || '', fns: (d.fns || []).slice() }; });
+            (loadUpcoming()[ym] || []).forEach((f) => {
+                if (!f || !f.ymd) return;
+                if (!byDay[f.ymd]) byDay[f.ymd] = { ymd: f.ymd, kind: 'fly', code: '', loc: '', fns: [] };
+                if (f.fn && byDay[f.ymd].fns.indexOf(f.fn) < 0) byDay[f.ymd].fns.push(f.fn);
+            });
+            return byDay;
+        }
+        function rcChipHtml(day) {
+            if (!day) return '';
+            if (day.kind === 'fly') return '<span class="ca-rc-chip is-fly">SQ ' + rosterEsc(day.fns.join('\u00b7')) + '</span>';
+            if (day.kind === 'lo') return '<span class="ca-rc-chip is-lo">' + rosterEsc(day.loc || 'Layover') + '</span>';
+            if (day.kind === 'off') return '<span class="ca-rc-chip is-off">OFF</span>';
+            if (day.kind === 'al') return '<span class="ca-rc-chip is-al">AL</span>';
+            if (day.kind === 'duty') return '<span class="ca-rc-chip is-duty">' + rosterEsc(day.code) + '</span>';
+            return '';
+        }
+        function renderRosterCalendar(slideDir) {
+            const grid = document.getElementById('ca-rc-grid');
+            const monthEl = document.getElementById('ca-rc-month');
+            const emptyEl = document.getElementById('ca-rc-empty');
+            if (!grid || !rcViewYm) return;
+            const paint = () => {
+                const y = parseInt(rcViewYm.slice(0, 4), 10);
+                const m = parseInt(rcViewYm.slice(5), 10) - 1;
+                const byDay = rcMonthData(rcViewYm);
+                const hasAny = Object.keys(byDay).length > 0;
+                if (monthEl) monthEl.textContent = (typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[m] : rcViewYm) + ' ' + y;
+                let html = '';
+                ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach((dw) => { html += '<span class="ca-micro font-bold text-gray-400 dark:text-gray-500 text-center py-1">' + dw + '</span>'; });
+                const first = new Date(y, m, 1);
+                const startPad = first.getDay();
+                const daysIn = new Date(y, m + 1, 0).getDate();
+                const today = todayLocalYMD();
+                for (let i = 0; i < startPad; i++) html += '<span></span>';
+                for (let dd = 1; dd <= daysIn; dd++) {
+                    const ymd = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+                    const day = byDay[ymd];
+                    const chip = rcChipHtml(day);
+                    const cls = 'ca-rc-cell' + (ymd === today ? ' is-today' : '');
+                    html += chip
+                        ? '<button type="button" class="' + cls + '" data-ymd="' + ymd + '"><span class="ca-rc-num">' + dd + '</span>' + chip + '</button>'
+                        : '<span class="' + cls + ' opacity-60"><span class="ca-rc-num">' + dd + '</span></span>';
+                }
+                grid.innerHTML = html;
+                grid.classList.remove('opacity-0');
+                if (emptyEl) {
+                    emptyEl.textContent = hasAny ? '' : 'No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.';
+                    emptyEl.classList.toggle('hidden', hasAny);
+                }
+                grid.querySelectorAll('.ca-rc-cell[data-ymd]').forEach((cell) => {
+                    cell.addEventListener('click', () => { try { rosterCalOpenDay(cell.getAttribute('data-ymd')); } catch (e) {} });
+                });
+            };
+            if (slideDir) {
+                grid.classList.add('opacity-0');
+                setTimeout(paint, 180);
+            } else paint();
+        }
+        function rosterCalDutyFlights(ymd) {
+            const store = loadUpcoming();
+            const all = [];
+            Object.keys(store).forEach((mk) => { (store[mk] || []).forEach((f) => { if (f && f.ymd) all.push(f); }); });
+            all.sort((a, b) => String(a.ymd + (a.std || '')).localeCompare(String(b.ymd + (b.std || ''))));
+            let i = all.findIndex((f) => f.ymd === ymd);
+            if (i < 0) return [];
+            while (i > 0 && all[i - 1].arr !== 'SIN' && all[i - 1].ymd <= ymd) i--;
+            const legs = [];
+            for (let k = i; k < all.length; k++) {
+                if (k > i && (all[k - 1].arr === 'SIN' || all[k].dep !== all[k - 1].arr)) break;
+                legs.push(all[k]);
+                if (all[k].arr === 'SIN') break;
+            }
+            return legs;
+        }
+        function rosterCalOpenDay(ymd) {
+            const day = rcMonthData(String(ymd).slice(0, 7))[ymd];
+            if (day && day.kind === 'fly') {
+                // a saved earnings entry reopens first (owner: "that duty's card / saved entry")
+                const entry = loadArchive().find((e) => e && e.sectorDate === ymd);
+                if (entry) { openArchEntry(entry.id); return; }
+                const legs = rosterCalDutyFlights(ymd);
+                if (legs.length) {
+                    const use = legs.slice(0, 4);
+                    const cmd = { pairs: use.map((f) => ({ fn: f.fn, ymd: f.ymd })) };
+                    const infos = use.map((f) => ({ dep: f.dep, arr: f.arr, std: f.std || '', sta: f.sta || '', staYmd: f.staYmd || f.ymd }));
+                    const trip = natBuildTrip(cmd, infos);
+                    addBotMessage('Here is the duty of ' + rosterShortDate(ymd) + ' \u2014 prefilled.' + (legs.length > 4 ? ' (The calculator card holds four sectors \u2014 the first four are in.)' : ''));
+                    renderCalculatorCard('both', (id) => { rosterPrefillCard(id, trip); });
+                    closeRosterCalendar();
+                    return;
+                }
+                addBotMessage('That duty has flown and wasn\u2019t saved to your earnings \u2014 nothing to reopen.');
+                return;
+            }
+            if (day && day.kind === 'lo') addBotMessage('You\u2019re in ' + (day.loc || 'layover') + ' that day \u2014 ' + rosterShortDate(ymd) + '.');
+            else if (day && day.kind === 'off') addBotMessage('OFF day \u2014 ' + rosterShortDate(ymd) + '.');
+            else if (day && day.kind === 'al') addBotMessage('Annual leave \u2014 ' + rosterShortDate(ymd) + '.');
+            else if (day && day.kind === 'duty') addBotMessage(rosterEsc(day.code) + ' \u2014 standby or course duty on ' + rosterShortDate(ymd) + '.');
+        }
+        function openRosterCalendar() {
+            const wrap = document.getElementById('ca-roster-cal');
+            const sheet = document.getElementById('ca-rc-sheet');
+            if (!wrap || !sheet) return;
+            const months = rosterCalMonths();
+            const todayYm = todayLocalYMD().slice(0, 7);
+            rcViewYm = months.indexOf(todayYm) >= 0 ? todayYm : (months[months.length - 1] || todayYm);
+            renderRosterCalendar();
+            const legend = document.getElementById('ca-rc-legend');
+            if (legend && !legend.childElementCount) {
+                legend.innerHTML = [
+                    '<span class="inline-flex items-center gap-1"><span class="ca-rc-chip is-fly">SQ 106</span>Flying duty</span>',
+                    '<span class="inline-flex items-center gap-1"><span class="ca-rc-chip is-lo">MEL</span>Layover</span>',
+                    '<span class="inline-flex items-center gap-1"><span class="ca-rc-chip is-off">OFF</span>Off</span>',
+                    '<span class="inline-flex items-center gap-1"><span class="ca-rc-chip is-al">AL</span>Leave</span>',
+                    '<span class="inline-flex items-center gap-1"><span class="ca-rc-chip is-duty">SN80</span>Standby / course</span>'
+                ].join('');
+            }
+            if (!wrap.getAttribute('data-bound')) {
+                wrap.setAttribute('data-bound', '1');
+                const shift = (dir) => {
+                    const months = rosterCalMonths();
+                    const at = months.indexOf(rcViewYm);
+                    const next = months[Math.min(months.length - 1, Math.max(0, at + dir))];
+                    if (next && next !== rcViewYm) { rcViewYm = next; renderRosterCalendar(dir); }
+                };
+                const on = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener('click', fn); };
+                on('ca-rc-prev', () => shift(-1));
+                on('ca-rc-next', () => shift(1));
+                on('ca-rc-today', () => { const t = todayLocalYMD().slice(0, 7); if (t !== rcViewYm) { rcViewYm = t; renderRosterCalendar(t > rcViewYm ? 1 : -1); } });
+                on('ca-rc-close', () => closeRosterCalendar());
+                wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
+            }
+            wrap.classList.remove('hidden');
+            if (typeof caSheetFocusIn === 'function') caSheetFocusIn(sheet);
+            setTimeout(() => {
+                const shade = wrap.querySelector('.ca-rc-shade');
+                if (shade) shade.classList.remove('opacity-0');
+                sheet.classList.remove('translate-y-full');
+            }, 10);
+        }
+        function closeRosterCalendar() {
+            const wrap = document.getElementById('ca-roster-cal');
+            const sheet = document.getElementById('ca-rc-sheet');
+            if (!wrap || wrap.classList.contains('hidden')) return;
+            if (typeof caSheetFocusOut === 'function') { try { caSheetFocusOut(sheet); } catch (e) {} }
+            const shade = wrap.querySelector('.ca-rc-shade');
+            if (shade) shade.classList.add('opacity-0');
+            sheet.classList.add('translate-y-full');
+            setTimeout(() => { wrap.classList.add('hidden'); }, 300);
         }
         function menusSavedFor(fn, ymd) {
             try { return !!localStorage.getItem(sqCabinCacheKey(fn, ymd)); } catch (e) { return false; }
@@ -4882,6 +5174,183 @@
             syncCalcUiAll();
         }
 
+        // ================= v1.39.0 (B7): natural calculator commands =================
+        // "sq802 4 oct sq807 5 oct" (chooser), "ifa sq802 4 oct", "lma sq802 4 oct
+        // sq807 5 oct", "cop ...", "menu sq802 4 oct". Grammar: an optional mode
+        // word, then one to four (flight, date) pairs. Anything that does not
+        // parse CLEANLY falls through to the old keyword engine — a typo never
+        // hijacks the chat. Route/times resolve from the attached roster first
+        // (offline-honest), then online via the menu API's schedule.
+        const NAT_MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, sept:9, oct:10, nov:11, dec:12,
+            january:1, february:2, march:3, april:4, june:6, july:7, august:8, september:9, october:10, november:11, december:12 };
+        function parseNaturalCommand(text) {
+            const t = String(text || '').toLowerCase().replace(/,/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+            if (!t.length) return null;
+            let mode = '';
+            let i = 0;
+            if (['menu', 'ifa', 'lma', 'cop'].indexOf(t[0]) >= 0) { mode = t[0]; i = 1; }
+            const pairs = [];
+            while (i < t.length) {
+                if (pairs.length >= 4) return null; // the card holds four sectors — longer pairings belong to the roster PDF
+                let fn = '';
+                const tok = t[i];
+                if (/^sq\d{1,4}$/.test(tok)) fn = tok.slice(2);
+                else if (i + 1 < t.length && tok === 'sq' && /^\d{1,4}$/.test(t[i + 1])) { fn = t[i + 1]; i++; }
+                else if (/^\d{1,4}$/.test(tok)) fn = tok;
+                if (!fn) return null;
+                i++;
+                let day = 0, mon = 0;
+                const a = t[i], b = t[i + 1];
+                if (a && /^\d{1,2}$/.test(a) && b && NAT_MONTHS[b]) { day = parseInt(a, 10); mon = NAT_MONTHS[b]; i += 2; }
+                else if (a && NAT_MONTHS[a] && b && /^\d{1,2}$/.test(b)) { day = parseInt(b, 10); mon = NAT_MONTHS[a]; i += 2; }
+                else if (a) { const m = a.match(/^(\d{1,2})([a-z]{3,9})$/); if (m && NAT_MONTHS[m[2]]) { day = parseInt(m[1], 10); mon = NAT_MONTHS[m[2]]; i += 1; } }
+                if (!day || !mon || day > 31) return null;
+                // no year in the phrasing: the nearest upcoming date is the one meant
+                let y = parseInt(todayLocalYMD().slice(0, 4), 10);
+                let ymd = y + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+                if (ymd < todayLocalYMD()) { y++; ymd = y + '-' + String(mon).padStart(2, '0') + '-' + String(day).padStart(2, '0'); }
+                pairs.push({ fn: String(parseInt(fn, 10)), ymd });
+            }
+            if (!pairs.length || i !== t.length) return null;
+            return { mode, pairs };
+        }
+        // The attached roster is the offline source of truth for a flight's
+        // route and printed times. Raw store (not upcomingList): past duties
+        // must still resolve for "how much did I earn" style lookups.
+        function natRosterInfo(fn, ymd) {
+            const store = loadUpcoming();
+            let hit = null;
+            Object.keys(store).forEach((mk) => {
+                (store[mk] || []).forEach((f) => { if (f && String(f.fn) === String(fn) && String(f.ymd) === String(ymd) && !hit) hit = f; });
+            });
+            return hit ? { dep: hit.dep, arr: hit.arr, std: hit.std || '', sta: hit.sta || '', staYmd: hit.staYmd || hit.ymd } : null;
+        }
+        // Online: getcabin proves the flight+date, the first cabin's menu
+        // carries the route and the printed local times. Both land in the
+        // cache on the way past — a later "menu sq802 4 oct" is then offline.
+        async function natResolveOnline(fn, ymd) {
+            try {
+                const payload = { carrierId: 'SQ', flightNumber: fn, flightDate: ymd, sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479' };
+                const res = await fetch('/api/sq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: 'getcabin', payload }) });
+                const cab = await res.json();
+                if (!cab || cab.statusCode !== 200 || !Array.isArray(cab.cabinClasses) || !cab.cabinClasses.length) return { unpublished: true };
+                try { localStorage.setItem(sqCabinCacheKey(fn, ymd), JSON.stringify({ timestamp: Date.now(), data: cab })); } catch (e) {}
+                const r = await fetchMenuForPrinter(fn, ymd, cab.cabinClasses[0]);
+                const legs = r && r.data && Array.isArray(r.data.legs) ? r.data.legs : [];
+                if (!legs.length) return { unpublished: true };
+                const fd = (legs[0].flightDetails || {});
+                const hm = (s) => { const m = String(s || '').match(/(\d{2}:\d{2}):(\d{2})/); return m ? m[1] : ''; };
+                return { dep: fd.departureAirportCode || '', arr: fd.arrivalAirportCode || '', std: hm(fd.departureLocalDate), sta: hm(fd.arrivalLocalDate), staYmd: String(fd.arrivalLocalDate || '').slice(0, 10) || ymd };
+            } catch (e) { return { error: true }; }
+        }
+        // flight time = STA - STD, rolling past midnight when the clock says so
+        function natFtHm(std, sta) {
+            const a = String(std || '').replace(':', ''), b = String(sta || '').replace(':', '');
+            if (!/^\d{4}$/.test(a) || !/^\d{4}$/.test(b)) return '';
+            let mins = (parseInt(b.slice(0, 2), 10) * 60 + parseInt(b.slice(2), 10)) - (parseInt(a.slice(0, 2), 10) * 60 + parseInt(a.slice(2), 10));
+            if (mins < 0) mins += 1440;
+            return String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+        }
+        function natBuildTrip(cmd, infos) {
+            const secs = cmd.pairs.map((p, k) => {
+                const inf = infos[k];
+                return { fn: p.fn, depDate: p.ymd, arrDate: inf ? (inf.staYmd || p.ymd) : p.ymd,
+                    dep: inf ? inf.dep : '', arr: inf ? inf.arr : '',
+                    stdHm: inf ? inf.std : '', staHm: inf ? inf.sta : '',
+                    ftHm: inf ? natFtHm(inf.std, inf.sta) : '', paxing: false };
+            });
+            const known = infos.filter(Boolean);
+            let type = '';
+            if (known.length === secs.length && known.length >= 2) {
+                const first = secs[0], last = secs[secs.length - 1];
+                type = (first.dep === 'SIN' && last.arr === 'SIN' && last.arrDate === first.depDate) ? 'Turnaround' : 'Layover';
+            }
+            const stations = [];
+            if (type !== 'Turnaround') {
+                for (let k = 0; k + 1 < secs.length; k++) {
+                    if (secs[k].arr && secs[k].arr === secs[k + 1].dep) {
+                        stations.push({ code: secs[k].arr, inFn: secs[k].fn, inDate: secs[k].arrDate, inTime: secs[k].staHm,
+                            outFn: secs[k + 1].fn, outDate: secs[k + 1].depDate, outTime: secs[k + 1].stdHm });
+                    }
+                }
+            }
+            return { type, sectors: secs, stations };
+        }
+        function natChooserBubble(text, buttons) {
+            // buttons: [{ label, icon, gold, act }] — the pair retires the moment
+            // one is pressed (dimmed, inert), the house rule for chat buttons.
+            addMessage('bot', text + '<div class="flex flex-wrap gap-2 mt-2">'
+                + buttons.map((b, k) => '<button type="button" class="nat-cmd-btn-' + k + ' flex-1 min-w-0 px-4 py-2.5 rounded-full ' + (b.gold ? 'bg-gradient-to-r from-sia-goldlt to-sia-gold text-black shadow-md' : 'border border-black/10 dark:border-white/15') + ' text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5">' + (b.icon ? '<i data-lucide="' + b.icon + '" class="w-3.5 h-3.5 shrink-0"></i>' : '') + b.label + '</button>').join('')
+                + '</div>');
+            const bubble = document.getElementById('chat-container').lastElementChild;
+            const els = buttons.map((b, k) => bubble.querySelector('.nat-cmd-btn-' + k));
+            const retire = () => els.forEach((b) => { if (b) { b.disabled = true; b.classList.add('opacity-40', 'pointer-events-none'); } });
+            buttons.forEach((b, k) => { if (els[k]) els[k].addEventListener('click', () => { retire(); b.act(); }); });
+            if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
+        }
+        function natPairLabel(p) { return 'SQ ' + p.fn + ' \u00b7 ' + rosterShortDate(p.ymd); }
+        async function runNaturalCommand(cmd) {
+            const label = cmd.pairs.map(natPairLabel).join(' \u2192 ');
+            // --- the LMA guards (owner rulings) ---
+            if (cmd.mode === 'lma' && cmd.pairs.length < 2) {
+                addBotMessage('LMA needs a layover \u2014 give me both sectors, like <b>lma sq802 4 oct sq807 5 oct</b>.');
+                return;
+            }
+            if (cmd.mode === 'lma' && cmd.pairs.every((p) => p.ymd === cmd.pairs[0].ymd)) {
+                addBotMessage('That reads as a same-day turnaround \u2014 no layover, no LMA. Try <b>cop ' + cmd.pairs.map((p) => 'sq' + p.fn + ' ' + rosterShortDate(p.ymd).toLowerCase()).join(' ') + '</b> for the full allowance.');
+                return;
+            }
+            // --- resolve every pair: roster first, then the network ---
+            const infos = [];
+            let needOnline = false;
+            for (const p of cmd.pairs) {
+                const r = natRosterInfo(p.fn, p.ymd);
+                if (r) infos.push(r);
+                else { infos.push(null); needOnline = true; }
+            }
+            if (needOnline && navigator.onLine && (cmd.mode !== 'menu')) {
+                addBotMessage('Checking ' + label + ' against the SQ schedule\u2026');
+                for (let k = 0; k < cmd.pairs.length; k++) {
+                    if (infos[k]) continue;
+                    const r = await natResolveOnline(cmd.pairs[k].fn, cmd.pairs[k].ymd);
+                    if (r && !r.unpublished && !r.error) infos[k] = r;
+                }
+            }
+            const stillMissing = infos.filter(Boolean).length < cmd.pairs.length;
+            // --- the LMA turnaround guard needs routes: same-day refusal already ran ---
+            if (cmd.mode === 'lma') {
+                const trip = natBuildTrip(cmd, infos);
+                if (trip.type === 'Turnaround') {
+                    addBotMessage('That\u2019s a same-day turnaround \u2014 no layover, no LMA. Try <b>cop</b> for the full allowance.');
+                    return;
+                }
+            }
+            // --- menu: straight to the flight's menus ---
+            if (cmd.mode === 'menu') {
+                if (cmd.pairs.length === 1) { openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd); return; }
+                natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd) })));
+                return;
+            }
+            // --- calculator prefill ---
+            const prefill = (mode) => {
+                const trip = natBuildTrip(cmd, infos);
+                addBotMessage('Prefilling ' + label + '\u2026');
+                renderCalculatorCard(mode, (id) => { rosterPrefillCard(id, trip); });
+                if (stillMissing) addBotMessage('I couldn\u2019t find every flight\u2019s times offline \u2014 tap <b>Fetch all</b> when you\u2019re connected, or type the times in.');
+            };
+            if (cmd.mode === 'ifa') return prefill('ifa');
+            if (cmd.mode === 'lma') return prefill('lma');
+            if (cmd.mode === 'cop') return prefill('both');
+            // --- no mode word: the crew picks menus or the allowance ---
+            natChooserBubble('<b>' + label + '</b> \u2014 what would you like?', [
+                { label: 'Menus', icon: 'utensils', gold: false, act: () => {
+                    if (cmd.pairs.length === 1) openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd);
+                    else natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd) })));
+                } },
+                { label: 'COP allowance', icon: 'calculator', gold: true, act: () => prefill('both') }
+            ]);
+        }
+
         function analyzeIntent(text) {
             const lowerText = text.toLowerCase();
             
@@ -4889,6 +5358,10 @@
             // Tour first: "tour" (or a bare "help") starts the feature tour.
             if (/\btour\b|show me around|^\s*help\s*$/.test(lowerText)) {
                 if (typeof startCaTour === 'function') startCaTour(true);
+            }
+            // v1.39.0 (B7): structured commands beat keywords — "ifa sq802 4
+            // oct" must never fall into the generic "flight" bucket.
+            else if ((function () { const c = parseNaturalCommand(text); if (c) { runNaturalCommand(c); return true; } return false; })()) {
             }
             // Print before menu so "Print the menu" does not open the viewer lookup.
             else if (/print|printer|homework/.test(lowerText)) {
@@ -10789,6 +11262,84 @@ function getRegionForAirport(code) {
             }
         }
 
+        // ================= v1.39.0 (A5): menu route-diff =================
+        // "vs your 1 Oct lookup: 2 mains changed, same desserts" — an honest
+        // comparison of THIS date's menu against the crew's most recent
+        // OTHER-date lookup of the SAME flight number, same cabin. Built
+        // entirely from the saved menu cache: no second date cached, no row.
+        // Course categories map to two classes; everything between is not
+        // compared (honest about what it read, silent about what it didn't).
+        function menuDiffClass(category) {
+            const c = String(category || '').toLowerCase();
+            if (/main|entr\u00e9e/.test(c)) return 'mains';
+            if (/dessert|sweet|pastry|cake/.test(c)) return 'desserts';
+            return '';
+        }
+        function menuDiffSignature(data) {
+            const sig = { mains: {}, desserts: {} };
+            ((data && data.legs) || []).forEach(leg => {
+                const langs = (leg.menu && leg.menu.language) || {};
+                Object.keys(langs).forEach(lk => {
+                    ((((langs[lk] || {}).meals) || []).forEach(meal => {
+                        (meal.selectionDetails || []).forEach(sel => {
+                            (sel.mealCourses || []).forEach(course => {
+                                const cls = menuDiffClass(course.category);
+                                if (!cls) return;
+                                (course.items || []).forEach(item => {
+                                    const n = String(item.name || item.title || '').trim().toLowerCase();
+                                    if (n) sig[cls][n] = 1;
+                                });
+                            });
+                        });
+                    }));
+                });
+            });
+            return sig;
+        }
+        function menuPreviousLookup(flightNumber, date, cabinClass) {
+            const want = 'SQ' + flightNumber + ':';
+            let best = null;
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k || k.indexOf(want) !== 0) continue;
+                const parts = k.split(':');
+                if (parts.length !== 3 || parts[2] !== cabinClass || parts[1] === date) continue;
+                let p = null;
+                try { p = JSON.parse(localStorage.getItem(k)); } catch (e) { continue; }
+                if (!p || !p.data || !Array.isArray(p.data.legs) || !p.data.legs.length) continue;
+                if (!best || (p.timestamp || 0) > best.timestamp) best = { date: parts[1], timestamp: p.timestamp || 0, data: p.data };
+            }
+            return best;
+        }
+        function renderMenuDiffRow(cabinClass, currentData) {
+            const row = document.getElementById('menu-diff-row');
+            if (!row) return;
+            let html = '';
+            try {
+                const prev = menuPreviousLookup(currentMenuSearch.flightNumber, currentMenuSearch.date, cabinClass);
+                if (prev && currentData && Array.isArray(currentData.legs)) {
+                    const a = menuDiffSignature(currentData), b = menuDiffSignature(prev.data);
+                    const changed = (cls) => {
+                        const seen = {};
+                        Object.keys(a[cls]).forEach(k => { seen[k] = 1; });
+                        Object.keys(b[cls]).forEach(k => { seen[k] = 1; });
+                        return Object.keys(seen).filter(k => ((k in a[cls]) !== (k in b[cls]))).length;
+                    };
+                    const mc = changed('mains'), dc = changed('desserts');
+                    const same = !mc && !dc;
+                    const txt = same
+                        ? 'Same menu as your ' + rosterShortDate(prev.date) + ' lookup.'
+                        : 'vs your ' + rosterShortDate(prev.date) + ' lookup: ' + (mc ? '<b>' + mc + (mc === 1 ? ' main' : ' mains') + ' changed</b>' : 'same mains') + ', ' + (dc ? '<b>' + dc + (dc === 1 ? ' dessert' : ' desserts') + ' changed</b>' : 'same desserts') + '.';
+                    html = '<i data-lucide="' + (same ? 'check' : 'git-compare-arrows') + '" class="w-3.5 h-3.5 shrink-0 mt-px"></i><span>' + txt + '</span>';
+                }
+            } catch (e) { html = ''; }
+            row.innerHTML = html;
+            row.classList.toggle('max-h-0', !html);
+            row.classList.toggle('opacity-0', !html);
+            row.classList.toggle('max-h-12', !!html);
+            if (html && (typeof lucide !== 'undefined')) { try { lucide.createIcons(); } catch (e) {} }
+        }
+
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
             currentMenuSearch.selectedCabins = cabinClasses;
             currentMenuSearch.selectedSector = '';
@@ -11135,6 +11686,9 @@ function getRegionForAirport(code) {
                 currentMenuSearch.selectedSector = legCode(pick);
                 renderSector(pick);
             }
+            // v1.39.0 (A5): the diff row rides every render — cached, fresh,
+            // or stale — because the comparison is about content, not age.
+            renderMenuDiffRow(currentMenuSearch.selectedCabin, data);
         }
         
         function menuHairlineTitle(text, extraHtml) {

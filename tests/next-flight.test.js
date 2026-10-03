@@ -307,7 +307,9 @@ function rosterItems(flight, sector, dateTok, opts) {
       const t = new Date(Date.now() + offMin * 60000);
       return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
     };
-    const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-390), sta: hm(-330), staYmd: ymd(0) };
+    // a leg that landed YESTERDAY morning — fixed walls, immune to the
+    // run hour (a "6.5h ago" seed wraps past midnight and turns future)
+    const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(-1), std: '08:25', sta: '09:35', staYmd: ymd(-1) };
     const inAirSta = hm(120); // pinned once — a minute roll between seed and assert must not rewrite it
     const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: inAirSta, staYmd: ymd(0) };
     // (a) part two, mid-air: the landed leg is gone, the airborne one leads
@@ -347,7 +349,7 @@ function rosterItems(flight, sector, dateTok, opts) {
     const { w, d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
       x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
-        { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-390), sta: hm(-330), staYmd: ymd(0) }
+        { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(-1), std: '08:25', sta: '09:35', staYmd: ymd(-1) }
       ])));
     } });
     let card = null;

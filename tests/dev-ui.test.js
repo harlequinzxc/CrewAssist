@@ -525,5 +525,77 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(st.textContent.replace(/\s+/g, ' ').indexOf('Saved menus (flights)1') !== -1, 'counts refresh after the clear');
   }
 
+  {
+    // ---- v1.39.0 (B7): natural calculator commands in the chat ----
+    const g = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [
+        { fn: '802', dep: 'SIN', arr: 'NRT', ymd: '2026-10-06', std: '09:45', sta: '18:27', staYmd: '2026-10-06' },
+        { fn: '807', dep: 'NRT', arr: 'SIN', ymd: '2026-10-08', std: '20:30', sta: '06:29', staYmd: '2026-10-09' },
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-04', std: '09:00', sta: '10:10', staYmd: '2026-10-04' },
+        { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-04', std: '10:25', sta: '11:45', staYmd: '2026-10-04' }
+      ] }));
+    } });
+    const gUntil = mkUntil(g.d);
+    const idle = async () => gUntil(() => !g.w.eval('isChatBusy()'), 9000);
+    const send = async (t) => { await idle(); g.w.eval('processInput(' + JSON.stringify(t) + ')'); await wait(250); return idle(); };
+    // the menu nudge can land mid-block (flights inside 48h) — assert on the
+    // whole chat, never on \u201cthe last bubble\u201d
+    const chatTxt = () => g.d.getElementById('chat-container').textContent.replace(/\s+/g, ' ');
+    const cards = () => Array.from(g.d.querySelectorAll('[data-calc-card]'));
+    await wait(1500); await idle();
+
+    // the parser: clean pairs only — a typo falls through to the old engine
+    R.eq(g.w.eval("parseNaturalCommand('sq802 4 oct sq807 5 oct').pairs.map(p => p.fn).join(',')"), '802,807', 'bare phrasing parses as flight pairs with no mode');
+    R.eq(g.w.eval("parseNaturalCommand('IFA SQ802 4oct').mode"), 'ifa', 'mode word + glued date parse case-insensitively');
+    R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), '2026-10-04', 'spaced flight and month-first dates both parse');
+    R.eq(g.w.eval("!!parseNaturalCommand('what can you do')"), false, 'ordinary sentences never parse as commands');
+
+    // ifa: the card arrives prefilled from the roster (offline-honest)
+    await send('ifa sq802 6 oct sq807 8 oct');
+    const ifaCard = cards()[cards().length - 1];
+    R.ok(!!ifaCard, 'ifa sq802 6 oct sq807 8 oct opens a calculator card');
+    R.eq((ifaCard.querySelector('input[id$="-ifa-fn1"]') || {}).value, '802', 'sector 1 carries the first flight');
+    R.eq((ifaCard.querySelector('input[id$="-ifa-d1"]') || {}).value, '2026-10-06', 'sector 1 carries the parsed date');
+    R.eq((ifaCard.querySelector('input[id$="-ifa-t1"]') || {}).value, '08:42', 'sector 1 flight time derives from the roster\u2019s printed STD/STA');
+    R.eq((ifaCard.querySelector('input[id$="-ifa-t2"]') || {}).value, '09:59', 'an overnight sector\u2019s time rolls past midnight honestly');
+
+    // the LMA guards (owner rulings)
+    await send('lma sq802 6 oct');
+    R.ok(chatTxt().indexOf('LMA needs a layover') >= 0, 'a single sector cannot be an LMA');
+    await send('lma sq106 4 oct sq105 4 oct');
+    R.ok(chatTxt().indexOf('same-day turnaround') >= 0, 'LMA for a same-day turnaround is refused');
+
+    // cop: the whole card, LMA station included
+    await send('cop sq802 6 oct sq807 8 oct');
+    const copCard = cards()[cards().length - 1];
+    R.eq((copCard.querySelector('input[id$="-flight-type"]') || {}).value, 'Layover', 'an out-and-back across days preselects Layover');
+    R.eq((copCard.querySelector('input[id$="-lma-iata1"]') || {}).value, 'NRT', 'the layover station prefills from the roster');
+    R.eq((copCard.querySelector('input[id$="-lma-at1"]') || {}).value, '18:27', 'the station\u2019s arrival time prefills');
+    R.eq((copCard.querySelector('input[id$="-lma-dt1"]') || {}).value, '20:30', 'the station\u2019s departure time prefills');
+
+    // menu: the existing honest flows, straight from the chat
+    Object.defineProperty(g.w.navigator, 'onLine', { value: false, configurable: true });
+    await send('menu sq802 6 oct');
+    R.ok(chatTxt().indexOf('offline') >= 0, 'menu for an unsaved flight offline stays honest');
+    Object.defineProperty(g.w.navigator, 'onLine', { value: true, configurable: true });
+    await send('menu sq802 6 oct sq807 8 oct');
+    const legBtns = Array.from(g.d.querySelectorAll('button[class*=nat-cmd-btn-]')).filter((b) => !b.disabled);
+    R.eq(legBtns.length, 2, 'a multi-leg menu command offers each leg');
+    R.ok(legBtns[0].textContent.indexOf('SQ 802') >= 0 && legBtns[1].textContent.indexOf('SQ 807') >= 0, 'the leg buttons name their flights');
+
+    // no mode word: the crew picks menus or the allowance
+    await send('sq802 6 oct sq807 8 oct');
+    const lastBubble = g.d.getElementById('chat-container').lastElementChild;
+    const pick = Array.from(lastBubble.querySelectorAll('button[class*=nat-cmd-btn-]')).filter((b) => !b.disabled);
+    R.eq(pick.map((b) => b.textContent.trim()).join('|'), 'Menus|COP allowance', 'a bare command offers menus or the COP allowance');
+    pick[1].click();
+    await idle(); await wait(500);
+    const bareCard = cards()[cards().length - 1];
+    R.eq((bareCard.querySelector('input[id$="-ifa-fn1"]') || {}).value, '802', 'the COP choice prefills the card');
+    R.ok(pick[0].disabled && pick[1].disabled, 'the choice pair retires once pressed');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
