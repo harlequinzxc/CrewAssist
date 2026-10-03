@@ -71,6 +71,14 @@ async function boot(appPath, opts) {
     // Evaluate every inline script in document order, like a browser would.
     const scripts = Array.from(d.querySelectorAll('script:not([src])')).map((s) => s.textContent);
     for (const code of scripts) { try { w.eval(code); } catch (e) { if (!/serviceWorker|tailwind/.test(String(e))) console.log('script err: ' + e); } }
+    // v1.37.0: the app's one-time in-app nudges (install hint, roster-import
+    // hint, Manual-mode hint) are pre-suppressed so suites stay deterministic;
+    // a test that verifies a nudge clears its flag in its own seed below.
+    try {
+        w.localStorage.setItem('crewAssist.installHintDone', '1');
+        w.localStorage.setItem('crewAssist.nudgedRoster', '1');
+        w.localStorage.setItem('crewAssist.nudgedCalcUi', '1');
+    } catch (e) {}
     // Seed hook: run before the app's DOMContentLoaded (which fires during the
     // wait below) so a suite can pre-load localStorage — profiles, rosters,
     // caches — exactly like a returning device would have them. (Re-added in

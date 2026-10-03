@@ -135,7 +135,7 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(core.className.includes('bg-green-500') && core.className.includes('animate-pulse'), 'online dot pulses green');
     setOnline(false);
     w.dispatchEvent(new w.Event('offline'));
-    R.ok(core.className.includes('bg-amber-500') && !core.className.includes('animate-pulse'), 'offline event turns the dot steady amber');
+    R.ok(core.className.includes('border-2 border-amber-500') && core.className.includes('bg-transparent') && !core.className.includes('animate-pulse'), 'v1.37.0: offline turns the dot into a steady hollow amber ring, keeping online solidly green');
     d.getElementById('net-status-dot').click();
     await wait(60);
     const pop = d.getElementById('net-status-pop');
@@ -194,11 +194,18 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.36.1';"), 'APP_VERSION stamped 1.36.1');
+    R.ok(src.includes("var APP_VERSION = '1.37.0';"), 'APP_VERSION stamped 1.37.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v169"), 'service-worker cache name bumped to v169');
+    R.ok(sw.includes("crewassist-v170"), 'service-worker cache name bumped to v170');
+    // v1.37.0 review: contrast, tap targets, and the install hint
+    R.ok(src.includes('html:not(.dark) .text-sia-gold { color: #7A620F; }'), 'light-mode gold TEXT gets the darker 7A620F token (borders and icons keep their gold)');
+    R.ok(src.includes('html.dark #onboarding-view .ui-input { color: rgba(255, 255, 255, 0.75); }'), 'dark-mode onboarding pills brighten to white/75');
+    R.ok(src.includes('w-11 h-11 flex items-center justify-center rounded-full transition-colors'), 'the connection dot reaches the 44px tap standard');
+    R.ok(src.includes('.print-edit-eye { min-height: 44px;'), 'the print-edit eye reaches the 44px tap standard');
+    R.ok(src.includes("matchMedia('(display-mode: standalone)')"), 'the install hint respects installed apps (display-mode standalone)');
+    R.ok(src.includes('v1.37.0 (3.2): Escape also closes whichever sheet is on top.'), 'Escape closes the topmost open sheet');
     R.ok(sw.includes('https://cdn.tailwindcss.com') && sw.includes('pdf.min.js'), 'Tailwind + pdf.js precached for first offline launch');
     // v1.36.0: the airplane-mode shell hardening (owner report: unstyled
     // onboarding + lost icons on offline launch).

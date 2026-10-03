@@ -231,7 +231,7 @@ const mkUntil = (d) => async (cond, ms) => {
     // ---- v1.33.1: light-mode surfaces + arrival-time next-flight ----
     R.ok(src.includes('html:not(.dark) #onboarding-view .ui-input'), 'onboarding fields get a light-mode surface and border');
     R.ok(src.includes('html:not(.dark) #whatsnew-backdrop .glass-bubble'), 'the What\u2019s New bubble gets a light-mode surface');
-    R.ok((src.match(/text-sia-navy\/70 dark:text-white\/15/g) || []).length === 2, 'the tagline and semver step up from navy/20 (1.4:1) to navy/70');
+    R.ok((src.match(/text-sia-navy\/70 dark:text-white\/25/g) || []).length === 2, 'the tagline and semver read navy/70 + white/25 (v1.37.0: the stamps step up from white/15)');
     R.ok(src.includes('placeholder-gray-600 dark:placeholder-gray-400'), 'the onboarding name placeholder reads at gray-600 in daylight');
     R.ok(src.includes('whatsnew-close" class="absolute top-3 right-3 p-3.5'), 'the What\u2019s New close button joins the 48px standard');
     R.ok(src.includes('sta: f.staHm'), 'roster imports record each flight\u2019s arrival time');
@@ -443,6 +443,45 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(clScroll.scrollTop === 0 && clTop.className.includes('opacity-0'), 'a re-render jumps the list back to the top and hides the button');
     c.d.getElementById('ca-changelog-close').click();
     await cUntil(() => c.d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 3000);
+  }
+  {
+    // ---- v1.37.0: Escape closes the top sheet; nudges fire once ----
+    const e = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
+    } });
+    const eUntil = mkUntil(e.d);
+    e.w.eval('openSettings()');
+    await eUntil(() => !e.d.getElementById('settings-sheet').classList.contains('translate-y-full'), 3000);
+    e.d.dispatchEvent(new e.w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    R.ok(e.d.getElementById('settings-sheet').classList.contains('translate-y-full'), 'v1.37.0: Escape closes the open settings sheet');
+    // the roster-import nudge: the second manual card earns it, exactly once
+    e.w.localStorage.removeItem('crewAssist.nudgedRoster');
+    e.w.localStorage.setItem('crewAssist.manualCards', '1');
+    e.w.eval("renderCalculatorCard('ifa')");
+    R.ok(await eUntil(() => (e.d.getElementById('chat-container').textContent || '').includes('roster PDF'), 6000), 'v1.37.0: the second manual card suggests attaching the roster PDF');
+    R.eq(e.w.localStorage.getItem('crewAssist.nudgedRoster'), '1', 'the roster hint stamps itself as shown');
+    const chat = () => e.d.getElementById('chat-container').textContent || '';
+    const nudgeCount = () => (chat().match(/roster PDF/g) || []).length;
+    const before = nudgeCount();
+    e.w.eval("renderCalculatorCard('ifa')");
+    await wait(1800);
+    R.eq(nudgeCount(), before, 'the roster hint never repeats on later cards');
+    // the Manual-interface hint: three hand edits to Fetch-owned fields
+    e.w.localStorage.removeItem('crewAssist.nudgedCalcUi');
+    const tField = e.d.querySelector('input[id$="-ifa-t1"]');
+    R.ok(!!tField, 'a fresh card exposes the trip-number field Fetch would fill');
+    for (let i = 0; i < 3; i++) { tField.value = 'SQ6' + i; tField.dispatchEvent(new e.w.Event('input', { bubbles: true })); }
+    R.ok(await eUntil(() => chat().includes('Prefer filling every field by hand?'), 6000), 'v1.37.0: the third hand edit offers the Manual interface');
+    R.eq(e.w.localStorage.getItem('crewAssist.nudgedCalcUi'), '1', 'the Manual-mode hint stamps itself as shown');
+    // the install hint: a browser-tab user with saved earnings hears it once
+    e.w.localStorage.removeItem('crewAssist.installHintDone');
+    e.w.localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'n1', monthKey: '2026-10', savedAt: '2026-10-01T00:00:00.000Z', amount: 120 }]));
+    e.w.eval('maybeInstallHint()');
+    R.ok(!e.d.getElementById('app-dialog-backdrop').classList.contains('hidden'), 'v1.37.0: a browser-tab user with saved earnings gets the install card');
+    R.ok((e.d.getElementById('app-dialog-msg').textContent || '').includes('Add to Home Screen'), 'the install card names the Add to Home Screen action');
+    R.eq(e.w.localStorage.getItem('crewAssist.installHintDone'), '1', 'the install card shows only once');
+    e.d.getElementById('app-dialog-ok').click();
   }
 
   process.exit(R.done() ? 1 : 0);

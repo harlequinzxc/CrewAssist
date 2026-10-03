@@ -69,7 +69,7 @@ const fs = require('fs');
     R.ok(!d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 'earnings page opens with nothing saved');
     const listTxt = d.getElementById('ca-arch-list').textContent;
     R.ok(/No flights yet/.test(listTxt), 'empty state heading');
-    R.ok(/Run a COP calculation and hit save or tap the import arrow/.test(listTxt), 'empty state names both ways to fill it');
+    R.ok(/Entries appear when you tap Save on a calculation/.test(listTxt) && /import a JSON backup with the arrow above/.test(listTxt), 'v1.37.0: the empty state names both ways to fill it in mental-model order');
   }
 
   // tap-through: rows reopen the saved summary; old entries say so honestly
@@ -837,6 +837,29 @@ function todayYmd() {
     R.ok(ctx.indexOf('+$400.00 vs Apr 2026') !== -1, 'May carries +$400.00 vs April (MoM in dollars)');
     R.ok(ctx.indexOf('vs LY') === -1, 'no LY chip without a year-ago record to cite');
     R.ok(d.getElementById('ca-arch-m-ctx').innerHTML.indexOf('trending-up') !== -1, 'the up-month shows its trend icon');
+  }
+  {
+    // ---- v1.37.0: owner ruling — a duty belongs to its departure month ----
+    const m = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
+    } });
+    m.w.eval("renderCalculatorCard('ifa')");
+    for (let i = 0; i < 40 && !m.d.querySelector('input[id$=\"-ifa-d1\"]'); i++) await wait(100);
+    const d1 = m.d.querySelector('input[id$=\"-ifa-d1\"]');
+    R.ok(!!d1, 'a manual card exposes its first departure date');
+    const cid = d1.id.slice(0, -'-ifa-d1'.length);
+    d1.value = '2026-11-30'; // SIN->XXX out Nov 30, back Dec 2
+    const rec = m.w.eval("buildCopArchivePayload('" + cid + "', true, 150, 0)");
+    R.ok(rec && rec.monthKey === '2026-11', 'v1.37.0 (4.3) owner ruling: a Nov 30 departure counts as November even when the duty lands in December');
+    // ---- v1.37.0: ten fresh entries re-arm the backup nudge ----
+    const nowMs = Date.now();
+    m.w.localStorage.setItem('crewAssist.lastBackupAt', String(nowMs));
+    const ten = [];
+    for (let i = 0; i < 10; i++) ten.push({ monthKey: '2026-10', savedAt: new Date(nowMs + (i + 1) * 60000).toISOString() });
+    const info = m.w.eval('archBackupNudgeInfo(' + JSON.stringify(ten) + ')');
+    R.ok(info && info.newCount === 10, 'v1.37.0: ten fresh entries re-arm the backup nudge inside the 21-day quiet window');
+    R.ok(m.w.eval('archBackupNudgeInfo(' + JSON.stringify(ten.slice(0, 2)) + ')') === null, 'two fresh entries stay quiet inside the 21-day window');
   }
   process.exit(R.done() ? 1 : 0);
 })();

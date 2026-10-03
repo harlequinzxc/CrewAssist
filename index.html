@@ -59,7 +59,7 @@
             --arch-surface: #141823;
             --arch-surface-border: rgba(255, 255, 255, 0.05);
             --arch-fg: #FFFFFF;
-            --arch-muted: rgba(255, 255, 255, 0.45);
+            --arch-muted: rgba(255, 255, 255, 0.60);
             --arch-hairline: rgba(255, 255, 255, 0.08);
             --arch-press: rgba(255, 255, 255, 0.04);
             --arch-badge-border: rgba(255, 255, 255, 0.15);
@@ -77,7 +77,7 @@
             --arch-surface: #FFFFFF;
             --arch-surface-border: rgba(0, 0, 0, 0.07);
             --arch-fg: #111827;
-            --arch-muted: rgba(17, 24, 39, 0.45);
+            --arch-muted: rgba(17, 24, 39, 0.62);
             --arch-hairline: rgba(0, 0, 0, 0.08);
             --arch-press: rgba(0, 0, 0, 0.035);
             --arch-badge-border: rgba(0, 0, 0, 0.12);
@@ -101,6 +101,11 @@
            paints for thumb taps, so the touch experience is unchanged; inputs
            keep their existing gold ring instead of doubling up. */
         :focus-visible:not(input):not(textarea):not(select) { outline: 2px solid var(--sia-gold-ink, #7d650f); outline-offset: 2px; }
+
+        /* v1.37.0: light mode gets a darker gold token for TEXT only — the
+           old #7d650f read as 3.9:1 on cream; icons and borders keep their
+           richer gold. Dark mode is untouched. */
+        html:not(.dark) .text-sia-gold { color: #7A620F; }
 
         body {
             background-color: var(--bg-color);
@@ -334,7 +339,7 @@
         .ca-arch-segtrack { display: inline-flex; background: rgba(26,19,0,.1); border-radius: 999px; padding: 3px; gap: 2px; }
         .ca-arch-seg { border: none; background: transparent; color: rgba(26,19,0,.65); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
         .ca-arch-seg.ca-arch-segon { background: #1a1300; color: #e6c254; }
-        .ca-arch-metalabel { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; opacity: .55; }
+        .ca-arch-metalabel { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-metaval { font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
         .ca-arch-metadot { opacity: .3; font-weight: 700; }
         .ca-arch-surface { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
@@ -347,12 +352,12 @@
         .ca-arch-barlab { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
         .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: #fff; padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
-        .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+        .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
         .ca-arch-badge-best { color: #e6c254; border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
         .ca-arch-badge-low { color: #f87171; border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
         .ca-arch-badge-prog { color: var(--arch-muted); border: 1px solid var(--arch-badge-border); }
         .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
-        .ca-arch-inslabel { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
+        .ca-arch-inslabel { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-insval { font-size: 14px; font-weight: 700; color: var(--arch-fg); }
         .ca-arch-inssub { font-size: 11px; margin-top: 2px; }
         .ca-arch-yoy-up { color: #34d399; font-weight: 700; }
@@ -380,6 +385,10 @@
             background: rgba(255, 255, 255, 0.6);
             border-color: rgba(17, 24, 39, 0.2);
         }
+        /* v1.37.0: dark-mode pills were near-white borders with gray/70
+           text — brightened to /75, and the selected state (which drops
+           ui-input) keeps its existing gold styling. */
+        html.dark #onboarding-view .ui-input { color: rgba(255, 255, 255, 0.75); }
         html:not(.dark) #whatsnew-backdrop .glass-bubble {
             background: rgba(246, 241, 232, 0.96); /* a cream card on the dim scrim */
         }
@@ -756,7 +765,7 @@
             filter: none;
         }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .print-edit-eye { height: 28px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
+        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
         .dev-rate-table { width: 100%; border-collapse: collapse; }
         .dev-rate-table th { text-align: left; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; padding: 4px 6px; }
         .dev-rate-table td { padding: 4px 6px; font-size: 12px; font-weight: 600; vertical-align: middle; }
@@ -950,7 +959,7 @@
                             <span class="text-xl uppercase tracking-[0.2em] font-bold text-sia-gold">CrewAssist&trade;</span>
                             <div class="h-px w-full bg-sia-navy/30 dark:bg-white/15 mt-1.5"></div>
                         </div>
-                        <p class="mt-1 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/15 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
+                        <p class="mt-1 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/25 select-none whitespace-nowrap">AN UNOFFICIAL CREW TOOL</p>
                     </div>
                 </div>
             </div>
@@ -1010,7 +1019,7 @@
                             <button id="ob-submit" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
                                 Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
                             </button>
-                            <p id="app-semver" class="mt-4 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/15 select-none"></p>
+                            <p id="app-semver" class="mt-4 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/25 select-none"></p>
                         </div>
                     </div>
                 </div>
@@ -1026,7 +1035,7 @@
                     <div class="flex items-center gap-1 cursor-pointer select-none" id="header-brand">
                         <img src="icons/logo-192.png" class="w-10 h-10 -ml-1 drop-shadow-md" alt="Logo">
                         <h1 class="font-bold text-lg tracking-tight">CrewAssist</h1>
-                        <button type="button" id="net-status-dot" aria-label="Connection status" aria-expanded="false" class="p-1 rounded-full transition-colors"><span id="net-status-dot-core" class="block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></button>
+                        <button type="button" id="net-status-dot" aria-label="Connection status" aria-expanded="false" class="w-11 h-11 flex items-center justify-center rounded-full transition-colors"><span id="net-status-dot-core" class="block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span></button>
                     </div>
                     <!-- Connection status popover (v1.26.0; v1.26.1 solid surface + animated) -->
                     <div id="net-status-pop" class="hidden absolute left-3 top-full mt-1 z-50 w-72 max-w-[calc(100vw-1.5rem)] glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all duration-200 ease-out origin-top-left opacity-0 scale-95" role="dialog" aria-label="Connection status details"></div>
@@ -1125,7 +1134,7 @@
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex items-center gap-2.5">
                             <div id="settings-avatar" class="w-9 h-9 rounded-full flex items-center justify-center border border-sia-gold/70 bg-sia-gold/10 text-sia-gold font-bold text-base select-none" aria-hidden="true">J</div>
-                            <p class="font-bold text-base" id="settings-profile-name">Johnathan</p>
+                            <p class="font-bold text-base truncate" id="settings-profile-name">Johnathan</p>
                         </div>
                         <button id="btn-edit-profile" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
                     </div>
@@ -1231,7 +1240,7 @@
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
             </div>
             <!-- header: title, installed version, close -->
-            <div class="flex items-start justify-between px-5 pt-1 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
+            <div class="flex items-start justify-between px-6 pt-1 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <div class="min-w-0">
                     <h3 class="text-xl font-bold">Changelog</h3>
                     <p class="ca-micro mt-1 flex items-center gap-1.5 text-gray-500">
@@ -1244,7 +1253,7 @@
                 </button>
             </div>
             <!-- controls: filter chips + sort toggle -->
-            <div class="flex items-center gap-2 px-5 py-2.5 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
+            <div class="flex items-center gap-2 px-6 py-2.5 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <div id="ca-cl-chips" class="flex items-center gap-1.5 overflow-x-auto flex-1 min-w-0 ca-cl-chips" aria-label="Filter changelog">
                     <button type="button" class="ca-cl-chip ca-cl-chipon" data-filter="all" aria-pressed="true">All</button>
                     <button type="button" class="ca-cl-chip" data-filter="new" aria-pressed="false"><i data-lucide="sparkles" class="w-3 h-3"></i><span>New</span></button>
@@ -1256,7 +1265,7 @@
                 </button>
             </div>
             <!-- "What's new for you" summary card -->
-            <div class="px-5 pt-3 shrink-0 max-w-xl mx-auto w-full">
+            <div class="px-6 pt-3 shrink-0 max-w-xl mx-auto w-full">
                 <div id="ca-cl-summary" class="ca-cl-sumcard flex items-center gap-3">
                     <div class="ca-cl-sumbadge shrink-0"><i data-lucide="party-popper" class="w-5 h-5"></i></div>
                     <div class="min-w-0 flex-1">
@@ -1267,7 +1276,7 @@
                 </div>
             </div>
             <!-- scrollable, grouped list -->
-            <div id="ca-changelog-scroll" class="overflow-y-auto flex-grow px-5 max-w-xl mx-auto w-full">
+            <div id="ca-changelog-scroll" class="overflow-y-auto flex-grow px-6 max-w-xl mx-auto w-full">
                 <div id="ca-changelog-list" class="text-sm leading-relaxed"></div>
                 <div id="ca-cl-empty" class="hidden flex-col items-center justify-center text-center py-14 gap-2">
                     <i data-lucide="search-x" class="w-8 h-8 text-gray-400"></i>
@@ -1288,7 +1297,7 @@
         <div id="ca-arch-sheet" role="dialog" aria-modal="true" aria-label="Earnings" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <!-- iOS bottom-sheet handle -->
             <div class="pt-2 pb-1 flex justify-center shrink-0"><div class="w-[44px] h-[4px] rounded-full bg-black/15 dark:bg-[#2a2f3d]"></div></div>
-            <div class="flex items-center justify-between px-5 pt-2 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
+            <div class="flex items-center justify-between px-6 pt-2 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <h3 class="text-xl font-bold">Earnings</h3>
                 <div class="flex items-center gap-1">
                     <button type="button" id="ca-arch-import" class="ca-arch-iconbtn" aria-label="Import backup"><i data-lucide="upload" class="w-5 h-5"></i></button>
@@ -1298,7 +1307,7 @@
                     <button type="button" id="ca-arch-close" class="ca-arch-iconbtn" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
             </div>
-            <div id="ca-arch-scroll" class="overflow-y-auto flex-grow px-4 pb-10 pt-3 max-w-xl mx-auto w-full">
+            <div id="ca-arch-scroll" class="overflow-y-auto flex-grow px-6 pb-10 pt-3 max-w-xl mx-auto w-full">
                 <!-- 1. gold summary card -->
                 <div class="ca-arch-goldcard p-5" id="ca-arch-summary">
                     <div class="flex justify-center">
@@ -1776,7 +1785,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.36.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.37.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -1794,6 +1803,15 @@
         // the development log (owner-approved); pre-v1.5.9 releases stay
         // undated because no record exists.
         const APP_CHANGELOG = [
+            { v: '1.37.0', d: '2026-10-03', items: [
+                { c: 'imp', t: 'Light-mode gold text now passes contrast standards.' },
+                { c: 'imp', t: 'Earnings labels enlarge and darken for readability.' },
+                { c: 'fix', t: 'Onboarding labels and status controls meet contrast and tap standards.' },
+                { c: 'imp', t: 'Escape closes any open sheet.' },
+                { c: 'new', t: 'The chat suggests roster import and Manual mode in context.' },
+                { c: 'new', t: 'Browser users get a one-time install-for-data-safety card.' },
+                { c: 'imp', t: 'Earnings re-nudges a backup after ten new entries.' },
+            ] },
             { v: '1.36.1', d: '2026-10-03', items: [
                 { c: 'imp', t: 'Earnings joins the reading tier, centered on wide screens.' },
             ] },
@@ -2301,7 +2319,7 @@
             const core = document.getElementById('net-status-dot-core');
             const btn = document.getElementById('net-status-dot');
             const online = netIsOnline();
-            if (core) core.className = 'block w-2 h-2 rounded-full ' + (online ? 'bg-green-500 animate-pulse' : 'bg-amber-500');
+            if (core) core.className = 'block w-2 h-2 rounded-full ' + (online ? 'bg-green-500 animate-pulse' : 'bg-transparent border-2 border-amber-500');
             if (btn) btn.setAttribute('aria-label', online ? 'Connection status: online' : 'Connection status: offline');
             const pop = document.getElementById('net-status-pop');
             if (!pop) return;
@@ -2372,12 +2390,71 @@
                 if (e.target && e.target.closest && e.target.closest('#net-status-pop, #net-status-dot')) return;
                 toggleNetPopover(false);
             });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleNetPopover(false); });
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                toggleNetPopover(false);
+                // v1.37.0 (3.2): Escape also closes whichever sheet is on top.
+                // The app dialog, the archive's inline figure edit and the menu
+                // lightbox each own the key while they're up — this only takes
+                // over when one of the big sheets is open beneath them.
+                if (typeof appDialogResolver !== 'undefined' && appDialogResolver) return;
+                if (e.target && e.target.classList && e.target.classList.contains('ca-arch-amt-input')) return;
+                const lbx = document.getElementById('menu-lightbox');
+                if (lbx && !lbx.classList.contains('hidden')) return; // its own handler closes it
+                const subx = document.getElementById('ca-arch-sub-sheet');
+                if (subx && !subx.classList.contains('translate-y-full')) { closeArchSub(); return; }
+                const closers = [
+                    ['whatsnew-backdrop', closeWhatsNew],
+                    ['ca-changelog-sheet', closeChangelog],
+                    ['ca-arch-sheet', closeArchOverlay],
+                    ['settings-sheet', closeSettings],
+                    ['menu-sheet', closeMenuViewer],
+                    ['print-overlay', closeMenuPrinter],
+                    ['results-sheet', function () {
+                        const backdrop = document.getElementById('results-backdrop');
+                        const sheet = document.getElementById('results-sheet');
+                        if (typeof caSheetFocusOut === 'function') caSheetFocusOut(sheet);
+                        backdrop.classList.add('opacity-0');
+                        sheet.classList.add('translate-y-full');
+                        setTimeout(() => { backdrop.classList.add('hidden'); }, 300);
+                    }]
+                ];
+                for (let i = 0; i < closers.length; i++) {
+                    const el = document.getElementById(closers[i][0]);
+                    if (!el) continue;
+                    if (!el.classList.contains('hidden') && !el.classList.contains('translate-y-full')) {
+                        try { closers[i][1](); } catch (err) {}
+                        return;
+                    }
+                }
+            });
             window.addEventListener('online', updateNetStatus);
             window.addEventListener('online', () => { if (nextFlightChatActive()) renderMenuNudge(); });
             window.addEventListener('offline', updateNetStatus);
             updateNetStatus();
             requestPersistentStorage();
+
+            // v1.37.0 (1.4): after the third hand-typed edit in Default mode,
+            // the chat offers the Manual interface once. Only the fields the
+            // Fetch flow fills count — those are the ones being replaced by hand.
+            const calcHintWrap = document.getElementById('chat-container');
+            if (calcHintWrap) calcHintWrap.addEventListener('input', (e) => {
+                const t = e.target;
+                if (!t || !t.id) return;
+                if (!/-ifa-t\d+$/.test(t.id) && !/-lma-iata\d+$/.test(t.id)) return;
+                if (calcUiMode !== 'default') return;
+                if (localStorage.getItem('crewAssist.nudgedCalcUi')) return;
+                const edits = (Number(localStorage.getItem('crewAssist.manualEdits') || 0) || 0) + 1;
+                try { localStorage.setItem('crewAssist.manualEdits', String(edits)); } catch (e2) {}
+                if (edits >= 3) {
+                    try { localStorage.setItem('crewAssist.nudgedCalcUi', '1'); } catch (e2) {}
+                    setTimeout(() => { try { addBotMessage('Prefer filling every field by hand? Settings → Allowance calculator interface → Manual.'); } catch (e2) {} }, 800);
+                }
+            });
+
+            // v1.37.0 (4.1): browser-tab users with saved earnings are told
+            // once that installing protects their data (see maybeInstallHint).
+            setTimeout(maybeInstallHint, 2500);
 
             // Register Service Worker
             if ('serviceWorker' in navigator) {
@@ -2404,6 +2481,24 @@
         // (broken layout, default-sized SVGs, no icons). Detect that and show
         // the honest repair overlay instead. The overlay itself is inline-
         // styled so it renders no matter what is missing.
+        // v1.37.0 (4.1): Safari clears a browser tab's script-writable
+        // storage after 7 days without interaction — home-screen installed
+        // apps are exempt. Anyone running in a tab WITH saved earnings gets
+        // told once, so the data-safety fact reaches them before it matters.
+        function maybeInstallHint() {
+            try {
+                if (localStorage.getItem('crewAssist.installHintDone')) return;
+                if ((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone) return;
+                let arch = [];
+                try { arch = JSON.parse(localStorage.getItem('crewAssist.archive') || '[]') || []; } catch (e) {}
+                if (!Array.isArray(arch) || arch.length < 1) return;
+                const wn = document.getElementById('whatsnew-backdrop');
+                if (wn && !wn.classList.contains('hidden')) return; // try again at a quieter moment
+                localStorage.setItem('crewAssist.installHintDone', '1');
+                const isAndroid = /android/i.test(navigator.userAgent || '');
+                appAlert('You are using CrewAssist in a browser tab. Safari can clear a tab’s saved data after 7 days without use — your earnings would go with it. Add CrewAssist to your Home Screen ' + (isAndroid ? 'from your browser menu (“Install app”)' : 'via Share → Add to Home Screen') + ' and everything stays safely on this phone.');
+            } catch (e) {}
+        }
         function shellGuard() {
             if (window.tailwind) return;
             const fail = document.getElementById('ca-shell-fail');
@@ -6430,6 +6525,16 @@ function getRegionForAirport(code) {
                 if (!caBulkBuild) lucide.createIcons();
                 bindCalculatorEvents(id, mode);
                 if (!caBulkBuild) {
+                    // v1.37.0 (1.2): the second manually-created card earns a
+                    // one-time hint that the roster PDF builds them all at once.
+                    try {
+                        const manualN = (Number(localStorage.getItem('crewAssist.manualCards') || 0) || 0) + 1;
+                        localStorage.setItem('crewAssist.manualCards', String(manualN));
+                        if (manualN === 2 && !localStorage.getItem('crewAssist.nudgedRoster')) {
+                            localStorage.setItem('crewAssist.nudgedRoster', '1');
+                            setTimeout(() => { try { addBotMessage('Next time, just attach your roster PDF — I can build every flight at once.'); } catch (e2) {} }, 1200);
+                        }
+                    } catch (e2) {}
                     syncCalcUiAll();
                     fitCalcPills();
                     // the webfont usually lands after the first pass; re-measure a few times
@@ -9159,7 +9264,7 @@ function getRegionForAirport(code) {
             if (all.length) renderArchInsights(all);
             if (!all.length) {
                 archEl('ca-arch-insights').classList.remove('ca-arch-insopen');
-                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Run a COP calculation and hit save or tap the import arrow to bring in a JSON backup.</span></div>';
+                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Entries appear when you tap Save on a calculation — or import a JSON backup with the arrow above.</span></div>';
                 try { lucide.createIcons(); } catch (e) {}
                 return;
             }
@@ -9186,7 +9291,7 @@ function getRegionForAirport(code) {
                     + '<div class="flex-1 min-w-0 ca-micro font-semibold text-amber-700 dark:text-amber-400 leading-relaxed">'
                     + (nudge.never
                         ? 'Your earnings live only on this phone. Export a JSON backup — it takes a few seconds.'
-                        : (nudge.newMonths + ' month' + (nudge.newMonths === 1 ? '' : 's') + ' of new entries since your last backup — an export takes a few seconds.'))
+                        : ((nudge.newCount >= 10 ? nudge.newCount + ' new entries' : nudge.newMonths + ' month' + (nudge.newMonths === 1 ? '' : 's') + ' of new entries') + ' since your last backup — an export takes a few seconds.'))
                     + '</div>'
                     + '<button type="button" id="ca-arch-nudge-export" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider">Export</button>'
                     + '<button type="button" id="ca-arch-nudge-snooze" aria-label="Snooze backup reminder" class="shrink-0 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
@@ -9579,14 +9684,17 @@ function getRegionForAirport(code) {
                 if (snoozed && Date.now() - snoozed < 14 * 24 * 3600 * 1000) return null;
                 if (!all || !all.length) return null;
                 const seen = {};
-                all.forEach((e) => { if (!last || new Date(e.savedAt || 0).getTime() > last) seen[e.monthKey] = 1; });
+                let newCount = 0;
+                all.forEach((e) => { if (!last || new Date(e.savedAt || 0).getTime() > last) { seen[e.monthKey] = 1; newCount++; } });
                 const newMonths = Object.keys(seen).length;
                 if (!last) {
                     const totalMonths = new Set(all.map((e) => e.monthKey)).size;
                     return totalMonths >= 2 ? { never: true, newMonths: totalMonths } : null;
                 }
-                if (Date.now() - last < 21 * 24 * 3600 * 1000) return null;
-                return newMonths >= 1 ? { never: false, newMonths } : null;
+                // v1.37.0 (4.2): ten new entries re-arm the nudge even inside
+                // the 21-day quiet window — a month of flying shouldn't wait.
+                if (Date.now() - last < 21 * 24 * 3600 * 1000 && newCount < 10) return null;
+                return (newMonths >= 1 || newCount >= 10) ? { never: false, newMonths, newCount } : null;
             } catch (e) { return null; }
         }
 
