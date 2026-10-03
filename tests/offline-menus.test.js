@@ -198,7 +198,8 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v170"), 'service-worker cache name bumped to v170');
+    R.ok(sw.includes("crewassist-v171"), 'service-worker cache name bumped to v171 (name-cap hotfix, no version bump)');
+    R.ok(src.includes('id="ob-name" maxlength="23"'), 'profile name input caps at 23 characters including spaces');
     // v1.37.0 review: contrast, tap targets, and the install hint
     R.ok(src.includes('html:not(.dark) .text-sia-gold { color: #7A620F; }'), 'light-mode gold TEXT gets the darker 7A620F token (borders and icons keep their gold)');
     R.ok(src.includes('html.dark #onboarding-view .ui-input { color: rgba(255, 255, 255, 0.75); }'), 'dark-mode onboarding pills brighten to white/75');
