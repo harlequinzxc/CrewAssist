@@ -484,5 +484,47 @@ const mkUntil = (d) => async (cond, ms) => {
     e.d.getElementById('app-dialog-ok').click();
   }
 
+  {
+    // ---- v1.38.0: SGT landing conversions (A2) + the storage panel (B9) ----
+    const f = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'S1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-01', flightType: 'Turnaround', stationDisplay: 'KUL', amount: 100 }]));
+      x.localStorage.setItem('SQ802:2026-10-20:CABINS', '{}');
+      x.localStorage.setItem('SQ999:2026-10-01:CABINS', '{}');
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '802', ymd: '2026-10-20', std: '09:45', sta: '18:35' }] }));
+    } });
+    // A2: the conversions are zone math, so DST and the :45 offsets are exact
+    f.w.eval("window.__sgtOf = (ymd, hm, zone) => new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(zonedWallToUtcMs(ymd, hm, zone)));");
+    R.eq(f.w.eval("__sgtOf('2026-10-04','18:35','Asia/Tokyo')"), '17:35', 'a Tokyo landing reads one hour behind in SGT');
+    R.eq(f.w.eval("__sgtOf('2026-07-04','18:35','Europe/London')"), '01:35', 'summer London is seven hours behind');
+    R.eq(f.w.eval("__sgtOf('2026-12-04','18:35','Europe/London')"), '02:35', 'winter London is eight hours behind — the date carries the DST');
+    R.eq(f.w.eval("__sgtOf('2026-07-01','21:55','Asia/Kathmandu')"), '00:10', 'Kathmandu’s :45 offset lands past SGT midnight');
+    R.eq(f.w.eval("landingSgtPhrase('NRT','2026-10-04','18:35')"), '17:35 SGT', 'the phrase renders as 17:35 SGT');
+    R.eq(f.w.eval("landingSgtPhrase('SIN','2026-10-04','18:35')"), '', 'Singapore landings need no conversion');
+    R.eq(f.w.eval("landingSgtPhrase('ZZZ','2026-10-04','18:35')"), '', 'unknown stations never get a guessed offset');
+    const ov = f.w.eval("overviewBlock('story', { sectors: [ {fn:'802', dep:'SIN', arr:'NRT', std:'09:45', sta:'18:35', arrYmd:'2026-10-04'}, {fn:'807', dep:'NRT', arr:'SIN', std:'20:15', sta:'05:35', arrYmd:'2026-10-05'}, {fn:'808', dep:'AAA', arr:'ZZZ', sta:'07:10', arrYmd:'2026-10-06'} ] })");
+    R.ok(ov.indexOf('lands 18:35 local (17:35 SGT)') !== -1, 'a roster landing converts to SGT');
+    R.ok(ov.indexOf('lands 05:35 SGT') !== -1, 'a Singapore landing reads plainly in SGT');
+    R.ok(ov.indexOf('lands 07:10 local') !== -1 && ov.indexOf('lands 07:10 local (') === -1, 'an unknown station keeps local time, no guess');
+    R.ok(ov.indexOf('SIN 09:45 → NRT') !== -1, 'the row shows the route with its printed departure time');
+    // B9: the storage panel
+    f.w.eval('openSettings()');
+    await wait(150);
+    const st = f.d.getElementById('settings-storage');
+    R.ok(!!st && st.textContent.indexOf('Earnings entries') !== -1, 'v1.38.0: settings renders the storage panel with the entry count');
+    R.ok(st.textContent.indexOf('Saved menus (flights)') !== -1 && st.textContent.indexOf('browser estimate') !== -1, 'menu counts show and the usage figure is labelled an estimate');
+    R.ok(st.textContent.indexOf('1 upcoming duty flight keeps their menus') !== -1, 'the panel names the protected upcoming menus');
+    const clr = f.d.getElementById('btn-clear-menus');
+    R.ok(!!clr, 'the clear action exists');
+    clr.click();
+    R.ok(clr.textContent.indexOf('Tap again to clear') !== -1, 'the first tap arms instead of firing');
+    clr.click();
+    await wait(80);
+    R.eq(f.w.localStorage.getItem('SQ999:2026-10-01:CABINS'), null, 'an unrelated saved menu clears');
+    R.ok(!!f.w.localStorage.getItem('SQ802:2026-10-20:CABINS'), 'an upcoming duty’s menu survives the clear');
+    R.ok(st.textContent.replace(/\s+/g, ' ').indexOf('Saved menus (flights)1') !== -1, 'counts refresh after the clear');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

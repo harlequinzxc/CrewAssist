@@ -625,6 +625,8 @@ const MONTH = [
     await wait(400);
     const txt = d.getElementById('results-content').textContent;
     R.ok(/Flight Overview/.test(txt), 'single summary carries the Flight Overview');
+    R.ok(txt.indexOf('lands 21:55 local (00:10 SGT)') !== -1, 'v1.38.0: the KTM landing converts to SGT across the :45 offset');
+    R.ok(txt.indexOf('lands 06:29 SGT') !== -1, 'v1.38.0: the SIN landing reads plainly in SGT');
     R.ok(/Kathmandu overnight/.test(txt), 'personal voice');
     R.ok(/2155H/.test(txt), 'landing time in the Sat 5th Sep 1727H format');
     R.ok(/just missing dinner/.test(txt), 'missed-meal aside with the window close time');

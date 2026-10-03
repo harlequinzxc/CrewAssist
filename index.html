@@ -324,6 +324,15 @@
         .dark .ca-arch-toast .ca-toast-undo { color: #7d650f; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
+        /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
+           when its $ total is tapped — max-height + opacity, like every
+           reveal in the app. */
+        .ca-arch-proj-wrap { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .3s ease, opacity .3s ease; }
+        .ca-arch-proj-wrap.open { max-height: 180px; opacity: 1; }
+        .ca-arch-proj-btn .ca-arch-proj-chev { transition: transform .3s ease; }
+        .ca-arch-proj-btn[aria-expanded="true"] .ca-arch-proj-chev { transform: rotate(180deg); }
+        /* v1.38.0 (A2): the Flight Overview itinerary rows. */
+        .ca-ov-itin { border: 1px solid var(--arch-muted); }
         .ca-arch-insights { overflow: hidden; max-height: 0; opacity: 0; margin-top: 0; transition: max-height .3s ease, opacity .3s ease, margin-top .3s ease; }
         .ca-arch-insights.ca-arch-insopen { max-height: 1400px; opacity: 1; margin-top: .75rem; }
         /* Earnings page (v1.24.0): gold summary card, 12-month trend, insights.
@@ -1217,6 +1226,12 @@
                     </div>
                 </div>
 
+                <!-- v1.38.0 (B9): honest storage numbers + menu-cache hygiene -->
+                <div>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Storage</p>
+                    <div id="settings-storage" class="flex flex-col gap-2"></div>
+                </div>
+
                 <!-- Data -->
                 <div>
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
@@ -1785,7 +1800,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.37.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.38.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -1803,6 +1818,11 @@
         // the development log (owner-approved); pre-v1.5.9 releases stay
         // undated because no record exists.
         const APP_CHANGELOG = [
+            { v: '1.38.0', d: '2026-10-03', items: [
+                { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
+                { c: 'new', t: 'Flight Overview rows convert landing times to Singapore time.' },
+                { c: 'new', t: 'Settings shows honest storage numbers and clears saved menus.' },
+            ] },
             { v: '1.37.0', d: '2026-10-03', items: [
                 { c: 'imp', t: 'Light-mode gold text now passes contrast standards.' },
                 { c: 'imp', t: 'Earnings labels enlarge and darken for readability.' },
@@ -4454,7 +4474,7 @@
                         </span>
                     </button>
                     <div class="ca-trip-body">
-                    ${overviewBlock(flightOverviewText(r.res.detail))}
+                    ${overviewBlock(flightOverviewText(r.res.detail), r.res.detail)}
                     ${r.res.ifaDetails.join('')}
                     ${r.res.isTurnaround
                         ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
@@ -4602,6 +4622,12 @@
                 if (blk) {
                     if (s.dep) blk.setAttribute('data-dep-airport', s.dep);
                     if (s.arr) blk.setAttribute('data-arr-airport', s.arr);
+                    // v1.38.0 (A2): the roster's printed times ride along so
+                    // Flight Overview rows can convert landings to SGT.
+                    if (s.depDate) blk.setAttribute('data-dep-ymd', s.depDate);
+                    if (s.stdHm) blk.setAttribute('data-dep-hm', s.stdHm);
+                    if (s.arrDate) blk.setAttribute('data-arr-ymd', s.arrDate);
+                    if (s.staHm) blk.setAttribute('data-arr-hm', s.staHm);
                 }
             });
             // Direct US switch exists on 2-sector layovers only (same rule as Fetch)
@@ -4701,6 +4727,68 @@
             }, 500); // Wait for slide down to finish
         }
 
+        // v1.38.0 (B9): the storage dashboard — honest numbers only. Counts
+        // are exact; the browser's usage figure is an estimate and says so.
+        // The one action clears saved menus (they re-download on the next
+        // lookup), keeping every upcoming duty's menus so the next-flight
+        // card's offline promise never breaks.
+        function renderStoragePanel() {
+            const box = document.getElementById('settings-storage');
+            if (!box) return;
+            let entries = 0;
+            try { entries = (loadArchive() || []).length; } catch (e) {}
+            const pairs = {};
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    const m = /^SQ\d{1,4}[A-Z]?:\d{4}-\d{2}-\d{2}:/.exec(k);
+                    if (m) pairs[k.slice(0, k.indexOf(':')) + '|' + m[1]] = 1;
+                }
+            } catch (e) {}
+            const menuCount = Object.keys(pairs).length;
+            let protectedCount = 0;
+            try {
+                upcomingList().forEach((f) => { if (f && f.fn && menusSavedFor(f.fn, f.ymd)) protectedCount++; });
+            } catch (e) {}
+            const row = (label, val, id) => '<div class="flex items-center justify-between px-3 h-11 rounded-xl ca-inset border border-black/5 dark:border-white/10"><span class="text-xs font-bold">' + label + '</span><span class="text-xs font-bold text-sia-gold" ' + (id ? 'id="' + id + '"' : '') + '>' + val + '</span></div>';
+            let html = row('Earnings entries', String(entries))
+                + row('Saved menus (flights)', String(menuCount))
+                + row('Storage used (browser estimate)', '\u2026', 'st-storage-usage')
+                + row('Persistent storage', '\u2026', 'st-storage-persisted')
+                + '<button type="button" id="btn-clear-menus" class="w-full h-[42px] rounded-full bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/50 hover:bg-amber-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Clear saved menus"><i data-lucide="eraser" class="w-4 h-4"></i>Clear saved menus</button>';
+            if (protectedCount > 0) html += '<p class="ca-micro px-1" style="color: var(--arch-muted)">' + protectedCount + ' upcoming duty flight' + (protectedCount === 1 ? '' : 's') + ' keep' + (protectedCount === 1 ? 's' : '') + ' their menus.</p>';
+            box.innerHTML = html;
+            try { lucide.createIcons(); } catch (e) {}
+            const usageEl = document.getElementById('st-storage-usage');
+            const persistEl = document.getElementById('st-storage-persisted');
+            try {
+                if (navigator.storage && navigator.storage.estimate) {
+                    navigator.storage.estimate().then((es) => {
+                        if (usageEl && es && isFinite(es.usage)) usageEl.textContent = '\u2248 ' + (es.usage / (1024 * 1024)).toFixed(1) + ' MB (approximate)';
+                    }).catch(() => { if (usageEl) usageEl.textContent = '\u2014'; });
+                } else if (usageEl) usageEl.textContent = '\u2014';
+            } catch (e) { if (usageEl) usageEl.textContent = '\u2014'; }
+            try {
+                if (navigator.storage && navigator.storage.persisted) {
+                    navigator.storage.persisted().then((p) => { if (persistEl) persistEl.textContent = p ? 'On \u2014 protected from auto-cleanup' : 'Off'; }).catch(() => { if (persistEl) persistEl.textContent = '\u2014'; });
+                } else if (persistEl) persistEl.textContent = '\u2014';
+            } catch (e) { if (persistEl) persistEl.textContent = '\u2014'; }
+            const clr = document.getElementById('btn-clear-menus');
+            if (clr) clr.addEventListener('click', () => armTwoTap(clr, { armedHtml: 'Tap again to clear', confirm: () => {
+                try {
+                    const keep = {};
+                    try { upcomingList().forEach((f) => { if (f && f.fn) keep['SQ' + f.fn + '|' + f.ymd] = 1; }); } catch (e) {}
+                    const drop = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const k = localStorage.key(i);
+                        const m = /^SQ\d{1,4}[A-Z]?(?::(\d{4}-\d{2}-\d{2}):)/.exec(k);
+                        if (m && !keep[k.slice(0, k.indexOf(':')) + '|' + m[1]]) drop.push(k);
+                    }
+                    drop.forEach((k) => localStorage.removeItem(k));
+                } catch (e) {}
+                renderStoragePanel();
+            } }));
+        }
         function resetSettingsSheet() {
             const scroll = document.getElementById('settings-scroll');
             if (scroll) scroll.scrollTop = 0;
@@ -4709,6 +4797,7 @@
                 const fold = card.querySelector('.dev-rate-fold');
                 if (fold) fold.classList.remove('is-open');
             });
+            renderStoragePanel(); // v1.38.0 (B9): fresh counts on every open
         }
 
         function openSettings() {
@@ -4896,6 +4985,8 @@
 
         
 const airports = [
+  // v1.38.0 note: AIRPORT_TZ (just below this list) maps the SQ network to
+  // IANA zones for SGT landing conversions; this list stays city data only.
   // ===== AUSTRALIA / NEW ZEALAND =====
   { code: "SYD", city: "Sydney", country: "Australia", countryCode: "AU" },
   { code: "MEL", city: "Melbourne", country: "Australia", countryCode: "AU" },
@@ -5492,6 +5583,69 @@ const airports = [
   { code: "HIR", city: "Honiara", country: "Solomon Islands", countryCode: "SB" },
   { code: "POM", city: "Port Moresby", country: "Papua New Guinea", countryCode: "PG" },
 ];
+        // v1.38.0 (A2): station time zones. The IATA DB above knows cities,
+        // not clocks; this curated SQ-network map gives each station its IANA
+        // zone so Intl does DST-correct math (SYD, LHR, LAX all shift). A
+        // station not listed simply gets no conversion — never a guessed
+        // offset.
+        const AIRPORT_TZ = {
+            SIN: 'Asia/Singapore',
+            NRT: 'Asia/Tokyo', HND: 'Asia/Tokyo', KIX: 'Asia/Tokyo', CTS: 'Asia/Tokyo',
+            ICN: 'Asia/Seoul',
+            PEK: 'Asia/Shanghai', PVG: 'Asia/Shanghai', CAN: 'Asia/Shanghai', SZX: 'Asia/Shanghai', XMN: 'Asia/Shanghai',
+            HKG: 'Asia/Hong_Kong', TPE: 'Asia/Taipei', MFM: 'Asia/Macau',
+            MNL: 'Asia/Manila', BKK: 'Asia/Bangkok', KUL: 'Asia/Kuala_Lumpur',
+            CGK: 'Asia/Jakarta', DPS: 'Asia/Makassar', SUB: 'Asia/Jakarta',
+            SGN: 'Asia/Ho_Chi_Minh', HAN: 'Asia/Ho_Chi_Minh', PNH: 'Asia/Phnom_Penh', RGN: 'Asia/Yangon',
+            DAC: 'Asia/Dhaka', CMB: 'Asia/Colombo', KTM: 'Asia/Kathmandu',
+            DEL: 'Asia/Kolkata', BOM: 'Asia/Kolkata', BLR: 'Asia/Kolkata', MAA: 'Asia/Kolkata', HYD: 'Asia/Kolkata', AMD: 'Asia/Kolkata', CCU: 'Asia/Kolkata',
+            KHI: 'Asia/Karachi',
+            DXB: 'Asia/Dubai', AUH: 'Asia/Dubai', DOH: 'Asia/Qatar', BAH: 'Asia/Bahrain', KWI: 'Asia/Kuwait', MCT: 'Asia/Muscat', RUH: 'Asia/Riyadh', JED: 'Asia/Riyadh', IKA: 'Asia/Tehran', AMM: 'Asia/Amman', BEY: 'Asia/Beirut', TLV: 'Asia/Jerusalem',
+            MLE: 'Indian/Maldives', SEZ: 'Indian/Mahe', MRU: 'Indian/Mauritius',
+            LHR: 'Europe/London', MAN: 'Europe/London', DUB: 'Europe/Dublin',
+            CDG: 'Europe/Paris', AMS: 'Europe/Amsterdam', FRA: 'Europe/Berlin', MUC: 'Europe/Berlin', ZRH: 'Europe/Zurich', GVA: 'Europe/Zurich', VIE: 'Europe/Vienna',
+            CPH: 'Europe/Copenhagen', ARN: 'Europe/Stockholm', OSL: 'Europe/Oslo', HEL: 'Europe/Helsinki',
+            BCN: 'Europe/Madrid', MAD: 'Europe/Madrid', LIS: 'Europe/Lisbon',
+            FCO: 'Europe/Rome', MXP: 'Europe/Rome', ATH: 'Europe/Athens', IST: 'Europe/Istanbul', BRU: 'Europe/Brussels', PRG: 'Europe/Prague', WAW: 'Europe/Warsaw', BUD: 'Europe/Budapest', KEF: 'Atlantic/Reykjavik', SVO: 'Europe/Moscow',
+            CAI: 'Africa/Cairo', NBO: 'Africa/Nairobi', ADD: 'Africa/Addis_Ababa', DAR: 'Africa/Dar_es_Salaam', JNB: 'Africa/Johannesburg', CPT: 'Africa/Johannesburg', LOS: 'Africa/Lagos', ACC: 'Africa/Accra',
+            JFK: 'America/New_York', EWR: 'America/New_York', BOS: 'America/New_York', IAD: 'America/New_York', MIA: 'America/New_York', YYZ: 'America/Toronto', YUL: 'America/Toronto', YVR: 'America/Vancouver',
+            ORD: 'America/Chicago', IAH: 'America/Chicago', DFW: 'America/Chicago',
+            LAX: 'America/Los_Angeles', SFO: 'America/Los_Angeles', SEA: 'America/Los_Angeles', LAS: 'America/Los_Angeles', ANC: 'America/Anchorage', HNL: 'Pacific/Honolulu',
+            MEX: 'America/Mexico_City', GRU: 'America/Sao_Paulo', EZE: 'America/Argentina/Buenos_Aires', SCL: 'America/Santiago', LIM: 'America/Lima', BOG: 'America/Bogota',
+            SYD: 'Australia/Sydney', MEL: 'Australia/Melbourne', BNE: 'Australia/Brisbane', OOL: 'Australia/Brisbane', CNS: 'Australia/Brisbane', ADL: 'Australia/Adelaide', PER: 'Australia/Perth',
+            AKL: 'Pacific/Auckland', CHC: 'Pacific/Auckland', NAN: 'Pacific/Fiji', PPT: 'Pacific/Tahiti'
+        };
+        function airportZone(code) { return AIRPORT_TZ[String(code || '').trim().toUpperCase()] || ''; }
+        // A wall-clock time printed on a roster is LOCAL to its station. This
+        // finds the true UTC instant of that wall time in the station's IANA
+        // zone — two offset passes so DST boundaries land on the right side.
+        function zonedWallToUtcMs(ymd, hm, zone) {
+            try {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || '')) || !/^\d{1,2}:\d{2}$/.test(String(hm || ''))) return NaN;
+                const wallMs = Date.parse(ymd + 'T' + hm + ':00Z');
+                const f = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+                const readZoneAsUtc = (ms) => {
+                    const p = {};
+                    f.formatToParts(new Date(ms)).forEach((x) => { p[x.type] = x.value; });
+                    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute);
+                };
+                let utc = wallMs - (readZoneAsUtc(wallMs) - wallMs);
+                utc = utc - (readZoneAsUtc(utc) - wallMs);
+                return utc;
+            } catch (e) { return NaN; }
+        }
+        // The A2 phrase: "17:35 SGT" for a landing printed in station-local
+        // time. Empty for Singapore (local IS SGT) and unknown stations.
+        function landingSgtPhrase(arrCode, arrYmd, arrHm) {
+            const zone = airportZone(arrCode);
+            if (!zone || zone === 'Asia/Singapore') return '';
+            const ms = zonedWallToUtcMs(arrYmd, arrHm, zone);
+            if (!isFinite(ms)) return '';
+            try {
+                return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms)) + ' SGT';
+            } catch (e) { return ''; }
+        }
+
 
 const countryToRegion = {
   AU: "Australia / New Zealand", NZ: "Australia / New Zealand",
@@ -8061,6 +8215,9 @@ function getRegionForAirport(code) {
                         dep: secBlock ? (secBlock.getAttribute('data-dep-airport') || '') : '',
                         arr: secBlock ? (secBlock.getAttribute('data-arr-airport') || '') : '',
                         depYmd: ((document.getElementById(`${id}-ifa-d${idx + 1}`) || {}).value || ''),
+                        std: secBlock ? (secBlock.getAttribute('data-dep-hm') || '') : '',
+                        sta: secBlock ? (secBlock.getAttribute('data-arr-hm') || '') : '',
+                        arrYmd: secBlock ? (secBlock.getAttribute('data-arr-ymd') || '') : '',
                         logic: logic
                     });
                     
@@ -8477,11 +8634,36 @@ function getRegionForAirport(code) {
             }
             return txt.trim();
         }
-        function overviewBlock(text) {
-            if (!text) return '';
+        // v1.38.0 (A2): one row per sector — flight, route, and the landing
+        // in station-local time converted to SGT ("lands 18:35 local (17:35
+        // SGT)"). Rows appear only where a time was actually printed: roster
+        // imports and fetched sectors. Manual cards without Fetch show the
+        // prose story alone; unknown stations show local time, no conversion.
+        function overviewItinHtml(s) {
+            if (!s || !s.sectors) return '';
+            const rows = [];
+            (s.sectors || []).forEach((x) => {
+                if (!x.sta) return;
+                const arr = String(x.arr || '').toUpperCase();
+                const dep = String(x.dep || '').toUpperCase();
+                const sgt = landingSgtPhrase(arr, x.arrYmd, x.sta);
+                const lands = (arr === 'SIN') ? (x.sta + ' SGT') : (x.sta + ' local' + (sgt ? ' (' + sgt + ')' : ''));
+                rows.push('<div class="flex items-center gap-2 py-1 text-xs">'
+                    + '<span class="font-bold whitespace-nowrap">' + (x.fn ? 'SQ ' + x.fn : 'Sector') + '</span>'
+                    + '<span class="truncate" style="color: var(--arch-muted)">' + (dep ? dep + (x.std ? ' ' + x.std : '') + ' \u2192 ' : '') + arr + '</span>'
+                    + '<span class="ml-auto font-bold text-sia-gold whitespace-nowrap">lands ' + lands + '</span>'
+                    + '</div>');
+            });
+            if (!rows.length) return '';
+            return '<div class="ca-ov-itin mb-3 p-3 rounded-xl ca-inset">' + rows.join('') + '</div>';
+        }
+        function overviewBlock(text, snap) {
+            const itin = overviewItinHtml(snap);
+            if (!text && !itin) return '';
             return '<div class="mb-6">'
                 + '<div class="flex items-center gap-1.5 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-sia-gold"></i><span class="ca-micro font-bold uppercase tracking-wider text-sia-gold">Flight Overview</span></div>'
-                + '<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">' + text + '</p>'
+                + itin
+                + (text ? '<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">' + text + '</p>' : '')
                 + '</div>';
         }
         // Rebuilds the IFA/LMA breakdown from a stored snapshot (archive reopen).
@@ -8630,7 +8812,7 @@ function getRegionForAirport(code) {
                     <p class="text-4xl font-bold ca-amt">${formatMoney(grandTotal)}</p>
                 </div>
             `;
-            if (mode === 'both' && detail) html += overviewBlock(flightOverviewText(detail));
+            if (mode === 'both' && detail) html += overviewBlock(flightOverviewText(detail), detail);
 
             if (ifaDetails.length > 0) {
                 html += `
@@ -8870,7 +9052,7 @@ function getRegionForAirport(code) {
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
-        const archState = { scope: 'all', search: '', collapsed: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '' };
+        const archState = { scope: 'all', search: '', collapsed: {}, projOpen: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '' };
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
@@ -9311,17 +9493,39 @@ function getRegionForAirport(code) {
                 if (mk === ins.lowMk && ins.lowMk && ins.lowMk !== ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-low"><i data-lucide="trending-down" class="w-2.5 h-2.5"></i>Low</span>';
                 if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog">' + (mk > currentMk ? 'Upcoming' : 'In progress') + '</span>';
                 else if (mk === currentMk) badges += '<span class="ca-arch-badge ca-arch-badge-prog">Completed</span>';
+                // v1.38.0 (A1): the $ total is a toggle when the month has
+                // unflown duties — tap to unfold "still to fly". Completed
+                // months keep a plain amount.
+                const hasUnflown = ms.unflownCount > 0;
+                const amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2">'
-                    + '<button type="button" class="ca-arch-group-head w-full flex items-center gap-2.5 py-3 px-1 rounded-xl text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
+                    + '<div class="flex items-center gap-2.5 py-3 px-1">'
+                    + '<button type="button" class="ca-arch-group-head flex-1 min-w-0 flex items-center gap-2.5 text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
                     + '<i data-lucide="chevron-right" class="ca-arch-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
                     + '<span class="flex-1 min-w-0">'
                     + '<span class="flex items-center gap-1.5 flex-wrap"><span class="text-[17px] font-semibold leading-tight" style="color: var(--arch-fg)">' + archiveMonthLabel(mk) + '</span>' + badges + '</span>'
                     + '<span class="block text-sm mt-0.5" style="color: var(--arch-muted)">' + rows.length + ' flight' + (rows.length === 1 ? '' : 's')
                     + (yoy !== null ? ' <span class="ca-arch-yoy-' + (yoy >= 0 ? 'up' : 'down') + ' text-xs whitespace-nowrap"><i data-lucide="' + (yoy >= 0 ? 'arrow-up' : 'arrow-down') + '" class="w-3 h-3 inline"></i> ' + Math.abs(yoy).toFixed(1) + '%</span>' : '')
                     + '</span></span>'
-                    + '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '') + '</span>'
                     + '</button>'
+                    + (hasUnflown
+                        ? '<button type="button" class="ca-arch-proj-btn flex items-center gap-1.5 shrink-0 rounded-xl px-1.5 py-1" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
+                        + '<span class="ca-arch-amt text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>'
+                        + '<i data-lucide="chevron-down" class="ca-arch-proj-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
+                        + '</button>'
+                        : '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>')
+                    + '</div>'
                     + '<div class="ca-arch-group-body pl-4">';
+                if (hasUnflown && ms.total > 0.004) {
+                    html += '<div class="ca-arch-proj-wrap' + (archState.projOpen[mk] ? ' open' : '') + '" data-mk="' + mk + '">'
+                        + '<div class="mb-2 p-3 rounded-xl border border-sia-gold/30 bg-sia-gold/5" role="status">'
+                        + '<div class="flex items-center justify-between gap-2">'
+                        + '<span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">Still to fly \u00b7 ' + ms.unflownCount + ' flight' + (ms.unflownCount === 1 ? '' : 's') + '</span>'
+                        + '<span class="text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(ms.unflown) + '</span>'
+                        + '</div>'
+                        + '<div class="text-xs mt-1" style="color: var(--arch-muted)">Landed ' + formatMoney(ms.flown) + ' \u00b7 on track for ' + formatMoney(ms.total) + '</div>'
+                        + '</div></div>';
+                }
                 rows.forEach((e) => {
                     html += '<div class="ca-arch-row flex items-center gap-2.5 py-2.5 px-1 rounded-lg cursor-pointer" data-id="' + e.id + '">'
                         + '<span class="ca-arch-dot"></span>'
@@ -9330,13 +9534,6 @@ function getRegionForAirport(code) {
                         + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
                         + '<button type="button" class="ca-arch-del ca-hit p-3 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
-                if (inProgress && ms.unflownCount > 0 && ms.total > 0.004) {
-                    const projFlights = ms.count;
-                    html += '<div class="flex items-center gap-2.5 py-2.5 px-1 italic" style="color: var(--arch-muted)">'
-                        + '<span class="ca-arch-dot-hollow"></span>'
-                        + '<span class="text-sm italic">Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's') + '</span>'
-                        + '<span class="ca-arch-amt ml-auto text-sm font-bold italic" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(ms.total) + '</span></div>';
-                }
                 html += '</div></div>';
             });
             // End of records
@@ -9356,6 +9553,25 @@ function getRegionForAirport(code) {
                 const g = hd.closest('.ca-arch-group');
                 g.classList.toggle('ca-arch-collapsed');
                 hd.setAttribute('aria-expanded', String(!archState.collapsed[k]));
+            }));
+            // v1.38.0 (A1): tapping a month's $ total unfolds the still-to-fly
+            // panel; opening it also expands a collapsed group so the reveal is
+            // never hidden inside one.
+            list.querySelectorAll('.ca-arch-proj-btn').forEach((b) => b.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                const k = b.getAttribute('data-mk');
+                const open = !archState.projOpen[k];
+                archState.projOpen[k] = open;
+                b.setAttribute('aria-expanded', String(open));
+                const g = b.closest('.ca-arch-group');
+                const wrap = g && g.querySelector('.ca-arch-proj-wrap');
+                if (wrap) wrap.classList.toggle('open', open);
+                if (open && g && g.classList.contains('ca-arch-collapsed')) {
+                    archState.collapsed[k] = false;
+                    g.classList.remove('ca-arch-collapsed');
+                    const head = g.querySelector('.ca-arch-group-head');
+                    if (head) head.setAttribute('aria-expanded', 'true');
+                }
             }));
             list.querySelectorAll('.ca-arch-del').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archDeleteOne(b.getAttribute('data-id')); }));
             // v1.29.0: tap an amount to correct it in place.
@@ -9592,7 +9808,7 @@ function getRegionForAirport(code) {
                 html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
                     + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
                     + '<p class="text-4xl font-bold ca-amt">' + formatMoney(s.grandTotal != null ? s.grandTotal : e.amount) + '</p></div>';
-                html += overviewBlock(flightOverviewText(s));
+                html += overviewBlock(flightOverviewText(s), s);
                 html += overviewDetailHtml(s);
             } else {
                 html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'

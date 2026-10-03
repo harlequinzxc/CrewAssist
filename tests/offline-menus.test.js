@@ -194,11 +194,16 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.37.0';"), 'APP_VERSION stamped 1.37.0');
+    R.ok(src.includes("var APP_VERSION = '1.38.0';"), 'APP_VERSION stamped 1.38.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v171"), 'service-worker cache name bumped to v171 (name-cap hotfix, no version bump)');
+    R.ok(sw.includes("crewassist-v172"), 'service-worker cache name bumped to v172');
+    // v1.38.0 review: forecast toggle, SGT conversions, storage panel
+    R.ok(src.includes('ca-arch-proj-btn') && src.includes('ca-arch-proj-wrap'), 'the month total is a still-to-fly toggle (A1)');
+    R.ok(src.includes("const AIRPORT_TZ = {"), 'a curated station-to-IANA-zone table powers SGT conversions (A2)');
+    R.ok(src.includes('function landingSgtPhrase'), 'landing conversions are DST-safe zone math, never fixed offsets (A2)');
+    R.ok(src.includes('function renderStoragePanel'), 'settings renders an honest storage panel (B9)');
     R.ok(src.includes('id="ob-name" maxlength="23"'), 'profile name input caps at 23 characters including spaces');
     // v1.37.0 review: contrast, tap targets, and the install hint
     R.ok(src.includes('html:not(.dark) .text-sia-gold { color: #7A620F; }'), 'light-mode gold TEXT gets the darker 7A620F token (borders and icons keep their gold)');

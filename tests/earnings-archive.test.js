@@ -234,7 +234,15 @@ const fs = require('fs');
     R.ok(up[0].closest('.ca-arch-group-head').getAttribute('data-mk') === '2026-08' && up[0].textContent.indexOf('100.0%') !== -1, 'Aug 2026 up 100.0% vs Aug 2025');
     R.eq(down.length, 0, 'no down arrows in this seed');
     const sepBody = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
-    R.ok(sepBody.querySelector('.ca-arch-dot-hollow') && sepBody.textContent.indexOf('Projected \u00b7 ' + projFlights + ' flight' + (projFlights === 1 ? '' : 's')) !== -1 && sepBody.textContent.indexOf(fm(projTotal)) !== -1, 'partial month shows a hollow-dot projected row');
+    // v1.38.0 (A1): the projection is a tap-to-reveal panel under the month total
+    const sepToggle = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn');
+    const sepWrap = sepBody.querySelector('.ca-arch-proj-wrap');
+    R.ok(!!sepToggle && !!sepWrap && !sepWrap.classList.contains('open') && sepToggle.getAttribute('aria-expanded') === 'false', 'v1.38.0: an in-progress month carries a closed still-to-fly toggle on its total');
+    sepToggle.click();
+    R.ok(sepWrap.classList.contains('open') && sepWrap.textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && sepWrap.textContent.indexOf(fm(projLeft)) !== -1 && sepWrap.textContent.indexOf('on track for ' + fm(projTotal)) !== -1, 'v1.38.0: tapping the month total unfolds the still-to-fly projection');
+    R.eq(sepToggle.getAttribute('aria-expanded'), 'true', 'the toggle announces its open state');
+    sepToggle.click();
+    R.ok(!sepWrap.classList.contains('open') && sepToggle.getAttribute('aria-expanded') === 'false', 'a second tap folds the projection away');
     const listTxt = d.getElementById('ca-arch-list').textContent;
     R.ok(listTxt.indexOf('End of records') !== -1 && listTxt.indexOf('Showing earnings since Aug 2025') !== -1, 'footer marks the end of records');
     R.eq(d.querySelectorAll('.ca-arch-row').length, 19, 'every entry renders a row');
@@ -321,7 +329,7 @@ const fs = require('fs');
     R.eq(d.querySelectorAll('.ca-arch-row').length, 6, 'only matching rows render');
     R.ok(Array.from(d.querySelectorAll('.ca-arch-row')).every((r) => r.textContent.indexOf('KTM') !== -1), 'every visible row matches the search');
     R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'search never narrows the summary');
-    R.ok(headOf('2025-09').textContent.indexOf('$360.72') !== -1 && headOf('2025-09').textContent.indexOf('of $700.00') !== -1, 'filtered month shows its share of the full month');
+    R.ok(headOf('2025-09').closest('.ca-arch-group').textContent.indexOf('$360.72') !== -1 && headOf('2025-09').closest('.ca-arch-group').textContent.indexOf('of $700.00') !== -1, 'filtered month shows its share of the full month (v1.38.0: the amount sits beside the header, not inside it)');
     R.ok(d.getElementById('ca-arch-list').textContent.indexOf('End of records') !== -1, 'footer stays while entries exist');
     R.ok(!d.getElementById('ca-arch-clear').classList.contains('opacity-0'), 'clear button fades in with text in the search');
     d.getElementById('ca-arch-trash').click();
@@ -625,9 +633,13 @@ const fs = require('fs');
     const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
     const bodyOf = (mk) => headOf(mk).closest('.ca-arch-group').querySelector('.ca-arch-group-body');
     R.ok(headOf('2026-09').textContent.indexOf('Completed') !== -1, 'fully-flown current month reads Completed');
-    R.ok(!bodyOf('2026-09').querySelector('.ca-arch-dot-hollow'), 'no projected row once every flight has landed');
+    R.ok(!headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn') && !bodyOf('2026-09').querySelector('.ca-arch-proj-wrap'), 'v1.38.0: no still-to-fly toggle once every flight has landed');
     R.ok(headOf('2026-10').textContent.indexOf('Upcoming') !== -1, 'future month with saved flights reads Upcoming');
-    R.ok(bodyOf('2026-10').querySelector('.ca-arch-dot-hollow') && bodyOf('2026-10').textContent.indexOf('Projected \u00b7 1 flight') !== -1 && bodyOf('2026-10').textContent.indexOf('$400.00') !== -1, 'upcoming month shows its projected schedule');
+    const octToggle = headOf('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn');
+    const octWrap = bodyOf('2026-10').querySelector('.ca-arch-proj-wrap');
+    R.ok(!!octToggle && !!octWrap, 'v1.38.0: an upcoming month carries the still-to-fly toggle');
+    octToggle.click();
+    R.ok(octWrap.classList.contains('open') && octWrap.textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && octWrap.textContent.indexOf('$400.00') !== -1, 'the upcoming month unfolds its projection on tap');
     const sepCol = d.querySelector('.ca-arch-barcol[data-mk="2026-09"]');
     const octCol = d.querySelector('.ca-arch-barcol[data-mk="2026-10"]');
     R.ok(sepCol && !sepCol.querySelector('.ca-arch-barproj') && sepCol.querySelector('.ca-arch-bar').style.height === '120px', 'completed month is a full solid bar');
@@ -770,7 +782,11 @@ function todayYmd() {
     const ctxM = d.getElementById('ca-arch-m-ctx');
     R.ok(ctxM.textContent.indexOf('On track for $500.00') !== -1 && ctxM.textContent.indexOf('$200.00 left') !== -1, 'the landed duty counts as earned, the airborne one as left');
     const body = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
-    R.ok(body.textContent.indexOf('Projected') !== -1, 'the un-landed duty still projects');
+    const ipToggle = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn');
+    const ipWrap = body.querySelector('.ca-arch-proj-wrap');
+    R.ok(!!ipToggle && !!ipWrap, 'v1.38.0: the un-landed duty still carries a projection toggle');
+    ipToggle.click();
+    R.ok(ipWrap.classList.contains('open') && ipWrap.textContent.indexOf('Still to fly') !== -1 && ipWrap.textContent.indexOf('$200.00') !== -1, 'tapping it shows the airborne duty as still to fly');
   }
   {
     // every duty today has landed → Completed on the day itself (the date
@@ -860,6 +876,34 @@ function todayYmd() {
     const info = m.w.eval('archBackupNudgeInfo(' + JSON.stringify(ten) + ')');
     R.ok(info && info.newCount === 10, 'v1.37.0: ten fresh entries re-arm the backup nudge inside the 21-day quiet window');
     R.ok(m.w.eval('archBackupNudgeInfo(' + JSON.stringify(ten.slice(0, 2)) + ')') === null, 'two fresh entries stay quiet inside the 21-day window');
+  }
+  {
+    // ---- v1.38.0 (A1): the reveal also expands a collapsed group ----
+    const e = await boot(APP, { now: '2026-09-20T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        { id: 'B1', savedAt: '2026-09-02T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-01', flightType: 'Turnaround', stationDisplay: 'HKT', amount: 300, endAt: Date.parse('2026-09-01T22:00:00+08:00') },
+        { id: 'B2', savedAt: '2026-09-03T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-28', flightType: 'Layover', stationDisplay: 'NRT', amount: 500, endAt: Date.parse('2026-09-29T06:00:00+08:00') },
+        { id: 'B3', savedAt: '2026-07-03T10:00:00Z', monthKey: '2026-07', sectorDate: '2026-07-03', flightType: 'Turnaround', stationDisplay: 'KUL', amount: 150, endAt: Date.parse('2026-07-03T20:00:00+08:00') }
+      ]));
+    } });
+    await wait(100);
+    e.w.eval('showArchiveOverlay()');
+    await wait(150);
+    const grp = e.d.querySelector('.ca-arch-group-head[data-mk="2026-09"]').closest('.ca-arch-group');
+    const tgl = grp.querySelector('.ca-arch-proj-btn');
+    R.ok(!!tgl && tgl.querySelector('.ca-arch-proj-chev'), 'the toggle carries the up/down chevron');
+    // collapse the group first — the reveal must expand it so it is never hidden
+    if (!grp.classList.contains('ca-arch-collapsed')) { e.d.querySelector('.ca-arch-group-head[data-mk="2026-09"]').click(); }
+    R.ok(grp.classList.contains('ca-arch-collapsed'), 'group starts collapsed');
+    tgl.click();
+    const wrap = grp.querySelector('.ca-arch-proj-wrap');
+    R.ok(wrap.classList.contains('open') && !grp.classList.contains('ca-arch-collapsed'), 'v1.38.0: opening the projection expands a collapsed month too');
+    R.ok(wrap.textContent.indexOf('Landed $300.00') !== -1 && wrap.textContent.indexOf('on track for $800.00') !== -1, 'the panel splits landed vs on-track');
+    // a fully-flown past month gets no toggle at all
+    R.ok(!e.d.querySelector('.ca-arch-group-head[data-mk="2026-07"]').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn'), 'completed past months keep a plain total');
+    e.d.getElementById('ca-arch-backdrop').click();
   }
   process.exit(R.done() ? 1 : 0);
 })();
