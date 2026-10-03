@@ -182,7 +182,7 @@ const EMDASH = '\u2014'; // —
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
     R.ok(src.includes("var APP_VERSION = '1.38.0';"), 'APP_VERSION stamped 1.38.0');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v172"), 'service-worker cache name bumped to v172');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v173"), 'service-worker cache name bumped to v173');
   }
 
   process.exit(R.done() ? 1 : 0);

@@ -329,10 +329,6 @@
            reveal in the app. */
         .ca-arch-proj-wrap { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-proj-wrap.open { max-height: 180px; opacity: 1; }
-        .ca-arch-proj-btn .ca-arch-proj-chev { transition: transform .3s ease; }
-        .ca-arch-proj-btn[aria-expanded="true"] .ca-arch-proj-chev { transform: rotate(180deg); }
-        /* v1.38.0 (A2): the Flight Overview itinerary rows. */
-        .ca-ov-itin { border: 1px solid var(--arch-muted); }
         .ca-arch-insights { overflow: hidden; max-height: 0; opacity: 0; margin-top: 0; transition: max-height .3s ease, opacity .3s ease, margin-top .3s ease; }
         .ca-arch-insights.ca-arch-insopen { max-height: 1400px; opacity: 1; margin-top: .75rem; }
         /* Earnings page (v1.24.0): gold summary card, 12-month trend, insights.
@@ -1166,24 +1162,28 @@
                 <!-- v1.31.0: onboarding is perishable — the tour shouldn't be -->
                 <div>
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Learn the app</p>
-                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold">Feature tour</span>
-                            <span class="ca-micro text-gray-500">See everything the app can do in 90 seconds</span>
+                    <!-- hotfix: both rows share one house box, hairline-split -->
+                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold">Feature tour</span>
+                                <span class="ca-micro text-gray-500">See everything the app can do in 90 seconds</span>
+                            </div>
+                            <button type="button" id="btn-replay-tour" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                                <i data-lucide="play" class="w-3.5 h-3.5"></i> Replay
+                            </button>
                         </div>
-                        <button type="button" id="btn-replay-tour" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                            <i data-lucide="play" class="w-3.5 h-3.5"></i> Replay
-                        </button>
-                    </div>
-                    <!-- v1.35.0: the whole version history, newest first -->
-                    <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5 mt-2">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold">Changelog</span>
-                            <span class="ca-micro text-gray-500">New features, fixes, and improvements</span>
+                        <div class="border-t ca-hairline my-3"></div>
+                        <!-- v1.35.0: the whole version history, newest first -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold">Changelog</span>
+                                <span class="ca-micro text-gray-500">New features, fixes, and improvements</span>
+                            </div>
+                            <button type="button" id="btn-changelog" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                                <i data-lucide="history" class="w-3.5 h-3.5"></i> View
+                            </button>
                         </div>
-                        <button type="button" id="btn-changelog" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                            <i data-lucide="history" class="w-3.5 h-3.5"></i> View
-                        </button>
                     </div>
                 </div>
 
@@ -2731,7 +2731,7 @@
             // (the 5:58pm unlock after an 11:45am landing). v1.33.2: the
             // earnings sheet rides the same triggers — a duty that lands while
             // the page is open flips the badges, projection and bars in place.
-            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); };
+            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); };
             setInterval(caRealtimeSweep, 60000);
             document.addEventListener('visibilitychange', () => { if (!document.hidden) caRealtimeSweep(); });
             // v1.33.0 (owner-approved): the input teaches its own vocabulary —
@@ -3323,7 +3323,7 @@
                 addBotMessage('How can I help you today?');
                 // v1.28.0: next-flight card + offline pre-save nudge ride the
                 // same bot queue, so they land after the greeting bubbles.
-                enqueueBot(() => { renderNextFlightCard(); renderMenuNudge(); });
+                enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); renderMenuNudge(); });
             };
             if (!kids.length) {
                 greet();
@@ -3594,7 +3594,7 @@
             if (/^\d{4}$/.test(s)) return s.slice(0, 2) + ':' + s.slice(2);
             return '';
         }
-        function rosterYmAdd(s, days) { const d = new Date(s + 'T00:00:00'); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
+        function rosterYmAdd(s, days) { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
         const RO_IS = {
             date: s => /^\d{2}[A-Za-z]{3}\d{2}$/.test(s),
             fn: s => /^SQ \d{1,4}$/.test(s),
@@ -3991,55 +3991,272 @@
         function nextFlightChatActive() {
             return !!(appProfile && document.getElementById('chat-container') && !document.getElementById('main-view').classList.contains('hidden'));
         }
+        // v1.38.0 hotfix (owner spec): duties, not days. The flights chain
+        // into a duty that ENDS when a leg lands at SIN. Part one (the crew
+        // is in SG) presents the OUTBOUND — every leg until the homebound
+        // one; part two (at the station) presents the legs that remain.
+        function nfDutyOf(all) {
+            const anchor = all[0];
+            const legs = [anchor];
+            for (let i = 1; i < all.length; i++) {
+                const last = legs[legs.length - 1];
+                if (last.arr === 'SIN') break;
+                if (all[i].dep !== last.arr) break; // chain broke — a new duty
+                legs.push(all[i]);
+            }
+            let out = [], ret = [];
+            if (anchor.dep === 'SIN') {
+                const homeIdx = legs.findIndex((l) => l.arr === 'SIN');
+                out = homeIdx === -1 ? legs.slice() : legs.slice(0, homeIdx);
+                ret = homeIdx === -1 ? [] : legs.slice(homeIdx);
+                if (!out.length) out = [anchor];
+            } else {
+                ret = legs.slice();
+            }
+            return { anchor: anchor, legs: legs, out: out, ret: ret };
+        }
+        // 24-hour "HHMMH" clock — the format the roster itself prints.
+        function hmH(hm) {
+            const s = String(hm || '').replace(':', '');
+            if (!/^\d{3,4}$/.test(s)) return String(hm || '');
+            return (s.length === 3 ? '0' + s : s) + 'H';
+        }
+        function hmHFromDate(ms, zone) {
+            try {
+                return new Intl.DateTimeFormat('en-GB', { timeZone: zone || 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms)).replace(':', '') + 'H';
+            } catch (e) { return '\u2014'; }
+        }
+        function nfHmToMin(hm) {
+            const s = String(hm || '').replace(':', '');
+            if (!/^\d{3,4}$/.test(s)) return null;
+            return parseInt(s.slice(0, s.length - 2), 10) * 60 + parseInt(s.slice(-2), 10);
+        }
+        // The true UTC instant a roster-printed departure happens at, in the
+        // departure station's own zone (SIN included) — so countdowns and
+        // conversions never depend on the device clock's timezone.
+        function nfDepMs(f) {
+            if (!f || !f.std || !/^\d{4}-\d{2}-\d{2}$/.test(String(f.ymd || ''))) return null;
+            const m = nfHmToMin(f.std);
+            if (m === null) return null;
+            const zone = airportZone(f.dep) || 'Asia/Singapore';
+            const hm = String(f.std).replace(':', '');
+            const wall = (hm.length === 3 ? '0' + hm : hm).replace(/^(\d{2})(\d{2})$/, '$1:$2');
+            const ms = zonedWallToUtcMs(f.ymd, wall, zone);
+            if (isFinite(ms)) return ms;
+            return new Date(f.ymd + 'T00:00:00').getTime() + m * 60000;
+        }
+        // The true UTC instant a roster-printed arrival happens at, in the
+        // arrival station's own zone (SIN arrivals are SGT by definition).
+        function nfArrMsZone(f) {
+            if (!f || !f.sta) return null;
+            const base = /^\d{4}-\d{2}-\d{2}$/.test(String(f.staYmd || '')) ? f.staYmd : f.ymd;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(base || ''))) return null;
+            const zone = airportZone(f.arr) || 'Asia/Singapore';
+            const hm = String(f.sta).replace(':', '');
+            if (!/^\d{3,4}$/.test(hm)) return null;
+            const wall = (hm.length === 3 ? '0' + hm : hm).replace(/^(\d{2})(\d{2})$/, '$1:$2');
+            // overnight: an STA earlier on the clock than STD lands next day
+            let ymd = base;
+            const stdHm = String(f.std || '').replace(':', '');
+            if (f.std && stdHm.length === 4 && hm.length === 4 && hm < stdHm && String(f.staYmd || '') === String(f.ymd)) ymd = new Date(new Date(base + 'T00:00:00Z').getTime() + 86400000).toISOString().slice(0, 10);
+            const ms = zonedWallToUtcMs(ymd, wall, zone);
+            if (isFinite(ms)) return ms;
+            return nfArrivalMs(f);
+        }
+        function nfCountdown(ms) {
+            if (!isFinite(ms) || ms <= 0) return '';
+            const mins = Math.round(ms / 60000);
+            if (mins < 60) return 'in ' + mins + 'm';
+            if (mins < 24 * 60) {
+                const h = Math.floor(mins / 60), m = mins % 60;
+                return 'in ' + h + 'h' + (m ? ' ' + m + 'm' : '');
+            }
+            const days = Math.round(mins / (24 * 60));
+            return 'in ' + days + ' day' + (days === 1 ? '' : 's');
+        }
+        function zoneOffsetMin(zone) {
+            try {
+                const now = Date.now();
+                const p = {};
+                new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(now)).forEach((x) => { p[x.type] = x.value; });
+                return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - now) / 60000);
+            } catch (e) { return null; }
+        }
+        function tzOffsetPhrase(min) {
+            if (min === null || !isFinite(min)) return '';
+            if (min === 0) return 'same as SG';
+            const a = Math.abs(min);
+            const h = Math.floor(a / 60), m = a % 60;
+            let t;
+            if (h && m) t = h + (h === 1 ? ' hour' : ' hours') + ' ' + m + (m === 1 ? ' minute' : ' minutes');
+            else if (h) t = h + (h === 1 ? ' hour' : ' hours');
+            else t = m + (m === 1 ? ' minute' : ' minutes');
+            return t + (min > 0 ? ' ahead of SG' : ' behind SG');
+        }
+        // The layover time-zone card (owner spec): the station's live local
+        // time with its offset from SG, and SG's own clock. Only while the
+        // crew is genuinely AT the station — part two, next leg not yet in
+        // the air — and only when the station's zone is actually known.
+        function layoverTzInfo() {
+            try {
+                if (!nextFlightChatActive()) return null;
+                const all = upcomingList();
+                if (!all.length) return null;
+                const duty = nfDutyOf(all);
+                if (!duty || duty.anchor.dep === 'SIN') return null;
+                const aDep = nfDepMs(duty.anchor), aArr = nfArrMsZone(duty.anchor);
+                if (aDep && aArr && Date.now() >= aDep && Date.now() < aArr) return null; // flying, not at the station
+                const station = duty.anchor.dep;
+                const zone = airportZone(station);
+                if (!zone || zone === 'Asia/Singapore') return null;
+                const stH = hmHFromDate(Date.now(), zone);
+                const sgH = hmHFromDate(Date.now(), 'Asia/Singapore');
+                const phrase = tzOffsetPhrase((zoneOffsetMin(zone) || 0) - 480);
+                return { station: station, stH: stH, sgH: sgH, phrase: phrase, sig: station + '|' + stH + '|' + sgH };
+            } catch (e) { return null; }
+        }
+        function renderLayoverTzCard() {
+            const info = layoverTzInfo();
+            const old = document.getElementById('ca-layover-tz-card');
+            if (!info) { if (old) old.remove(); return; }
+            const inner = '<div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">'
+                + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="globe" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i><span class="ca-micro font-bold uppercase tracking-wider" style="color: var(--sia-gold, #c9a227)">Layover time zone</span></div>'
+                + '<p class="text-sm font-bold">' + rosterEsc(info.station) + ' \u2014 ' + info.stH + ' <span class="font-normal text-gray-500">&middot; ' + info.phrase + '</span></p>'
+                + '<p class="text-sm font-bold mt-0.5">SG \u2014 ' + info.sgH + '</p>'
+                + '</div>';
+            if (old) {
+                // in-place minute rollover — never a mid-chat re-append
+                if (old.getAttribute('data-sig') !== info.sig) {
+                    old.setAttribute('data-sig', info.sig);
+                    old.innerHTML = inner;
+                    try { lucide.createIcons(); } catch (e) {}
+                }
+                return;
+            }
+            const chat = document.getElementById('chat-container');
+            const el = document.createElement('div');
+            el.id = 'ca-layover-tz-card';
+            el.className = 'flex items-start gap-3 mt-2 w-full chat-anim-in';
+            el.setAttribute('data-sig', info.sig);
+            el.innerHTML = inner;
+            chat.appendChild(el);
+            try { lucide.createIcons(); } catch (e) {}
+            scrollToBottom();
+        }
         function renderNextFlightCard() {
             const old = document.getElementById('ca-nextflight-card');
             if (old) old.remove();
             if (!nextFlightChatActive()) return;
-            // v1.31.1 (owner report): an out-and-back day is ONE duty — the
-            // card lists every flight on the next flight's day (SQ106 out,
-            // SQ105 back), each with its own Menus badge and its own tap.
             const all = upcomingList();
             if (!all.length) return;
-            const day = all.filter((x) => x.ymd === all[0].ymd);
+            const duty = nfDutyOf(all);
+            const part1 = duty.anchor.dep === 'SIN';
+            const legs = part1 ? duty.out : duty.ret;
+            if (!legs || !legs.length) return;
+            const first = legs[0];
+            const station = part1 ? legs[legs.length - 1].arr : first.dep;
+            const allSaved = legs.every((f) => menusSavedFor(f.fn, f.ymd));
             const chat = document.getElementById('chat-container');
             const el = document.createElement('div');
             el.id = 'ca-nextflight-card';
             el.className = 'flex items-start gap-3 mt-2 w-full chat-anim-in';
-            const rowHtml = (f, idx) =>
-                '<button type="button"' + (idx === 0 ? ' id="ca-nextflight-tap"' : '') + ' class="ca-nextflight-tap w-full text-left" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '" aria-label="Open menus for SQ ' + rosterEsc(f.fn) + '">'
+
+            // section 3 — the real-time details (zone-aware instants, so
+            // countdowns never depend on the device clock's timezone)
+            const depMs = nfDepMs(first);
+            const arrMsFirst = nfArrMsZone(first);
+            const inAir = !!(depMs && arrMsFirst && Date.now() >= depMs && Date.now() < arrMsFirst);
+            let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400">' + rosterShortDate(first.ymd) + ' &middot; <b>' + nextFlightRel(first.ymd) + '</b></span>';
+            if (inAir) {
+                detail += '<span class="block mt-1 font-bold" style="color: var(--sia-gold, #c9a227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
+            } else {
+                detail += '<span class="block mt-1">Departs ' + hmH(first.std) + (part1 ? '' : ' local') + (depMs ? ' &middot; ' + nfCountdown(depMs - Date.now()) : '') + '</span>';
+            }
+            const last = legs[legs.length - 1];
+            if (last.sta) {
+                const arrMs = nfArrMsZone(last);
+                if (part1) {
+                    const zone = airportZone(station);
+                    let lands = 'Lands ' + rosterEsc(station) + ' ' + hmH(last.sta) + ' local';
+                    if (arrMs && zone && zone !== 'Asia/Singapore') {
+                        const sgtH = hmHFromDate(arrMs, 'Asia/Singapore');
+                        if (sgtH !== hmH(last.sta)) lands += ' &middot; ' + sgtH + ' SGT';
+                    }
+                    detail += '<span class="block mt-1">' + lands + '</span>';
+                } else {
+                    detail += '<span class="block mt-1">Lands SIN ' + hmH(last.sta) + ' SGT</span>';
+                }
+            }
+
+            // section 1 — the suggested alarm (part one, inside its window:
+            // from 12h before the alarm until departure; report 2h before
+            // STD, prep 1h, transport 1h — the owner's own arithmetic)
+            let alarmHtml = '';
+            if (part1 && depMs && !inAir) {
+                const now = Date.now();
+                if (now >= depMs - 16 * 3600000 && now < depMs) {
+                    alarmHtml = '<div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
+                        + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                        + '<span class="flex-1 min-w-0">'
+                        + '<span class="block font-bold text-sia-navy dark:text-sia-gold">Suggested alarm ' + hmHFromDate(depMs - 4 * 3600000, 'Asia/Singapore') + '</span>'
+                        + '<span class="block text-xs mt-0.5 text-gray-500">Reporting ' + hmHFromDate(depMs - 2 * 3600000, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
+                        + '</span></div>';
+                }
+            }
+
+            const fns = legs.map((f) => 'SQ ' + rosterEsc(f.fn)).join(' &middot; ');
+            el.innerHTML =
+                '<div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">'
+                + alarmHtml
+                + '<div class="flex items-start gap-2.5">'
+                + '<button type="button" id="ca-nextflight-tap" class="ca-nextflight-tap flex-1 min-w-0 text-left" data-nf="' + rosterEsc(first.fn) + '|' + rosterEsc(first.ymd) + '" aria-label="Open menus for SQ ' + rosterEsc(first.fn) + '">'
                 + '<span class="flex items-center gap-2.5">'
                 + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                 + '<span class="flex-1 min-w-0">'
-                + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">SQ ' + rosterEsc(f.fn) + ' <span class="font-normal">&middot; ' + rosterEsc(f.dep) + ' &rarr; ' + rosterEsc(f.arr) + '</span></span>'
-                + '<span class="block text-xs mt-0.5 text-gray-500">' + rosterShortDate(f.ymd) + (nfInAir(f) ? ' &middot; lands ' + rosterEsc(f.sta) : (f.std ? ' &middot; departs ' + rosterEsc(f.std) : '')) + ' &middot; <b>' + nextFlightRel(f.ymd) + '</b></span>'
-                + '</span>'
-                + (menusSavedFor(f.fn, f.ymd) ? '<span class="shrink-0 inline-flex items-center gap-1 ca-micro font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>' : '')
-                + '</span></button>';
-            el.innerHTML =
-                '<div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">'
-                + (day.length > 1 ? '<p class="ca-micro font-bold uppercase tracking-wider text-gray-500 mb-1">' + day.length + ' flights ' + nextFlightRel(day[0].ymd) + '</p>' : '')
-                + day.map(rowHtml).join('<div class="border-t ca-hairline my-1.5"></div>')
+                + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">' + fns + ' <span class="font-normal">&middot; ' + rosterEsc(station) + '</span></span>'
+                + '</span></span>'
+                + '<span class="block text-xs mt-2 text-gray-500 leading-relaxed">' + detail + '</span>'
+                + '</button>'
+                + (allSaved
+                    ? '<span class="shrink-0 inline-flex items-center gap-1 ca-micro font-bold text-emerald-600 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2 py-1 mt-1"><i data-lucide="check" class="w-3 h-3"></i>Menus saved</span>'
+                    : '<button type="button" id="ca-nf-save" class="shrink-0 h-9 px-3.5 rounded-full border border-sia-gold/70 text-sia-gold ca-micro font-bold uppercase tracking-wider inline-flex items-center gap-1.5 mt-0.5" aria-label="Save menus for this duty"><i data-lucide="download" class="w-3 h-3"></i>Save menu' + (legs.length > 1 ? 's' : '') + '</button>')
+                + '</div>'
                 + '</div>';
             chat.appendChild(el);
             try { lucide.createIcons(); } catch (e) {}
-            el.querySelectorAll('.ca-nextflight-tap').forEach((btn) => {
-                const parts = (btn.getAttribute('data-nf') || '').split('|');
+            const tapBtn = el.querySelector('#ca-nextflight-tap');
+            if (tapBtn) {
+                const parts = (tapBtn.getAttribute('data-nf') || '').split('|');
                 const fn = parts[0], ymd = parts[1];
-                const nfBtnHtml = btn.innerHTML;
-                btn.addEventListener('click', () => {
+                const nfBtnHtml = tapBtn.innerHTML;
+                tapBtn.addEventListener('click', () => {
                     if (isChatBusy()) return;
-                    // v1.28.2: saved → viewer straight from cache; otherwise fetch
-                    // every cabin behind a spinner, then open. Works offline when
-                    // the menus are already saved (the onboard scenario).
                     const setBusy = (busy) => {
-                        btn.disabled = busy;
-                        btn.innerHTML = busy
+                        tapBtn.disabled = busy;
+                        tapBtn.innerHTML = busy
                             ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
                             : nfBtnHtml;
                         try { lucide.createIcons(); } catch (e) {}
                     };
                     openNextFlightMenus(fn, ymd, setBusy);
                 });
+            }
+            const saveBtn = el.querySelector('#ca-nf-save');
+            if (saveBtn) saveBtn.addEventListener('click', async () => {
+                if (isChatBusy()) return;
+                setChatBusy(true);
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Saving\u2026';
+                try { lucide.createIcons(); } catch (e) {}
+                let okCount = 0;
+                for (const f of legs) {
+                    let r = { ok: false, saved: 0, cabins: 0 };
+                    try { r = await saveMenusForFlightOffline(f.fn, f.ymd); } catch (e) {}
+                    if (r.ok) okCount++;
+                }
+                renderNextFlightCard(); // badge refresh only (v1.28.2 pattern)
+                setChatBusy(false);
+                if (!okCount) addBotMessage('Couldn\u2019t reach the menu service \u2014 connect once and try again.');
             });
             scrollToBottom();
         }
@@ -4176,6 +4393,7 @@
         }
 
         function refreshNextFlightUi() {
+            renderLayoverTzCard();
             renderNextFlightCard();
             renderMenuNudge();
         }
@@ -4474,7 +4692,7 @@
                         </span>
                     </button>
                     <div class="ca-trip-body">
-                    ${overviewBlock(flightOverviewText(r.res.detail), r.res.detail)}
+                    ${overviewBlock(flightOverviewText(r.res.detail))}
                     ${r.res.ifaDetails.join('')}
                     ${r.res.isTurnaround
                         ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
@@ -4750,13 +4968,21 @@
             try {
                 upcomingList().forEach((f) => { if (f && f.fn && menusSavedFor(f.fn, f.ymd)) protectedCount++; });
             } catch (e) {}
-            const row = (label, val, id) => '<div class="flex items-center justify-between px-3 h-11 rounded-xl ca-inset border border-black/5 dark:border-white/10"><span class="text-xs font-bold">' + label + '</span><span class="text-xs font-bold text-sia-gold" ' + (id ? 'id="' + id + '"' : '') + '>' + val + '</span></div>';
-            let html = row('Earnings entries', String(entries))
+            // hotfix: the panel joins the house box style — one glass panel,
+            // hairline-separated rows, the action inside the box.
+            const row = (label, val, id) => '<div class="flex items-center justify-between py-2.5"><span class="text-xs font-bold">' + label + '</span><span class="text-xs font-bold text-sia-gold" ' + (id ? 'id="' + id + '"' : '') + '>' + val + '</span></div>';
+            let html = '<div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">'
+                + row('Earnings entries', String(entries))
+                + '<div class="border-t ca-hairline"></div>'
                 + row('Saved menus (flights)', String(menuCount))
+                + '<div class="border-t ca-hairline"></div>'
                 + row('Storage used (browser estimate)', '\u2026', 'st-storage-usage')
+                + '<div class="border-t ca-hairline"></div>'
                 + row('Persistent storage', '\u2026', 'st-storage-persisted')
+                + '<div class="border-t ca-hairline my-1"></div>'
                 + '<button type="button" id="btn-clear-menus" class="w-full h-[42px] rounded-full bg-transparent text-amber-600 dark:text-amber-400 border border-amber-500/50 hover:bg-amber-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Clear saved menus"><i data-lucide="eraser" class="w-4 h-4"></i>Clear saved menus</button>';
-            if (protectedCount > 0) html += '<p class="ca-micro px-1" style="color: var(--arch-muted)">' + protectedCount + ' upcoming duty flight' + (protectedCount === 1 ? '' : 's') + ' keep' + (protectedCount === 1 ? 's' : '') + ' their menus.</p>';
+            if (protectedCount > 0) html += '<p class="ca-micro mt-2" style="color: var(--arch-muted)">' + protectedCount + ' upcoming duty flight' + (protectedCount === 1 ? '' : 's') + ' keep' + (protectedCount === 1 ? 's' : '') + ' their menus.</p>';
+            html += '</div>';
             box.innerHTML = html;
             try { lucide.createIcons(); } catch (e) {}
             const usageEl = document.getElementById('st-storage-usage');
@@ -5642,7 +5868,9 @@ const airports = [
             const ms = zonedWallToUtcMs(arrYmd, arrHm, zone);
             if (!isFinite(ms)) return '';
             try {
-                return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms)) + ' SGT';
+                const sgtHm = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(ms));
+                if (sgtHm === String(arrHm || '')) return ''; // same clock as SG (KUL) — nothing to convert
+                return sgtHm + ' SGT';
             } catch (e) { return ''; }
         }
 
@@ -8634,36 +8862,15 @@ function getRegionForAirport(code) {
             }
             return txt.trim();
         }
-        // v1.38.0 (A2): one row per sector — flight, route, and the landing
-        // in station-local time converted to SGT ("lands 18:35 local (17:35
-        // SGT)"). Rows appear only where a time was actually printed: roster
-        // imports and fetched sectors. Manual cards without Fetch show the
-        // prose story alone; unknown stations show local time, no conversion.
-        function overviewItinHtml(s) {
-            if (!s || !s.sectors) return '';
-            const rows = [];
-            (s.sectors || []).forEach((x) => {
-                if (!x.sta) return;
-                const arr = String(x.arr || '').toUpperCase();
-                const dep = String(x.dep || '').toUpperCase();
-                const sgt = landingSgtPhrase(arr, x.arrYmd, x.sta);
-                const lands = (arr === 'SIN') ? (x.sta + ' SGT') : (x.sta + ' local' + (sgt ? ' (' + sgt + ')' : ''));
-                rows.push('<div class="flex items-center gap-2 py-1 text-xs">'
-                    + '<span class="font-bold whitespace-nowrap">' + (x.fn ? 'SQ ' + x.fn : 'Sector') + '</span>'
-                    + '<span class="truncate" style="color: var(--arch-muted)">' + (dep ? dep + (x.std ? ' ' + x.std : '') + ' \u2192 ' : '') + arr + '</span>'
-                    + '<span class="ml-auto font-bold text-sia-gold whitespace-nowrap">lands ' + lands + '</span>'
-                    + '</div>');
-            });
-            if (!rows.length) return '';
-            return '<div class="ca-ov-itin mb-3 p-3 rounded-xl ca-inset">' + rows.join('') + '</div>';
-        }
-        function overviewBlock(text, snap) {
-            const itin = overviewItinHtml(snap);
-            if (!text && !itin) return '';
+        // v1.38.0 hotfix: the per-sector itinerary rows were withdrawn by
+        // owner order (the conversions now live on the next-flight card);
+        // overviewBlock is prose again. The zone machinery it grew —
+        // AIRPORT_TZ, zonedWallToUtcMs, landingSgtPhrase — stays.
+        function overviewBlock(text) {
+            if (!text) return '';
             return '<div class="mb-6">'
                 + '<div class="flex items-center gap-1.5 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-sia-gold"></i><span class="ca-micro font-bold uppercase tracking-wider text-sia-gold">Flight Overview</span></div>'
-                + itin
-                + (text ? '<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">' + text + '</p>' : '')
+                + '<p class="text-sm leading-relaxed text-gray-700 dark:text-gray-300">' + text + '</p>'
                 + '</div>';
         }
         // Rebuilds the IFA/LMA breakdown from a stored snapshot (archive reopen).
@@ -8812,7 +9019,7 @@ function getRegionForAirport(code) {
                     <p class="text-4xl font-bold ca-amt">${formatMoney(grandTotal)}</p>
                 </div>
             `;
-            if (mode === 'both' && detail) html += overviewBlock(flightOverviewText(detail), detail);
+            if (mode === 'both' && detail) html += overviewBlock(flightOverviewText(detail));
 
             if (ifaDetails.length > 0) {
                 html += `
@@ -9495,7 +9702,8 @@ function getRegionForAirport(code) {
                 else if (mk === currentMk) badges += '<span class="ca-arch-badge ca-arch-badge-prog">Completed</span>';
                 // v1.38.0 (A1): the $ total is a toggle when the month has
                 // unflown duties — tap to unfold "still to fly". Completed
-                // months keep a plain amount.
+                // months keep a plain amount. (Hotfix: no chevron — it
+                // shifted the amount text; the tap still works.)
                 const hasUnflown = ms.unflownCount > 0;
                 const amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2">'
@@ -9509,9 +9717,8 @@ function getRegionForAirport(code) {
                     + '</span></span>'
                     + '</button>'
                     + (hasUnflown
-                        ? '<button type="button" class="ca-arch-proj-btn flex items-center gap-1.5 shrink-0 rounded-xl px-1.5 py-1" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
+                        ? '<button type="button" class="ca-arch-proj-btn flex items-center shrink-0 rounded-xl px-1.5 py-1" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
                         + '<span class="ca-arch-amt text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>'
-                        + '<i data-lucide="chevron-down" class="ca-arch-proj-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
                         + '</button>'
                         : '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>')
                     + '</div>'
@@ -9808,7 +10015,7 @@ function getRegionForAirport(code) {
                 html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
                     + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
                     + '<p class="text-4xl font-bold ca-amt">' + formatMoney(s.grandTotal != null ? s.grandTotal : e.amount) + '</p></div>';
-                html += overviewBlock(flightOverviewText(s), s);
+                html += overviewBlock(flightOverviewText(s));
                 html += overviewDetailHtml(s);
             } else {
                 html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'

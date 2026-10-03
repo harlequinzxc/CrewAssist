@@ -288,13 +288,12 @@ function rosterItems(flight, sector, dateTok, opts) {
     await wait(5600);
     const card = d.getElementById('ca-nextflight-card');
     R.ok(card, 'the card renders for the out-and-back day');
+    R.ok(card && card.textContent.indexOf('SQ 106') >= 0 && card.textContent.indexOf('KUL') >= 0, 'v1.38.0 hotfix: part one presents the outbound — SQ 106 to KUL');
+    R.ok(card && card.textContent.indexOf('SQ 105') === -1, 'the homebound leg waits its turn — part two begins once SQ 106 lands');
+    R.ok(card && card.textContent.indexOf('SQ 336') === -1, 'a later duty waits its turn');
     const rows = card ? card.querySelectorAll('.ca-nextflight-tap') : [];
-    R.eq(rows.length, 2, 'both same-day flights get a row');
-    R.ok(card && card.textContent.indexOf('SQ 106') >= 0 && card.textContent.indexOf('SQ 105') >= 0, 'the out and the back are both named');
-    R.ok(card && card.textContent.indexOf('KUL') >= 0, 'routes render');
-    R.ok(card && card.textContent.indexOf('2 flights') >= 0, 'the header counts the pair');
-    R.ok(card && card.textContent.indexOf('SQ 336') === -1, 'a later day waits its turn');
-    R.ok(rows[0] && rows[0].id === 'ca-nextflight-tap', 'the first row keeps the original tap id');
+    R.eq(rows.length, 1, 'one tap target — the presented part');
+    R.ok(rows[0] && rows[0].id === 'ca-nextflight-tap', 'the tap keeps the original id');
     R.ok(card && !/Menus saved/.test(card.textContent), 'no badge until a flight is actually saved');
   }
 
@@ -311,20 +310,32 @@ function rosterItems(flight, sector, dateTok, opts) {
     const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-390), sta: hm(-330), staYmd: ymd(0) };
     const inAirSta = hm(120); // pinned once — a minute roll between seed and assert must not rewrite it
     const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: inAirSta, staYmd: ymd(0) };
-    const statless = { fn: '321', dep: 'SIN', arr: 'HKT', ymd: ymd(0), std: hm(-720) };
+    // (a) part two, mid-air: the landed leg is gone, the airborne one leads
     const { d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
-      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([landed, inAir, statless])));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([landed, inAir])));
     } });
     let card = null;
     const t0 = Date.now();
     while (Date.now() - t0 < 8000 && !(card = d.getElementById('ca-nextflight-card'))) await wait(50);
-    R.ok(!!card, 'the day\u2019s remaining flights render a card');
+    R.ok(!!card, 'the airborne leg renders the card');
     const txt = card ? card.textContent : '';
     R.ok(txt.indexOf('SQ 118') === -1, 'a flight that landed hours ago is gone from the card');
-    R.ok(txt.indexOf('SQ 105') >= 0 && txt.indexOf('lands ' + inAirSta) >= 0, 'a leg in the air shows its landing time');
-    R.ok(txt.indexOf('SQ 321') >= 0, 'a flight with no arrival on record is kept for the day');
-    R.ok(txt.indexOf('SQ 336') === -1 || txt.indexOf('CDG') === -1, 'the card stays on the current day, not tomorrow');
+    R.ok(txt.indexOf('SQ 105') >= 0 && txt.indexOf('KUL') >= 0, 'part two names the flight and the station the crew is at');
+    R.ok(txt.indexOf('In the air') >= 0 && txt.indexOf('lands in') >= 0, 'v1.38.0 hotfix: a leg in the air shows a live landing countdown');
+    R.ok(txt.indexOf('Lands SIN ' + String(inAirSta).replace(':', '') + 'H SGT') >= 0, 'the homebound landing reads in SGT, 24-hour H format');
+    R.ok(!d.getElementById('ca-layover-tz-card'), 'no layover time-zone card while flying home');
+    // (b) a statless leg (no arrival printed) is kept for the day
+    const { d: d2 } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '321', dep: 'SIN', arr: 'HKT', ymd: ymd(0), std: hm(-720) }])));
+    } });
+    let card2 = null;
+    const t1 = Date.now();
+    while (Date.now() - t1 < 8000 && !(card2 = d2.getElementById('ca-nextflight-card'))) await wait(50);
+    const txt2 = card2 ? card2.textContent : '';
+    R.ok(txt2.indexOf('SQ 321') >= 0, 'a flight with no arrival on record is kept for the day');
+    R.ok(!/Lands /.test(txt2), 'no landing line is invented without a printed arrival');
   }
   {
     // everything today has landed → tomorrow leads, and the store remembers
@@ -378,5 +389,109 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(!JSON.stringify(store).match(/"105"/), 'the landed flight is pruned from storage too');
   }
 
+  {
+    // ---- v1.38.0 hotfix (owner spec): part one — alarm + flight + details ----
+    const { d } = await boot(APP, { now: '2026-10-05T22:00:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '802', dep: 'SIN', arr: 'NRT', ymd: '2026-10-06', std: '09:45', sta: '18:27', staYmd: '2026-10-06' },
+        { fn: '807', dep: 'NRT', arr: 'SIN', ymd: '2026-10-08', std: '20:30', sta: '06:29', staYmd: '2026-10-09' }
+      ])));
+    } });
+    let c1 = null; const tA = Date.now();
+    while (Date.now() - tA < 9000 && !(c1 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const p1 = c1 ? c1.textContent : '';
+    R.ok(c1 && p1.indexOf('Suggested alarm 0545H') >= 0, 'part one: suggested alarm = STD − 4h, 24-hour H format');
+    R.ok(p1.indexOf('Reporting 0745H') >= 0 && p1.indexOf('STD 0945H') >= 0, 'part one: reporting 2h before STD, no transport line');
+    R.ok(p1.indexOf('SQ 802') >= 0 && p1.indexOf('NRT') >= 0, 'part one: flight number + station IATA');
+    R.ok(p1.indexOf('Departs 0945H \u00b7 in 11h 45m') >= 0, 'part one: departs clock + live countdown');
+    R.ok(p1.indexOf('Lands NRT 1827H local \u00b7 1727H SGT') >= 0, 'part one: landing in station local AND SGT');
+    R.ok(p1.indexOf('SQ 807') === -1, 'part one never leaks the homebound leg');
+    R.ok(c1 && !!c1.querySelector('#ca-nf-save'), 'the save-menu button rides with the flight');
+    R.ok(!d.getElementById('ca-layover-tz-card'), 'no layover card while in SG');
+  }
+  {
+    // outside the alarm window (12h before alarm) the section simply waits
+    const { d } = await boot(APP, { now: '2026-10-05T08:00:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '802', dep: 'SIN', arr: 'NRT', ymd: '2026-10-06', std: '09:45', sta: '18:27', staYmd: '2026-10-06' }
+      ])));
+    } });
+    let c2 = null; const tB = Date.now();
+    while (Date.now() - tB < 9000 && !(c2 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const p1b = c2 ? c2.textContent : '';
+    R.ok(c2 && p1b.indexOf('Suggested alarm') === -1, 'the alarm section stays hidden before its 12h window');
+    R.ok(p1b.indexOf('SQ 802') >= 0 && p1b.indexOf('Departs 0945H') >= 0, 'the flight and its details still show');
+  }
+  {
+    // ---- part two: at the station + the layover time-zone card ----
+    const { d } = await boot(APP, { now: '2026-10-07T14:32:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '807', dep: 'NRT', arr: 'SIN', ymd: '2026-10-08', std: '20:30', sta: '06:29', staYmd: '2026-10-09' }
+      ])));
+    } });
+    let c3 = null; const tC = Date.now();
+    while (Date.now() - tC < 9000 && !(c3 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const p2 = c3 ? c3.textContent : '';
+    R.ok(c3 && p2.indexOf('Suggested alarm') === -1, 'part two carries no alarm — reporting is a SIN rule');
+    R.ok(p2.indexOf('SQ 807') >= 0 && p2.indexOf('NRT') >= 0, 'part two: flight number + the station the crew is at');
+    R.ok(p2.indexOf('Departs 2030H local') >= 0, 'part two: departure reads in station-local time');
+    R.ok(p2.indexOf('Lands SIN 0629H SGT') >= 0, 'part two: the homebound landing reads in SGT');
+    const tz = d.getElementById('ca-layover-tz-card');
+    R.ok(!!tz, 'the layover time-zone card appears while at the station');
+    const tzTxt = tz ? tz.textContent : '';
+    R.ok(tzTxt.indexOf('NRT \u2014 1532H') >= 0 && tzTxt.indexOf('1 hour ahead of SG') >= 0, 'the station line: live local time + offset from SG');
+    R.ok(tzTxt.indexOf('SG \u2014 1432H') >= 0, 'the SG line: Singapore\u2019s own clock');
+    const chat = d.getElementById('chat-container');
+    const kids = Array.from(chat.children);
+    R.ok(kids.indexOf(tz) > -1 && kids.indexOf(c3) > -1 && kids.indexOf(tz) < kids.indexOf(c3), 'the time-zone card sits after the greetings, before the flight card');
+  }
+  {
+    // ---- multisector layover: part one presents the whole outbound ----
+    const { d } = await boot(APP, { now: '2026-10-05T22:00:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '123', dep: 'SIN', arr: 'KUL', ymd: '2026-10-06', std: '09:45', sta: '11:27', staYmd: '2026-10-06' },
+        { fn: '124', dep: 'KUL', arr: 'NRT', ymd: '2026-10-06', std: '13:00', sta: '18:35', staYmd: '2026-10-06' },
+        { fn: '125', dep: 'NRT', arr: 'SIN', ymd: '2026-10-09', std: '20:30', sta: '06:29', staYmd: '2026-10-10' }
+      ])));
+    } });
+    let c4 = null; const tD = Date.now();
+    while (Date.now() - tD < 9000 && !(c4 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const ms = c4 ? c4.textContent : '';
+    R.ok(c4 && ms.indexOf('SQ 123') >= 0 && ms.indexOf('SQ 124') >= 0, 'a multisector outbound names every leg');
+    R.ok(ms.indexOf('Departs 0945H') >= 0, 'it departs at the FIRST sector\u2019s time');
+    R.ok(ms.indexOf('Lands NRT 1835H local \u00b7 1735H SGT') >= 0, 'it lands at the FINAL station, local + SGT');
+    R.ok(c4 && !!c4.querySelector('#ca-nf-save') && c4.textContent.indexOf('Save menus') >= 0, 'the save button goes plural for multiple legs');
+  }
+  {
+    // ---- the save-menu button: save-only, then the badge ----
+    const { w, d } = await boot(APP, { now: '2026-10-05T22:00:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '802', dep: 'SIN', arr: 'NRT', ymd: '2026-10-06', std: '09:45', sta: '18:27', staYmd: '2026-10-06' }
+      ])));
+    } });
+    let c5 = null; const tE = Date.now();
+    while (Date.now() - tE < 9000 && !(c5 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    R.ok(!!c5, 'the card renders before saving');
+    w.fetch = async (u, opts) => {
+      const body = JSON.parse((opts && opts.body) || '{}');
+      if (body.endpoint === 'getcabin') return new Response(JSON.stringify({ statusCode: 200, cabinClasses: ['JCL', 'YCL'] }), { status: 200 });
+      if (body.endpoint === 'menu') return new Response(JSON.stringify({ statusCode: 200, legs: [] }), { status: 200 });
+      return new Response('{}', { status: 200 });
+    };
+    const saveBtn = d.getElementById('ca-nf-save');
+    R.ok(!!saveBtn, 'the save button exists while menus are unsaved');
+    saveBtn.click();
+    await wait(700);
+    R.ok(!!w.localStorage.getItem('SQ802:2026-10-06:CABINS'), 'save caches the cabin schedule');
+    R.ok(!!w.localStorage.getItem('SQ802:2026-10-06:JCL') && !!w.localStorage.getItem('SQ802:2026-10-06:YCL'), 'save fetches every cabin menu');
+    const after = d.getElementById('ca-nextflight-card');
+    R.ok(after && /Menus saved/.test(after.textContent), 'the card flips to the saved badge');
+    R.ok(after && !after.querySelector('#ca-nf-save'), 'no save button once everything is saved');
+  }
   process.exit(R.done() ? 1 : 0);
 })();

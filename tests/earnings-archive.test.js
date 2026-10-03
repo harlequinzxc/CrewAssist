@@ -893,7 +893,7 @@ function todayYmd() {
     await wait(150);
     const grp = e.d.querySelector('.ca-arch-group-head[data-mk="2026-09"]').closest('.ca-arch-group');
     const tgl = grp.querySelector('.ca-arch-proj-btn');
-    R.ok(!!tgl && tgl.querySelector('.ca-arch-proj-chev'), 'the toggle carries the up/down chevron');
+    R.ok(!!tgl && tgl.tagName === 'BUTTON' && !tgl.querySelector('i'), 'hotfix: the total stays tappable with no chevron shifting the text');
     // collapse the group first — the reveal must expand it so it is never hidden
     if (!grp.classList.contains('ca-arch-collapsed')) { e.d.querySelector('.ca-arch-group-head[data-mk="2026-09"]').click(); }
     R.ok(grp.classList.contains('ca-arch-collapsed'), 'group starts collapsed');

@@ -238,13 +238,13 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('function nextFlightExpirySweep'), 'a sweep retires landed flights from the card');
     R.ok(src.includes('setInterval(caRealtimeSweep, 60000)'), 'the sweep runs every minute while the app is open');
     R.ok(src.includes("document.addEventListener('visibilitychange', () => { if (!document.hidden) caRealtimeSweep(); })"), 'returning to the screen triggers an immediate sweep');
-    R.ok(src.includes('lands ' + "' + rosterEsc(f.sta)"), 'a leg in the air shows its landing time');
+    R.ok(src.includes("In the air &middot; lands ' + nfCountdown("), 'a leg in the air shows a live landing countdown');
     // ---- v1.33.2: the earnings schedule model follows landings ----
     R.ok(src.includes("cardRoot.setAttribute('data-duty-end'"), 'roster-built cards carry their duty landing');
     R.ok(src.includes('rec.endAt = dutyEnd'), 'save payloads record the duty landing time');
     R.ok(src.includes('function archEntryLanded'), 'a duty counts as flown once it has landed');
     R.ok(src.includes('function archLandedSweep'), 'the earnings sheet sweeps for landings');
-    R.ok(src.includes('const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); };'), 'both real-time tracks share one sweep cadence');
+    R.ok(src.includes('const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); };'), 'both real-time tracks — plus the layover clock — share one sweep cadence');
     // M1: surface tokens replaced the hand-mixed pairs everywhere
     R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');
     R.ok(src.includes('.ca-inset { background-color: var(--ca-surface-2); }'), 'the inset token class exists (M1)');
@@ -503,11 +503,10 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq(f.w.eval("landingSgtPhrase('NRT','2026-10-04','18:35')"), '17:35 SGT', 'the phrase renders as 17:35 SGT');
     R.eq(f.w.eval("landingSgtPhrase('SIN','2026-10-04','18:35')"), '', 'Singapore landings need no conversion');
     R.eq(f.w.eval("landingSgtPhrase('ZZZ','2026-10-04','18:35')"), '', 'unknown stations never get a guessed offset');
-    const ov = f.w.eval("overviewBlock('story', { sectors: [ {fn:'802', dep:'SIN', arr:'NRT', std:'09:45', sta:'18:35', arrYmd:'2026-10-04'}, {fn:'807', dep:'NRT', arr:'SIN', std:'20:15', sta:'05:35', arrYmd:'2026-10-05'}, {fn:'808', dep:'AAA', arr:'ZZZ', sta:'07:10', arrYmd:'2026-10-06'} ] })");
-    R.ok(ov.indexOf('lands 18:35 local (17:35 SGT)') !== -1, 'a roster landing converts to SGT');
-    R.ok(ov.indexOf('lands 05:35 SGT') !== -1, 'a Singapore landing reads plainly in SGT');
-    R.ok(ov.indexOf('lands 07:10 local') !== -1 && ov.indexOf('lands 07:10 local (') === -1, 'an unknown station keeps local time, no guess');
-    R.ok(ov.indexOf('SIN 09:45 → NRT') !== -1, 'the row shows the route with its printed departure time');
+    const ov = f.w.eval("overviewBlock('story', { sectors: [ {fn:'802', dep:'SIN', arr:'NRT', std:'09:45', sta:'18:35', arrYmd:'2026-10-04'} ] })");
+    R.ok(ov.indexOf('Flight Overview') !== -1 && ov.indexOf('story') !== -1, 'the Flight Overview stays the prose story');
+    R.ok(ov.indexOf('lands') === -1, 'hotfix: the per-sector itinerary rows were withdrawn by owner order (conversions moved to the next-flight card)');
+    R.eq(f.w.eval("landingSgtPhrase('KUL','2026-10-04','11:27')"), '', 'a station on SG\u2019s own clock never shows a redundant conversion');
     // B9: the storage panel
     f.w.eval('openSettings()');
     await wait(150);

@@ -15,6 +15,11 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
+// The crew lives on Singapore time: pin the test box to SGT so the app's naive
+// wall math (expiry sweeps, day labels) and its zone-aware station math both
+// read the same clocks as the owner's phone, whatever the host box runs.
+process.env.TZ = 'Asia/Singapore';
+
 const APP = path.resolve(__dirname, '..', 'index.html');
 const RATES = fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8');
 
