@@ -1892,6 +1892,7 @@
                 { c: 'fix', t: 'Hotfix: tapping a day pops up its flight summary.' },
                 { c: 'fix', t: 'Hotfix: header icons pack tighter, freeing the title.' },
                 { c: 'fix', t: 'Hotfix: the calendar becomes a pill grid with day details.' },
+                { c: 'fix', t: 'Hotfix: duties span to landing days, split per duty, past included.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -3907,27 +3908,58 @@
                 if (!flyingDates.has(ymd)) skippedDays++;
             });
             const monthLabel = anchors.length ? rosterDateToYmd(anchors[0].date).slice(0, 7) : '';
-            // ---- v1.39.0 (B6): duty days, the roster calendar's material ----
-            // FLY is already covered by the flights pass; every OTHER code —
-            // LO (a layover day at the printed station), the OFF family
-            // (owner's list: ATDO/OFFD/EXDO/RQ99/RX99), AALV annual leave,
-            // and any standby or course code — becomes a calendar day, the
-            // code itself the label. Rows the generator prints without a
-            // date (layover continuation rows do this) carry forward one day
-            // from the last seen date — a calendar inference, never a guess
-            // about a flight.
+            // ---- v1.39.0 (B6 + hotfix 4): duty days, the roster calendar's ----
+            // A duty is one chain SIN -> ... -> SIN (the same chaining the
+            // calculator uses). Its calendar footprint runs from the report
+            // day through the FINAL LANDING day: every date a leg departs,
+            // every date a leg lands (the generator prints continuation rows
+            // — "13 Oct 1900H -> (+1) 0015H" lands on the 14th), and the LO
+            // rows between; FLY beats LO on a day the roster prints both
+            // (land-and-lay-over, lay-over-and-depart). Each fly day carries
+            // its duty's key so two turnarounds on back-to-back days stay
+            // two circles, never one capsule. The OFF family (owner's list:
+            // ATDO/OFFD/EXDO/RQ99/RX99), AALV annual leave and standby or
+            // course codes are their own days. A dateless LO row is the
+            // LANDING day of the flight above it (the generator prints
+            // layovers from touchdown); with no flight above it carries
+            // forward one day — a calendar inference, never a guess about
+            // a flight.
             const RO_OFF = new Set(['ATDO', 'OFFD', 'EXDO', 'RQ99', 'RX99']);
             const dayMap = {};
-            const dayOf = (ymd) => (dayMap[ymd] = dayMap[ymd] || { ymd, kind: '', code: '', loc: '', fns: [] });
-            flights.forEach(f => { if (!f.ymd) return; const t = dayOf(f.ymd); t.kind = 'fly'; if (f.fn && t.fns.indexOf(f.fn) < 0) t.fns.push(f.fn); });
+            const dayOf = (ymd) => (dayMap[ymd] = dayMap[ymd] || { ymd, kind: '', code: '', loc: '', fns: [], dkey: '' });
+            merged.forEach((t) => {
+                const span = [];
+                t.sectors.forEach((sec) => { [sec.ymd, sec.depDate, sec.arrDate].forEach((dd) => { if (dd) span.push(dd); }); });
+                if (!span.length) return;
+                span.sort();
+                const dkey = span[0];
+                t.sectors.forEach((sec) => {
+                    [sec.ymd, sec.depDate, sec.arrDate].forEach((dd) => {
+                        if (!dd) return;
+                        const day = dayOf(dd);
+                        day.kind = 'fly';
+                        if (sec.fn && day.fns.indexOf(sec.fn) < 0) day.fns.push(sec.fn);
+                        day.dkey = dkey;
+                    });
+                });
+            });
             let lastSeenYmd = '';
+            let lastFlightArrYmd = '';
             rowList.forEach(r => {
                 const duty = r.vals.duty || '';
                 if (!duty) return;
-                if (r.vals.fn || r.vals.sector || duty === 'FLY') { if (r.ymd) lastSeenYmd = r.ymd; return; }
+                if (r.vals.fn || r.vals.sector || duty === 'FLY') {
+                    if (r.ymd) lastSeenYmd = r.ymd;
+                    const own = byKey[(r.vals.fn || '') + '|' + (r.vals.sector || '')];
+                    if (own) lastFlightArrYmd = own.arrDate || own.depDate || own.ymd || lastFlightArrYmd;
+                    return;
+                }
                 let ymd = r.ymd;
                 const ownDate = anchors.some(a => a.page === r.page && Math.abs(a.x - r.x) <= 3);
-                if (!ownDate && lastSeenYmd) ymd = rosterYmAdd(lastSeenYmd, 1);
+                if (!ownDate) {
+                    if (duty === 'LO' && lastFlightArrYmd) ymd = lastFlightArrYmd;
+                    else if (lastSeenYmd) ymd = rosterYmAdd(lastSeenYmd, 1);
+                }
                 if (!ymd) return;
                 lastSeenYmd = ymd;
                 const t = dayOf(ymd);
@@ -4101,6 +4133,22 @@
             });
             const pruned = upcomingPrune(store);
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
+            // v1.39.0 hotfix 4 (owner order: "generate roster calendar for
+            // past flights"): the next-flight card prunes legs once they
+            // land — but the calendar must retell FLOWN duties too. This
+            // twin store keeps every parsed leg (same shape plus the true
+            // departure/arrival dates) and is never pruned.
+            const allStore = loadAllFlights();
+            const allMonths = {};
+            flights.forEach((f) => { allMonths[String(f.ymd).slice(0, 7)] = 1; });
+            Object.keys(allMonths).forEach((mk) => { allStore[mk] = []; });
+            const allSeen = {};
+            flights.forEach((f) => {
+                const k = f.fn + '|' + f.ymd;
+                if (allSeen[k]) return; allSeen[k] = 1;
+                allStore[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '', sta: f.staHm || '', stdYmd: f.depDate || '', staYmd: f.arrDate || '' });
+            });
+            try { localStorage.setItem(ALL_KEY, JSON.stringify(allStore)); } catch (e) {}
             dutyRemember(parsed);
             refreshNextFlightUi();
             return pruned;
@@ -4110,6 +4158,10 @@
         // on re-import, never touched by the menu clear (it is roster data,
         // not cache).
         const DUTY_KEY = 'crewAssist.dutyDays';
+        const ALL_KEY = 'crewAssist.allFlights';
+        function loadAllFlights() {
+            try { const v = JSON.parse(localStorage.getItem(ALL_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+        }
         function loadDutyDays() {
             try { const v = JSON.parse(localStorage.getItem(DUTY_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
         }
@@ -4144,10 +4196,10 @@
         }
         function rcMonthData(ym) {
             const byDay = {};
-            (loadDutyDays()[ym] || []).forEach((d) => { if (d && d.ymd) byDay[d.ymd] = { ymd: d.ymd, kind: d.kind || '', code: d.code || '', loc: d.loc || '', fns: (d.fns || []).slice() }; });
+            (loadDutyDays()[ym] || []).forEach((d) => { if (d && d.ymd) byDay[d.ymd] = { ymd: d.ymd, kind: d.kind || '', code: d.code || '', loc: d.loc || '', fns: (d.fns || []).slice(), dkey: d.dkey || '' }; });
             (loadUpcoming()[ym] || []).forEach((f) => {
                 if (!f || !f.ymd) return;
-                if (!byDay[f.ymd]) byDay[f.ymd] = { ymd: f.ymd, kind: 'fly', code: '', loc: '', fns: [] };
+                if (!byDay[f.ymd]) byDay[f.ymd] = { ymd: f.ymd, kind: 'fly', code: '', loc: '', fns: [], dkey: '' };
                 if (f.fn && byDay[f.ymd].fns.indexOf(f.fn) < 0) byDay[f.ymd].fns.push(f.fn);
             });
             return byDay;
@@ -4159,6 +4211,14 @@
                 if (!cache[ym]) cache[ym] = rcMonthData(ym);
                 const day = cache[ym][ymd];
                 return day ? (day.kind || '') : '';
+            };
+        }
+        function rcDayLookup() {
+            const cache = {};
+            return (ymd) => {
+                const ym = String(ymd).slice(0, 7);
+                if (!cache[ym]) cache[ym] = rcMonthData(ym);
+                return cache[ym][ymd] || null;
             };
         }
         function renderRosterCalendar(slideDir) {
@@ -4179,7 +4239,7 @@
                 const nextBtn = document.getElementById('ca-rc-next');
                 if (prevBtn) { const none = at <= 0; prevBtn.classList.toggle('invisible', none); prevBtn.setAttribute('aria-hidden', none ? 'true' : 'false'); }
                 if (nextBtn) { const none = at < 0 || at >= months.length - 1; nextBtn.classList.toggle('invisible', none); nextBtn.setAttribute('aria-hidden', none ? 'true' : 'false'); }
-                const kindAt = rcKindLookup();
+                const dayAt = rcDayLookup();
                 const today = todayLocalYMD();
                 const daysIn = new Date(y, m + 1, 0).getDate();
                 const ymdOf = (dd) => y + '-' + String(m + 1).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
@@ -4190,15 +4250,23 @@
                 // runs: maximal consecutive same-kind duty days (OFF and empty days break)
                 const runs = [];
                 for (let dd = 1; dd <= daysIn; dd++) {
-                    const kind = kindAt(ymdOf(dd));
-                    if (!kind || kind === 'off') continue;
+                    const day = dayAt(ymdOf(dd));
+                    if (!day || !day.kind || day.kind === 'off') continue;
                     const prev = runs[runs.length - 1];
-                    if (prev && prev.kind === kind && prev.end === dd - 1) prev.end = dd;
-                    else runs.push({ kind: kind, start: dd, end: dd });
+                    // fly days join into one capsule only within ONE duty —
+                    // back-to-back turnarounds stay separate circles
+                    const joins = prev && prev.kind === day.kind && prev.end === dd - 1 &&
+                        (day.kind !== 'fly' || String(prev.dkey) === String(day.dkey));
+                    if (joins) prev.end = dd;
+                    else runs.push({ kind: day.kind, dkey: day.dkey || '', start: dd, end: dd });
                 }
                 runs.forEach((r) => {
-                    r.contPrev = r.start === 1 && kindAt(ymdShift(1, -1)) === r.kind;
-                    r.contNext = r.end === daysIn && kindAt(ymdShift(daysIn, 1)) === r.kind;
+                    const beside = (delta) => {
+                        const nd = dayAt(ymdShift(delta < 0 ? 1 : daysIn, delta));
+                        return !!nd && nd.kind === r.kind && (r.kind !== 'fly' || String(nd.dkey) === String(r.dkey));
+                    };
+                    r.contPrev = r.start === 1 && beside(-1);
+                    r.contNext = r.end === daysIn && beside(1);
                 });
                 // week segments: a run crossing a Sunday continues in the next row
                 const segs = [];
@@ -4274,16 +4342,34 @@
         function rosterCalLegsBlock(legs) {
             const first = legs[0], last = legs[legs.length - 1];
             const stops = legs.map(l => l.dep).concat([last.arr]).filter((v, i, a) => i === 0 || v !== a[i - 1]);
-            const type = (first.dep === 'SIN' && last.arr === 'SIN' && (last.staYmd || last.ymd) === first.ymd)
+            const depOf = (l) => l.stdYmd || l.ymd;
+            const arrOf = (l) => l.staYmd || l.ymd;
+            // the calculator's own rule: under 6h on the ground out-and-back
+            // is a Turnaround, however many midnights the clock crosses
+            const legMs = (l, which) => {
+                const d = which === 'dep' ? depOf(l) : arrOf(l), hm = String(which === 'dep' ? l.std : l.sta).replace(':', '');
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) || !/^\d{4}$/.test(hm)) return null;
+                return new Date(d + 'T00:00:00').getTime() + (parseInt(hm.slice(0, 2), 10) * 3600 + parseInt(hm.slice(2), 10) * 60) * 1000;
+            };
+            let maxGround = -1;
+            for (let k = 0; k < legs.length - 1; k++) {
+                const am = legMs(legs[k], 'arr'), bm = legMs(legs[k + 1], 'dep');
+                const g = (am != null && bm != null) ? (bm - am) / 60000 : 99999;
+                if (g > maxGround) maxGround = g;
+            }
+            const type = (first.dep === 'SIN' && last.arr === 'SIN' && maxGround <= 360)
                 ? 'Turnaround' : (last.arr === 'SIN' ? 'Layover' : 'Duty');
             let html = '<p class="text-sm font-bold mt-2">SQ ' + rosterEsc(legs.map(l => l.fn).join(' \u00b7 ')) + ' \u00b7 ' + type + '</p>'
-                + '<p class="text-sm font-bold">' + rosterEsc(stops.join(' \u2192 ')) + ' \u00b7 ' + rosterShortDate(first.ymd) + (last.ymd !== first.ymd ? ' \u2013 ' + rosterShortDate(last.ymd) : '') + '</p>'
+                + '<p class="text-sm font-bold">' + rosterEsc(stops.join(' \u2192 ')) + ' \u00b7 ' + rosterShortDate(depOf(first)) + (arrOf(last) !== depOf(first) ? ' \u2013 ' + rosterShortDate(arrOf(last)) : '') + '</p>'
                 + '<div class="glass-panel rounded-2xl overflow-hidden mt-2">';
             legs.forEach((l, i) => {
+                // an arrival past midnight wears its (+1) — the owner's format:
+                // "13 Oct \u00b7 1900H \u2192 (+1) 0015H"
+                const crosses = l.sta && arrOf(l) > depOf(l);
                 html += '<div class="flex items-center justify-between gap-3 px-4 py-3' + (i ? ' border-t ca-hairline' : '') + '">'
                     + '<span class="text-sm font-bold whitespace-nowrap">SQ ' + rosterEsc(l.fn) + ' \u00b7 ' + rosterEsc(l.dep) + ' \u2192 ' + rosterEsc(l.arr) + '</span>'
-                    + '<span class="ca-micro font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(l.ymd)
-                    + (l.std ? ' \u00b7 ' + hmH(l.std) : '') + (l.sta ? ' \u2192 ' + hmH(l.sta) : '') + '</span>'
+                    + '<span class="ca-micro font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(depOf(l))
+                    + (l.std ? ' \u00b7 ' + hmH(l.std) : '') + (l.sta ? ' \u2192 ' + (crosses ? '(+1) ' : '') + hmH(l.sta) : '') + '</span>'
                     + '</div>';
             });
             return html + '</div>';
@@ -4321,11 +4407,14 @@
             });
         }
         function rosterCalDutyFlights(ymd) {
-            const store = loadUpcoming();
+            // hotfix 4: the full never-pruned store — flown duties retell
+            // their legs too — matched by report day, departure day OR
+            // landing day (a duty's footprint touches all three).
+            const store = loadAllFlights();
             const all = [];
             Object.keys(store).forEach((mk) => { (store[mk] || []).forEach((f) => { if (f && f.ymd) all.push(f); }); });
-            all.sort((a, b) => String(a.ymd + (a.std || '')).localeCompare(String(b.ymd + (b.std || ''))));
-            let i = all.findIndex((f) => f.ymd === ymd);
+            all.sort((a, b) => String((a.stdYmd || a.ymd) + (a.std || '')).localeCompare(String((b.stdYmd || b.ymd) + (b.std || ''))));
+            let i = all.findIndex((f) => f.ymd === ymd || f.stdYmd === ymd || f.staYmd === ymd);
             if (i < 0) return [];
             while (i > 0 && all[i - 1].arr !== 'SIN' && all[i - 1].ymd <= ymd) i--;
             const legs = [];

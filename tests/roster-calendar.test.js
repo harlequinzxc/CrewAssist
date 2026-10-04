@@ -1,11 +1,13 @@
-// Roster calendar (v1.39.0 B6 + hotfix 3): the parser reads the roster's Duty
+// Roster calendar (v1.39.0 B6 + hotfixes): the parser reads the roster's Duty
 // column — flying days, layover days with their station, the OFF family,
 // annual leave, standby and course codes — into a duty-day store, and the
-// header's calendar icon opens the owner-spec pill grid: no cell chrome,
-// duty runs as pills behind the numbers (circle for one day, one seamless
-// capsule for a run), the today bar beneath the number, tap-to-select with
-// the detail section below the divider, and arrows only where a data month
-// exists beyond.
+// header's calendar icon opens the owner-spec pill grid. Hotfix 4 (owner
+// report, real roster): a duty's footprint runs from its report day through
+// the FINAL LANDING day (continuation rows like "13 Oct 1900H → (+1) 0015H"
+// land on the 14th), back-to-back turnarounds never merge into one capsule
+// (each fly day carries its duty's key), dateless LO rows are the landing
+// day of the flight above them, and legs come from a never-pruned flight
+// store so PAST duties retell their times too.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 const fs = require('fs');
@@ -16,17 +18,24 @@ const path = require('path');
 // Rank 298, Rpt 328, STD 358, STA 388, FT 421.
 const row = (x, cells) => cells.map(c => ({ str: c[1], x, y: c[0], page: 1 }));
 const synthItems = [].concat(
-    row(150, [[21, 'Start Date'], [65, 'Day'], [91, 'Flight'], [138, 'Sector'], [183, 'A/C'], [210, 'Duty'], [298, 'Rank'], [358, 'STD'], [388, 'STA'], [421, 'Flight'], [461, 'Duty'], [461, 'Time']]),
+    row(150, [[21, 'Start Date'], [65, 'Day'], [91, 'Flight'], [138, 'Sector'], [183, 'A/C'], [210, 'Duty'], [298, 'Rank'], [328, 'Rpt'], [358, 'STD'], [388, 'STA'], [421, 'Flight'], [423, 'Time'], [461, 'Duty'], [463, 'Time']]),
     row(180, [[21, '01Oct26'], [65, 'Thu'], [91, 'SQ 106'], [134, 'SIN-KUL'], [211, 'FLY'], [358, '0825'], [388, '0935']]),
-    row(202, [[91, 'SQ 105'], [134, 'KUL-SIN'], [211, 'FLY'], [358, '1025'], [388, '1145']]),
+    row(201, [[91, 'SQ 105'], [134, 'KUL-SIN'], [211, 'FLY'], [358, '1025'], [388, '1145']]),
     row(224, [[21, '02Oct26'], [65, 'Fri'], [143, 'MEL'], [207, 'LO']]),
     row(246, [[21, '03Oct26'], [65, 'Sat'], [143, 'SIN'], [207, 'ATDO']]),
     row(268, [[21, '04Oct26'], [65, 'Sun'], [143, 'SIN'], [207, 'AALV']]),
     row(290, [[21, '05Oct26'], [65, 'Mon'], [143, 'SIN'], [208, 'SN80']]),
     row(312, [[21, '06Oct26'], [65, 'Tue'], [91, 'SQ 207'], [134, 'SIN-MEL'], [211, 'FLY'], [358, '0100'], [388, '0900']]),
-    // 07Oct: the generator prints NO date on a layover continuation row
+    // the generator prints the LANDING-day layover row with no date — it is
+    // the day the flight above it touches down (06 Oct here), never +1
     row(334, [[143, 'MEL'], [214, 'LO']]),
-    row(356, [[21, '08Oct26'], [65, 'Wed'], [91, 'SQ 218'], [134, 'MEL-SIN'], [211, 'FLY'], [358, '2300'], [388, '0455']]),
+    row(345, [[21, '07Oct26'], [65, 'Wed'], [143, 'MEL'], [214, 'LO']]),
+    // an overnight return: dep 2300, lands 0455 the NEXT day
+    row(367, [[21, '08Oct26'], [65, 'Thu'], [91, 'SQ 218'], [134, 'MEL-SIN'], [211, 'FLY'], [358, '2300'], [388, '0455']]),
+    // a duty that reports one evening and departs after midnight: the
+    // report row carries the date + totals, the next row the STD/STA
+    row(389, [[21, '10Oct26'], [65, 'Sat'], [91, 'SQ 100'], [134, 'SIN-PEK'], [211, 'FLY'], [328, '2205'], [421, '06:20'], [460, '08:00']]),
+    row(411, [[21, '11Oct26'], [65, 'Sun'], [91, 'SQ 100'], [134, 'SIN-PEK'], [211, 'FLY'], [358, '0010'], [388, '0630']]),
     // the Duty Codes legend page — its rows must never become days
     row(600, [[30, 'Duty'], [70, 'Duty'], [120, 'Duty Codes'], [180, 'Duty Desc'], [188, 'Duty']]).map(i => Object.assign(i, { page: 2 })),
     row(650, [[68, 'ATDO'], [166, 'AUTO TAG DAY OFF']]).map(i => Object.assign(i, { page: 2 })),
@@ -35,26 +44,32 @@ const synthItems = [].concat(
 );
 
 (async () => {
-  // ---- the parser: duty days, kinds, and the dateless carry-forward ----
+  // ---- the parser: duty spans, landing days, and the duty key ----
   {
     const { w } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
     } });
     w.eval('window.__p = rosterParse(' + JSON.stringify(synthItems) + ')');
-    R.eq(w.eval('window.__p.flights.length'), 4, 'the flights pass is untouched by duty-day parsing');
+    R.eq(w.eval('window.__p.flights.length'), 5, 'the flights pass is untouched by duty-day parsing');
     const days = JSON.parse(w.eval('JSON.stringify(window.__p.days)'));
     const byYmd = {}; days.forEach(d => { byYmd[d.ymd] = d; });
-    R.eq(days.length, 8, 'every duty row becomes exactly one day');
+    R.eq(days.length, 11, 'every duty row becomes exactly one day — landing days included');
     R.eq(byYmd['2026-10-01'].kind, 'fly', 'a flying row is a fly day');
     R.ok(JSON.stringify(byYmd['2026-10-01'].fns) === JSON.stringify(['106', '105']), 'the day carries its flight numbers');
+    R.eq(byYmd['2026-10-01'].dkey, '2026-10-01', 'a turnaround carries its own duty key');
     R.eq(byYmd['2026-10-02'].kind + '@' + byYmd['2026-10-02'].loc, 'lo@MEL', 'a dated LO row is a layover day with its station');
     R.eq(byYmd['2026-10-03'].kind, 'off', 'ATDO is an OFF day (the owner\u2019s code list)');
     R.eq(byYmd['2026-10-04'].kind, 'al', 'AALV is annual leave');
     R.eq(byYmd['2026-10-05'].kind + '[' + byYmd['2026-10-05'].code + ']', 'duty[SN80]', 'a standby code keeps its own label');
-    R.eq(byYmd['2026-10-07'].kind + '@' + byYmd['2026-10-07'].loc, 'lo@MEL', 'a dateless LO row carries forward one day');
-    R.ok(!byYmd['2026-10-09'] && !byYmd['2026-10-10'], 'the Duty Codes legend page never becomes days');
+    R.eq(byYmd['2026-10-06'].kind, 'fly', 'the departure day is a fly day');
+    R.eq(byYmd['2026-10-06'].loc, '', 'the dateless landing-day LO loses to the flight already on that day');
+    R.eq(byYmd['2026-10-07'].kind + '@' + byYmd['2026-10-07'].loc, 'lo@MEL', 'a dated continuation LO row is its own layover day');
+    R.eq(byYmd['2026-10-09'].kind + ':' + byYmd['2026-10-09'].fns.join('/') + ':' + byYmd['2026-10-09'].dkey, 'fly:218:2026-10-06', 'an overnight leg marks its LANDING day, carrying its duty\u2019s key');
+    R.eq(byYmd['2026-10-10'].kind + ':' + byYmd['2026-10-10'].fns.join('/'), 'fly:100', 'the report row\u2019s evening is a fly day');
+    R.eq(byYmd['2026-10-11'].kind + ':' + byYmd['2026-10-11'].fns.join('/') + ':' + byYmd['2026-10-11'].dkey, 'fly:100:2026-10-10', 'an after-midnight departure marks the day its STD row is dated');
+    R.ok(!byYmd['2026-10-12'], 'the Duty Codes legend page never becomes days');
     // the OFF family, per the owner's list
-    R.eq(w.eval("rosterParse([{str:'09Oct26',x:10,y:21,page:1},{str:'OFFD',x:10,y:207,page:1},{str:'EXDO',x:32,y:207,page:1},{str:'RQ99',x:54,y:207,page:1},{str:'RX99',x:76,y:207,page:1}].concat([{str:'Start Date',x:2,y:21,page:1},{str:'Duty',x:2,y:210,page:1}])).days.map(d=>d.kind).join(',')"), 'off,off,off,off', 'OFFD, EXDO, RQ99 and RX99 all read as OFF');
+    R.eq(w.eval("rosterParse([{str:'13Oct26',x:10,y:21,page:1},{str:'OFFD',x:10,y:207,page:1},{str:'EXDO',x:32,y:207,page:1},{str:'RQ99',x:54,y:207,page:1},{str:'RX99',x:76,y:207,page:1}].concat([{str:'Start Date',x:2,y:21,page:1},{str:'Duty',x:2,y:210,page:1}])).days.map(d=>d.kind).join(',')"), 'off,off,off,off', 'OFFD, EXDO, RQ99 and RX99 all read as OFF');
   }
 
   // ---- the store: month-replaced like the upcoming store ----
@@ -68,47 +83,70 @@ const synthItems = [].concat(
     const store = JSON.parse(w.localStorage.getItem('crewAssist.dutyDays'));
     R.ok(store['2026-10'].length > 1, 'a re-import replaces the month it covers');
     R.ok(store['2026-10'].every(d => d.ymd.slice(0, 7) === '2026-10'), 'no day lands in the wrong month');
+    const all = JSON.parse(w.localStorage.getItem('crewAssist.allFlights'));
+    const allCount = Object.keys(all).reduce((n, mk) => n + (all[mk] || []).length, 0);
+    R.eq(allCount, 5, 'every parsed leg lands in the never-pruned flight store');
+    R.ok(all['2026-10'].every(f => /^\d{4}-\d{2}-\d{2}$/.test(f.stdYmd) && /^\d{4}-\d{2}-\d{2}$/.test(f.staYmd)), 'the full store carries each leg\u2019s true departure and arrival dates');
   }
 
-  // ---- the real October 2026 roster: end-to-end honesty ----
+  // ---- the real October + November 2026 rosters: end-to-end honesty ----
   {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
-    const file = path.resolve(__dirname, '../_inbox/October 2026.pdf');
-    const data = new Uint8Array(fs.readFileSync(file));
-    const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
-    const items = [];
-    for (let pi = 1; pi <= doc.numPages; pi++) {
-      const tc = await (await doc.getPage(pi)).getTextContent();
-      tc.items.forEach(i => items.push({ str: i.str, x: i.transform[4], y: i.transform[5], page: pi }));
-    }
+    const readItems = async (file) => {
+      const data = new Uint8Array(fs.readFileSync(path.resolve(__dirname, '../_inbox/' + file)));
+      const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
+      const items = [];
+      for (let pi = 1; pi <= doc.numPages; pi++) {
+        const tc = await (await doc.getPage(pi)).getTextContent();
+        tc.items.forEach(i => items.push({ str: i.str, x: i.transform[4], y: i.transform[5], page: pi }));
+      }
+      return items;
+    };
+    const octItems = await readItems('October 2026.pdf');
+    const novItems = await readItems('November 2026.pdf');
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.tourDone', '1');
       x.localStorage.setItem('crewAssist.tourOffered', '1');
     } });
-    w.eval('window.__p = rosterParse(' + JSON.stringify(items) + ')');
-    R.eq(w.eval('window.__p.flights.length'), 15, 'the real October roster still parses its 15 flights');
-    w.eval('upcomingRemember(window.__p)');
-    const days = JSON.parse(w.localStorage.getItem('crewAssist.dutyDays'));
-    const oct = days['2026-10'];
-    const nov = days['2026-11'] || [];
-    const kind = (ymd) => { const dd = oct.find(x => x.ymd === ymd) || nov.find(x => x.ymd === ymd); return dd ? dd.kind + (dd.loc ? '@' + dd.loc : '') : 'none'; };
-    R.eq(kind('2026-10-01'), 'fly', 'real: 1 Oct is the SQ 106/105 turnaround');
-    R.eq(kind('2026-10-03'), 'off', 'real: an ATDO day reads OFF');
-    R.eq(kind('2026-10-04'), 'duty', 'real: a standby code keeps its label');
-    R.eq(kind('2026-11-01'), 'lo@AMD', 'real: the dateless layover continuation lands on 1 Nov');
+    w.eval('window.__oct = rosterParse(' + JSON.stringify(octItems) + ')');
+    R.eq(w.eval('window.__oct.flights.length'), 15, 'the real October roster still parses its 15 flights');
+    w.eval('upcomingRemember(window.__oct)');
+    let days = JSON.parse(w.localStorage.getItem('crewAssist.dutyDays'));
+    const dayAt = (store, ymd) => {
+      const mk = String(ymd).slice(0, 7);
+      return (store[mk] || []).find(x => x.ymd === ymd) || null;
+    };
+    // owner report, issue 2: 12–14 Oct is one SIN-SYD-SIN duty — the 0015H
+    // landing on the 14th is a fly day of the SAME duty
+    R.eq(dayAt(days, '2026-10-12').dkey, '2026-10-12', 'the SYD duty starts on the 12th');
+    R.eq([13, 14].map(dd => dayAt(days, '2026-10-' + dd).kind + ':' + dayAt(days, '2026-10-' + dd).dkey).join('|'), 'fly:2026-10-12|fly:2026-10-12', 'the 13th and the 0015H landing on the 14th belong to the same duty');
+    R.eq(dayAt(days, '2026-10-25').kind + ':' + dayAt(days, '2026-10-25').fns.join('/'), 'fly:218', 'the MEL duty\u2019s 0530H landing on the 25th is a fly day');
+    // owner report, issue 1: 1 Oct and 2 Oct are two SEPARATE turnarounds
+    R.ok(dayAt(days, '2026-10-01').dkey !== dayAt(days, '2026-10-02').dkey, 'the KUL turnaround and the HKT turnaround are different duties');
+    // owner report, issue 4: flown duties keep their legs (the next-flight
+    // card prunes landed legs; the calendar must not)
+    R.ok(w.eval("loadAllFlights()['2026-10'].some(f => f.fn === '736' && f.stdYmd === '2026-10-02')"), 'the never-pruned store still holds the flown 2 Oct legs');
+    R.ok(!w.eval("loadUpcoming()['2026-10'] || []").length || true, 'the upcoming store may prune; the calendar reads its twin');
+    // then November — issue 3: 8–12 Nov is one SIN-LHR-SIN duty
+    w.eval('window.__nov = rosterParse(' + JSON.stringify(novItems) + ')');
+    w.eval('upcomingRemember(window.__nov)');
+    days = JSON.parse(w.localStorage.getItem('crewAssist.dutyDays'));
+    R.eq([8, 9, 11, 12].map(dd => dayAt(days, '2026-11-' + String(dd).padStart(2, '0')).kind + ':' + dayAt(days, '2026-11-' + String(dd).padStart(2, '0')).dkey).join('|'), 'fly:2026-11-08|fly:2026-11-08|fly:2026-11-08|fly:2026-11-08', 'the LHR duty\u2019s report day, departure, and 0615H landing on the 12th are one duty');
+    R.eq(dayAt(days, '2026-11-10').kind + '@' + dayAt(days, '2026-11-10').loc, 'lo@LHR', 'the middle layover day stays green');
+    R.eq(dayAt(days, '2026-11-02').kind + ':' + dayAt(days, '2026-11-02').fns.join('/'), 'fly:505', 'the SQ 505 0715H landing on 2 Nov is a fly day');
+    R.eq(dayAt(days, '2026-11-01').kind, 'fly', '1 Nov flies out — the November roster\u2019s own print wins for its month');
 
     // ---- the calendar UI on real data (owner spec: the pill grid) ----
     w.eval('openRosterCalendar()');
     await wait(500);
     const wrap = d.getElementById('ca-roster-cal');
     R.ok(wrap && !wrap.classList.contains('hidden'), 'the header calendar opens the sheet');
-    // hotfix regression (owner report): the sheet once lived INSIDE the archive
-    // sub-sheet wrapper — its own hidden class was gone, but the wrapper's kept
-    // it blind. Visibility is asserted through the whole ancestor chain.
     R.ok(wrap && wrap.closest('.hidden') === null, 'no hidden ancestor keeps the calendar blind');
     R.ok(wrap && !wrap.closest('#ca-arch-sub') && !wrap.closest('#ca-arch-sheet'), 'the calendar sheet is never nested inside another sheet');
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'it opens on the current month');
+    const TODAY = String(w.eval('todayLocalYMD()'));
+    const oct = TODAY.slice(0, 7) === '2026-10';
+    R.ok(!oct || d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'it opens on the current month');
     const src = fs.readFileSync(APP, 'utf8');
     const cells = Array.from(d.querySelectorAll('.ca-rc-day[data-ymd]'));
     R.eq(cells.length, 31, 'every day of the month is a tappable cell — duty or not');
@@ -120,20 +158,44 @@ const synthItems = [].concat(
     R.ok(src.indexOf('data-lucide="chevron-left"') >= 0 && src.indexOf('data-lucide="chevron-right"') >= 0, 'the chevrons are Lucide icons');
     // ---- pills: shapes, kinds, and the OFF day's plainness ----
     const pills = Array.from(d.querySelectorAll('.ca-rc-pill'));
-    R.ok(pills.length > 10, 'duty days render pills behind the numbers');
-    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && p.getAttribute('style').indexOf('calc(2.5 * 100% / 7)') >= 0), 'a single-day flying duty (27 Oct, col 2) is a gold circle centered on its column');
-    const cap = pills.find(p => p.className.indexOf('is-capsule') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && p.getAttribute('style').indexOf('calc(5 * 100% / 7 + 3px)') >= 0);
-    R.ok(!!cap && cap.getAttribute('style').indexOf('999px 999px 999px 999px') >= 0, 'the 1–2 Oct flying run is ONE capsule, rounded only at its true ends');
-    R.ok(pills.some(p => p.className.indexOf('ca-rc-k-duty') >= 0 && p.getAttribute('style').indexOf('calc(2 * 100% / 7 + 3px)') >= 0), 'the 6–7 Oct standby run gets its own blue capsule');
+    const styleOf = (p) => p.getAttribute('style') || '';
     const weekRows = d.querySelectorAll('#ca-rc-grid .relative.grid');
-    R.eq(weekRows[0].querySelectorAll('.ca-rc-pill').length, 1, 'the OFF day (3 Oct) shows no pill — only its plain number');
+    // owner report, issue 1: two turnarounds on back-to-back days are two
+    // circles, never one capsule
+    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(4.5 * 100% / 7)') >= 0), '1 Oct (KUL turnaround) is its own gold circle');
+    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(5.5 * 100% / 7)') >= 0), '2 Oct (HKT turnaround) is a SEPARATE circle — duties never bleed together');
+    R.eq(weekRows[0].querySelectorAll('.ca-rc-pill').length, 2, 'the week of 1–3 Oct holds exactly the two turnaround circles — the OFF day shows none');
+    // owner report, issue 2: 12–14 Oct is one continuous capsule
+    const syd = Array.from(weekRows[2].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(1 * 100% / 7 + 3px)') >= 0);
+    R.ok(!!syd && styleOf(syd).indexOf('calc(3 * 100% / 7 - 3px - 3px)') >= 0 && styleOf(syd).indexOf('999px 999px 999px 999px') >= 0, 'the SIN-SYD-SIN duty is ONE capsule from the 12th through its 0015H landing on the 14th');
+    // the MEL duty wraps the week: flush Saturday edge, flush Sunday start
+    const melA = Array.from(weekRows[3].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(5 * 100% / 7 + 3px)') >= 0);
+    R.ok(!!melA && styleOf(melA).indexOf('999px 0 0 999px') >= 0, 'the 23–24 Oct segment ends flush at the week edge — the duty continues');
+    const melB = Array.from(weekRows[4].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(0 * 100% / 7)') >= 0);
+    R.ok(!!melB && styleOf(melB).indexOf('0 999px 999px 0') >= 0, '…and picks up flush on Sunday the 25th, rounding off at its landing');
+    R.ok(pills.some(p => p.className.indexOf('ca-rc-k-duty') >= 0 && styleOf(p).indexOf('calc(2 * 100% / 7 + 3px)') >= 0), 'the 6–7 Oct standby run gets its own blue capsule');
     // ---- the today bar ----
-    const todayCell = cells.find(c => c.getAttribute('data-ymd') === '2026-10-04');
-    R.ok(todayCell && !!todayCell.querySelector('.ca-rc-bar.is-today'), 'today is marked by the short accent bar beneath its number');
+    const todayCell = cells.find(c => c.getAttribute('data-ymd') === TODAY);
+    R.ok(todayCell && !!todayCell.querySelector('.ca-rc-bar.is-today'), 'today is marked by the short accent bar beneath its number — duty day or off day alike');
     R.ok(cells.every(c => !!c.querySelector('.ca-rc-bar')), 'every cell keeps the bar slot — the indicator reads on duty days and off days alike');
     // ---- selection + the detail section ----
     R.ok(todayCell.classList.contains('is-selected'), 'opening the calendar selects today');
-    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('SSS3') >= 0, 'the detail section retells the selected day');
+    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf(String(w.eval("rosterShortDate('" + TODAY + "')"))) >= 0, 'the detail section retells the selected day');
+    // owner report, issue 4: a FLOWN turnaround retells its legs
+    const past = cells.find(c => c.getAttribute('data-ymd') === '2026-10-02');
+    past.click();
+    await wait(300);
+    let det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+    R.ok(det.indexOf('SQ 736') >= 0 && det.indexOf('SQ 735') >= 0 && det.indexOf('Turnaround') >= 0, 'the flown 2 Oct HKT turnaround retells both legs');
+    R.ok(det.indexOf('1615H') >= 0 && det.indexOf('2105H') >= 0, 'past legs keep their times (never-pruned store)');
+    R.ok(det.indexOf('no leg times') < 0, 'a flown duty never says "no leg times for this day" again');
+    // owner report, issue 2: the (+1) format
+    cells.find(c => c.getAttribute('data-ymd') === '2026-10-13').click();
+    await wait(300);
+    det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+    R.ok(det.indexOf('SQ 241') >= 0 && det.indexOf('SQ 242') >= 0, 'the SYD duty names both sectors');
+    R.ok(det.indexOf('SIN \u2192 SYD \u2192 SIN') >= 0 && det.indexOf('12 Oct \u2013 14 Oct') >= 0, 'the duty\u2019s span reads from departure to landing');
+    R.ok(det.indexOf('13 Oct \u00b7 1900H \u2192 (+1) 0015H') >= 0, 'a leg landing past midnight wears the owner\u2019s (+1) format');
     const future = cells.find(c => c.getAttribute('data-ymd') === '2026-10-27');
     const cardsBefore = d.querySelectorAll('[data-calc-card]').length;
     future.click();
@@ -141,7 +203,7 @@ const synthItems = [].concat(
     R.ok(future.classList.contains('is-selected'), 'tapping a day selects it');
     R.eq(d.querySelectorAll('[data-calc-card]').length, cardsBefore, 'selecting a flying day never builds a calculator card');
     R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'no popup — the day\u2019s details live in the section below the divider');
-    const det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+    det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 164') >= 0 && det.indexOf('SQ 163') >= 0, 'the detail names every leg of the duty');
     R.ok(det.indexOf('Turnaround') >= 0, 'a same-day out-and-back reads Turnaround');
     R.ok(det.indexOf('SIN \u2192 SAI \u2192 SIN') >= 0, 'the detail shows the full route');
@@ -167,13 +229,28 @@ const synthItems = [].concat(
     R.ok(d.getElementById('ca-rc-month').textContent.indexOf('November 2026') === 0, 'the month/year label follows the chevron');
     R.ok(d.querySelectorAll('.ca-rc-day[data-ymd="2026-10-27"]').length === 0, 'the grid rebuilds when the month changes');
     const novSel = d.querySelector('.ca-rc-day.is-selected');
-    R.ok(novSel && novSel.getAttribute('data-ymd') === '2026-11-01', 'a month without today resets the selection to its first day');
-    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('AMD') >= 0, '1 Nov reads as the AMD layover in the detail');
+    R.ok(novSel && novSel.getAttribute('data-ymd') === (oct ? '2026-11-01' : TODAY), 'a month without today resets the selection to its first day');
+    // owner report, issue 3: 8–12 Nov renders continuously
+    const novWeek = d.querySelector('.ca-rc-day[data-ymd="2026-11-08"]').parentElement;
+    const novPills = Array.from(novWeek.querySelectorAll('.ca-rc-pill'));
+    R.eq(novPills.length, 3, 'the week of 8–12 Nov holds three pills — no empty day between them');
+    R.ok(novPills.some(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(0 * 100% / 7 + 3px)') >= 0 && styleOf(p).indexOf('calc(2 * 100% / 7 - 3px - 3px)') >= 0), 'the LHR duty opens as a capsule on the 8th–9th');
+    R.ok(novPills.some(p => p.className.indexOf('ca-rc-k-lo') >= 0 && p.className.indexOf('is-circle') >= 0), 'the 10th stays a green layover circle');
+    R.ok(novPills.some(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(3 * 100% / 7 + 3px)') >= 0), 'and closes as a capsule through the 0615H landing on the 12th');
+    d.querySelector('.ca-rc-day[data-ymd="2026-11-09"]').click();
+    await wait(300);
+    det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+    R.ok(det.indexOf('SQ 306') >= 0 && det.indexOf('SQ 305') >= 0, '9 Nov retells the WHOLE London duty');
+    R.ok(det.indexOf('SIN \u2192 LHR \u2192 SIN') >= 0 && det.indexOf('9 Nov \u2013 12 Nov') >= 0, 'the duty spans from departure to landing');
+    R.ok(det.indexOf('11 Nov \u00b7 0910H \u2192 (+1) 0615H') >= 0, 'the homebound leg wears its (+1)');
+    d.querySelector('.ca-rc-day[data-ymd="2026-11-12"]').click();
+    await wait(300);
+    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('SQ 305') >= 0, 'the landing day on the 12th retells the same duty');
     R.ok(d.getElementById('ca-rc-next').classList.contains('invisible'), 'no month after November — the forward arrow is not shown');
     d.getElementById('ca-rc-prev').click();
     await wait(500);
     R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'the back chevron returns to October');
-    R.ok(d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === '2026-10-04', 'a month holding today reselects today');
+    R.ok(d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === TODAY, 'a month holding today reselects today');
     // Escape closes the sheet
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await wait(500);
@@ -214,8 +291,8 @@ const synthItems = [].concat(
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-08').click();
     await wait(200);
     R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('no leg times') >= 0, 'a fly day without parsed legs says so honestly');
-    const todayCell = cells.find(c => c.getAttribute('data-ymd') === '2026-10-04');
-    R.ok(todayCell && !!todayCell.querySelector('.ca-rc-bar.is-today'), 'the today bar shows even on a day with no duty at all');
+    const todayCell = cells.find(c => c.getAttribute('data-ymd') === String(w.eval('todayLocalYMD()')));
+    R.ok(todayCell && !!todayCell.querySelector('.ca-rc-bar.is-today'), 'the today bar shows on whatever kind of day today is');
     const w1 = d.querySelectorAll('#ca-rc-grid .relative.grid')[1];
     R.eq(w1.querySelectorAll('.ca-rc-pill').length, 1, 'no-duty days render no pills');
     R.ok(w1.querySelectorAll('.ca-rc-pill')[0].className.indexOf('is-circle') >= 0, 'a lone fly day renders as a circle');

@@ -550,7 +550,9 @@ const mkUntil = (d) => async (cond, ms) => {
     // the parser: clean pairs only — a typo falls through to the old engine
     R.eq(g.w.eval("parseNaturalCommand('sq802 4 oct sq807 5 oct').pairs.map(p => p.fn).join(',')"), '802,807', 'bare phrasing parses as flight pairs with no mode');
     R.eq(g.w.eval("parseNaturalCommand('IFA SQ802 4oct').mode"), 'ifa', 'mode word + glued date parse case-insensitively');
-    R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), '2026-10-04', 'spaced flight and month-first dates both parse');
+    // nearest-upcoming year: "oct 4" is 2026 while it hasn't passed, 2027 after
+    const oct4Year = g.w.eval("(function(){ const t = todayLocalYMD(); return (t <= '2026-10-04') ? '2026' : '2027'; })()");
+    R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), oct4Year + '-10-04', 'spaced flight and month-first dates both parse');
     R.eq(g.w.eval("!!parseNaturalCommand('what can you do')"), false, 'ordinary sentences never parse as commands');
 
     // ifa: the card arrives prefilled from the roster (offline-honest)
