@@ -273,6 +273,9 @@
         .ca-rc-nav { border-radius: 999px; transition: background-color .15s ease, transform .12s ease; }
         .ca-rc-nav:active { transform: scale(.92); }
         @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: rgba(127,127,127,.13); } }
+        /* hotfix 5 (owner order): sideways swipes change months — vertical
+           pans must keep scrolling, so the grid owns only the horizontal */
+        #ca-rc-grid { touch-action: pan-y; }
         .cadate-day {
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
@@ -1433,8 +1436,15 @@
              out only when a saved flight was tapped. A sheet always sits as a
              direct child of <body>, never inside another sheet. -->
         <div id="ca-roster-cal" class="fixed inset-0 z-[60] hidden">
-            <div class="ca-rc-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-rc-close></div>
-            <div id="ca-rc-sheet" role="dialog" aria-modal="true" aria-label="Roster calendar" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl p-5 pb-8 space-y-3 max-w-xl mx-auto w-full overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300">
+            <!-- hotfix 5 (owner order): the shade matches every other
+                 overlay — bg-black/60 with the same backdrop blur -->
+            <div class="ca-rc-shade absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300" data-ca-rc-close></div>
+            <!-- hotfix 5 (owner order): the sheet wears the Settings
+                 overlay's exact geometry (same top offset, full width, drag
+                 handle) so the two read as the same height -->
+            <div id="ca-rc-sheet" role="dialog" aria-modal="true" aria-label="Roster calendar" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col overflow-y-auto overscroll-contain">
+                <div class="w-full flex justify-center py-3 shrink-0"><div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div></div>
+                <div class="px-5 pb-8 space-y-3 flex-none">
                 <div class="flex items-center justify-between gap-1">
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 -ml-2 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -1449,6 +1459,7 @@
                      divider retells whichever day is selected. -->
                 <div id="ca-rc-detail" class="pt-3 border-t ca-hairline" aria-live="polite"></div>
                 <p id="ca-rc-empty" class="hidden text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3"></p>
+                </div>
             </div>
         </div>
 
@@ -1893,6 +1904,7 @@
                 { c: 'fix', t: 'Hotfix: header icons pack tighter, freeing the title.' },
                 { c: 'fix', t: 'Hotfix: the calendar becomes a pill grid with day details.' },
                 { c: 'fix', t: 'Hotfix: duties span to landing days, split per duty, past included.' },
+                { c: 'fix', t: 'Hotfix: one gold capsule per duty, standby windows, swipe, settings match.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -3927,12 +3939,16 @@
             const RO_OFF = new Set(['ATDO', 'OFFD', 'EXDO', 'RQ99', 'RX99']);
             const dayMap = {};
             const dayOf = (ymd) => (dayMap[ymd] = dayMap[ymd] || { ymd, kind: '', code: '', loc: '', fns: [], dkey: '' });
+            const dutySpans = [];
             merged.forEach((t) => {
                 const span = [];
                 t.sectors.forEach((sec) => { [sec.ymd, sec.depDate, sec.arrDate].forEach((dd) => { if (dd) span.push(dd); }); });
                 if (!span.length) return;
                 span.sort();
                 const dkey = span[0];
+                const fns = [];
+                t.sectors.forEach((sec) => { if (sec.fn && fns.indexOf(sec.fn) < 0) fns.push(sec.fn); });
+                dutySpans.push({ dkey: dkey, start: span[0], end: span[span.length - 1], fns: fns });
                 t.sectors.forEach((sec) => {
                     [sec.ymd, sec.depDate, sec.arrDate].forEach((dd) => {
                         if (!dd) return;
@@ -3968,6 +3984,27 @@
                 else if (RO_OFF.has(duty)) { if (!t.kind) { t.kind = 'off'; t.code = duty; } }
                 else if (duty === 'AALV') { if (!t.kind) { t.kind = 'al'; t.code = duty; } }
                 else if (!t.kind) { t.kind = 'duty'; t.code = duty; }
+            });
+            // hotfix 5 (owner order): a duty renders as ONE gold capsule,
+            // report day through final landing — the layover days inside the
+            // span join the duty's run (8–12 Nov SIN-LHR-SIN is five gold
+            // days, no green circle on the 10th), days the generator left
+            // blank inside a span are filled so the bar never breaks, and a
+            // layover run that runs INTO a duty (a roster that begins
+            // mid-trip) joins it too. A layover outside every span keeps
+            // its own day but never draws a pill.
+            dutySpans.forEach((sp) => {
+                for (let ymd = sp.start; ymd <= sp.end; ymd = rosterYmAdd(ymd, 1)) {
+                    const t = dayMap[ymd];
+                    if (!t) { const nd = dayOf(ymd); nd.kind = 'fly'; nd.dkey = sp.dkey; nd.fns = sp.fns.slice(); continue; }
+                    if (t.kind === 'lo' || t.kind === '') { t.kind = 'fly'; t.dkey = sp.dkey; if (!t.fns.length) t.fns = sp.fns.slice(); }
+                }
+                let before = dayMap[rosterYmAdd(sp.start, -1)];
+                while (before && before.kind === 'lo') {
+                    before.kind = 'fly'; before.dkey = sp.dkey;
+                    if (!before.fns.length) before.fns = sp.fns.slice();
+                    before = dayMap[rosterYmAdd(before.ymd, -1)];
+                }
             });
             const days = Object.keys(dayMap).sort().map(k => dayMap[k]);
             return { monthLabel, trips, flights, skippedDays, flyingDays: seen.size - skippedDays, days };
@@ -4247,23 +4284,56 @@
                     const dt = new Date(y, m, dd + delta);
                     return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
                 };
-                // runs: maximal consecutive same-kind duty days (OFF and empty days break)
+                // hotfix 5 (owner order): layover days never draw pills —
+                // the ones inside a duty were absorbed into its gold run by
+                // the parser; the rest stay plain numbers. A stored layover
+                // that sits inside a duty's span (pre-v179 stores) still
+                // joins that run here, so nothing breaks before a re-import.
+                const flySpans = {};
+                for (let dd = 1; dd <= daysIn; dd++) {
+                    const t = dayAt(ymdOf(dd));
+                    if (t && t.kind === 'fly' && t.dkey) {
+                        const ymd = ymdOf(dd);
+                        const sp = flySpans[t.dkey] = flySpans[t.dkey] || [ymd, ymd];
+                        if (ymd < sp[0]) sp[0] = ymd;
+                        if (ymd > sp[1]) sp[1] = ymd;
+                    }
+                }
+                const effDay = (dd) => {
+                    const t = dayAt(ymdOf(dd));
+                    if (t && t.kind === 'lo') {
+                        const ymd = ymdOf(dd);
+                        const key = Object.keys(flySpans).find((k) => ymd > flySpans[k][0] && ymd < flySpans[k][1]);
+                        if (key) return { ymd: ymd, kind: 'fly', code: '', loc: '', fns: [], dkey: key };
+                    }
+                    return t;
+                };
+                // runs: maximal consecutive same-kind duty days (OFF, empty
+                // and bare-layover days break). Fly days join into one
+                // capsule only within ONE duty; standby days join only when
+                // the SAME code runs on (20 and 21 Oct are two standbys,
+                // SN60 and SN80 — two circles, never one bar)
                 const runs = [];
                 for (let dd = 1; dd <= daysIn; dd++) {
-                    const day = dayAt(ymdOf(dd));
-                    if (!day || !day.kind || day.kind === 'off') continue;
+                    const day = effDay(dd);
+                    if (!day || !day.kind || day.kind === 'off' || day.kind === 'lo') continue;
                     const prev = runs[runs.length - 1];
-                    // fly days join into one capsule only within ONE duty —
-                    // back-to-back turnarounds stay separate circles
                     const joins = prev && prev.kind === day.kind && prev.end === dd - 1 &&
-                        (day.kind !== 'fly' || String(prev.dkey) === String(day.dkey));
+                        (day.kind === 'fly' ? String(prev.dkey) === String(day.dkey) :
+                         day.kind === 'duty' ? prev.code === day.code : true);
                     if (joins) prev.end = dd;
-                    else runs.push({ kind: day.kind, dkey: day.dkey || '', start: dd, end: dd });
+                    else runs.push({ kind: day.kind, dkey: day.dkey || '', code: day.code || '', start: dd, end: dd });
                 }
+                const dayAtYmd = (ymd) => {
+                    const dd = parseInt(String(ymd).slice(8), 10);
+                    return (String(ymd).slice(0, 7) === rcViewYm) ? effDay(dd) : dayAt(ymd);
+                };
                 runs.forEach((r) => {
                     const beside = (delta) => {
-                        const nd = dayAt(ymdShift(delta < 0 ? 1 : daysIn, delta));
-                        return !!nd && nd.kind === r.kind && (r.kind !== 'fly' || String(nd.dkey) === String(r.dkey));
+                        const nd = dayAtYmd(ymdShift(delta < 0 ? 1 : daysIn, delta));
+                        return !!nd && nd.kind === r.kind &&
+                            (r.kind === 'fly' ? String(nd.dkey) === String(r.dkey) :
+                             r.kind === 'duty' ? nd.code === r.code : true);
                     };
                     r.contPrev = r.start === 1 && beside(-1);
                     r.contNext = r.end === daysIn && beside(1);
@@ -4336,6 +4406,14 @@
             });
             rosterCalRenderDetail(rcSelected);
         }
+        // hotfix 5 (owner-provided): the standby windows, exactly as the
+        // owner listed them. Shown in a standby day's detail.
+        const RC_STANDBY_TIMES = {
+            SSS0: ['0601', '2359'], SSS9: ['0000', '2359'], SSS1: ['0000', '2359'], SSS2: ['0000', '1159'], SSS3: ['1200', '2359'],
+            SS22: ['0000', '2200'], SS60: ['0600', '2359'], SS80: ['0800', '2359'], SS55: ['0000', '2359'], SS88: ['0000', '2359'],
+            SS77: ['0000', '2359'], SS7W: ['0000', '2359'], SSN1: ['0000', '2359'], SSN2: ['0000', '1159'], SSN3: ['1200', '2359'],
+            SN60: ['0600', '2159'], SN80: ['0800', '1459'], SN15: ['0000', '1459'], SN22: ['0000', '2159']
+        };
         function rosterCalKindLabel(kind) {
             return { fly: 'Flying', duty: 'Standby / course', lo: 'Layover', al: 'Leave', off: 'Off day' }[kind] || 'No duty';
         }
@@ -4397,7 +4475,8 @@
             } else if (kind === 'al') {
                 html += '<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Annual leave.</p>';
             } else if (kind === 'duty') {
-                html += '<p class="text-sm font-bold mt-2">' + rosterEsc(day.code) + '</p><p class="ca-micro font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">Standby or course duty</p>';
+                const win = RC_STANDBY_TIMES[day.code];
+                html += '<p class="text-sm font-bold mt-2">' + rosterEsc(day.code) + (win ? ' · ' + hmH(win[0]) + ' – ' + hmH(win[1]) : '') + '</p><p class="ca-micro font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">Standby or course duty</p>';
             } else {
                 html += '<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Nothing on the roster for this day.</p>';
             }
@@ -4415,6 +4494,12 @@
             Object.keys(store).forEach((mk) => { (store[mk] || []).forEach((f) => { if (f && f.ymd) all.push(f); }); });
             all.sort((a, b) => String((a.stdYmd || a.ymd) + (a.std || '')).localeCompare(String((b.stdYmd || b.ymd) + (b.std || ''))));
             let i = all.findIndex((f) => f.ymd === ymd || f.stdYmd === ymd || f.staYmd === ymd);
+            if (i < 0) {
+                // an interior day of a duty (a layover absorbed into its
+                // gold run): retell the whole duty from its report day
+                const day = rcMonthData(String(ymd).slice(0, 7))[ymd];
+                if (day && day.dkey) i = all.findIndex((f) => f.ymd === day.dkey);
+            }
             if (i < 0) return [];
             while (i > 0 && all[i - 1].arr !== 'SIN' && all[i - 1].ymd <= ymd) i--;
             const legs = [];
@@ -4451,6 +4536,25 @@
                 });
                 on('ca-rc-close', () => closeRosterCalendar());
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
+                // hotfix 5 (owner order): swipe the grid sideways to change
+                // months. Horizontal only — a vertical pan scrolls the
+                // sheet — and never past the months the data holds.
+                const grid = document.getElementById('ca-rc-grid');
+                if (grid) {
+                    let swX = null, swY = null;
+                    grid.addEventListener('pointerdown', (e) => { swX = (e && e.clientX != null) ? e.clientX : null; swY = (e && e.clientY != null) ? e.clientY : null; });
+                    grid.addEventListener('pointercancel', () => { swX = null; swY = null; });
+                    grid.addEventListener('pointerup', (e) => {
+                        if (swX === null || !e || e.clientX == null) { swX = null; swY = null; return; }
+                        const dx = e.clientX - swX, dy = (e.clientY != null ? e.clientY : 0) - (swY != null ? swY : 0);
+                        swX = null; swY = null;
+                        if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+                        const months = rosterCalMonths();
+                        const at = months.indexOf(rcViewYm);
+                        const next = months[Math.min(months.length - 1, Math.max(0, at + (dx < 0 ? 1 : -1)))];
+                        if (next && next !== rcViewYm) { rcViewYm = next; renderRosterCalendar(dx < 0 ? 1 : -1); }
+                    });
+                }
             }
             wrap.classList.remove('hidden');
             if (typeof caSheetFocusIn === 'function') caSheetFocusIn(sheet);
