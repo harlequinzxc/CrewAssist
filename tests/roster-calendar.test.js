@@ -157,13 +157,22 @@ const synthItems = [].concat(
     R.ok(src.indexOf('data-lucide="chevron-left"') >= 0 && src.indexOf('data-lucide="chevron-right"') >= 0, 'the chevrons are Lucide icons');
     // hotfix 6 (owner orders): the header itself
     R.ok(/^[A-Z][a-z]{2} \d{4}$/.test(d.getElementById('ca-rc-month').textContent), 'the month spells three letters — Oct 2026, never October 2026');
-    R.ok(!d.getElementById('ca-rc-today'), 'the Today pill is gone — a double tap replaces it');
+    R.ok(!d.getElementById('ca-rc-today'), 'the Today pill is gone — press and hold replaces it');
     R.ok(!!d.getElementById('ca-rc-jump') && !!d.getElementById('ca-rc-fold'), 'the month header button and the fold chevron live in the header');
+    R.ok(d.getElementById('ca-rc-jump').nextElementSibling === d.getElementById('ca-rc-fold'), 'the fold chevron sits just after the month header');
+    R.ok(d.getElementById('ca-rc-prev').parentElement.contains(d.getElementById('ca-rc-close')) && !d.getElementById('ca-rc-prev').parentElement.contains(d.getElementById('ca-rc-fold')), 'the arrows sit beside the close icon, away from the fold');
     R.ok(src.indexOf('ca-rc-shade absolute inset-0 bg-black/60 backdrop-blur-sm') >= 0, 'the calendar shade matches the Settings backdrop — black/60 with the same blur');
     const settingsTop = (src.match(/id="settings-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
     const calTop = (src.match(/id="ca-rc-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
     R.ok(settingsTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('max-w-xl') < 0, 'the calendar sheet wears the Settings overlay’s exact height — same top offset, full width');
     R.ok(src.indexOf('w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600') >= 0, 'the calendar grows the Settings-style drag handle');
+    // hotfix 7 (owner orders): the sheet itself never scrolls — the grid is
+    // fixed and the timeline owns the vertical scroll, no scrollbar
+    R.ok(d.getElementById('ca-rc-sheet').className.indexOf('overflow-hidden') >= 0, 'the sheet never scrolls');
+    R.ok(d.getElementById('ca-rc-detail').className.indexOf('flex-1') >= 0 && d.getElementById('ca-rc-detail').className.indexOf('overflow-y-auto') >= 0, 'the timeline owns the vertical scroll below the divider');
+    R.ok(src.indexOf('#ca-rc-detail { scrollbar-width: none;') >= 0 && src.indexOf('#ca-rc-detail::-webkit-scrollbar { display: none;') >= 0, 'the timeline scrolls with no visible scrollbar');
+    R.eq(d.getElementById('ca-rc-detail').getAttribute('data-rc-days'), '61', 'the timeline spans every attached roster date — all 61 of Oct+Nov');
+    R.ok(d.querySelectorAll('#ca-rc-detail .ca-rc-row').length < 25, 'only a window of rows renders — the list is virtualized');
     // ---- pills: shapes, kinds, and the OFF day's plainness ----
     const pills = Array.from(d.querySelectorAll('.ca-rc-pill'));
     const styleOf = (p) => p.getAttribute('style') || '';
@@ -211,8 +220,8 @@ const synthItems = [].concat(
     await wait(300);
     det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 241') >= 0 && det.indexOf('SQ 242') >= 0, 'the SYD duty names both sectors');
-    R.ok(rowN(12) && rowN(13) && rowN(14) && !rowN(11) && !rowN(15), 'the duty flows as its own day rows — the 12th through the 14th');
-    R.ok(rowN(13).classList.contains('is-on') && rowN(12).classList.contains('is-ctx') && rowN(14).classList.contains('is-ctx'), 'the selected day is the highlighted band, its trip muted around it');
+    R.ok(rowN(12) && rowN(13) && rowN(14), 'the duty flows as its own day rows — the 12th through the 14th');
+    R.ok(rowN(13).classList.contains('is-on') && !rowN(12).classList.contains('is-on') && !rowN(14).classList.contains('is-on'), 'the selected day is the highlighted band \u2014 its neighbours are not');
     const t13 = rowN(13).textContent.replace(/\s+/g, ' ');
     R.ok(t13.indexOf('LO · SYD') >= 0 && t13.indexOf('SQ 242') >= 0, 'the 13th wakes in SYD and flies the leg home — layover label above the flight card');
     R.ok(t13.indexOf('1900H') >= 0 && t13.indexOf('(+1) 0015H') >= 0, 'a leg landing past midnight wears the owner\u2019s (+1) format');
@@ -220,11 +229,12 @@ const synthItems = [].concat(
     const t14 = rowN(14).textContent.replace(/\s+/g, ' ');
     R.ok(t14.indexOf('Lands SIN') >= 0 && t14.indexOf('0015H') >= 0, 'the landing day reads Lands SIN · 0015H');
     const future = cells.find(c => c.getAttribute('data-ymd') === '2026-10-27');
-    const cardsBefore = d.querySelectorAll('[data-calc-card]').length;
+    const visibleCards = () => Array.from(d.querySelectorAll('[data-calc-card]')).filter((c) => !c.closest('[data-rc-live-calc]'));
+    const cardsBefore = visibleCards().length;
     future.click();
     await wait(300);
     R.ok(future.classList.contains('is-selected'), 'tapping a day selects it');
-    R.eq(d.querySelectorAll('[data-calc-card]').length, cardsBefore, 'selecting a flying day never builds a calculator card');
+    R.eq(visibleCards().length, cardsBefore, 'selecting a flying day never builds a calculator card (the hidden live-earnings card never counts)');
     R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'no popup — the day\u2019s details live in the section below the divider');
     det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 164') >= 0 && det.indexOf('SQ 163') >= 0, 'the detail names every leg of the duty');
@@ -247,9 +257,9 @@ const synthItems = [].concat(
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-29').click();
     await wait(200);
     R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('318.55') >= 0, 'a saved duty shows its amount beside the drill-in chevron');
-    d.querySelector('#ca-rc-detail [data-rc-open-entry]').click();
-    await wait(400);
-    R.ok(!d.getElementById('ca-arch-sub').classList.contains('hidden'), 'the saved entry opens from the detail section');
+    d.querySelector('#ca-rc-detail [data-rc-earn]').click();
+    await wait(600);
+    R.ok(!d.getElementById('ca-arch-sub').classList.contains('hidden'), 'the saved entry opens from its flight card');
     w.eval('closeArchSub()');
     await wait(300);
     // ---- month navigation: bounded arrows, label, rebuild, selection reset ----
@@ -279,12 +289,28 @@ const synthItems = [].concat(
     await wait(300);
     det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 306') >= 0 && det.indexOf('SQ 305') >= 0, '9 Nov retells the WHOLE London duty');
-    R.eq(rows().length, 5, 'the London duty flows as five day rows — the 8th through the 12th');
-    R.ok(rowN(9).classList.contains('is-on') && rowN(8).classList.contains('is-ctx') && rowN(10).classList.contains('is-ctx') && rowN(11).classList.contains('is-ctx') && rowN(12).classList.contains('is-ctx'), 'the selected day is the highlighted band, the rest of the trip muted around it');
+    R.ok(rowN(8) && rowN(9) && rowN(10) && rowN(11) && rowN(12), 'the London duty flows as its own day rows — the 8th through the 12th');
+    R.ok(rowN(9).classList.contains('is-on') && !rowN(8).classList.contains('is-on') && !rowN(12).classList.contains('is-on'), 'the selected day is the highlighted band \u2014 the rest of the trip is not');
     const t9 = rowN(9).textContent.replace(/\s+/g, ' ');
     R.ok(t9.indexOf('SQ 306') >= 0 && t9.indexOf('359') >= 0 && t9.indexOf('0110H') >= 0 && t9.indexOf('0740H') >= 0, 'the 9th carries the SQ 306 hero card — aircraft 359, SIN 0110H to LHR 0740H');
     R.ok(t9.indexOf('14H 30M') >= 0, 'the block time reads from the roster\u2019s own FT row — 14H 30M');
     R.ok(rowN(9).querySelectorAll('.ca-rc-trk .pt').length === 2 && !!rowN(9).querySelector('.ca-rc-trk .ln'), 'the route renders as a dashed track with a filled dot at each end');
+    // hotfix 7 (owner report): the London duty is tappable into earnings even
+    // unsaved — the live amount lands on the card, the card opens the overlay
+    await wait(1500);
+    const ldnCard = rowN(9).querySelector('[data-rc-earn]');
+    const ldnAmt = ldnCard && ldnCard.querySelector('[data-rc-amt]');
+    R.ok(ldnAmt && ldnAmt.textContent === '$1511.94', 'an UNSAVED duty shows its live earnings — the London trip prices at $1511.94');
+    R.ok(!!ldnCard.querySelector('.text-sm.font-bold.text-sia-gold') && !!ldnCard.querySelector('.text-sm.font-bold.text-gray-500'), 'the aircraft uses the flight number\u2019s type size in its own colour');
+    ldnCard.click();
+    await wait(900);
+    const ldnSub = d.getElementById('ca-arch-sub');
+    R.ok(ldnSub && !ldnSub.classList.contains('hidden'), 'tapping the London card opens its earnings overlay — the owner\u2019s report fixed');
+    const ldnTxt = ldnSub ? ldnSub.textContent.replace(/\s+/g, ' ') : '';
+    R.ok(ldnTxt.indexOf('SQ 306') >= 0 && ldnTxt.indexOf('Grand Total') >= 0 && ldnTxt.indexOf('$1,511.94') >= 0, 'the overlay retells the duty with its grand total');
+    R.ok(ldnTxt.indexOf('Figured from your roster') >= 0, 'and says honestly that it is not saved yet');
+    w.eval('closeArchSub()');
+    await wait(400);
     R.ok(!!rowN(9).querySelector('[data-lucide="plane"]'), 'the plane rides the track, nose toward the destination');
     const t8 = rowN(8).textContent.replace(/\s+/g, ' ');
     R.ok(t8.indexOf('Report 2310H') >= 0, 'the report day shows its report time — 2310H');
@@ -296,19 +322,40 @@ const synthItems = [].concat(
     const t12b = rowN(12).textContent.replace(/\s+/g, ' ');
     R.ok(t12b.indexOf('Lands SIN') >= 0 && t12b.indexOf('0615H') >= 0, 'the landing day on the 12th reads Lands SIN · 0615H');
     R.ok(d.getElementById('ca-rc-next').classList.contains('ca-rc-off'), 'no month after November — the forward arrow grays out');
-    // hotfix 6 (owner orders): the fold chevron and the double-tap month
+    // hotfix 6+7 (owner orders): the fold chevron, the press-and-hold month,
+    // and the scroll-synced timeline
     const gridEl = d.getElementById('ca-rc-grid');
     d.getElementById('ca-rc-fold').click();
     await wait(150);
     R.ok(gridEl.classList.contains('hidden'), 'the chevron collapses the calendar for the timeline');
-    R.ok(rows().length === 5, 'the timeline keeps flowing with the grid folded away');
+    R.ok(rows().length > 0, 'the timeline keeps flowing with the grid folded away');
     d.getElementById('ca-rc-fold').click();
     await wait(150);
     R.ok(!gridEl.classList.contains('hidden'), 'and expands it back');
-    d.getElementById('ca-rc-jump').click();
-    d.getElementById('ca-rc-jump').click();
-    await wait(600);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'a double tap on the month header returns to today\u2019s month');
+    // scrolling the timeline flips the calendar to the month in view
+    const tlEl = d.getElementById('ca-rc-detail');
+    tlEl.scrollTop = 999999;
+    tlEl.dispatchEvent(new w.Event('scroll', { bubbles: true }));
+    await wait(400);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'scrolling the timeline into November flips the calendar');
+    R.ok(!!rowN(30) && rowN(30).querySelector('.ca-rc-gut .m').textContent === 'NOV', 'late-November rows render after the scroll');
+    // tapping a timeline row highlights that date in the grid
+    const row28 = rowN(28);
+    R.ok(!!row28, 'a late-November row is rendered');
+    row28.click();
+    await wait(200);
+    R.ok(d.querySelector('.ca-rc-day.is-selected') && d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === '2026-11-28', 'tapping a timeline row highlights that date in the calendar');
+    R.ok(row28.classList.contains('is-on'), 'and the row itself carries the highlighted band');
+    // press and HOLD the month header to return to today; a quick tap does nothing
+    const jump = d.getElementById('ca-rc-jump');
+    const hold = () => { const pd = new w.Event('pointerdown', { bubbles: true }); pd.clientX = 30; pd.clientY = 30; jump.dispatchEvent(pd); };
+    hold();
+    const pu = new w.Event('pointerup', { bubbles: true }); pu.clientX = 30; pu.clientY = 30; jump.dispatchEvent(pu);
+    await wait(700);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'a quick tap on the month header does nothing');
+    hold();
+    await wait(1000);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'pressing and holding the month header returns to today\u2019s month');
     R.ok(d.querySelector('.ca-rc-day.is-selected') && d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === TODAY, 'and lands the selection on today');
     d.getElementById('ca-rc-next').click();
     await wait(500);
