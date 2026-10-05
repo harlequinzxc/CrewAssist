@@ -276,6 +276,46 @@
         /* hotfix 5 (owner order): sideways swipes change months — vertical
            pans must keep scrolling, so the grid owns only the horizontal */
         #ca-rc-grid { touch-action: pan-y; }
+        /* hotfix 6 (owner order): the month arrows never disappear — at the
+           data edges they gray out instead */
+        .ca-rc-nav.ca-rc-off { opacity: .3; pointer-events: none; }
+        /* hotfix 6 (owner spec): the bottom detail is a day-row timeline —
+           a date gutter per row, tinted by duty state, the selected day as
+           the highlighted band, its trip flowing around it */
+        .ca-rc-row { display: flex; align-items: stretch; }
+        .ca-rc-row + .ca-rc-row { border-top: 1px solid rgba(127,127,127,.14); }
+        html.dark .ca-rc-row + .ca-rc-row { border-top-color: rgba(127,127,127,.18); }
+        .ca-rc-row.is-ctx { opacity: .58; }
+        .ca-rc-gut { width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
+        .ca-rc-gut .n { font-size: 15px; font-weight: 800; line-height: 1; color: rgba(31,41,55,.92); }
+        html.dark .ca-rc-gut .n { color: rgba(229,231,235,.92); }
+        .ca-rc-gut .m { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: rgba(31,41,55,.55); }
+        html.dark .ca-rc-gut .m { color: rgba(229,231,235,.55); }
+                .ca-rc-gut::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: transparent; }
+        .ca-rc-row.is-ctx .ca-rc-gut::after { background: rgba(127,127,127,.18); }
+        .ca-rc-gut.k-fly { background: rgba(201,162,39,.12); }
+        .ca-rc-gut.k-duty { background: rgba(59,130,246,.10); }
+        html.dark .ca-rc-gut.k-duty { background: rgba(96,165,250,.12); }
+        .ca-rc-gut.k-lo, .ca-rc-gut.k-off, .ca-rc-gut.k-al { background: rgba(127,127,127,.10); }
+        .ca-rc-gut.k-fly.is-on { background: rgba(201,162,39,.24); }
+        .ca-rc-gut.k-fly.is-on::after { background: #c9a227; }
+        .ca-rc-gut.k-duty.is-on { background: rgba(59,130,246,.20); }
+        html.dark .ca-rc-gut.k-duty.is-on { background: rgba(96,165,250,.22); }
+        .ca-rc-gut.k-duty.is-on::after { background: #3b82f6; }
+        html.dark .ca-rc-gut.k-duty.is-on::after { background: #60a5fa; }
+        .ca-rc-gut.k-lo.is-on, .ca-rc-gut.k-off.is-on, .ca-rc-gut.k-al.is-on { background: rgba(127,127,127,.18); }
+        .ca-rc-gut.k-lo.is-on::after, .ca-rc-gut.k-off.is-on::after { background: rgba(127,127,127,.65); }
+        .ca-rc-gut.k-al.is-on::after { background: rgba(168,85,247,.75); }
+        .ca-rc-bd { flex: 1; min-width: 0; padding: 10px 0 10px 12px; }
+        .ca-rc-row.is-on .ca-rc-bd { background: linear-gradient(90deg, rgba(201,162,39,.08), transparent 55%); }
+        /* the flight card's dashed route track: filled dots at the ends,
+           the plane nose-on between them */
+        .ca-rc-trk { flex: 1; display: flex; align-items: center; min-width: 34px; }
+        .ca-rc-trk .ln { flex: 1; border-top: 2px dashed rgba(201,162,39,.55); }
+        .ca-rc-trk .pt { width: 7px; height: 7px; border-radius: 999px; background: #c9a227; flex: none; }
+        .ca-rc-rise { animation: ca-rc-rise .18s ease both; }
+        @keyframes ca-rc-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .ca-rc-rise { animation: none; } }
         .cadate-day {
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         }
@@ -1445,14 +1485,22 @@
             <div id="ca-rc-sheet" role="dialog" aria-modal="true" aria-label="Roster calendar" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col overflow-y-auto overscroll-contain">
                 <div class="w-full flex justify-center py-3 shrink-0"><div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div></div>
                 <div class="px-5 pb-8 space-y-3 flex-none">
+                <!-- hotfix 6 (owner orders): the month header truncates to
+                     three letters; the Today pill is gone (double-tap the
+                     month instead); the arrows always show — grayed at the
+                     data edges — and sit left of the close icon; the chevron
+                     collapses the calendar so the timeline below fills the
+                     sheet, and expands it back. -->
                 <div class="flex items-center justify-between gap-1">
+                    <button type="button" id="ca-rc-jump" aria-label="Double-tap the month for today" class="ca-hit -ml-2 pl-1 pr-3 py-1.5 rounded-xl active:scale-95 transition-transform">
+                        <h3 id="ca-rc-month" class="font-bold text-base text-left leading-none"></h3>
+                    </button>
                     <div class="flex items-center">
-                        <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 -ml-2 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
-                        <h3 id="ca-rc-month" class="font-bold text-base w-32 text-center"></h3>
-                        <button type="button" id="ca-rc-next" aria-label="Next month" class="ca-hit ca-rc-nav p-3 -mr-2 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-fold" aria-label="Collapse calendar" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><span id="ca-rc-fold-up"><i data-lucide="chevron-up" class="w-5 h-5"></i></span><span id="ca-rc-fold-down" class="hidden"><i data-lucide="chevron-down" class="w-5 h-5"></i></span></button>
+                        <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-next" aria-label="Next month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
-                    <button type="button" id="ca-rc-today" class="h-9 px-4 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform">Today</button>
-                    <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 <div id="ca-rc-grid" class="transition-opacity duration-200"></div>
                 <!-- v1.39.0 hotfix 3 (owner spec): the detail section below the
@@ -1905,6 +1953,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar becomes a pill grid with day details.' },
                 { c: 'fix', t: 'Hotfix: duties span to landing days, split per duty, past included.' },
                 { c: 'fix', t: 'Hotfix: one gold capsule per duty, standby windows, swipe, settings match.' },
+                { c: 'fix', t: 'Hotfix: three-letter months, grayed arrows, double-tap today, fold, timeline detail.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -3775,6 +3824,11 @@
                     its.forEach(v => { if (v.str === 'Duty' && (dutyY === null || v.y < dutyY)) dutyY = v.y; });
                     its.forEach(v => { if (v.str === 'Sector' && (locY === null || v.y < locY)) locY = v.y; });
                 }
+                // hotfix 6 (owner spec): the A/C row — the aircraft type the
+                // generator prints under the duty codes (359, 7M8, 35M, 7WR…)
+                // — feeds the calendar's flight cards.
+                let acY = null;
+                its.forEach(v => { if (v.str === 'A/C' && (acY === null || v.y < acY)) acY = v.y; });
                 its.forEach(v => {
                     if (dutyY != null && Math.abs(v.y - dutyY) <= 12 && /^[A-Z]{2,5}\d{0,2}$/.test(v.str)) pool.push({ key: 'duty', str: v.str, x: v.x, page: p });
                     else if (locY != null && Math.abs(v.y - locY) <= 10 && /^[A-Z]{3}$/.test(v.str)) pool.push({ key: 'loc', str: v.str, x: v.x, page: p });
@@ -3784,9 +3838,13 @@
                     if (RO_IS.hhmm(v.str) && digitAnchors.length) {
                         let best = null, bd = 1e9;
                         digitAnchors.forEach(a => { const d = Math.abs(a[0] - v.y); if (d < bd) { bd = d; best = a[1]; } });
-                        if (best && best !== 'rpt' && bd <= 16) pool.push({ key: best, str: v.str, x: v.x, page: p });
+                        // hotfix 6: Rpt-anchored values pool as 'rpt' now — the
+                        // calendar's report-day row shows the report time
+                        if (best && bd <= 16) pool.push({ key: best, str: v.str, x: v.x, page: p });
                     } else if (RO_IS.hm(v.str) && ftY != null && Math.abs(ftY - v.y) <= 16) {
                         pool.push({ key: 'ft', str: v.str, x: v.x, page: p });
+                    } else if (acY != null && Math.abs(v.y - acY) <= 16 && /^[0-9][A-Z0-9]{2}$/.test(v.str)) {
+                        pool.push({ key: 'ac', str: v.str, x: v.x, page: p });
                     }
                 });
             });
@@ -3842,6 +3900,7 @@
                 }
                 const f = { fn: r.vals.fn.replace(/^SQ\s*/, ''), dep: m[1], arr: m[2],
                     std: r.vals.std || '', sta: r.vals.sta || '', ft: r.vals.ft || '',
+                    ac: r.vals.ac || '', rpt: r.vals.rpt || '',
                     stdRowYmd: r.ymd, staRowYmd: r.ymd, ymd: r.ymd, echoYmd: '',
                     pos: !!r.vals.pos };
                 byKey[key] = f;
@@ -4183,7 +4242,7 @@
             flights.forEach((f) => {
                 const k = f.fn + '|' + f.ymd;
                 if (allSeen[k]) return; allSeen[k] = 1;
-                allStore[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '', sta: f.staHm || '', stdYmd: f.depDate || '', staYmd: f.arrDate || '' });
+                allStore[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '', sta: f.staHm || '', stdYmd: f.depDate || '', staYmd: f.arrDate || '', ft: f.ft || '', ac: f.ac || '', rpt: f.rpt || '' });
             });
             try { localStorage.setItem(ALL_KEY, JSON.stringify(allStore)); } catch (e) {}
             dutyRemember(parsed);
@@ -4268,14 +4327,17 @@
                 const m = parseInt(rcViewYm.slice(5), 10) - 1;
                 const byDay = rcMonthData(rcViewYm);
                 const hasAny = Object.keys(byDay).length > 0;
-                if (monthEl) monthEl.textContent = (typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[m] : rcViewYm) + ' ' + y;
-                // (owner spec) where no data month exists beyond, the arrow is not shown
+                // hotfix 6 (owner order): the header spells the month in three
+                // letters — "Oct 2026", never "October 2026"
+                if (monthEl) monthEl.textContent = String(typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[m] : rcViewYm).slice(0, 3) + ' ' + y;
+                // hotfix 6 (owner order): the arrows always show — at the data
+                // edges they gray out instead of vanishing
                 const months = rosterCalMonths();
                 const at = months.indexOf(rcViewYm);
                 const prevBtn = document.getElementById('ca-rc-prev');
                 const nextBtn = document.getElementById('ca-rc-next');
-                if (prevBtn) { const none = at <= 0; prevBtn.classList.toggle('invisible', none); prevBtn.setAttribute('aria-hidden', none ? 'true' : 'false'); }
-                if (nextBtn) { const none = at < 0 || at >= months.length - 1; nextBtn.classList.toggle('invisible', none); nextBtn.setAttribute('aria-hidden', none ? 'true' : 'false'); }
+                if (prevBtn) { const none = at <= 0; prevBtn.classList.toggle('ca-rc-off', none); prevBtn.setAttribute('aria-disabled', none ? 'true' : 'false'); }
+                if (nextBtn) { const none = at < 0 || at >= months.length - 1; nextBtn.classList.toggle('ca-rc-off', none); nextBtn.setAttribute('aria-disabled', none ? 'true' : 'false'); }
                 const dayAt = rcDayLookup();
                 const today = todayLocalYMD();
                 const daysIn = new Date(y, m + 1, 0).getDate();
@@ -4414,73 +4476,144 @@
             SS77: ['0000', '2359'], SS7W: ['0000', '2359'], SSN1: ['0000', '2359'], SSN2: ['0000', '1159'], SSN3: ['1200', '2359'],
             SN60: ['0600', '2159'], SN80: ['0800', '1459'], SN15: ['0000', '1459'], SN22: ['0000', '2159']
         };
-        function rosterCalKindLabel(kind) {
-            return { fly: 'Flying', duty: 'Standby / course', lo: 'Layover', al: 'Leave', off: 'Off day' }[kind] || 'No duty';
+        // hotfix 6 (owner spec): the bottom detail is a timeline of day
+        // rows — one date gutter per day, the selected day as the
+        // highlighted band, the rest of its trip (or its run of off/rest
+        // days) flowing around it as muted context rows.
+        function rosterCalDayShift(ymd, delta) {
+            const dt = new Date(parseInt(String(ymd).slice(0, 4), 10), parseInt(String(ymd).slice(5, 7), 10) - 1, parseInt(String(ymd).slice(8), 10) + delta);
+            return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
         }
-        function rosterCalLegsBlock(legs) {
-            const first = legs[0], last = legs[legs.length - 1];
-            const stops = legs.map(l => l.dep).concat([last.arr]).filter((v, i, a) => i === 0 || v !== a[i - 1]);
-            const depOf = (l) => l.stdYmd || l.ymd;
-            const arrOf = (l) => l.staYmd || l.ymd;
-            // the calculator's own rule: under 6h on the ground out-and-back
-            // is a Turnaround, however many midnights the clock crosses
-            const legMs = (l, which) => {
-                const d = which === 'dep' ? depOf(l) : arrOf(l), hm = String(which === 'dep' ? l.std : l.sta).replace(':', '');
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(d || '')) || !/^\d{4}$/.test(hm)) return null;
-                return new Date(d + 'T00:00:00').getTime() + (parseInt(hm.slice(0, 2), 10) * 3600 + parseInt(hm.slice(2), 10) * 60) * 1000;
-            };
-            let maxGround = -1;
-            for (let k = 0; k < legs.length - 1; k++) {
-                const am = legMs(legs[k], 'arr'), bm = legMs(legs[k + 1], 'dep');
-                const g = (am != null && bm != null) ? (bm - am) / 60000 : 99999;
-                if (g > maxGround) maxGround = g;
+        function rosterCalFlowDays(ymd) {
+            const dayAt = rcDayLookup();
+            const sel = dayAt(ymd);
+            if (sel && sel.kind === 'fly' && sel.dkey) {
+                // the whole duty, report day through final landing day —
+                // across month edges too (a NRT duty wrapping into November)
+                const days = [];
+                const store = loadDutyDays();
+                Object.keys(store).forEach((mk) => {
+                    const byYmd = rcMonthData(mk);
+                    (store[mk] || []).forEach((d) => { if (d && d.ymd && d.dkey === sel.dkey && byYmd[d.ymd]) days.push(byYmd[d.ymd]); });
+                });
+                days.sort((a, b) => String(a.ymd).localeCompare(String(b.ymd)));
+                return days;
             }
-            const type = (first.dep === 'SIN' && last.arr === 'SIN' && maxGround <= 360)
-                ? 'Turnaround' : (last.arr === 'SIN' ? 'Layover' : 'Duty');
-            let html = '<p class="text-sm font-bold mt-2">SQ ' + rosterEsc(legs.map(l => l.fn).join(' \u00b7 ')) + ' \u00b7 ' + type + '</p>'
-                + '<p class="text-sm font-bold">' + rosterEsc(stops.join(' \u2192 ')) + ' \u00b7 ' + rosterShortDate(depOf(first)) + (arrOf(last) !== depOf(first) ? ' \u2013 ' + rosterShortDate(arrOf(last)) : '') + '</p>'
-                + '<div class="glass-panel rounded-2xl overflow-hidden mt-2">';
-            legs.forEach((l, i) => {
-                // an arrival past midnight wears its (+1) — the owner's format:
-                // "13 Oct \u00b7 1900H \u2192 (+1) 0015H"
-                const crosses = l.sta && arrOf(l) > depOf(l);
-                html += '<div class="flex items-center justify-between gap-3 px-4 py-3' + (i ? ' border-t ca-hairline' : '') + '">'
-                    + '<span class="text-sm font-bold whitespace-nowrap">SQ ' + rosterEsc(l.fn) + ' \u00b7 ' + rosterEsc(l.dep) + ' \u2192 ' + rosterEsc(l.arr) + '</span>'
-                    + '<span class="ca-micro font-bold text-gray-500 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(depOf(l))
-                    + (l.std ? ' \u00b7 ' + hmH(l.std) : '') + (l.sta ? ' \u2192 ' + (crosses ? '(+1) ' : '') + hmH(l.sta) : '') + '</span>'
-                    + '</div>';
-            });
+            if (!sel) return [];
+            // a run of consecutive non-duty days around the selection (off,
+            // leave, lone layovers, standby) flows as its own sequence
+            const run = [];
+            let y = ymd;
+            while (true) { const d = dayAt(y); if (!d || (d.kind === 'fly' && d.dkey)) break; run.unshift(d); y = rosterCalDayShift(y, -1); }
+            y = rosterCalDayShift(ymd, 1);
+            while (true) { const d = dayAt(y); if (!d || (d.kind === 'fly' && d.dkey)) break; run.push(d); y = rosterCalDayShift(y, 1); }
+            return run;
+        }
+        function rosterCalLabelRow(icon, title, sub) {
+            return '<div class="flex items-center gap-2.5 min-w-0 py-0.5">'
+                + '<span class="inline-flex items-center justify-center w-8 h-8 rounded-full ca-inset shrink-0"><i data-lucide="' + icon + '" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i></span>'
+                + '<span class="min-w-0"><span class="block text-sm font-bold truncate">' + rosterEsc(title) + '</span>'
+                + (sub ? '<span class="block ca-micro font-bold text-gray-500 dark:text-gray-400 truncate">' + rosterEsc(sub) + '</span>' : '')
+                + '</span></div>';
+        }
+        function rosterCalBlockHm(l) {
+            // the roster's own FT is the truth (port-local subtraction lies
+            // across time zones); it falls back to the printed times
+            const m = String(l.ft || '').match(/^(\d{1,2}):(\d{2})$/);
+            if (m) { const h = parseInt(m[1], 10), mi = parseInt(m[2], 10); if (h || mi) return (h ? h + 'H ' : '') + String(mi).padStart(2, '0') + 'M'; }
+            const a = String(l.std || '').replace(':', ''), b = String(l.sta || '').replace(':', '');
+            if (/^\d{3,4}$/.test(a) && /^\d{3,4}$/.test(b)) {
+                let mins = (parseInt(b.slice(0, 2), 10) * 60 + parseInt(b.slice(2), 10)) - (parseInt(a.slice(0, 2), 10) * 60 + parseInt(a.slice(2), 10));
+                if (mins <= 0) mins += 1440;
+                if (mins > 0) { const h = Math.floor(mins / 60), mi = mins % 60; return (h ? h + 'H ' : '') + String(mi).padStart(2, '0') + 'M'; }
+            }
+            return '';
+        }
+        function rosterCalFlightCard(l, entry) {
+            // the hero card: flight number + aircraft, the dashed route with
+            // the plane nose-on, local times under each end, block time below
+            const dur = rosterCalBlockHm(l);
+            const crosses = l.sta && String(l.staYmd || '') > String(l.stdYmd || l.ymd || '');
+            let html = '<div class="glass-panel rounded-2xl px-4 py-3 mt-2 flex items-center gap-2">'
+                + '<div class="flex-1 min-w-0">'
+                + '<div class="flex items-baseline gap-2"><span class="text-sm font-bold text-sia-gold">SQ ' + rosterEsc(l.fn) + '</span>'
+                + (l.ac ? '<span class="ca-micro font-mono font-bold tracking-widest text-gray-500 dark:text-gray-400">· ' + rosterEsc(l.ac) + '</span>' : '')
+                + '</div>'
+                + '<div class="flex items-center justify-between gap-2 mt-1.5">'
+                + '<span class="text-center shrink-0"><span class="block text-xl font-extrabold tracking-wide leading-none">' + rosterEsc(l.dep) + '</span>'
+                + (l.std ? '<span class="block ca-micro font-bold text-gray-500 dark:text-gray-400 mt-1">' + hmH(l.std) + '</span>' : '') + '</span>'
+                + '<span class="ca-rc-trk"><span class="pt"></span><span class="ln"></span><i data-lucide="plane" class="w-4 h-4 mx-1.5 text-sia-gold shrink-0" style="transform: rotate(45deg);"></i><span class="ln"></span><span class="pt"></span></span>'
+                + '<span class="text-center shrink-0"><span class="block text-xl font-extrabold tracking-wide leading-none">' + rosterEsc(l.arr) + '</span>'
+                + (l.sta ? '<span class="block ca-micro font-bold text-gray-500 dark:text-gray-400 mt-1">' + (crosses ? '(+1) ' : '') + hmH(l.sta) + '</span>' : '') + '</span>'
+                + '</div>'
+                + (dur ? '<p class="text-center text-xs font-bold tracking-wider mt-1.5 text-gray-600 dark:text-gray-300">' + dur + '</p>' : '')
+                + '</div>';
+            if (entry) {
+                html += '<span class="flex flex-col items-end shrink-0 self-center">'
+                    + '<span class="ca-micro font-bold text-sia-gold">$' + Number(entry.amount || 0).toFixed(2) + '</span>'
+                    + '<button type="button" data-rc-open-entry="' + rosterEsc(String(entry.id)) + '" aria-label="Open earnings summary" class="ca-hit p-1.5 -mr-1.5 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5 text-sia-gold"></i></button>'
+                    + '</span>';
+            }
             return html + '</div>';
+        }
+        function rosterCalDayRow(day, on, legs, entry) {
+            const kind = day.kind || '';
+            const kcls = { fly: 'k-fly', duty: 'k-duty', lo: 'k-lo', al: 'k-al', off: 'k-off' }[kind] || 'k-off';
+            const mi = parseInt(String(day.ymd).slice(5, 7), 10) - 1;
+            const mon = String(typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[mi] : String(day.ymd).slice(5, 7)).slice(0, 3).toUpperCase();
+            let body = '';
+            if (kind === 'fly') {
+                const dep = legs.filter((l) => String(l.stdYmd || l.ymd) === day.ymd);
+                const rptLeg = legs.find((l) => l.ymd === day.ymd && String(l.stdYmd || l.ymd) !== day.ymd) || null;
+                const arrLeg = legs.filter((l) => String(l.staYmd || '') === day.ymd).pop();
+                // woke away from home: the layover label rides above the card
+                if (dep.length && dep[0].dep !== 'SIN') body += rosterCalLabelRow('bed', 'LO · ' + dep[0].dep, 'Layover');
+                dep.forEach((l) => { body += rosterCalFlightCard(l, entry); });
+                if (!dep.length) {
+                    if (day.loc) body += rosterCalLabelRow('bed', 'LO · ' + day.loc, arrLeg ? 'Lands ' + arrLeg.arr + ' · ' + hmH(arrLeg.sta) : 'Layover');
+                    else if (rptLeg && rptLeg.rpt) body += rosterCalLabelRow('alarm-clock', 'Flying duty', 'Report ' + hmH(rptLeg.rpt));
+                    else if (rptLeg) body += rosterCalLabelRow('alarm-clock', 'Flying duty', 'Duty begins this evening');
+                    else if (arrLeg) body += rosterCalLabelRow('plane', 'Flying duty', 'Lands ' + arrLeg.arr + ' · ' + hmH(arrLeg.sta));
+                    else body += '<p class="text-sm text-gray-500 dark:text-gray-400">Flying duty — the roster printed no leg times for this day.</p>';
+                }
+            } else if (kind === 'duty') {
+                const win = RC_STANDBY_TIMES[day.code];
+                body += rosterCalLabelRow(win ? 'clock' : 'book-open', (win ? 'Standby / ' : '') + (day.code || 'Duty'), win ? 'Window ' + hmH(win[0]) + ' – ' + hmH(win[1]) : 'Course or ground duty');
+            } else if (kind === 'lo') {
+                body += rosterCalLabelRow('bed', 'LO · ' + (day.loc || ''), 'Layover');
+            } else if (kind === 'al') {
+                body += rosterCalLabelRow('tree-palm', day.code || 'AALV', 'Annual leave');
+            } else if (kind === 'off') {
+                body += rosterCalLabelRow(day.code === 'OFFD' ? 'circle-slash' : 'coffee', day.code || 'OFF', 'Enjoy your day off');
+            } else {
+                body += '<p class="text-sm text-gray-500 dark:text-gray-400">Nothing on the roster for this day.</p>';
+            }
+            return '<div class="ca-rc-row' + (on ? ' is-on' : ' is-ctx') + '">'
+                + '<div class="ca-rc-gut ' + kcls + (on ? ' is-on' : '') + '">'
+                + '<span class="n">' + parseInt(String(day.ymd).slice(8), 10) + '</span><span class="m">' + mon + '</span></div>'
+                + '<div class="ca-rc-bd">' + body + '</div></div>';
         }
         function rosterCalRenderDetail(ymd) {
             const el = document.getElementById('ca-rc-detail');
             if (!el) return;
-            const day = rcMonthData(String(ymd).slice(0, 7))[ymd];
-            const kind = day ? day.kind : '';
-            let html = '<div class="flex items-center justify-between gap-2">'
-                + '<h3 class="font-bold text-base">' + rosterShortDate(ymd) + '</h3>'
-                + '<span class="ca-micro font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 inline-flex items-center gap-1.5">'
-                + (kind && kind !== 'off' ? '<span class="inline-block w-2.5 h-2.5 rounded-full ca-rc-k-' + kind + '"></span>' : '')
-                + rosterCalKindLabel(kind) + '</span></div>';
-            if (kind === 'fly') {
-                const legs = rosterCalDutyFlights(ymd);
-                if (legs.length) html += rosterCalLegsBlock(legs);
-                else html += '<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Flying duty \u2014 the roster printed no leg times for this day.</p>';
-                const entry = loadArchive().find((e) => e && e.sectorDate === ymd);
-                if (entry) html += '<button type="button" data-rc-open-entry="' + rosterEsc(String(entry.id)) + '" class="mt-3 h-10 px-4 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wide active:scale-95 transition-transform">Saved \u00b7 $' + Number(entry.amount || 0).toFixed(2) + ' \u2014 open</button>';
-            } else if (kind === 'lo') {
-                html += '<p class="text-sm font-bold mt-2">You\u2019re in ' + rosterEsc(day.loc || 'layover') + '.</p>';
-            } else if (kind === 'off') {
-                html += '<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">OFF \u2014 no duty.</p>';
-            } else if (kind === 'al') {
-                html += '<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Annual leave.</p>';
-            } else if (kind === 'duty') {
-                const win = RC_STANDBY_TIMES[day.code];
-                html += '<p class="text-sm font-bold mt-2">' + rosterEsc(day.code) + (win ? ' · ' + hmH(win[0]) + ' – ' + hmH(win[1]) : '') + '</p><p class="ca-micro font-bold text-gray-500 dark:text-gray-400 mt-1 uppercase tracking-wide">Standby or course duty</p>';
+            const flow = rosterCalFlowDays(ymd);
+            const sel = rcDayLookup()(ymd);
+            const dkey = (sel && sel.kind === 'fly' && sel.dkey) ? sel.dkey : '';
+            const legs = dkey ? rosterCalDutyFlights(dkey) : (sel && sel.kind === 'fly' ? rosterCalDutyFlights(ymd) : []);
+            const entry = loadArchive().find((e) => e && e.sectorDate === (dkey || ymd)) || null;
+            let html = '<div class="ca-rc-rise">';
+            if (flow.length) {
+                flow.forEach((d) => { html += rosterCalDayRow(d, d.ymd === String(ymd), legs, entry); });
             } else {
-                html += '<p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Nothing on the roster for this day.</p>';
+                const mi = parseInt(String(ymd).slice(5, 7), 10) - 1;
+                const mon = String(typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[mi] : String(ymd).slice(5, 7)).slice(0, 3).toUpperCase();
+                html += '<div class="ca-rc-row is-on"><div class="ca-rc-gut k-off is-on">'
+                    + '<span class="n">' + parseInt(String(ymd).slice(8), 10) + '</span><span class="m">' + mon + '</span></div>'
+                    + '<div class="ca-rc-bd"><p class="text-sm text-gray-500 dark:text-gray-400">Nothing on the roster for this day.</p></div></div>';
             }
+            html += '</div>';
             el.innerHTML = html;
+            try { lucide.createIcons(); } catch (e) {}
             el.querySelectorAll('[data-rc-open-entry]').forEach((b) => {
                 b.addEventListener('click', () => { try { openArchEntry(b.getAttribute('data-rc-open-entry')); } catch (e) {} });
             });
@@ -4517,6 +4650,14 @@
             const months = rosterCalMonths();
             const todayYm = todayLocalYMD().slice(0, 7);
             rcViewYm = months.indexOf(todayYm) >= 0 ? todayYm : (months[months.length - 1] || todayYm);
+            // hotfix 6: every open starts expanded
+            const gridEl = document.getElementById('ca-rc-grid');
+            if (gridEl) gridEl.classList.remove('hidden');
+            const foldUp = document.getElementById('ca-rc-fold-up'), foldDown = document.getElementById('ca-rc-fold-down');
+            if (foldUp) foldUp.classList.remove('hidden');
+            if (foldDown) foldDown.classList.add('hidden');
+            const foldBtn = document.getElementById('ca-rc-fold');
+            if (foldBtn) foldBtn.setAttribute('aria-label', 'Collapse calendar');
             renderRosterCalendar();
             if (!wrap.getAttribute('data-bound')) {
                 wrap.setAttribute('data-bound', '1');
@@ -4529,10 +4670,31 @@
                 const on = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener('click', fn); };
                 on('ca-rc-prev', () => shift(-1));
                 on('ca-rc-next', () => shift(1));
-                on('ca-rc-today', () => {
+                // hotfix 6 (owner order): the Today pill is gone — a double
+                // tap on the month header carries today instead
+                let rcLastMonthTap = 0;
+                on('ca-rc-jump', () => {
+                    const now = Date.now();
+                    if (now - rcLastMonthTap > 420) { rcLastMonthTap = now; return; }
+                    rcLastMonthTap = 0;
                     const t = todayLocalYMD();
+                    if (rosterCalMonths().indexOf(t.slice(0, 7)) < 0) return;
                     if (t.slice(0, 7) !== rcViewYm) { const dir = t.slice(0, 7) > rcViewYm ? 1 : -1; rcViewYm = t.slice(0, 7); renderRosterCalendar(dir); }
-                    else rosterCalSelect(t);
+                    rosterCalSelect(t);
+                });
+                // hotfix 6 (owner order): the chevron collapses the calendar
+                // so the timeline fills the sheet — and expands it back
+                on('ca-rc-fold', () => {
+                    const g = document.getElementById('ca-rc-grid');
+                    const up = document.getElementById('ca-rc-fold-up');
+                    const down = document.getElementById('ca-rc-fold-down');
+                    const btn = document.getElementById('ca-rc-fold');
+                    if (!g) return;
+                    const collapsed = !g.classList.contains('hidden');
+                    g.classList.toggle('hidden', collapsed);
+                    if (up) up.classList.toggle('hidden', collapsed);
+                    if (down) down.classList.toggle('hidden', !collapsed);
+                    if (btn) btn.setAttribute('aria-label', collapsed ? 'Expand calendar' : 'Collapse calendar');
                 });
                 on('ca-rc-close', () => closeRosterCalendar());
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));

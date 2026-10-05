@@ -145,7 +145,7 @@ const synthItems = [].concat(
     R.ok(wrap && !wrap.closest('#ca-arch-sub') && !wrap.closest('#ca-arch-sheet'), 'the calendar sheet is never nested inside another sheet');
     const TODAY = String(w.eval('todayLocalYMD()'));
     const oct = TODAY.slice(0, 7) === '2026-10';
-    R.ok(!oct || d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'it opens on the current month');
+    R.ok(!oct || d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'it opens on the current month');
     const src = fs.readFileSync(APP, 'utf8');
     const cells = Array.from(d.querySelectorAll('.ca-rc-day[data-ymd]'));
     R.eq(cells.length, 31, 'every day of the month is a tappable cell — duty or not');
@@ -155,6 +155,10 @@ const synthItems = [].concat(
     R.ok(src.indexOf('@media (hover:hover) { .ca-rc-day:hover') >= 0, 'hover states live behind a real-pointer media query');
     R.ok(src.indexOf('.ca-rc-day:active { transform: scale(.92); }') >= 0, 'day cells give immediate press feedback');
     R.ok(src.indexOf('data-lucide="chevron-left"') >= 0 && src.indexOf('data-lucide="chevron-right"') >= 0, 'the chevrons are Lucide icons');
+    // hotfix 6 (owner orders): the header itself
+    R.ok(/^[A-Z][a-z]{2} \d{4}$/.test(d.getElementById('ca-rc-month').textContent), 'the month spells three letters — Oct 2026, never October 2026');
+    R.ok(!d.getElementById('ca-rc-today'), 'the Today pill is gone — a double tap replaces it');
+    R.ok(!!d.getElementById('ca-rc-jump') && !!d.getElementById('ca-rc-fold'), 'the month header button and the fold chevron live in the header');
     R.ok(src.indexOf('ca-rc-shade absolute inset-0 bg-black/60 backdrop-blur-sm') >= 0, 'the calendar shade matches the Settings backdrop — black/60 with the same blur');
     const settingsTop = (src.match(/id="settings-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
     const calTop = (src.match(/id="ca-rc-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
@@ -189,13 +193,17 @@ const synthItems = [].concat(
     R.ok(cells.every(c => !!c.querySelector('.ca-rc-bar')), 'every cell keeps the bar slot — the indicator reads on duty days and off days alike');
     // ---- selection + the detail section ----
     R.ok(todayCell.classList.contains('is-selected'), 'opening the calendar selects today');
-    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf(String(w.eval("rosterShortDate('" + TODAY + "')"))) >= 0, 'the detail section retells the selected day');
+    const rows = () => Array.from(d.querySelectorAll('#ca-rc-detail .ca-rc-row'));
+    const rowN = (n) => rows().find(r => r.querySelector('.ca-rc-gut .n') && r.querySelector('.ca-rc-gut .n').textContent === String(n));
+    const gut = d.querySelector('.ca-rc-row.is-on .ca-rc-gut');
+    R.ok(gut && gut.querySelector('.n') && gut.querySelector('.n').textContent === String(parseInt(TODAY.slice(8), 10)), 'the selected day is the highlighted row, its number in the date gutter');
+    R.ok(gut && gut.querySelector('.m') && gut.querySelector('.m').textContent.length === 3, 'the gutter stacks the day over a three-letter month');
     // owner report, issue 4: a FLOWN turnaround retells its legs
     const past = cells.find(c => c.getAttribute('data-ymd') === '2026-10-02');
     past.click();
     await wait(300);
     let det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
-    R.ok(det.indexOf('SQ 736') >= 0 && det.indexOf('SQ 735') >= 0 && det.indexOf('Turnaround') >= 0, 'the flown 2 Oct HKT turnaround retells both legs');
+    R.ok(det.indexOf('SQ 736') >= 0 && det.indexOf('SQ 735') >= 0, 'the flown 2 Oct HKT turnaround retells both legs as flight cards');
     R.ok(det.indexOf('1615H') >= 0 && det.indexOf('2105H') >= 0, 'past legs keep their times (never-pruned store)');
     R.ok(det.indexOf('no leg times') < 0, 'a flown duty never says "no leg times for this day" again');
     // owner report, issue 2: the (+1) format
@@ -203,8 +211,14 @@ const synthItems = [].concat(
     await wait(300);
     det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 241') >= 0 && det.indexOf('SQ 242') >= 0, 'the SYD duty names both sectors');
-    R.ok(det.indexOf('SIN \u2192 SYD \u2192 SIN') >= 0 && det.indexOf('12 Oct \u2013 14 Oct') >= 0, 'the duty\u2019s span reads from departure to landing');
-    R.ok(det.indexOf('13 Oct \u00b7 1900H \u2192 (+1) 0015H') >= 0, 'a leg landing past midnight wears the owner\u2019s (+1) format');
+    R.ok(rowN(12) && rowN(13) && rowN(14) && !rowN(11) && !rowN(15), 'the duty flows as its own day rows — the 12th through the 14th');
+    R.ok(rowN(13).classList.contains('is-on') && rowN(12).classList.contains('is-ctx') && rowN(14).classList.contains('is-ctx'), 'the selected day is the highlighted band, its trip muted around it');
+    const t13 = rowN(13).textContent.replace(/\s+/g, ' ');
+    R.ok(t13.indexOf('LO · SYD') >= 0 && t13.indexOf('SQ 242') >= 0, 'the 13th wakes in SYD and flies the leg home — layover label above the flight card');
+    R.ok(t13.indexOf('1900H') >= 0 && t13.indexOf('(+1) 0015H') >= 0, 'a leg landing past midnight wears the owner\u2019s (+1) format');
+    R.ok(t13.indexOf('8H 15M') >= 0, 'the card shows the roster\u2019s own block time — 8H 15M');
+    const t14 = rowN(14).textContent.replace(/\s+/g, ' ');
+    R.ok(t14.indexOf('Lands SIN') >= 0 && t14.indexOf('0015H') >= 0, 'the landing day reads Lands SIN · 0015H');
     const future = cells.find(c => c.getAttribute('data-ymd') === '2026-10-27');
     const cardsBefore = d.querySelectorAll('[data-calc-card]').length;
     future.click();
@@ -214,40 +228,45 @@ const synthItems = [].concat(
     R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'no popup — the day\u2019s details live in the section below the divider');
     det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 164') >= 0 && det.indexOf('SQ 163') >= 0, 'the detail names every leg of the duty');
-    R.ok(det.indexOf('Turnaround') >= 0, 'a same-day out-and-back reads Turnaround');
-    R.ok(det.indexOf('SIN \u2192 SAI \u2192 SIN') >= 0, 'the detail shows the full route');
+    R.ok(rowN(27) && rowN(27).querySelectorAll('.ca-rc-trk .pt').length === 4, 'a two-sector day stacks two dashed-track cards');
     R.ok(det.indexOf('0840H') >= 0 && det.indexOf('0955H') >= 0, 'times read in the 24-hour HHMMH house format');
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-03').click();
     await wait(200);
-    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('OFF') >= 0, 'an OFF day says so in the detail section');
+    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('ATDO') >= 0 && d.getElementById('ca-rc-detail').textContent.indexOf('Enjoy your day off') >= 0, 'an off day shows its roster code and its caption');
     // standby windows (owner-provided timings)
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-20').click();
     await wait(200);
     let sbDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
-    R.ok(sbDet.indexOf('SN60') >= 0 && sbDet.indexOf('0600H') >= 0 && sbDet.indexOf('2159H') >= 0, 'a standby day shows its window — SN60 0600H to 2159H');
+    R.ok(sbDet.indexOf('Standby / SN60') >= 0 && sbDet.indexOf('Window 0600H') >= 0 && sbDet.indexOf('2159H') >= 0, 'a standby day shows its window — Standby / SN60, 0600H to 2159H');
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-04').click();
     await wait(200);
     sbDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
-    R.ok(sbDet.indexOf('SSS3') >= 0 && sbDet.indexOf('1200H') >= 0 && sbDet.indexOf('2359H') >= 0, 'SSS3 reads its 1200H to 2359H window');
+    R.ok(sbDet.indexOf('Standby / SSS3') >= 0 && sbDet.indexOf('Window 1200H') >= 0 && sbDet.indexOf('2359H') >= 0, 'SSS3 reads its 1200H to 2359H window');
     // a saved duty offers its earnings entry from the detail section
     w.eval("persistArchive([{ id: 'e1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-29', flightType: 'Layover', stationDisplay: 'HKT', amount: 318.55 }])");
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-29').click();
     await wait(200);
-    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('318.55') >= 0, 'a saved duty shows its amount in the detail');
+    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('318.55') >= 0, 'a saved duty shows its amount beside the drill-in chevron');
     d.querySelector('#ca-rc-detail [data-rc-open-entry]').click();
     await wait(400);
     R.ok(!d.getElementById('ca-arch-sub').classList.contains('hidden'), 'the saved entry opens from the detail section');
     w.eval('closeArchSub()');
     await wait(300);
     // ---- month navigation: bounded arrows, label, rebuild, selection reset ----
-    R.ok(d.getElementById('ca-rc-prev').classList.contains('invisible'), 'no previous data month — the back arrow is not shown');
-    R.ok(!d.getElementById('ca-rc-next').classList.contains('invisible'), 'November holds roster days — the forward arrow shows');
+    R.ok(d.getElementById('ca-rc-prev').classList.contains('ca-rc-off'), 'no previous data month — the back arrow grays out');
+    R.ok(!d.getElementById('ca-rc-prev').classList.contains('invisible'), 'but it never disappears (owner order)');
+    R.ok(!d.getElementById('ca-rc-next').classList.contains('ca-rc-off'), 'November holds roster days — the forward arrow stays live');
     d.getElementById('ca-rc-next').click();
     await wait(500);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('November 2026') === 0, 'the month/year label follows the chevron');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'the month/year label follows the chevron');
     R.ok(d.querySelectorAll('.ca-rc-day[data-ymd="2026-10-27"]').length === 0, 'the grid rebuilds when the month changes');
     const novSel = d.querySelector('.ca-rc-day.is-selected');
     R.ok(novSel && novSel.getAttribute('data-ymd') === (oct ? '2026-11-01' : TODAY), 'a month without today resets the selection to its first day');
+    // hotfix 6: the never-pruned store carries the aircraft, block time and
+    // report time the flight cards need
+    const allStore = JSON.parse(w.localStorage.getItem('crewAssist.allFlights') || '{}');
+    const a306 = (allStore['2026-11'] || []).find(f => f && f.fn === '306');
+    R.ok(a306 && a306.ac === '359' && a306.ft === '14:30' && a306.rpt === '2310', 'the allFlights store carries aircraft 359, FT 14:30 and report 2310 for SQ 306');
     // owner report: 8–12 Nov renders as ONE gold capsule
     const novWeek = d.querySelector('.ca-rc-day[data-ymd="2026-11-08"]').parentElement;
     const novPills = Array.from(novWeek.querySelectorAll('.ca-rc-pill'));
@@ -260,12 +279,39 @@ const synthItems = [].concat(
     await wait(300);
     det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 306') >= 0 && det.indexOf('SQ 305') >= 0, '9 Nov retells the WHOLE London duty');
-    R.ok(det.indexOf('SIN \u2192 LHR \u2192 SIN') >= 0 && det.indexOf('9 Nov \u2013 12 Nov') >= 0, 'the duty spans from departure to landing');
-    R.ok(det.indexOf('11 Nov \u00b7 0910H \u2192 (+1) 0615H') >= 0, 'the homebound leg wears its (+1)');
+    R.eq(rows().length, 5, 'the London duty flows as five day rows — the 8th through the 12th');
+    R.ok(rowN(9).classList.contains('is-on') && rowN(8).classList.contains('is-ctx') && rowN(10).classList.contains('is-ctx') && rowN(11).classList.contains('is-ctx') && rowN(12).classList.contains('is-ctx'), 'the selected day is the highlighted band, the rest of the trip muted around it');
+    const t9 = rowN(9).textContent.replace(/\s+/g, ' ');
+    R.ok(t9.indexOf('SQ 306') >= 0 && t9.indexOf('359') >= 0 && t9.indexOf('0110H') >= 0 && t9.indexOf('0740H') >= 0, 'the 9th carries the SQ 306 hero card — aircraft 359, SIN 0110H to LHR 0740H');
+    R.ok(t9.indexOf('14H 30M') >= 0, 'the block time reads from the roster\u2019s own FT row — 14H 30M');
+    R.ok(rowN(9).querySelectorAll('.ca-rc-trk .pt').length === 2 && !!rowN(9).querySelector('.ca-rc-trk .ln'), 'the route renders as a dashed track with a filled dot at each end');
+    R.ok(!!rowN(9).querySelector('[data-lucide="plane"]'), 'the plane rides the track, nose toward the destination');
+    const t8 = rowN(8).textContent.replace(/\s+/g, ' ');
+    R.ok(t8.indexOf('Report 2310H') >= 0, 'the report day shows its report time — 2310H');
+    const t11 = rowN(11).textContent.replace(/\s+/g, ' ');
+    R.ok(t11.indexOf('LO · LHR') >= 0 && t11.indexOf('SQ 305') >= 0, 'the 11th wakes in LHR — layover label stacked above its flight card');
+    R.ok(t11.indexOf('0910H') >= 0 && t11.indexOf('(+1) 0615H') >= 0 && t11.indexOf('13H 05M') >= 0, 'the homebound leg wears its (+1) and the roster\u2019s 13H 05M block');
     d.querySelector('.ca-rc-day[data-ymd="2026-11-12"]').click();
     await wait(300);
-    R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('SQ 305') >= 0, 'the landing day on the 12th retells the same duty');
-    R.ok(d.getElementById('ca-rc-next').classList.contains('invisible'), 'no month after November — the forward arrow is not shown');
+    const t12b = rowN(12).textContent.replace(/\s+/g, ' ');
+    R.ok(t12b.indexOf('Lands SIN') >= 0 && t12b.indexOf('0615H') >= 0, 'the landing day on the 12th reads Lands SIN · 0615H');
+    R.ok(d.getElementById('ca-rc-next').classList.contains('ca-rc-off'), 'no month after November — the forward arrow grays out');
+    // hotfix 6 (owner orders): the fold chevron and the double-tap month
+    const gridEl = d.getElementById('ca-rc-grid');
+    d.getElementById('ca-rc-fold').click();
+    await wait(150);
+    R.ok(gridEl.classList.contains('hidden'), 'the chevron collapses the calendar for the timeline');
+    R.ok(rows().length === 5, 'the timeline keeps flowing with the grid folded away');
+    d.getElementById('ca-rc-fold').click();
+    await wait(150);
+    R.ok(!gridEl.classList.contains('hidden'), 'and expands it back');
+    d.getElementById('ca-rc-jump').click();
+    d.getElementById('ca-rc-jump').click();
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'a double tap on the month header returns to today\u2019s month');
+    R.ok(d.querySelector('.ca-rc-day.is-selected') && d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === TODAY, 'and lands the selection on today');
+    d.getElementById('ca-rc-next').click();
+    await wait(500);
     // hotfix 5 (owner order): swipes change months — and respect the bounds
     const grid = d.getElementById('ca-rc-grid');
     const swipe = (x1, y1, x2, y2) => {
@@ -274,22 +320,22 @@ const synthItems = [].concat(
     };
     swipe(200, 300, 20, 305);
     await wait(600);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('November 2026') === 0, 'swiping left past the last data month does nothing');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'swiping left past the last data month does nothing');
     swipe(200, 300, 420, 305);
     await wait(600);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'swiping right returns to October');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'swiping right returns to October');
     swipe(200, 300, 215, 460);
     await wait(600);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'a vertical drag never changes the month');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'a vertical drag never changes the month');
     swipe(200, 300, 20, 300);
     await wait(600);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('November 2026') === 0, 'swiping left opens November');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'swiping left opens November');
     d.getElementById('ca-rc-prev').click();
     await wait(500);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'the back chevron returns to October');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'the back chevron returns to October');
     swipe(200, 300, 420, 300);
     await wait(600);
-    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('October 2026') === 0, 'swiping right before the first data month does nothing');
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'swiping right before the first data month does nothing');
     R.ok(d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === TODAY, 'a month holding today reselects today');
     // Escape closes the sheet
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -354,7 +400,7 @@ const synthItems = [].concat(
     R.ok(!d.getElementById('ca-rc-sheet').classList.contains('translate-y-full'), 'the sheet has slid up');
     R.ok(d.querySelectorAll('.ca-rc-pill').length === 0, 'a clean device renders no pills');
     R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('Nothing on the roster') >= 0, 'a day without duties says so in the detail');
-    R.ok(d.getElementById('ca-rc-prev').classList.contains('invisible') && d.getElementById('ca-rc-next').classList.contains('invisible'), 'with a single month, neither arrow shows');
+    R.ok(d.getElementById('ca-rc-prev').classList.contains('ca-rc-off') && d.getElementById('ca-rc-next').classList.contains('ca-rc-off'), 'with a single month, both arrows gray out — neither disappears');
     w.eval('openRosterCalendar()');
     await wait(500);
     R.ok(!d.getElementById('ca-roster-cal').classList.contains('hidden'), 'the calendar opens even with no roster');
