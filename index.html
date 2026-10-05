@@ -251,7 +251,9 @@
            Duty runs render as pills BEHIND the numbers: a circle for a
            single day, one seamless capsule for a multi-day run (rounded
            only at its true ends, flush where the run continues past a week
-           or month edge). Four tints keep the duty types apart. */
+           or month edge). Five tints keep the duty types apart — flight
+           blue, standby green, course bronze, layover teal, leave purple
+           (hotfix 10). */
         .ca-rc-day { position: relative; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 0.75rem; transition: transform .12s ease, background-color .15s ease; -webkit-tap-highlight-color: transparent; }
         .ca-rc-day:active { transform: scale(.92); }
         .ca-rc-num { font-size: 13px; font-weight: 700; line-height: 16px; color: rgba(31,41,55,.92); }
@@ -262,10 +264,17 @@
         .ca-rc-pill { position: absolute; top: 6px; height: 38px; pointer-events: none; }
         .ca-rc-pill.is-circle { width: 38px; border-radius: 999px; transform: translateX(-50%); }
         .ca-rc-pill.is-capsule { border-radius: 0; }
-        .ca-rc-k-fly { background: rgba(201,162,39,.34); }
-        html.dark .ca-rc-k-fly { background: rgba(201,162,39,.42); }
-        .ca-rc-k-duty { background: rgba(59,130,246,.28); }
-        html.dark .ca-rc-k-duty { background: rgba(96,165,250,.36); }
+        /* hotfix 10 (owner order): the duty tints — flight BLUE, standby
+           GREEN, course BROWNISH GOLD — each tuned for both themes (the
+           light pills sit under near-black day numbers, the dark pills
+           must glow off the black scrim). Layover keeps its teal, leave
+           its purple; selection stays the app's gold everywhere. */
+        .ca-rc-k-fly { background: rgba(37,99,235,.30); }
+        html.dark .ca-rc-k-fly { background: rgba(96,165,250,.36); }
+        .ca-rc-k-sb { background: rgba(21,128,61,.24); }
+        html.dark .ca-rc-k-sb { background: rgba(74,222,128,.30); }
+        .ca-rc-k-crs { background: rgba(146,94,14,.26); }
+        html.dark .ca-rc-k-crs { background: rgba(212,167,76,.34); }
         .ca-rc-k-lo { background: rgba(20,184,166,.28); }
         html.dark .ca-rc-k-lo { background: rgba(45,212,191,.34); }
         .ca-rc-k-al { background: rgba(168,85,247,.26); }
@@ -299,16 +308,25 @@
         html.dark .ca-rc-gut .m { color: rgba(229,231,235,.55); }
                 .ca-rc-gut::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: transparent; }
         .ca-rc-row.is-ctx .ca-rc-gut::after { background: rgba(127,127,127,.18); }
-        .ca-rc-gut.k-fly { background: rgba(201,162,39,.12); }
-        .ca-rc-gut.k-duty { background: rgba(59,130,246,.10); }
-        html.dark .ca-rc-gut.k-duty { background: rgba(96,165,250,.12); }
+        .ca-rc-gut.k-fly { background: rgba(37,99,235,.10); }
+        html.dark .ca-rc-gut.k-fly { background: rgba(96,165,250,.12); }
         .ca-rc-gut.k-lo, .ca-rc-gut.k-off, .ca-rc-gut.k-al { background: rgba(127,127,127,.10); }
-        .ca-rc-gut.k-fly.is-on { background: rgba(201,162,39,.24); }
-        .ca-rc-gut.k-fly.is-on::after { background: #c9a227; }
-        .ca-rc-gut.k-duty.is-on { background: rgba(59,130,246,.20); }
-        html.dark .ca-rc-gut.k-duty.is-on { background: rgba(96,165,250,.22); }
-        .ca-rc-gut.k-duty.is-on::after { background: #3b82f6; }
-        html.dark .ca-rc-gut.k-duty.is-on::after { background: #60a5fa; }
+        .ca-rc-gut.k-sb { background: rgba(21,128,61,.09); }
+        html.dark .ca-rc-gut.k-sb { background: rgba(74,222,128,.10); }
+        .ca-rc-gut.k-crs { background: rgba(146,94,14,.09); }
+        html.dark .ca-rc-gut.k-crs { background: rgba(212,167,76,.12); }
+        .ca-rc-gut.k-fly.is-on { background: rgba(37,99,235,.20); }
+        html.dark .ca-rc-gut.k-fly.is-on { background: rgba(96,165,250,.22); }
+        .ca-rc-gut.k-fly.is-on::after { background: #2563eb; }
+        html.dark .ca-rc-gut.k-fly.is-on::after { background: #60a5fa; }
+        .ca-rc-gut.k-sb.is-on { background: rgba(21,128,61,.18); }
+        html.dark .ca-rc-gut.k-sb.is-on { background: rgba(74,222,128,.20); }
+        .ca-rc-gut.k-sb.is-on::after { background: #15803d; }
+        html.dark .ca-rc-gut.k-sb.is-on::after { background: #4ade80; }
+        .ca-rc-gut.k-crs.is-on { background: rgba(146,94,14,.18); }
+        html.dark .ca-rc-gut.k-crs.is-on { background: rgba(212,167,76,.20); }
+        .ca-rc-gut.k-crs.is-on::after { background: #92600e; }
+        html.dark .ca-rc-gut.k-crs.is-on::after { background: #d4a74c; }
         .ca-rc-gut.k-lo.is-on, .ca-rc-gut.k-off.is-on, .ca-rc-gut.k-al.is-on { background: rgba(127,127,127,.18); }
         .ca-rc-gut.k-lo.is-on::after, .ca-rc-gut.k-off.is-on::after { background: rgba(127,127,127,.65); }
         .ca-rc-gut.k-al.is-on::after { background: rgba(168,85,247,.75); }
@@ -1975,6 +1993,7 @@
                 { c: 'fix', t: 'Hotfix: the fold chevron animates the calendar away and back.' },
                 { c: 'fix', t: 'Hotfix: month swipes glide sideways like the timeline scrolls.' },
                 { c: 'fix', t: 'Hotfix: the timeline opens on today and follows every tap.' },
+                { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -4073,9 +4092,10 @@
                 else if (duty === 'AALV') { if (!t.kind) { t.kind = 'al'; t.code = duty; } }
                 else if (!t.kind) { t.kind = 'duty'; t.code = duty; }
             });
-            // hotfix 5 (owner order): a duty renders as ONE gold capsule,
-            // report day through final landing — the layover days inside the
-            // span join the duty's run (8–12 Nov SIN-LHR-SIN is five gold
+            // hotfix 5 (owner order): a duty renders as ONE capsule (gold
+            // until hotfix 10 recolored fly duties blue), report day
+            // through final landing — the layover days inside the
+            // span join the duty's run (8–12 Nov SIN-LHR-SIN is five
             // days, no green circle on the 10th), days the generator left
             // blank inside a span are filled so the bar never breaks, and a
             // layover run that runs INTO a duty (a roster that begins
@@ -4432,13 +4452,13 @@
                 const openL = sg.start > r.start || r.contPrev;   // the bar continues left of this segment
                 const openR = sg.end < r.end || r.contNext;       // …and/or right of it
                 if (sg.start === sg.end && !openL && !openR) {
-                    return '<span class="ca-rc-pill is-circle ca-rc-k-' + r.kind + '" style="left: calc(' + (sg.s + 0.5) + ' * 100% / 7);" aria-hidden="true"></span>';
+                    return '<span class="ca-rc-pill is-circle ca-rc-k-' + rcTintKind(r.kind, r.code) + '" style="left: calc(' + (sg.s + 0.5) + ' * 100% / 7);" aria-hidden="true"></span>';
                 }
                 const left = openL ? 'calc(' + sg.s + ' * 100% / 7)' : 'calc(' + sg.s + ' * 100% / 7 + 3px)';
                 const width = 'calc(' + (sg.e - sg.s + 1) + ' * 100% / 7' + (openL ? '' : ' - 3px') + (openR ? '' : ' - 3px') + ')';
                 const rL = openL ? '0' : '999px';
                 const rR = openR ? '0' : '999px';
-                return '<span class="ca-rc-pill is-capsule ca-rc-k-' + r.kind + '" style="left: ' + left + '; width: ' + width + '; border-radius: ' + rL + ' ' + rR + ' ' + rR + ' ' + rL + ';" aria-hidden="true"></span>';
+                return '<span class="ca-rc-pill is-capsule ca-rc-k-' + rcTintKind(r.kind, r.code) + '" style="left: ' + left + '; width: ' + width + '; border-radius: ' + rL + ' ' + rR + ' ' + rR + ' ' + rL + ';" aria-hidden="true"></span>';
             };
             let html = '<div class="grid grid-cols-7 mb-1.5">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dw) => '<span class="ca-micro font-bold text-gray-400 dark:text-gray-500 text-center py-1">' + dw + '</span>').join('') + '</div>';
             const startPad = new Date(y, m, 1).getDay();
@@ -4560,39 +4580,7 @@
             });
             // hotfix 7: a grid tap reveals its row in the timeline, and the
             // window re-renders around wherever the timeline now sits
-            if (!opts.noScroll && det && rcTL) {
-                const i = rcTL.days.indexOf(rcSelected);
-                if (i >= 0) {
-                    // hotfix 9 (owner orders): the selected day's entry is
-                    // THE FIRST LINE below the calendar — every reveal scrolls
-                    // (even when the row is already partly on screen), and it
-                    // anchors flush at the timeline's top. The anchor is
-                    // re-asserted after each window render because the
-                    // renderer's measured heights correct the offsets — the
-                    // row lands exactly, not approximately. The scroll-flip's
-                    // +24 probe still lands inside the revealed row (rows are
-                    // ≥46px tall), so the reveal can never flip the month.
-                    rcTlProgUntil = Date.now() + 250;
-                    let target = Math.max(0, rcTL.off[i]);
-                    for (let k = 0; k < 4; k++) {
-                        det.scrollTop = target;            // sticks once the spacers give the scroller its range
-                        rosterCalTLWindow();                // renders the window and corrects the offsets it measures
-                        const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + rcSelected + '"]');
-                        if (!row) {                        // fresh open: the window has not reached the row yet — anchor by offset
-                            if ((det.scrollTop || 0) === target) break;
-                            continue;
-                        }
-                        // engines disagree whether a scroller's padding-top
-                        // scrolls with its content — measure where the row
-                        // really sits and correct, never guess
-                        const delta = row.getBoundingClientRect().top - det.getBoundingClientRect().top;
-                        if (Math.abs(delta) <= 1) break;   // the row starts exactly at the detail's top edge
-                        const next = Math.max(0, target + delta);
-                        if (next === target) break;
-                        target = next;
-                    }
-                }
-            }
+            if (!opts.noScroll && det && rcTL) rcRevealSelected();
             rosterCalTLWindow();
             // hotfix 8: wherever the app itself left the scroller — after a
             // reveal or a re-render clamped it — is its known resting spot;
@@ -4609,6 +4597,16 @@
             SS77: ['0000', '2359'], SS7W: ['0000', '2359'], SSN1: ['0000', '2359'], SSN2: ['0000', '1159'], SSN3: ['1200', '2359'],
             SN60: ['0600', '2159'], SN80: ['0800', '1459'], SN15: ['0000', '1459'], SN22: ['0000', '2159']
         };
+        // hotfix 10 (owner order): standby and course split their tints —
+        // standby GREEN, course BROWNISH GOLD. Standby is exactly the
+        // owner's code table above; every other duty code (SDLC and
+        // friends) is a course day. Merging is untouched — duty runs still
+        // join only while the SAME code continues, so this is purely a
+        // colour-key change on top of the existing kind system.
+        function rcTintKind(kind, code) {
+            if (kind !== 'duty') return kind;
+            return Object.prototype.hasOwnProperty.call(RC_STANDBY_TIMES, String(code || '')) ? 'sb' : 'crs';
+        }
         // hotfix 7 (owner orders): the bottom detail is a VIRTUALIZED
         // timeline — every date of the attached roster, window-rendered so
         // even years of duties scroll smoothly. Scrolling it flips the
@@ -4622,6 +4620,73 @@
         let rcTlScrollT = null;
         let rcTlProgUntil = 0;     // hotfix 8: a scroll the app itself caused (the row reveal) never flips the month
         let rcTlTopKnown = -1;     // hotfix 8: the scroller's app-set resting spot — see rosterCalSelect
+        // hotfix 10 (owner report: the FIRST open still showed the roster's
+        // earliest dates instead of today): the reveal used to run exactly
+        // once, at open — while the sheet still sat fully off-screen at
+        // translateY(100%). WebKit can silently drop a scrollTop write to a
+        // scroller in that state, so the anchor never stuck and no later
+        // pass corrected it. The reveal is now a standalone, idempotent
+        // function that the open RE-ASSERTS as the sheet slides in and
+        // settles — any engine that ignored, clamped or restored the
+        // scroller mid-slide is healed a beat later, on every device.
+        function rcRevealSelected() {
+            const det = document.getElementById('ca-rc-detail');
+            if (!det || !rcTL) return;
+            const i = rcTL.days.indexOf(rcSelected);
+            if (i < 0) return;
+            // hotfix 9 (owner orders): the selected day's entry is THE FIRST
+            // LINE below the calendar — every reveal scrolls (even when the
+            // row is already partly on screen) and anchors flush at the
+            // timeline's top, re-asserted after each window render because
+            // the renderer's measured heights correct the offsets — the row
+            // lands exactly, not approximately. The scroll-flip's +24 probe
+            // still lands inside the revealed row (rows are ≥46px tall), so
+            // the reveal can never flip the month.
+            rcTlProgUntil = Date.now() + 250;
+            let target = Math.max(0, rcTL.off[i]);
+            for (let k = 0; k < 4; k++) {
+                det.scrollTop = target;            // sticks once the spacers give the scroller its range
+                rosterCalTLWindow();                // renders the window and corrects the offsets it measures
+                const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + rcSelected + '"]');
+                if (!row) {                        // the window has not reached the row yet — anchor by offset
+                    if ((det.scrollTop || 0) === target) break;
+                    continue;
+                }
+                // engines disagree whether a scroller's padding-top scrolls
+                // with its content — measure where the row really sits and
+                // correct, never guess
+                const delta = row.getBoundingClientRect().top - det.getBoundingClientRect().top;
+                if (Math.abs(delta) <= 1) break;   // the row starts exactly at the detail's top edge
+                const next = Math.max(0, target + delta);
+                if (next === target) break;
+                target = next;
+            }
+            rcTlTopKnown = det.scrollTop;
+        }
+        let rcRevealT = [];        // the open's pending re-assertion timers
+        function rcRevealCancel() { rcRevealT.forEach((t) => clearTimeout(t)); rcRevealT = []; }
+        // Each pass is a no-op unless the selected day is NOT the first line
+        // (its row is unrendered, or measurably below the detail's top) — so
+        // repeated passes never fight a reveal that already landed, and a
+        // real touch cancels whatever is still pending.
+        function rcRevealArm() {
+            rcRevealCancel();
+            [90, 360, 760].forEach((ms) => {
+                rcRevealT.push(setTimeout(() => {
+                    const wrap = document.getElementById('ca-roster-cal');
+                    const det = document.getElementById('ca-rc-detail');
+                    if (!wrap || wrap.classList.contains('hidden') || !det || !rcTL) return;
+                    if (rcTL.days.indexOf(rcSelected) < 0) return;
+                    const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + rcSelected + '"]');
+                    let off = 0;
+                    if (row) off = row.getBoundingClientRect().top - det.getBoundingClientRect().top;
+                    if (row && Math.abs(off) <= 2) { rcTlTopKnown = det.scrollTop; return; }
+                    rcRevealSelected();
+                    rosterCalTLWindow();
+                    rcTlTopKnown = det.scrollTop;
+                }, ms));
+            });
+        }
         const rcEarnCache = {};    // dkey -> amount (or null: unpriceable)
         const rcLegCache = {};     // dkey -> legs
         function rcDutyLegs(dkey) {
@@ -4863,7 +4928,7 @@
         }
         function rosterCalDayRow(day, on) {
             const kind = day.kind || '';
-            const kcls = { fly: 'k-fly', duty: 'k-duty', lo: 'k-lo', al: 'k-al', off: 'k-off' }[kind] || 'k-off';
+            const kcls = { fly: 'k-fly', sb: 'k-sb', crs: 'k-crs', lo: 'k-lo', al: 'k-al', off: 'k-off' }[rcTintKind(kind, day.code)] || 'k-off';
             const mi = parseInt(String(day.ymd).slice(5, 7), 10) - 1;
             const mon = String(typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[mi] : String(day.ymd).slice(5, 7)).slice(0, 3).toUpperCase();
             let body = '';
@@ -4963,8 +5028,15 @@
             // hotfix 7: the timeline spans every attached roster date
             rosterCalTimelineInit();
             renderRosterCalendar();
+            // hotfix 10: the reveal above ran while the sheet was still
+            // parked off-screen — re-assert it as the sheet slides in and
+            // settles (idempotent; any touch cancels the pending passes)
+            rcRevealArm();
             if (!wrap.getAttribute('data-bound')) {
                 wrap.setAttribute('data-bound', '1');
+                // hotfix 10: a real touch takes ownership of the timeline —
+                // the open's pending reveal re-assertions stand down
+                wrap.addEventListener('pointerdown', rcRevealCancel, true);
                 // hotfix 8 (owner orders): month changes glide sideways, the
                 // drag following the finger like the timeline's vertical
                 // scroll. The drag state lives up here so every month-changer
@@ -5263,6 +5335,7 @@
             const wrap = document.getElementById('ca-roster-cal');
             const sheet = document.getElementById('ca-rc-sheet');
             if (!wrap || wrap.classList.contains('hidden')) return;
+            rcRevealCancel();   // hotfix 10: no reveal pass outlives the sheet
             if (typeof caSheetFocusOut === 'function') { try { caSheetFocusOut(sheet); } catch (e) {} }
             const shade = wrap.querySelector('.ca-rc-shade');
             if (shade) shade.classList.add('opacity-0');

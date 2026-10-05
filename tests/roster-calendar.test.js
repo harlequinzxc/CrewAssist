@@ -179,7 +179,7 @@ const synthItems = [].concat(
     const weekRows = d.querySelectorAll('#ca-rc-grid .relative.grid');
     // owner report, issue 1: two turnarounds on back-to-back days are two
     // circles, never one capsule
-    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(4.5 * 100% / 7)') >= 0), '1 Oct (KUL turnaround) is its own gold circle');
+    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(4.5 * 100% / 7)') >= 0), '1 Oct (KUL turnaround) is its own blue circle (hotfix 10: fly = blue)');
     R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(5.5 * 100% / 7)') >= 0), '2 Oct (HKT turnaround) is a SEPARATE circle — duties never bleed together');
     R.eq(weekRows[0].querySelectorAll('.ca-rc-pill').length, 2, 'the week of 1–3 Oct holds exactly the two turnaround circles — the OFF day shows none');
     // owner report, issue 2: 12–14 Oct is one continuous capsule
@@ -190,11 +190,11 @@ const synthItems = [].concat(
     R.ok(!!melA && styleOf(melA).indexOf('999px 0 0 999px') >= 0, 'the 23–24 Oct segment ends flush at the week edge — the duty continues');
     const melB = Array.from(weekRows[4].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(0 * 100% / 7)') >= 0);
     R.ok(!!melB && styleOf(melB).indexOf('0 999px 999px 0') >= 0, '…and picks up flush on Sunday the 25th, rounding off at its landing');
-    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-duty') >= 0 && styleOf(p).indexOf('calc(2.5 * 100% / 7)') >= 0) &&
-        pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-duty') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0) &&
-        !pills.some(p => p.className.indexOf('ca-rc-k-duty') >= 0 && p.className.indexOf('is-capsule') >= 0), '6 and 7 Oct are two separate standby circles — SSS1 and SS80 never merge');
-    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-duty') >= 0 && styleOf(p).indexOf('calc(2.5 * 100% / 7)') >= 0 && p.className.indexOf('ca-rc-k-duty') >= 0) &&
-        pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-duty') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0), '20 and 21 Oct are two separate standby circles (SN60, SN80 — owner report)');
+    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(2.5 * 100% / 7)') >= 0) &&
+        pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0) &&
+        !pills.some(p => p.className.indexOf('ca-rc-k-sb') >= 0 && p.className.indexOf('is-capsule') >= 0), '6 and 7 Oct are two separate standby circles — SSS1 and SS80 never merge');
+    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(2.5 * 100% / 7)') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0) &&
+        pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0), '20 and 21 Oct are two separate standby circles (SN60, SN80 — owner report)');
     R.eq(d.querySelectorAll('.ca-rc-pill.ca-rc-k-lo').length, 0, 'layover days never draw green pills at all (owner order)');
     // ---- the today bar ----
     const todayCell = cells.find(c => c.getAttribute('data-ymd') === TODAY);
@@ -218,6 +218,63 @@ const synthItems = [].concat(
     }
     R.ok(src.indexOf('hotfix 9 (owner report): the wrap must be VISIBLE') >= 0, 'the calendar un-hides before its timeline renders — a display:none scroller silently ignores the reveal');
     R.ok(src.indexOf('detEl.scrollTop = maxTop') >= 0, 'a stale scroll offset clamps into the new timeline before its window renders');
+    // hotfix 10 (owner orders): the duty tints — flight BLUE, standby GREEN,
+    // course BROWNISH GOLD — both themes, and standby splits from course by
+    // the owner's own standby code table (SDLC and friends are courses)
+    R.ok(src.indexOf('rgba(37,99,235,.30)') >= 0 && src.indexOf('rgba(96,165,250,.36)') >= 0, 'flight pills are BLUE — tuned for light and dark themes');
+    R.ok(src.indexOf('rgba(21,128,61,.24)') >= 0 && src.indexOf('rgba(74,222,128,.30)') >= 0, 'standby pills are GREEN in both themes');
+    R.ok(src.indexOf('rgba(146,94,14,.26)') >= 0 && src.indexOf('rgba(212,167,76,.34)') >= 0, 'course pills are BROWNISH GOLD in both themes');
+    R.ok(src.indexOf('ca-rc-k-duty') < 0, 'the old shared duty tint is gone — standby and course are separate colors');
+    R.ok(src.indexOf('function rcTintKind') >= 0, 'standby vs course splits through rcTintKind on the standby code table');
+    R.ok(pills.some(p => p.className.indexOf('ca-rc-k-sb') >= 0), 'the standby days render green circles in the grid (hotfix 10)');
+    // the split itself: standby is exactly the owner's code table, every
+    // other duty code (SDLC and friends) is a course — proven on a synthetic
+    // course day so the pin never leans on stitched-month parse quirks
+    {
+        R.eq(String(w.eval('rcTintKind("duty", "SSS1")')), 'sb', 'standby codes tint green');
+        R.eq(String(w.eval('rcTintKind("duty", "SDLC")')), 'crs', 'course codes tint brownish gold');
+        R.eq(String(w.eval('rcTintKind("fly", "")')), 'fly', 'fly days keep their own tint');
+        const storeKey = 'crewAssist.dutyDays';
+        const before = w.localStorage.getItem(storeKey);
+        const st = JSON.parse(before);
+        st['2026-10'] = (st['2026-10'] || []).concat([{ ymd: '2026-10-31', kind: 'duty', code: 'SDLC', loc: '', fns: [], dkey: '' }]);
+        w.localStorage.setItem(storeKey, JSON.stringify(st));
+        const mhtml = String(w.eval('rcMonthHtml("2026-10")'));
+        R.ok(mhtml.indexOf('ca-rc-k-crs') >= 0, 'a course day renders its bronze circle in the month grid');
+        R.ok(mhtml.indexOf('ca-rc-k-sb') >= 0 && mhtml.indexOf('ca-rc-k-fly') >= 0, 'standby green and flight blue circles render in the same month grid');
+        w.eval('rosterCalSelect("2026-10-06")');
+        await wait(120);
+        R.ok(d.querySelector('.ca-rc-row.is-on .ca-rc-gut.k-sb'), 'a standby day\u2019s selected row carries the standby gutter tint (green)');
+        w.eval('rosterCalSelect("2026-10-31")');
+        await wait(120);
+        R.ok(d.querySelector('.ca-rc-row.is-on .ca-rc-gut.k-crs'), 'the course day\u2019s selected row carries the course gutter tint (bronze)');
+        w.localStorage.setItem(storeKey, before);
+        w.eval('rosterCalTimelineInit()');
+        w.eval('rosterCalSelect("' + TODAY + '")');
+        await wait(120);
+    }
+    // hotfix 10 (owner report): the FIRST open still showed the roster\u2017s
+    // earliest dates — the reveal ran while the sheet sat off-screen and an
+    // engine can drop that scrollTop write. The reveal is now re-asserted as
+    // the sheet settles. Simulate the dropped write — fling the scroller to
+    // the far bottom and re-render the window there (today\u2019s row leaves
+    // the DOM) — then let the settle passes run: the timeline must heal
+    // back onto today.
+    {
+        const dd = d.getElementById('ca-rc-detail');
+        dd.scrollTop = 999999;
+        w.eval('rosterCalTLWindow(true)');
+        R.ok(!dd.querySelector('.ca-rc-row[data-rc-ymd="' + TODAY + '"]'), 'sabotage: the window re-renders at the far bottom — today\u2019s row is out of view (the dropped first reveal)');
+        w.eval('rcRevealArm()');
+        await wait(500);
+        R.ok((dd.scrollTop || 0) > 0 && (dd.scrollTop || 0) < 999999, 'the settle pass healed the scroll — off the sabotaged bottom, back at today\u2019s own offset');
+        const healedIdx = rows().findIndex(r => r.classList.contains('is-on'));
+        R.ok(healedIdx >= 0 && healedIdx <= 6, 'the settle pass heals the dropped reveal — today\u2019s entry is the first line again');
+        R.ok(!!dd.querySelector('.ca-rc-row[data-rc-ymd="' + TODAY + '"]'), 'today\u2019s row is back in the rendered window');
+    }
+    R.ok(src.indexOf('[90, 360, 760]') >= 0, 'the open schedules three settle passes as the sheet slides in and settles');
+    R.ok(src.indexOf("wrap.addEventListener('pointerdown', rcRevealCancel, true)") >= 0, 'a real touch cancels the pending reveal passes — the user owns the timeline');
+    R.ok(src.indexOf('rcRevealCancel();   // hotfix 10') >= 0, 'closing the calendar cancels any reveal pass still pending');
     // owner report, issue 4: a FLOWN turnaround retells its legs
     const past = cells.find(c => c.getAttribute('data-ymd') === '2026-10-02');
     past.click();
@@ -288,11 +345,11 @@ const synthItems = [].concat(
     const allStore = JSON.parse(w.localStorage.getItem('crewAssist.allFlights') || '{}');
     const a306 = (allStore['2026-11'] || []).find(f => f && f.fn === '306');
     R.ok(a306 && a306.ac === '359' && a306.ft === '14:30' && a306.rpt === '2310', 'the allFlights store carries aircraft 359, FT 14:30 and report 2310 for SQ 306');
-    // owner report: 8–12 Nov renders as ONE gold capsule
+    // owner report: 8–12 Nov renders as ONE capsule (blue since hotfix 10)
     const novWeek = d.querySelector('.ca-rc-day[data-ymd="2026-11-08"]').parentElement;
     const novPills = Array.from(novWeek.querySelectorAll('.ca-rc-pill'));
     R.eq(novPills.length, 1, 'the week of 8–12 Nov holds exactly one pill');
-    R.ok(novPills[0] && novPills[0].className.indexOf('ca-rc-k-fly') >= 0 && styleOf(novPills[0]).indexOf('calc(0 * 100% / 7 + 3px)') >= 0 && styleOf(novPills[0]).indexOf('calc(5 * 100% / 7 - 3px - 3px)') >= 0 && styleOf(novPills[0]).indexOf('999px 999px 999px 999px') >= 0, 'the whole SIN-LHR-SIN duty is one gold capsule, the 8th through the 12th');
+    R.ok(novPills[0] && novPills[0].className.indexOf('ca-rc-k-fly') >= 0 && styleOf(novPills[0]).indexOf('calc(0 * 100% / 7 + 3px)') >= 0 && styleOf(novPills[0]).indexOf('calc(5 * 100% / 7 - 3px - 3px)') >= 0 && styleOf(novPills[0]).indexOf('999px 999px 999px 999px') >= 0, 'the whole SIN-LHR-SIN duty is one blue capsule, the 8th through the 12th (hotfix 10)');
     d.querySelector('.ca-rc-day[data-ymd="2026-11-10"]').click();
     await wait(300);
     R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('SQ 306') >= 0 && d.getElementById('ca-rc-detail').textContent.indexOf('SQ 305') >= 0, 'the absorbed layover day on the 10th retells the whole London duty');
@@ -452,11 +509,11 @@ const synthItems = [].concat(
     } });
     w.eval('openRosterCalendar()');
     await wait(500);
-    // week 4 holds 25–31 Oct: the six-day duty is ONE gold capsule, rounded on
+    // week 4 holds 25–31 Oct: the six-day duty is ONE capsule, rounded on
     // Monday and flush at the Saturday edge — the run continues past it
     const w4 = d.querySelectorAll('#ca-rc-grid .relative.grid')[4];
     const seg1 = w4 ? Array.from(w4.querySelectorAll('.ca-rc-pill')) : [];
-    R.ok(seg1.length === 1 && seg1[0].className.indexOf('ca-rc-k-fly') >= 0, 'the six-day duty is one gold capsule in its week row');
+    R.ok(seg1.length === 1 && seg1[0].className.indexOf('ca-rc-k-fly') >= 0, 'the six-day duty is one blue capsule in its week row (hotfix 10)');
     R.ok(seg1[0].getAttribute('style').indexOf('calc(1 * 100% / 7 + 3px)') >= 0, 'it starts rounded on the Monday');
     R.ok(seg1[0].getAttribute('style').indexOf('999px 0 0 999px') >= 0, 'it ends flush at the week edge — the run continues');
     // November: the run continues flush from the left edge, rounding off at its true end
