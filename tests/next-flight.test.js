@@ -366,23 +366,28 @@ function rosterItems(flight, sector, dateTok, opts) {
     // moment the screen comes back (visibilitychange) — no reload needed.
     // The card is seeded on a flight still ~2 minutes out, then the store is
     // aged to "landed an hour ago" and the app woken — deterministic, no
-    // wall-clock race.
-    const hm = (offMin) => {
-      const t = new Date(Date.now() + offMin * 60000);
-      return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
-    };
+    // wall-clock race. v1.39.0 hotfix 9: both legs are built from true
+    // moments (ymd = departure date, staYmd = arrival date) so an
+    // hh:mm-based seed can never straddle midnight and trip the overnight
+    // rule — the suite must pass at 2am, not just in the afternoon.
+    const hhmm = (t) => String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
+    const ymdAt = (t) => t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+    const leg = (depT, landT) => ({ fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymdAt(depT), std: hhmm(depT), sta: hhmm(landT), staYmd: ymdAt(landT) });
+    const landT = new Date(Date.now() + 2 * 60000);
+    // the boot leg must depart TODAY (nfFlightEnded retires any flight whose
+    // departure date has passed), so the lookback never reaches past midnight
+    const nowD = new Date();
+    const depBack = Math.min(60, nowD.getHours() * 60 + nowD.getMinutes());
     const { w, d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
-      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
-        { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: hm(2), staYmd: ymd(0) }
-      ])));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([leg(new Date(Date.now() - depBack * 60000), landT)])));
     } });
     let card = null;
     const t0 = Date.now();
     while (Date.now() - t0 < 8000 && !(card = d.getElementById('ca-nextflight-card'))) await wait(50);
     R.ok(!!card, 'the not-yet-landed flight shows its card');
     w.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
-      { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-180), sta: hm(-60), staYmd: ymd(0) }
+      leg(new Date(Date.now() - 180 * 60000), new Date(Date.now() - 60 * 60000))
     ])));
     d.dispatchEvent(new w.Event('visibilitychange'));
     await wait(300);

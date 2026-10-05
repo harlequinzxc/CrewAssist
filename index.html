@@ -1974,6 +1974,7 @@
                 { c: 'fix', t: 'Hotfix: RQ99 birthday requests read “Enjoy your birthday off”.' },
                 { c: 'fix', t: 'Hotfix: the fold chevron animates the calendar away and back.' },
                 { c: 'fix', t: 'Hotfix: month swipes glide sideways like the timeline scrolls.' },
+                { c: 'fix', t: 'Hotfix: the timeline opens on today and follows every tap.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -4562,16 +4563,33 @@
             if (!opts.noScroll && det && rcTL) {
                 const i = rcTL.days.indexOf(rcSelected);
                 if (i >= 0) {
-                    const top = rcTL.off[i];
-                    const vh = det.clientHeight || 420;
-                    if (top < det.scrollTop || top + rcTL.h[i] > det.scrollTop + vh) {
-                        // hotfix 8 (owner report: after hold-for-today a swipe
-                        // jumped straight back) — the app's own reveal-scroll
-                        // is flagged so the scroll-flip can never read it as
-                        // a finger's scroll, and it anchors -24 so the flip's
-                        // +24 probe lands inside the revealed row itself
-                        rcTlProgUntil = Date.now() + 250;
-                        det.scrollTop = Math.max(0, top - 24);
+                    // hotfix 9 (owner orders): the selected day's entry is
+                    // THE FIRST LINE below the calendar — every reveal scrolls
+                    // (even when the row is already partly on screen), and it
+                    // anchors flush at the timeline's top. The anchor is
+                    // re-asserted after each window render because the
+                    // renderer's measured heights correct the offsets — the
+                    // row lands exactly, not approximately. The scroll-flip's
+                    // +24 probe still lands inside the revealed row (rows are
+                    // ≥46px tall), so the reveal can never flip the month.
+                    rcTlProgUntil = Date.now() + 250;
+                    let target = Math.max(0, rcTL.off[i]);
+                    for (let k = 0; k < 4; k++) {
+                        det.scrollTop = target;            // sticks once the spacers give the scroller its range
+                        rosterCalTLWindow();                // renders the window and corrects the offsets it measures
+                        const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + rcSelected + '"]');
+                        if (!row) {                        // fresh open: the window has not reached the row yet — anchor by offset
+                            if ((det.scrollTop || 0) === target) break;
+                            continue;
+                        }
+                        // engines disagree whether a scroller's padding-top
+                        // scrolls with its content — measure where the row
+                        // really sits and correct, never guess
+                        const delta = row.getBoundingClientRect().top - det.getBoundingClientRect().top;
+                        if (Math.abs(delta) <= 1) break;   // the row starts exactly at the detail's top edge
+                        const next = Math.max(0, target + delta);
+                        if (next === target) break;
+                        target = next;
                     }
                 }
             }
@@ -4639,7 +4657,15 @@
             for (let i = 0; i < h.length; i++) off.push(off[i] + h[i]);
             rcTL = { days: days, h: h, off: off, total: off[off.length - 1] || 0, rendered: null };
             const detEl = document.getElementById('ca-rc-detail');
-            if (detEl) detEl.setAttribute('data-rc-days', String(days.length));
+            if (detEl) {
+                detEl.setAttribute('data-rc-days', String(days.length));
+                // hotfix 9: a stale offset from a previous session (the
+                // browser restores it silently on re-open) must never point
+                // into the new timeline's spacer — clamp it into range so
+                // the window always renders around real rows
+                const maxTop = Math.max(0, rcTL.total - 1);
+                if ((detEl.scrollTop || 0) > maxTop) detEl.scrollTop = maxTop;
+            }
         }
         function rosterCalTlYmdAt(px) {
             if (!rcTL || !rcTL.days.length) return '';
@@ -4667,6 +4693,11 @@
             }
             html += '<div style="height:' + Math.max(0, rcTL.total - rcTL.off[b]) + 'px" aria-hidden="true"></div>';
             el.innerHTML = html;
+            // hotfix 9: icons swap in BEFORE the heights are measured — the
+            // placeholder <i> and its svg replacement size differently in
+            // some engines, and a reveal anchoring on pre-icon offsets lands
+            // short of its row
+            try { lucide.createIcons(); } catch (e) {}
             // measured heights correct the estimates (browsers only — jsdom
             // reports 0 and keeps the estimates, which is fine for structure)
             const rowsEl = el.querySelectorAll('.ca-rc-row');
@@ -4681,7 +4712,6 @@
                 const sp = el.querySelectorAll(':scope > div[aria-hidden="true"]');
                 if (sp.length >= 2) { sp[0].style.height = Math.max(0, rcTL.off[a]) + 'px'; sp[sp.length - 1].style.height = Math.max(0, rcTL.total - rcTL.off[b]) + 'px'; }
             }
-            try { lucide.createIcons(); } catch (e) {}
             rosterCalScheduleEarns();
         }
         // ---- live earnings: every duty is tappable, saved or not ----
@@ -4910,6 +4940,15 @@
             const wrap = document.getElementById('ca-roster-cal');
             const sheet = document.getElementById('ca-rc-sheet');
             if (!wrap || !sheet) return;
+            // hotfix 9 (owner report): the wrap must be VISIBLE before the
+            // timeline renders. Rendering inside display:none silently
+            // ignored the reveal's scrollTop and, on un-hide, the browser
+            // restored the previous session's offset — the timeline then
+            // opened on the earliest dates (or on blank spacer) instead of
+            // today. Un-hiding first changes nothing visually (the sheet
+            // still rides translate-y-full until its slide) but gives the
+            // scroller a layout to scroll.
+            wrap.classList.remove('hidden');
             const months = rosterCalMonths();
             const todayYm = todayLocalYMD().slice(0, 7);
             rcViewYm = months.indexOf(todayYm) >= 0 ? todayYm : (months[months.length - 1] || todayYm);
@@ -5212,7 +5251,7 @@
                     });
                 }
             }
-            wrap.classList.remove('hidden');
+            // (the wrap was un-hidden at the top of this function — hotfix 9)
             if (typeof caSheetFocusIn === 'function') caSheetFocusIn(sheet);
             setTimeout(() => {
                 const shade = wrap.querySelector('.ca-rc-shade');

@@ -207,6 +207,17 @@ const synthItems = [].concat(
     const gut = d.querySelector('.ca-rc-row.is-on .ca-rc-gut');
     R.ok(gut && gut.querySelector('.n') && gut.querySelector('.n').textContent === String(parseInt(TODAY.slice(8), 10)), 'the selected day is the highlighted row, its number in the date gutter');
     R.ok(gut && gut.querySelector('.m') && gut.querySelector('.m').textContent.length === 3, 'the gutter stacks the day over a three-letter month');
+    // hotfix 9 (owner reports): the timeline opens ON today — the reveal
+    // anchors the selected row as the first line below the calendar, every
+    // tap scrolls its entry flush, and a stale offset from an earlier
+    // session can never point into blank spacer
+    R.ok(src.indexOf('top < det.scrollTop') < 0, 'the reveal always scrolls — it no longer waits for the row to be out of view (owner order)');
+    {
+        const idx = rows().findIndex(r => r.classList.contains('is-on'));
+        R.ok(idx >= 0 && idx <= 6, 'opening the calendar anchors today\u2019s row at the head of the rendered window — the first line below the calendar');
+    }
+    R.ok(src.indexOf('hotfix 9 (owner report): the wrap must be VISIBLE') >= 0, 'the calendar un-hides before its timeline renders — a display:none scroller silently ignores the reveal');
+    R.ok(src.indexOf('detEl.scrollTop = maxTop') >= 0, 'a stale scroll offset clamps into the new timeline before its window renders');
     // owner report, issue 4: a FLOWN turnaround retells its legs
     const past = cells.find(c => c.getAttribute('data-ymd') === '2026-10-02');
     past.click();

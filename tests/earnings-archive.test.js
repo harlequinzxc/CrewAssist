@@ -345,10 +345,21 @@ const fs = require('fs');
 
     // --- v1.27.0 backup nudge ---
   {
+    // v1.39.0 hotfix 9: the seeds ride the run date (convention #5) — a
+    // fixed savedAt crossed the rolling 30-day backup window and failed the
+    // suite a day later. A is always an older month (40 days back), B always
+    // a newer one (3 days back) — two distinct months in every calendar
+    // position, and B is always "new" versus a 30-day-old backup.
+    const ago = (days) => {
+      const t = new Date(Date.now() - days * 86400000);
+      const key = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0');
+      return { iso: t.toISOString(), key: key };
+    };
+    const A = ago(40), B = ago(3);
     const { w, d } = await boot(APP);
     w.localStorage.setItem('crewAssist.archive', JSON.stringify([
-      { id: 'A', savedAt: '2026-08-02T10:00:00Z', monthKey: '2026-08', sectorDate: '2026-08-02', stationDisplay: 'SIN/ICN', amount: 100 },
-      { id: 'B', savedAt: '2026-09-05T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', stationDisplay: 'SIN/HND', amount: 200 }
+      { id: 'A', savedAt: A.iso, monthKey: A.key, sectorDate: A.key + '-02', stationDisplay: 'SIN/ICN', amount: 100 },
+      { id: 'B', savedAt: B.iso, monthKey: B.key, sectorDate: B.key + '-05', stationDisplay: 'SIN/HND', amount: 200 }
     ]));
     w.showArchiveOverlay();
     let card = d.getElementById('ca-arch-backup-nudge');
