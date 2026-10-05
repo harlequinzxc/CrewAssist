@@ -96,6 +96,17 @@ function expectedMonthLabel(f) {
         };
     }
 
+    // ---- hotfix 8 (owner report): the 4-sector turnaround on 3 Sep 2026 ----
+    // The calendar used to cut the day at its mid-turn SIN arrival (SQ
+    // 134/133 shown, 138/137 lost); the parser always chained all four.
+    {
+        const r = singles['September 2026.pdf'].parsed;
+        R.eq(r.flights.filter(f => f.ymd === '2026-09-03').map(f => f.fn).join('/'), '134/133/138/137', 'September 2026: 3 Sep carries all four same-day sectors');
+        const t = (r.trips || []).find(tr => (tr.sectors || []).some(s => s.fn === '134'));
+        R.ok(!!t && t.ok && t.sectors.length === 4, 'the four sectors chain into ONE buildable turnaround trip');
+        R.eq(t ? t.type : '', 'Turnaround', 'the 4-sector day is a turnaround (every ground stop under 6h)');
+    }
+
     // ---- v1.32.1: every real positioning sector builds pre-marked paxing ----
     // These four are the only PU/TVL sectors across all fixtures; before
     // v1.32.1 their whole trips were refused with 'some times could not be

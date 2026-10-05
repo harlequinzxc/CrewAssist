@@ -332,6 +332,24 @@ const synthItems = [].concat(
     d.getElementById('ca-rc-fold').click();
     await wait(150);
     R.ok(!gridEl.classList.contains('hidden'), 'and expands it back');
+    // hotfix 8 (owner ruling, restored): the fold ANIMATES — with a layout
+    // the calendar glides away and back instead of vanishing (jsdom has no
+    // layout, so a faked height stands in for one)
+    {
+        const g2 = d.getElementById('ca-rc-grid');
+        let fakeH = 320;
+        Object.defineProperty(g2, 'offsetHeight', { configurable: true, get: () => fakeH });
+        d.getElementById('ca-rc-fold').click();
+        R.ok(!g2.classList.contains('hidden'), 'the collapse starts animated — hidden only lands when the glide ends');
+        await wait(450);
+        R.ok(g2.classList.contains('hidden'), 'the collapse glide finishes into the folded state');
+        fakeH = 320;
+        d.getElementById('ca-rc-fold').click();
+        R.ok(!g2.classList.contains('hidden'), 'the expand reveals the grid at once, then it grows into place');
+        await wait(450);
+        R.ok(!g2.classList.contains('hidden') && g2.style.height === '', 'the expand glide finishes with the height released');
+        delete g2.offsetHeight;   // back to jsdom's honest no-layout world
+    }
     // scrolling the timeline flips the calendar to the month in view
     const tlEl = d.getElementById('ca-rc-detail');
     tlEl.scrollTop = 999999;
@@ -358,7 +376,12 @@ const synthItems = [].concat(
     R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'pressing and holding the month header returns to today\u2019s month');
     R.ok(d.querySelector('.ca-rc-day.is-selected') && d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === TODAY, 'and lands the selection on today');
     d.getElementById('ca-rc-next').click();
+    // hotfix 8 (owner report): the browser fires a scroll event for the
+    // timeline's own reveal-scroll too — that must never flip the month
+    // back to today after a swipe
+    tlEl.dispatchEvent(new w.Event('scroll', { bubbles: true }));
     await wait(500);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'after hold-for-today, the swipe keeps November — no jump back to today');
     // hotfix 5 (owner order): swipes change months — and respect the bounds
     const grid = d.getElementById('ca-rc-grid');
     const swipe = (x1, y1, x2, y2) => {
@@ -384,6 +407,20 @@ const synthItems = [].concat(
     await wait(600);
     R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Oct 2026') === 0, 'swiping right before the first data month does nothing');
     R.ok(d.querySelector('.ca-rc-day.is-selected').getAttribute('data-ymd') === TODAY, 'a month holding today reselects today');
+    // hotfix 8 (owner order): the swipe GLIDES — a finger-tracked drag
+    // follows the pointer and the release lands on the nearer month
+    const drag = (x1, x2) => {
+        const a = new w.Event('pointerdown', { bubbles: true }); a.clientX = x1; a.clientY = 300; grid.dispatchEvent(a);
+        const mv = new w.Event('pointermove', { bubbles: true }); mv.clientX = Math.round((x1 + x2) / 2); mv.clientY = 300; grid.dispatchEvent(mv);
+        const b = new w.Event('pointerup', { bubbles: true }); b.clientX = x2; b.clientY = 300; grid.dispatchEvent(b);
+    };
+    drag(200, 80);
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'a finger-tracked drag glides into November');
+    R.ok(!grid.querySelector('.ca-rc-track'), 'the glide leaves no track behind — the grid is one month again');
+    drag(200, 170);
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-month').textContent.indexOf('Nov 2026') === 0, 'a too-short drag glides back — November stays');
     // Escape closes the sheet
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     await wait(500);
@@ -431,6 +468,48 @@ const synthItems = [].concat(
     const w1 = d.querySelectorAll('#ca-rc-grid .relative.grid')[1];
     R.eq(w1.querySelectorAll('.ca-rc-pill').length, 1, 'no-duty days render no pills');
     R.ok(w1.querySelectorAll('.ca-rc-pill')[0].className.indexOf('is-circle') >= 0, 'a lone fly day renders as a circle');
+  }
+
+  // ---- hotfix 8: a four-sector turnaround day (owner report: 3 Sep) and
+  // the RQ99 birthday line ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-10-04T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      // the real 3 Sep 2026 shape, moved into October: SQ 134/133/138/137
+      // SIN-PEN-SIN-PEN-SIN on one day — plus a neighbour 2-sector turn
+      const legs = [
+        { fn: '134', dep: 'SIN', arr: 'PEN', ymd: '2026-10-05', std: '09:37', sta: '11:05', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:28', ac: '7M8', rpt: '07:35', pos: false },
+        { fn: '133', dep: 'PEN', arr: 'SIN', ymd: '2026-10-05', std: '11:57', sta: '13:29', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:32', ac: '7M8', rpt: '', pos: false },
+        { fn: '138', dep: 'SIN', arr: 'PEN', ymd: '2026-10-05', std: '16:22', sta: '17:45', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:23', ac: '7M8', rpt: '', pos: false },
+        { fn: '137', dep: 'PEN', arr: 'SIN', ymd: '2026-10-05', std: '18:41', sta: '20:10', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:29', ac: '7M8', rpt: '', pos: false },
+        { fn: '142', dep: 'SIN', arr: 'PEN', ymd: '2026-10-07', std: '09:00', sta: '10:30', stdYmd: '2026-10-07', staYmd: '2026-10-07', ft: '01:30', ac: '7M8', rpt: '07:30', pos: false },
+        { fn: '141', dep: 'PEN', arr: 'SIN', ymd: '2026-10-07', std: '12:00', sta: '13:30', stdYmd: '2026-10-07', staYmd: '2026-10-07', ft: '01:30', ac: '7M8', rpt: '', pos: false },
+      ];
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': legs }));
+      x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [
+        { ymd: '2026-10-05', kind: 'fly', code: '', loc: '', fns: ['134', '133', '138', '137'], dkey: '2026-10-05' },
+        { ymd: '2026-10-06', kind: 'off', code: 'RQ99', loc: '', fns: [], dkey: '' },
+        { ymd: '2026-10-07', kind: 'fly', code: '', loc: '', fns: ['142', '141'], dkey: '2026-10-07' },
+      ] }));
+    } });
+    R.eq(String(w.eval("rosterCalDutyFlights('2026-10-05').map(f=>f.fn).join('/')")), '134/133/138/137', 'a same-day 4-sector turn chains ALL four legs — the mid-turn SIN arrival does not cut it');
+    R.eq(String(w.eval("rosterCalDutyFlights('2026-10-07').map(f=>f.fn).join('/')")), '142/141', 'a 2-sector turn still chains its own two legs');
+    R.eq(String(w.eval("rosterCalDutyFlights('2026-10-07').length")), '2', 'the 4-sector rule never bleeds into the next duty');
+    w.eval('openRosterCalendar()');
+    await wait(400);
+    d.querySelector('.ca-rc-day[data-ymd="2026-10-05"]').click();
+    await wait(250);
+    const row5 = d.querySelector('.ca-rc-row[data-rc-ymd="2026-10-05"]');
+    R.ok(!!row5, 'the 4-sector day renders its timeline row');
+    R.eq(row5 ? row5.querySelectorAll('[data-rc-earn]').length : -1, 4, 'all four sectors show as flight cards — SQ 134 through SQ 137');
+    R.ok(!!row5 && row5.textContent.indexOf('SQ 137') >= 0, 'the day reads through to its last sector');
+    // RQ99: the birthday request reads its own line (owner order)
+    d.querySelector('.ca-rc-day[data-ymd="2026-10-06"]').click();
+    await wait(250);
+    const row6 = d.querySelector('.ca-rc-row[data-rc-ymd="2026-10-06"]');
+    R.ok(!!row6 && row6.textContent.indexOf('RQ99') >= 0, 'the RQ99 day keeps its code as the label');
+    R.ok(!!row6 && row6.textContent.indexOf('Enjoy your birthday off') >= 0, 'RQ99 reads \u201cEnjoy your birthday off\u201d (owner order)');
+    R.ok(!!row6 && row6.textContent.indexOf('Enjoy your day off') < 0, '\u2014 not the generic day-off line');
   }
 
   // ---- a clean device: honest empty state, driven by the real button ----

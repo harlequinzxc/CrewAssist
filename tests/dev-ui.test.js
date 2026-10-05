@@ -205,6 +205,10 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('function wnPendingEntries') && src.includes("localStorage.getItem('crewAssist.wnSeen')"), "what's new tracks the version the crew last saw (E6)");
     R.ok(src.includes('function wnSeenVersion') && src.includes('APP_CHANGELOG[1] && APP_CHANGELOG[1].v'), 'a pre-changelog device defaults to the release before current (E6)');
     R.ok(/id="whatsnew-list"[^>]*max-h-\[50vh\] overflow-y-auto/.test(src), "the what's-new list scrolls when a big jump brings many versions (E6)");
+    // hotfix 8 (owner order): no surface — changelog or What's New — tells
+    // how Developer Mode unlocks; the feature itself stays listed
+    R.ok(!src.includes('ten logo taps') && !src.includes('ten taps') && !src.includes('10 taps'), 'the changelog never tells how Developer Mode unlocks (owner order)');
+    R.ok(src.includes("t: 'Hidden Developer Mode, edits calculation modifiers via JSON.'"), 'the Developer Mode line stays - only its unlock is secret');
     R.ok(src.includes('function renderChangelogInto'), "the What's New delta keeps its renderer (E6)");
     R.ok(src.includes('function renderChangelogSheet') && src.includes('id="ca-cl-chips"') && src.includes('id="ca-cl-sort"') && src.includes('id="ca-cl-summary"'), 'the Settings changelog renders its own filterable, sortable view (E6)');
     R.ok(src.includes('id="ca-changelog-sheet"') && src.includes('id="btn-changelog"'), 'Settings opens the full changelog overlay (E6)');

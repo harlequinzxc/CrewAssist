@@ -276,6 +276,12 @@
         /* hotfix 5 (owner order): sideways swipes change months — vertical
            pans must keep scrolling, so the grid owns only the horizontal */
         #ca-rc-grid { touch-action: pan-y; }
+        /* hotfix 8 (owner order): month changes glide sideways like the
+           timeline scrolls — the drag follows the finger; day cells never
+           catch a click mid-drag */
+        .ca-rc-track { user-select: none; -webkit-user-select: none; }
+        #ca-rc-grid.ca-rc-drag .ca-rc-day { pointer-events: none; }
+        #ca-rc-grid.ca-rc-drag { cursor: grabbing; }
         /* hotfix 6 (owner order): the month arrows never disappear — at the
            data edges they gray out instead */
         .ca-rc-nav.ca-rc-off { opacity: .3; pointer-events: none; }
@@ -1507,7 +1513,7 @@
                         <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
                 </div>
-                <div id="ca-rc-grid" class="transition-opacity duration-200 flex-none"></div>
+                <div id="ca-rc-grid" class="flex-none"></div>
                 <!-- v1.39.0 hotfix 3 (owner spec): the detail section below the
                      divider. hotfix 7: it is the timeline's scroll container —
                      every roster date, window-rendered, no visible scrollbar. -->
@@ -1961,6 +1967,13 @@
                 { c: 'fix', t: 'Hotfix: one gold capsule per duty, standby windows, swipe, settings match.' },
                 { c: 'fix', t: 'Hotfix: three-letter months, grayed arrows, double-tap today, fold, timeline detail.' },
                 { c: 'fix', t: 'Hotfix: fixed grid, scrolling timeline, hold-for-today, live earnings per duty.' },
+                { c: 'fix', t: 'Hotfix: the changelog keeps the Developer Mode unlock to itself.' },
+                { c: 'fix', t: 'Hotfix: same-clock layovers fold the time-zone card to one line.' },
+                { c: 'fix', t: 'Hotfix: after hold-for-today, a swipe keeps the month it lands on.' },
+                { c: 'fix', t: 'Hotfix: four-sector turnaround days show all four sectors.' },
+                { c: 'fix', t: 'Hotfix: RQ99 birthday requests read “Enjoy your birthday off”.' },
+                { c: 'fix', t: 'Hotfix: the fold chevron animates the calendar away and back.' },
+                { c: 'fix', t: 'Hotfix: month swipes glide sideways like the timeline scrolls.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -2408,7 +2421,7 @@
             ] },
             { v: '1.1.4', d: '2026-09-04', items: [
                 { c: 'new', t: 'A Feedback and Support section with a Telegram button.' },
-                { c: 'new', t: 'Hidden Developer Mode, unlocked by ten logo taps, edits calculation modifiers via JSON.' },
+                { c: 'new', t: 'Hidden Developer Mode, edits calculation modifiers via JSON.' },
             ] },
             { v: '1.1.0', d: '2026-09-04', items: [
                 { c: 'new', t: 'The onboarding screen captures Name, Gender and Crew Rank.' },
@@ -4332,149 +4345,206 @@
                 return cache[ym][ymd] || null;
             };
         }
-        function renderRosterCalendar(slideDir, keepSel) {
-            const grid = document.getElementById('ca-rc-grid');
+        // hotfix 8 (owner orders): month changes GLIDE sideways like the
+        // timeline scrolls vertically. rcMonthHtml builds one month's grid;
+        // rcApplyMonth paints it and resets the selection (the owner spec);
+        // renderRosterCalendar(dir) slides the old month out and the new one
+        // in — renderRosterCalendar(0, …) paints instantly, so the timeline's
+        // own month flips never fight the vertical gesture that caused them.
+        function rcMonthHtml(ym) {
+            const y = parseInt(ym.slice(0, 4), 10);
+            const m = parseInt(ym.slice(5), 10) - 1;
+            const dayAt = rcDayLookup();
+            const today = todayLocalYMD();
+            const daysIn = new Date(y, m + 1, 0).getDate();
+            const ymdOf = (dd) => y + '-' + String(m + 1).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+            const ymdShift = (dd, delta) => {
+                const dt = new Date(y, m, dd + delta);
+                return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+            };
+            // hotfix 5 (owner order): layover days never draw pills —
+            // the ones inside a duty were absorbed into its gold run by
+            // the parser; the rest stay plain numbers. A stored layover
+            // that sits inside a duty's span (pre-v179 stores) still
+            // joins that run here, so nothing breaks before a re-import.
+            const flySpans = {};
+            for (let dd = 1; dd <= daysIn; dd++) {
+                const t = dayAt(ymdOf(dd));
+                if (t && t.kind === 'fly' && t.dkey) {
+                    const ymd = ymdOf(dd);
+                    const sp = flySpans[t.dkey] = flySpans[t.dkey] || [ymd, ymd];
+                    if (ymd < sp[0]) sp[0] = ymd;
+                    if (ymd > sp[1]) sp[1] = ymd;
+                }
+            }
+            const effDay = (dd) => {
+                const t = dayAt(ymdOf(dd));
+                if (t && t.kind === 'lo') {
+                    const ymd = ymdOf(dd);
+                    const key = Object.keys(flySpans).find((k) => ymd > flySpans[k][0] && ymd < flySpans[k][1]);
+                    if (key) return { ymd: ymd, kind: 'fly', code: '', loc: '', fns: [], dkey: key };
+                }
+                return t;
+            };
+            // runs: maximal consecutive same-kind duty days (OFF, empty
+            // and bare-layover days break). Fly days join into one
+            // capsule only within ONE duty; standby days join only when
+            // the SAME code runs on (20 and 21 Oct are two standbys,
+            // SN60 and SN80 — two circles, never one bar)
+            const runs = [];
+            for (let dd = 1; dd <= daysIn; dd++) {
+                const day = effDay(dd);
+                if (!day || !day.kind || day.kind === 'off' || day.kind === 'lo') continue;
+                const prev = runs[runs.length - 1];
+                const joins = prev && prev.kind === day.kind && prev.end === dd - 1 &&
+                    (day.kind === 'fly' ? String(prev.dkey) === String(day.dkey) :
+                     day.kind === 'duty' ? prev.code === day.code : true);
+                if (joins) prev.end = dd;
+                else runs.push({ kind: day.kind, dkey: day.dkey || '', code: day.code || '', start: dd, end: dd });
+            }
+            const dayAtYmd = (ymd) => {
+                const dd = parseInt(String(ymd).slice(8), 10);
+                return (String(ymd).slice(0, 7) === ym) ? effDay(dd) : dayAt(ymd);
+            };
+            runs.forEach((r) => {
+                const beside = (delta) => {
+                    const nd = dayAtYmd(ymdShift(delta < 0 ? 1 : daysIn, delta));
+                    return !!nd && nd.kind === r.kind &&
+                        (r.kind === 'fly' ? String(nd.dkey) === String(r.dkey) :
+                         r.kind === 'duty' ? nd.code === r.code : true);
+                };
+                r.contPrev = r.start === 1 && beside(-1);
+                r.contNext = r.end === daysIn && beside(1);
+            });
+            // week segments: a run crossing a Sunday continues in the next row
+            const segs = [];
+            runs.forEach((r) => {
+                let cur = null;
+                for (let dd = r.start; dd <= r.end; dd++) {
+                    const dow = new Date(y, m, dd).getDay();
+                    if (dow === 0 || !cur) { cur = { run: r, start: dd, end: dd, s: dow, e: dow }; segs.push(cur); }
+                    else { cur.end = dd; cur.e = dow; }
+                }
+            });
+            const pillHtml = (sg) => {
+                const r = sg.run;
+                const openL = sg.start > r.start || r.contPrev;   // the bar continues left of this segment
+                const openR = sg.end < r.end || r.contNext;       // …and/or right of it
+                if (sg.start === sg.end && !openL && !openR) {
+                    return '<span class="ca-rc-pill is-circle ca-rc-k-' + r.kind + '" style="left: calc(' + (sg.s + 0.5) + ' * 100% / 7);" aria-hidden="true"></span>';
+                }
+                const left = openL ? 'calc(' + sg.s + ' * 100% / 7)' : 'calc(' + sg.s + ' * 100% / 7 + 3px)';
+                const width = 'calc(' + (sg.e - sg.s + 1) + ' * 100% / 7' + (openL ? '' : ' - 3px') + (openR ? '' : ' - 3px') + ')';
+                const rL = openL ? '0' : '999px';
+                const rR = openR ? '0' : '999px';
+                return '<span class="ca-rc-pill is-capsule ca-rc-k-' + r.kind + '" style="left: ' + left + '; width: ' + width + '; border-radius: ' + rL + ' ' + rR + ' ' + rR + ' ' + rL + ';" aria-hidden="true"></span>';
+            };
+            let html = '<div class="grid grid-cols-7 mb-1.5">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dw) => '<span class="ca-micro font-bold text-gray-400 dark:text-gray-500 text-center py-1">' + dw + '</span>').join('') + '</div>';
+            const startPad = new Date(y, m, 1).getDay();
+            const weeks = Math.ceil((startPad + daysIn) / 7);
+            const segByRow = {};
+            segs.forEach((sg) => { const wk = Math.floor((startPad + sg.start - 1) / 7); (segByRow[wk] = segByRow[wk] || []).push(sg); });
+            for (let wk = 0; wk < weeks; wk++) {
+                html += '<div class="relative grid grid-cols-7">';
+                html += '<div class="absolute inset-0 pointer-events-none" aria-hidden="true">' + (segByRow[wk] || []).map(pillHtml).join('') + '</div>';
+                for (let col = 0; col < 7; col++) {
+                    const dd = wk * 7 + col - startPad + 1;
+                    if (dd < 1 || dd > daysIn) { html += '<span></span>'; continue; }
+                    const ymd = ymdOf(dd);
+                    html += '<button type="button" class="ca-rc-day" data-ymd="' + ymd + '" aria-label="' + rosterShortDate(ymd) + '">'
+                        + '<span class="ca-rc-num">' + dd + '</span>'
+                        + '<span class="ca-rc-bar' + (ymd === today ? ' is-today' : '') + '" aria-hidden="true"></span>'
+                        + '</button>';
+                }
+                html += '</div>';
+            }
+            return html;
+        }
+        function rcSyncHeader() {
             const monthEl = document.getElementById('ca-rc-month');
-            const emptyEl = document.getElementById('ca-rc-empty');
-            if (!grid || !rcViewYm) return;
-            const paint = () => {
+            // hotfix 6 (owner order): the header spells the month in three
+            // letters — "Oct 2026", never "October 2026"
+            if (monthEl) {
                 const y = parseInt(rcViewYm.slice(0, 4), 10);
                 const m = parseInt(rcViewYm.slice(5), 10) - 1;
-                const byDay = rcMonthData(rcViewYm);
-                const hasAny = Object.keys(byDay).length > 0;
-                // hotfix 6 (owner order): the header spells the month in three
-                // letters — "Oct 2026", never "October 2026"
-                if (monthEl) monthEl.textContent = String(typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[m] : rcViewYm).slice(0, 3) + ' ' + y;
-                // hotfix 6 (owner order): the arrows always show — at the data
-                // edges they gray out instead of vanishing
-                const months = rosterCalMonths();
-                const at = months.indexOf(rcViewYm);
-                const prevBtn = document.getElementById('ca-rc-prev');
-                const nextBtn = document.getElementById('ca-rc-next');
-                if (prevBtn) { const none = at <= 0; prevBtn.classList.toggle('ca-rc-off', none); prevBtn.setAttribute('aria-disabled', none ? 'true' : 'false'); }
-                if (nextBtn) { const none = at < 0 || at >= months.length - 1; nextBtn.classList.toggle('ca-rc-off', none); nextBtn.setAttribute('aria-disabled', none ? 'true' : 'false'); }
-                const dayAt = rcDayLookup();
-                const today = todayLocalYMD();
-                const daysIn = new Date(y, m + 1, 0).getDate();
-                const ymdOf = (dd) => y + '-' + String(m + 1).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
-                const ymdShift = (dd, delta) => {
-                    const dt = new Date(y, m, dd + delta);
-                    return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
-                };
-                // hotfix 5 (owner order): layover days never draw pills —
-                // the ones inside a duty were absorbed into its gold run by
-                // the parser; the rest stay plain numbers. A stored layover
-                // that sits inside a duty's span (pre-v179 stores) still
-                // joins that run here, so nothing breaks before a re-import.
-                const flySpans = {};
-                for (let dd = 1; dd <= daysIn; dd++) {
-                    const t = dayAt(ymdOf(dd));
-                    if (t && t.kind === 'fly' && t.dkey) {
-                        const ymd = ymdOf(dd);
-                        const sp = flySpans[t.dkey] = flySpans[t.dkey] || [ymd, ymd];
-                        if (ymd < sp[0]) sp[0] = ymd;
-                        if (ymd > sp[1]) sp[1] = ymd;
-                    }
-                }
-                const effDay = (dd) => {
-                    const t = dayAt(ymdOf(dd));
-                    if (t && t.kind === 'lo') {
-                        const ymd = ymdOf(dd);
-                        const key = Object.keys(flySpans).find((k) => ymd > flySpans[k][0] && ymd < flySpans[k][1]);
-                        if (key) return { ymd: ymd, kind: 'fly', code: '', loc: '', fns: [], dkey: key };
-                    }
-                    return t;
-                };
-                // runs: maximal consecutive same-kind duty days (OFF, empty
-                // and bare-layover days break). Fly days join into one
-                // capsule only within ONE duty; standby days join only when
-                // the SAME code runs on (20 and 21 Oct are two standbys,
-                // SN60 and SN80 — two circles, never one bar)
-                const runs = [];
-                for (let dd = 1; dd <= daysIn; dd++) {
-                    const day = effDay(dd);
-                    if (!day || !day.kind || day.kind === 'off' || day.kind === 'lo') continue;
-                    const prev = runs[runs.length - 1];
-                    const joins = prev && prev.kind === day.kind && prev.end === dd - 1 &&
-                        (day.kind === 'fly' ? String(prev.dkey) === String(day.dkey) :
-                         day.kind === 'duty' ? prev.code === day.code : true);
-                    if (joins) prev.end = dd;
-                    else runs.push({ kind: day.kind, dkey: day.dkey || '', code: day.code || '', start: dd, end: dd });
-                }
-                const dayAtYmd = (ymd) => {
-                    const dd = parseInt(String(ymd).slice(8), 10);
-                    return (String(ymd).slice(0, 7) === rcViewYm) ? effDay(dd) : dayAt(ymd);
-                };
-                runs.forEach((r) => {
-                    const beside = (delta) => {
-                        const nd = dayAtYmd(ymdShift(delta < 0 ? 1 : daysIn, delta));
-                        return !!nd && nd.kind === r.kind &&
-                            (r.kind === 'fly' ? String(nd.dkey) === String(r.dkey) :
-                             r.kind === 'duty' ? nd.code === r.code : true);
-                    };
-                    r.contPrev = r.start === 1 && beside(-1);
-                    r.contNext = r.end === daysIn && beside(1);
-                });
-                // week segments: a run crossing a Sunday continues in the next row
-                const segs = [];
-                runs.forEach((r) => {
-                    let cur = null;
-                    for (let dd = r.start; dd <= r.end; dd++) {
-                        const dow = new Date(y, m, dd).getDay();
-                        if (dow === 0 || !cur) { cur = { run: r, start: dd, end: dd, s: dow, e: dow }; segs.push(cur); }
-                        else { cur.end = dd; cur.e = dow; }
-                    }
-                });
-                const pillHtml = (sg) => {
-                    const r = sg.run;
-                    const openL = sg.start > r.start || r.contPrev;   // the bar continues left of this segment
-                    const openR = sg.end < r.end || r.contNext;       // …and/or right of it
-                    if (sg.start === sg.end && !openL && !openR) {
-                        return '<span class="ca-rc-pill is-circle ca-rc-k-' + r.kind + '" style="left: calc(' + (sg.s + 0.5) + ' * 100% / 7);" aria-hidden="true"></span>';
-                    }
-                    const left = openL ? 'calc(' + sg.s + ' * 100% / 7)' : 'calc(' + sg.s + ' * 100% / 7 + 3px)';
-                    const width = 'calc(' + (sg.e - sg.s + 1) + ' * 100% / 7' + (openL ? '' : ' - 3px') + (openR ? '' : ' - 3px') + ')';
-                    const rL = openL ? '0' : '999px';
-                    const rR = openR ? '0' : '999px';
-                    return '<span class="ca-rc-pill is-capsule ca-rc-k-' + r.kind + '" style="left: ' + left + '; width: ' + width + '; border-radius: ' + rL + ' ' + rR + ' ' + rR + ' ' + rL + ';" aria-hidden="true"></span>';
-                };
-                let html = '<div class="grid grid-cols-7 mb-1.5">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dw) => '<span class="ca-micro font-bold text-gray-400 dark:text-gray-500 text-center py-1">' + dw + '</span>').join('') + '</div>';
-                const startPad = new Date(y, m, 1).getDay();
-                const weeks = Math.ceil((startPad + daysIn) / 7);
-                const segByRow = {};
-                segs.forEach((sg) => { const wk = Math.floor((startPad + sg.start - 1) / 7); (segByRow[wk] = segByRow[wk] || []).push(sg); });
-                for (let wk = 0; wk < weeks; wk++) {
-                    html += '<div class="relative grid grid-cols-7">';
-                    html += '<div class="absolute inset-0 pointer-events-none" aria-hidden="true">' + (segByRow[wk] || []).map(pillHtml).join('') + '</div>';
-                    for (let col = 0; col < 7; col++) {
-                        const dd = wk * 7 + col - startPad + 1;
-                        if (dd < 1 || dd > daysIn) { html += '<span></span>'; continue; }
-                        const ymd = ymdOf(dd);
-                        html += '<button type="button" class="ca-rc-day" data-ymd="' + ymd + '" aria-label="' + rosterShortDate(ymd) + '">'
-                            + '<span class="ca-rc-num">' + dd + '</span>'
-                            + '<span class="ca-rc-bar' + (ymd === today ? ' is-today' : '') + '" aria-hidden="true"></span>'
-                            + '</button>';
-                    }
-                    html += '</div>';
-                }
-                grid.innerHTML = html;
-                grid.classList.remove('opacity-0');
-                if (emptyEl) {
-                    emptyEl.textContent = hasAny ? '' : 'No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.';
-                    emptyEl.classList.toggle('hidden', hasAny);
-                }
-                grid.querySelectorAll('.ca-rc-day[data-ymd]').forEach((cell) => {
-                    cell.addEventListener('click', () => { try { rosterCalSelect(cell.getAttribute('data-ymd')); } catch (e) {} });
-                });
-                // (owner spec) a month change resets the selection: today if
-                // this month holds it, else the first of the month
-                const keep = !!keepSel && rcSelected.slice(0, 7) === rcViewYm;
-                rosterCalSelect(keep ? rcSelected : (rcViewYm === today.slice(0, 7) ? today : ymdOf(1)), { noScroll: !!keepSel });
+                monthEl.textContent = String(typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[m] : rcViewYm).slice(0, 3) + ' ' + y;
+            }
+            // hotfix 6 (owner order): the arrows always show — at the data
+            // edges they gray out instead of vanishing
+            const months = rosterCalMonths();
+            const at = months.indexOf(rcViewYm);
+            const prevBtn = document.getElementById('ca-rc-prev');
+            const nextBtn = document.getElementById('ca-rc-next');
+            if (prevBtn) { const none = at <= 0; prevBtn.classList.toggle('ca-rc-off', none); prevBtn.setAttribute('aria-disabled', none ? 'true' : 'false'); }
+            if (nextBtn) { const none = at < 0 || at >= months.length - 1; nextBtn.classList.toggle('ca-rc-off', none); nextBtn.setAttribute('aria-disabled', none ? 'true' : 'false'); }
+        }
+        function rcPaintGrid(ym) {
+            const grid = document.getElementById('ca-rc-grid');
+            if (!grid) return;
+            grid.innerHTML = rcMonthHtml(ym);
+            const emptyEl = document.getElementById('ca-rc-empty');
+            if (emptyEl) {
+                const hasAny = Object.keys(rcMonthData(ym)).length > 0;
+                emptyEl.textContent = hasAny ? '' : 'No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.';
+                emptyEl.classList.toggle('hidden', hasAny);
+            }
+        }
+        function rcApplyMonth(keepSel) {
+            rcSyncHeader();
+            rcPaintGrid(rcViewYm);
+            // (owner spec) a month change resets the selection: today if
+            // this month holds it, else the first of the month
+            const today = todayLocalYMD();
+            const keep = !!keepSel && rcSelected.slice(0, 7) === rcViewYm;
+            rosterCalSelect(keep ? rcSelected : (rcViewYm === today.slice(0, 7) ? today : rcViewYm + '-01'), { noScroll: !!keepSel });
+        }
+        let rcSlideGen = 0;
+        // the canned slide: the outgoing month and the incoming one sit side
+        // by side on a track; the track translates one pane-width and the
+        // commit paints the new month. Without a layout engine (jsdom) it
+        // commits at once — same code path, no animation to wait for.
+        function rcSlideMonth(dir, commit) {
+            const grid = document.getElementById('ca-rc-grid');
+            rcSlideGen++;
+            const gen = rcSlideGen;
+            if (!grid || grid.getAttribute('data-rc-slide') || grid.querySelector('.ca-rc-track') || grid.classList.contains('hidden')) { commit(); return; }
+            const out = grid.innerHTML;
+            const hasLayout = !!(grid.offsetWidth || grid.offsetHeight || (grid.getClientRects && grid.getClientRects().length));
+            if (!out || !hasLayout) { commit(); return; }
+            const inc = rcMonthHtml(rcViewYm);
+            grid.setAttribute('data-rc-slide', '1');
+            grid.style.overflow = 'hidden';
+            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:200%;will-change:transform;transform:translateX(' + (dir > 0 ? '0%' : '-50%') + ')">'
+                + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? out : inc) + '</div>'
+                + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? inc : out) + '</div></div>';
+            const track = grid.firstChild;
+            let fin = false;
+            const done = () => {
+                if (fin || rcSlideGen !== gen) return;
+                fin = true;
+                grid.removeAttribute('data-rc-slide');
+                grid.style.overflow = '';
+                commit();
             };
-            if (slideDir) {
-                grid.classList.add('opacity-0');
-                setTimeout(paint, 180);
-            } else paint();
+            // hotfix 8: a forced reflow (not a rAF chain — a busy compositor
+            // can starve rAFs past the commit timer) pins the start pose so
+            // the glide animates from it in every engine
+            void track.offsetWidth;
+            track.style.transition = 'transform .3s cubic-bezier(.25,.8,.25,1)';
+            track.style.transform = 'translateX(' + (dir > 0 ? '-50%' : '0%') + ')';
+            track.addEventListener('transitionend', function end(ev) {
+                if (ev && ev.target !== track) return;
+                track.removeEventListener('transitionend', end);
+                done();
+            });
+            setTimeout(done, 380);   // transitionend never fires without a layout engine
+        }
+        function renderRosterCalendar(slideDir, keepSel) {
+            const grid = document.getElementById('ca-rc-grid');
+            if (!grid || !rcViewYm) return;
+            const commit = () => rcApplyMonth(keepSel);
+            if (slideDir) rcSlideMonth(slideDir, commit);
+            else commit();
         }
         function rosterCalSelect(ymd, opts) {
             opts = opts || {};
@@ -4494,10 +4564,23 @@
                 if (i >= 0) {
                     const top = rcTL.off[i];
                     const vh = det.clientHeight || 420;
-                    if (top < det.scrollTop || top + rcTL.h[i] > det.scrollTop + vh) det.scrollTop = Math.max(0, top - 40);
+                    if (top < det.scrollTop || top + rcTL.h[i] > det.scrollTop + vh) {
+                        // hotfix 8 (owner report: after hold-for-today a swipe
+                        // jumped straight back) — the app's own reveal-scroll
+                        // is flagged so the scroll-flip can never read it as
+                        // a finger's scroll, and it anchors -24 so the flip's
+                        // +24 probe lands inside the revealed row itself
+                        rcTlProgUntil = Date.now() + 250;
+                        det.scrollTop = Math.max(0, top - 24);
+                    }
                 }
             }
             rosterCalTLWindow();
+            // hotfix 8: wherever the app itself left the scroller — after a
+            // reveal or a re-render clamped it — is its known resting spot;
+            // a scroll event that finds it still parked there was caused by
+            // the app, never by a finger
+            if (det) rcTlTopKnown = det.scrollTop;
             if (rcSelected.slice(0, 7) !== rcViewYm) { rcViewYm = rcSelected.slice(0, 7); renderRosterCalendar(0, true); }
         }
         // hotfix 5 (owner-provided): the standby windows, exactly as the
@@ -4519,6 +4602,8 @@
         }
         let rcTL = null;           // { days:[ymd…], h:[px…], off:[cum…], total, rendered:[a,b] }
         let rcTlScrollT = null;
+        let rcTlProgUntil = 0;     // hotfix 8: a scroll the app itself caused (the row reveal) never flips the month
+        let rcTlTopKnown = -1;     // hotfix 8: the scroller's app-set resting spot — see rosterCalSelect
         const rcEarnCache = {};    // dkey -> amount (or null: unpriceable)
         const rcLegCache = {};     // dkey -> legs
         function rcDutyLegs(dkey) {
@@ -4776,7 +4861,9 @@
             } else if (kind === 'al') {
                 body += rosterCalLabelRow('tree-palm', day.code || 'AALV', 'Annual leave');
             } else if (kind === 'off') {
-                body += rosterCalLabelRow(day.code === 'OFFD' ? 'circle-slash' : 'coffee', day.code || 'OFF', 'Enjoy your day off');
+                // hotfix 8 (owner order): RQ99 is the birthday request —
+                // its line reads “Enjoy your birthday off”
+                body += rosterCalLabelRow(day.code === 'OFFD' ? 'circle-slash' : 'coffee', day.code || 'OFF', day.code === 'RQ99' ? 'Enjoy your birthday off' : 'Enjoy your day off');
             } else {
                 body += '<p class="text-sm text-gray-500 dark:text-gray-400">Nothing on the roster for this day.</p>';
             }
@@ -4804,9 +4891,18 @@
             while (i > 0 && all[i - 1].arr !== 'SIN' && all[i - 1].ymd <= ymd) i--;
             const legs = [];
             for (let k = i; k < all.length; k++) {
-                if (k > i && (all[k - 1].arr === 'SIN' || all[k].dep !== all[k - 1].arr)) break;
+                if (k > i) {
+                    const prev = all[k - 1];
+                    // hotfix 8 (owner report: 3 Sep's SQ 134/133/138/137): a
+                    // SIN arrival only ends the duty when the next leg does
+                    // not continue the SAME day — the parser's own rule, so a
+                    // 4-sector turn shows (and prices) all four sectors
+                    const cont = prev.arr === 'SIN' && all[k].dep === 'SIN'
+                        && String(all[k].stdYmd || all[k].ymd || '') === String(prev.staYmd || prev.ymd || '')
+                        && legs.length < 4;
+                    if (prev.arr === 'SIN' ? !cont : all[k].dep !== prev.arr) break;
+                }
                 legs.push(all[k]);
-                if (all[k].arr === 'SIN') break;
             }
             return legs;
         }
@@ -4830,7 +4926,32 @@
             renderRosterCalendar();
             if (!wrap.getAttribute('data-bound')) {
                 wrap.setAttribute('data-bound', '1');
+                // hotfix 8 (owner orders): month changes glide sideways, the
+                // drag following the finger like the timeline's vertical
+                // scroll. The drag state lives up here so every month-changer
+                // (arrows, hold-for-today, fold) can land or cancel a live
+                // drag before it acts.
+                const grid = document.getElementById('ca-rc-grid');
+                const rcDrag = { x0: null, y0: 0, on: false, track: null, base: '', w: 0, snapT: null, snapFn: null };
+                const rcDragStop = (restore) => {
+                    if (rcDrag.snapT) { clearTimeout(rcDrag.snapT); rcDrag.snapT = null; rcDrag.snapFn = null; }
+                    if (rcDrag.track) {
+                        rcDrag.track = null;
+                        if (restore && grid) grid.innerHTML = rcDrag.base;
+                        if (grid) { grid.style.overflow = ''; grid.classList.remove('ca-rc-drag'); }
+                    }
+                    rcDrag.on = false;
+                };
+                const rcDragFlush = () => {
+                    if (!rcDrag.snapT) return;
+                    clearTimeout(rcDrag.snapT);
+                    const f = rcDrag.snapFn;
+                    rcDrag.snapT = null; rcDrag.snapFn = null;
+                    if (f) f();
+                };
+                const rcDragLand = () => { rcDragFlush(); if (rcDrag.on) rcDragStop(true); };
                 const shift = (dir) => {
+                    rcDragLand();
                     const months = rosterCalMonths();
                     const at = months.indexOf(rcViewYm);
                     const next = months[Math.min(months.length - 1, Math.max(0, at + dir))];
@@ -4850,6 +4971,7 @@
                         clearHold();
                         holdT = setTimeout(() => {
                             holdT = null;
+                            rcDragLand();
                             const t = todayLocalYMD();
                             if (rosterCalMonths().indexOf(t.slice(0, 7)) < 0) return;
                             if (t.slice(0, 7) !== rcViewYm) { const dir = t.slice(0, 7) > rcViewYm ? 1 : -1; rcViewYm = t.slice(0, 7); renderRosterCalendar(dir); }
@@ -4864,39 +4986,191 @@
                     });
                 }
                 // hotfix 6 (owner order): the chevron collapses the calendar
-                // so the timeline fills the sheet — and expands it back
+                // so the timeline fills the sheet — and expands it back.
+                // hotfix 8 (owner ruling, restored): the fold ANIMATES — the
+                // height and opacity glide and the flex hands the space to
+                // the timeline. Without a layout engine (jsdom) it toggles.
+                let rcFoldAnim = null;   // the live fold glide — a new click cancels it
+                let rcFoldGen = 0;        // which fold click a glide belongs to
                 on('ca-rc-fold', () => {
                     const g = document.getElementById('ca-rc-grid');
                     const up = document.getElementById('ca-rc-fold-up');
                     const down = document.getElementById('ca-rc-fold-down');
                     const btn = document.getElementById('ca-rc-fold');
                     if (!g) return;
+                    rcDragLand();
+                    const gen = ++rcFoldGen;
                     const collapsed = !g.classList.contains('hidden');
-                    g.classList.toggle('hidden', collapsed);
                     if (up) up.classList.toggle('hidden', collapsed);
                     if (down) down.classList.toggle('hidden', !collapsed);
                     if (btn) btn.setAttribute('aria-label', collapsed ? 'Expand calendar' : 'Collapse calendar');
+                    // hotfix 8: the expand must come out of hiding BEFORE its
+                    // layout is known — a display:none grid has no box, so
+                    // measuring (and the animate-or-not decision) happen
+                    // only once it is visible. Without this the expand could
+                    // never animate: it was always "no layout" at click time
+                    if (!collapsed) g.classList.remove('hidden');
+                    const hasLayout = !!(g.offsetWidth || g.offsetHeight || (g.getClientRects && g.getClientRects().length));
+                    if (!hasLayout) { g.classList.toggle('hidden', collapsed); return; }
+                    const h0 = g.offsetHeight;
+                    // hotfix 8 (owner ruling): the fold GLIDES. Real engines
+                    // animate it with the Web Animations API — a transition
+                    // off display:none never starts (the expand came out of
+                    // hidden in the same style pass), and a CSS transition's
+                    // start pose can be skipped when the first frame lands
+                    // late. jsdom (no .animate) keeps the inline-style glide
+                    // the suite pins.
+                    let anim = null;
+                    if (rcFoldAnim) { try { rcFoldAnim.cancel(); } catch (e) {} }
+                    try { if (g.animate) { anim = g.animate(
+                        collapsed ? [{ height: h0 + 'px', opacity: '1' }, { height: '0px', opacity: '0' }] : [{ height: '0px', opacity: '0' }, { height: h0 + 'px', opacity: '1' }],
+                        { duration: 260, easing: 'ease' }); rcFoldAnim = anim; } } catch (e) {}
+                    if (anim) {
+                        const land = () => {
+                            // the finish promise can settle very late — only
+                            // the newest fold click's glide may land
+                            if (gen !== rcFoldGen) return;
+                            if (collapsed) g.classList.add('hidden');
+                            g.style.overflow = '';
+                        };
+                        anim.finished.then(land, land);
+                        setTimeout(land, 500);   // if the finish promise never settles
+                        return;
+                    }
+                    if (collapsed) {
+                        g.style.height = h0 + 'px';
+                        g.style.overflow = 'hidden';
+                        void g.offsetHeight;   // reflow, so the glide starts from this height
+                        g.style.transition = 'height .26s ease, opacity .26s ease';
+                        g.style.height = '0px';
+                        g.style.opacity = '0';
+                        setTimeout(() => {
+                            g.classList.add('hidden');
+                            g.style.transition = ''; g.style.height = ''; g.style.opacity = ''; g.style.overflow = '';
+                        }, 300);
+                    } else {
+                        g.style.height = '0px';
+                        g.style.overflow = 'hidden';
+                        g.style.opacity = '0';
+                        void g.offsetHeight;
+                        g.style.transition = 'height .26s ease, opacity .26s ease';
+                        g.style.height = h0 + 'px';
+                        g.style.opacity = '1';
+                        setTimeout(() => { g.style.transition = ''; g.style.height = ''; g.style.opacity = ''; g.style.overflow = ''; }, 300);
+                    }
                 });
                 on('ca-rc-close', () => closeRosterCalendar());
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
-                // hotfix 5 (owner order): swipe the grid sideways to change
-                // months. Horizontal only — a vertical pan scrolls the
-                // sheet — and never past the months the data holds.
-                const grid = document.getElementById('ca-rc-grid');
+                // hotfix 5 + 8 (owner orders): swipe the grid sideways to
+                // change months — now a finger-following glide. The track
+                // [prev][current][next] rides under the finger, the release
+                // glides to the nearer side, and a flick with no tracked
+                // moves keeps the classic threshold. Horizontal only — a
+                // vertical pan belongs to the page — and never past the
+                // months the data holds.
                 if (grid) {
-                    let swX = null, swY = null;
-                    grid.addEventListener('pointerdown', (e) => { swX = (e && e.clientX != null) ? e.clientX : null; swY = (e && e.clientY != null) ? e.clientY : null; });
-                    grid.addEventListener('pointercancel', () => { swX = null; swY = null; });
-                    grid.addEventListener('pointerup', (e) => {
-                        if (swX === null || !e || e.clientX == null) { swX = null; swY = null; return; }
-                        const dx = e.clientX - swX, dy = (e.clientY != null ? e.clientY : 0) - (swY != null ? swY : 0);
-                        swX = null; swY = null;
-                        if (Math.abs(dx) < 48 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-                        const months = rosterCalMonths();
-                        const at = months.indexOf(rcViewYm);
-                        const next = months[Math.min(months.length - 1, Math.max(0, at + (dx < 0 ? 1 : -1)))];
-                        if (next && next !== rcViewYm) { rcViewYm = next; renderRosterCalendar(dx < 0 ? 1 : -1); }
+                    grid.addEventListener('click', (ev) => {
+                        const cell = ev.target && ev.target.closest ? ev.target.closest('.ca-rc-day[data-ymd]') : null;
+                        if (cell) { try { rosterCalSelect(cell.getAttribute('data-ymd')); } catch (e) {} }
                     });
+                    // hotfix 8: the gesture owns the WHOLE screen — a finger
+                    // or mouse that wanders off the grid mid-swipe must not
+                    // strand the drag (touch captures implicitly; mouse and
+                    // pen do not, so the stream rides window listeners)
+                    const rcDragMove = (e) => {
+                        if (rcDrag.x0 === null || !e || e.clientX == null) return;
+                        const dx = e.clientX - rcDrag.x0, dy = (e.clientY != null ? e.clientY : 0) - rcDrag.y0;
+                        if (!rcDrag.on) {
+                            if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+                            const months = rosterCalMonths();
+                            const i = months.indexOf(rcViewYm);
+                            if ((dx > 0 && i <= 0) || (dx < 0 && i >= months.length - 1)) return;   // no month that way — nothing to drag in
+                            rcDrag.on = true;
+                            rcDrag.base = grid.innerHTML;
+                            rcDrag.w = grid.offsetWidth || 0;
+                            grid.style.overflow = 'hidden';
+                            grid.classList.add('ca-rc-drag');
+                            const left = i > 0 ? rcMonthHtml(months[i - 1]) : '';
+                            const right = i < months.length - 1 ? rcMonthHtml(months[i + 1]) : '';
+                            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
+                                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + left + '</div>'
+                                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + rcDrag.base + '</div>'
+                                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + right + '</div></div>';
+                            rcDrag.track = grid.firstChild;
+                        }
+                        if (rcDrag.track) {
+                            let d = dx;
+                            const months = rosterCalMonths();
+                            const i = months.indexOf(rcViewYm);
+                            if ((d > 0 && i <= 0) || (d < 0 && i >= months.length - 1)) d *= 0.35;   // rubber-band at the data edges
+                            rcDrag.track.style.transform = 'translateX(calc(-33.3333% ' + (d >= 0 ? '+ ' + Math.round(d) : '- ' + Math.abs(Math.round(d))) + 'px))';
+                        }
+                    };
+                    const dragEnd = (e) => {
+                        if (rcDrag.x0 === null) return;
+                        const dx = (e && e.clientX != null ? e.clientX : rcDrag.x0) - rcDrag.x0;
+                        const dy = (e && e.clientY != null ? e.clientY : 0) - rcDrag.y0;
+                        rcDrag.x0 = null;
+                        window.removeEventListener('pointermove', rcDragMove);
+                        window.removeEventListener('pointerup', dragEnd);
+                        window.removeEventListener('pointercancel', dragCancel);
+                        if (rcDrag.on && rcDrag.track) {
+                            const months = rosterCalMonths();
+                            const i = months.indexOf(rcViewYm);
+                            const dir = dx < 0 ? 1 : -1;
+                            const has = dir > 0 ? i < months.length - 1 : i > 0;
+                            const far = rcDrag.w ? Math.abs(dx) > Math.max(48, rcDrag.w * 0.22) : Math.abs(dx) >= 48;
+                            const live = rcDrag.track.parentNode === grid;
+                            if (far && has && live) {
+                                const target = months[i + dir];
+                                rcDrag.track.style.transition = 'transform .24s cubic-bezier(.25,.8,.25,1)';
+                                rcDrag.track.style.transform = 'translateX(' + (dir > 0 ? '-66.6667%' : '0%') + ')';
+                                const f = () => {
+                                    if (!rcDrag.track || rcDrag.track.parentNode !== grid) { rcDragStop(false); return; }
+                                    rcDragStop(false);
+                                    rcViewYm = target;
+                                    rcApplyMonth();
+                                };
+                                rcDrag.snapFn = f;
+                                rcDrag.snapT = setTimeout(f, 260);
+                            } else {
+                                rcDrag.track.style.transition = 'transform .24s ease';
+                                rcDrag.track.style.transform = 'translateX(-33.3333%)';
+                                const f = () => { if (rcDrag.track && rcDrag.track.parentNode === grid) rcDragStop(true); else rcDragStop(false); };
+                                rcDrag.snapFn = f;
+                                rcDrag.snapT = setTimeout(f, 260);
+                            }
+                            rcDrag.on = false;
+                            return;
+                        }
+                        // no tracked drag: a quick flick keeps the classic threshold
+                        if (Math.abs(dx) >= 48 && Math.abs(dx) >= Math.abs(dy) * 1.5) {
+                            const months = rosterCalMonths();
+                            const i = months.indexOf(rcViewYm);
+                            const dir = dx < 0 ? 1 : -1;
+                            const next = months[Math.min(months.length - 1, Math.max(0, i + dir))];
+                            if (next && next !== rcViewYm) { rcViewYm = next; renderRosterCalendar(dir); }
+                        }
+                    };
+                    const dragCancel = () => { if (rcDrag.on) rcDragStop(true); rcDrag.x0 = null; window.removeEventListener('pointermove', rcDragMove); window.removeEventListener('pointerup', dragEnd); window.removeEventListener('pointercancel', dragCancel); };
+                    grid.addEventListener('pointerdown', (e) => {
+                        rcDragFlush();
+                        if (rcDrag.on) rcDragStop(true);
+                        if (grid.getAttribute('data-rc-slide')) { rcDrag.x0 = null; return; }   // a canned slide owns the grid
+                        rcDrag.x0 = (e && e.clientX != null) ? e.clientX : null;
+                        rcDrag.y0 = (e && e.clientY != null) ? e.clientY : 0;
+                        rcDrag.on = false;
+                        if (rcDrag.x0 === null) return;
+                        // NOTE: no setPointerCapture here — capture would retarget
+                        // the tap's own click to the grid and break day taps;
+                        // the window listeners below already carry the gesture
+                        window.addEventListener('pointermove', rcDragMove);
+                        window.addEventListener('pointerup', dragEnd);
+                        window.addEventListener('pointercancel', dragCancel);
+                    });
+                    grid.addEventListener('pointermove', rcDragMove);
+                    grid.addEventListener('pointerup', dragEnd);
+                    grid.addEventListener('pointercancel', dragCancel);
                 }
                 // hotfix 7 (owner orders): the timeline scrolls inside the
                 // sheet (the sheet itself never scrolls) — scrolling it
@@ -4906,9 +5180,27 @@
                 if (det) {
                     det.addEventListener('scroll', () => {
                         rosterCalTLWindow();
+                        // hotfix 8 (owner report: after hold-for-today a
+                        // swipe jumped straight back) — the browser fires a
+                        // scroll event for the app's own reveal-scroll too;
+                        // it is flagged here so only a real finger's scroll,
+                        // which arrives later, ever flips the month
+                        const prog = Date.now() < rcTlProgUntil;
                         if (rcTlScrollT) clearTimeout(rcTlScrollT);
                         rcTlScrollT = setTimeout(() => {
-                            const ymd = rosterCalTlYmdAt((det.scrollTop || 0) + 24);
+                            if (prog) return;
+                            // hotfix 8: a slide or drag owns the grid while it
+                            // runs — its own reflow can clamp this scroller and
+                            // fire a synthetic scroll, which must never flip
+                            // the month out from under the animation
+                            const g = document.getElementById('ca-rc-grid');
+                            if (g && (g.getAttribute('data-rc-slide') || g.querySelector('.ca-rc-track'))) return;
+                            const top = det.scrollTop || 0;
+                            // still parked exactly where the app left it — the
+                            // reflow's own scroll, not a finger's
+                            if (top === rcTlTopKnown) return;
+                            const ymd = rosterCalTlYmdAt(top + 24);
+                            rcTlTopKnown = top;
                             if (ymd && ymd.slice(0, 7) !== rcViewYm) { rcViewYm = ymd.slice(0, 7); renderRosterCalendar(0, true); }
                         }, 140);
                     });
@@ -5078,11 +5370,15 @@
                 if (aDep && aArr && Date.now() >= aDep && Date.now() < aArr) return null; // flying, not at the station
                 const station = duty.anchor.dep;
                 const zone = airportZone(station);
-                if (!zone || zone === 'Asia/Singapore') return null;
+                if (!zone) return null;
                 const stH = hmHFromDate(Date.now(), zone);
                 const sgH = hmHFromDate(Date.now(), 'Asia/Singapore');
-                const phrase = tzOffsetPhrase((zoneOffsetMin(zone) || 0) - 480);
-                return { station: station, stH: stH, sgH: sgH, phrase: phrase, sig: station + '|' + stH + '|' + sgH };
+                const diff = (zoneOffsetMin(zone) || 0) - 480;
+                // hotfix 8 (owner order): local time same as SGT — or within
+                // a minute of it (PEK, KUL, HKG…) — folds the card to ONE line
+                const same = Math.abs(diff) <= 1;
+                const phrase = same ? 'same as SGT' : tzOffsetPhrase(diff);
+                return { station: station, stH: stH, sgH: sgH, phrase: phrase, same: same, sig: station + '|' + stH + '|' + sgH + '|' + (same ? '1' : '0') };
             } catch (e) { return null; }
         }
         function renderLayoverTzCard() {
@@ -5091,8 +5387,11 @@
             if (!info) { if (old) old.remove(); return; }
             const inner = '<div class="glass-bubble p-3.5 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">'
                 + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="globe" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i><span class="ca-micro font-bold uppercase tracking-wider" style="color: var(--sia-gold, #c9a227)">Layover time zone</span></div>'
-                + '<p class="text-sm font-bold">' + rosterEsc(info.station) + ' \u2014 ' + info.stH + ' <span class="font-normal text-gray-500">&middot; ' + info.phrase + '</span></p>'
-                + '<p class="text-sm font-bold mt-0.5">SG \u2014 ' + info.sgH + '</p>'
+                // hotfix 8 (owner order): one line when the clocks match —
+                // "PEK \u2014 1432H same as SGT"; the two-line card otherwise
+                + '<p class="text-sm font-bold">' + rosterEsc(info.station) + ' \u2014 ' + info.stH + ' <span class="font-normal text-gray-500">'
+                + (info.same ? 'same as SGT</span></p>'
+                    : '&middot; ' + info.phrase + '</span></p><p class="text-sm font-bold mt-0.5">SG \u2014 ' + info.sgH + '</p>')
                 + '</div>';
             if (old) {
                 // in-place minute rollover — never a mid-chat re-append

@@ -451,6 +451,24 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(kids.indexOf(tz) > -1 && kids.indexOf(c3) > -1 && kids.indexOf(tz) < kids.indexOf(c3), 'the time-zone card sits after the greetings, before the flight card');
   }
   {
+    // ---- hotfix 8 (owner order): a station keeping Singapore time folds
+    // the card to ONE line - "PEK - 1432H same as SGT" ----
+    const { d } = await boot(APP, { now: '2026-10-07T14:32:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '802', dep: 'PEK', arr: 'SIN', ymd: '2026-10-08', std: '20:30', sta: '06:29', staYmd: '2026-10-09' }
+      ])));
+    } });
+    let c5 = null; const tE = Date.now();
+    while (Date.now() - tE < 9000 && !(c5 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const tz2 = d.getElementById('ca-layover-tz-card');
+    R.ok(!!tz2, 'the layover card still appears at a same-clock station');
+    const txt2 = tz2 ? tz2.textContent : '';
+    R.ok(txt2.indexOf('PEK \u2014 1432H same as SGT') >= 0, 'PEK (Singapore\u2019s own clock) reads ONE line: PEK \u2014 1432H same as SGT');
+    R.ok(txt2.indexOf('SG \u2014') < 0, 'no second SG line when the clocks match');
+    R.ok(txt2.indexOf('ahead of SG') < 0 && txt2.indexOf('behind SG') < 0, 'no offset phrase to state when the clocks match');
+  }
+  {
     // ---- multisector layover: part one presents the whole outbound ----
     const { d } = await boot(APP, { now: '2026-10-05T22:00:00+08:00', seed: (x) => {
       seedProfile(x);
