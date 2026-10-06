@@ -273,7 +273,8 @@ const mkUntil = (d) => async (cond, ms) => {
     // and the inflation is per-block (non-uniform), which misaligns the
     // pixel-tuned cards. The lock makes every screen draw the design as-is.
     R.ok(/html \{\s*\n\s*-webkit-text-size-adjust: 100%;\s*\n\s*text-size-adjust: 100%;\s*\n\s*\}/.test(src), 'hotfix 15: the text autosizer is locked to 100% — the inner screen renders at the designed text scale');
-    R.ok(!src.includes('will-change'), 'no standing will-change layers (the slide tracks animate without them — less compositor pressure on a 5-megapixel foldable screen)');
+    R.ok((src.match(/will-change/g) || []).length === 1 && src.includes('width:300%;will-change:transform;transform:translateX(-33.3333%)'), 'exactly one will-change survives — the live finger-drag track (hotfix 17); every other surface rides the compositor only while it animates');
+    R.ok(!src.includes("el.innerHTML = html;") && src.includes('rcTL.diff[ymd] = node;'), 'hotfix 17: the timeline window is diffed, never wiped — rows mount and unmount one at a time between stable spacers');
     // hotfix 16 (owner screenshots from the foldable's inner screen: the
     // grid / the timeline / both / the earnings sheets dropped whole regions
     // of content in tile-sized bands): the big sheets are 95%-opaque yet

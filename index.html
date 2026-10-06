@@ -2030,7 +2030,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
                 { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide open, survives a quick close-and-reopen, keeps its lines to one row and its text at scale, and paints fully on the foldable\u2019s inner screen.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide open, answers quick taps and swipes, keeps its lines to one row and its text at scale, and paints fully on the foldable\u2019s inner screen.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
             ] },
@@ -4582,11 +4582,19 @@
                 + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? inc : out) + '</div></div>';
             const track = grid.firstChild;
             let fin = false;
+            // hotfix 17 (owner report: the calendar misbehaves "depending
+            // where I tap" — root cause found): a second arrow tap inside the
+            // 380ms glide bumped the generation, and this guard then aborted
+            // WITHOUT removing data-rc-slide or the overflow clamp — the
+            // swipe and the scroll-flip stayed dead for the rest of the
+            // session. Cleanup is unconditional now; only the commit is
+            // generation-owned (a newer render already owns the content).
             const done = () => {
-                if (fin || rcSlideGen !== gen) return;
+                if (fin) return;
                 fin = true;
                 grid.removeAttribute('data-rc-slide');
                 grid.style.overflow = '';
+                if (rcSlideGen !== gen) return;   // a newer render owns the content
                 commit();
             };
             // hotfix 8: a forced reflow (not a rAF chain — a busy compositor
@@ -4780,26 +4788,105 @@
             while (a < b) { const m = (a + b + 1) >> 1; if (rcTL.off[m] <= px) a = m; else b = m - 1; }
             return rcTL.days[a];
         }
+        // hotfix 17: the window derives from REAL geometry when rows are
+        // mounted — rcTL.off[] carries height ESTIMATES for every day that
+        // has never been mounted, and the estimates drift from the real
+        // cards (144px real vs 310px estimated and worse), so a window
+        // chosen from off[] can miss where the scroller actually rests —
+        // the owner's "bottom details not rendering" state. The mounted
+        // rows' rects are the truth; when the viewport sits outside them
+        // the index extrapolates from the nearest row's real height.
+        function rosterCalTLCover(el) {
+            if (!rcTL || !rcTL.diff) return null;
+            const mounted = Object.keys(rcTL.diff).map((ymd) => ({ idx: rcTL.days.indexOf(ymd), node: rcTL.diff[ymd] })).sort((x, y) => x.idx - y.idx);
+            if (!mounted.length) return null;
+            const dr = el.getBoundingClientRect();
+            if (!dr.height) return null;   // no layout engine (jsdom) — the offsets are the only truth
+            const st = el.scrollTop || 0, vh = el.clientHeight || 420;
+            let topIdx = null;
+            for (const m of mounted) {
+                const rr = m.node.getBoundingClientRect();
+                if (rr.bottom > dr.top + 4) { topIdx = m.idx; break; }
+            }
+            if (topIdx === null) {   // below every mounted row — extrapolate down
+                const last = mounted[mounted.length - 1];
+                const rr = last.node.getBoundingClientRect();
+                topIdx = Math.min(rcTL.days.length - 1, last.idx + Math.max(1, Math.round((dr.top - rr.bottom) / Math.max(40, rr.height || 60))));
+            }
+            const first = mounted[0];
+            const fr = first.node.getBoundingClientRect();
+            if (fr.top > dr.top + 4) {   // above every mounted row — extrapolate up
+                topIdx = Math.max(0, first.idx - Math.max(1, Math.round((fr.top - dr.top) / Math.max(40, fr.height || 60))));
+            }
+            return [Math.max(0, topIdx - 6), Math.min(rcTL.days.length, topIdx + Math.ceil(vh / 58) + 6)];
+        }
         function rosterCalTLWindow(force) {
             const el = document.getElementById('ca-rc-detail');
             if (!el || !rcTL || !rcTL.days.length) return;
-            const st = el.scrollTop || 0, vh = el.clientHeight || 420;
-            let a = 0;
-            while (a < rcTL.days.length - 1 && rcTL.off[a + 1] <= st + 24) a++;
-            let b = a;
-            while (b < rcTL.days.length && rcTL.off[b] < st + vh + 24) b++;
-            const over = 6;
-            a = Math.max(0, a - over); b = Math.min(rcTL.days.length, b + over);
+            const estimate = () => {
+                const st = el.scrollTop || 0, vh = el.clientHeight || 420;
+                let a = 0;
+                while (a < rcTL.days.length - 1 && rcTL.off[a + 1] <= st + 24) a++;
+                let b = a;
+                while (b < rcTL.days.length && rcTL.off[b] < st + vh + 24) b++;
+                return [Math.max(0, a - 6), Math.min(rcTL.days.length, b + 6)];
+            };
+            let ab = rosterCalTLCover(el) || estimate();
+            let a = ab[0], b = ab[1];
             if (!force && rcTL.rendered && rcTL.rendered[0] <= a && rcTL.rendered[1] >= b) { rosterCalScheduleEarns(); return; }
-            rcTL.rendered = [a, b];
             const dayAt = rcDayLookup();
-            let html = '<div style="height:' + Math.max(0, rcTL.off[a]) + 'px" aria-hidden="true"></div>';
-            for (let i = a; i < b; i++) {
-                const ymd = rcTL.days[i];
-                html += rosterCalDayRow(dayAt(ymd) || { ymd: ymd, kind: '', code: '', loc: '', fns: [], dkey: '' }, ymd === rcSelected);
+            // hotfix 17 (owner reports: the timeline "flickers as if there
+            // is some black box" while a finger scrolls it, and "bottom
+            // details not rendering" at rest): the window used to wipe
+            // el.innerHTML on every crossing — every row was destroyed and
+            // rebuilt, so the whole visible window re-rasterized at once
+            // (black tiles on the inner screen while the compositor caught
+            // up). Worse, the heights were corrected only AFTER the window
+            // was chosen, so a resting viewport could end up outside the
+            // freshly corrected window with no further scroll event coming
+            // — an empty detail that sat there until the next touch. The
+            // window is now DIFFED (rows mount and unmount one at a time
+            // between two stable spacers — a visible row never leaves the
+            // DOM mid-scroll) and applied a SECOND time on the corrected
+            // offsets, so the window always covers where the scroller
+            // actually rests.
+            const apply = (a, b) => {
+                rcTL.rendered = [a, b];
+                // unmount the rows that left the window
+                Object.keys(rcTL.diff).forEach((ymd) => {
+                    const idx = rcTL.days.indexOf(ymd);
+                    if (idx < a || idx >= b) { const r = rcTL.diff[ymd]; if (r && r.parentNode === el) r.remove(); delete rcTL.diff[ymd]; }
+                });
+                // mount the missing rows, in day order, before the first
+                // row that follows them (or the tail spacer)
+                for (let i = a; i < b; i++) {
+                    const ymd = rcTL.days[i];
+                    if (rcTL.diff[ymd]) continue;
+                    const holder = document.createElement('div');
+                    holder.innerHTML = rosterCalDayRow(dayAt(ymd) || { ymd: ymd, kind: '', code: '', loc: '', fns: [], dkey: '' }, ymd === rcSelected);
+                    const node = holder.firstElementChild;
+                    if (!node) continue;
+                    let ref = rcTL.tail;
+                    for (let j = i + 1; j < b; j++) { const nx = rcTL.diff[rcTL.days[j]]; if (nx) { ref = nx; break; } }
+                    el.insertBefore(node, ref);
+                    rcTL.diff[ymd] = node;
+                }
+                rcTL.head.style.height = Math.max(0, rcTL.off[a]) + 'px';
+                rcTL.tail.style.height = Math.max(0, rcTL.total - rcTL.off[b]) + 'px';
+            };
+            if (force || !rcTL.diff || !rcTL.head || rcTL.head.parentNode !== el) {
+                el.textContent = '';
+                rcTL.diff = {};
+                rcTL.head = document.createElement('div');
+                rcTL.head.setAttribute('aria-hidden', 'true');
+                rcTL.tail = document.createElement('div');
+                rcTL.tail.setAttribute('aria-hidden', 'true');
+                el.appendChild(rcTL.head);
+                el.appendChild(rcTL.tail);
+                apply(a, b);
+            } else {
+                apply(a, b);
             }
-            html += '<div style="height:' + Math.max(0, rcTL.total - rcTL.off[b]) + 'px" aria-hidden="true"></div>';
-            el.innerHTML = html;
             // hotfix 9: icons swap in BEFORE the heights are measured — the
             // placeholder <i> and its svg replacement size differently in
             // some engines, and a reveal anchoring on pre-icon offsets lands
@@ -4807,17 +4894,30 @@
             try { lucide.createIcons(); } catch (e) {}
             // measured heights correct the estimates (browsers only — jsdom
             // reports 0 and keeps the estimates, which is fine for structure)
-            const rowsEl = el.querySelectorAll('.ca-rc-row');
             let drifted = false;
-            rowsEl.forEach((r, k) => {
-                const i = a + k, real = r.offsetHeight;
+            for (let i = rcTL.rendered[0]; i < rcTL.rendered[1]; i++) {
+                const r = rcTL.diff[rcTL.days[i]];
+                const real = r ? r.offsetHeight : 0;
                 if (real && Math.abs(real - rcTL.h[i]) > 2) { rcTL.h[i] = real; drifted = true; }
-            });
+            }
             if (drifted) {
+                const a1 = rcTL.rendered[0], oldOffA = rcTL.off[a1];
                 for (let i = 1; i <= rcTL.days.length; i++) rcTL.off[i] = rcTL.off[i - 1] + rcTL.h[i - 1];
                 rcTL.total = rcTL.off[rcTL.days.length] || 0;
-                const sp = el.querySelectorAll(':scope > div[aria-hidden="true"]');
-                if (sp.length >= 2) { sp[0].style.height = Math.max(0, rcTL.off[a]) + 'px'; sp[sp.length - 1].style.height = Math.max(0, rcTL.total - rcTL.off[b]) + 'px'; }
+                // the anchor: the corrected offsets move the window's start
+                // (the head spacer resizes), which would slide every visible
+                // row under the eye and make the re-derivation chase it.
+                // Compensate the scroller by the same delta — the screen
+                // holds still, the rows above quietly correct.
+                const dHead = rcTL.off[a1] - oldOffA;
+                if (dHead && el.scrollTop > 0) el.scrollTop = Math.max(0, el.scrollTop + dHead);
+                // the second pass: re-derive the window from the real
+                // geometry of where the scroller now rests and re-apply, so
+                // the viewport is never left outside the window (the owner's
+                // "bottom details not rendering" state)
+                const ab2 = rosterCalTLCover(el) || estimate();
+                apply(ab2[0], ab2[1]);
+                try { lucide.createIcons(); } catch (e) {}
             }
             rosterCalScheduleEarns();
         }
@@ -5272,9 +5372,25 @@
                             rcDrag.w = grid.offsetWidth || 0;
                             grid.style.overflow = 'hidden';
                             grid.classList.add('ca-rc-drag');
-                            const left = i > 0 ? rcMonthHtml(months[i - 1]) : '';
-                            const right = i < months.length - 1 ? rcMonthHtml(months[i + 1]) : '';
-                            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;transform:translateX(-33.3333%)">'
+                            // hotfix 17 (owner report: "the content flickers
+                            // as if there is some black box" while holding and
+                            // swinging the finger): at the roster's first/last
+                            // month the void side of the track was an EMPTY
+                            // third, and the rubber band dragged that black
+                            // slab into view. Both thirds now carry a clone of
+                            // the current month — the resistance slides over
+                            // real content, never a void.
+                            const left = i > 0 ? rcMonthHtml(months[i - 1]) : rcMonthHtml(rcViewYm);
+                            const right = i < months.length - 1 ? rcMonthHtml(months[i + 1]) : rcMonthHtml(rcViewYm);
+                            // hotfix 17: this track transforms on EVERY pointer
+                            // event — without its own compositor layer each
+                            // move forces a full-grid repaint, which the big
+                            // inner screen shows as black flashes. The element
+                            // is destroyed when the drag lands, so the layer
+                            // is transient by design (the one-shot slide
+                            // tracks stay unpromoted — a transition promotes
+                            // itself).
+                            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
                                 + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + left + '</div>'
                                 + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + rcDrag.base + '</div>'
                                 + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + right + '</div></div>';

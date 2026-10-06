@@ -184,7 +184,15 @@ const synthItems = [].concat(
     // cancels the pending hide before un-hiding the wrap.
     R.ok(/function openRosterCalendar[\s\S]*?caSheetHideCancel\(wrap\);\s*\n\s*wrap\.classList\.remove\('hidden'\);/.test(src), 'a quick close-and-reopen never hides the wrap mid-open (hotfix 14) — the open cancels the close\u2019s pending hide');
     R.ok(/function closeRosterCalendar[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the close arms its hide through the shared pair (a reopen cancels it)');
-    R.ok(!/ca-rc-track[^>]*will-change/.test(src), 'the month slide track carries no standing compositor layer (hotfix 15) — the one-shot transition promotes itself');
+    R.ok(src.includes('width:300%;will-change:transform;transform:translateX(-33.3333%)'), 'the finger-following drag track carries its own compositor layer (hotfix 17) — it transforms on every pointer event');
+    // hotfix 17 (owner: "the content flickers as if there is some black box"
+    // while holding and swinging the finger; the swipe died after quick
+    // arrow taps; "bottom details not rendering" at rest):
+    R.ok(/const done = \(\) => \{[\s\S]*?fin = true;\s*\n\s*grid\.removeAttribute\('data-rc-slide'\);\s*\n\s*grid\.style\.overflow = '';\s*\n\s*if \(rcSlideGen !== gen\) return;   \/\/ a newer render owns the content\s*\n\s*commit\(\);/.test(src), 'a slide always cleans up its state — only the commit is generation-owned, so rapid arrow taps can never strand data-rc-slide and kill the swipe (hotfix 17)');
+    R.ok(/const left = i > 0 \? rcMonthHtml\(months\[i - 1\]\) : rcMonthHtml\(rcViewYm\);/.test(src) && /const right = i < months\.length - 1 \? rcMonthHtml\(months\[i \+ 1\]\) : rcMonthHtml\(rcViewYm\);/.test(src), 'the drag track\u2019s void edges carry a clone of the current month — the rubber band never drags a black slab into view (hotfix 17)');
+    R.ok(src.includes('function rosterCalTLCover(el)') && src.includes('if (!dr.height) return null;   // no layout engine (jsdom) — the offsets are the only truth'), 'the timeline window derives from real geometry when there is one (hotfix 17) — stale height estimates can never leave the resting viewport outside the window');
+    R.ok(/const dHead = rcTL\.off\[a1\] - oldOffA;\s*\n\s*if \(dHead && el\.scrollTop > 0\) el\.scrollTop = Math\.max\(0, el\.scrollTop \+ dHead\);/.test(src), 'height corrections anchor the scroller — corrected spacers never slide the visible rows under the eye (hotfix 17)');
+    R.ok(!/'<div class="ca-rc-track" style="display:flex;width:200%;will-change/.test(src) && !/width:300%;will-change:transform;transform:translateX\(dir/.test(src), 'the one-shot slide tracks stay unpromoted (hotfix 15) — a transition promotes itself');
     // hotfix 16: the owner's inner-screen screenshots showed the calendar's
     // content dropping in tile-sized bands — the sheet's invisible live blur
     // over the blurred full-screen shade starved the compositor.
