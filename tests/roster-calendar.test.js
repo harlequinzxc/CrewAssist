@@ -161,7 +161,7 @@ const synthItems = [].concat(
     R.ok(!!d.getElementById('ca-rc-jump') && !!d.getElementById('ca-rc-fold'), 'the month header button and the fold chevron live in the header');
     R.ok(d.getElementById('ca-rc-jump').nextElementSibling === d.getElementById('ca-rc-fold'), 'the fold chevron sits just after the month header');
     R.ok(d.getElementById('ca-rc-prev').parentElement.contains(d.getElementById('ca-rc-close')) && !d.getElementById('ca-rc-prev').parentElement.contains(d.getElementById('ca-rc-fold')), 'the arrows sit beside the close icon, away from the fold');
-    R.ok(src.indexOf('ca-rc-shade absolute inset-0 bg-black/60 backdrop-blur-sm') >= 0, 'the calendar shade matches the Settings backdrop — black/60 with the same blur');
+    R.ok(src.indexOf('ca-rc-shade absolute inset-0 bg-black/60 opacity-0') >= 0, 'the calendar shade matches the Settings backdrop — the same black/60 scrim (hotfix 16: both blur-free)');
     const settingsTop = (src.match(/id="settings-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
     const calTop = (src.match(/id="ca-rc-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
     R.ok(settingsTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('max-w-xl') < 0, 'the calendar sheet wears the Settings overlay’s exact height — same top offset, full-bleed glass');
@@ -185,6 +185,11 @@ const synthItems = [].concat(
     R.ok(/function openRosterCalendar[\s\S]*?caSheetHideCancel\(wrap\);\s*\n\s*wrap\.classList\.remove\('hidden'\);/.test(src), 'a quick close-and-reopen never hides the wrap mid-open (hotfix 14) — the open cancels the close\u2019s pending hide');
     R.ok(/function closeRosterCalendar[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the close arms its hide through the shared pair (a reopen cancels it)');
     R.ok(!/ca-rc-track[^>]*will-change/.test(src), 'the month slide track carries no standing compositor layer (hotfix 15) — the one-shot transition promotes itself');
+    // hotfix 16: the owner's inner-screen screenshots showed the calendar's
+    // content dropping in tile-sized bands — the sheet's invisible live blur
+    // over the blurred full-screen shade starved the compositor.
+    R.ok(!/ca-rc-shade[^"]*backdrop-blur/.test(src), 'the calendar shade is scrim-only (hotfix 16) — no full-screen blur under the sheet');
+    R.ok(/class="ca-rc-shade absolute inset-0 bg-black\/60 opacity-0/.test(src), 'the calendar shade is the plain black/60 scrim');
     R.ok(src.indexOf('w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600') >= 0, 'the calendar grows the Settings-style drag handle');
     // hotfix 7 (owner orders): the sheet itself never scrolls — the grid is
     // fixed and the timeline owns the vertical scroll, no scrollbar

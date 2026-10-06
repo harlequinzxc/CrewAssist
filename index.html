@@ -138,10 +138,18 @@
             border: 1px solid var(--glass-border);
         }
 
+        /* hotfix 16 (owner screenshots from the foldable's inner screen:
+        "calendar grid not rendering", "bottom details not rendering",
+        "grid and bottom details not rendering", "earnings overlay has
+        nothing rendered"): the big sheets are 95%-opaque surfaces that
+        carried a live backdrop-filter blur — invisible under their own
+        opacity, but each one forced a full-sheet blur pass every frame, and
+        nested over the full-screen blurred shade the foldable's compositor
+        dropped whole regions of content (grid, timeline rows, the earnings
+        sheets) in tile-sized bands. The blur is gone: the 0.95-alpha
+        background over the dimmed shade behind it looks the same. */
         .glass-sheet {
             background: var(--glass-sheet-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border-top: 1px solid var(--glass-border);
         }
 
@@ -1036,7 +1044,7 @@
         .ca-cl-group { animation: caClGroupIn .35s ease both; }
         @keyframes caClGroupIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
         @media (prefers-reduced-motion: reduce) { .ca-cl-group { animation: none; } }
-        .ca-cl-vhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: rgba(4, 7, 15, 0.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(201, 162, 39, 0.35); }
+        .ca-cl-vhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: rgba(4, 7, 15, 0.92); border-bottom: 1px solid rgba(201, 162, 39, 0.35); }
         html:not(.dark) .ca-cl-vhead { background: rgba(246, 241, 232, 0.92); }
         .ca-cl-vdate { margin-left: auto; font-size: 11px; color: #a8a29e; }
         html:not(.dark) .ca-cl-vdate { color: #78716c; }
@@ -1254,7 +1262,7 @@
         </div>
 
         <!-- Settings Bottom Sheet -->
-        <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="settings-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 "></div>
         <div id="settings-sheet" role="dialog" aria-modal="true" aria-label="Settings" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
@@ -1384,7 +1392,7 @@
         </div>
 
         <!-- Changelog overlay (v1.35.0; redesigned in the v1.35.0 hotfix-3 round: filter chips, sort toggle, summary card, sticky version headers) -->
-        <div id="ca-changelog-backdrop" class="fixed inset-0 bg-black/60 z-[63] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="ca-changelog-backdrop" class="fixed inset-0 bg-black/60 z-[63] hidden opacity-0 transition-opacity duration-300 "></div>
         <div id="ca-changelog-sheet" role="dialog" aria-modal="true" aria-label="Changelog" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[64] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
@@ -1443,7 +1451,7 @@
 
         <!-- Results Overlay Sheet -->
         <!-- Earnings archive overlay (v1.19.13 redesign) -->
-        <div id="ca-arch-backdrop" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="ca-arch-backdrop" class="fixed inset-0 bg-black/60 z-[60] hidden opacity-0 transition-opacity duration-300 "></div>
         <div id="ca-arch-sheet" role="dialog" aria-modal="true" aria-label="Earnings" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-[61] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <!-- iOS bottom-sheet handle -->
             <div class="pt-2 pb-1 flex justify-center shrink-0"><div class="w-[44px] h-[4px] rounded-full bg-black/15 dark:bg-[#2a2f3d]"></div></div>
@@ -1534,7 +1542,7 @@
         <div id="ca-roster-cal" class="fixed inset-0 z-[60] hidden">
             <!-- hotfix 5 (owner order): the shade matches every other
                  overlay — bg-black/60 with the same backdrop blur -->
-            <div class="ca-rc-shade absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 transition-opacity duration-300" data-ca-rc-close></div>
+            <div class="ca-rc-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-close></div>
             <!-- hotfix 5 (owner order): the sheet wears the Settings
                  overlay's exact geometry (same top offset, full width, drag
                  handle) so the two read as the same height -->
@@ -1580,7 +1588,7 @@
             </div>
         </div>
 
-        <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="results-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 "></div>
         <div id="results-sheet" role="dialog" aria-modal="true" aria-label="Summary" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
@@ -1607,7 +1615,7 @@
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
         </div>
 
-        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
+        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
             <div class="w-full max-w-sm">
                 <div class="glass-bubble w-full rounded-3xl p-5 pt-6 border border-sia-gold/20 shadow-2xl relative" onclick="event.stopPropagation()">
                     <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
@@ -1626,7 +1634,7 @@
             </div>
         </div>
 
-        <div id="app-dialog-backdrop" class="fixed inset-0 z-[90] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
+        <div id="app-dialog-backdrop" class="fixed inset-0 z-[90] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <div class="glass-bubble w-full max-w-sm rounded-3xl p-5 border border-sia-gold/20 shadow-2xl" onclick="event.stopPropagation()">
                 <p id="app-dialog-msg" class="text-sm font-bold text-center leading-relaxed mb-5"></p>
                 <div class="flex gap-2">
@@ -1636,7 +1644,7 @@
             </div>
         </div>
 
-        <div id="cadate-backdrop" class="fixed inset-0 z-[92] hidden opacity-0 transition-opacity duration-200 bg-black/60 backdrop-blur-sm flex items-center justify-center p-6" role="dialog" aria-modal="true">
+        <div id="cadate-backdrop" class="fixed inset-0 z-[92] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <div id="cadate-panel" class="w-full max-w-sm rounded-3xl p-5 shadow-2xl" onclick="event.stopPropagation()">
                 <p class="ca-micro font-bold uppercase tracking-widest text-sia-gold">Select date</p>
                 <p id="cadate-heading" class="text-2xl font-bold mt-1"></p>
@@ -1670,7 +1678,7 @@
         </div>
 
         <!-- Menu Viewer Sheet -->
-        <div id="menu-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="menu-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 "></div>
         <div id="menu-sheet" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
             <div class="w-full flex justify-center py-3 shrink-0">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
@@ -1760,7 +1768,7 @@
         </div>
 
         <!-- Menu Printer -->
-        <div id="print-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 backdrop-blur-sm"></div>
+        <div id="print-backdrop" class="fixed inset-0 bg-black/60 z-40 hidden opacity-0 transition-opacity duration-300 "></div>
         <div id="print-overlay" class="fixed inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] z-50 glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col overflow-hidden">
             <div class="w-full flex justify-center py-3 shrink-0 no-print">
                 <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
@@ -2022,7 +2030,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
                 { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide open, survives a quick close-and-reopen, keeps its text size steady and each card line to one row, and rests its buttons while the chat types.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide open, survives a quick close-and-reopen, keeps its lines to one row and its text at scale, and paints fully on the foldable\u2019s inner screen.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
             ] },

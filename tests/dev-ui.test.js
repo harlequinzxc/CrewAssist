@@ -274,6 +274,18 @@ const mkUntil = (d) => async (cond, ms) => {
     // pixel-tuned cards. The lock makes every screen draw the design as-is.
     R.ok(/html \{\s*\n\s*-webkit-text-size-adjust: 100%;\s*\n\s*text-size-adjust: 100%;\s*\n\s*\}/.test(src), 'hotfix 15: the text autosizer is locked to 100% — the inner screen renders at the designed text scale');
     R.ok(!src.includes('will-change'), 'no standing will-change layers (the slide tracks animate without them — less compositor pressure on a 5-megapixel foldable screen)');
+    // hotfix 16 (owner screenshots from the foldable's inner screen: the
+    // grid / the timeline / both / the earnings sheets dropped whole regions
+    // of content in tile-sized bands): the big sheets are 95%-opaque yet
+    // carried a live backdrop-filter blur, nested over full-screen blurred
+    // shades — the compositor on the wide inner screen shed content under
+    // the load. The sheets and every full-screen shade are blur-free now
+    // (the blur was invisible under their own opacity/scrim); only the login
+    // hero keeps its blur, and the small identity surfaces (header strip,
+    // bubbles, the photo lightbox) keep theirs.
+    R.ok(!/\.glass-sheet \{[^}]*backdrop-filter/.test(src), 'hotfix 16: the big sheets carry no live blur — a 95%-opaque surface never needed one');
+    R.ok((src.match(/backdrop-blur-sm/g) || []).length === 1, 'exactly one backdrop-blur-sm survives (the login hero) — every full-screen shade is scrim-only');
+    R.ok(!/\.ca-cl-vhead \{[^}]*backdrop-filter/.test(src), 'the changelog sticky header carries no blur (sticky + blur inside a scroller is a classic Android paint-killer)');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');
