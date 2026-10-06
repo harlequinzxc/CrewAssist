@@ -253,6 +253,17 @@ const mkUntil = (d) => async (cond, ms) => {
         // gold line across the overlay.
         R.ok(src.includes('sheet.classList.add(\'ca-focuscatch\');') && src.includes('.ca-focuscatch:focus, .ca-focuscatch:focus-visible { outline: none !important; }'), 'hotfix 13: the focus catch never draws the gold outline');
     }
+    // ---- hotfix 14 (owner report: "some of the calendar contents are not
+    // rendering/displaying properly" on the foldable): the stale hide timer —
+    // a close armed a 300ms display:none, a quick reopen un-hid the wrap,
+    // and the stale timer then fired mid-open (the calendar collapsed and
+    // its scroll-flip "corrected" to the first month). Opens cancel, closes
+    // arm, through one shared pair — no bare hide timers anywhere.
+    R.ok(src.includes('function caSheetHideArm') && src.includes('function caSheetHideCancel'), 'hotfix 14: the shared hide-arm/cancel pair exists');
+    R.ok(src.split('caSheetHideCancel(').length - 1 >= 12, 'hotfix 14: every opener cancels a pending hide (' + (src.split('caSheetHideCancel(').length - 1) + ' cancels)');
+    R.ok(src.split('caSheetHideArm(').length - 1 >= 10, 'hotfix 14: every closer arms through the pair (' + (src.split('caSheetHideArm(').length - 1) + ' arms)');
+    R.ok(!/\}\);? ?\n?\s*setTimeout\(\(\) => \{ ?[a-zA-Z]+\.classList\.add\('hidden'\); ?\}, 300\)/.test(src), 'no bare 300ms hide timers survive outside the pair');
+    R.ok(/function caSheetHideArm[\s\S]*?el\.__caHideT = setTimeout\(\(\) => \{ el\.__caHideT = null; el\.classList\.add\('hidden'\); \}, ms \|\| 300\);/.test(src), 'the arm clears any prior timer before arming (double-close never double-arms)');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');

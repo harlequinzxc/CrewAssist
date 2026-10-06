@@ -2009,7 +2009,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
                 { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens and always finishes its slide open, the flight card keeps every line to one row, and the header buttons rest while the chat types.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, always finishes its slide open, survives a quick close-and-reopen, keeps each flight-card line to one row, and rests its buttons while the chat types.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
             ] },
@@ -2636,7 +2636,7 @@
                         if (typeof caSheetFocusOut === 'function') caSheetFocusOut(sheet);
                         backdrop.classList.add('opacity-0');
                         sheet.classList.add('translate-y-full');
-                        setTimeout(() => { backdrop.classList.add('hidden'); }, 300);
+                        caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
                     }]
                 ];
                 for (let i = 0; i < closers.length; i++) {
@@ -2790,7 +2790,7 @@
             appDialogResolver = null;
             if (backdrop) {
                 backdrop.classList.add('opacity-0');
-                setTimeout(() => backdrop.classList.add('hidden'), 200);
+                caSheetHideArm(backdrop, 200);   // hotfix 14: arm, never a bare timer
             }
             if (resolve) resolve(!!val);
         }
@@ -2809,6 +2809,7 @@
                 msg.textContent = message;
                 if (isConfirm) cancel.classList.remove('hidden');
                 else cancel.classList.add('hidden');
+                caSheetHideCancel(backdrop);   // hotfix 14
                 backdrop.classList.remove('hidden');
                 requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
             });
@@ -3231,6 +3232,7 @@
             if (title) title.textContent = entries.length === 1 ? 'v' + APP_VERSION : 'v' + entries[entries.length - 1].v + ' \u2192 v' + APP_VERSION;
             renderChangelogInto(list, entries);
             if (hide) hide.checked = false;
+            caSheetHideCancel(backdrop);   // hotfix 14
             backdrop.classList.remove('hidden');
             requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
             try { lucide.createIcons(); } catch (e) {}
@@ -3429,6 +3431,7 @@
             renderClSummary();
             renderChangelogSheet();
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
+            caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 // hotfix 13: the shared glide (reflow pin + heal passes)
@@ -3443,7 +3446,7 @@
             caSheetFocusOut(sheet); // v1.32.0 (M3): focus returns to the opener
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
-            setTimeout(() => { backdrop.classList.add('hidden'); }, 300);
+            caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
 
         function closeWhatsNew() {
@@ -3460,7 +3463,7 @@
             }
             if (!backdrop) return;
             backdrop.classList.add('opacity-0');
-            setTimeout(() => backdrop.classList.add('hidden'), 200);
+            caSheetHideArm(backdrop, 200);   // hotfix 14: arm, never a bare timer
             // If the welcome chat was held behind this sheet, start it now.
             const cb = whatsNewOnClosed;
             whatsNewOnClosed = null;
@@ -5056,6 +5059,10 @@
             // today. Un-hiding first changes nothing visually (the sheet
             // still rides translate-y-full until its slide) but gives the
             // scroller a layout to scroll.
+            // hotfix 14: a close still inside its 300ms hide window must
+            // never fire display:none under this fresh open — the calendar
+            // collapsed to nothing and flipped to the first month when it did
+            caSheetHideCancel(wrap);
             wrap.classList.remove('hidden');
             const months = rosterCalMonths();
             const todayYm = todayLocalYMD().slice(0, 7);
@@ -5385,7 +5392,7 @@
             const shade = wrap.querySelector('.ca-rc-shade');
             if (shade) shade.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
-            setTimeout(() => { wrap.classList.add('hidden'); }, 300);
+            caSheetHideArm(wrap);   // hotfix 14: arm, never a bare timer — a reopen cancels it
         }
         function menusSavedFor(fn, ymd) {
             try { return !!localStorage.getItem(sqCabinCacheKey(fn, ymd)); } catch (e) { return false; }
@@ -6198,6 +6205,7 @@
                 };
             }
             content.scrollTop = 0;
+            caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             setTimeout(() => {
@@ -6642,6 +6650,7 @@
             const sheet = document.getElementById('settings-sheet');
             resetSettingsSheet();
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
+            caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             // small delay to allow display:block to apply before opacity transition
             setTimeout(() => {
@@ -6658,9 +6667,7 @@
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
             
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
+            caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
         
         // ==========================================
@@ -8029,7 +8036,7 @@ function getRegionForAirport(code) {
             const bd = document.getElementById('cadate-backdrop');
             if (!bd) return;
             bd.classList.add('opacity-0');
-            setTimeout(() => bd.classList.add('hidden'), 200);
+            caSheetHideArm(bd, 200);   // hotfix 14: arm, never a bare timer
             caDateTarget = null;
             caDateOnCommit = null;
         }
@@ -8093,6 +8100,7 @@ function getRegionForAirport(code) {
             caDateView = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, 1);
             renderCaDateGrid();
             const bd = document.getElementById('cadate-backdrop');
+            caSheetHideCancel(bd);   // hotfix 14
             bd.classList.remove('hidden');
             const panel = document.getElementById('cadate-panel');
             if (panel) panel.classList.toggle('is-strict', caDateStrict);
@@ -10746,6 +10754,7 @@ function getRegionForAirport(code) {
             }
             content.scrollTop = 0;
 
+            caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             setTimeout(() => {
@@ -11225,6 +11234,27 @@ function getRegionForAirport(code) {
                 }
             }, 750));
         }
+        // v1.39.0 hotfix 14 (owner report: "some of the calendar contents
+        // are not rendering/displaying properly" on the foldable): a close
+        // arms a delayed display:none; a reopen inside that window un-hides
+        // the element, but the STALE timer fires anyway — display:none lands
+        // mid-open. On the calendar that collapsed the whole overlay (the
+        // wrap hid, the timeline's scrollTop zeroed beneath display:none,
+        // and the scroll-flip then "corrected" the month to the roster's
+        // first date); on the other sheets the shade vanished while the
+        // sheet floated on. A quick close-and-reopen — natural on a fast
+        // foldable — sat squarely inside the 300ms window. Opens cancel;
+        // closes arm. Same discipline as the glide: one place, every sheet.
+        function caSheetHideArm(el, ms) {
+            if (!el) return;
+            if (el.__caHideT) clearTimeout(el.__caHideT);
+            el.__caHideT = setTimeout(() => { el.__caHideT = null; el.classList.add('hidden'); }, ms || 300);
+        }
+        function caSheetHideCancel(el) {
+            if (!el || !el.__caHideT) return;
+            clearTimeout(el.__caHideT);
+            el.__caHideT = null;
+        }
         function caSheetFocusables(sheet) {
             return Array.prototype.filter.call(
                 sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
@@ -11286,9 +11316,9 @@ function getRegionForAirport(code) {
             archToast('Deleted ' + (archRoute(removed[0]) || 'entry'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
             renderArch();
         }
-        let archSubTimer = null;
         function openArchSub(html) {
-            if (archSubTimer) { clearTimeout(archSubTimer); archSubTimer = null; }
+            const wrap0 = archEl('ca-arch-sub');
+            caSheetHideCancel(wrap0);   // hotfix 14: the shared cancel (was a bespoke archSubTimer)
             archEl('ca-arch-sub-sheet').innerHTML = html;
             const wrap = archEl('ca-arch-sub');
             wrap.classList.remove('hidden');
@@ -11307,11 +11337,10 @@ function getRegionForAirport(code) {
             const shade = wrap.querySelector('.ca-arch-sub-shade');
             if (shade) shade.classList.add('opacity-0');
             archEl('ca-arch-sub-sheet').classList.add('translate-y-full');
-            if (archSubTimer) clearTimeout(archSubTimer);
-            archSubTimer = setTimeout(() => wrap.classList.add('hidden'), 300);
+            caSheetHideArm(wrap);   // hotfix 14: the shared arm (was a bespoke archSubTimer)
         }
-        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); setTimeout(() => { caSheetGlideIn(s, b); }, 10); } /* hotfix 13: shared glide */
-        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; setTimeout(() => { b.classList.add('hidden'); }, 300); }
+        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); setTimeout(() => { caSheetGlideIn(s, b); }, 10); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide */
+        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm */
 
         // v1.33.2: a fingerprint of which duties have landed — renderArch
         // stamps it, the sweep compares it, and the earnings page only
@@ -11894,9 +11923,7 @@ function getRegionForAirport(code) {
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
             
-            setTimeout(() => {
-                backdrop.classList.add('hidden');
-            }, 300);
+            caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         });
     </script>
     <script>
@@ -12603,6 +12630,7 @@ function getRegionForAirport(code) {
             menuViewState = { category: 'meals', mealTab: 0 };
             currentMealServices = [];
             loadMenu(cabinClasses[0]);
+            caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             setTimeout(() => {
                 // hotfix 13: the shared glide (reflow pin + heal passes)
@@ -12675,8 +12703,8 @@ function getRegionForAirport(code) {
             
             backdrop.classList.add('opacity-0');
             sheet.classList.add('translate-y-full');
-            if (immediate === true) backdrop.classList.add('hidden');
-            else setTimeout(() => backdrop.classList.add('hidden'), 300);
+            if (immediate === true) { caSheetHideCancel(backdrop); backdrop.classList.add('hidden'); }
+            else caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
 
         function openMenuLightbox(url) {
@@ -13940,8 +13968,8 @@ function getRegionForAirport(code) {
             if (overlay) overlay.classList.add('translate-y-full');
             if (backdrop) {
                 backdrop.classList.add('opacity-0');
-                if (immediate === true) backdrop.classList.add('hidden');
-                else setTimeout(() => backdrop.classList.add('hidden'), 300);
+                if (immediate === true) { caSheetHideCancel(backdrop); backdrop.classList.add('hidden'); }
+                else caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
             }
         }
 
@@ -13974,6 +14002,7 @@ function getRegionForAirport(code) {
         function openPrintSheetChrome() {
             const overlay = document.getElementById('print-overlay');
             const backdrop = document.getElementById('print-backdrop');
+            caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             if (backdrop) backdrop.classList.remove('hidden');
             setTimeout(() => {
                 // hotfix 13: the shared glide (reflow pin + heal passes)

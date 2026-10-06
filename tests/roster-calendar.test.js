@@ -177,6 +177,13 @@ const synthItems = [].concat(
     // change + heal passes); the pin guards the wiring from drifting back
     // to a bare class toggle.
     R.ok(/function openRosterCalendar[\s\S]*?setTimeout\(\(\) => \{\s*\n\s*const shade = wrap\.querySelector\('\.ca-rc-shade'\);\s*\n\s*\/\/ hotfix 13[\s\S]*?caSheetGlideIn\(sheet, shade\);/.test(src), 'the calendar opens through the shared glide (hotfix 13) — a canceled close can never leave the sheet stuck off-screen');
+    // hotfix 14 (owner report: contents "not rendering properly" on the
+    // foldable): a quick close-and-reopen used to let the close's 300ms
+    // display:none fire MID-OPEN — the whole calendar collapsed and the
+    // scroll-flip "corrected" to the roster's first month. The open now
+    // cancels the pending hide before un-hiding the wrap.
+    R.ok(/function openRosterCalendar[\s\S]*?caSheetHideCancel\(wrap\);\s*\n\s*wrap\.classList\.remove\('hidden'\);/.test(src), 'a quick close-and-reopen never hides the wrap mid-open (hotfix 14) — the open cancels the close\u2019s pending hide');
+    R.ok(/function closeRosterCalendar[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the close arms its hide through the shared pair (a reopen cancels it)');
     R.ok(src.indexOf('w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600') >= 0, 'the calendar grows the Settings-style drag handle');
     // hotfix 7 (owner orders): the sheet itself never scrolls — the grid is
     // fixed and the timeline owns the vertical scroll, no scrollbar
