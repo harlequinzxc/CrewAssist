@@ -170,6 +170,13 @@ const synthItems = [].concat(
     // like the menu viewer — phones never reach the cap, wide screens get
     // a calm centered column
     R.ok(src.indexOf('px-5 pb-6 flex-1 min-h-0 flex flex-col max-w-2xl mx-auto w-full') >= 0, 'the calendar’s data tier centers at max-w-2xl like the menu viewer (hotfix 12) — no stretching on wide screens');
+    // hotfix 13 (owner report, Magic V3 foldable): the calendar sometimes
+    // opened with its top rows or bottom detail missing — a close's
+    // display:none canceled the glide, and the next open never started it.
+    // The calendar now opens through the shared glide (reflow-pinned class
+    // change + heal passes); the pin guards the wiring from drifting back
+    // to a bare class toggle.
+    R.ok(/function openRosterCalendar[\s\S]*?setTimeout\(\(\) => \{\s*\n\s*const shade = wrap\.querySelector\('\.ca-rc-shade'\);\s*\n\s*\/\/ hotfix 13[\s\S]*?caSheetGlideIn\(sheet, shade\);/.test(src), 'the calendar opens through the shared glide (hotfix 13) — a canceled close can never leave the sheet stuck off-screen');
     R.ok(src.indexOf('w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600') >= 0, 'the calendar grows the Settings-style drag handle');
     // hotfix 7 (owner orders): the sheet itself never scrolls — the grid is
     // fixed and the timeline owns the vertical scroll, no scrollbar

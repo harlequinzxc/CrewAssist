@@ -234,6 +234,25 @@ const mkUntil = (d) => async (cond, ms) => {
         R.ok(busyCss.includes('html.chat-busy #btn-roster-cal') && busyCss.includes('html.chat-busy #btn-settings') && busyCss.includes('html.chat-busy #btn-reset'), 'hotfix 12: chat-busy CSS dims and locks the calendar, settings and refresh buttons');
         R.ok(!busyCss.includes('#btn-theme'), 'hotfix 12: the theme button is never in a chat-busy lockout — it stays tappable at all times');
     }
+    // ---- hotfix 13 (owner report, Magic V3 foldable): sheets that stick
+    // and the gold line ----
+    {
+        // the glide: every sheet opens through the shared helper — a forced
+        // reflow pins the start pose (a close's display:none can cancel the
+        // glide, and the next open then never starts), and two heal passes
+        // (+450 restart, +900 snap) never leave a sheet below the fold
+        R.ok(src.includes('function caSheetGlideIn') && src.includes('function caSheetGlideStuck'), 'hotfix 13: the shared sheet glide exists (start-pose reflow + heal passes)');
+        R.ok(src.split('caSheetGlideIn(').length >= 10, 'hotfix 13: every sheet opener routes through the shared glide (' + (src.split('caSheetGlideIn(').length - 1) + ' call sites)');
+        R.ok(/function caSheetGlideIn[\s\S]*?void sheet\.offsetHeight;\s*\n\s*if \(shade\) shade\.classList\.remove\('opacity-0'\);\s*\n\s*sheet\.classList\.remove\('translate-y-full'\);/.test(src), 'the glide pins the start pose with a forced reflow BEFORE the class change');
+        R.ok(/function caSheetGlideIn[\s\S]*?\}, 400\)/.test(src) && /function caSheetGlideIn[\s\S]*?\}, 750\)/.test(src), 'the heal passes arm at +400ms (restart) and +750ms (snap)');
+        R.ok(src.includes("const gone = () => !sheet.isConnected || sheet.classList.contains('translate-y-full');"), 'a heal pass stands down the moment its sheet closes');
+        // the gold line: the focus catch is invisible. On a first launch the
+        // onboarding's keyboard typing leaves :focus-visible in keyboard
+        // modality, the trap's programmatic focus inherits it, and the
+        // full-bleed sheet drew a 2px gold outline whose top edge read as a
+        // gold line across the overlay.
+        R.ok(src.includes('sheet.classList.add(\'ca-focuscatch\');') && src.includes('.ca-focuscatch:focus, .ca-focuscatch:focus-visible { outline: none !important; }'), 'hotfix 13: the focus catch never draws the gold outline');
+    }
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');

@@ -101,6 +101,13 @@
            paints for thumb taps, so the touch experience is unchanged; inputs
            keep their existing gold ring instead of doubling up. */
         :focus-visible:not(input):not(textarea):not(select) { outline: 2px solid var(--sia-gold-ink, #7d650f); outline-offset: 2px; }
+        /* v1.39.0 hotfix 13 (owner report): sheets take programmatic focus
+           for their focus trap; the container itself is not a control and
+           must never draw the gold outline. On a first launch — right after
+           onboarding's keyboard input — :focus-visible matched the focused
+           sheet and painted a 2px gold line across the overlay's top (the
+           sheet is full-bleed, so only the top edge of the outline showed). */
+        .ca-focuscatch:focus, .ca-focuscatch:focus-visible { outline: none !important; }
 
         /* v1.37.0: light mode gets a darker gold token for TEXT only — the
            old #7d650f read as 3.9:1 on cream; icons and borders keep their
@@ -2002,10 +2009,9 @@
                 { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
                 { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens like the menu viewer, the flight card keeps every line to one row, and the header buttons rest while the chat types.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens and always finishes its slide open, the flight card keeps every line to one row, and the header buttons rest while the chat types.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
-                { c: 'fix', t: 'Hotfix: the changelog keeps the Developer Mode unlock to itself.' },
-                { c: 'fix', t: 'Hotfix: same-clock layovers fold the time-zone card to one line.' },
+                { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -3425,8 +3431,8 @@
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             backdrop.classList.remove('hidden');
             setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                caSheetGlideIn(sheet, backdrop);
             }, 10);
             try { lucide.createIcons(); } catch (e) {}
         }
@@ -5364,8 +5370,10 @@
             if (typeof caSheetFocusIn === 'function') caSheetFocusIn(sheet);
             setTimeout(() => {
                 const shade = wrap.querySelector('.ca-rc-shade');
-                if (shade) shade.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide — reflow-pinned class change
+                // plus heal passes, so a canceled close can never leave the
+                // sheet stuck off-screen on a big foldable screen
+                caSheetGlideIn(sheet, shade);
             }, 10);
         }
         function closeRosterCalendar() {
@@ -6193,8 +6201,8 @@
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                caSheetGlideIn(sheet, backdrop);
                 content.scrollTop = 0;
             }, 10);
             setTimeout(() => {
@@ -6637,8 +6645,8 @@
             backdrop.classList.remove('hidden');
             // small delay to allow display:block to apply before opacity transition
             setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                caSheetGlideIn(sheet, backdrop);
             }, 10);
         }
 
@@ -10741,8 +10749,8 @@ function getRegionForAirport(code) {
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                caSheetGlideIn(sheet, backdrop);
                 content.scrollTop = 0;
             }, 10);
             
@@ -11149,6 +11157,74 @@ function getRegionForAirport(code) {
         // it. Sheets stack (the archive sub-sheet rides over the archive),
         // so the entries stack too.
         const caSheetFocusStack = [];
+        // v1.39.0 hotfix 13 (owner report, Magic V3 foldable): the calendar
+        // "sometimes" opened with its top rows or its bottom detail missing —
+        // and sometimes a sheet never arrived at all. Root cause: every sheet
+        // hides its wrap with display:none 300ms after closing; when that
+        // lands before the closing glide's last composited frame the
+        // transition is CANCELED, and on the NEXT open the engine can refuse
+        // to start the new glide — the sheet keeps the closed pose while the
+        // open classes are already gone (reproduced in headless Chromium at
+        // a foldable viewport: computed transform parked at translateY(1036)
+        // with translate-y-full long removed; big sheets make the race
+        // easy to hit, phones almost never do). Two defenses, shared by
+        // every sheet: (1) a forced reflow between un-hide and the class
+        // change pins the start pose — the same medicine hotfix 8 gave the
+        // fold and the month slide; (2) two heal passes — +400ms restarts a
+        // dead glide cleanly, +750ms snaps it open, because a sheet stuck
+        // below the fold is worse than one instant landing.
+        function caSheetGlideStuck(sheet) {
+            try {
+                const tf = getComputedStyle(sheet).transform;
+                if (!tf || tf === 'none') return false;
+                const m = tf.match(/matrix\(([^)]+)\)/);
+                if (!m) return false;
+                const ty = parseFloat(m[1].split(',').map((x) => x.trim()).pop());
+                return !isNaN(ty) && ty > 8;
+            } catch (e) { return false; }
+        }
+        function caSheetGlideIn(sheet, shade) {
+            if (!sheet) return;
+            (sheet.__caHealT || []).forEach((t) => clearTimeout(t));
+            sheet.__caHealT = [];
+            // (1) pin the start pose after the un-hide — display:none left
+            // the sheet without a box; commit the closed pose first so the
+            // glide always has somewhere to start from
+            void sheet.offsetHeight;
+            if (shade) shade.classList.remove('opacity-0');
+            sheet.classList.remove('translate-y-full');
+            const gone = () => !sheet.isConnected || sheet.classList.contains('translate-y-full');
+            // (2a) a dead glide restarts, cleanly and still animated
+            sheet.__caHealT.push(setTimeout(() => {
+                if (gone() || !caSheetGlideStuck(sheet)) return;
+                sheet.style.transition = 'none';
+                sheet.style.transform = 'translateY(100%)';
+                void sheet.offsetHeight;
+                sheet.style.transition = '';
+                sheet.style.transform = '';
+            }, 400));
+            // (2b) anything still stuck snaps open — never leave a sheet
+            // below the fold (a wedged engine refuses even the restart's
+            // fresh transition, so the snap forces the pose). The shade
+            // gets the same mercy.
+            sheet.__caHealT.push(setTimeout(() => {
+                if (gone()) return;
+                if (caSheetGlideStuck(sheet)) {
+                    sheet.style.transition = 'none';
+                    sheet.style.transform = 'translateY(0)';
+                    void sheet.offsetHeight;
+                    sheet.style.transition = '';
+                    sheet.style.transform = '';
+                }
+                if (shade && parseFloat(getComputedStyle(shade).opacity || '1') < 0.5) {
+                    shade.style.transition = 'none';
+                    shade.style.opacity = '1';
+                    void shade.offsetHeight;
+                    shade.style.transition = '';
+                    shade.style.opacity = '';
+                }
+            }, 750));
+        }
         function caSheetFocusables(sheet) {
             return Array.prototype.filter.call(
                 sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
@@ -11158,6 +11234,15 @@ function getRegionForAirport(code) {
         function caSheetFocusIn(sheet) {
             if (!sheet) return;
             caSheetFocusOut(sheet); // opening twice never double-stacks
+            // hotfix 13 (owner report): the focus catch must never paint —
+            // on a first launch the onboarding's keyboard typing leaves the
+            // browser's :focus-visible heuristic in keyboard modality, the
+            // programmatic focus below inherits it, and the full-bleed sheet
+            // drew its 2px gold outline — only the top edge on-screen, so it
+            // read as a gold line across the overlay. The sheet is a
+            // container, not a control; its catch is invisible (see the
+            // .ca-focuscatch rule up with the focus styles).
+            sheet.classList.add('ca-focuscatch');
             caSheetFocusStack.push({ sheet: sheet, opener: document.activeElement, onKey: null });
             const ent = caSheetFocusStack[caSheetFocusStack.length - 1];
             sheet.setAttribute('tabindex', '-1');
@@ -11211,8 +11296,8 @@ function getRegionForAirport(code) {
             // Let the hidden->visible flip land first, then ease the sheet up.
             setTimeout(() => {
                 const shade = wrap.querySelector('.ca-arch-sub-shade');
-                if (shade) shade.classList.remove('opacity-0');
-                archEl('ca-arch-sub-sheet').classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                caSheetGlideIn(archEl('ca-arch-sub-sheet'), shade);
                 archEl('ca-arch-sub-sheet').scrollTop = 0;
             }, 10);
         }
@@ -11225,7 +11310,7 @@ function getRegionForAirport(code) {
             if (archSubTimer) clearTimeout(archSubTimer);
             archSubTimer = setTimeout(() => wrap.classList.add('hidden'), 300);
         }
-        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); setTimeout(() => { b.classList.remove('opacity-0'); s.classList.remove('translate-y-full'); }, 10); }
+        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); setTimeout(() => { caSheetGlideIn(s, b); }, 10); } /* hotfix 13: shared glide */
         function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; setTimeout(() => { b.classList.add('hidden'); }, 300); }
 
         // v1.33.2: a fingerprint of which duties have landed — renderArch
@@ -12520,8 +12605,8 @@ function getRegionForAirport(code) {
             loadMenu(cabinClasses[0]);
             backdrop.classList.remove('hidden');
             setTimeout(() => {
-                backdrop.classList.remove('opacity-0');
-                sheet.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                caSheetGlideIn(sheet, backdrop);
             }, 10);
         }
 
@@ -13891,8 +13976,8 @@ function getRegionForAirport(code) {
             const backdrop = document.getElementById('print-backdrop');
             if (backdrop) backdrop.classList.remove('hidden');
             setTimeout(() => {
-                if (backdrop) backdrop.classList.remove('opacity-0');
-                if (overlay) overlay.classList.remove('translate-y-full');
+                // hotfix 13: the shared glide (reflow pin + heal passes)
+                if (overlay) caSheetGlideIn(overlay, backdrop);
             }, 10);
             lucide.createIcons();
         }
