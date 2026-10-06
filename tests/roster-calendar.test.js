@@ -164,7 +164,12 @@ const synthItems = [].concat(
     R.ok(src.indexOf('ca-rc-shade absolute inset-0 bg-black/60 backdrop-blur-sm') >= 0, 'the calendar shade matches the Settings backdrop — black/60 with the same blur');
     const settingsTop = (src.match(/id="settings-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
     const calTop = (src.match(/id="ca-rc-sheet"[^>]*class="([^"]*)"/) || [])[1] || '';
-    R.ok(settingsTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('max-w-xl') < 0, 'the calendar sheet wears the Settings overlay’s exact height — same top offset, full width');
+    R.ok(settingsTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('top-[calc(60px+env(safe-area-inset-top,20px))]') >= 0 && calTop.indexOf('max-w-xl') < 0, 'the calendar sheet wears the Settings overlay’s exact height — same top offset, full-bleed glass');
+    // hotfix 12 (owner report: a foldable’s inner screen stretched the
+    // calendar edge to edge): the data tier centers at max-w-2xl exactly
+    // like the menu viewer — phones never reach the cap, wide screens get
+    // a calm centered column
+    R.ok(src.indexOf('px-5 pb-6 flex-1 min-h-0 flex flex-col max-w-2xl mx-auto w-full') >= 0, 'the calendar’s data tier centers at max-w-2xl like the menu viewer (hotfix 12) — no stretching on wide screens');
     R.ok(src.indexOf('w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600') >= 0, 'the calendar grows the Settings-style drag handle');
     // hotfix 7 (owner orders): the sheet itself never scrolls — the grid is
     // fixed and the timeline owns the vertical scroll, no scrollbar

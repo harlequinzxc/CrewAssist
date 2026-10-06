@@ -605,6 +605,18 @@
             pointer-events: none;
             opacity: 0.45;
         }
+        /* hotfix 12 (owner order): while the chat types, the calendar,
+           settings and refresh buttons stand down with the same dimmed
+           rest — the theme button stays live at all times. CSS-only, like
+           the set above: the tour drives these buttons programmatically
+           and programmatic .click() sails past pointer-events, so the
+           tour keeps working. */
+        html.chat-busy #btn-roster-cal,
+        html.chat-busy #btn-settings,
+        html.chat-busy #btn-reset {
+            pointer-events: none;
+            opacity: 0.45;
+        }
         html.chat-busy #chat-container button,
         html.chat-busy #chat-container input,
         html.chat-busy #chat-container select,
@@ -1511,7 +1523,14 @@
                 <!-- hotfix 7 (owner order): the sheet itself never scrolls —
                      the month grid sits fixed at the top and the timeline
                      owns the vertical scroll below the divider -->
-                <div class="px-5 pb-6 flex-1 min-h-0 flex flex-col">
+                <!-- hotfix 12 (owner report: on a foldable's inner screen the
+                     calendar stretched edge to edge and looked broken; the
+                     menu viewer already solves this) — the sheet keeps its
+                     full-bleed glass, but the data tier (header, grid,
+                     timeline) centers at max-w-2xl (672px) exactly like the
+                     menu viewer, so wide screens get a calm centered column
+                     instead of a stretched one. Phones never reach the cap. -->
+                <div class="px-5 pb-6 flex-1 min-h-0 flex flex-col max-w-2xl mx-auto w-full">
                 <!-- hotfix 6 (owner orders): the month header truncates to
                      three letters; the Today pill is gone (double-tap the
                      month instead); the arrows always show — grayed at the
@@ -1971,30 +1990,22 @@
         // version since v1.5.9 carries d - an approximate release date from
         // the development log (owner-approved); pre-v1.5.9 releases stay
         // undated because no record exists.
+        // hotfix 12 (owner order): the twelve hotfix rounds are folded into one
+        // line per theme — the changelog is a diary, not a diff log, and
+        // twenty "Hotfix:" rows read as noise. Each line keeps one
+        // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
             { v: '1.39.0', d: '2026-10-04', items: [
                 { c: 'new', t: 'Roster calendar: duties, layovers, OFF and standby days.' },
-                { c: 'new', t: 'Type “ifa sq802 4 oct” to prefill calculators from chat.' },
+                { c: 'new', t: 'Type \u201cifa sq802 4 oct\u201d to prefill calculators from chat.' },
                 { c: 'new', t: 'The menu viewer diffs against your last lookup.' },
-                { c: 'fix', t: 'Hotfix: the calendar now opens from its header icon.' },
-                { c: 'fix', t: 'Hotfix: the calendar fills the page like other overlays.' },
-                { c: 'fix', t: 'Hotfix: tapping a day pops up its flight summary.' },
-                { c: 'fix', t: 'Hotfix: header icons pack tighter, freeing the title.' },
-                { c: 'fix', t: 'Hotfix: the calendar becomes a pill grid with day details.' },
-                { c: 'fix', t: 'Hotfix: duties span to landing days, split per duty, past included.' },
-                { c: 'fix', t: 'Hotfix: one gold capsule per duty, standby windows, swipe, settings match.' },
-                { c: 'fix', t: 'Hotfix: three-letter months, grayed arrows, double-tap today, fold, timeline detail.' },
-                { c: 'fix', t: 'Hotfix: fixed grid, scrolling timeline, hold-for-today, live earnings per duty.' },
+                { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
+                { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
+                { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens like the menu viewer, the flight card keeps every line to one row, and the header buttons rest while the chat types.' },
+                { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: the changelog keeps the Developer Mode unlock to itself.' },
                 { c: 'fix', t: 'Hotfix: same-clock layovers fold the time-zone card to one line.' },
-                { c: 'fix', t: 'Hotfix: after hold-for-today, a swipe keeps the month it lands on.' },
-                { c: 'fix', t: 'Hotfix: four-sector turnaround days show all four sectors.' },
-                { c: 'fix', t: 'Hotfix: RQ99 birthday requests read “Enjoy your birthday off”.' },
-                { c: 'fix', t: 'Hotfix: the fold chevron animates the calendar away and back.' },
-                { c: 'fix', t: 'Hotfix: month swipes glide sideways like the timeline scrolls.' },
-                { c: 'fix', t: 'Hotfix: the timeline opens on today and follows every tap.' },
-                { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -5569,15 +5580,19 @@
             el.className = 'flex items-start gap-3 mt-2 w-full chat-anim-in';
 
             // section 3 — the real-time details (zone-aware instants, so
-            // countdowns never depend on the device clock's timezone)
+            // countdowns never depend on the device clock's timezone).
+            // hotfix 12 (owner order): every detail line stays on ONE row —
+            // a narrow screen used to flow each line onto two; nowrap keeps
+            // the card's rhythm at any width (the lines are short and the
+            // bubble is 85% wide, so nothing clips)
             const depMs = nfDepMs(first);
             const arrMsFirst = nfArrMsZone(first);
             const inAir = !!(depMs && arrMsFirst && Date.now() >= depMs && Date.now() < arrMsFirst);
-            let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400">' + rosterShortDate(first.ymd) + ' &middot; <b>' + nextFlightRel(first.ymd) + '</b></span>';
+            let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(first.ymd) + ' &middot; <b>' + nextFlightRel(first.ymd) + '</b></span>';
             if (inAir) {
-                detail += '<span class="block mt-1 font-bold" style="color: var(--sia-gold, #c9a227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
+                detail += '<span class="block mt-1 font-bold whitespace-nowrap" style="color: var(--sia-gold, #c9a227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
             } else {
-                detail += '<span class="block mt-1">Departs ' + hmH(first.std) + (part1 ? '' : ' local') + (depMs ? ' &middot; ' + nfCountdown(depMs - Date.now()) : '') + '</span>';
+                detail += '<span class="block mt-1 whitespace-nowrap">Departs ' + hmH(first.std) + (part1 ? '' : ' local') + (depMs ? ' &middot; ' + nfCountdown(depMs - Date.now()) : '') + '</span>';
             }
             const last = legs[legs.length - 1];
             if (last.sta) {
@@ -5589,9 +5604,9 @@
                         const sgtH = hmHFromDate(arrMs, 'Asia/Singapore');
                         if (sgtH !== hmH(last.sta)) lands += ' &middot; ' + sgtH + ' SGT';
                     }
-                    detail += '<span class="block mt-1">' + lands + '</span>';
+                    detail += '<span class="block mt-1 whitespace-nowrap">' + lands + '</span>';
                 } else {
-                    detail += '<span class="block mt-1">Lands SIN ' + hmH(last.sta) + ' SGT</span>';
+                    detail += '<span class="block mt-1 whitespace-nowrap">Lands SIN ' + hmH(last.sta) + ' SGT</span>';
                 }
             }
 
@@ -5605,8 +5620,8 @@
                     alarmHtml = '<div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
                         + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                         + '<span class="flex-1 min-w-0">'
-                        + '<span class="block font-bold text-sia-navy dark:text-sia-gold">Suggested alarm ' + hmHFromDate(depMs - 4 * 3600000, 'Asia/Singapore') + '</span>'
-                        + '<span class="block text-xs mt-0.5 text-gray-500">Reporting ' + hmHFromDate(depMs - 2 * 3600000, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
+                        + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - 4 * 3600000, 'Asia/Singapore') + '</span>'
+                        + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - 2 * 3600000, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
                         + '</span></div>';
                 }
             }

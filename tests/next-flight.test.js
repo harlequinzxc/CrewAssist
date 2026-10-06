@@ -415,6 +415,15 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(p1.indexOf('Lands NRT 1827H local \u00b7 1727H SGT') >= 0, 'part one: landing in station local AND SGT');
     R.ok(p1.indexOf('SQ 807') === -1, 'part one never leaks the homebound leg');
     R.ok(c1 && !!c1.querySelector('#ca-nf-save'), 'the save-menu button rides with the flight');
+    // hotfix 12 (owner order): every detail line stays on ONE row — narrow
+    // screens used to flow each line onto two. The date, the in-air/departs
+    // line, the lands lines and the alarm's two lines all pin nowrap (the
+    // wrapper span stays wrappable — nowrap there would fuse every line into
+    // one; only the LEAF lines carry it).
+    {
+        const textLines = c1 ? Array.from(c1.querySelectorAll('span.block')).filter((sp) => !sp.querySelector('span') && (sp.textContent || '').match(/Departs|Lands|Suggested alarm|Reporting/)) : [];
+        R.ok(textLines.length >= 3 && textLines.every((sp) => sp.className.indexOf('whitespace-nowrap') >= 0), 'hotfix 12: every flight-card text line carries nowrap — one row each, no flowing down');
+    }
     R.ok(!d.getElementById('ca-layover-tz-card'), 'no layover card while in SG');
   }
   {

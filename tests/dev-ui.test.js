@@ -189,7 +189,13 @@ const mkUntil = (d) => async (cond, ms) => {
       entries[0].items.forEach((it) => {
         R.ok(['new', 'fix', 'imp', 'fun'].indexOf(it.c) !== -1, `current-release pointer is categorised: "${it.t}" (E6)`);
         R.ok(it.t.indexOf('. ') === -1 && /[.!?]$/.test(it.t), `current-release pointer is one sentence: "${it.t}" (E6)`);
-        R.ok(it.t.split(/\s+/).length <= 12, `current-release pointer stays within twelve words: "${it.t}" (E6)`);
+        // hotfix 12 (owner order): when a release's hotfix pointers pile up
+        // they combine into themed one-sentence pointers — longer than the
+        // old twelve-word cap but still one sentence each. Feature pointers
+        // (new/imp) keep the tight cap; consolidated fix pointers may run
+        // to thirty-five words.
+        const cap = (it.c === 'fix') ? 35 : 12;
+        R.ok(it.t.split(/\s+/).length <= cap, `current-release pointer stays within ${cap} words: "${it.t}" (E6)`);
       });
       const cmpV = (x, y) => { const A = x.split('.').map(Number), B = y.split('.').map(Number); return (A[0] - B[0]) || (A[1] - B[1]) || (A[2] - B[2]); };
       const badCat = [], badDate = [];
@@ -219,6 +225,15 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.split('px-4 py-3.5 min-h-[48px] text-xs').length === 5, 'all four quick chips are min-48px tall');
     R.ok(src.includes('class="p-3.5 rounded-full'), 'sheet close buttons are 48px');
     R.ok((src.match(/class="p-3 rounded-full hover:bg-black\/5 dark:hover:bg-white\/5 transition-colors text-gray-600 dark:text-gray-300"/g) || []).length === 4, 'v1.39.0 hotfix: the four header icons pack at 44px so they stop eating the title');
+    // hotfix 12 (owner order): while the chat types, calendar / settings /
+    // refresh stand down with the other busy controls; the theme button
+    // never rests. CSS-only, no JS guards — the tour taps these buttons
+    // programmatically and .click() ignores pointer-events.
+    {
+        const busyCss = (src.match(/html\.chat-busy[^{]*\{[^}]*pointer-events: none;[^}]*opacity: 0\.45;[^}]*\}/g) || []).join('\n');
+        R.ok(busyCss.includes('html.chat-busy #btn-roster-cal') && busyCss.includes('html.chat-busy #btn-settings') && busyCss.includes('html.chat-busy #btn-reset'), 'hotfix 12: chat-busy CSS dims and locks the calendar, settings and refresh buttons');
+        R.ok(!busyCss.includes('#btn-theme'), 'hotfix 12: the theme button is never in a chat-busy lockout — it stays tappable at all times');
+    }
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');
