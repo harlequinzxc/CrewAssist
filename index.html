@@ -1994,6 +1994,7 @@
                 { c: 'fix', t: 'Hotfix: month swipes glide sideways like the timeline scrolls.' },
                 { c: 'fix', t: 'Hotfix: the timeline opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
+                { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -4811,7 +4812,32 @@
             }, holder);
         }
         function rosterCalOpenEarnings(dkey) {
-            const saved = loadArchive().find((e) => e && e.sectorDate === dkey);
+            // hotfix 11 (owner report: "some flights can't be tapped open, but
+            // I can open them from the earnings page"): the save flow files an
+            // entry under the FIRST LEG's date, not the report day — a duty
+            // reported on the 16th with wheels-up 0118 on the 17th saves as
+            // the 17th, and a duty printed on 1 Nov can even depart on
+            // 31 Oct. The calendar matched the report day only, missed the
+            // filed entry, and fell through to live pricing — which honestly
+            // refuses pairings the Build flow had let the owner fix by hand.
+            // Now the lookup spans every date the duty touches (report day,
+            // each leg's own dates), and a date-only fallback only opens an
+            // entry whose route has no codes to compare — a routed entry on
+            // a shared date must name one of the duty's own stations, so a
+            // neighbour duty's filing never opens from the wrong tap.
+            const legs = rcDutyLegs(dkey) || [];
+            const dates = {};
+            dates[dkey] = 1;
+            legs.forEach((l) => [l.ymd, l.stdYmd, l.staYmd].forEach((x) => { if (x) dates[x] = 1; }));
+            const stations = {};
+            legs.forEach((l) => { if (l.dep && l.dep !== 'SIN') stations[l.dep] = 1; if (l.arr && l.arr !== 'SIN') stations[l.arr] = 1; });
+            const arch = loadArchive();
+            const inSpan = arch.filter((e) => e && dates[e.sectorDate]);
+            const namesOwnStation = (e) => String(e.stationDisplay || '').split('/').some((s) => stations[String(s).trim().toUpperCase()]);
+            const routeless = (e) => !e.stationDisplay || String(e.stationDisplay).trim() === '\u2014';
+            const saved = arch.find((e) => e && e.sectorDate === dkey)
+                || inSpan.find(namesOwnStation)
+                || inSpan.find(routeless);
             if (saved) { openArchEntry(saved.id); return; }
             rosterCalLiveEarnings(dkey, (res) => {
                 if (!res) { archToast('This duty can\u2019t be priced yet \u2014 its times or pairing don\u2019t fit the calculator.', null); return; }

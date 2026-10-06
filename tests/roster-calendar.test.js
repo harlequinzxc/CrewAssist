@@ -390,6 +390,50 @@ const synthItems = [].concat(
     const t12b = rowN(12).textContent.replace(/\s+/g, ' ');
     R.ok(t12b.indexOf('Lands SIN') >= 0 && t12b.indexOf('0615H') >= 0, 'the landing day on the 12th reads Lands SIN · 0615H');
     R.ok(d.getElementById('ca-rc-next').classList.contains('ca-rc-off'), 'no month after November — the forward arrow grays out');
+    // hotfix 11 (owner report: "some flights can't be tapped open, but I can
+    // open them from the earnings page"): the save flow files an entry under
+    // the FIRST LEG's date, not the report day — the London duty reported on
+    // 8 Nov departs 0110 on the 9th (its filing lands on the 9th), and the
+    // 1 Nov duty even departs 31 Oct. The calendar matched the report day
+    // only, missed the filing, and fell through to live pricing. The lookup
+    // now spans every date the duty touches, and a routed entry on a shared
+    // date must name one of the duty's own stations — a neighbour's filing
+    // never opens from the wrong tap.
+    {
+        w.eval("persistArchive(["
+            + "{ id: 'decoy', savedAt: new Date().toISOString(), monthKey: '2026-11', sectorDate: '2026-11-09', flightType: 'Turnaround', stationDisplay: 'PEN', amount: 99.99 },"
+            + "{ id: 'lhr', savedAt: new Date().toISOString(), monthKey: '2026-11', sectorDate: '2026-11-09', flightType: 'Layover', stationDisplay: 'LHR', amount: 1511.94 },"
+            + "{ id: 'amd', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-31', flightType: 'Turnaround', stationDisplay: 'AMD', amount: 411.5 }])");
+        // the London duty: reported 8 Nov, first card on the 9th, filed under the 9th
+        w.eval('rosterCalSelect("2026-11-09")');
+        await wait(250);
+        let earn11 = d.querySelector('.ca-rc-row[data-rc-ymd="2026-11-09"] [data-rc-earn]');
+        R.ok(!!earn11, 'the overnight departure\u2019s flight card carries the drill-in chevron');
+        earn11.click();
+        await wait(600);
+        let sub11 = d.getElementById('ca-arch-sub');
+        let sub11Txt = sub11 ? sub11.textContent.replace(/\s+/g, ' ') : '';
+        R.ok(sub11 && !sub11.classList.contains('hidden') && sub11Txt.indexOf('$1,511.94') >= 0 && sub11Txt.indexOf('Figured from your roster') < 0, 'hotfix 11: a duty filed under its first leg\u2019s date opens its FILED summary from the calendar');
+        R.ok(sub11Txt.indexOf('99.99') < 0, 'a neighbour duty\u2019s same-date filing never opens — the route guard holds');
+        w.eval('closeArchSub()');
+        await wait(300);
+        // the 1 Nov duty departs 31 Oct — the span rule reaches back a day
+        w.eval('rosterCalSelect("2026-11-01")');
+        await wait(250);
+        earn11 = d.querySelector('.ca-rc-row[data-rc-ymd="2026-11-01"] [data-rc-earn]');
+        R.ok(!!earn11, 'the 1 Nov duty\u2019s card carries the chevron');
+        earn11.click();
+        await wait(600);
+        sub11 = d.getElementById('ca-arch-sub');
+        sub11Txt = sub11 ? sub11.textContent.replace(/\s+/g, ' ') : '';
+        R.ok(sub11 && !sub11.classList.contains('hidden') && sub11Txt.indexOf('411.50') >= 0 && sub11Txt.indexOf('Figured from your roster') < 0, 'a duty printed on 1 Nov but departing 31 Oct opens its 31 Oct filing');
+        w.eval('closeArchSub()');
+        await wait(300);
+        // restore the state this stretch of the suite expects
+        w.eval("persistArchive([])");
+        w.eval('rosterCalSelect("2026-11-12")');
+        await wait(250);
+    }
     // hotfix 6+7 (owner orders): the fold chevron, the press-and-hold month,
     // and the scroll-synced timeline
     const gridEl = d.getElementById('ca-rc-grid');
