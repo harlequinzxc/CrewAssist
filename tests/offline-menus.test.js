@@ -198,7 +198,7 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v191"), 'service-worker cache name bumped to v182 (glide-and-fold hotfix, no version bump)');
+    R.ok(sw.includes("crewassist-v192"), 'service-worker cache name bumped to v192 (motion-frame-diet hotfix, no version bump)');
     // v1.38.0 review: forecast toggle, SGT conversions, storage panel
     R.ok(src.includes('ca-arch-proj-btn') && src.includes('ca-arch-proj-wrap'), 'the month total is a still-to-fly toggle (A1)');
     R.ok(src.includes("const AIRPORT_TZ = {"), 'a curated station-to-IANA-zone table powers SGT conversions (A2)');
@@ -212,7 +212,7 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('.print-edit-eye { min-height: 44px;'), 'the print-edit eye reaches the 44px tap standard');
     R.ok(src.includes("matchMedia('(display-mode: standalone)')"), 'the install hint respects installed apps (display-mode standalone)');
     R.ok(src.includes('v1.37.0 (3.2): Escape also closes whichever sheet is on top.'), 'Escape closes the topmost open sheet');
-    R.ok(sw.includes('https://cdn.tailwindcss.com') && sw.includes('pdf.min.js'), 'Tailwind + pdf.js precached for first offline launch');
+    R.ok(sw.includes("'./tw.css'") && sw.includes('pdf.min.js') && !sw.includes('cdn.tailwindcss.com'), 'the compiled stylesheet + pdf.js are precached for first offline launch (hotfix 18: the Tailwind CDN runtime is gone)');
     // v1.36.0: the airplane-mode shell hardening (owner report: unstyled
     // onboarding + lost icons on offline launch).
     R.ok(sw.includes('https://unpkg.com/lucide@latest'), 'lucide icons precached — they were never cached before, so every offline launch lost its icons');
@@ -221,7 +221,7 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(sw.includes('RUNTIME_CACHE_HOSTS') && sw.includes('fonts.gstatic.com'), 'fonts/icons/lib downloads are backfilled into the cache as they are used online');
     R.ok(sw.includes("res.type === 'opaque'"), 'cross-origin CDN responses (opaque) are runtime-cacheable');
     R.ok(src.includes('id="ca-shell-fail"') && src.includes('function shellGuard()'), 'missing-Tailwind boot shows the honest repair screen (shell guard)');
-    R.ok(src.includes("if (window.tailwind) return;"), 'the guard stays silent when Tailwind loads fine');
+    R.ok(src.includes('if (caTwLoaded()) return;'), 'the guard stays silent when the compiled stylesheet loads fine');
   }
 
   // ---- v1.39.0 (A5): the menu viewer's honest route-diff ----

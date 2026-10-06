@@ -1,8 +1,9 @@
-const CACHE_NAME = 'crewassist-v191';
+const CACHE_NAME = 'crewassist-v192';
 const ASSETS = [
     './',
     './index.html',
     './manifest.json',
+    './tw.css',
     './rates.json',
     './icons/favicon.png',
     './icons/logo-192.png',
@@ -11,11 +12,12 @@ const ASSETS = [
     './icons/app-icon-192.png',
     './icons/app-icon-512.png'
 ];
-// Third-party assets the app needs on first offline launch (Tailwind runtime,
-// pdf.js for roster import, lucide icons, Google Fonts). Fetched individually
-// so a CDN hiccup can never break the install of the core shell.
+// Third-party assets the app needs on first offline launch (pdf.js for roster
+// import, lucide icons, Google Fonts). v1.39.0 hotfix 18: the Tailwind Play
+// CDN runtime is gone — the styles are the compiled, precached ./tw.css, so
+// no CSS compiler ever runs in the browser. Fetched individually so a CDN
+// hiccup can never break the install of the core shell.
 const CDN_ASSETS = [
-    'https://cdn.tailwindcss.com',
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js',
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js',
     'https://unpkg.com/lucide@latest',
@@ -64,8 +66,7 @@ const RUNTIME_CACHE_HOSTS = [
     'fonts.googleapis.com',
     'fonts.gstatic.com',
     'unpkg.com',
-    'cdnjs.cloudflare.com',
-    'cdn.tailwindcss.com'
+    'cdnjs.cloudflare.com'
 ];
 
 self.addEventListener('fetch', (event) => {

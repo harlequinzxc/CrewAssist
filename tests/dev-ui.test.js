@@ -273,7 +273,7 @@ const mkUntil = (d) => async (cond, ms) => {
     // and the inflation is per-block (non-uniform), which misaligns the
     // pixel-tuned cards. The lock makes every screen draw the design as-is.
     R.ok(/html \{\s*\n\s*-webkit-text-size-adjust: 100%;\s*\n\s*text-size-adjust: 100%;\s*\n\s*\}/.test(src), 'hotfix 15: the text autosizer is locked to 100% — the inner screen renders at the designed text scale');
-    R.ok((src.match(/will-change/g) || []).length === 1 && src.includes('width:300%;will-change:transform;transform:translateX(-33.3333%)'), 'exactly one will-change survives — the live finger-drag track (hotfix 17); every other surface rides the compositor only while it animates');
+    R.ok((src.match(/will-change/g) || []).length === 2 && src.includes('width:300%;will-change:transform;transform:translateX(-33.3333%)') && src.includes('width:200%;will-change:transform;transform:translateX('), 'exactly two will-changes survive — the drag track and the glide track, both born with their layer and destroyed when they land (hotfix 17+18); nothing at rest carries one');
     R.ok(!src.includes("el.innerHTML = html;") && src.includes('rcTL.diff[ymd] = node;'), 'hotfix 17: the timeline window is diffed, never wiped — rows mount and unmount one at a time between stable spacers');
     // hotfix 16 (owner screenshots from the foldable's inner screen: the
     // grid / the timeline / both / the earnings sheets dropped whole regions
@@ -287,6 +287,14 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(!/\.glass-sheet \{[^}]*backdrop-filter/.test(src), 'hotfix 16: the big sheets carry no live blur — a 95%-opaque surface never needed one');
     R.ok((src.match(/backdrop-blur-sm/g) || []).length === 1, 'exactly one backdrop-blur-sm survives (the login hero) — every full-screen shade is scrim-only');
     R.ok(!/\.ca-cl-vhead \{[^}]*backdrop-filter/.test(src), 'the changelog sticky header carries no blur (sticky + blur inside a scroller is a classic Android paint-killer)');
+    // hotfix 18 (owner: the same hold-and-move flicker persisting after all
+    // four hotfix-17 fixes — the remaining causes were motion-frame costs a
+    // headless rig can never see: a runtime CSS compiler observing every
+    // mutation, live blur passes on the always-visible chrome, promotion
+    // frames, per-event geometry, and rest-time work run mid-gesture):
+    R.ok(!/\.glass-panel \{[^}]*backdrop-filter/.test(src) && src.includes('--glass-solid-bg'), 'hotfix 18: the always-visible chrome (sticky header, chips, cards) carries no live blur — the same treatment the sheets got in hotfix 16');
+    R.ok(src.includes('<link rel="stylesheet" href="./tw.css">') && !src.includes('cdn.tailwindcss.com'), 'hotfix 18: styles are the compiled ./tw.css — no runtime JIT compiler observes the document');
+    R.ok(src.includes('id="ca-tw-probe"') && src.includes('function caTwLoaded()'), 'the shell guard probes the live stylesheet (the sentinel span) instead of a CDN global');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');

@@ -21,30 +21,14 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        sia: {
-                            gold: '#C9A227',
-                            goldlt: '#E8C766',
-                            navy: '#0B1A3A',
-                            deep: '#04070F',
-                            batik: '#5B3E96'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                        mono: ['"Space Mono"', 'monospace'],
-                    }
-                }
-            }
-        }
-    </script>
+    <!-- Tailwind CSS — hotfix 18: compiled at build time into ./tw.css
+         (see tw.config.cjs). The app no longer runs the Play CDN JIT in the
+         browser: that runtime compiler kept a MutationObserver over the
+         whole document and recompiled on every DOM change — row mounts
+         during a finger scroll, month clones during a drag — and on the
+         120Hz foldable inner screen the mid-gesture style injections showed
+         up as black flashes. -->
+    <link rel="stylesheet" href="./tw.css">
 
     <style>
         :root {
@@ -55,6 +39,12 @@
             --glass-border: rgba(255, 255, 255, 0.05);
             --glass-bubble-bg: rgba(201, 162, 39, 0.15);
             --glass-sheet-bg: rgba(4, 7, 15, 0.95);
+            /* hotfix 18: the always-visible chrome (sticky header, action
+               chips, cards) carries NO live backdrop blur — on the foldable's
+               inner screen every live blur pass is a per-frame compositor
+               cost this device has already shown it cannot afford (hotfix 16
+               found the same for the sheets). Same hue, near-opaque. */
+            --glass-solid-bg: rgba(4, 7, 15, 0.92);
             /* Earnings page surfaces (dark) */
             --arch-surface: #141823;
             --arch-surface-border: rgba(255, 255, 255, 0.05);
@@ -73,6 +63,7 @@
             --glass-border: rgba(0, 0, 0, 0.1);
             --glass-bubble-bg: rgba(201, 162, 39, 0.2);
             --glass-sheet-bg: rgba(246, 241, 232, 0.95);
+            --glass-solid-bg: rgba(255, 255, 255, 0.94);   /* hotfix 18: de-blurred chrome */
             /* Earnings page surfaces (light) */
             --arch-surface: #FFFFFF;
             --arch-surface-border: rgba(0, 0, 0, 0.07);
@@ -124,9 +115,10 @@
 
         /* Glassmorphic Utilities */
         .glass-panel {
-            background: var(--glass-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            /* hotfix 18: de-blurred — see --glass-solid-bg above. The glass
+               look survives through the border and the shadow; the live
+               blur does not. */
+            background: var(--glass-solid-bg);
             border: 1px solid var(--glass-border);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
@@ -317,6 +309,11 @@
            timeline scrolls — the drag follows the finger; day cells never
            catch a click mid-drag */
         .ca-rc-track { user-select: none; -webkit-user-select: none; }
+        /* hotfix 18 (owner report: hold-and-move flicker): the calendar's
+           gesture surfaces are not text — a long-press that turns into a
+           move must never raise the selection machinery on top of the
+           motion the compositor is already carrying */
+        #ca-rc-grid, #ca-rc-detail { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         #ca-rc-grid.ca-rc-drag .ca-rc-day { pointer-events: none; }
         #ca-rc-grid.ca-rc-drag { cursor: grabbing; }
         /* hotfix 6 (owner order): the month arrows never disappear — at the
@@ -1088,6 +1085,9 @@
     <canvas id="sky-canvas"></canvas>
 
     <div id="app-root" class="relative z-10 w-full h-full flex flex-col min-h-screen">
+        <!-- hotfix 18: stylesheet sentinel — only the compiled Tailwind `hidden`
+             class can hide this, so the shell guard can probe it -->
+        <span id="ca-tw-probe" class="hidden" aria-hidden="true"></span>
         <!-- Onboarding View -->
         <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
             <div class="h-[35%] flex items-center justify-center relative">
@@ -2030,7 +2030,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
                 { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide open, answers quick taps and swipes, keeps its lines to one row and its text at scale, and paints fully on the foldable\u2019s inner screen.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide, answers quick taps and swipes, keeps its rows and text at scale, and holds steady on the foldable\u2019s inner screen as the finger moves.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
             ] },
@@ -2717,11 +2717,13 @@
             }
         });
 
-        // v1.36.0: shell guard — the whole app is styled by the Tailwind CDN
-        // runtime. If it isn't loaded, an offline launch would render unstyled
-        // (broken layout, default-sized SVGs, no icons). Detect that and show
-        // the honest repair overlay instead. The overlay itself is inline-
-        // styled so it renders no matter what is missing.
+        // v1.36.0: shell guard — the whole app is styled by its stylesheet.
+        // v1.39.0 hotfix 18: that stylesheet is the compiled ./tw.css (the
+        // Play CDN runtime is gone). If it didn't load, an offline launch
+        // renders unstyled (broken layout, default-sized SVGs, no icons).
+        // Detect that and show the honest repair overlay instead. The
+        // overlay itself is inline-styled so it renders no matter what is
+        // missing.
         // v1.37.0 (4.1): Safari clears a browser tab's script-writable
         // storage after 7 days without interaction — home-screen installed
         // apps are exempt. Anyone running in a tab WITH saved earnings gets
@@ -2740,8 +2742,24 @@
                 appAlert('You are using CrewAssist in a browser tab. Safari can clear a tab’s saved data after 7 days without use — your earnings would go with it. Add CrewAssist to your Home Screen ' + (isAndroid ? 'from your browser menu (“Install app”)' : 'via Share → Add to Home Screen') + ' and everything stays safely on this phone.');
             } catch (e) {}
         }
+        function caTwLoaded() {
+            // hotfix 18: probe the live stylesheets — the compiled sheet
+            // defines .hidden; if no rule does, the styles never loaded
+            try {
+                for (let i = 0; i < document.styleSheets.length; i++) {
+                    let rules = null;
+                    try { rules = document.styleSheets[i].cssRules; } catch (e) { continue; }
+                    if (!rules) continue;
+                    for (let j = 0; j < rules.length; j++) {
+                        const sel = rules[j].selectorText || '';
+                        if (sel.split(',').map((x) => x.trim()).indexOf('.hidden') >= 0) return true;
+                    }
+                }
+            } catch (e) {}
+            return false;
+        }
         function shellGuard() {
-            if (window.tailwind) return;
+            if (caTwLoaded()) return;
             const fail = document.getElementById('ca-shell-fail');
             if (!fail) return;
             const show = () => { fail.style.display = 'flex'; };
@@ -2752,7 +2770,7 @@
                 window.addEventListener('online', () => { try { location.reload(); } catch (e) {} }, { once: true });
             } else {
                 // Online: give a slow CDN a fair chance before declaring failure.
-                setTimeout(() => { if (!window.tailwind) show(); }, 6000);
+                setTimeout(() => { if (!caTwLoaded()) show(); }, 6000);
             }
             const retry = document.getElementById('ca-shell-retry');
             if (retry) retry.addEventListener('click', () => { try { location.reload(); } catch (e) {} });
@@ -4577,7 +4595,11 @@
             const inc = rcMonthHtml(rcViewYm);
             grid.setAttribute('data-rc-slide', '1');
             grid.style.overflow = 'hidden';
-            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:200%;transform:translateX(' + (dir > 0 ? '0%' : '-50%') + ')">'
+            // hotfix 18: the glide track gets its layer AT BIRTH — a
+            // transition self-promotes only once it starts, and the
+            // promotion frame is exactly where the big screen flashed
+            // (the layer must raster before it moves, not as it moves)
+            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:200%;will-change:transform;transform:translateX(' + (dir > 0 ? '0%' : '-50%') + ')">'
                 + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? out : inc) + '</div>'
                 + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? inc : out) + '</div></div>';
             const track = grid.firstChild;
@@ -4850,7 +4872,9 @@
             // DOM mid-scroll) and applied a SECOND time on the corrected
             // offsets, so the window always covers where the scroller
             // actually rests.
+            let justMounted = 0;
             const apply = (a, b) => {
+                let mountedNow = 0;
                 rcTL.rendered = [a, b];
                 // unmount the rows that left the window
                 Object.keys(rcTL.diff).forEach((ymd) => {
@@ -4870,9 +4894,12 @@
                     for (let j = i + 1; j < b; j++) { const nx = rcTL.diff[rcTL.days[j]]; if (nx) { ref = nx; break; } }
                     el.insertBefore(node, ref);
                     rcTL.diff[ymd] = node;
+                    mountedNow++;
                 }
                 rcTL.head.style.height = Math.max(0, rcTL.off[a]) + 'px';
                 rcTL.tail.style.height = Math.max(0, rcTL.total - rcTL.off[b]) + 'px';
+                justMounted += mountedNow;
+                return mountedNow;
             };
             if (force || !rcTL.diff || !rcTL.head || rcTL.head.parentNode !== el) {
                 el.textContent = '';
@@ -4890,8 +4917,10 @@
             // hotfix 9: icons swap in BEFORE the heights are measured — the
             // placeholder <i> and its svg replacement size differently in
             // some engines, and a reveal anchoring on pre-icon offsets lands
-            // short of its row
-            try { lucide.createIcons(); } catch (e) {}
+            // short of its row. hotfix 18: the scan runs only when a pass
+            // actually mounted rows — it is a whole-document query and the
+            // scroll handler fires at the display's rate
+            if (justMounted) { try { lucide.createIcons(); } catch (e) {} }
             // measured heights correct the estimates (browsers only — jsdom
             // reports 0 and keeps the estimates, which is fine for structure)
             let drifted = false;
@@ -4916,8 +4945,7 @@
                 // the viewport is never left outside the window (the owner's
                 // "bottom details not rendering" state)
                 const ab2 = rosterCalTLCover(el) || estimate();
-                apply(ab2[0], ab2[1]);
-                try { lucide.createIcons(); } catch (e) {}
+                if (apply(ab2[0], ab2[1])) { try { lucide.createIcons(); } catch (e) {} }
             }
             rosterCalScheduleEarns();
         }
@@ -5022,7 +5050,21 @@
                 rcEarnPump();
             });
         }
-        function rosterCalScheduleEarns() {
+        let rcEarnIdleT = null;
+        let rcTLMotion = 0;   // hotfix 18: when the scroller last moved — pricing stands down near motion
+        function rosterCalScheduleEarns(now) {
+            // hotfix 18 (the motion-frame diet): pricing a duty builds a
+            // whole hidden calculator card and walks the archive store —
+            // that is REST work, never motion work. When the finger has
+            // scrolled in the last 400ms the pass defers until ~350ms of
+            // quiet; opens, taps and reveals (no motion in flight) still
+            // price at once.
+            if (rcEarnIdleT) clearTimeout(rcEarnIdleT);
+            const moving = !now && rcTLMotion && (Date.now() - rcTLMotion < 400);
+            if (!moving) { rcEarnIdleT = null; rosterCalScheduleEarnsRun(); return; }
+            rcEarnIdleT = setTimeout(() => { rcEarnIdleT = null; rosterCalScheduleEarnsRun(); }, 350);
+        }
+        function rosterCalScheduleEarnsRun() {
             // saved entries always outrank live figures — they are what the
             // crew actually filed, so they are re-checked on every pass
             const arch = loadArchive();
@@ -5214,9 +5256,10 @@
                 // (arrows, hold-for-today, fold) can land or cancel a live
                 // drag before it acts.
                 const grid = document.getElementById('ca-rc-grid');
-                const rcDrag = { x0: null, y0: 0, on: false, track: null, base: '', w: 0, snapT: null, snapFn: null };
+                const rcDrag = { x0: null, y0: 0, on: false, moved: false, preT: null, track: null, base: '', w: 0, snapT: null, snapFn: null };
                 const rcDragStop = (restore) => {
                     if (rcDrag.snapT) { clearTimeout(rcDrag.snapT); rcDrag.snapT = null; rcDrag.snapFn = null; }
+                    if (rcDrag.preT) { clearTimeout(rcDrag.preT); rcDrag.preT = null; }
                     if (rcDrag.track) {
                         rcDrag.track = null;
                         if (restore && grid) grid.innerHTML = rcDrag.base;
@@ -5359,6 +5402,48 @@
                     // or mouse that wanders off the grid mid-swipe must not
                     // strand the drag (touch captures implicitly; mouse and
                     // pen do not, so the stream rides window listeners)
+                    // hotfix 18 (the motion-frame diet): building the drag
+                    // track AT the first move gave the compositor zero time
+                    // to raster its new layer — the first frames of a drag
+                    // showed un-rastered thirds on the big inner screen. The
+                    // track now PARKS in place on a 140ms hold (rasterizing
+                    // while the finger rests) and the first real move only
+                    // flips it live. pre=true parks it WITHOUT taking the
+                    // gesture: no ca-rc-drag class, no pointer-events
+                    // lockdown, so a tap that never becomes a swipe still
+                    // selects its day.
+                    const rcDragEngage = (pre) => {
+                        const months = rosterCalMonths();
+                        const i = months.indexOf(rcViewYm);
+                        rcDrag.on = true;
+                        rcDrag.moved = !pre;
+                        rcDrag.base = grid.innerHTML;
+                        rcDrag.w = grid.offsetWidth || 0;
+                        grid.style.overflow = 'hidden';
+                        if (!pre) grid.classList.add('ca-rc-drag');
+                        // hotfix 17 (owner report: "the content flickers
+                        // as if there is some black box" while holding and
+                        // swinging the finger): at the roster's first/last
+                        // month the void side of the track was an EMPTY
+                        // third, and the rubber band dragged that black
+                        // slab into view. Both thirds now carry a clone of
+                        // the current month — the resistance slides over
+                        // real content, never a void.
+                        const left = i > 0 ? rcMonthHtml(months[i - 1]) : rcMonthHtml(rcViewYm);
+                        const right = i < months.length - 1 ? rcMonthHtml(months[i + 1]) : rcMonthHtml(rcViewYm);
+                        // hotfix 17: this track transforms on EVERY pointer
+                        // event — without its own compositor layer each
+                        // move forces a full-grid repaint, which the big
+                        // inner screen shows as black flashes. The element
+                        // is destroyed when the drag lands, so the layer
+                        // is transient by design (the glide track carries
+                        // its own layer from birth too, hotfix 18).
+                        grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
+                            + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + left + '</div>'
+                            + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + rcDrag.base + '</div>'
+                            + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + right + '</div></div>';
+                        rcDrag.track = grid.firstChild;
+                    };
                     const rcDragMove = (e) => {
                         if (rcDrag.x0 === null || !e || e.clientX == null) return;
                         const dx = e.clientX - rcDrag.x0, dy = (e.clientY != null ? e.clientY : 0) - rcDrag.y0;
@@ -5367,34 +5452,15 @@
                             const months = rosterCalMonths();
                             const i = months.indexOf(rcViewYm);
                             if ((dx > 0 && i <= 0) || (dx < 0 && i >= months.length - 1)) return;   // no month that way — nothing to drag in
-                            rcDrag.on = true;
-                            rcDrag.base = grid.innerHTML;
-                            rcDrag.w = grid.offsetWidth || 0;
-                            grid.style.overflow = 'hidden';
+                            if (rcDrag.preT) { clearTimeout(rcDrag.preT); rcDrag.preT = null; }
+                            rcDragEngage(false);
+                        } else if (!rcDrag.moved) {
+                            // hotfix 18: a track parked by the hold timer waits
+                            // for real horizontal intent before it takes the
+                            // gesture — plain day taps must keep landing
+                            if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+                            rcDrag.moved = true;
                             grid.classList.add('ca-rc-drag');
-                            // hotfix 17 (owner report: "the content flickers
-                            // as if there is some black box" while holding and
-                            // swinging the finger): at the roster's first/last
-                            // month the void side of the track was an EMPTY
-                            // third, and the rubber band dragged that black
-                            // slab into view. Both thirds now carry a clone of
-                            // the current month — the resistance slides over
-                            // real content, never a void.
-                            const left = i > 0 ? rcMonthHtml(months[i - 1]) : rcMonthHtml(rcViewYm);
-                            const right = i < months.length - 1 ? rcMonthHtml(months[i + 1]) : rcMonthHtml(rcViewYm);
-                            // hotfix 17: this track transforms on EVERY pointer
-                            // event — without its own compositor layer each
-                            // move forces a full-grid repaint, which the big
-                            // inner screen shows as black flashes. The element
-                            // is destroyed when the drag lands, so the layer
-                            // is transient by design (the one-shot slide
-                            // tracks stay unpromoted — a transition promotes
-                            // itself).
-                            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
-                                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + left + '</div>'
-                                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + rcDrag.base + '</div>'
-                                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + right + '</div></div>';
-                            rcDrag.track = grid.firstChild;
                         }
                         if (rcDrag.track) {
                             let d = dx;
@@ -5409,10 +5475,16 @@
                         const dx = (e && e.clientX != null ? e.clientX : rcDrag.x0) - rcDrag.x0;
                         const dy = (e && e.clientY != null ? e.clientY : 0) - rcDrag.y0;
                         rcDrag.x0 = null;
+                        if (rcDrag.preT) { clearTimeout(rcDrag.preT); rcDrag.preT = null; }
                         window.removeEventListener('pointermove', rcDragMove);
                         window.removeEventListener('pointerup', dragEnd);
                         window.removeEventListener('pointercancel', dragCancel);
                         if (rcDrag.on && rcDrag.track) {
+                            // hotfix 18: a track that only parked (a hold that
+                            // never became a move) restores at once — no snap
+                            // timer, so the tap's own click lands on the
+                            // restored day
+                            if (!rcDrag.moved) { rcDragStop(true); rcDrag.on = false; return; }
                             const months = rosterCalMonths();
                             const i = months.indexOf(rcViewYm);
                             const dir = dx < 0 ? 1 : -1;
@@ -5450,7 +5522,7 @@
                             if (next && next !== rcViewYm) { rcViewYm = next; renderRosterCalendar(dir); }
                         }
                     };
-                    const dragCancel = () => { if (rcDrag.on) rcDragStop(true); rcDrag.x0 = null; window.removeEventListener('pointermove', rcDragMove); window.removeEventListener('pointerup', dragEnd); window.removeEventListener('pointercancel', dragCancel); };
+                    const dragCancel = () => { if (rcDrag.preT) { clearTimeout(rcDrag.preT); rcDrag.preT = null; } if (rcDrag.on) rcDragStop(true); rcDrag.x0 = null; window.removeEventListener('pointermove', rcDragMove); window.removeEventListener('pointerup', dragEnd); window.removeEventListener('pointercancel', dragCancel); };
                     grid.addEventListener('pointerdown', (e) => {
                         rcDragFlush();
                         if (rcDrag.on) rcDragStop(true);
@@ -5465,6 +5537,17 @@
                         window.addEventListener('pointermove', rcDragMove);
                         window.addEventListener('pointerup', dragEnd);
                         window.addEventListener('pointercancel', dragCancel);
+                        // hotfix 18: arm the pre-build — a finger still
+                        // resting after 140ms is holding, not tapping, and
+                        // the drag it is about to make should find its track
+                        // already rasterized
+                        rcDrag.preT = setTimeout(() => {
+                            rcDrag.preT = null;
+                            if (rcDrag.x0 === null || rcDrag.on) return;
+                            if (grid.getAttribute('data-rc-slide') || grid.querySelector('.ca-rc-track') || grid.classList.contains('hidden')) return;
+                            if (rosterCalMonths().length < 2) return;   // nothing to swipe between
+                            rcDragEngage(true);
+                        }, 140);
                     });
                     grid.addEventListener('pointermove', rcDragMove);
                     grid.addEventListener('pointerup', dragEnd);
@@ -5477,6 +5560,7 @@
                 const det = document.getElementById('ca-rc-detail');
                 if (det) {
                     det.addEventListener('scroll', () => {
+                        rcTLMotion = Date.now();   // hotfix 18: pricing stands down while the list moves
                         rosterCalTLWindow();
                         // hotfix 8 (owner report: after hold-for-today a
                         // swipe jumped straight back) — the browser fires a
@@ -5486,6 +5570,17 @@
                         const prog = Date.now() < rcTlProgUntil;
                         if (rcTlScrollT) clearTimeout(rcTlScrollT);
                         rcTlScrollT = setTimeout(() => {
+                            // hotfix 18: the settle pass. Scroll events ride the
+                            // display's frames — under load they land frames
+                            // BEHIND a fast scroller, so the last event's
+                            // window can stop short of where the finger
+                            // actually rests (the "bottom details not
+                            // rendering" state). 140ms of quiet is the only
+                            // reliable witness of the resting position, so it
+                            // gets the final word — UNCONDITIONALLY: it only
+                            // reads geometry and mounts rows, it never flips
+                            // anything, so no guard may skip it.
+                            rosterCalTLWindow();
                             if (prog) return;
                             // hotfix 8: a slide or drag owns the grid while it
                             // runs — its own reflow can clamp this scroller and
@@ -5508,6 +5603,14 @@
                         const row = ev.target && ev.target.closest ? ev.target.closest('.ca-rc-row') : null;
                         if (row && row.getAttribute('data-rc-ymd')) rosterCalSelect(row.getAttribute('data-rc-ymd'), { noScroll: true });
                     });
+                    // hotfix 18: scrollend, where the engine provides it, is
+                    // the EXACT rest signal — the settle above covers engines
+                    // without it. Rest also releases the pricing stand-down.
+                    det.addEventListener('scrollend', () => { rcTLMotion = 0; rosterCalTLWindow(); });
+                    // hotfix 18: the gesture surfaces raise no long-press
+                    // menu — the hold belongs to the drag, not to the
+                    // selection machinery
+                    wrap.addEventListener('contextmenu', (e) => { e.preventDefault(); });
                 }
             }
             // (the wrap was un-hidden at the top of this function — hotfix 9)

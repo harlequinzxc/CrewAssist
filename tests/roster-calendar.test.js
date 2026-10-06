@@ -192,7 +192,19 @@ const synthItems = [].concat(
     R.ok(/const left = i > 0 \? rcMonthHtml\(months\[i - 1\]\) : rcMonthHtml\(rcViewYm\);/.test(src) && /const right = i < months\.length - 1 \? rcMonthHtml\(months\[i \+ 1\]\) : rcMonthHtml\(rcViewYm\);/.test(src), 'the drag track\u2019s void edges carry a clone of the current month — the rubber band never drags a black slab into view (hotfix 17)');
     R.ok(src.includes('function rosterCalTLCover(el)') && src.includes('if (!dr.height) return null;   // no layout engine (jsdom) — the offsets are the only truth'), 'the timeline window derives from real geometry when there is one (hotfix 17) — stale height estimates can never leave the resting viewport outside the window');
     R.ok(/const dHead = rcTL\.off\[a1\] - oldOffA;\s*\n\s*if \(dHead && el\.scrollTop > 0\) el\.scrollTop = Math\.max\(0, el\.scrollTop \+ dHead\);/.test(src), 'height corrections anchor the scroller — corrected spacers never slide the visible rows under the eye (hotfix 17)');
-    R.ok(!/'<div class="ca-rc-track" style="display:flex;width:200%;will-change/.test(src) && !/width:300%;will-change:transform;transform:translateX\(dir/.test(src), 'the one-shot slide tracks stay unpromoted (hotfix 15) — a transition promotes itself');
+    R.ok(src.includes('width:200%;will-change:transform;transform:translateX('), 'the glide track is promoted AT BIRTH (hotfix 18) — a transition self-promotes only once it starts, and that promotion frame is exactly where the big screen flashed');
+    // hotfix 18 (owner: the same flicker persisting after all four hotfix-17
+    // fixes — the remaining causes were motion-frame costs a headless rig
+    // can never see):
+    R.ok(/rcDrag\.preT = setTimeout\(\(\) => \{[\s\S]*?\}, 140\);/.test(src) && src.includes('rcDragEngage(true);'), 'a resting hold parks the drag track early — the layer rasterizes while the finger rests, before the first move');
+    R.ok(src.includes('if (!rcDrag.moved) { rcDragStop(true); rcDrag.on = false; return; }'), 'a hold that never becomes a move restores the grid at once — day taps keep landing');
+    R.ok(/140ms of quiet is the only\s*\n\s*\/\/ reliable witness[\s\S]*?rosterCalTLWindow\(\);\s*\n\s*if \(prog\) return;/.test(src), 'the scroll-quiet settle pass runs UNCONDITIONALLY before any guard — it only reads and mounts, never flips');
+    R.ok(src.includes("det.addEventListener('scrollend', () => { rcTLMotion = 0; rosterCalTLWindow(); })"), 'scrollend (where the engine provides it) is the exact rest signal, and it releases the pricing stand-down');
+    R.ok(!src.includes('rcTL.band'), 'no coverage-band shortcut — every scroll event derives the window from real geometry (a stale band could skip the pass the viewport needed)');
+    R.ok(src.includes('if (justMounted) { try { lucide.createIcons(); } catch (e) {} }'), 'the whole-document icon scan runs only when a pass actually mounted rows');
+    R.ok(src.includes('function rosterCalScheduleEarns(now)') && src.includes('rosterCalScheduleEarnsRun(); }, 350);') && src.includes('rcTLMotion && (Date.now() - rcTLMotion < 400)'), 'pricing duties (whole hidden calculator cards) defers only near real motion — opens and taps still price at once');
+    R.ok(src.includes('#ca-rc-grid, #ca-rc-detail { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }'), 'the gesture surfaces raise no text selection on a long-press-and-move');
+    R.ok(src.includes("wrap.addEventListener('contextmenu', (e) => { e.preventDefault(); });"), 'the calendar raises no long-press context menu');
     // hotfix 16: the owner's inner-screen screenshots showed the calendar's
     // content dropping in tile-sized bands — the sheet's invisible live blur
     // over the blurred full-screen shade starved the compositor.
