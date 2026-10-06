@@ -264,6 +264,16 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.split('caSheetHideArm(').length - 1 >= 10, 'hotfix 14: every closer arms through the pair (' + (src.split('caSheetHideArm(').length - 1) + ' arms)');
     R.ok(!/\}\);? ?\n?\s*setTimeout\(\(\) => \{ ?[a-zA-Z]+\.classList\.add\('hidden'\); ?\}, 300\)/.test(src), 'no bare 300ms hide timers survive outside the pair');
     R.ok(/function caSheetHideArm[\s\S]*?el\.__caHideT = setTimeout\(\(\) => \{ el\.__caHideT = null; el\.classList\.add\('hidden'\); \}, ms \|\| 300\);/.test(src), 'the arm clears any prior timer before arming (double-close never double-arms)');
+    // hotfix 15 (owner report: the calendar renders improperly on the
+    // foldable's INNER screen only — fine on PC, iPhone and the cover
+    // screen): Chrome on Android inflates text on wide mobile viewports via
+    // its text autosizer. The cover screen is too narrow to trigger it,
+    // desktop Chrome and iOS Safari never apply it — so the wide inner
+    // screen was the one place the app rendered at a different text scale,
+    // and the inflation is per-block (non-uniform), which misaligns the
+    // pixel-tuned cards. The lock makes every screen draw the design as-is.
+    R.ok(/html \{\s*\n\s*-webkit-text-size-adjust: 100%;\s*\n\s*text-size-adjust: 100%;\s*\n\s*\}/.test(src), 'hotfix 15: the text autosizer is locked to 100% — the inner screen renders at the designed text scale');
+    R.ok(!src.includes('will-change'), 'no standing will-change layers (the slide tracks animate without them — less compositor pressure on a 5-megapixel foldable screen)');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
     R.ok((src.match(/<label class="flex items-center justify-between gap-3 w-full cursor-pointer">/g) || []).length === 3, 'all three switches make their text part of the tap target');

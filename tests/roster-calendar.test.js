@@ -184,6 +184,7 @@ const synthItems = [].concat(
     // cancels the pending hide before un-hiding the wrap.
     R.ok(/function openRosterCalendar[\s\S]*?caSheetHideCancel\(wrap\);\s*\n\s*wrap\.classList\.remove\('hidden'\);/.test(src), 'a quick close-and-reopen never hides the wrap mid-open (hotfix 14) — the open cancels the close\u2019s pending hide');
     R.ok(/function closeRosterCalendar[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the close arms its hide through the shared pair (a reopen cancels it)');
+    R.ok(!/ca-rc-track[^>]*will-change/.test(src), 'the month slide track carries no standing compositor layer (hotfix 15) — the one-shot transition promotes itself');
     R.ok(src.indexOf('w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600') >= 0, 'the calendar grows the Settings-style drag handle');
     // hotfix 7 (owner orders): the sheet itself never scrolls — the grid is
     // fixed and the timeline owns the vertical scroll, no scrollbar

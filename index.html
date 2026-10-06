@@ -145,6 +145,19 @@
             border-top: 1px solid var(--glass-border);
         }
 
+        /* hotfix 15 (owner report: the calendar renders improperly on the
+             foldable's inner screen only): Chrome on Android inflates
+             text on wide mobile viewports (its text autosizer) — the
+             cover screen is too narrow to trigger it, desktop Chrome
+             and iOS Safari never apply it, so the wide inner screen is
+             the one place the app renders at a different text scale.
+             Locking the adjustment to 100% makes every screen draw the
+             app exactly as designed. */
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+        }
+
         html, body, * {
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -2009,7 +2022,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar became itself \u2014 a pill grid with day details, duties spanning report day to landing, four-sector turns and RQ99 birthdays reading right, standby windows, and live earnings on every duty.' },
                 { c: 'fix', t: 'Hotfix: gliding month swipes, hold-for-today, a folding grid, and a timeline that opens on today and follows every tap.' },
                 { c: 'fix', t: 'Hotfix: flights blue, standby green, courses bronze on the calendar.' },
-                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, always finishes its slide open, survives a quick close-and-reopen, keeps each flight-card line to one row, and rests its buttons while the chat types.' },
+                { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide open, survives a quick close-and-reopen, keeps its text size steady and each card line to one row, and rests its buttons while the chat types.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
             ] },
@@ -4556,7 +4569,7 @@
             const inc = rcMonthHtml(rcViewYm);
             grid.setAttribute('data-rc-slide', '1');
             grid.style.overflow = 'hidden';
-            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:200%;will-change:transform;transform:translateX(' + (dir > 0 ? '0%' : '-50%') + ')">'
+            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:200%;transform:translateX(' + (dir > 0 ? '0%' : '-50%') + ')">'
                 + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? out : inc) + '</div>'
                 + '<div style="flex:0 0 50%;min-width:50%">' + (dir > 0 ? inc : out) + '</div></div>';
             const track = grid.firstChild;
@@ -5253,7 +5266,7 @@
                             grid.classList.add('ca-rc-drag');
                             const left = i > 0 ? rcMonthHtml(months[i - 1]) : '';
                             const right = i < months.length - 1 ? rcMonthHtml(months[i + 1]) : '';
-                            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
+                            grid.innerHTML = '<div class="ca-rc-track" style="display:flex;width:300%;transform:translateX(-33.3333%)">'
                                 + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + left + '</div>'
                                 + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + rcDrag.base + '</div>'
                                 + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + right + '</div></div>';
