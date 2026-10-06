@@ -21,14 +21,6 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- Tailwind CSS — hotfix 18: compiled at build time into ./tw.css
-         (see tw.config.cjs). The app no longer runs the Play CDN JIT in the
-         browser: that runtime compiler kept a MutationObserver over the
-         whole document and recompiled on every DOM change — row mounts
-         during a finger scroll, month clones during a drag — and on the
-         120Hz foldable inner screen the mid-gesture style injections showed
-         up as black flashes. -->
-    <link rel="stylesheet" href="./tw.css">
 
     <style>
         :root {
@@ -1066,6 +1058,24 @@
         .ca-badge-green { background: rgba(34, 197, 94, 0.16); border: 1px solid rgba(34, 197, 94, 0.45); color: #22c55e; }
         html:not(.dark) .ca-badge-green { color: #15803d; }
     </style>
+    <!-- Tailwind CSS — hotfix 18: compiled at build time into ./tw.css
+         (see tw.config.cjs). The app no longer runs the Play CDN JIT in the
+         browser: that runtime compiler kept a MutationObserver over the
+         whole document and recompiled on every DOM change — row mounts
+         during a finger scroll, month clones during a drag — and on the
+         120Hz foldable inner screen the mid-gesture style injections showed
+         up as black flashes.
+
+         v1.39.0 hotfix 19 (owner report: "weird white pill with gold border
+         at the bottom of the screen" — the archive toast, stuck visible):
+         this link MUST stay AFTER the inline <style> block above. The Play
+         CDN injected its compiled styles at the END of <head>, after these
+         inline rules, and the app's cascade was built for that order — app
+         classes that set `display` (ca-arch-toast: display:flex,
+         ca-roster-sticky) rely on the utility `.hidden` winning the tie.
+         A link placed before the inline block flips those ties and sticks
+         every hidden-toggled element on screen. Utilities last, always. -->
+    <link rel="stylesheet" href="./tw.css">
 </head>
 <body class="antialiased w-full h-full min-h-screen flex flex-col">
     <!-- v1.36.0: shell guard overlay. Inline styles ONLY — this must render
@@ -1530,8 +1540,28 @@
         </div>
         <div id="ca-arch-toast" class="ca-arch-toast hidden" role="status" aria-live="polite"></div>
         <div id="ca-arch-sub" class="fixed inset-0 z-[62] hidden">
-            <div class="ca-arch-sub-shade absolute inset-0 bg-black/50 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
-            <div id="ca-arch-sub-sheet" role="dialog" aria-modal="true" aria-label="Flight details" class="absolute inset-x-0 bottom-0 glass-sheet rounded-t-3xl p-6 pb-8 space-y-3 max-w-xl mx-auto w-full max-h-[calc(100vh-120px)] overflow-y-auto overscroll-contain translate-y-full transition-transform duration-300"></div>
+            <div class="ca-arch-sub-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-arch-sub-close></div>
+            <!-- v1.39.0 hotfix 19 (owner request: "make the summary open
+                 below the chat header similar to all overlays"): the flight
+                 summary wears the same chrome as every other overlay — it
+                 starts below the chat header (top-[calc(60px+safe-area)],
+                 like Settings / Earnings / Changelog), carries the grab
+                 handle, a title line and its own close button, and the body
+                 scrolls inside. It opens from the earnings page's rows and
+                 the calendar's flight cards alike. -->
+            <div id="ca-arch-sub-sheet" role="dialog" aria-modal="true" aria-label="Flight details" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+                <div class="w-full flex justify-center py-3 shrink-0">
+                    <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+                </div>
+                <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-2 shrink-0 max-w-xl mx-auto">
+                    <div class="min-w-0">
+                        <h3 id="ca-arch-sub-title" class="text-xl font-bold truncate">Flight details</h3>
+                        <p id="ca-arch-sub-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
+                    </div>
+                    <button type="button" id="btn-close-arch-sub" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close summary"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="ca-arch-sub-body" class="flex-grow overflow-y-auto overscroll-contain px-6 pb-8 max-w-xl mx-auto w-full space-y-3"></div>
+            </div>
         </div>
         <!-- v1.39.0 (B6): the roster calendar — a month of duties at a glance.
              HOTFIX (owner report, still 1.39.0): this block was first inserted
@@ -2033,6 +2063,7 @@
                 { c: 'fix', t: 'Hotfix: the calendar centers on wide screens, finishes its slide, answers quick taps and swipes, keeps its rows and text at scale, and holds steady on the foldable\u2019s inner screen as the finger moves.' },
                 { c: 'fix', t: 'Hotfix: duties saved under their first leg\u2019s date open from the calendar.' },
                 { c: 'fix', t: 'Hotfix: overlays open clean on a fresh install with no stray gold line, the changelog keeps the Developer Mode unlock to itself, and same-clock layovers fold the time-zone card to one line.' },
+                { c: 'fix', t: 'Hotfix: the stuck gold-bordered pill at the bottom is gone, and flight summaries open below the chat header wearing every other overlay\u2019s look.' },
             ] },
             { v: '1.38.0', d: '2026-10-03', items: [
                 { c: 'new', t: 'Tap a month’s total to see what’s still to fly.' },
@@ -3026,6 +3057,8 @@
             
             // Settings Events
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
+            // hotfix 19: the summary overlay's own close button
+            document.getElementById('btn-close-arch-sub').addEventListener('click', closeArchSub);
             document.getElementById('settings-backdrop').addEventListener('click', closeSettings);
 
             document.querySelectorAll('#calcui-segmented .calcui-pill').forEach((pill) => {
@@ -5015,17 +5048,14 @@
                 const first = legs[0], last = legs[legs.length - 1];
                 const stops = legs.map((l) => l.dep).concat([last ? last.arr : '']).filter((v, i, arr) => i === 0 || v !== arr[i - 1]);
                 const head = 'SQ ' + legs.map((l) => l.fn).join(' / ') + ' \u00b7 ' + stops.join(' \u2192 ');
-                let html = '<div class="flex items-baseline justify-between gap-2 mb-4">'
-                    + '<h4 class="font-bold text-lg">' + rosterEsc(head) + '</h4>'
-                    + '<span class="text-xs text-gray-500">' + rosterShortDate(legs[0].ymd) + ' \u00b7 ' + (res.isTurnaround ? 'Turnaround' : 'Layover') + '</span></div>'
+                let html = ''
                     + '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
                     + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
                     + '<p class="text-4xl font-bold ca-amt">' + formatMoney(res.grandTotal) + '</p></div>'
                     + overviewBlock(flightOverviewText(res.detail))
                     + overviewDetailHtml(res.detail)
                     + '<p class="ca-micro text-gray-400 text-center pt-3">Figured from your roster \u2014 not saved yet. Build + Calculate all to file it.</p>';
-                openArchSub(html);
-                try { lucide.createIcons(); } catch (err) {}
+                openArchSub(html, rosterEsc(head), rosterShortDate(legs[0].ymd) + ' \u00b7 ' + (res.isTurnaround ? 'Turnaround' : 'Layover'));
             });
         }
         let rcEarnQ = [], rcEarnBusy = false;
@@ -11556,10 +11586,18 @@ function getRegionForAirport(code) {
             archToast('Deleted ' + (archRoute(removed[0]) || 'entry'), () => { persistArchive(loadArchive().concat(removed)); renderArch(); });
             renderArch();
         }
-        function openArchSub(html) {
+        function openArchSub(html, title, subtitle) {
             const wrap0 = archEl('ca-arch-sub');
             caSheetHideCancel(wrap0);   // hotfix 14: the shared cancel (was a bespoke archSubTimer)
-            archEl('ca-arch-sub-sheet').innerHTML = html;
+            // hotfix 19: the callers pass the title line; the chrome (handle,
+            // title, close button) lives in the sheet and the content scrolls
+            // in the body — the summary presents like every other overlay.
+            archEl('ca-arch-sub-body').innerHTML = html;
+            const t = title || 'Flight details';
+            archEl('ca-arch-sub-title').textContent = t;
+            archEl('ca-arch-sub-subtitle').textContent = subtitle || '';
+            archEl('ca-arch-sub-sheet').setAttribute('aria-label', t);
+            try { lucide.createIcons(); } catch (err) {}
             const wrap = archEl('ca-arch-sub');
             wrap.classList.remove('hidden');
             caSheetFocusIn(archEl('ca-arch-sub-sheet')); // v1.32.0 (M3): the sub-sheet traps too
@@ -11568,7 +11606,7 @@ function getRegionForAirport(code) {
                 const shade = wrap.querySelector('.ca-arch-sub-shade');
                 // hotfix 13: the shared glide (reflow pin + heal passes)
                 caSheetGlideIn(archEl('ca-arch-sub-sheet'), shade);
-                archEl('ca-arch-sub-sheet').scrollTop = 0;
+                archEl('ca-arch-sub-body').scrollTop = 0;
             }, 10);
         }
         function closeArchSub() {
@@ -11972,9 +12010,9 @@ function getRegionForAirport(code) {
             const e = loadArchive().find(x => x.id === id);
             if (!e) return;
             const head = archRoute(e) || (e.flightType || 'Flight');
-            let html = '<div class="flex items-baseline justify-between gap-2 mb-4">'
-                + '<h4 class="font-bold text-lg">' + head + '</h4>'
-                + '<span class="text-xs text-gray-500">' + (archiveDayLabel(e.sectorDate) || '') + (e.flightType ? ' · ' + e.flightType : '') + '</span></div>';
+            // hotfix 19: the route + date ride the sheet's title row now
+            const subLine = ((archiveDayLabel(e.sectorDate) || '') + (e.flightType ? ' · ' + e.flightType : '')).replace(/^[\s·]+/, '');
+            let html = '';
             const s = e.detail;
             if (s && s.sectors && s.sectors.length) {
                 html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
@@ -11990,8 +12028,7 @@ function getRegionForAirport(code) {
             }
             const saved = String(e.savedAt || '').slice(0, 10);
             if (saved) html += '<p class="ca-micro text-gray-400 text-center pt-3">Saved ' + ovDay(saved) + '</p>';
-            openArchSub(html);
-            try { lucide.createIcons(); } catch (err) {}
+            openArchSub(html, (head && head !== '—') ? head : 'Flight details', subLine);
         }
 
         function archNormalize(raw) {
@@ -12014,9 +12051,9 @@ function getRegionForAirport(code) {
         }
         function archKey(r, d, a) { return String(r || '').toLowerCase() + '|' + String(d || '') + '|' + Math.round((Number(a) || 0) * 100); }
         function archImport() {
-            openArchSub('<h4 class="font-bold text-lg mb-1">Import backup</h4><p class="text-xs text-gray-500">JSON backups only - CSV isn’t supported here.</p>'
+            openArchSub('<p class="text-xs text-gray-500">JSON backups only - CSV isn’t supported here.</p>'
                 + '<input type="file" id="ca-sub-file" accept=".json,.txt,application/json,text/plain" class="block w-full text-sm pt-3">'
-                + '<div id="ca-sub-preview" class="text-sm pt-2"></div>');
+                + '<div id="ca-sub-preview" class="text-sm pt-2"></div>', 'Import backup');
             archEl('ca-sub-file').addEventListener('change', (ev) => { const f = ev.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (e2) => archImportRead(f.name, String(e2.target.result)); r.readAsText(f); });
         }
         function archImportRead(name, text) {
@@ -12087,9 +12124,9 @@ function getRegionForAirport(code) {
         }
 
         function archExport() {
-            openArchSub('<h4 class="font-bold text-lg mb-1">Export earnings</h4><p class="text-xs text-gray-500 mb-1">Keep this file private - it contains your pay data.</p>'
+            openArchSub('<p class="text-xs text-gray-500 mb-1">Keep this file private - it contains your pay data.</p>'
                 + '<button type="button" id="ca-sub-json" class="w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold">JSON - Full backup</button>'
-                + '<button type="button" id="ca-sub-csv" class="w-full py-3 rounded-full bg-black/10 dark:bg-white/10 font-bold">CSV - Spreadsheet</button>');
+                + '<button type="button" id="ca-sub-csv" class="w-full py-3 rounded-full bg-black/10 dark:bg-white/10 font-bold">CSV - Spreadsheet</button>', 'Export earnings');
             archEl('ca-sub-json').onclick = () => archDoExport('json');
             archEl('ca-sub-csv').onclick = () => archDoExport('csv');
         }

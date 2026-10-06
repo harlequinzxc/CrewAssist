@@ -111,11 +111,14 @@ const fs = require('fs');
     R.ok(/IFA Breakdown/.test(txt2) && /LMA Breakdown/.test(txt2), 'breakdowns rebuilt from the snapshot');
     R.ok(/SQ 442/.test(txt2) && /SQ 441/.test(txt2), 'flight numbers in the breakdown');
     R.ok(/Saved /.test(txt2), 'saved-at footer');
-    // tall summaries: the sheet is bounded + scrollable and opens at the TOP
+    // tall summaries: the body scrolls inside and opens at the TOP
     const sheetEl = d.getElementById('ca-arch-sub-sheet');
-    R.ok(sheetEl.classList.contains('overflow-y-auto'), 'summary sheet is scrollable');
-    R.ok(Array.from(sheetEl.classList).some(c => c.indexOf('max-h-') === 0), 'summary sheet is height-bounded');
-    R.eq(sheetEl.scrollTop, 0, 'opens at the top, never auto-scrolled to the bottom');
+    const bodyEl = d.getElementById('ca-arch-sub-body');
+    R.ok(bodyEl.classList.contains('overflow-y-auto'), 'summary body is scrollable');
+    R.ok(sheetEl.classList.contains('top-[calc(60px+env(safe-area-inset-top,20px))]'), 'hotfix 19: the summary opens below the chat header, like every other overlay');
+    R.ok(sheetEl.classList.contains('rounded-t-3xl') && sheetEl.classList.contains('flex') && sheetEl.classList.contains('flex-col'), 'hotfix 19: it wears the overlay chrome \u2014 rounded top, handle, column');
+    R.ok(!!d.getElementById('btn-close-arch-sub') && !!d.getElementById('ca-arch-sub-title') && !!d.getElementById('ca-arch-sub-subtitle'), 'hotfix 19: the grab-handle sheet carries a title row and its own close button');
+    R.eq(bodyEl.scrollTop, 0, 'opens at the top, never auto-scrolled to the bottom');
     // the X deletes immediately (undo toast) without opening the sheet
     d.querySelector('[data-ca-arch-sub-close]').click();
     await wait(400);

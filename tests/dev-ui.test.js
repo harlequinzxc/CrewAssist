@@ -294,6 +294,7 @@ const mkUntil = (d) => async (cond, ms) => {
     // frames, per-event geometry, and rest-time work run mid-gesture):
     R.ok(!/\.glass-panel \{[^}]*backdrop-filter/.test(src) && src.includes('--glass-solid-bg'), 'hotfix 18: the always-visible chrome (sticky header, chips, cards) carries no live blur — the same treatment the sheets got in hotfix 16');
     R.ok(src.includes('<link rel="stylesheet" href="./tw.css">') && !src.includes('cdn.tailwindcss.com'), 'hotfix 18: styles are the compiled ./tw.css — no runtime JIT compiler observes the document');
+    R.ok(src.indexOf('<link rel="stylesheet" href="./tw.css">') > src.lastIndexOf('</style>'), 'hotfix 19: the compiled sheet loads AFTER the inline styles — the CDN always injected last, and app classes that set display (the archive toast) rely on the .hidden utility winning that tie');
     R.ok(src.includes('id="ca-tw-probe"') && src.includes('function caTwLoaded()'), 'the shell guard probes the live stylesheet (the sentinel span) instead of a CDN global');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');
@@ -608,7 +609,11 @@ const mkUntil = (d) => async (cond, ms) => {
 
   {
     // ---- v1.39.0 (B7): natural calculator commands in the chat ----
-    const g = await boot(APP, { seed: (x) => {
+    // the clock is pinned just before the seeded legs (6/8 Oct 2026): the
+    // commands below speak in month-day words ("6 oct"), and once 6 Oct
+    // passes in real time the year-rollover maps them to 2027 and the
+    // roster lookup misses — a date-stable block, not a today-relative one
+    const g = await boot(APP, { now: '2026-10-05T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
       x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [
