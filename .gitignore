@@ -5,3 +5,4 @@ icon-options/
 !tests/package.json
 .DS_Store
 _screenshots/
+!tests/smoke/package.json

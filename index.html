@@ -1645,14 +1645,13 @@
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
         </div>
 
-        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true" aria-labelledby="whatsnew-title">
+        <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <div class="w-full max-w-sm">
                 <div class="glass-bubble w-full rounded-3xl p-5 pt-6 border border-sia-gold/20 shadow-2xl relative" onclick="event.stopPropagation()">
                     <button type="button" id="whatsnew-close" class="absolute top-3 right-3 p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors" aria-label="Close">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
-                    <p class="ca-micro font-bold uppercase tracking-widest text-sia-gold mb-1">What's new</p>
-                    <p id="whatsnew-title" class="text-sm font-bold mb-3"></p>
+                    <p class="ca-micro font-bold uppercase tracking-widest text-sia-gold mb-2">What's new</p>
                     <!-- v1.35.0: a versioned, grouped list — scrolls when a
                          big version jump brings many entries (owner ruling). -->
                     <div id="whatsnew-list" class="text-sm leading-relaxed space-y-2 pr-1 max-h-[50vh] overflow-y-auto"></div>
@@ -3302,11 +3301,12 @@
             if (!whatsNewWillShow()) return;
             const entries = wnPendingEntries();
             const backdrop = document.getElementById('whatsnew-backdrop');
-            const title = document.getElementById('whatsnew-title');
             const list = document.getElementById('whatsnew-list');
             const hide = document.getElementById('whatsnew-hide');
             if (!backdrop || !list) return;
-            if (title) title.textContent = entries.length === 1 ? 'v' + APP_VERSION : 'v' + entries[entries.length - 1].v + ' \u2192 v' + APP_VERSION;
+            // v1.40.0 hotfix (owner report): the version shows ONCE — the gold
+            // header on the first list entry. The old white title line above
+            // the list duplicated it.
             renderChangelogInto(list, entries);
             if (hide) hide.checked = false;
             caSheetHideCancel(backdrop);   // hotfix 14

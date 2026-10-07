@@ -85,7 +85,7 @@ IF isPaxing == true:
 
 **Precedence:** Paxing and Direct US are mutually exclusive in the UI (§4.2); when both would be true, the paxing branch is evaluated first inside `calcSector`.
 
-> **Known deviation, pending decision:** Clause 34(5) credits a positioning crew with **0.75 × the scheduled flying hours**, after which the normal multiplier ladder applies — identical to ours for turnarounds (the shared multiplier commutes), different for layovers (the official reading keeps the bracket uplift; ours pays a flat 75%). Not yet changed; see the owner.
+> **Owner ruling (2026-10-07): the app keeps the flat 0.75×.** Clause 34(5) credits a positioning crew with **0.75 × the scheduled flying hours**, after which the normal multiplier ladder applies — identical to ours for turnarounds (the shared multiplier commutes), different for layovers (the official reading keeps the bracket uplift; ours pays a flat 75%). The owner has reviewed the difference and ruled the flat multiplier stays as shipped.
 
 ### 1.5 IFA — Sector Allowance
 
@@ -393,53 +393,10 @@ IF amount ≤ 0 → nothing to save
 
 ---
 
-## 5. CALCULATION PIPELINE / SEQUENCE
 
-### 5.1 IFA Pipeline
+## 5. EDGE CASES & ROUNDING
 
-```
-STEP 1  Receive inputs: rank, flightType, is4Sector, times[], directUS[], paxing[], cfg
-STEP 2  baseRate = cfg.baseRates[rank]
-STEP 3  sectorCount = is4Sector ? 4 : 2;  build sectorIsSg[] from flightType + is4Sector
-STEP 4  Parse each time string → decimal hours (null if invalid)
-STEP 5  IF Turnaround: sum SDPs → total_SDP → ONE multiplier from the turnaround
-        brackets, shared by all non-paxing sectors
-STEP 6  For each sector i:
-            IF time invalid OR hours ≤ 0 → sectorResult[i] = null (skip)
-            ELSE SDP_i = hours_i + buffer_i
-                 multiplier_i = paxing ? 0.75
-                              : Turnaround ? sharedTurnaroundMultiplier
-                              : directUS ? 3.5
-                              : layover_bracket(SDP_i)
-                 allowance_i = hours_i × baseRate × multiplier_i
-STEP 7  turnaroundBonus per §1.6
-STEP 8  IFA_total = Σ allowance_i + turnaroundBonus
-```
-
-### 5.2 LMA Pipeline
-
-```
-STEP 1  Receive: airportCode, arrival date/time, departure date/time, rates
-STEP 2  region = getRegionForAirport(airportCode);  null → empty result
-STEP 3  Parse times; either unparseable → empty result
-STEP 4  daysDiff = dateDiffDays(arrival, departure);  < 0 → empty result
-STEP 5  departure_boundary = departure_time − 60 minutes (the report time, §1.8)
-STEP 6  IF daysDiff == 0:
-            transit = departure_boundary − arrival
-            meals earned only if transit ≥ 180 minutes AND the window fits inside
-            arrival..departure_boundary (§1.9)
-        ELSE:
-            arrival day: arrival ≤ window end
-            full days: all three meals
-            departure day: departure_boundary ≥ window start
-STEP 7  Sum per meal and per station; grand total = Σ station totals
-```
-
----
-
-## 6. EDGE CASES & ROUNDING
-
-### 6.1 Rounding Rules
+### 5.1 Rounding Rules
 
 | Quantity | Rule |
 |---|---|
@@ -449,11 +406,11 @@ STEP 7  Sum per meal and per station; grand total = Σ station totals
 
 `7.5 × 13.5 × 1.3 = 131.625 → "$131.63"; 140.40 + 131.625 = 272.025 → "$272.03"`.
 
-### 6.2 Boundary Conditions (Inclusive/Exclusive)
+### 5.2 Boundary Conditions (Inclusive/Exclusive)
 
 All bracket upper bounds are **inclusive** (`≤`), lower bounds strict (`>`). Exactly 14.0 layover SDP → 1.3×; exactly 12.0 turnaround total SDP → 1.3×. Meal windows: `arrival ≤ end` inclusive; `departure_boundary ≥ start` inclusive. The 3-hour transit gate is **inclusive** (exactly 180 minutes earns). The report-time subtraction (−60 min) happens before every departure-side comparison.
 
-### 6.3 Zero & Negative Handling
+### 5.3 Zero & Negative Handling
 
 | Case | Behaviour |
 |---|---|
@@ -464,7 +421,7 @@ All bracket upper bounds are **inclusive** (`≤`), lower bounds strict (`>`). E
 | IFA total = 0 | No result rendered |
 | Archive amount ≤ 0 | Save aborted |
 
-### 6.4 Date Arithmetic Safety
+### 5.4 Date Arithmetic Safety
 
 **Never use `toISOString()`** — it converts to UTC and shifts dates backward in positive-offset timezones (UTC+8 turns Jan 1 into Dec 31).
 
@@ -476,7 +433,7 @@ All bracket upper bounds are **inclusive** (`≤`), lower bounds strict (`>`). E
 
 ---
 
-## 7. VERIFICATION TEST CASES
+## 6. VERIFICATION TEST CASES
 
 ### IFA Test 1 — Turnaround, Total-SDP Rule
 
