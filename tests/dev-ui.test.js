@@ -21,15 +21,16 @@ const mkUntil = (d) => async (cond, ms) => {
   // footer (v1.41.0): Export is the single one-line secondary — the rates
   // import folded into Settings → Restore backup (one import door).
   R.ok(exp && exp.className.includes('w-full') && exp.className.includes('items-center') && !exp.className.includes('flex-col'), 'Export: full-width one-line button');
+  R.ok(exp.className.includes('text-sia-gold') && exp.className.includes('border-sia-gold'), 'hotfix: Export rates.json runs the Export-backup gold');
   R.eq(exp.querySelector('i').getAttribute('data-lucide'), 'download', 'Export icon is download');
-  R.eq(exp.textContent.trim(), 'Export', 'Export label visible');
+  R.eq(exp.textContent.trim(), 'Export rates.json', 'hotfix: the Export label names its file');
   R.ok(!d.getElementById('btn-dev-import'), 'the dev Import button is gone (v1.41.0)');
   R.ok(!d.getElementById('dev-file-import'), 'its file input went with it');
   const save = d.getElementById('btn-dev-save');
   R.ok(save && save.className.includes('h-[42px]') && save.className.includes('border-sia-gold') && !save.className.includes('bg-gradient'), 'v1.42.0: Save rates wears the Data Management uniform (h-[42px] gold outline)');
-  R.ok(card.contains(d.getElementById('btn-dev-reset')), 'v1.42.0: Reset rates to defaults moved into the dev card');
-  const devOrder = Array.from(card.querySelectorAll('#btn-dev-save, #btn-dev-reset, #btn-dev-export')).map((el) => el.id);
-  R.eq(devOrder.join(','), 'btn-dev-save,btn-dev-reset,btn-dev-export', 'Reset sits directly below Save rates, Export last');
+  R.ok(card.contains(d.getElementById('btn-dev-reset')), 'v1.42.0: Reset rates to default moved into the dev card');
+  const devOrder = Array.from(card.querySelectorAll('#btn-dev-save, #btn-dev-export, #btn-dev-reset')).map((el) => el.id);
+  R.eq(devOrder.join(','), 'btn-dev-save,btn-dev-export,btn-dev-reset', 'hotfix: Save, then Export rates.json, then Reset last');
 
   // Data Management (v1.41.0): Export backup (gold) + Restore backup (the one
   // import door, file input inside) above the dev-gated Reset and red Clear.
@@ -45,7 +46,7 @@ const mkUntil = (d) => async (cond, ms) => {
   const reset = d.getElementById('btn-dev-reset');
   const clear = d.getElementById('btn-clear-data');
   R.ok(reset.classList.contains('hidden'), 'Reset hidden when dev mode off');
-  R.ok(reset.className.includes('text-sia-gold') && reset.className.includes('border-sia-gold'), 'Reset: gold text + gold border');
+  R.ok(reset.className.includes('text-red-600') && reset.className.includes('border-red-500'), 'hotfix: Reset runs the red destructive style');
   R.ok(clear.className.includes('text-red-600') && clear.className.includes('border-red-500'), 'Clear All Data: red text + red border');
   R.ok(clear.className.includes('bg-transparent'), 'Clear All Data: transparent background');
   R.ok(bex.parentElement.className.includes('glass-panel'), 'v1.42.0: Data Management buttons sit in the house box — the same width as Clear saved menus');
@@ -120,6 +121,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq(ob('ob-restore-file').getAttribute('accept'), '.json,.txt,application/json,text/plain', 'the welcome picker accepts the same files as Settings');
     R.ok(ob('ob-submit').className.includes('flex-1'), 'Let\'s Go keeps the primary share of the row');
     R.ok(ob('ob-submit').disabled === true && !obr.disabled, 'the door is tappable while the form is still empty');
+    R.ok(obr.className.includes('w-[52px]') && obr.className.includes('h-[52px]') && obr.className.includes('self-center'), 'hotfix: the door is an explicit 52px square (matches the CTA height)');
 
     type(ob('ob-name'), 'Junior June');
     R.ok(rankFolded(), 'a name alone does not reveal Rank');
@@ -707,6 +709,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(st.textContent.indexOf('1 upcoming duty flight keeps their menus') !== -1, 'the panel names the protected upcoming menus');
     const clr = f.d.getElementById('btn-clear-menus');
     R.ok(!!clr, 'the clear action exists');
+    R.ok(clr.className.includes('text-red-600') && clr.className.includes('border-red-500'), 'hotfix: Clear saved menus runs the red destructive style');
     clr.click();
     R.ok(clr.textContent.indexOf('Tap again to clear') !== -1, 'the first tap arms instead of firing');
     clr.click();

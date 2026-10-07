@@ -472,6 +472,7 @@ const fs = require('fs');
     d.getElementById('app-dialog-cancel').click();
     await wait(80);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'cancel leaves the device untouched');
+    R.ok(!w.localStorage.getItem('crewAssist.tourDone'), 'the Settings door leaves the tour flag alone');
     // the v1.42.0 welcome-screen door: partial exports redirect, full backups land
     w.eval('backupRestoreRead("e.json", ' + legacy + ', { fromOnboarding: true })');
     await wait(80);
@@ -492,6 +493,7 @@ const fs = require('fs');
     await wait(120);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'the welcome door applies the full backup wholesale');
     R.ok(JSON.parse(w.localStorage.getItem('crewAssist.profile')).name === 'Backup Bo', 'the profile comes home through the welcome door');
+    R.eq(w.localStorage.getItem('crewAssist.tourDone'), '1', 'hotfix: the welcome door retires the tour — a restoring user is not a new user');
     // the earnings header: the import arrow is gone, the export stays
     w.showArchiveOverlay();
     await wait(100);

@@ -63,7 +63,7 @@ const { R, boot, wait, APP } = H;
   w.resetDevRates();
   await wait(50);
   R.ok(!d.getElementById('app-dialog-backdrop').classList.contains('hidden'), 'reset opens confirm pop-up');
-  R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Reset rates to defaults') !== -1, 'reset confirm wording');
+  R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Reset rates to default') !== -1, 'reset confirm wording (hotfix: singular)');
   d.getElementById('app-dialog-ok').click();
   await wait(400);
   R.eq(d.querySelector('[data-ifa-field="sgBuffer"]').value, initialVal, 'OK restores default rates');
