@@ -1385,8 +1385,10 @@
                         <div class="flex flex-col gap-2">
                             <button type="button" id="btn-dev-save" class="dev-save w-full h-12 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-sm font-bold inline-flex items-center justify-center gap-2 transition-all" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
                             <div class="flex gap-2">
-                                <button type="button" id="btn-dev-export" class="flex-1 h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
-                                <button type="button" id="btn-dev-import" class="flex-1 h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold relative overflow-hidden" aria-label="Import rates"><i data-lucide="upload" class="w-4 h-4"></i>Import<input type="file" id="dev-file-import" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
+                                <!-- v1.41.0: the rates import folded into Settings → Data
+                                     Management → Restore backup (one import door). The
+                                     export stays — it is the rates.json publishing path. -->
+                                <button type="button" id="btn-dev-export" class="w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
                             </div>
                         </div>
                     </div>
@@ -1402,6 +1404,11 @@
                 <div>
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
                     <div class="flex flex-col gap-2">
+                        <!-- v1.41.0: the one-shot backup — every piece of crew data
+                             on this device in a single file, and one import door that
+                             also reads the old earnings/rates exports. -->
+                        <button type="button" id="btn-backup-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export everything as one backup file"><i data-lucide="download" class="w-4 h-4"></i>Export backup</button>
+                        <button type="button" id="btn-backup-restore" class="relative overflow-hidden w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Restore from a backup file"><i data-lucide="upload" class="w-4 h-4"></i>Restore backup<input type="file" id="backup-file-restore" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
                         <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to defaults"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to defaults</button>
                         <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
                             <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
@@ -1481,8 +1488,7 @@
             <div class="flex items-center justify-between px-6 pt-2 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <h3 class="text-xl font-bold">Earnings</h3>
                 <div class="flex items-center gap-1">
-                    <button type="button" id="ca-arch-import" class="ca-arch-iconbtn" aria-label="Import backup"><i data-lucide="upload" class="w-5 h-5"></i></button>
-                    <button type="button" id="ca-arch-export" class="ca-arch-iconbtn" aria-label="Export backup"><i data-lucide="download" class="w-5 h-5"></i></button>
+                    <button type="button" id="ca-arch-export" class="ca-arch-iconbtn" aria-label="Export earnings"><i data-lucide="download" class="w-5 h-5"></i></button>
                     <span class="ca-arch-headrule" aria-hidden="true"></span>
                     <button type="button" id="ca-arch-trash" class="ca-arch-iconbtn" aria-label="Delete visible entries"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
                     <button type="button" id="ca-arch-close" class="ca-arch-iconbtn" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2043,7 +2049,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.40.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.41.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2065,6 +2071,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.41.0', d: '2026-10-08', items: [
+                { c: 'new', t: 'One backup file now carries everything \u2014 Settings \u2192 Data Management.' },
+                { c: 'imp', t: 'Restore reads old earnings and rates files too.' },
+                { c: 'imp', t: 'The backup reminder asks for the full backup.' },
+            ] },
             { v: '1.40.1', d: '2026-10-07', items: [
                 { c: 'fix', t: 'Paxing flights borrow their Singapore leg\u2019s flight time.' },
                 { c: 'imp', t: 'Date of First Solo reads in title case.' },
@@ -3137,8 +3148,10 @@
             const resetRatesBtn = document.getElementById('btn-dev-reset');
             if (resetRatesBtn) resetRatesBtn.addEventListener('click', () => { resetDevRates(); });
             document.getElementById('btn-dev-export').addEventListener('click', () => { exportDevRates(); });
-            document.getElementById('dev-file-import').addEventListener('change', (e) => {
-                importDevRatesFile(e.target.files[0]);
+            // v1.41.0: the one-shot backup door
+            document.getElementById('btn-backup-export').addEventListener('click', () => { exportFullBackup(); });
+            document.getElementById('backup-file-restore').addEventListener('change', (e) => {
+                backupRestoreFile(e.target.files[0]);
                 e.target.value = '';
             });
             // Chat Events
@@ -11839,7 +11852,7 @@ function getRegionForAirport(code) {
             if (all.length) renderArchInsights(all);
             if (!all.length) {
                 archEl('ca-arch-insights').classList.remove('ca-arch-insopen');
-                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Entries appear when you tap Save on a calculation — or import a JSON backup with the arrow above.</span></div>';
+                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Entries appear when you tap Save on a calculation — or restore a backup in Settings → Data Management.</span></div>';
                 try { lucide.createIcons(); } catch (e) {}
                 return;
             }
@@ -11865,8 +11878,8 @@ function getRegionForAirport(code) {
                     + '<i data-lucide="hard-drive-download" class="w-4 h-4 shrink-0 mt-0.5 text-amber-600"></i>'
                     + '<div class="flex-1 min-w-0 ca-micro font-semibold text-amber-700 dark:text-amber-400 leading-relaxed">'
                     + (nudge.never
-                        ? 'Your earnings live only on this phone. Export a JSON backup — it takes a few seconds.'
-                        : ((nudge.newCount >= 10 ? nudge.newCount + ' new entries' : nudge.newMonths + ' month' + (nudge.newMonths === 1 ? '' : 's') + ' of new entries') + ' since your last backup — an export takes a few seconds.'))
+                        ? 'Your data lives only on this phone. Export a backup — it takes a few seconds.'
+                        : ((nudge.newCount >= 10 ? nudge.newCount + ' new entries' : nudge.newMonths + ' month' + (nudge.newMonths === 1 ? '' : 's') + ' of new entries') + ' since your last backup — a fresh backup takes a few seconds.'))
                     + '</div>'
                     + '<button type="button" id="ca-arch-nudge-export" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider">Export</button>'
                     + '<button type="button" id="ca-arch-nudge-snooze" aria-label="Snooze backup reminder" class="shrink-0 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
@@ -11970,7 +11983,7 @@ function getRegionForAirport(code) {
             // v1.29.0: tap an amount to correct it in place.
             list.querySelectorAll('.ca-arch-amt[data-amt]').forEach((b) => b.addEventListener('click', (ev) => { ev.stopPropagation(); archEditAmount(b.getAttribute('data-amt')); }));
             const nudgeExport = list.querySelector('#ca-arch-nudge-export');
-            if (nudgeExport) nudgeExport.addEventListener('click', archExport);
+            if (nudgeExport) nudgeExport.addEventListener('click', exportFullBackup); // v1.41.0: the nudge backs up EVERYTHING, not just earnings
             const nudgeSnooze = list.querySelector('#ca-arch-nudge-snooze');
             if (nudgeSnooze) nudgeSnooze.addEventListener('click', () => {
                 try { localStorage.setItem('crewAssist.backupNudgeSnoozedAt', String(Date.now())); } catch (e) {}
@@ -12233,37 +12246,104 @@ function getRegionForAirport(code) {
             };
         }
         function archKey(r, d, a) { return String(r || '').toLowerCase() + '|' + String(d || '') + '|' + Math.round((Number(a) || 0) * 100); }
-        function archImport() {
-            openArchSub('<p class="text-xs text-gray-500">JSON backups only - CSV isn’t supported here.</p>'
-                + '<input type="file" id="ca-sub-file" accept=".json,.txt,application/json,text/plain" class="block w-full text-sm pt-3">'
-                + '<div id="ca-sub-preview" class="text-sm pt-2"></div>', 'Import backup');
-            archEl('ca-sub-file').addEventListener('change', (ev) => { const f = ev.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = (e2) => archImportRead(f.name, String(e2.target.result)); r.readAsText(f); });
+        // ---- v1.41.0: the one-shot backup and the one import door ----
+        // Everything worth keeping on this device, as one file. Menu caches and
+        // one-time flags are deliberately absent — caches re-fetch, flags are
+        // this device's own business.
+        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards'];
+        function buildFullBackup() {
+            const data = {};
+            BACKUP_KEYS.forEach((k) => {
+                const raw = localStorage.getItem(k);
+                if (raw == null) return;
+                try { data[k] = JSON.parse(raw); } catch (e) { data[k] = raw; }
+            });
+            const arch = Array.isArray(data['crewAssist.archive']) ? data['crewAssist.archive'] : [];
+            const duty = (data['crewAssist.dutyDays'] && typeof data['crewAssist.dutyDays'] === 'object') ? Object.keys(data['crewAssist.dutyDays']).length : 0;
+            return { v: 1, app: 'CrewAssist', exportedAt: new Date().toISOString(), counts: { earnings: arch.length, dutyMonths: duty }, data: data };
         }
-        function archImportRead(name, text) {
-            const pv = archEl('ca-sub-preview');
+        function exportFullBackup() {
+            const payload = buildFullBackup();
+            const t = new Date();
+            const stamp = t.getFullYear() + String(t.getMonth() + 1).padStart(2, '0') + String(t.getDate()).padStart(2, '0');
+            try { localStorage.setItem('crewAssist.lastBackupAt', String(Date.now())); localStorage.removeItem('crewAssist.backupNudgeSnoozedAt'); } catch (e) {}
+            exportFile(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), 'crewassist-backup-' + stamp + '.json')
+                .then((res) => { if (res) archToast('Backup exported — keep it private, it has your pay data.', null); });
+        }
+        // The one import door (Settings → Data Management → Restore backup).
+        // It auto-detects the format: a v1.41.0 full backup, a legacy earnings
+        // export (array or {entries:[…]}), or a legacy rates export.
+        function backupRestoreFile(file) {
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => backupRestoreRead(file.name, String(ev.target.result));
+            reader.readAsText(file);
+        }
+        function backupRestoreRead(name, text) {
             const trimmed = String(text || '').trim();
             if (/\.csv$/i.test(name) || (trimmed && trimmed[0] !== '{' && trimmed[0] !== '[')) {
-                pv.innerHTML = '<p class="text-red-500 font-semibold">That looks like a CSV. I only read JSON backups - export one here and try again.</p>'; return;
+                appAlert('That looks like a CSV. I only read JSON files — export a backup in Settings and try again.'); return;
             }
-            let data; try { data = JSON.parse(trimmed); } catch (e) { pv.innerHTML = '<p class="text-red-500 font-semibold">That file isn’t valid JSON.</p>'; return; }
-            const arr = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : []);
+            let data; try { data = JSON.parse(trimmed); } catch (e) { appAlert('That file isn’t valid JSON.'); return; }
+            if (data && data.app === 'CrewAssist' && data.v === 1 && data.data && typeof data.data === 'object') return restoreFullBackup(data);
+            const arr = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : null);
+            if (arr) return restoreEarningsJson(arr);
+            const parsed = parseRates(data);
+            if (parsed) return restoreRatesJson(parsed);
+            appAlert('That file isn’t a CrewAssist backup — expected a full backup, an earnings export or a rates export.');
+        }
+        function restoreFullBackup(payload) {
+            const d = (payload && payload.data) || {};
+            const arch = Array.isArray(d['crewAssist.archive']) ? d['crewAssist.archive'] : [];
+            const duty = (d['crewAssist.dutyDays'] && typeof d['crewAssist.dutyDays'] === 'object') ? Object.keys(d['crewAssist.dutyDays']).length : 0;
+            const prof = d['crewAssist.profile'] || null;
+            const when = payload.exportedAt ? new Date(payload.exportedAt) : null;
+            const whenTxt = (when && !isNaN(when.getTime())) ? when.toLocaleDateString() : 'an unknown date';
+            appConfirm('Full backup from ' + whenTxt + ' — ' + arch.length + ' earnings entries, ' + duty + ' months of roster duties' + (prof && prof.name ? ', profile ' + prof.name : '') + '. Restore? This replaces the CrewAssist data on this device.').then((ok) => {
+                if (!ok) return;
+                applyFullBackupData(d);
+                try { location.reload(); } catch (e) {}
+            });
+        }
+        // The write step, on its own so tests can round-trip without a reload:
+        // the backed-up keys are replaced wholesale; everything else on this
+        // device (dev mode, tour flags, What’s-New seen) stays as it is.
+        function applyFullBackupData(d) {
+            BACKUP_KEYS.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
+            Object.keys(d || {}).forEach((k) => {
+                if (BACKUP_KEYS.indexOf(k) === -1) return;
+                try { localStorage.setItem(k, (typeof d[k] === 'string') ? d[k] : JSON.stringify(d[k])); } catch (e) {}
+            });
+        }
+        function restoreEarningsJson(arr) {
             const existing = loadArchive();
             const have = {}; existing.forEach((e) => { have[archKey(e.stationDisplay, e.sectorDate, e.amount)] = 1; });
             const readable = []; const seen = {}; let dup = 0;
             arr.forEach((raw) => { const e = archNormalize(raw); if (!e) return; readable.push(e); const k = archKey(e.stationDisplay, e.sectorDate, e.amount); if (have[k] || seen[k]) dup++; else seen[k] = 1; });
             const fresh = []; const fs2 = {};
             readable.forEach((e) => { const k = archKey(e.stationDisplay, e.sectorDate, e.amount); if (!have[k] && !fs2[k]) { fs2[k] = 1; fresh.push(e); } });
+            if (!fresh.length) { appAlert('Everything in that earnings file is already on this device — nothing new to import.'); return; }
             const sum = fresh.reduce((s, e) => s + e.amount, 0);
-            pv.innerHTML = '<p class="font-semibold">Found ' + readable.length + ' readable · ' + formatMoney(sum) + ' · ' + dup + ' duplicate' + (dup === 1 ? '' : 's') + '</p>'
-                + '<button type="button" id="ca-sub-import" ' + (fresh.length ? '' : 'disabled ') + 'class="mt-3 w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold disabled:opacity-40">Import ' + fresh.length + ' new</button>';
-            const ib = archEl('ca-sub-import');
-            if (ib) ib.onclick = () => {
+            appConfirm('Earnings file — ' + readable.length + ' readable · ' + formatMoney(sum) + ' · ' + dup + ' duplicate' + (dup === 1 ? '' : 's') + '. Import ' + fresh.length + ' new?').then((ok) => {
+                if (!ok) return;
                 const imported = fresh.slice();
                 persistArchive(loadArchive().concat(imported));
-                closeArchSub();
+                closeSettings();
                 archToast('Imported ' + imported.length + ' entries', () => { const ids = {}; imported.forEach((x) => { ids[x.id] = 1; }); persistArchive(loadArchive().filter((x) => !ids[x.id])); renderArch(); });
                 renderArch();
-            };
+            });
+        }
+        function restoreRatesJson(parsed) {
+            appConfirm('Rates file — apply these rates to this device? You can review or reset them in Developer mode.').then((ok) => {
+                if (!ok) return;
+                try { localStorage.setItem('crewAssist.rates', JSON.stringify(parsed)); localStorage.setItem('crewAssist.ratesUpdatedAt', String(Date.now())); } catch (e) {}
+                activeRates = cloneRates(parsed);
+                devSnapshot = cloneRates(parsed);
+                applyRatesToEngine(parsed);
+                renderDevRatesEditor();
+                try { devRefresh(); } catch (e) {}
+                archToast('Rates restored', null);
+            });
         }
         function csvCell(v) { v = String(v == null ? '' : v); if (/[",\n]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"'; return v; }
         function archScopeSuffix() { const info = archScopeInfo(); return archState.scope === 'month' ? info.mk : (archState.scope === 'year' ? info.yr : 'all'); }
@@ -12273,7 +12353,9 @@ function getRegionForAirport(code) {
         function archDoExport(kind) {
             const data = archFiltered(); const suf = archScopeSuffix();
             if (kind === 'json') {
-                try { localStorage.setItem('crewAssist.lastBackupAt', String(Date.now())); localStorage.removeItem('crewAssist.backupNudgeSnoozedAt'); } catch (e) {}
+                // v1.41.0: this is an EXTRACT of the current filter, not the
+                // device backup — it no longer stamps lastBackupAt. Only the
+                // full backup (Settings → Data Management) does.
                 archShareOrDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'crewassist-earnings-' + suf + '.json');
             } else {
                 let csv = 'route,date,type,amount\n';
@@ -12307,8 +12389,8 @@ function getRegionForAirport(code) {
         }
 
         function archExport() {
-            openArchSub('<p class="text-xs text-gray-500 mb-1">Keep this file private - it contains your pay data.</p>'
-                + '<button type="button" id="ca-sub-json" class="w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold">JSON - Full backup</button>'
+            openArchSub('<p class="text-xs text-gray-500 mb-1">Keep this file private - it contains your pay data. This exports the current filter; the whole-device backup lives in Settings → Data Management.</p>'
+                + '<button type="button" id="ca-sub-json" class="w-full py-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black font-bold">JSON - pay data</button>'
                 + '<button type="button" id="ca-sub-csv" class="w-full py-3 rounded-full bg-black/10 dark:bg-white/10 font-bold">CSV - Spreadsheet</button>', 'Export earnings');
             archEl('ca-sub-json').onclick = () => archDoExport('json');
             archEl('ca-sub-csv').onclick = () => archDoExport('csv');
@@ -12351,8 +12433,7 @@ function getRegionForAirport(code) {
         (function bindArchUi() {
             archEl('ca-arch-close').addEventListener('click', closeArchOverlay);
             archEl('ca-arch-backdrop').addEventListener('click', closeArchOverlay);
-            archEl('ca-arch-import').addEventListener('click', archImport);
-            archEl('ca-arch-export').addEventListener('click', archExport);
+            archEl('ca-arch-export').addEventListener('click', archExport); // v1.41.0: import moved to Settings → Restore backup
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
             document.querySelectorAll('#ca-arch-summary .ca-arch-seg').forEach((b) => b.addEventListener('click', () => {

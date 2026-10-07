@@ -37,14 +37,26 @@ const { R, boot, wait, APP } = H;
   R.ok(d.getElementById('dev-dirty-dot').classList.contains('hidden'), 'after save dot cleared');
   R.ok(!dotOf(d.querySelector('[data-ifa-field="sgBuffer"]')).classList.contains('is-on'), 'after save: section dot off');
 
-  // import fills fields + marks dirty, never saves
+  // v1.41.0: the rates import folded into Settings → Restore backup. A rates
+  // file through the door confirms, then APPLIES (it is a restore action,
+  // not an editor fill) — and the engine picks the values up at once.
   const before = w.localStorage.getItem('crewAssist.rates');
-  const file = new w.File([JSON.stringify({ version: 1, ifa: { sgBuffer: 5 } })], 'r.json', { type: 'application/json' });
-  w.importDevRatesFile(file);
-  await wait(300);
-  R.ok(!d.getElementById('dev-dirty-dot').classList.contains('hidden'), 'import marks dirty');
-  R.eq(w.localStorage.getItem('crewAssist.rates'), before, 'import does not auto-save');
-  R.ok(dotOf(d.querySelector('[data-ifa-field="sgBuffer"]')).classList.contains('is-on'), 'import: section dot on');
+  const ratesTxt = JSON.stringify(JSON.stringify({ version: 1, ifa: { sgBuffer: 5 } }));
+  w.eval('backupRestoreRead("r.json", ' + ratesTxt + ')');
+  await wait(80);
+  R.ok(!d.getElementById('app-dialog-backdrop').classList.contains('hidden'), 'a rates file opens the confirm door');
+  R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Rates file') !== -1, 'the rates confirm says what it will do');
+  R.eq(w.localStorage.getItem('crewAssist.rates'), before, 'cancel-safe: nothing written before OK');
+  d.getElementById('app-dialog-cancel').click();
+  await wait(80);
+  R.eq(w.localStorage.getItem('crewAssist.rates'), before, 'cancel leaves the rates untouched');
+  w.eval('backupRestoreRead("r.json", ' + ratesTxt + ')');
+  await wait(80);
+  d.getElementById('app-dialog-ok').click();
+  await wait(200);
+  const restored = JSON.parse(w.localStorage.getItem('crewAssist.rates') || 'null');
+  R.ok(restored && restored.ifa && restored.ifa.sgBuffer === 5, 'OK applies the rates to crewAssist.rates');
+  R.eq(w.eval('readRatesFromEditor().ifa.sgBuffer'), 5, 'the live editor reflects the restored buffer at once');
 
   // reset to defaults: confirm dialog, then defaults applied (still unsaved)
   const initialVal = '2.5'; // shipped rates.json == code defaults for this field

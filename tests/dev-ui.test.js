@@ -17,27 +17,36 @@ const mkUntil = (d) => async (cond, ms) => {
   const { w, d } = await boot(APP);
   const card = d.getElementById('settings-developer');
   const exp = d.getElementById('btn-dev-export');
-  const imp = d.getElementById('btn-dev-import');
 
-  // footer: two equal one-line buttons matching the Save button's language
-  R.ok(exp && exp.className.includes('flex-1') && exp.className.includes('items-center') && !exp.className.includes('flex-col'), 'Export: equal-width one-line button');
-  R.ok(imp && imp.className.includes('flex-1') && imp.className.includes('items-center') && !imp.className.includes('flex-col'), 'Import: equal-width one-line button');
+  // footer (v1.41.0): Export is the single one-line secondary — the rates
+  // import folded into Settings → Restore backup (one import door).
+  R.ok(exp && exp.className.includes('w-full') && exp.className.includes('items-center') && !exp.className.includes('flex-col'), 'Export: full-width one-line button');
   R.eq(exp.querySelector('i').getAttribute('data-lucide'), 'download', 'Export icon is download');
-  R.eq(imp.querySelector('i').getAttribute('data-lucide'), 'upload', 'Import icon is upload');
   R.eq(exp.textContent.trim(), 'Export', 'Export label visible');
+  R.ok(!d.getElementById('btn-dev-import'), 'the dev Import button is gone (v1.41.0)');
+  R.ok(!d.getElementById('dev-file-import'), 'its file input went with it');
   R.ok(d.getElementById('btn-dev-save'), 'Save button still present');
   R.ok(!card.contains(d.getElementById('btn-dev-reset')), 'Reset no longer inside dev rates card');
-  R.ok(imp.contains(d.getElementById('dev-file-import')), 'file input stays inside Import button');
 
-  // Data Management: gold Reset above red Clear All Data, dev-gated
+  // Data Management (v1.41.0): Export backup (gold) + Restore backup (the one
+  // import door, file input inside) above the dev-gated Reset and red Clear.
+  const bex = d.getElementById('btn-backup-export');
+  const bres = d.getElementById('btn-backup-restore');
+  R.ok(bex && bex.className.includes('text-sia-gold') && bex.className.includes('border-sia-gold'), 'Export backup: gold text + gold border');
+  R.eq(bex.querySelector('i').getAttribute('data-lucide'), 'download', 'Export backup icon is download');
+  R.eq(bex.textContent.trim(), 'Export backup', 'Export backup label visible');
+  R.ok(bres && bres.className.includes('relative') && bres.className.includes('overflow-hidden'), 'Restore backup: a pill that can hold its file input');
+  R.eq(bres.querySelector('i').getAttribute('data-lucide'), 'upload', 'Restore backup icon is upload');
+  R.ok(bres.contains(d.getElementById('backup-file-restore')), 'the restore file input sits inside the button');
+  R.eq(d.getElementById('backup-file-restore').getAttribute('accept'), '.json,.txt,application/json,text/plain', 'the restore picker accepts .txt twins (Android round-trip)');
   const reset = d.getElementById('btn-dev-reset');
   const clear = d.getElementById('btn-clear-data');
   R.ok(reset.classList.contains('hidden'), 'Reset hidden when dev mode off');
   R.ok(reset.className.includes('text-sia-gold') && reset.className.includes('border-sia-gold'), 'Reset: gold text + gold border');
   R.ok(clear.className.includes('text-red-600') && clear.className.includes('border-red-500'), 'Clear All Data: red text + red border');
   R.ok(clear.className.includes('bg-transparent'), 'Clear All Data: transparent background');
-  const order = Array.from(d.querySelectorAll('#btn-dev-reset, #btn-clear-data')).map((el) => el.id);
-  R.eq(order.join(','), 'btn-dev-reset,btn-clear-data', 'Reset sits above Clear All Data');
+  const order = Array.from(d.querySelectorAll('#btn-backup-export, #btn-backup-restore, #btn-dev-reset, #btn-clear-data')).map((el) => el.id);
+  R.eq(order.join(','), 'btn-backup-export,btn-backup-restore,btn-dev-reset,btn-clear-data', 'backup doors sit above Reset and Clear All Data');
 
   // the real 10-tap path reveals both the section and the pill
   for (let i = 0; i < 10; i++) d.getElementById('header-brand').click();

@@ -69,7 +69,7 @@ const fs = require('fs');
     R.ok(!d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 'earnings page opens with nothing saved');
     const listTxt = d.getElementById('ca-arch-list').textContent;
     R.ok(/No flights yet/.test(listTxt), 'empty state heading');
-    R.ok(/Entries appear when you tap Save on a calculation/.test(listTxt) && /import a JSON backup with the arrow above/.test(listTxt), 'v1.37.0: the empty state names both ways to fill it in mental-model order');
+    R.ok(/Entries appear when you tap Save on a calculation/.test(listTxt) && /restore a backup in Settings/.test(listTxt), 'v1.41.0: the empty state names both ways to fill it in mental-model order');
   }
 
   // tap-through: rows reopen the saved summary; old entries say so honestly
@@ -186,7 +186,7 @@ const fs = require('fs');
     R.ok(d.querySelector('#ca-arch-sheet .w-\\[44px\\].h-\\[4px\\]'), 'iOS-style sheet handle pill');
     R.ok(d.querySelector('#ca-arch-sheet > div.max-w-xl.mx-auto.w-full.flex.items-center.justify-between'), 'v1.36.1: the earnings header joins the centered reading column (owner tier ruling)');
     R.ok(d.querySelector('#ca-arch-scroll.max-w-xl.mx-auto.w-full'), 'v1.36.1: the earnings content scrolls inside the reading column, so flight taps open a same-width summary');
-    R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 4, 'four header icon buttons');
+    R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 3, 'three header icon buttons (v1.41.0: export, trash, close — the import arrow moved to Settings → Restore backup)');
     R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg').length, 3, 'three segmented scope buttons');
     const segOf = (scope) => d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="' + scope + '"]');
     R.ok(['month', 'year', 'all'].every((s) => !!segOf(s)), 'segmented buttons: month / year / all');
@@ -388,12 +388,17 @@ const fs = require('fs');
     card = d.getElementById('ca-arch-backup-nudge');
     R.ok(card, 'backup 30 days old + new month → nudge card');
     R.ok(card && card.textContent.indexOf('1 month of new entries since your last backup') >= 0, 'stale-backup copy counts the new months');
-    // exporting a JSON backup stamps it and clears the card
+    // v1.41.0: the earnings JSON is an EXTRACT now — it does NOT stamp the
+    // backup clock. Only the full backup (Settings → Data Management) does.
     w.URL.createObjectURL = () => 'blob:test'; w.URL.revokeObjectURL = () => {};
     w.eval("archDoExport('json')");
-    R.ok(Number(w.localStorage.getItem('crewAssist.lastBackupAt')) > Date.now() - 60000, 'JSON export stamps lastBackupAt');
+    R.ok(Number(w.localStorage.getItem('crewAssist.lastBackupAt')) < Date.now() - 20 * 86400000, 'an earnings extract does not stamp lastBackupAt');
     w.eval('renderArch()');
-    R.ok(!d.getElementById('ca-arch-backup-nudge'), 'fresh export → no nudge');
+    R.ok(!!d.getElementById('ca-arch-backup-nudge'), 'an extract does not silence the backup nudge');
+    w.eval('exportFullBackup()');
+    R.ok(Number(w.localStorage.getItem('crewAssist.lastBackupAt')) > Date.now() - 60000, 'the full backup stamps lastBackupAt');
+    w.eval('renderArch()');
+    R.ok(!d.getElementById('ca-arch-backup-nudge'), 'fresh full backup → no nudge');
   }
   {
     // single month + never backed up → stays quiet
@@ -403,6 +408,75 @@ const fs = require('fs');
     ]));
     w.showArchiveOverlay();
     R.ok(!d.getElementById('ca-arch-backup-nudge'), 'one month + never backed up → no nudge yet');
+  }
+
+  // --- v1.41.0: the one-shot backup + the one restore door ---
+  {
+    const seed = (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Backup Bo', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01' }));
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'bk1', savedAt: '2026-10-01T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-01', stationDisplay: 'SIN/KUL', amount: 100 }]));
+      x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [{ ymd: '2026-10-07', kind: 'F' }] }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [{ fn: 'SQ106' }] }));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '106', ymd: '2026-10-20', std: '0900' }] }));
+      x.localStorage.setItem('crewAssist.devMode', 'true');
+    };
+    const { w, d } = await boot(APP, { seed });
+    // build: the manifest counts what matters and carries the crown jewels
+    const p = JSON.parse(w.eval('JSON.stringify(buildFullBackup())'));
+    R.eq(p.v, 1, 'backup manifest v1');
+    R.eq(p.app, 'CrewAssist', 'backup manifest names the app');
+    R.eq(p.counts.earnings, 1, 'backup counts the earnings entries');
+    R.eq(p.counts.dutyMonths, 1, 'backup counts the duty months');
+    R.ok(p.data['crewAssist.profile'] && p.data['crewAssist.profile'].name === 'Backup Bo', 'backup carries the profile');
+    R.ok(!('crewAssist.devMode' in p.data), 'device flags stay out of the backup');
+    R.ok(!('crewAssist.installHintDone' in p.data), 'one-time flags stay out of the backup');
+    // round-trip: wipe the data keys, apply, everything returns
+    w.eval("['crewAssist.profile','crewAssist.archive','crewAssist.dutyDays','crewAssist.allFlights','crewAssist.upcoming'].forEach((k) => localStorage.removeItem(k))");
+    R.ok(!w.localStorage.getItem('crewAssist.dutyDays'), 'duty days gone before the restore');
+    w.eval('applyFullBackupData(' + JSON.stringify(p.data) + ')');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'restore returns the earnings');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.dutyDays'))['2026-10'].length, 1, 'restore returns the duty days — the calendar survives a reset, no PDF re-upload');
+    R.ok(JSON.parse(w.localStorage.getItem('crewAssist.profile')).name === 'Backup Bo', 'restore returns the profile');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.upcoming'))['2026-10'].length, 1, 'restore returns upcoming flights');
+    // replace semantics: a key not in the backup is cleared
+    w.eval("localStorage.setItem('crewAssist.manualCards', '[{\"x\":1}]'); applyFullBackupData(" + JSON.stringify(p.data) + ')');
+    R.ok(!w.localStorage.getItem('crewAssist.manualCards'), 'restore replaces — a key not in the backup is cleared');
+    // the door detects a legacy earnings file and merges through a confirm
+    const legacy = JSON.stringify(JSON.stringify([{ id: 'x1', savedAt: '2026-10-02T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-02', stationDisplay: 'SIN/HKT', amount: 55 }]));
+    w.eval('backupRestoreRead("e.json", ' + legacy + ')');
+    await wait(80);
+    R.ok(!d.getElementById('app-dialog-backdrop').classList.contains('hidden'), 'an earnings file opens the confirm door');
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('1 readable') !== -1, 'the earnings preview counts readables');
+    d.getElementById('app-dialog-ok').click();
+    await wait(120);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'legacy earnings files still import through the door');
+    // the same file again → the honest nothing-new alert, archive untouched
+    w.eval('backupRestoreRead("e.json", ' + legacy + ')');
+    await wait(80);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('already on this device') !== -1, 'a fully-duplicate file gets the honest nothing-new alert');
+    d.getElementById('app-dialog-ok').click();
+    await wait(80);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'a fully-duplicate import adds nothing');
+    // a rates file through the door
+    w.eval('backupRestoreRead("r.json", ' + JSON.stringify(JSON.stringify({ version: 1, ifa: { sgBuffer: 5 } })) + ')');
+    await wait(80);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Rates file') !== -1, 'a rates file opens the rates confirm');
+    d.getElementById('app-dialog-ok').click();
+    await wait(120);
+    R.ok(JSON.parse(w.localStorage.getItem('crewAssist.rates')).ifa.sgBuffer === 5, 'a rates file applies through the door');
+    // a full backup previews its counts and profile; cancel is safe
+    w.eval('backupRestoreRead("b.json", ' + JSON.stringify(JSON.stringify(p)) + ')');
+    await wait(80);
+    const msg = d.getElementById('app-dialog-msg').textContent;
+    R.ok(msg.indexOf('1 earnings entries') !== -1 && msg.indexOf('Backup Bo') !== -1, 'a full backup previews counts + profile');
+    d.getElementById('app-dialog-cancel').click();
+    await wait(80);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'cancel leaves the device untouched');
+    // the earnings header: the import arrow is gone, the export stays
+    w.showArchiveOverlay();
+    await wait(100);
+    R.ok(!d.getElementById('ca-arch-import'), 'the earnings header import arrow is gone (v1.41.0)');
+    R.ok(!!d.getElementById('ca-arch-export'), 'the earnings header keeps its export');
   }
 
   // --- v1.27.1: insights must react to the FIRST tap (regression: a leftover
