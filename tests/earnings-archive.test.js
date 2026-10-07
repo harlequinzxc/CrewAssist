@@ -472,6 +472,26 @@ const fs = require('fs');
     d.getElementById('app-dialog-cancel').click();
     await wait(80);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'cancel leaves the device untouched');
+    // the v1.42.0 welcome-screen door: partial exports redirect, full backups land
+    w.eval('backupRestoreRead("e.json", ' + legacy + ', { fromOnboarding: true })');
+    await wait(80);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('earnings export') !== -1, 'the welcome door refuses an earnings export with directions');
+    d.getElementById('app-dialog-ok').click();
+    await wait(80);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'the welcome-door refusal imports nothing');
+    w.eval('backupRestoreRead("r.json", ' + JSON.stringify(JSON.stringify({ version: 1, ifa: { sgBuffer: 9 } })) + ', { fromOnboarding: true })');
+    await wait(80);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('rates export') !== -1, 'the welcome door refuses a rates export with directions');
+    d.getElementById('app-dialog-ok').click();
+    await wait(80);
+    R.ok(JSON.parse(w.localStorage.getItem('crewAssist.rates')).ifa.sgBuffer === 5, 'the welcome-door rates refusal changes nothing');
+    w.eval('backupRestoreRead("b.json", ' + JSON.stringify(JSON.stringify(p)) + ', { fromOnboarding: true })');
+    await wait(80);
+    R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('1 earnings entries') !== -1, 'the welcome door previews the full backup');
+    d.getElementById('app-dialog-ok').click();
+    await wait(120);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'the welcome door applies the full backup wholesale');
+    R.ok(JSON.parse(w.localStorage.getItem('crewAssist.profile')).name === 'Backup Bo', 'the profile comes home through the welcome door');
     // the earnings header: the import arrow is gone, the export stays
     w.showArchiveOverlay();
     await wait(100);

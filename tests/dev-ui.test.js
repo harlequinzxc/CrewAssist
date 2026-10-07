@@ -25,8 +25,11 @@ const mkUntil = (d) => async (cond, ms) => {
   R.eq(exp.textContent.trim(), 'Export', 'Export label visible');
   R.ok(!d.getElementById('btn-dev-import'), 'the dev Import button is gone (v1.41.0)');
   R.ok(!d.getElementById('dev-file-import'), 'its file input went with it');
-  R.ok(d.getElementById('btn-dev-save'), 'Save button still present');
-  R.ok(!card.contains(d.getElementById('btn-dev-reset')), 'Reset no longer inside dev rates card');
+  const save = d.getElementById('btn-dev-save');
+  R.ok(save && save.className.includes('h-[42px]') && save.className.includes('border-sia-gold') && !save.className.includes('bg-gradient'), 'v1.42.0: Save rates wears the Data Management uniform (h-[42px] gold outline)');
+  R.ok(card.contains(d.getElementById('btn-dev-reset')), 'v1.42.0: Reset rates to defaults moved into the dev card');
+  const devOrder = Array.from(card.querySelectorAll('#btn-dev-save, #btn-dev-reset, #btn-dev-export')).map((el) => el.id);
+  R.eq(devOrder.join(','), 'btn-dev-save,btn-dev-reset,btn-dev-export', 'Reset sits directly below Save rates, Export last');
 
   // Data Management (v1.41.0): Export backup (gold) + Restore backup (the one
   // import door, file input inside) above the dev-gated Reset and red Clear.
@@ -45,8 +48,10 @@ const mkUntil = (d) => async (cond, ms) => {
   R.ok(reset.className.includes('text-sia-gold') && reset.className.includes('border-sia-gold'), 'Reset: gold text + gold border');
   R.ok(clear.className.includes('text-red-600') && clear.className.includes('border-red-500'), 'Clear All Data: red text + red border');
   R.ok(clear.className.includes('bg-transparent'), 'Clear All Data: transparent background');
-  const order = Array.from(d.querySelectorAll('#btn-backup-export, #btn-backup-restore, #btn-dev-reset, #btn-clear-data')).map((el) => el.id);
-  R.eq(order.join(','), 'btn-backup-export,btn-backup-restore,btn-dev-reset,btn-clear-data', 'backup doors sit above Reset and Clear All Data');
+  R.ok(bex.parentElement.className.includes('glass-panel'), 'v1.42.0: Data Management buttons sit in the house box — the same width as Clear saved menus');
+  R.ok(!bex.parentElement.contains(reset), 'Reset left Data Management for the dev card (v1.42.0)');
+  const order = Array.from(d.querySelectorAll('#btn-backup-export, #btn-backup-restore, #btn-clear-data')).map((el) => el.id);
+  R.eq(order.join(','), 'btn-backup-export,btn-backup-restore,btn-clear-data', 'backup doors sit above Clear All Data');
 
   // the real 10-tap path reveals both the section and the pill
   for (let i = 0; i < 10; i++) d.getElementById('header-brand').click();
@@ -105,6 +110,16 @@ const mkUntil = (d) => async (cond, ms) => {
       R.ok(appSrc.includes('<div class="space-y-4 flex-grow">'), 'the onboarding fields sit closer together (v1.40.1)'); 
     }
     R.ok(rankFolded(), 'Rank stays folded on first run');
+
+    // v1.42.0: the welcome screen carries the restore door beside the CTA.
+    const obr = ob('ob-restore');
+    R.ok(!!obr, 'the restore door renders on the welcome screen');
+    R.eq(obr.getAttribute('aria-label'), 'Restore from a backup', 'the door is labelled for screen readers');
+    R.eq((obr.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide'), 'log-in', 'the door uses the log-in icon');
+    R.ok(obr.contains(ob('ob-restore-file')), 'the file input overlays the door button (Settings-door pattern)');
+    R.eq(ob('ob-restore-file').getAttribute('accept'), '.json,.txt,application/json,text/plain', 'the welcome picker accepts the same files as Settings');
+    R.ok(ob('ob-submit').className.includes('flex-1'), 'Let\'s Go keeps the primary share of the row');
+    R.ok(ob('ob-submit').disabled === true && !obr.disabled, 'the door is tappable while the form is still empty');
 
     type(ob('ob-name'), 'Junior June');
     R.ok(rankFolded(), 'a name alone does not reveal Rank');
@@ -503,8 +518,12 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok((c.d.getElementById('settings-semver') || {}).textContent === 'CrewAssist v' + c.w.APP_VERSION, 'settings carries a CrewAssist vX footer');
     const learnCopy = c.d.getElementById('settings-scroll').textContent;
     R.ok(learnCopy.includes('Usually replies within a few hours'), 'the developer row sets reply expectations');
-    R.ok(learnCopy.includes('See everything the app can do in 90 seconds'), 'the tour row sells the 90-second walkthrough');
-    R.ok(learnCopy.includes('New features, fixes, and improvements'), 'the changelog row subtitles its categories');
+    R.ok(learnCopy.includes('Placeholder'), 'v1.42.0: the tour row subtitle is a placeholder pending the tour overhaul');
+    R.ok(learnCopy.includes('Features, fixes and improvements'), 'the changelog row subtitles its categories');
+    R.ok((c.d.getElementById('btn-edit-profile') || {}).className.includes('w-32'), 'the profile Edit button runs the standard width');
+    R.ok((c.d.querySelector('a[href="https://t.me/harlequinzxc"]') || {}).className.includes('w-32'), 'the Telegram button runs the standard width');
+    R.ok((c.d.getElementById('btn-replay-tour') || {}).className.includes('w-32'), 'Replay runs the standard width');
+    R.ok((c.d.getElementById('btn-changelog') || {}).className.includes('w-32'), 'View runs the standard width');
     R.ok((c.d.querySelector('#btn-replay-tour i[data-lucide]') || {}).getAttribute('data-lucide') === 'play', 'the tour button uses the play icon');
     R.ok((c.d.querySelector('a[href="https://t.me/harlequinzxc"] i[data-lucide]') || {}).getAttribute('data-lucide') === 'send', 'the Telegram button uses the send icon');
     const clBadge = c.d.getElementById('calcui-desc-badge');
