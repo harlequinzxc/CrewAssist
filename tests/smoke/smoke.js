@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.42.0', 'APP_VERSION is 1.42.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.42.0' && e.d === '2026-10-08' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,fix,fix'; }), 'the changelog carries the 1.42.0 entry (2026-10-08, welcome-screen restore + settings alignment)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v200'), 'the service-worker cache name is bumped to v200 (APP_VERSION 1.42.0)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.42.0' && e.d === '2026-10-08' && e.items.length === 6 && e.items.map((i) => i.c).join(',') === 'new,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.42.0 entry (welcome restore + hotfix round)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v201'), 'the service-worker cache name is bumped to v201 (APP_VERSION 1.42.0, hotfix round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -150,6 +150,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const inp = document.getElementById('ob-restore-file');
             return !!ob && ob.contains(inp) && (ob.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide') === 'log-in';
         }), 'the welcome screen carries the restore door');
+        ok(await page.evaluate(() => { const r = document.getElementById('ob-restore').getBoundingClientRect(); return r.width > 0 && Math.abs(r.width - r.height) < 1.5; }), 'hotfix: the login door renders square (the compiled stylesheet carries the square)');
         await page.evaluate(() => {
             localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'w1', savedAt: '2026-10-08T03:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/BKK', amount: 88 }]));
             localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [{ ymd: '2026-10-09', kind: 'F' }] }));
@@ -172,11 +173,22 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const duty = JSON.parse(localStorage.getItem('crewAssist.dutyDays') || '{}');
             return arch.length === 1 && arch[0].amount === 88 && prof && prof.name === 'Welcome Wo' && duty['2026-10'] && duty['2026-10'].length === 1;
         }), 'the restored phone carries the earnings, profile and duty days');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.tourDone') === '1'), 'hotfix: a restoring user is not offered the tour');
         // a partial export through the welcome door redirects honestly
         await page.evaluate(() => backupRestoreRead('earnings.json', JSON.stringify([{ id: 'w2', savedAt: '2026-10-08T04:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/HKT', amount: 5 }]), { fromOnboarding: true }));
         await page.waitForFunction(() => !document.getElementById('app-dialog-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('app-dialog-msg').textContent.indexOf('earnings export') !== -1), 'the welcome door refuses partial exports with directions');
         await page.evaluate(() => document.getElementById('app-dialog-ok').click());
+
+        // 7. hotfix: the standard widths actually render (compiled stylesheet).
+        await page.evaluate(() => openSettings());
+        await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
+        ok(await page.evaluate(() => {
+            const wd = (el) => el.getBoundingClientRect().width;
+            const tg = wd(document.querySelector('a[href="https://t.me/harlequinzxc"]'));
+            return ['btn-edit-profile', 'btn-replay-tour', 'btn-changelog'].every((id) => Math.abs(wd(document.getElementById(id)) - tg) < 1.5);
+        }), 'hotfix: Edit, Replay, View and Telegram render one width (the compiled stylesheet carries w-32)');
+        await page.evaluate(() => closeSettings());
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));
