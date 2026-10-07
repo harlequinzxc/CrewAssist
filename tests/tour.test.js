@@ -234,6 +234,9 @@ const clickLast = (d, sel) => {
     const name = d.getElementById('ob-name');
     name.value = 'Tour Tester';
     name.dispatchEvent(new w.Event('input', { bubbles: true }));
+    const solo = d.getElementById('ob-solo');
+    solo.value = '01/01/2020'; // decades past first solo: tour demo trips price at the full FS rate
+    solo.dispatchEvent(new w.Event('input', { bubbles: true }));
     d.querySelector('.ob-gender-btn').click();
     await wait(150);
     d.querySelector('.ob-rank-btn').click();
@@ -264,6 +267,9 @@ const clickLast = (d, sel) => {
     const name = d.getElementById('ob-name');
     name.value = 'Sheet Tester';
     name.dispatchEvent(new w.Event('input', { bubbles: true }));
+    const solo = d.getElementById('ob-solo');
+    solo.value = '01/01/2020'; // decades past first solo: tour demo trips price at the full FS rate
+    solo.dispatchEvent(new w.Event('input', { bubbles: true }));
     d.querySelector('.ob-gender-btn').click();
     await wait(150);
     d.querySelector('.ob-rank-btn').click();

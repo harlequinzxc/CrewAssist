@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.40.0', 'APP_VERSION is 1.40.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.40.0' && e.d === '2026-10-07' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,imp,imp'; }), 'the changelog carries the 1.40.0 entry (2026-10-07, new+imp+imp)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v196'), 'the service-worker cache name is bumped to v196 (APP_VERSION frozen at 1.40.0)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.40.0' && e.d === '2026-10-07' && e.items.length === 6 && e.items.map((i) => i.c).join(',') === 'new,imp,imp,new,imp,imp'; }), 'the changelog carries the 1.40.0 entry (2026-10-07, transit meals + onboarding overhaul pointers)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v197'), 'the service-worker cache name is bumped to v197 (APP_VERSION frozen at 1.40.0)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -114,6 +114,17 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await closeResults(page);
         txt = await (async () => { await calcCard(page, { type: 'Turnaround', t1: '1:30', t2: '1:35', lma: { iata: 'KUL', at: '14:00', dt: '20:29' } }); return resultsText(page); })();
         ok(!/dinner/i.test(txt) && txt.indexOf('$70.00') === -1, 'a 20:29 departure reports at 19:29 — the window has closed');
+
+        // 4. v1.40.0 onboarding: the first-solo date drives the FS junior tier, per flight date.
+        ok(await page.evaluate(() => { appProfile.firstSoloYMD = '2026-08-01'; return ifaRankKeyForDate('2026-10-07') === 'Jr. FS'; }), 'a first solo two months back keys the Jr. FS tier');
+        ok(await page.evaluate(() => ifaRankKeyForDate('2028-08-01') === 'FS'), 'the 24-month anniversary crosses to full FS');
+        ok(await page.evaluate(() => { appProfile.rank = 'LS'; return ifaRankKeyForDate('2026-10-07') === 'LS'; }), 'LS never tiers');
+        await page.evaluate(() => { appProfile.rank = 'FS'; appProfile.firstSoloYMD = ''; });
+        ok(await page.evaluate(() => ifaRankKeyForDate('2026-10-07') === 'FS'), 'a pre-hotfix profile with no solo date keeps the full rate');
+        txt = await (async () => { await page.evaluate(() => { const t = new Date(); appProfile.firstSoloYMD = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }); await calcCard(page, { type: 'Turnaround', t1: '1:30', t2: '1:35', lma: { iata: 'KUL', at: '10:00', dt: '13:59' } }); return resultsText(page); })();
+        ok(/\u00d7 \$10 \u00d7/.test(txt), 'a first solo dated yesterday prices the junior $10 tier in a real card');
+        await page.evaluate(() => { appProfile.firstSoloYMD = ''; });
+        await closeResults(page);
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

@@ -237,7 +237,7 @@ A sector is **incomplete** and excluded when: IFA — `parseDuration(time)` is `
 | CS/CSS | 18.50 |
 | IFM | 23.00 |
 
-> The rank dropdown **is** the pay tier; there is no separate years-of-service input. The Junior boundary is the official definition — count from first solo.
+> The rank pills list the crew's real ranks (FS/LS/CS/IFM or FSS/LSS/CSS/IFM) — the Junior tier is never picked. Onboarding asks for the **date of first solo** (masked DD/MM/YYYY), and for FS/FSS the app derives the tier per flight date: a trip flown within 24 months of the first solo prices at the Junior rate; from the anniversary on, the full rate. Other ranks never tier. A profile saved before this hotfix (no solo date on file) keeps its stored rank — including a legacy picked "Jr." rank.
 
 ### 3.2 IFA Multiplier Brackets — Layover (Clause 34(2)(b))
 

@@ -1146,6 +1146,18 @@
                                     <input type="text" id="ob-name" maxlength="23" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold placeholder-gray-600 dark:placeholder-gray-400 focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="e.g. Johnathan">
                                 </div>
                             </div>
+                            <!-- Date of first solo (v1.40.0 hotfix): FS/FSS
+                                 pay the junior tier until 24 months past this
+                                 date. Masked DD/MM/YYYY, numeric keypad. -->
+                            <div>
+                                <label class="block text-sm font-bold mb-2">Date of first solo</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i data-lucide="calendar" class="w-4 h-4 text-gray-600"></i>
+                                    </div>
+                                    <input type="text" id="ob-solo" inputmode="numeric" autocomplete="off" maxlength="10" class="w-full ui-input rounded-xl py-3 pl-10 pr-4 text-sm font-bold placeholder-gray-600 dark:placeholder-gray-400 focus:outline-none focus:border-sia-gold focus:ring-1 focus:ring-sia-gold transition-colors bg-transparent" placeholder="DD/MM/YYYY">
+                                </div>
+                            </div>
                             <!-- Gender -->
                             <div>
                                 <label class="block text-sm font-bold mb-2">Gender</label>
@@ -2056,6 +2068,9 @@
                 { c: 'new', t: 'Transits of three hours or more now earn location meals.' },
                 { c: 'imp', t: 'Meal windows now close at report time, an hour before departure.' },
                 { c: 'imp', t: 'The rules are verified line-by-line against the Staff Members\u2019 Agreement.' },
+                { c: 'new', t: 'Onboarding asks your date of first solo, masked DD/MM/YYYY.' },
+                { c: 'imp', t: 'FS/FSS pay the junior tier for two years from first solo.' },
+                { c: 'imp', t: 'Ranks appear only after name, date and gender are set.' },
             ] },
             { v: '1.39.0', d: '2026-10-04', items: [
                 { c: 'new', t: 'Roster calendar: duties, layovers, OFF and standby days.' },
@@ -2558,10 +2573,15 @@
         let appPrefs = { autoScroll: true };
         let appDevMode = false;
         
-        let tempProfile = { name: '', gender: '', rank: '' };
+        let tempProfile = { name: '', gender: '', rank: '', firstSoloYMD: '' };
+        // v1.40.0 hotfix (owner spec): the rank pills show the crew's real
+        // ranks only. The JUNIOR tier is never picked — it is derived per
+        // flight date from the onboarding first-solo date (see
+        // ifaRankKeyForDate); the Jr. keys stay in rates.json and the
+        // developer editor.
         const ranks = {
-            M: ['Jr. FS', 'FS', 'LS', 'CS', 'IFM'],
-            F: ['Jr. FSS', 'FSS', 'LSS', 'CSS', 'IFM']
+            M: ['FS', 'LS', 'CS', 'IFM'],
+            F: ['FSS', 'LSS', 'CSS', 'IFM']
         };
 
         let devTapCount = 0;
@@ -2935,6 +2955,21 @@
             // Onboarding Events
             document.getElementById('ob-name').addEventListener('input', (e) => {
                 tempProfile.name = e.target.value.trim();
+                checkObReveal();
+                checkObSubmit();
+            });
+
+            // Masked DD/MM/YYYY: digits only — the slashes appear as they
+            // type (11022024 -> 11/02/2024), the numeric keypad opens on
+            // mobile (inputmode), and only a real calendar date unlocks Rank.
+            document.getElementById('ob-solo').addEventListener('input', (e) => {
+                const digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                let out = digits;
+                if (digits.length > 4) out = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+                else if (digits.length > 2) out = digits.slice(0, 2) + '/' + digits.slice(2);
+                if (out !== e.target.value) e.target.value = out;
+                tempProfile.firstSoloYMD = obSoloToYmd(out);
+                checkObReveal();
                 checkObSubmit();
             });
 
@@ -2954,7 +2989,7 @@
                     
                     tempProfile.gender = target.dataset.value;
                     tempProfile.rank = ''; // Reset rank
-                    renderRanks(tempProfile.gender);
+                    checkObReveal(); // v1.40.0 hotfix: Rank waits for name + date + gender
                     checkObSubmit();
                 });
             });
@@ -3197,9 +3232,38 @@
             });
         }
 
+        // v1.40.0 hotfix: DD/MM/YYYY <-> YYYY-MM-DD for the onboarding date.
+        // A date only counts when it is a REAL calendar date.
+        function obSoloToYmd(masked) {
+            const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(masked || ''));
+            if (!m) return '';
+            const dd = parseInt(m[1], 10), mm = parseInt(m[2], 10), yy = parseInt(m[3], 10);
+            const dt = new Date(yy, mm - 1, dd);
+            if (dt.getFullYear() !== yy || dt.getMonth() !== mm - 1 || dt.getDate() !== dd) return '';
+            if (yy < 1940 || yy > 2100) return '';
+            return yy + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
+        }
+        function obYmdToSolo(ymd) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+            return m ? m[3] + '/' + m[2] + '/' + m[1] : '';
+        }
+        // Rank reveals only when name, a valid first-solo date and gender are
+        // all in; editing any of them away folds it back and clears the pick.
+        function checkObReveal() {
+            const container = document.getElementById('ob-rank-container');
+            if (!container) return;
+            const ready = !!(tempProfile.name.trim() && tempProfile.firstSoloYMD && tempProfile.gender);
+            if (ready) {
+                renderRanks(tempProfile.gender);
+            } else if (!container.classList.contains('opacity-0')) {
+                container.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
+                container.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
+                tempProfile.rank = '';
+            }
+        }
         function checkObSubmit() {
             const btn = document.getElementById('ob-submit');
-            if (tempProfile.name.trim() !== '' && tempProfile.gender !== '' && tempProfile.rank !== '') {
+            if (tempProfile.name.trim() !== '' && tempProfile.firstSoloYMD && tempProfile.gender !== '' && tempProfile.rank !== '') {
                 btn.removeAttribute('disabled');
                 btn.classList.add('animate-jump');
             } else {
@@ -3214,15 +3278,20 @@
             // Pre-fill if editing
             if (appProfile) {
                 tempProfile = { ...appProfile };
+                // A pre-hotfix profile may carry a picked 'Jr. FS/FSS' — the
+                // tier is date-driven now, so the pill shows the base rank.
+                tempProfile.rank = String(tempProfile.rank || '').replace(/^Jr\. /, '');
                 document.getElementById('ob-name').value = tempProfile.name;
+                document.getElementById('ob-solo').value = obYmdToSolo(tempProfile.firstSoloYMD);
                 if (tempProfile.gender) {
                     document.querySelector(`.ob-gender-btn[data-value="${tempProfile.gender}"]`).click();
                     // rank click simulated in renderRanks if matched, but let's re-render
                     renderRanks(tempProfile.gender);
                 }
             } else {
-                tempProfile = { name: '', gender: '', rank: '' };
+                tempProfile = { name: '', gender: '', rank: '', firstSoloYMD: '' };
                 document.getElementById('ob-name').value = '';
+                document.getElementById('ob-solo').value = '';
                 document.querySelectorAll('.ob-gender-btn').forEach(b => {
                     b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
                     b.classList.add('ui-input', 'text-gray-600');
@@ -6392,7 +6461,7 @@
                     ${overviewBlock(flightOverviewText(r.res.detail))}
                     ${r.res.ifaDetails.join('')}
                     ${r.res.isTurnaround && r.res.lmaDetails.length === 0
-                        ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights \u2014 unless an overseas transit spans 3 hours or more (Clause 36(4)).</div>'
+                        ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
                         : r.res.lmaDetails.join('')}
                     </div>
                 </div>`;
@@ -10253,6 +10322,21 @@ function getRegionForAirport(code) {
 
         // The card's compute core, split from executeCalculation so "Calculate
         // all" can total every roster card into one combined summary.
+        // v1.40.0 hotfix (owner spec): FS/FSS pay the JUNIOR tier while the
+        // trip's flight date sits within 24 months of the profile's date of
+        // first solo (onboarding). Other ranks never tier; a profile with no
+        // solo date (pre-hotfix install) keeps its stored rank untouched.
+        function ifaRankKeyForDate(ymd) {
+            const rank = appProfile ? String(appProfile.rank || '') : '';
+            if (rank !== 'FS' && rank !== 'FSS') return rank;
+            const solo = appProfile ? String(appProfile.firstSoloYMD || '') : '';
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(solo) || !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ''))) return rank;
+            const flight = new Date(ymd + 'T00:00:00');
+            const cutoff = new Date(solo + 'T00:00:00');
+            if (isNaN(flight.getTime()) || isNaN(cutoff.getTime())) return rank;
+            cutoff.setMonth(cutoff.getMonth() + 24);
+            return flight < cutoff ? ('Jr. ' + rank) : rank;
+        }
         function computeCardResults(id, mode) {
             let ifaTotal = 0;
             let lmaTotal = 0;
@@ -10278,8 +10362,19 @@ function getRegionForAirport(code) {
                 // was a dev-rates edit leaving a rank unratable). A missing
                 // PROFILE cannot happen past onboarding, so it keeps the FS
                 // default. LMA always computes (region rates, not rank).
+                // v1.40.0 hotfix (owner spec): an FS/FSS crew pays the
+                // JUNIOR tier until 24 months past their onboarding date of
+                // first solo — decided per trip from sector 1's flight date
+                // (manual, fetched or roster-prefilled; every path writes
+                // the same date input). Other ranks never tier, and a
+                // profile without a solo date (pre-hotfix install) keeps
+                // its stored rank untouched.
+                const obD1 = document.getElementById(`${id}-ifa-d1`);
+                const rankKey = appProfile
+                    ? ifaRankKeyForDate(obD1 ? obD1.value : '')
+                    : 'FS';
                 const rankRate = appProfile
-                    ? IFA_CONFIG.baseRates[appProfile.rank]
+                    ? IFA_CONFIG.baseRates[rankKey]
                     : (IFA_CONFIG.baseRates.FS || 13.5);
                 if (appProfile && !rankRate) snap.rateMissing = true;
                 snap.type = isTurnaround ? 'Turnaround' : 'Layover';
@@ -10746,7 +10841,7 @@ function getRegionForAirport(code) {
                 if (s.bonusCount === 1) txt += ' And the day earns your ' + formatMoney(s.bonusAmount) + ' turnaround bonus.';
                 else if (s.bonusCount > 1) { const bw = { 2: 'two', 3: 'three' }[s.bonusCount] || String(s.bonusCount); txt += ' And because you did the out-and-back ' + (s.bonusCount === 2 ? 'twice' : s.bonusCount + ' times') + ', ' + bw + ' turnaround bonuses at ' + formatMoney(s.bonusAmount / s.bonusCount) + ' each.'; }
                 if (s.lmaTotal > 0 && stations.length) {
-                    txt += ' ' + grand + ' all in — and with ' + (ovCity(stations[0].code) || stations[0].code) + ' ground time running three hours or more before report time, its location meals are part of that (Clause 36(4)).';
+                    txt += ' ' + grand + ' all in — and with ' + (ovCity(stations[0].code) || stations[0].code) + ' ground time running three hours or more before report time, its location meals are part of that.';
                 } else {
                     txt += " " + grand + " all in. No location meals — the transit is under three hours.";
                 }
@@ -11076,7 +11171,7 @@ function getRegionForAirport(code) {
             // Post result message to chat
             let msg = '';
             if (isTurnaround && lmaDetails.length === 0) {
-                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights — unless an overseas transit spans 3 hours or more (Clause 36(4)).</div>`;
+                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>`;
             }
             if (isTurnaround && mode === 'both') {
                 msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
