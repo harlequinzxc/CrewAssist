@@ -37,8 +37,12 @@ async function boot(appPath, opts) {
     const w = dom.window, d = w.document;
     // The app calls lucide.createIcons() after renders; icons are cosmetic for tests.
     w.lucide = { createIcons() {} };
-    // No service worker in jsdom; the app guards registration but stub to be safe.
-    Object.defineProperty(w.navigator, 'serviceWorker', { value: undefined, configurable: true });
+    // No service worker in jsdom — leave navigator.serviceWorker ABSENT. The
+    // app guards registration with 'serviceWorker' in navigator; an old
+    // value-undefined stub made `in` true while the read gave undefined, and
+    // the TypeError inside the DOMContentLoaded handler rethrew flakily and
+    // killed whole suites (v1.40.1 round: dev-ui crashed in run-all but
+    // passed standalone).
     // Network: repo rates.json for the shipped-rates fetch; everything else offline.
     const origFetch = w.fetch;
     // jsdom's window has no Response constructor, so build the stubbed replies

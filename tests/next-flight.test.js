@@ -301,19 +301,24 @@ function rosterItems(flight, sector, dateTok, opts) {
   // --- v1.33.1: a landed flight leaves the card; the air shows its landing ---
   {
     // The owner's exact case: a KUL turnaround that landed at 11:45 still
-    // showed in the card at 17:58. Times are seeded relative to the real
-    // clock so the case holds on any run date.
+    // showed in the card at 17:58. v1.40.1: the clock is PINNED (the
+    // date-stability rule) — near SGT midnight a real-clock "-60 min" seed
+    // wraps past midnight and reads as a future departure, killing the
+    // in-air case (it failed at 00:34 local on 2026-10-08).
+    const PIN = '2026-10-07T14:32:00+08:00';
+    const base = new Date(PIN).getTime();
     const hm = (offMin) => {
-      const t = new Date(Date.now() + offMin * 60000);
+      const t = new Date(base + offMin * 60000);
       return String(t.getHours()).padStart(2, '0') + ':' + String(t.getMinutes()).padStart(2, '0');
     };
+    const ymdB = (off) => { const t = new Date(base + off * DAY); return t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); };
     // a leg that landed YESTERDAY morning — fixed walls, immune to the
     // run hour (a "6.5h ago" seed wraps past midnight and turns future)
-    const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymd(-1), std: '08:25', sta: '09:35', staYmd: ymd(-1) };
+    const landed = { fn: '118', dep: 'KUL', arr: 'SIN', ymd: ymdB(-1), std: '08:25', sta: '09:35', staYmd: ymdB(-1) };
     const inAirSta = hm(120); // pinned once — a minute roll between seed and assert must not rewrite it
-    const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymd(0), std: hm(-60), sta: inAirSta, staYmd: ymd(0) };
+    const inAir = { fn: '105', dep: 'KUL', arr: 'SIN', ymd: ymdB(0), std: hm(-60), sta: inAirSta, staYmd: ymdB(0) };
     // (a) part two, mid-air: the landed leg is gone, the airborne one leads
-    const { d } = await boot(APP, { seed: (x) => {
+    const { d } = await boot(APP, { now: PIN, seed: (x) => {
       seedProfile(x);
       x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([landed, inAir])));
     } });
@@ -328,9 +333,9 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(txt.indexOf('Lands SIN ' + String(inAirSta).replace(':', '') + 'H SGT') >= 0, 'the homebound landing reads in SGT, 24-hour H format');
     R.ok(!d.getElementById('ca-layover-tz-card'), 'no layover time-zone card while flying home');
     // (b) a statless leg (no arrival printed) is kept for the day
-    const { d: d2 } = await boot(APP, { seed: (x) => {
+    const { d: d2 } = await boot(APP, { now: PIN, seed: (x) => {
       seedProfile(x);
-      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '321', dep: 'SIN', arr: 'HKT', ymd: ymd(0), std: hm(-720) }])));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '321', dep: 'SIN', arr: 'HKT', ymd: ymdB(0), std: hm(-720) }])));
     } });
     let card2 = null;
     const t1 = Date.now();
