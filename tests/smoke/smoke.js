@@ -73,7 +73,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         page.on('requestfailed', (r) => { const u = r.url() || ''; if (!CDN.test(u) && !RIG404.test(u)) consoleErrors.push('requestfailed: ' + u); });
 
         console.log('— boot —');
-        await page.evaluateOnNewDocument(() => { try { localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' })); localStorage.setItem('crewAssist.wnSeen', '1.39.0'); localStorage.setItem('crewAssist.calcUi', 'manual'); } catch (e) {} });
+        await page.evaluateOnNewDocument(() => { try { if (localStorage.getItem('__smokeFreshBoot')) return; localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' })); localStorage.setItem('crewAssist.wnSeen', '1.39.0'); localStorage.setItem('crewAssist.calcUi', 'manual'); } catch (e) {} });
         await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
         await page.waitForSelector('#chat-container', { timeout: 20000 });
         ok(true, 'the app boots to the chat view');
@@ -81,15 +81,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const el = document.querySelector('.ca-micro'); return el && parseFloat(getComputedStyle(el).fontSize) <= 11.5; }), 'the compiled stylesheet applies (ca-micro renders at 11px)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.41.0', 'APP_VERSION is 1.41.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.41.0' && e.d === '2026-10-08' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,imp,imp'; }), 'the changelog carries the 1.41.0 entry (2026-10-08, one-shot backup)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v199'), 'the service-worker cache name is bumped to v199 (APP_VERSION 1.41.0)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.42.0', 'APP_VERSION is 1.42.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.42.0' && e.d === '2026-10-08' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,fix,fix'; }), 'the changelog carries the 1.42.0 entry (2026-10-08, welcome-screen restore + settings alignment)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v200'), 'the service-worker cache name is bumped to v200 (APP_VERSION 1.42.0)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.41.0'; }), 'the What\'s New sheet carries the v1.41.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.42.0'; }), 'the What\'s New sheet carries the v1.42.0 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Transits of three hours or more now earn location meals.') !== -1), 'the What\'s New sheet carries the transit-meals pointer');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.41\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.42\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(true, 'closing What\'s New releases the welcome chat');
@@ -140,6 +140,43 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return arch.length === 1 && arch[0].amount === 123.45 && duty['2026-10'].length === 1;
         }), 'the one-shot backup builds and restores in the real browser');
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.dutyDays'); });
+
+        // 6. v1.42.0: the welcome-screen restore door — the new-phone journey.
+        await page.evaluate(() => { localStorage.setItem('__smokeFreshBoot', '1'); localStorage.removeItem('crewAssist.profile'); });
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        ok(await page.evaluate(() => !document.getElementById('onboarding-view').classList.contains('hidden') && document.getElementById('main-view').classList.contains('hidden')), 'a profile-less boot shows the welcome screen');
+        ok(await page.evaluate(() => {
+            const ob = document.getElementById('ob-restore');
+            const inp = document.getElementById('ob-restore-file');
+            return !!ob && ob.contains(inp) && (ob.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide') === 'log-in';
+        }), 'the welcome screen carries the restore door');
+        await page.evaluate(() => {
+            localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'w1', savedAt: '2026-10-08T03:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/BKK', amount: 88 }]));
+            localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [{ ymd: '2026-10-09', kind: 'F' }] }));
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Welcome Wo', gender: 'M', rank: 'FS' }));
+            const p = buildFullBackup();
+            ['crewAssist.profile', 'crewAssist.archive', 'crewAssist.dutyDays'].forEach((k) => localStorage.removeItem(k));
+            window.__welcomePayload = JSON.stringify(p);
+        });
+        await page.evaluate(() => backupRestoreRead('crewassist-backup.json', window.__welcomePayload, { fromOnboarding: true }));
+        await page.waitForFunction(() => !document.getElementById('app-dialog-backdrop').classList.contains('hidden'), { timeout: 5000 });
+        ok(await page.evaluate(() => { const m = document.getElementById('app-dialog-msg').textContent; return m.indexOf('Welcome Wo') !== -1 && m.indexOf('1 earnings entries') !== -1; }), 'the welcome door previews the backup before touching the phone');
+        await Promise.all([
+            page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 45000 }),
+            page.evaluate(() => document.getElementById('app-dialog-ok').click()),
+        ]);
+        ok(await page.evaluate(() => document.getElementById('onboarding-view').classList.contains('hidden') && !document.getElementById('main-view').classList.contains('hidden')), 'the restore reloads straight past onboarding into the app');
+        ok(await page.evaluate(() => {
+            const arch = JSON.parse(localStorage.getItem('crewAssist.archive') || '[]');
+            const prof = JSON.parse(localStorage.getItem('crewAssist.profile') || 'null');
+            const duty = JSON.parse(localStorage.getItem('crewAssist.dutyDays') || '{}');
+            return arch.length === 1 && arch[0].amount === 88 && prof && prof.name === 'Welcome Wo' && duty['2026-10'] && duty['2026-10'].length === 1;
+        }), 'the restored phone carries the earnings, profile and duty days');
+        // a partial export through the welcome door redirects honestly
+        await page.evaluate(() => backupRestoreRead('earnings.json', JSON.stringify([{ id: 'w2', savedAt: '2026-10-08T04:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/HKT', amount: 5 }]), { fromOnboarding: true }));
+        await page.waitForFunction(() => !document.getElementById('app-dialog-backdrop').classList.contains('hidden'), { timeout: 5000 });
+        ok(await page.evaluate(() => document.getElementById('app-dialog-msg').textContent.indexOf('earnings export') !== -1), 'the welcome door refuses partial exports with directions');
+        await page.evaluate(() => document.getElementById('app-dialog-ok').click());
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

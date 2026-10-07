@@ -1180,9 +1180,20 @@
                             </div>
                         </div>
                         <div class="mt-8 shrink-0 pb-4">
-                            <button id="ob-submit" disabled class="cta-gold w-full py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
-                                Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                            </button>
+                            <div class="flex items-stretch gap-3">
+                                <button id="ob-submit" disabled class="cta-gold flex-1 py-4 px-4 rounded-full text-sm uppercase tracking-widest font-bold disabled:opacity-50 disabled:grayscale disabled:pointer-events-none transition-all shadow-lg flex items-center justify-center gap-2 ">
+                                    Let's Go <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                                </button>
+                                <!-- v1.42.0: transferring phones skip the typing — the
+                                     same restore door, straight from the welcome screen.
+                                     The input overlays the button (the Settings-door
+                                     pattern); gold border and icon read on the light
+                                     cream form and the dark navy one alike. -->
+                                <button type="button" id="ob-restore" aria-label="Restore from a backup" title="Restore from a backup" class="relative overflow-hidden w-[3.5rem] shrink-0 rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 active:scale-95 transition-all flex items-center justify-center">
+                                    <i data-lucide="log-in" class="w-5 h-5"></i>
+                                    <input type="file" id="ob-restore-file" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain">
+                                </button>
+                            </div>
                             <p id="app-semver" class="mt-4 ca-micro tracking-[0.18em] text-center text-sia-navy/70 dark:text-white/25 select-none"></p>
                         </div>
                     </div>
@@ -1307,7 +1318,7 @@
                             <div id="settings-avatar" class="w-9 h-9 rounded-full flex items-center justify-center border border-sia-gold/70 bg-sia-gold/10 text-sia-gold font-bold text-base select-none" aria-hidden="true">J</div>
                             <p class="font-bold text-base truncate" id="settings-profile-name">Johnathan</p>
                         </div>
-                        <button id="btn-edit-profile" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
+                        <button id="btn-edit-profile" class="w-32 shrink-0 px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
                     </div>
                 </div>
 
@@ -1319,7 +1330,7 @@
                             <span class="text-sm font-bold">Chat with the developer</span>
                             <span class="ca-micro text-gray-500">Usually replies within a few hours</span>
                         </div>
-                        <a href="https://t.me/harlequinzxc" target="_blank" class="px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                        <a href="https://t.me/harlequinzxc" target="_blank" class="w-32 justify-center px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
                             <i data-lucide="send" class="w-3.5 h-3.5"></i> Telegram
                         </a>
                     </div>
@@ -1333,9 +1344,9 @@
                         <div class="flex items-center justify-between">
                             <div class="flex flex-col">
                                 <span class="text-sm font-bold">Feature tour</span>
-                                <span class="ca-micro text-gray-500">See everything the app can do in 90 seconds</span>
+                                <span class="ca-micro text-gray-500">Placeholder</span>
                             </div>
-                            <button type="button" id="btn-replay-tour" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                            <button type="button" id="btn-replay-tour" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
                                 <i data-lucide="play" class="w-3.5 h-3.5"></i> Replay
                             </button>
                         </div>
@@ -1344,9 +1355,9 @@
                         <div class="flex items-center justify-between">
                             <div class="flex flex-col">
                                 <span class="text-sm font-bold">Changelog</span>
-                                <span class="ca-micro text-gray-500">New features, fixes, and improvements</span>
+                                <span class="ca-micro text-gray-500">Features, fixes and improvements</span>
                             </div>
-                            <button type="button" id="btn-changelog" class="px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                            <button type="button" id="btn-changelog" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
                                 <i data-lucide="history" class="w-3.5 h-3.5"></i> View
                             </button>
                         </div>
@@ -1382,14 +1393,16 @@
                             <span id="dev-dirty-label" class="hidden ca-micro font-bold text-sia-gold tracking-wider mt-0.5">UNSAVED EDITS</span>
                         </div>
                         <div id="dev-rates-root" class="flex flex-col gap-4"></div>
+                        <!-- v1.42.0 (owner order): the dev buttons wear the Data
+                             Management uniform — h-[42px] outline pills — and Reset
+                             rates to defaults moved in directly below Save rates. -->
                         <div class="flex flex-col gap-2">
-                            <button type="button" id="btn-dev-save" class="dev-save w-full h-12 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-sm font-bold inline-flex items-center justify-center gap-2 transition-all" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
-                            <div class="flex gap-2">
-                                <!-- v1.41.0: the rates import folded into Settings → Data
-                                     Management → Restore backup (one import door). The
-                                     export stays — it is the rates.json publishing path. -->
-                                <button type="button" id="btn-dev-export" class="w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
-                            </div>
+                            <button type="button" id="btn-dev-save" class="dev-save w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
+                            <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to defaults"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to defaults</button>
+                            <!-- v1.41.0: the rates import folded into Settings → Data
+                                 Management → Restore backup (one import door). The
+                                 export stays — it is the rates.json publishing path. -->
+                            <button type="button" id="btn-dev-export" class="w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Export rates"><i data-lucide="download" class="w-4 h-4"></i>Export</button>
                         </div>
                     </div>
                 </div>
@@ -1403,13 +1416,14 @@
                 <!-- Data -->
                 <div>
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
-                    <div class="flex flex-col gap-2">
+                    <!-- v1.42.0 (owner order): the buttons sit inside the house box,
+                         so they run the same width as Storage's Clear saved menus. -->
+                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
                         <!-- v1.41.0: the one-shot backup — every piece of crew data
                              on this device in a single file, and one import door that
                              also reads the old earnings/rates exports. -->
                         <button type="button" id="btn-backup-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export everything as one backup file"><i data-lucide="download" class="w-4 h-4"></i>Export backup</button>
                         <button type="button" id="btn-backup-restore" class="relative overflow-hidden w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Restore from a backup file"><i data-lucide="upload" class="w-4 h-4"></i>Restore backup<input type="file" id="backup-file-restore" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
-                        <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to defaults"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to defaults</button>
                         <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
                             <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
                         </button>
@@ -2049,7 +2063,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.41.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.42.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2071,6 +2085,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.42.0', d: '2026-10-08', items: [
+                { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
+                { c: 'fix', t: 'Settings buttons align to one width per section.' },
+                { c: 'fix', t: 'Reset rates moves below Save rates in Developer.' },
+            ] },
             { v: '1.41.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'One backup file now carries everything \u2014 Settings \u2192 Data Management.' },
                 { c: 'imp', t: 'Restore reads old earnings and rates files too.' },
@@ -3152,6 +3171,14 @@
             document.getElementById('btn-backup-export').addEventListener('click', () => { exportFullBackup(); });
             document.getElementById('backup-file-restore').addEventListener('change', (e) => {
                 backupRestoreFile(e.target.files[0]);
+                e.target.value = '';
+            });
+            // v1.42.0: the welcome-screen restore door — same picker, same
+            // detection, but partial exports redirect (they can't finish
+            // onboarding for you).
+            const obRestoreFileInput = document.getElementById('ob-restore-file');
+            if (obRestoreFileInput) obRestoreFileInput.addEventListener('change', (e) => {
+                backupRestoreFile(e.target.files[0], { fromOnboarding: true });
                 e.target.value = '';
             });
             // Chat Events
@@ -12273,13 +12300,13 @@ function getRegionForAirport(code) {
         // The one import door (Settings → Data Management → Restore backup).
         // It auto-detects the format: a v1.41.0 full backup, a legacy earnings
         // export (array or {entries:[…]}), or a legacy rates export.
-        function backupRestoreFile(file) {
+        function backupRestoreFile(file, opts) {
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => backupRestoreRead(file.name, String(ev.target.result));
+            reader.onload = (ev) => backupRestoreRead(file.name, String(ev.target.result), opts);
             reader.readAsText(file);
         }
-        function backupRestoreRead(name, text) {
+        function backupRestoreRead(name, text, opts) {
             const trimmed = String(text || '').trim();
             if (/\.csv$/i.test(name) || (trimmed && trimmed[0] !== '{' && trimmed[0] !== '[')) {
                 appAlert('That looks like a CSV. I only read JSON files — export a backup in Settings and try again.'); return;
@@ -12287,9 +12314,17 @@ function getRegionForAirport(code) {
             let data; try { data = JSON.parse(trimmed); } catch (e) { appAlert('That file isn’t valid JSON.'); return; }
             if (data && data.app === 'CrewAssist' && data.v === 1 && data.data && typeof data.data === 'object') return restoreFullBackup(data);
             const arr = Array.isArray(data) ? data : (data && Array.isArray(data.entries) ? data.entries : null);
-            if (arr) return restoreEarningsJson(arr);
+            if (arr) {
+                // v1.42.0: from the welcome screen, a partial export cannot
+                // finish onboarding (no profile inside) — say so honestly.
+                if (opts && opts.fromOnboarding) { appAlert('That\u2019s an earnings export \u2014 it carries pay data, not your profile. Finish setting up, then restore it from Settings \u2192 Data Management.'); return; }
+                return restoreEarningsJson(arr);
+            }
             const parsed = parseRates(data);
-            if (parsed) return restoreRatesJson(parsed);
+            if (parsed) {
+                if (opts && opts.fromOnboarding) { appAlert('That\u2019s a rates export \u2014 finish setting up first, then restore it from Settings \u2192 Data Management.'); return; }
+                return restoreRatesJson(parsed);
+            }
             appAlert('That file isn’t a CrewAssist backup — expected a full backup, an earnings export or a rates export.');
         }
         function restoreFullBackup(payload) {
