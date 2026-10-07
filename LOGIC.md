@@ -1,6 +1,33 @@
 # LOGIC.md — Calculation Engine & Business Rules Specification
 
-> **Source of truth for formulas and rules.** Default coefficients (rank rates, buffers, brackets, LMA B/L/D) ship in `rates.json`. Developer mode can override them on this device (`localStorage`); publishing a new `rates.json` on GitHub updates every install. If this document and the code disagree on *behaviour*, this document wins. If a live rate disagrees with the tables below, the live `rates.json` / device override wins.
+> **Source of truth for formulas and rules.** Upstream authority: the **Singapore Airlines Staff Members' Agreement 2025 (CA No.058/2025)** — see *The official basis* below. Default coefficients (rank rates, buffers, brackets, LMA B/L/D) ship in `rates.json`; Developer mode can override them on this device (`localStorage`), and publishing a new `rates.json` on GitHub updates every install. If this document and the code disagree on *behaviour*, this document wins. If a live rate disagrees with the tables below, the live `rates.json` / device override wins. If this document disagrees with the Agreement, **the Agreement wins** — file the correction.
+
+---
+
+## 0. THE OFFICIAL BASIS
+
+Every formula in this file traces to **Clauses 34–36 of the Singapore Airlines Staff Members' Agreement 2025 (CA No.058/2025, ASCA N (120925))**, verified line-by-line against the official document on 7 October 2026:
+
+- **Clause 34 — Incentive Flying Allowance.** Paid per hour flown, in addition to basic salary. Sets the hourly rates by grade (34(2)(a)), the scheduled-duty-period multipliers (34(2)(b)), the delay multipliers based on Actual Duty Period (34(2)(c)), the 85-hour excess rule (34(3)), deadheading (34(4)), positioning (34(5)), diversions (34(6)) and the definitions of duty periods and flying hours (34(7)).
+- **Clause 35 — Turnaround Allowance.** $90 per turnaround flight; a 4-sector COP of two consecutive turnarounds earns both ($180). A turnaround is a duty that commences and ends at base with no overnight stop at any overseas slip station.
+- **Clause 36 — Meal Allowances.** Reimbursements for meals on duty overseas at a slip station, payable when a meal window falls within duty time (36(2)); duty times run from the scheduled arrival to the **reporting time** for the next departure (36(3)); **a transit of three hours or more earns meals at the transit location, even without an overnight** (36(4)); rates are renegotiated every January (36(5)) — the current table is **wef 01 Jan 2026**.
+
+Two definitions from Clause 34(7) anchor the math:
+
+- **"Scheduled duty period" (SDP)** — the hours from the scheduled report time at the station where the crew come on duty, ending **30 minutes after scheduled engines off** at the station where the crew take rest. Our engine approximates this with fixed buffers (§1.1): 2.5h added to sectors departing Singapore, 1.5h to sectors departing an overseas station. The buffers encode report-before-departure plus the 30 minutes after engines off; real report times vary slightly per duty.
+- **"Scheduled flying hours"** — scheduled departure to scheduled engines off: the block time our engine takes from the roster or the schedule API.
+
+*Verification note: the Agreement copy used for the 7 Oct 2026 comparison has a blank multiplier cell for "Turnaround Flights with SDP ≤ 12 hours"; the 1.3× value our engine uses was confirmed from the owner's original document.*
+
+**Known exclusions — official rules this engine does not yet model** (documented honestly, never silently approximated):
+
+| Clause | Rule | Status |
+|---|---|---|
+| 34(2)(c) | Delay multipliers based on **Actual** Duty Period (e.g. a ≤12h turnaround delayed past 12h actual → 1.6×) | Not modelled — the engine works from scheduled times only |
+| 34(3) | Hours beyond **85/month** paid at **1.5×** the hourly rate (scheduled hours only) | Not modelled — the engine computes per trip; no monthly top-up |
+| 34(4) | **Deadheading** credited with the full scheduled flight time of the sectors flown | Not modelled — no deadhead input |
+| 34(5) | Positioning for **compassionate reasons or illness** earns nothing | Not modelled — the 0.75 credit applies whenever Paxing is ticked |
+| 34(6) | **Diversions** — hours from actual flight time of every sector operated | Not modelled — scheduled times only |
 
 ---
 
@@ -12,15 +39,11 @@
 SDP_sector = flight_time_hours + buffer
 
 WHERE:
-  buffer = sgBuffer      IF sector origin is Singapore
-  buffer = stationBuffer IF sector origin is a foreign station
+  buffer = sgBuffer      IF sector origin is Singapore      (default 2.5 = 2h 30m)
+  buffer = stationBuffer IF sector origin is a foreign station (default 1.5 = 1h 30m)
 ```
 
-**Plain English:** Each sector's scheduled duty period equals its flight time plus a fixed buffer that depends on whether the sector departs from Singapore or from the overseas station.
-
-**Defaults:** `sgBuffer = 2.5` (2h 30m), `stationBuffer = 1.5` (1h 30m)
-
----
+**Plain English:** each sector's scheduled duty period equals its flight time plus a fixed buffer for where the sector departs. The buffers approximate the official definition (§0): report before departure, plus 30 minutes after engines off.
 
 ### 1.2 IFA — Total Trip SDP (Turnaround only)
 
@@ -28,16 +51,9 @@ WHERE:
 total_SDP = Σ (SDP_sector_i)   for all valid sectors i
 ```
 
-**Plain English:** For turnaround flights, add up the SDP of every valid sector to get one trip-wide total.
-
----
-
 ### 1.3 IFA — Multiplier Selection
 
 **Layover (per-sector SDP):**
-```
-multiplier = f_layover(SDP_sector)
-```
 
 | Condition | Multiplier |
 |---|---|
@@ -46,9 +62,6 @@ multiplier = f_layover(SDP_sector)
 | `SDP_sector > 18` | 3.0 |
 
 **Turnaround (TOTAL trip SDP):**
-```
-multiplier = f_turnaround(total_SDP)
-```
 
 | Condition | Multiplier |
 |---|---|
@@ -57,24 +70,22 @@ multiplier = f_turnaround(total_SDP)
 | `14 < total_SDP ≤ 18` | 2.5 |
 | `total_SDP > 18` | 3.0 |
 
-> **CRITICAL:** Turnaround uses the **summed** SDP across all sectors. Layover uses each sector's **individual** SDP. This is the single most important asymmetry in the engine.
-
----
+> **CRITICAL:** turnaround uses the **summed** SDP across all sectors; layover uses each sector's **individual** SDP. This is the single most important asymmetry in the engine. Both ladders are Clause 34(2)(b) verbatim (the "any flight" rows there cover layovers above 14h).
 
 ### 1.4 IFA — Multiplier Overrides
 
 ```
 IF isDirectUS == true:
-    multiplier = directUSMultiplier       (default 3.5)
+    multiplier = directUSMultiplier       (default 3.5, no hour condition — Clause 34(2)(b))
 
 IF isPaxing == true:
     multiplier = paxingMultiplier         (default 0.75)
     SDP is IGNORED entirely
 ```
 
-**Precedence:** Paxing and Direct US are mutually exclusive in the UI by design (see §4.4). When both flags would somehow be true, the paxing branch is evaluated first inside `calcSector`.
+**Precedence:** Paxing and Direct US are mutually exclusive in the UI (§4.2); when both would be true, the paxing branch is evaluated first inside `calcSector`.
 
----
+> **Known deviation, pending decision:** Clause 34(5) credits a positioning crew with **0.75 × the scheduled flying hours**, after which the normal multiplier ladder applies — identical to ours for turnarounds (the shared multiplier commutes), different for layovers (the official reading keeps the bracket uplift; ours pays a flat 75%). Not yet changed; see the owner.
 
 ### 1.5 IFA — Sector Allowance
 
@@ -86,10 +97,6 @@ Paxing:
   allowance_sector = flight_time_hours × base_rate × paxingMultiplier
 ```
 
-**Plain English:** A sector's allowance is flight hours multiplied by the rank's hourly rate, multiplied by the applicable multiplier.
-
----
-
 ### 1.6 IFA — Turnaround Bonus
 
 ```
@@ -97,10 +104,8 @@ turnaround_bonus_count = 2  IF flight_type == Turnaround AND is4Sector
 turnaround_bonus_count = 1  IF flight_type == Turnaround AND NOT is4Sector
 turnaround_bonus_count = 0  IF flight_type == Layover
 
-turnaround_bonus = turnaround_bonus_count × turnaroundBonusAmount   (default 90.00)
+turnaround_bonus = turnaround_bonus_count × turnaroundBonusAmount   (default 90.00 — Clause 35)
 ```
-
----
 
 ### 1.7 IFA — Trip Total
 
@@ -108,86 +113,62 @@ turnaround_bonus = turnaround_bonus_count × turnaroundBonusAmount   (default 90
 IFA_total = Σ (allowance_sector_i) + turnaround_bonus
 ```
 
----
+### 1.8 LMA — Presence at a Slip Station
 
-### 1.8 LMA — Meal Eligibility (Same-Day)
+Duty time at a slip station runs from the **scheduled arrival** to the **report time for the next departure** — Clause 36(3). The engine takes the report time as **one hour before the scheduled departure**:
 
 ```
-meal_earned =
-    (arrival_minutes ≤ meal_window_end_minutes)
-    AND
-    (departure_minutes ≥ meal_window_start_minutes)
+arrival_boundary   = arrival time (station local)
+departure_boundary = departure time − 60 minutes   (the report time)
 ```
 
-**Plain English:** On a same-day layover, a meal counts only if the crew member is present for the entire meal window — they arrived at or before the window closed AND depart at or after it opened.
+A report before midnight (departure before 01:00) lands negative and simply earns nothing on the departure day.
 
----
+### 1.9 LMA — Meal Eligibility (Same-Day, including transits)
 
-### 1.9 LMA — Meal Eligibility (Multi-Day)
+```
+transit_minutes = departure_boundary − arrival_boundary
+
+meal_earned = (transit_minutes ≥ 180)
+    AND (arrival_minutes ≤ meal_window_end_minutes)
+    AND (departure_boundary_minutes ≥ meal_window_start_minutes)
+```
+
+**Plain English:** a same-day presence earns a meal only when it is a **transit of three hours or more** (Clause 36(4)) *and* the crew were present for the whole window. A 2-hour turn that happens to straddle the lunch window pays nothing.
+
+### 1.10 LMA — Meal Eligibility (Multi-Day)
 
 ```
 ARRIVAL DAY:
     meal_earned = (arrival_minutes ≤ meal_window_end_minutes)
 
-DEPARTURE DAY:
-    meal_earned = (departure_minutes ≥ meal_window_start_minutes)
-
 FULL DAYS (every calendar day strictly between arrival and departure):
-    breakfast_earned = true
-    lunch_earned     = true
-    dinner_earned    = true
+    breakfast = lunch = dinner = true
+
+DEPARTURE DAY:
+    meal_earned = (departure_boundary_minutes ≥ meal_window_start_minutes)
 ```
 
----
-
-### 1.10 LMA — Sector Total
+### 1.11 LMA — Sector and Trip Totals
 
 ```
-LMA_sector_total =
-      (breakfast_count × breakfast_rate)
-    + (lunch_count     × lunch_rate)
-    + (dinner_count    × dinner_rate)
+LMA_sector_total = (breakfast_count × breakfast_rate) + (lunch_count × lunch_rate) + (dinner_count × dinner_rate)
+LMA_trip_total   = Σ (LMA_sector_total_i)
 ```
 
----
-
-### 1.11 LMA — Trip Total (Multi-Sector)
+### 1.12 Grand Total
 
 ```
-LMA_trip_total = Σ (LMA_sector_total_i)   for all sectors
+grand_total = IFA_total + LMA_trip_total
 ```
 
----
-
-### 1.12 Sticky Bar — Grand Total
-
-```
-grand_total = IFA_total + effective_LMA_total
-
-WHERE:
-  effective_LMA_total = LMA_trip_total  IF LMA is eligible
-  effective_LMA_total = 0               IF IFA flight type is Turnaround
-```
-
----
+LMA contributes on layovers **and on turnarounds with a 3h+ overseas transit** (Clause 36(4)); a plain turnaround carries no LMA stations and contributes 0.
 
 ### 1.13 Duration Parsing
 
 ```
-HH:MM → decimal hours:
-  hours = floor(HH) + (MM / 60)
-```
-
-**Example:** `07:30` → `7 + 30/60` → `7.5` hours
-
----
-
-### 1.14 Decimal Hours → HH:MM Display
-
-```
-total_minutes = round(decimal_hours × 60)
-HH = floor(total_minutes / 60)
-MM = total_minutes mod 60
+HH:MM → decimal hours:  hours = floor(HH) + (MM / 60)      e.g. 07:30 → 7.5
+decimal → HH:MM:        total_minutes = round(h × 60); HH = floor(m/60); MM = m mod 60
 ```
 
 ---
@@ -196,20 +177,18 @@ MM = total_minutes mod 60
 
 ### 2.1 IFA Inputs
 
-| Input | Type | Default | Constraint | Unit |
-|---|---|---|---|---|
-| `rank` | enum (5 values) | `FS/FSS` | one of RANK_OPTIONS | — |
-| `flightType` | enum | `Layover` | `Layover` \| `Turnaround` | — |
-| `is4Sector` | boolean | `false` | — | — |
-| `times[0..3]` | string `HH:MM` | `""` (empty) | minutes 0–59; hours ≥ 0 | hours:minutes |
-| `flightNumber[0..3]` | string | `""` | optional; Fetch fills times from `/menu` | — |
-| `fetchDate[0..3]` | `YYYY-MM-DD` | today | optional; scheduled departure date for Fetch | date |
-| `directUS[0..3]` | boolean | `false` | — | — |
-| `paxing[0..3]` | boolean | `false` | — | — |
-| `turnaroundStations[0..1]` | IATA string | `""` | 3 chars, must match DB | — |
-| `turnaroundArchiveMonth` | `YYYY-MM` | current month | valid month | — |
+| Input | Type | Default | Constraint |
+|---|---|---|---|
+| `rank` | enum (5 values) | `FS/FSS` | one of RANK_OPTIONS |
+| `flightType` | enum | `Layover` | `Layover` \| `Turnaround` |
+| `is4Sector` | boolean | `false` | — |
+| `times[0..3]` | `HH:MM` | `""` | minutes 0–59; hours ≥ 0 |
+| `flightNumber[0..3]` / `fetchDate[0..3]` | string / `YYYY-MM-DD` | `""` / today | optional; Fetch fills times |
+| `directUS[0..3]`, `paxing[0..3]` | boolean | `false` | — |
+| `turnaroundStations[0..1]` | IATA | `""` | 3 chars, must match DB |
+| `turnaroundArchiveMonth` | `YYYY-MM` | current month | valid month |
 
-**Sector count:** 2 (default) or 4 (toggle on). Indices 0–1 always active; 2–3 only when `is4Sector`.
+**Sector count:** 2 (default) or 4. Indices 0–1 always active; 2–3 only when `is4Sector`.
 
 **Sector origin flags (`isSingapore`):**
 
@@ -219,63 +198,48 @@ MM = total_minutes mod 60
 | 4-sector Turnaround | Singapore | Station | Singapore | Station |
 | 4-sector Layover | Singapore | Station | Station | Station |
 
-**Fetch (optional):** `/api/getcabin` then `/api/menu` for the first published cabin (JCL preferred). Block time = UTC arrival − UTC departure. LMA in/out times come from adjacent sectors. Empty flight number does not block Calculate. Cabin class is not required. Fetch does **not** overwrite the date the crew typed. LMA **out** date is the next sector’s typed flight date (not destination arrival, which is often +1 on overnight sectors such as NRT→SIN). LMA **in** is previous sector arrival local. Local SQ date-times are parsed as **station local** (not UTC). Live `/menu` data exists from **today − 2 days** through **today + 6 weeks**; Fetch on a date outside that window alerts and does not call the API. Past: “Live flight information isn’t available for past dates.” Future: “Live flight information isn’t available this far in advance. Please try again closer to your flight date.” The inflight-menu calendar cannot select those crossed days; COP/IFA/LMA can (for typing / later archive). On a 2-sector layover, Fetch ticks Direct US when either end of the sector is a US airport (`countryCode === US`); the crew can untick. Multi-leg menus (same flight number, e.g. SIN–NRT–LAX) pick the unused dep→arr pair, preferring the previous sector’s arrival airport as this sector’s departure (last layover sector prefers SIN). LMA departure is the next sector’s departure at that station, never the previous arrival clock.
+**Fetch (optional):** `/api/getcabin` then `/api/menu` for the first published cabin (JCL preferred). Block time = UTC arrival − UTC departure. LMA in/out times come from adjacent sectors; the LMA **out** date is the next sector's typed flight date; **in** is the previous sector's local arrival. Local SQ date-times parse as **station local**, never UTC. Live schedule data exists from today − 2 days through today + 6 weeks. On a 2-sector layover, Fetch ticks Direct US when either end is a US airport (`countryCode === US`); the crew can untick. Multi-leg menus pick the unused dep→arr pair, preferring continuity with the adjacent sector.
 
 ### 2.2 LMA Inputs
 
-| Input | Type | Default | Constraint | Unit |
-|---|---|---|---|---|
-| `airportCode` | IATA string | `""` | 3 chars, must exist in DB | — |
-| `arrivalDate` | `YYYY-MM-DD` | today | valid date | date |
-| `arrivalTime` | `HH:MM` | `""` (empty) | 00:00–23:59 | time (station local) |
-| `departureDate` | `YYYY-MM-DD` | today + 2 days | ≥ arrivalDate | date |
-| `departureTime` | `HH:MM` | `""` (empty) | 00:00–23:59 | time (station local) |
-| `shuttle` | boolean | `false` | per station; if true, LMA = $0 (see 4.3a) | — |
+| Input | Type | Default | Constraint |
+|---|---|---|---|
+| `airportCode` | IATA | `""` | 3 chars, must exist in DB |
+| `arrivalDate` / `arrivalTime` | `YYYY-MM-DD` / `HH:MM` | today / `""` | station local |
+| `departureDate` / `departureTime` | `YYYY-MM-DD` / `HH:MM` | today + 2d / `""` | ≥ arrivalDate; station local |
+| `shuttle` | boolean | `false` | per station; if true, LMA = $0 (§4.3a) |
 
-**Fetch (optional, LMA calculator):** inbound and outbound flight number + date write IATA / local in–out times from `/menu`. Empty flight number does not block Calculate. Crew can still type every field.
-
-**4-sector mode:** `sectors[0..2]`, each with the above fields. Date chaining auto-populates downstream dates.
+**Roster import (prefill source):** a Crew Roster Report PDF fills flight numbers, dates, sector flight times, and the LMA stations — layover slip stations as before, plus (v1.40.0) a **turnaround's overseas transits of 3h+** (scheduled arrival to report time) as same-day LMA stations. Port-local times are used exactly as printed; anything the parser cannot read with confidence is reported and left for manual entry — never guessed. **Calculate all** runs the same per-trip math over every built card — there is no separate calculation path — and its Save files each trip as its own archive entry. Saved entries store the structured snapshot frozen at calculate time, so a reopened summary always shows what was actually computed that day, even after rates change.
 
 ### 2.3 Units & Currency
 
 | Quantity | Unit | Symbol |
 |---|---|---|
-| All monetary amounts | Singapore Dollars | `$` (SGD) |
-| Flight time / SDP | Hours (decimal internally, HH:MM displayed) | `h` |
-| Buffers | Hours (decimal) | `h` |
+| Monetary amounts | Singapore Dollars | `$` |
+| Flight time / SDP / buffers | Hours (decimal internally, HH:MM displayed) | `h` |
 | Multipliers | Dimensionless ratio | `×` |
-| Meal counts | Integer count | — |
-| Layover duration | Days / nights | — |
 
 ### 2.4 Empty / Incomplete Input Handling
 
-A sector is considered **incomplete** and excluded from calculation when:
-- IFA: `parseDuration(time)` returns `null` OR `hours ≤ 0`
-- LMA: region unresolved, OR arrival/departure date empty, OR either time unparseable
-
-Incomplete sectors return `null` and contribute `0` to totals. **The app never crashes on empty input.**
+A sector is **incomplete** and excluded when: IFA — `parseDuration(time)` is `null` or hours ≤ 0; LMA — region unresolved, dates empty, or times unparseable. Incomplete sectors return `null` and contribute 0. **The app never crashes on empty input.**
 
 ---
 
-### 2.5 Roster PDF Import (prefill source)
-
-A Crew Roster Report PDF may prefill the inputs above; it is a source, not a separate calculation path. On-device parsing fills `flightNumber`, `fetchDate` (the scheduled departure date, port-local), `times` (the roster's per-sector Flight Time) and, for layover trips, the LMA station with arrival date/time (previous sector's port-local STA + its date) and departure date/time (next sector's STD + date). Direct US is pre-ticked on 2-sector layovers touching a US airport; the crew can untick it. Port-local times are used exactly as printed — no timezone conversion. Anything the parser cannot read with confidence (times, trip shapes outside 2/4 sectors, trips that do not return to SIN within the roster) is reported and left for manual entry — never guessed. Uploading several months in one pick stitches them into one timeline (duplicate months skipped with a note), so a trip crossing a month boundary is assessed whole and the open-ended/mid-trip flags above apply only to what genuinely falls outside every uploaded month. **Calculate all** (roster bubble footer) automates the same per-trip math: every built card is calculated with the rules above and the combined summary's grand total is the sum of those per-trip totals — there is no separate calculation path. Its Save files each trip as its own archive entry (4.10-4.12) in one tap. Every COP summary also opens with a **Flight Overview** — a plain-English paragraph generated from the same per-trip results (flight numbers, times, SDPs, buffers, bracket, station in/out date-times, meal story, totals); it is a rendering of the numbers, never a second calculation path. Saved entries store that structured snapshot frozen at calculate time, so a reopened summary always shows what was actually computed that day, even after rates change.
-
 ## 3. MODIFIERS & TIERS
 
-### 3.1 IFA Rank Tiers (Base Hourly Rates)
+### 3.1 IFA Rank Tiers (Base Hourly Rates) — Clause 34(2)(a)
 
 | Rank | Rate ($/flight hour) |
 |---|---|
-| Jr. FS/FSS | 10.00 |
-| FS/FSS | 13.50 |
+| Jr. FS/FSS — **24 months or less since first solo** | 10.00 |
+| FS/FSS — more than 24 months since first solo | 13.50 |
 | LS/LSS | 16.00 |
 | CS/CSS | 18.50 |
 | IFM | 23.00 |
 
-> The rank dropdown **is** the pay tier. No separate years-of-service input.
+> The rank dropdown **is** the pay tier; there is no separate years-of-service input. The Junior boundary is the official definition — count from first solo.
 
-### 3.2 IFA Multiplier Brackets — Layover
+### 3.2 IFA Multiplier Brackets — Layover (Clause 34(2)(b))
 
 | Bracket | Condition | Multiplier |
 |---|---|---|
@@ -283,7 +247,7 @@ A Crew Roster Report PDF may prefill the inputs above; it is a source, not a sep
 | 2 | SDP > 14h AND ≤ 18h | 2.5× |
 | 3 | SDP > 18h | 3.0× |
 
-### 3.3 IFA Multiplier Brackets — Turnaround
+### 3.3 IFA Multiplier Brackets — Turnaround (Clause 34(2)(b))
 
 | Bracket | Condition | Multiplier |
 |---|---|---|
@@ -296,20 +260,20 @@ A Crew Roster Report PDF may prefill the inputs above; it is a source, not a sep
 
 | Modifier | Value | Effect |
 |---|---|---|
-| Direct US | 3.5× | Replaces any bracket multiplier for that sector |
-| Paxing | 0.75× | Replaces multiplier; SDP ignored entirely |
+| Direct US | 3.5× | Replaces any bracket multiplier for that sector (no hour condition) |
+| Paxing | 0.75× | Replaces multiplier; SDP ignored entirely (see §1.4 deviation note) |
 
-### 3.5 IFA Bonus
+### 3.5 IFA Turnaround Bonus — Clause 35
 
 | Condition | Bonus |
 |---|---|
 | Turnaround, 2-sector | $90.00 (1 × 90) |
-| Turnaround, 4-sector | $180.00 (2 × 90) |
+| Turnaround, 4-sector (two consecutive turnarounds) | $180.00 (2 × 90) |
 | Layover (any) | $0.00 |
 
-### 3.6 LMA Region Rate Tiers
+### 3.6 LMA Region Rate Tiers — Clause 36(5), wef 01 Jan 2026
 
-| Region | Breakfast | Lunch | Dinner | Daily Max |
+| Region | Breakfast | Lunch | Dinner | Daily total |
 |---|---|---|---|---|
 | Australia / New Zealand | 50 | 86 | 111 | 247 |
 | Orient | 57 | 100 | 128 | 285 |
@@ -321,9 +285,9 @@ A Crew Roster Report PDF may prefill the inputs above; it is a source, not a sep
 | South Asia | 36 | 64 | 82 | 182 |
 | Southeast Asia | 31 | 55 | 70 | 156 |
 
-`daily_max = breakfast + lunch + dinner` (informational display only)
+`daily_total = breakfast + lunch + dinner` (informational display only). **Rates are renegotiated every January** — publish a new `rates.json` each year; the 2026 table above is current until 31 Dec 2026.
 
-### 3.7 LMA Meal Windows (Station Local Time)
+### 3.7 LMA Meal Windows (Station Local Time) — Clause 36(2), all times inclusive
 
 | Meal | Start | End | Badge |
 |---|---|---|---|
@@ -333,9 +297,9 @@ A Crew Roster Report PDF may prefill the inputs above; it is a source, not a sep
 
 ### 3.8 Airport → Region Mapping
 
-Region is derived from the airport's **ISO country code**, not the airport itself. All China airports map to **Orient**.
+Region derives from the airport's **ISO country code**, not the airport. All China airports map to **Orient**.
 
-| Region | Country Codes |
+| Region | Country codes |
 |---|---|
 | Australia / New Zealand | AU, NZ, FJ, PF, WS, TO, NC, VU, SB, PG |
 | Orient | CN, HK, MO, TW, KR, MN |
@@ -355,41 +319,16 @@ Region is derived from the airport's **ISO country code**, not the airport itsel
 
 ```
 IF isDirectUS == true
-    THEN multiplier = 3.5
-    AND reason = "Direct US flight → 3.5×"
-
+    THEN multiplier = 3.5                       ("Direct US flight → 3.5×")
 ELSE IF isPaxing == true
-    THEN multiplier = 0.75
-    AND SDP is ignored
-    AND reason = "Paxing → 0.75× (SDP ignored)"
-
+    THEN multiplier = 0.75, SDP ignored         ("Paxing → 0.75× (SDP ignored)")
 ELSE IF flightType == "Turnaround"
-    THEN compute total_SDP = Σ SDP_all_sectors
-    AND multiplier = turnaround_bracket(total_SDP)
-    AND apply SAME multiplier to ALL non-paxing sectors
-
-ELSE (flightType == "Layover")
-    THEN multiplier = layover_bracket(SDP_this_sector)
-    AND each sector may have a DIFFERENT multiplier
+    THEN multiplier = turnaround_bracket(Σ SDP_all_sectors), shared by ALL non-paxing sectors
+ELSE (Layover)
+    THEN multiplier = layover_bracket(SDP_this_sector), per sector
 ```
 
-### 4.2 IFA Toggle Visibility
-
-```
-IF flightType == "Turnaround"
-    THEN hide all "Direct US flight?" toggles
-    (reason: no Direct US turnaround flights exist)
-
-IF flightType == "Turnaround" AND is4Sector == true
-    THEN hide all "Paxing?" toggles
-    (reason: no Paxing 4-sector turnaround flights exist)
-
-IF flightType == "Layover" AND is4Sector == true
-    THEN hide all "Direct US flight?" AND "Paxing?" toggles
-    (reason: no 4-sector Direct US or Paxing layover flights exist)
-```
-
-**Consolidated visibility matrix:**
+### 4.2 Modifier Combinations (UI visibility)
 
 | Condition | Direct US | Paxing |
 |---|---|---|
@@ -407,37 +346,30 @@ canShowPaxing   = (is4Sector == false)
 
 ```
 IF LMA station shuttle == true
-    THEN LMA_sector_total = 0
-    AND no breakfast/lunch/dinner earned
-    AND IFA for the trip is unchanged (still layover or turnaround as selected)
+    THEN LMA_sector_total = 0, no meals earned, IFA unchanged
 ```
 
-Shuttle is a **per-station** skip, not IFA flight type Turnaround. Use it when the pairing turns at a station with no nightstop (same calendar day, or ground time under 6 hours). Do **not** hardcode flight numbers. Auto-fill may pre-tick Shuttle from those ground-time rules; the crew can untick.
+Shuttle is a **per-station** skip. Auto-fill ticks it only for **under-3-hour turns** (Clause 36(4)): ground time from scheduled arrival to report time below 3h. Do **not** hardcode flight numbers; the crew can untick.
 
-### 4.3 LMA Hidden When Turnaround
+### 4.3 LMA Section Visibility
 
 ```
-IF IFA flight type == "Turnaround"
-    THEN hide the entire LMA accordion
-    AND effective_LMA_total = 0
-    (reason: LMA is not eligible for turnaround flights)
-
-lmaEligible = (IFA_flight_type != "Turnaround")
+IF flightType == "Turnaround" AND no LMA station data on the card
+    THEN the LMA section stays hidden          (a plain turnaround earns no LMA)
+ELSE
+    THEN the LMA section shows                 (layovers, and turnarounds whose
+                                                roster prefill carried a 3h+ transit)
 ```
 
 ### 4.4 LMA Same-Day vs Multi-Day
 
 ```
 IF dateDiffDays(arrivalDate, departureDate) == 0
-    THEN same-day logic (§1.8) for all three meals
-
-ELSE IF dateDiffDays(arrivalDate, departureDate) > 0
-    THEN arrival-day logic for arrival date
-    AND full-day logic for every intermediate date
-    AND departure-day logic for departure date
-
-ELSE (dateDiffDays < 0)
-    THEN return empty result (invalid: departure before arrival)
+    THEN same-day logic (§1.9) — the 3h transit gate applies
+ELSE IF dateDiffDays > 0
+    THEN arrival-day (§1.10) + full days + departure-day (§1.10, report-time boundary)
+ELSE
+    THEN empty result (invalid: departure before arrival)
 ```
 
 ### 4.5 LMA Date Chaining (4-Sector Mode)
@@ -445,103 +377,18 @@ ELSE (dateDiffDays < 0)
 ```
 IF user changes sector[i].arrivalDate
     THEN sector[i].departureDate = arrivalDate + 1 day
-    AND for each j > i:
-        sector[j].arrivalDate   = sector[j-1].departureDate + 1 day
-        sector[j].departureDate = sector[j].arrivalDate + 1 day
+    AND cascade: sector[j>i].arrivalDate = sector[j-1].departureDate + 1 day, departureDate = arrivalDate + 1 day
 
 IF user changes sector[i].departureDate
-    THEN keep that value
-    AND for each j > i:
-        sector[j].arrivalDate   = sector[i].departureDate + 1 day
-        sector[j].departureDate = sector[j].arrivalDate + 1 day
+    THEN keep it, cascade later sectors the same way
 ```
 
-**Plain English:** Changing any arrival date cascades forward through all later sectors. Changing a departure date keeps it but still cascades everything after it.
-
-### 4.6 Sticky Bar Label Selection
+### 4.6 Archive Amount Source
 
 ```
-IF IFA_total > 0 AND LMA_total > 0
-    THEN label = "COP Allowance"
-ELSE IF IFA_total > 0
-    THEN label = "Total IFA"
-ELSE IF LMA_total > 0
-    THEN label = "Total LMA"
-```
-
-### 4.7 Sticky Bar Dynamic Headers
-
-```
-IF IFA is valid
-    THEN header = "🛩️ IFA for {HH}H {MM}M flight"
-    (HH/MM = total flight hours across all valid IFA sectors)
-
-IF LMA is valid
-    THEN header = "🍴 LMA for {station_summary}"
-    (single: "LHR"; 4-sector: "LHR > NRT > JFK")
-```
-
-### 4.8 Developer Mode Unlock
-
-```
-IF header brand tapped
-    AND (now - lastTap) ≤ 400ms
-        THEN tapStreak += 1
-    ELSE tapStreak = 1
-
-IF tapStreak ≥ 10
-    THEN toggle developer mode
-    AND persist crewAssist.devMode
-    AND show “Developer Mode Enabled” or “Developer Mode Disabled”
-    AND tapStreak = 0
-```
-
-### 4.9 Reset All Preservation Rules
-
-```
-On Reset All:
-    RESET:    LMA sector inputs, IFA times, directUS flags, paxing flags
-    PRESERVE: currently selected IFA rank
-    PRESERVE: currently selected IFA flight type (Layover OR Turnaround)
-    PRESERVE: IFA/LMA accordion open/close state
-    PRESERVE: LMA regional rates (localStorage)
-    PRESERVE: IFA modifiers (localStorage)
-    PRESERVE: Allowances Archive (localStorage)
-```
-
-### 4.10 Archive Month Source
-
-```
-IF flightType == "Turnaround"
-    THEN monthKey = developer Month & Year field value
-ELSE (Layover)
-    THEN monthKey = first sector's arrivalDate month/year
-         (single mode: single.arrivalDate)
-         (4-sector mode: sectors[0].arrivalDate)
-```
-
-### 4.11 Archive Station Display
-
-```
-IF flightType == "Turnaround"
-    THEN codes = IFA turnaround station inputs
-         2 codes → "AAA/BBB"
-         1 code  → "AAA"
-         4-sector turnaround → use only FIRST TWO codes
-
-ELSE (Layover)
-    THEN codes = LMA station inputs
-         single    → "AAA"
-         4-sector  → "AAA/BBB" (first two)
-```
-
-### 4.12 Archive Amount Source
-
-```
-IF flightType == "Turnaround"
-    THEN amount = IFA_total only
-ELSE (Layover)
-    THEN amount = IFA_total + LMA_total (the COP allowance)
+amount = IFA_total + LMA_trip_total    (always — v1.40.0: a turnaround with a
+                                        3h+ transit files the full COP, Clause 36(4))
+IF amount ≤ 0 → nothing to save
 ```
 
 ---
@@ -553,90 +400,39 @@ ELSE (Layover)
 ```
 STEP 1  Receive inputs: rank, flightType, is4Sector, times[], directUS[], paxing[], cfg
 STEP 2  baseRate = cfg.baseRates[rank]
-STEP 3  Determine sectorCount = is4Sector ? 4 : 2
-STEP 4  Build sectorIsSg[] array from flightType + is4Sector
-STEP 5  Parse each time string → decimal hours (null if invalid)
-STEP 6  IF flightType == "Turnaround":
-            Compute SDP for each valid sector
-            Sum all SDPs → total_SDP
-            Look up ONE multiplier from turnaround brackets using total_SDP
-            Store as sharedTurnaroundMultiplier
-STEP 7  For each sector i:
-            IF time invalid OR hours ≤ 0:
-                sectorResult[i] = null   (skip)
-            ELSE:
-                SDP_i = flight_hours_i + buffer_i
-                IF paxing[i]:
-                    multiplier_i = cfg.paxingMultiplier (SDP ignored)
-                ELSE IF flightType == "Turnaround":
-                    multiplier_i = sharedTurnaroundMultiplier
-                ELSE IF directUS[i]:
-                    multiplier_i = cfg.directUSMultiplier
-                ELSE:
-                    multiplier_i = layover_bracket(SDP_i)
-                allowance_i = flight_hours_i × baseRate × multiplier_i
-STEP 8  Compute turnaroundBonusCount and turnaroundBonus
-STEP 9  IFA_total = Σ allowance_i + turnaroundBonus
-STEP 10 Build display labels, emojis, isSg arrays
-STEP 11 Emit result to UI and parent (via onTotalChange)
+STEP 3  sectorCount = is4Sector ? 4 : 2;  build sectorIsSg[] from flightType + is4Sector
+STEP 4  Parse each time string → decimal hours (null if invalid)
+STEP 5  IF Turnaround: sum SDPs → total_SDP → ONE multiplier from the turnaround
+        brackets, shared by all non-paxing sectors
+STEP 6  For each sector i:
+            IF time invalid OR hours ≤ 0 → sectorResult[i] = null (skip)
+            ELSE SDP_i = hours_i + buffer_i
+                 multiplier_i = paxing ? 0.75
+                              : Turnaround ? sharedTurnaroundMultiplier
+                              : directUS ? 3.5
+                              : layover_bracket(SDP_i)
+                 allowance_i = hours_i × baseRate × multiplier_i
+STEP 7  turnaroundBonus per §1.6
+STEP 8  IFA_total = Σ allowance_i + turnaroundBonus
 ```
 
 ### 5.2 LMA Pipeline
 
 ```
-STEP 1  Receive: airportCode, arrivalDate, arrivalTime, departureDate, departureTime, rates
-STEP 2  region = getRegionForAirport(airportCode)
-        IF region == null → return empty result
-STEP 3  Parse arrivalTime and departureTime
-        IF either unparseable → return empty result
-STEP 4  daysDiff = dateDiffDays(arrivalDate, departureDate)
-        IF daysDiff < 0 → return empty result
-STEP 5  regionRates = rates[region]
+STEP 1  Receive: airportCode, arrival date/time, departure date/time, rates
+STEP 2  region = getRegionForAirport(airportCode);  null → empty result
+STEP 3  Parse times; either unparseable → empty result
+STEP 4  daysDiff = dateDiffDays(arrival, departure);  < 0 → empty result
+STEP 5  departure_boundary = departure_time − 60 minutes (the report time, §1.8)
 STEP 6  IF daysDiff == 0:
-            Build ONE day entry (type = "same-day")
-            For each meal: eligible = arrival ≤ mealEnd AND departure ≥ mealStart
+            transit = departure_boundary − arrival
+            meals earned only if transit ≥ 180 minutes AND the window fits inside
+            arrival..departure_boundary (§1.9)
         ELSE:
-            Build arrival-day entry (type = "arrival")
-            For each meal: eligible = arrival ≤ mealEnd
-            For each intermediate day d (1 ≤ d < daysDiff):
-                Build full-day entry (type = "full")
-                All three meals eligible = true
-            Build departure-day entry (type = "departure")
-            For each meal: eligible = departure ≥ mealStart
-STEP 7  For each day:
-            For each eligible meal: add that meal's rate to the day total
-STEP 8  Aggregate counts and totals across all days:
-            breakfastCount, lunchCount, dinnerCount
-            totalBreakfast, totalLunch, totalDinner
-STEP 9  grandTotal = totalBreakfast + totalLunch + totalDinner
-STEP 10 Emit result to UI and parent
-```
-
-### 5.3 Sticky Bar Pipeline
-
-```
-STEP 1  Receive ifaTotal, lmaTotal, ifaDetails, lmaDetails
-STEP 2  lmaEligible = (IFA_flightType != "Turnaround")
-STEP 3  effectiveLmaTotal = lmaEligible ? lmaTotal : 0
-STEP 4  effectiveLmaDetails = lmaEligible ? lmaDetails : null
-STEP 5  grandTotal = ifaTotal + effectiveLmaTotal
-STEP 6  Select label per §4.6
-STEP 7  Render bar IF (ifaTotal > 0 OR effectiveLmaTotal > 0)
-```
-
-### 5.4 Archive Save Pipeline
-
-```
-STEP 1  User presses "Save to archives"
-STEP 2  Determine monthKey per §4.10
-STEP 3  Determine stationDisplay per §4.11
-STEP 4  Determine amount per §4.12
-STEP 5  IF amount ≤ 0 → abort (nothing to save)
-STEP 6  Construct AllowanceArchiveEntry
-STEP 7  APPEND entry to END of archives array
-STEP 8  Persist to localStorage
-STEP 9  Show "Saved to archives" cue for 2200ms
-STEP 10 Run calculator reset (preserving rank, flightType, accordion state)
+            arrival day: arrival ≤ window end
+            full days: all three meals
+            departure day: departure_boundary ≥ window start
+STEP 7  Sum per meal and per station; grand total = Σ station totals
 ```
 
 ---
@@ -645,147 +441,99 @@ STEP 10 Run calculator reset (preserving rank, flightType, accordion state)
 
 ### 6.1 Rounding Rules
 
-| Quantity | Rule | Display |
-|---|---|---|
-| All monetary outputs | Round to 2 decimal places at **display time only** | `$X.XX` via `toFixed(2)` |
-| Internal calculations | **Never round** — keep full floating-point precision | — |
-| Multiplier | Display as-is (e.g. `1.3×`) | `{value}×` |
-| Flight hours | Round to nearest minute for HH:MM display | `HH:MM` |
-| Layover duration | Integer days/nights | `{N} days, {N} nights` |
+| Quantity | Rule |
+|---|---|
+| Monetary outputs | Round to 2 decimals **at display time only** (`$X.XX` via `toFixed(2)`) |
+| Internal calculations | Never round — full floating-point precision; totals sum unrounded |
+| Flight hours | Round to nearest minute for HH:MM display |
 
-> **Critical:** Rounding happens ONLY in the presentation layer (`money()` helper = `$${n.toFixed(2)}`). Totals are summed from unrounded values, so `140.40 + 131.625 = 272.025` displays as `$272.03` (standard `toFixed` rounding).
+`7.5 × 13.5 × 1.3 = 131.625 → "$131.63"; 140.40 + 131.625 = 272.025 → "$272.03"`.
 
 ### 6.2 Boundary Conditions (Inclusive/Exclusive)
 
-All bracket boundaries use **`≤` for the upper bound** and strict `>` for the lower:
-
-```
-Layover:  SDP ≤ 14  → 1.3   |  SDP > 14 AND ≤ 18 → 2.5   |  SDP > 18 → 3.0
-Turnaround: TSDP ≤ 12 → 1.3 |  TSDP > 12 AND ≤ 14 → 1.6  | TSDP > 14 AND ≤ 18 → 2.5 | TSDP > 18 → 3.0
-```
-
-**Boundary values:** Exactly 14.0 layover SDP → 1.3× (not 2.5×). Exactly 12.0 total turnaround SDP → 1.3× (not 1.6×).
-
-**Meal windows:** `arrival ≤ mealEnd` is inclusive. `departure ≥ mealStart` is inclusive.
+All bracket upper bounds are **inclusive** (`≤`), lower bounds strict (`>`). Exactly 14.0 layover SDP → 1.3×; exactly 12.0 turnaround total SDP → 1.3×. Meal windows: `arrival ≤ end` inclusive; `departure_boundary ≥ start` inclusive. The 3-hour transit gate is **inclusive** (exactly 180 minutes earns). The report-time subtraction (−60 min) happens before every departure-side comparison.
 
 ### 6.3 Zero & Negative Handling
 
 | Case | Behaviour |
 |---|---|
-| Flight time empty or `00:00` | Sector excluded (`null`), contributes 0 |
-| Flight time negative | Impossible via UI clamp; `parseDuration` returns `null` for negative |
-| Minutes > 59 | `parseDuration` returns `null` |
-| Departure date before arrival date | LMA returns empty result; UI shows error |
-| Departure datetime ≤ arrival datetime | UI shows "Departure must be after arrival", results suppressed |
-| Region unresolved (bad IATA) | LMA returns empty result |
-| IFA total = 0 | Sticky bar does not render |
+| Flight time empty or `00:00` | Sector excluded, contributes 0 |
+| Departure date before arrival date | LMA empty result |
+| Same-day transit under 3h (arrival→report) | No meals, honest $0 row |
+| Region unresolved (bad IATA) | LMA empty result |
+| IFA total = 0 | No result rendered |
 | Archive amount ≤ 0 | Save aborted |
-| Negative rate in editor | Accepted numerically (dev tool) but produces negative allowance |
 
-### 6.4 Input Clamping
+### 6.4 Date Arithmetic Safety
 
-| Input | Clamp |
-|---|---|
-| TimeInput hours | 0–23 |
-| DurationInput hours | ≥ 0 (unbounded above) |
-| TimeInput/DurationInput minutes | 0–59 |
-| Airport code | Uppercase, A–Z / 0–9 / space only |
-
-### 6.5 Cap Limits
-
-There are **no hard caps** on allowance amounts. The only structural caps are:
-- Maximum 4 IFA sectors
-- Maximum 3 LMA layover sectors (4-sector mode)
-- Turnaround bonus count caps at 2
-
-### 6.6 Floating-Point Precision
-
-Sector allowances are computed as `hours × rate × multiplier` without intermediate rounding. Sums accumulate unrounded. Example precision behaviour:
+**Never use `toISOString()`** — it converts to UTC and shifts dates backward in positive-offset timezones (UTC+8 turns Jan 1 into Dec 31).
 
 ```
-7.5 × 13.5 × 1.3 = 131.625      → displays "$131.63"
-8.0 × 13.5 × 1.3 = 140.4        → displays "$140.40"
-total            = 272.025      → displays "$272.03"
+// WRONG:  d.toISOString().split("T")[0]
+// CORRECT: new Date(y, m-1, d); d.getFullYear(), d.getMonth()+1, d.getDate()
+// Parsing YYYY-MM-DD locally: append T00:00:00 — new Date("2025-01-01T00:00:00")
 ```
-
-### 6.7 Date Arithmetic Safety
-
-**NEVER use `toISOString()`** — it converts to UTC and shifts dates backward in positive-offset timezones (e.g. UTC+8 turns Jan 1 into Dec 31).
-
-```
-// WRONG — UTC shift bug:
-d.toISOString().split("T")[0]
-
-// CORRECT — local-time constructor + getters:
-new Date(y, m - 1, d)
-dt.getFullYear(), dt.getMonth() + 1, dt.getDate()
-```
-
-When parsing `YYYY-MM-DD` for local time, always append `T00:00:00`:
-```
-new Date("2025-01-01T00:00:00")   // local ✓
-new Date("2025-01-01")            // may parse as UTC ✗
-```
-
-### 6.8 Empty Archive & Empty Month Handling
-
-| Case | Behaviour |
-|---|---|
-| No archive entries | Displays `No archived allowances yet.` |
-| Month with all entries deleted | Month window disappears automatically |
-| Clear all | Empties array, persists `[]` |
-| Corrupt localStorage JSON | `loadAllowanceArchives` returns `[]` |
-| Corrupt IFA config JSON | `loadIfaConfig` returns `DEFAULT_IFA_CONFIG` |
-| Corrupt LMA rates JSON | `loadRates` returns `DEFAULT_RATES` |
 
 ---
 
 ## 7. VERIFICATION TEST CASES
 
 ### IFA Test 1 — Turnaround, Total-SDP Rule
+
 ```
 rank=Jr. FS/FSS, type=Turnaround, SG=04:00, ST=04:00, directUS=no, paxing=no
 baseRate = 10.00
-SG SDP  = 4.0 + 2.5 = 6.5h
-ST SDP  = 4.0 + 1.5 = 5.5h
-totalSDP = 6.5 + 5.5 = 12.0h  → bracket: ≤12 → 1.3×
-SG allowance  = 4.0 × 10 × 1.3 = 52.00
-ST allowance  = 4.0 × 10 × 1.3 = 52.00
-bonus = 1 × 90 = 90.00
+SG SDP = 4.0 + 2.5 = 6.5h;  ST SDP = 4.0 + 1.5 = 5.5h;  totalSDP = 12.0h → ≤12 → 1.3×
+SG allowance = 4.0 × 10 × 1.3 = 52.00;  ST allowance = 52.00;  bonus = 1 × 90 = 90.00
 TOTAL = 194.00 ✓
 ```
 
 ### IFA Test 2 — Layover, Per-Sector SDP
+
 ```
-rank=FS/FSS, type=Layover, SG=08:00, ST=07:30, directUS=no, paxing=no
-baseRate = 13.50
-SG SDP = 8.0 + 2.5 = 10.5h → ≤14 → 1.3×
-ST SDP = 7.5 + 1.5 = 9.0h  → ≤14 → 1.3×
-SG allowance = 8.0 × 13.5 × 1.3 = 140.40
-ST allowance = 7.5 × 13.5 × 1.3 = 131.625 → $131.63
+rank=FS/FSS, type=Layover, SG=08:00, ST=07:30
+SG SDP = 10.5h → 1.3×;  ST SDP = 9.0h → 1.3×
+SG = 8.0 × 13.5 × 1.3 = 140.40;  ST = 7.5 × 13.5 × 1.3 = 131.625 → $131.63
 TOTAL = 272.025 → $272.03 ✓
 ```
 
 ### IFA Test 3 — Turnaround, High Total SDP
+
 ```
-rank=CS/CSS, type=Turnaround, SG=11:00, ST=10:30, directUS=no, paxing=no
-baseRate = 18.50
-SG SDP = 11.0 + 2.5 = 13.5h
-ST SDP = 10.5 + 1.5 = 12.0h
-totalSDP = 25.5h → >18 → 3.0×
-SG allowance = 11.0 × 18.5 × 3.0 = 610.50
-ST allowance = 10.5 × 18.5 × 3.0 = 582.75
-bonus = 90.00
+rank=CS/CSS, type=Turnaround, SG=11:00, ST=10:30
+SG SDP = 13.5h;  ST SDP = 12.0h;  totalSDP = 25.5h → >18 → 3.0×
+SG = 11.0 × 18.5 × 3.0 = 610.50;  ST = 10.5 × 18.5 × 3.0 = 582.75;  bonus = 90.00
 TOTAL = 1283.25 ✓
 ```
 
 ### IFA Test 4 — Layover, Direct US Override
+
 ```
-rank=IFM, type=Layover, SG=17:30, ST=18:00, directUS=yes/yes, paxing=no
-baseRate = 23.00
-Direct US overrides → 3.5× both
-SG allowance = 17.5 × 23 × 3.5 = 1408.75
-ST allowance = 18.0 × 23 × 3.5 = 1449.00
-bonus = 0 (layover)
+rank=IFM, type=Layover, SG=17:30, ST=18:00, directUS=yes/yes
+SG = 17.5 × 23 × 3.5 = 1408.75;  ST = 18.0 × 23 × 3.5 = 1449.00;  bonus = 0
 TOTAL = 2857.75 ✓
+```
+
+### LMA Test 5 — Same-Day Transit, the 3-Hour Gate (Clause 36(4))
+
+```
+Station KUL (Southeast Asia: B 31 / L 55 / D 70), same day:
+  arrival 10:00, departure 15:30 → report 14:30 → transit = 4.5h ≥ 3h
+  Breakfast: arrival 10:00 > 08:30 → no.   Lunch: 10:00 ≤ 13:30 AND 14:30 ≥ 12:30 → YES ($55).
+  Dinner: 14:30 < 19:30 → no.
+  LMA = $55.00 ✓
+
+Same station, arrival 12:00, departure 14:30 → report 13:30 → transit = 1.5h < 3h
+  → NO meals, $0.00 — even though the turn straddles the lunch window ✓
+```
+
+### LMA Test 6 — Multi-Day Layover, Report-Time Boundary (Clause 36(3))
+
+```
+Station NRT (Japan: B 52 / L 92 / D 118), arrive 21:55 Mon, depart 12:15 Thu
+  Mon (arrival): 21:55 > 20:30 → dinner NO
+  Tue, Wed (full days): B + L + D each = 262 × 2 = 524
+  Thu (departure): report 11:15 — breakfast 11:15 > 08:30 NO; lunch 11:15 < 12:30 NO; dinner NO
+  LMA = $524.00 ✓   (the old departure-time rule would also have paid nothing here —
+  the boundary matters when departure sits within an hour above a window start)
 ```

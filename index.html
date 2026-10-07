@@ -2031,7 +2031,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.39.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.40.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2053,6 +2053,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.40.0', d: '2026-10-07', items: [
+                { c: 'new', t: 'Transits of three hours or more now earn location meals.' },
+                { c: 'imp', t: 'Meal windows now close at report time, an hour before departure.' },
+                { c: 'imp', t: 'The rules are verified line-by-line against the Staff Members\u2019 Agreement.' },
+            ] },
             { v: '1.39.0', d: '2026-10-04', items: [
                 { c: 'new', t: 'Roster calendar: duties, layovers, OFF and standby days.' },
                 { c: 'new', t: 'Type \u201cifa sq802 4 oct\u201d to prefill calculators from chat.' },
@@ -3937,9 +3942,14 @@
                 for (let i = 0; i < t.sectors.length - 1; i++) {
                     const a = t.sectors[i], b = t.sectors[i + 1];
                     if (a.arr === 'SIN') continue;
-                    const lastSt = trip.stations[trip.stations.length - 1];
-                    if (lastSt && lastSt.code === a.arr) { lastSt.outDate = b.depDate; lastSt.outTime = b.stdHm; lastSt.outFn = b.fn; }
-                    else trip.stations.push({ code: a.arr, inDate: a.arrDate, inTime: a.staHm, inFn: a.fn, outDate: b.depDate, outTime: b.stdHm, outFn: b.fn });
+                    // v1.40.0: stations are per-VISIT ground time. The old
+                    // builder merged a double shuttle's two stays into one
+                    // first-in-last-out record (PEN 1102-1809), a phantom
+                    // 7-hour "presence" that counted the SIN out-and-back in
+                    // the middle — harmless while turnarounds never earned
+                    // LMA, but under Clause 36(4) it would buy a lunch the
+                    // crew never sat through. Each stay is its own station.
+                    trip.stations.push({ code: a.arr, inDate: a.arrDate, inTime: a.staHm, inFn: a.fn, outDate: b.depDate, outTime: b.stdHm, outFn: b.fn });
                 }
                 return trip;
             });
@@ -6401,8 +6411,8 @@
                     <div class="ca-trip-body">
                     ${overviewBlock(flightOverviewText(r.res.detail))}
                     ${r.res.ifaDetails.join('')}
-                    ${r.res.isTurnaround
-                        ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
+                    ${r.res.isTurnaround && r.res.lmaDetails.length === 0
+                        ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights \u2014 unless an overseas transit spans 3 hours or more (Clause 36(4)).</div>'
                         : r.res.lmaDetails.join('')}
                     </div>
                 </div>`;
@@ -6562,16 +6572,26 @@
                 const us = q('ifa-us1');
                 if (us && !us.checked) { us.checked = true; us.dispatchEvent(new Event('change', { bubbles: true })); }
             }
-            // LMA stations (layover trips only — Turnaround hides the LMA section)
-            if (trip.type === 'Layover' && trip.stations.length) {
+            // LMA stations — layover trips carry their slip stations, and
+            // (v1.40.0, Clause 36(4)) a TURNAROUND's overseas transit of 3h+
+            // — scheduled arrival to report time — earns location meals too,
+            // so those transits are prefilled as same-day stations.
+            const lmaSts = (trip.type === 'Turnaround')
+                ? trip.stations.filter((st) => {
+                    const inMs = st.inDate && st.inTime ? new Date(st.inDate + 'T' + st.inTime + ':00').getTime() : NaN;
+                    const outMs = st.outDate && st.outTime ? new Date(st.outDate + 'T' + st.outTime + ':00').getTime() : NaN;
+                    return isFinite(inMs) && isFinite(outMs) && (outMs - 60 * 60 * 1000 - inMs) >= 3 * 60 * 60 * 1000;
+                })
+                : trip.stations;
+            if (lmaSts.length) {
                 const btnAdd = q('btn-add-lma');
                 window.__caLmaQuietAdd = true;
                 try {
                     let have = 0;
                     while (q(`lma-iata${have + 1}`)) have++;
-                    while (have < trip.stations.length && btnAdd && !btnAdd.classList.contains('hidden')) { btnAdd.click(); have++; }
+                    while (have < lmaSts.length && btnAdd && !btnAdd.classList.contains('hidden')) { btnAdd.click(); have++; }
                 } finally { window.__caLmaQuietAdd = false; }
-                trip.stations.forEach((st, i) => {
+                lmaSts.forEach((st, i) => {
                     const k = i + 1;
                     setVal(q(`lma-iata${k}`), st.code, true);
                     setVal(q(`lma-afn${k}`), st.inFn, true);
@@ -7039,7 +7059,12 @@
                 const wrap = card.querySelector('.calc-lma-section');
                 const typeInp = card.querySelector('input[id$="-flight-type"]');
                 const isTurn = !!typeInp && typeInp.value === 'Turnaround';
-                if (wrap) wrap.classList.toggle('hidden', isTurn || isDefault);
+                // v1.40.0 (Clause 36(4)): a turnaround with a 3h+ overseas
+                // transit EARNS location meals — the section shows whenever
+                // station data exists (a prefilled transit) and stays hidden
+                // on plain same-station turnarounds.
+                const hasLmaData = !!(wrap && Array.from(wrap.querySelectorAll('input[id$="-lma-iata1"], input[id$="-lma-at1"], input[id$="-lma-dt1"]')).some((i) => String(i.value || '').trim()));
+                if (wrap) wrap.classList.toggle('hidden', isDefault || (isTurn && !hasLmaData));
             }
             // Visibility drives the Calculate gate, so make it re-evaluate.
             card.dispatchEvent(new Event('input'));
@@ -8570,10 +8595,15 @@ function getRegionForAirport(code) {
         }
 
         function suggestShuttle(arrLocal, nextDepLocal, arrUtc, nextDepUtc) {
-            if (arrLocal && nextDepLocal && formatLocalYMD(arrLocal) === formatLocalYMD(nextDepLocal)) return true;
+            // v1.40.0, Clause 36(4) (ASCA 2025, CA No.058/2025): a transit of
+            // three hours or more EARNS the location meal allowance — so
+            // shuttle (no LMA) is only for under-3-hour turns, and the
+            // transit clock runs from the scheduled arrival to the REPORT
+            // time for the next departure (an hour before it, Clause 36(3)).
+            // Same-calendar-day alone no longer suggests it.
             if (arrUtc && nextDepUtc) {
-                const g = nextDepUtc.getTime() - arrUtc.getTime();
-                if (g >= 0 && g < 6 * 60 * 60 * 1000) return true;
+                const g = nextDepUtc.getTime() - arrUtc.getTime() - (60 * 60 * 1000);
+                if (g >= 0 && g < 3 * 60 * 60 * 1000) return true;
             }
             return false;
         }
@@ -10376,8 +10406,10 @@ function getRegionForAirport(code) {
                 }
             }
 
-            // LMA
-            if ((mode === 'lma' || mode === 'both') && !isTurnaround) {
+            // LMA — v1.40.0 (Clause 36(4)): a turnaround's 3h+ overseas
+            // transit earns location meals too, so the gate is the mode
+            // alone; plain turnarounds carry no stations and compute nothing.
+            if (mode === 'lma' || mode === 'both') {
                 // Find all active LMA blocks
                 const container = document.getElementById(`${id}-lma-sectors`);
                 const blocks = container.querySelectorAll('.ui-input.uppercase');
@@ -10389,6 +10421,15 @@ function getRegionForAirport(code) {
                     const aTime = document.getElementById(`${id}-lma-at${idxStr}`).value;
                     const dDate = document.getElementById(`${id}-lma-d${idxStr}`).value;
                     const dTime = document.getElementById(`${id}-lma-dt${idxStr}`).value;
+                    // v1.40.0: an untouched station row is not an error —
+                    // a fresh row carries default DATES (arrival today, out
+                    // two days on) with no station code and no times, and
+                    // turnarounds without a 3h+ transit carry exactly that.
+                    // They must show the calm no-meals note, not a red
+                    // "missing fields" flag. Dates alone are not input:
+                    // only a station code or a typed time makes a row real,
+                    // and a REAL row missing fields still gets flagged.
+                    if (!iata && !aTime && !dTime) return;
                     const snapStation = { code: iata, region: '', inYmd: aDate, inHm: aTime, outYmd: dDate, outHm: dTime, days: [], total: 0, shuttle: false, skipped: '' };
 
                     const shInp = document.getElementById(`${id}-lma-sh${idxStr}`);
@@ -10443,6 +10484,13 @@ function getRegionForAirport(code) {
                     const arrMins = parseMins(aTime);
                     const depMins = parseMins(dTime);
                     if (arrMins < 0 || depMins < 0) { snapStation.skipped = 'Unreadable times'; snap.stations.push(snapStation); return; }
+                    // v1.40.0, Clause 36(3): the departure-side boundary of a
+                    // slip station is the REPORT time for the next flight —
+                    // an hour before its departure (owner's rule). Presence
+                    // for the meal windows ends when the crew report, not
+                    // when the aircraft leaves. A report before midnight
+                    // lands negative and simply earns nothing that day.
+                    const reportMins = depMins - 60;
 
                     const win = LMA_WINDOWS || {};
                     const bStart = parseHmToMinutes(win.b && win.b.start) ?? (7 * 60 + 30);
@@ -10460,17 +10508,24 @@ function getRegionForAirport(code) {
                         let bc=0, lc=0, dc=0;
                         
                         if (daysDiff === 0) {
-                            if (arrMins <= bEnd && depMins >= bStart) bc++;
-                            if (arrMins <= lEnd && depMins >= lStart) lc++;
-                            if (arrMins <= dEnd && depMins >= dStart) dc++;
+                            // v1.40.0, Clause 36(4): a same-day transit earns
+                            // meals only when it spans 3h+ from arrival to
+                            // report time — a shorter turn pays nothing even
+                            // when it happens to straddle a window.
+                            const transitMins = reportMins - arrMins;
+                            if (transitMins >= 180) {
+                                if (arrMins <= bEnd && reportMins >= bStart) bc++;
+                                if (arrMins <= lEnd && reportMins >= lStart) lc++;
+                                if (arrMins <= dEnd && reportMins >= dStart) dc++;
+                            }
                         } else if (d === 0) {
                             if (arrMins <= bEnd) bc++;
                             if (arrMins <= lEnd) lc++;
                             if (arrMins <= dEnd) dc++;
                         } else if (d === daysDiff) {
-                            if (depMins >= bStart) bc++;
-                            if (depMins >= lStart) lc++;
-                            if (depMins >= dStart) dc++;
+                            if (reportMins >= bStart) bc++;
+                            if (reportMins >= lStart) lc++;
+                            if (reportMins >= dStart) dc++;
                         } else {
                             bc++; lc++; dc++;
                         }
@@ -10520,7 +10575,7 @@ function getRegionForAirport(code) {
                 });
             }
 
-            if (lmaTotal > 0 && !isTurnaround) {
+            if (lmaTotal > 0) {
                 lmaDetails.push(`
                     <div class="flex justify-between items-center text-xs font-bold text-gray-500 ca-inset p-2 rounded-xl mt-1 mb-1 border ca-hairline">
                         <div class="flex flex-col items-center flex-1 border-r ca-hairline last:border-0">
@@ -10710,7 +10765,11 @@ function getRegionForAirport(code) {
                 }
                 if (s.bonusCount === 1) txt += ' And the day earns your ' + formatMoney(s.bonusAmount) + ' turnaround bonus.';
                 else if (s.bonusCount > 1) { const bw = { 2: 'two', 3: 'three' }[s.bonusCount] || String(s.bonusCount); txt += ' And because you did the out-and-back ' + (s.bonusCount === 2 ? 'twice' : s.bonusCount + ' times') + ', ' + bw + ' turnaround bonuses at ' + formatMoney(s.bonusAmount / s.bonusCount) + ' each.'; }
-                txt += " " + grand + " all in. No LMA — same-day flying doesn't qualify.";
+                if (s.lmaTotal > 0 && stations.length) {
+                    txt += ' ' + grand + ' all in — and with ' + (ovCity(stations[0].code) || stations[0].code) + ' ground time running three hours or more before report time, its location meals are part of that (Clause 36(4)).';
+                } else {
+                    txt += " " + grand + " all in. No location meals — the transit is under three hours.";
+                }
             } else {
                 const st0 = stations[0];
                 const last = secs[secs.length - 1];
@@ -10786,7 +10845,10 @@ function getRegionForAirport(code) {
                 html += '<div class="mb-3 p-3 ca-inset rounded-xl border ca-hairline"><div class="flex justify-between font-bold text-sm"><span>Turnaround Bonus (' + s.bonusCount + 'x)</span><span class="ca-amt">' + formatMoney(s.bonusAmount) + '</span></div></div>';
             }
             html += '</div>';
-            if (s.type !== 'Turnaround' && (s.stations || []).length) {
+            // v1.40.0 (Clause 36(4)): a turnaround's 3h+ transit earns
+            // location meals, so its breakdown renders like a layover's.
+            // Plain turnarounds have no stations and never reach this.
+            if ((s.stations || []).length) {
                 html += '<div class="mt-6 border-t ca-hairline pt-6"><div class="flex justify-between items-center mb-3"><h4 class="font-bold">LMA Breakdown</h4><span class="font-bold text-[17px] ca-amt text-sia-gold">' + formatMoney(s.lmaTotal) + '</span></div>';
                 (s.stations || []).forEach(st => {
                     if (st.shuttle) {
@@ -10930,9 +10992,7 @@ function getRegionForAirport(code) {
                 `;
             }
 
-            if (isTurnaround) {
-                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>`;
-            } else if (lmaDetails.length > 0) {
+            if (lmaDetails.length > 0) {
                 html += `
                     <div class="mt-6 border-t ca-hairline pt-6">
                         <div class="flex justify-between items-center mb-3">
@@ -11035,6 +11095,9 @@ function getRegionForAirport(code) {
             
             // Post result message to chat
             let msg = '';
+            if (isTurnaround && lmaDetails.length === 0) {
+                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights — unless an overseas transit spans 3 hours or more (Clause 36(4)).</div>`;
+            }
             if (isTurnaround && mode === 'both') {
                 msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
             } else if (mode === 'ifa') {
@@ -11090,7 +11153,9 @@ function getRegionForAirport(code) {
             return d + ' ' + names[m - 1];
         }
         function buildCopArchivePayload(id, isTurnaround, ifaTotal, lmaTotal) {
-            const amount = isTurnaround ? ifaTotal : (ifaTotal + lmaTotal); // 4.12
+            // v1.40.0 (Clause 36(4)): a turnaround with a 3h+ transit earns
+            // location meals, so its archive amount is the full COP.
+            const amount = ifaTotal + lmaTotal; // 4.12
             if (!(amount > 0)) return null;
             const d1 = (document.getElementById(`${id}-ifa-d1`) || {}).value || '';
             const monthKey = (d1 || todayLocalYMD()).slice(0, 7); // 4.10
