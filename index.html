@@ -1135,7 +1135,8 @@
                 <div class="bg-[#F6F1E8]/90 dark:bg-[#080B14]/80 h-full w-full px-8 pt-2 pb-8 flex flex-col">
                     <div class="flex-grow overflow-y-auto max-w-sm mx-auto w-full flex flex-col">
                         <h2 class="text-2xl font-bold mb-8 text-center">Welcome aboard<span class="text-sia-gold">.</span></h2>
-                        <div class="space-y-6 flex-grow">
+                        <!-- v1.40.1 (owner order): tighter field rhythm -->
+                        <div class="space-y-4 flex-grow">
                             <!-- Name -->
                             <div>
                                 <label class="block text-sm font-bold mb-2">Name</label>
@@ -1150,7 +1151,7 @@
                                  pay the junior tier until 24 months past this
                                  date. Masked DD/MM/YYYY, numeric keypad. -->
                             <div>
-                                <label class="block text-sm font-bold mb-2">Date of first solo</label>
+                                <label class="block text-sm font-bold mb-2">Date of First Solo</label>
                                 <div class="relative">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                         <i data-lucide="calendar" class="w-4 h-4 text-gray-600"></i>
@@ -2042,7 +2043,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.40.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.40.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2064,6 +2065,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.40.1', d: '2026-10-07', items: [
+                { c: 'fix', t: 'Paxing flights borrow their Singapore leg\u2019s flight time.' },
+                { c: 'imp', t: 'Date of First Solo reads in title case.' },
+                { c: 'imp', t: 'Onboarding fields sit closer together.' },
+            ] },
             { v: '1.40.0', d: '2026-10-07', items: [
                 { c: 'new', t: 'Transits of three hours or more now earn location meals.' },
                 { c: 'imp', t: 'Meal windows now close at report time, an hour before departure.' },
@@ -6239,7 +6245,7 @@
             const paxList = tripsOk.filter(t => t.sectors.some(s => s.paxing));
             if (paxList.length) {
                 const paxDates = paxList.map(t => rosterShortDate((t.sectors.find(s => s.paxing) || {}).depDate, true)).filter(Boolean).join(', ');
-                lines.push(`${paxList.length} positioning trip${paxList.length === 1 ? ' is' : 's are'} marked <b>paxing</b>${paxDates ? ' (' + paxDates + ')' : ''} — the roster prints no flight time for them; Fetch fills it when calculating.`);
+                lines.push(`${paxList.length} positioning trip${paxList.length === 1 ? ' is' : 's are'} marked <b>paxing</b>${paxDates ? ' (' + paxDates + ')' : ''} — the roster prints no flight time for them; the Singapore leg\u2019s time is used, or Fetch fills the exact flight.`);
             }
             const listHtml = tripsOk.map((t, i) => {
                 const s0 = t.sectors[0], sl = t.sectors[t.sectors.length - 1];
@@ -9648,6 +9654,12 @@ function getRegionForAirport(code) {
                     }
                     if (!inp.closest('.hidden') && !inp.closest('.max-h-0')) {
                         if (inp.value.trim() === '') {
+                            // v1.40.1: a paxing sector may borrow its Singapore
+                            // leg's time — that pair arms the card here too.
+                            if (inp.classList.contains('ifa-time-input')) {
+                                const bm = /^(.*)-ifa-t(\d+)$/.exec(inp.id || '');
+                                if (bm && ifaPaxPartnerHours(bm[1], parseInt(bm[2], 10)) !== null) return;
+                            }
                             allFilled = false;
                         } else if (inp.classList.contains('ifa-time-input') || inp.classList.contains('lma-time-input')) {
                             if (inp.value.length < 4) {
@@ -9661,7 +9673,12 @@ function getRegionForAirport(code) {
                 // filled it. Default mode hides the field, so Fetch is how it lands —
                 // but Calculate must not fire on a sector with no duration at all.
                 containerNode.querySelectorAll('.ifa-time-input').forEach((inp) => {
-                    if ((inp.value || '').trim().length < 4) allFilled = false;
+                    if ((inp.value || '').trim().length >= 4) return;
+                    // v1.40.1: a paxing sector may borrow its Singapore leg's
+                    // time — that pair arms the card.
+                    const tm = /^(.*)-ifa-t(\d+)$/.exec(inp.id || '');
+                    if (tm && ifaPaxPartnerHours(tm[1], parseInt(tm[2], 10)) !== null) return;
+                    allFilled = false;
                 });
 
                 // LMA calculator: a valid station code and both times must be present,
@@ -9705,6 +9722,9 @@ function getRegionForAirport(code) {
                             const sh = probe.querySelector('.lma-shuttle-input');
                             if (sh && sh.checked) staleSectors.delete(k);
                         }
+                        // v1.40.1: a paxing sector borrowing its Singapore leg's
+                        // time has nothing to fetch — it is never stale.
+                        if (p[0] === 'ifa' && ifaPaxPartnerHours(id, parseInt(p[1], 10)) !== null) staleSectors.delete(k);
                     });
                     if (staleSectors.size) allFilled = false;
                 }
@@ -10337,6 +10357,23 @@ function getRegionForAirport(code) {
             cutoff.setMonth(cutoff.getMonth() + 24);
             return flight < cutoff ? ('Jr. ' + rank) : rank;
         }
+
+        // v1.40.1 (owner order): a PAXING sector the roster gave no flight
+        // time uses the same time as its Singapore leg — the flight from
+        // Singapore or the flight back to Singapore, whichever carries a
+        // time. An own typed/fetched time always wins. The Paxing toggle
+        // only exists on two-sector cards, so the partner is the other leg.
+        // Returns the borrowed hours, or null when there is nothing to
+        // borrow (not paxing, own time present, partner empty too).
+        function ifaPaxPartnerHours(id, i) {
+            const px = document.getElementById(`${id}-ifa-px${i}`);
+            if (!px || !px.checked) return null;
+            const own = document.getElementById(`${id}-ifa-t${i}`);
+            if (own && (own.value || '').trim().length >= 4) return null;
+            const pi = (i % 2 === 1) ? i + 1 : i - 1;
+            const pt = pi >= 1 ? document.getElementById(`${id}-ifa-t${pi}`) : null;
+            return pt ? parseDuration(pt.value) : null;
+        }
         function computeCardResults(id, mode) {
             let ifaTotal = 0;
             let lmaTotal = 0;
@@ -10394,7 +10431,13 @@ function getRegionForAirport(code) {
                     const usInp = document.getElementById(`${id}-ifa-us${i}`);
                     const pxInp = document.getElementById(`${id}-ifa-px${i}`);
                     
-                    const hours = parseDuration(tInp.value);
+                    let hours = parseDuration(tInp.value);
+                    // v1.40.1: an empty paxing sector borrows its Singapore
+                    // leg's time (see ifaPaxPartnerHours).
+                    if (hours === null) {
+                        const borrowed = ifaPaxPartnerHours(id, i);
+                        if (borrowed !== null) hours = borrowed;
+                    }
                     if (hours !== null) {
                         const buffer = isSgArr[i-1] ? IFA_CONFIG.sgBuffer : IFA_CONFIG.stationBuffer;
                         const sdp = hours + buffer;

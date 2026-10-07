@@ -90,6 +90,11 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(!!ob('ob-solo'), 'the first-solo field renders');
     R.eq(ob('ob-solo').getAttribute('inputmode'), 'numeric', 'the date field summons the numeric keypad');
     R.eq(ob('ob-solo').placeholder, 'DD/MM/YYYY', 'the placeholder teaches DD/MM/YYYY');
+    R.ok(ob('ob-solo').parentElement.parentElement.querySelector('label').textContent === 'Date of First Solo', 'the label reads Date of First Solo (v1.40.1 title case)');
+    {
+      const fsMod = require('fs'); const appSrc = fsMod.readFileSync(APP, 'utf8');
+      R.ok(appSrc.includes('<div class="space-y-4 flex-grow">'), 'the onboarding fields sit closer together (v1.40.1)'); 
+    }
     R.ok(rankFolded(), 'Rank stays folded on first run');
 
     type(ob('ob-name'), 'Junior June');

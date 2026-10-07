@@ -81,15 +81,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const el = document.querySelector('.ca-micro'); return el && parseFloat(getComputedStyle(el).fontSize) <= 11.5; }), 'the compiled stylesheet applies (ca-micro renders at 11px)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.40.0', 'APP_VERSION is 1.40.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.40.0' && e.d === '2026-10-07' && e.items.length === 6 && e.items.map((i) => i.c).join(',') === 'new,imp,imp,new,imp,imp'; }), 'the changelog carries the 1.40.0 entry (2026-10-07, transit meals + onboarding overhaul pointers)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v197'), 'the service-worker cache name is bumped to v197 (APP_VERSION frozen at 1.40.0)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.40.1', 'APP_VERSION is 1.40.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.40.1' && e.d === '2026-10-07' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'fix,imp,imp'; }), 'the changelog carries the 1.40.1 entry (2026-10-07, paxing borrow + onboarding polish)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v198'), 'the service-worker cache name is bumped to v198 (APP_VERSION 1.40.1)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.40.0'; }), 'the What\'s New sheet carries the v1.40.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.40.1'; }), 'the What\'s New sheet carries the v1.40.1 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Transits of three hours or more now earn location meals.') !== -1), 'the What\'s New sheet carries the transit-meals pointer');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.40\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.40\.1/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(true, 'closing What\'s New releases the welcome chat');

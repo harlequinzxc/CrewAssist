@@ -424,8 +424,10 @@ const MONTH = [
   // ---- v1.32.1: positioning sectors build pre-marked paxing ----
   {
     // The roster prints no flight time for PU/TVL positioning sectors; the
-    // parser marks them paxing and the trip builds anyway. The card waits
-    // for its flight time (Fetch or hand entry) before it will calculate.
+    // parser marks them paxing and the trip builds anyway. v1.40.1 (owner
+    // order): the paxing sector BORROWS its Singapore leg's flight time, so
+    // the card arms and prices without waiting for Fetch; an own time still
+    // outranks the borrow.
     const trip = {
       type: 'Layover', ok: true, stations: [],
       sectors: [
@@ -444,27 +446,33 @@ const MONTH = [
     const px2 = d.getElementById(id + '-ifa-px2');
     R.ok(px1 && px1.checked, 'the positioning sector arrives pre-ticked paxing');
     R.ok(px2 && !px2.checked, 'the operating sector stays full pay');
-    R.ok(d.getElementById(id + '-btn-calc').disabled, 'the card honestly waits for its missing flight time');
-    // hand-enter the positioning flight time and the card arms at 0.75×
+    R.ok(!d.getElementById(id + '-btn-calc').disabled, 'v1.40.1: the card arms — the paxing sector borrows the Singapore leg\u2019s time');
+    let res = w.computeCardResults(id, 'both');
+    let sec = res.detail.sectors[0];
+    const rate = res.detail.rankRate;
+    R.ok(sec.paxing === true, 'the computed sector records paxing');
+    R.ok(sec.logic === 'Paxing Override (SDP ignored)', 'paxing ignores the SDP brackets');
+    R.eq(sec.mult, 0.75, 'paxing pays the 0.75× multiplier (owner-ratified rate)');
+    R.eq(sec.ftHm, '11H 35M', 'the empty paxing sector shows the borrowed Singapore-leg time (11h35m)');
+    R.eq(sec.amount, Math.round(695 / 60 * rate * sec.mult * 100) / 100, 'paxing amount = borrowed 11h35m × rate × 0.75');
+    // an own typed time still outranks the borrowed one
     const ft1 = d.getElementById(id + '-ifa-t1');
     ft1.value = '12h25m';
     ft1.dispatchEvent(new w.Event('input', { bubbles: true }));
     ft1.dispatchEvent(new w.Event('change', { bubbles: true }));
     await wait(250);
-    R.ok(!d.getElementById(id + '-btn-calc').disabled, 'the card arms once the flight time is in');
-    const res = w.computeCardResults(id, 'both');
-    const sec = res.detail.sectors[0];
-    const rate = res.detail.rankRate;
-    R.ok(sec.paxing === true, 'the computed sector records paxing');
-    R.ok(sec.logic === 'Paxing Override (SDP ignored)', 'paxing ignores the SDP brackets');
-    R.eq(sec.mult, 0.75, 'paxing pays the 0.75× multiplier (owner-ratified rate)');
-    R.eq(sec.amount, Math.round(745 / 60 * rate * sec.mult * 100) / 100, 'paxing amount = hours × rate × 0.75 (12h25m)');
+    R.ok(!d.getElementById(id + '-btn-calc').disabled, 'the card stays armed with an own time');
+    res = w.computeCardResults(id, 'both');
+    sec = res.detail.sectors[0];
+    R.eq(sec.ftHm, '12H 25M', 'a typed own time outranks the borrowed one');
+    R.eq(sec.amount, Math.round(745 / 60 * rate * sec.mult * 100) / 100, 'the own-time amount prices 12h25m × rate × 0.75');
     // the confirm bubble dates every positioning trip so the crew can find
     // the duty on the paper roster
     const parsedPx = { monthLabel: 'October 2024', trips: [trip], flights: trip.sectors, skippedDays: 0, flyingDays: 2 };
     w.renderRosterConfirm(parsedPx, 'Oct 2024.pdf');
     await wait(200);
     R.ok(/1 positioning trip is marked paxing \(21 Oct 2024\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip to the day and year');
+    R.ok(/the Singapore leg\u2019s time is used, or Fetch fills the exact flight\./.test(d.getElementById('chat-container').textContent), 'the confirm bubble explains the v1.40.1 borrow rule');
   }
 
   // ---- v1.33.0: review batch — rate guard, month groups, offline hints, CSV ----

@@ -81,7 +81,10 @@ IF isDirectUS == true:
 IF isPaxing == true:
     multiplier = paxingMultiplier         (default 0.75)
     SDP is IGNORED entirely
+    flight time = own time, else the paired Singapore leg's time
 ```
+
+**Flight time (v1.40.1, owner order):** the roster prints no time for positioning sectors. A paxing sector with no time of its own uses the same time as its Singapore leg — the flight from Singapore or the flight back to Singapore, whichever carries a time. An own typed or fetched time always wins.
 
 **Precedence:** Paxing and Direct US are mutually exclusive in the UI (§4.2); when both would be true, the paxing branch is evaluated first inside `calcSector`.
 
