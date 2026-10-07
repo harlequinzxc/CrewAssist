@@ -6,7 +6,7 @@
 
 ## 0. THE OFFICIAL BASIS
 
-Every formula in this file traces to **Clauses 34–36 of the Singapore Airlines Staff Members' Agreement 2025 (CA No.058/2025, ASCA N (120925))**, verified line-by-line against the official document on 7 October 2026:
+Every formula in this file traces to **Clauses 34–36 of the Singapore Airlines Staff Members' Agreement 2025 (CA No.058/2025, ASCA N (120925))**, verified line-by-line against the official document on 7 October 2026 — the full Agreement is committed at `docs/CA_058_of_2025_Singapore_Airlines_Staff_Members_Agreement.pdf` (Clauses 34–36 are the ones this app implements):
 
 - **Clause 34 — Incentive Flying Allowance.** Paid per hour flown, in addition to basic salary. Sets the hourly rates by grade (34(2)(a)), the scheduled-duty-period multipliers (34(2)(b)), the delay multipliers based on Actual Duty Period (34(2)(c)), the 85-hour excess rule (34(3)), deadheading (34(4)), positioning (34(5)), diversions (34(6)) and the definitions of duty periods and flying hours (34(7)).
 - **Clause 35 — Turnaround Allowance.** $90 per turnaround flight; a 4-sector COP of two consecutive turnarounds earns both ($180). A turnaround is a duty that commences and ends at base with no overnight stop at any overseas slip station.

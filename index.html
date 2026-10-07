@@ -4452,15 +4452,6 @@
             });
             return byDay;
         }
-        function rcKindLookup() {
-            const cache = {};
-            return (ymd) => {
-                const ym = String(ymd).slice(0, 7);
-                if (!cache[ym]) cache[ym] = rcMonthData(ym);
-                const day = cache[ym][ymd];
-                return day ? (day.kind || '') : '';
-            };
-        }
         function rcDayLookup() {
             const cache = {};
             return (ymd) => {
@@ -5676,17 +5667,6 @@
         }
         function menusSavedFor(fn, ymd) {
             try { return !!localStorage.getItem(sqCabinCacheKey(fn, ymd)); } catch (e) { return false; }
-        }
-        // v1.33.1: between departure and landing the leg reads "lands 11:45" —
-        // the card reflects the duty as it happens, not as it was printed.
-        function nfInAir(f) {
-            if (!f || !f.std || !f.sta) return false;
-            const hm = String(f.std).replace(':', '');
-            if (!/^\d{4}$/.test(hm) || !/^\d{4}-\d{2}-\d{2}$/.test(String(f.ymd || ''))) return false;
-            const dep = new Date(f.ymd + 'T00:00:00').getTime() + (parseInt(hm.slice(0, 2), 10) * 3600 + parseInt(hm.slice(2), 10) * 60) * 1000;
-            const arr = nfArrivalMs(f);
-            const now = Date.now();
-            return arr !== null && now >= dep && now < arr;
         }
         function nextFlightRel(ymd) {
             const d = Math.round((new Date(ymd + 'T12:00:00') - new Date(todayLocalYMD() + 'T12:00:00')) / 86400000);

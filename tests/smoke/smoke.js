@@ -83,7 +83,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.40.0', 'APP_VERSION is 1.40.0');
         ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.40.0' && e.d === '2026-10-07' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,imp,imp'; }), 'the changelog carries the 1.40.0 entry (2026-10-07, new+imp+imp)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v195'), 'the service-worker cache name is bumped to v195 (APP_VERSION frozen at 1.40.0)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v196'), 'the service-worker cache name is bumped to v196 (APP_VERSION frozen at 1.40.0)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
