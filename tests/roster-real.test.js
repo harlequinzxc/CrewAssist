@@ -1,4 +1,4 @@
-// Real-roster regression: every PDF in ../_inbox goes through the REAL
+// Real-roster regression: every PDF in ../docs/_reference_rosters goes through the REAL
 // pipeline — pdfjs-dist text extraction (same shape rosterReadPdf produces:
 // {str, x, y, page}) into the booted app's rosterParse. These are the
 // owner's actual Crew Roster Reports (2024–2026), committed as fixtures.
@@ -64,7 +64,7 @@ function expectedMonthLabel(f) {
         return items;
     }
 
-    const dir = path.resolve(__dirname, '../_inbox');
+    const dir = path.resolve(__dirname, '../docs/_reference_rosters');
     const files = fs.readdirSync(dir).filter(f => /\.pdf$/i.test(f)).sort();
     R.ok(files.length >= 6, `roster fixtures present (${files.length} files)`);
 

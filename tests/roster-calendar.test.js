@@ -93,7 +93,7 @@ const synthItems = [].concat(
   {
     const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const readItems = async (file) => {
-      const data = new Uint8Array(fs.readFileSync(path.resolve(__dirname, '../_inbox/' + file)));
+      const data = new Uint8Array(fs.readFileSync(path.resolve(__dirname, '../docs/_reference_rosters/' + file)));
       const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
       const items = [];
       for (let pi = 1; pi <= doc.numPages; pi++) {

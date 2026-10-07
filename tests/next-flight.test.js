@@ -37,7 +37,7 @@ const waitChatIdle = async (w, cap) => {
 
 // Real-geometry synthetic table page: a rotated crew roster — day columns
 // keyed by x, date anchors along the bottom, flight/sector/std/sta/pos values
-// at the same x (shapes taken from the real _inbox rosters).
+// at the same x (shapes taken from the real reference rosters).
 function rosterItems(flight, sector, dateTok, opts) {
   opts = opts || {};
   const x = opts.x || 950, page = 1;

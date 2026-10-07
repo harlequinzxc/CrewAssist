@@ -19,7 +19,7 @@
 // starch/meat axes untouched.
 // The fixture (tests/menu-extraction.fixture.json) freezes the extractor's
 // output for all 1,139 unique (name, description) pairs harvested from the
-// official SQ main-course corpus (_inbox/menu/sq_main_courses.json). It was
+// official SQ main-course corpus (docs/_reference_rosters/menu/sq_main_courses.json). It was
 // validated pair-by-pair against the reviewed digest v1.3. If a vocabulary or
 // rule change is ever deliberate, regenerate the fixture in the same commit
 // and say so — a mismatch here means extraction drifted.
