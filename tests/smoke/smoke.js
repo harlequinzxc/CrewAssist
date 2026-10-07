@@ -81,15 +81,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const el = document.querySelector('.ca-micro'); return el && parseFloat(getComputedStyle(el).fontSize) <= 11.5; }), 'the compiled stylesheet applies (ca-micro renders at 11px)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.40.1', 'APP_VERSION is 1.40.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.40.1' && e.d === '2026-10-07' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'fix,imp,imp'; }), 'the changelog carries the 1.40.1 entry (2026-10-07, paxing borrow + onboarding polish)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v198'), 'the service-worker cache name is bumped to v198 (APP_VERSION 1.40.1)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.41.0', 'APP_VERSION is 1.41.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.41.0' && e.d === '2026-10-08' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,imp,imp'; }), 'the changelog carries the 1.41.0 entry (2026-10-08, one-shot backup)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v199'), 'the service-worker cache name is bumped to v199 (APP_VERSION 1.41.0)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.40.1'; }), 'the What\'s New sheet carries the v1.40.1 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.41.0'; }), 'the What\'s New sheet carries the v1.41.0 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Transits of three hours or more now earn location meals.') !== -1), 'the What\'s New sheet carries the transit-meals pointer');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.40\.1/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.41\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(true, 'closing What\'s New releases the welcome chat');
@@ -125,6 +125,21 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(/\u00d7 \$10 \u00d7/.test(txt), 'a first solo dated yesterday prices the junior $10 tier in a real card');
         await page.evaluate(() => { appProfile.firstSoloYMD = ''; });
         await closeResults(page);
+
+        // 5. v1.41.0: the one-shot backup round-trips in the real browser.
+        ok(await page.evaluate(() => {
+            localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 's1', savedAt: '2026-10-08T02:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/KUL', amount: 123.45 }]));
+            localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [{ ymd: '2026-10-08', kind: 'F' }] }));
+            const p = buildFullBackup();
+            if (p.app !== 'CrewAssist' || p.v !== 1 || p.counts.earnings !== 1 || p.counts.dutyMonths !== 1) return false;
+            localStorage.removeItem('crewAssist.archive');
+            localStorage.removeItem('crewAssist.dutyDays');
+            applyFullBackupData(p.data);
+            const arch = JSON.parse(localStorage.getItem('crewAssist.archive') || '[]');
+            const duty = JSON.parse(localStorage.getItem('crewAssist.dutyDays') || '{}');
+            return arch.length === 1 && arch[0].amount === 123.45 && duty['2026-10'].length === 1;
+        }), 'the one-shot backup builds and restores in the real browser');
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.dutyDays'); });
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

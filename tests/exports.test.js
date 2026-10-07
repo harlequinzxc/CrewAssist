@@ -33,7 +33,7 @@ const setupExport = (w) => {
     w.archDoExport('csv');
     await wait(80);
     R.ok(w.__clicks.some((n) => /^crewassist-earnings-.*\.csv$/.test(n)), 'PC: archive CSV export downloads');
-    R.eq(d.getElementById('dev-file-import').getAttribute('accept'), '.json,.txt,application/json,text/plain', 'import picker accepts .txt twins');
+    R.eq(d.getElementById('backup-file-restore').getAttribute('accept'), '.json,.txt,application/json,text/plain', 'the restore picker accepts .txt twins (v1.41.0 door)');
   }
 
   // iPhone: native share sheet, .json name kept, cancel delivers nothing
