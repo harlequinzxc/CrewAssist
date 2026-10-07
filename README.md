@@ -37,7 +37,7 @@ As of **v1.40.1** (`crewassist-v198`): a chat assistant with natural commands, t
 3. Proxy / live menus: Vercel CLI (`npm i -g vercel`) then `vercel dev`.
 4. Use a mobile viewport (or a phone) — the UI is built mobile-first.
 
-Install as a PWA from the phone browser. After a deploy, confirm the onboarding stamp matches `APP_VERSION` (currently `v1.40.0`) — a mismatch means cache, not code.
+Install as a PWA from the phone browser. After a deploy, confirm the onboarding stamp matches `APP_VERSION` (currently `v1.40.1`) — a mismatch means cache, not code.
 
 ## Tests
 `tests/` holds the jsdom behaviour suite: it boots the real `index.html` in a fake browser and asserts the feature contracts (12 suites, ~1,800 checks). `tests/smoke/` is the real-browser layer — it boots the app in actual Chromium and checks boot health, release stamps, What's New and the headline calculation semantics. Run the jsdom suite with `cd tests && npm install && npm test` (~25 s) and the smoke with `cd tests/smoke && npm install && node run.js`. The real-roster regression tests read every PDF in `docs/_reference_rosters/`, so a fresh clone runs the full suite out of the box. New features bring their test block; intentional behaviour changes update the matching block in the same sitting. Details and conventions: `tests/README.md`.
