@@ -80,6 +80,82 @@ const mkUntil = (d) => async (cond, ms) => {
     void d;
   }
 
+  // v1.40.0 hotfix: onboarding asks for the date of first solo
+  {
+    const { w, d } = await boot(APP); // no profile seeded: first-run onboarding shows
+    const ob = (id) => d.getElementById(id);
+    const type = (el, v) => { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); };
+    const rankFolded = () => ob('ob-rank-container').classList.contains('opacity-0');
+
+    R.ok(!!ob('ob-solo'), 'the first-solo field renders');
+    R.eq(ob('ob-solo').getAttribute('inputmode'), 'numeric', 'the date field summons the numeric keypad');
+    R.eq(ob('ob-solo').placeholder, 'DD/MM/YYYY', 'the placeholder teaches DD/MM/YYYY');
+    R.ok(rankFolded(), 'Rank stays folded on first run');
+
+    type(ob('ob-name'), 'Junior June');
+    R.ok(rankFolded(), 'a name alone does not reveal Rank');
+
+    type(ob('ob-solo'), '11022024');
+    R.eq(ob('ob-solo').value, '11/02/2024', 'the mask types 11022024 as 11/02/2024');
+    R.ok(rankFolded(), 'name + date without gender keeps Rank folded');
+
+    d.querySelectorAll('.ob-gender-btn')[0].click(); // Male
+    await wait(50);
+    R.ok(!rankFolded(), 'name + valid date + gender reveals Rank');
+    R.eq(Array.from(d.querySelectorAll('.ob-rank-btn')).map((b) => b.textContent.trim()).join(','), 'FS,LS,CS,IFM', 'male ranks list FS/LS/CS/IFM — no junior pill');
+
+    d.querySelectorAll('.ob-gender-btn')[1].click(); // Female
+    await wait(50);
+    R.eq(Array.from(d.querySelectorAll('.ob-rank-btn')).map((b) => b.textContent.trim()).join(','), 'FSS,LSS,CSS,IFM', 'female ranks list FSS/LSS/CSS/IFM — no junior pill');
+    d.querySelectorAll('.ob-gender-btn')[0].click(); // back to Male for the submit
+    await wait(50);
+
+    type(ob('ob-solo'), '31022024');
+    R.eq(ob('ob-solo').value, '31/02/2024', 'the mask formats 31/02/2024 too');
+    R.ok(rankFolded(), 'an impossible calendar date folds Rank away');
+
+    type(ob('ob-solo'), '01082026');
+    R.ok(!rankFolded(), 'a corrected date re-reveals Rank');
+    R.ok(ob('ob-submit').disabled === true, 'without a rank the submit stays inert');
+    d.querySelectorAll('.ob-rank-btn')[0].click(); // FS
+    await wait(50);
+    R.ok(ob('ob-submit').disabled === false, 'name + date + gender + rank enables Submit');
+    ob('ob-submit').click();
+    await wait(400);
+    const wn = d.getElementById('whatsnew-close');
+    if (wn && !d.getElementById('whatsnew-backdrop').classList.contains('hidden')) wn.click();
+    const stored = JSON.parse(w.eval('localStorage.getItem("crewAssist.profile")'));
+    R.ok(stored && stored.name === 'Junior June' && stored.gender === 'M' && stored.rank === 'FS' && stored.firstSoloYMD === '2026-08-01', 'submit stores the solo date as YYYY-MM-DD');
+
+    // the stored date prices the FS junior tier per flight date (profile swaps
+    // go through localStorage + initData(), the app's own reload path — the
+    // harness evals each script block separately, so appProfile is a closure)
+    const swap = (p) => w.eval('localStorage.setItem("crewAssist.profile", ' + JSON.stringify(JSON.stringify(p)) + '); initData();');
+    R.eq(w.eval('ifaRankKeyForDate("2026-10-07")'), 'Jr. FS', 'a first solo one month back keys Jr. FS');
+    R.eq(w.eval('ifaRankKeyForDate("2028-08-01")'), 'FS', 'the 24-month anniversary crosses to full FS');
+    swap({ name: 'Test Tan', gender: 'M', rank: 'LS', firstSoloYMD: '2026-08-01' });
+    R.eq(w.eval('ifaRankKeyForDate("2026-10-07")'), 'LS', 'LS never tiers');
+    swap({ name: 'Test Tan', gender: 'M', rank: 'FS' });
+    R.eq(w.eval('ifaRankKeyForDate("2026-10-07")'), 'FS', 'a pre-hotfix profile with no solo date keeps the full rate');
+    swap({ name: 'Test Tan', gender: 'M', rank: 'Jr. FS' });
+    R.eq(w.eval('ifaRankKeyForDate("2026-10-07")'), 'Jr. FS', 'a legacy picked Jr. FS rank still resolves');
+
+    // end to end: a card dated within 24 months of first solo prices $10
+    swap({ name: 'Test Tan', gender: 'M', rank: 'FS', firstSoloYMD: '2026-08-01' });
+    w.eval('renderCalculatorCard("both")');
+    await wait(150);
+    const card = d.querySelector('#chat-container [data-calc-card]:last-of-type');
+    const cid = card.querySelector('input[id$="-ifa-fn1"]').id.slice(0, -'-ifa-fn1'.length);
+    const set = (el, v) => { if (el) { el.value = v; el.dispatchEvent(new w.Event('input', { bubbles: true })); el.dispatchEvent(new w.Event('change', { bubbles: true })); } };
+    set(d.getElementById(cid + '-flight-type'), 'Turnaround');
+    set(d.getElementById(cid + '-ifa-fn1'), '123'); set(d.getElementById(cid + '-ifa-fn2'), '124');
+    set(d.getElementById(cid + '-ifa-d1'), '2026-10-07'); set(d.getElementById(cid + '-ifa-d2'), '2026-10-07');
+    set(d.getElementById(cid + '-ifa-t1'), '1:30'); set(d.getElementById(cid + '-ifa-t2'), '1:35');
+    R.eq(w.eval('computeCardResults("' + cid + '", "both").detail.rankRate'), 10, 'a card dated 2 months after first solo prices the junior $10 rate');
+    swap({ name: 'Test Tan', gender: 'M', rank: 'FS', firstSoloYMD: '2024-01-01' });
+    R.eq(w.eval('computeCardResults("' + cid + '", "both").detail.rankRate'), 13.5, 'a card past the 24-month mark prices the full $13.50');
+  }
+
   // v1.31.0: the UX-review release — labelled pill, aria, type floor, ink, hit areas
   {
     const fs = require('fs');
