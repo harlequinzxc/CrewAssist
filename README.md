@@ -1,6 +1,6 @@
 **CrewAssist** is a Progressive Web App (PWA) for Singapore Airlines (SIA) cabin crew. It is a mobile-first, chatbot-style assistant for inflight and layover allowance calculations, roster reading, and live digital inflight menus. It is an **unofficial** crew tool.
 
-As of **v1.43.0** (`crewassist-v202`): a chat assistant with natural commands, the COP/IFA/LMA allowance calculator (Default / Manual / Advanced interface modes, rules verified against the Staff Members' Agreement), roster-PDF import with one-tap Calculate-all, the **Earnings page** (Month / Year / All-time summaries, a twelve-month chart with projection, twelve insight cards), a roster calendar, live inflight menu viewer + print sheet, an offline menu archive, a five-step feature tour, and a developer rates editor. Next-agent instructions live in [`docs/HANDOVER.md`](docs/HANDOVER.md) (start with its **Cold start** section). Formulas live in [`docs/LOGIC.md`](docs/LOGIC.md). The SQ inflight-menu API map lives in [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md). The feature tour's beat-by-beat script lives in [`docs/TOUR-BREAKDOWN.md`](docs/TOUR-BREAKDOWN.md); the test-suite contracts live in [`tests/README.md`](tests/README.md).
+As of **v1.43.0** (`crewassist-v204`): a chat assistant with natural commands, the COP/IFA/LMA allowance calculator (Default / Manual / Advanced interface modes, rules verified against the Staff Members' Agreement), roster-PDF import with one-tap Calculate-all, the **Earnings page** (Month / Year / All-time summaries, a twelve-month chart with projection, twelve insight cards), a roster calendar, live inflight menu viewer + print sheet, an offline menu archive, a five-step feature tour, and a developer rates editor. Next-agent instructions live in [`docs/HANDOVER.md`](docs/HANDOVER.md) (start with its **Cold start** section). Formulas live in [`docs/LOGIC.md`](docs/LOGIC.md). The SQ inflight-menu API map lives in [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md). The feature tour's beat-by-beat script lives in [`docs/TOUR-BREAKDOWN.md`](docs/TOUR-BREAKDOWN.md); the test-suite contracts live in [`tests/README.md`](tests/README.md).
 
 ## Features & Goals
 - **Chatbot interface:** NLP-style intent matching for quick commands (`menu`, `print`, `IFA`, `LMA`, `COP` / `total`) plus natural commands (`cop sq802 6 oct sq807 8 oct`). Jump-to-latest control only shows when the thread is scrolled up. Typing dots play before every bot line; messages, cards and lookups animate in and out, and inputs stay locked while an animation runs.
@@ -22,7 +22,7 @@ As of **v1.43.0** (`crewassist-v202`): a chat assistant with natural commands, t
 
 ## File Structure
 - `index.html` — UI, chat, calculators, roster import, calendar, earnings, menu overlay, printer, and all app logic.
-- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v202`).
+- `manifest.json` & `sw.js` — PWA install and cache (`crewassist-v204`).
 - `tw.css` & `tw.config.cjs` — the compiled Tailwind stylesheet and the config that rebuilds it (rebuild when class names change; the CLI lives in `tests/smoke/node_modules`).
 - `rates.json` — default IFA modifiers and LMA region rates (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).

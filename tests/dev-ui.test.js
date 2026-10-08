@@ -401,7 +401,29 @@ const mkUntil = (d) => async (cond, ms) => {
     // frames, per-event geometry, and rest-time work run mid-gesture):
     R.ok(!/\.glass-panel \{[^}]*backdrop-filter/.test(src) && src.includes('--glass-solid-bg'), 'hotfix 18: the always-visible chrome (sticky header, chips, cards) carries no live blur — the same treatment the sheets got in hotfix 16');
     R.ok(src.includes('<link rel="stylesheet" href="./tw.css">') && !src.includes('cdn.tailwindcss.com'), 'hotfix 18: styles are the compiled ./tw.css — no runtime JIT compiler observes the document');
-    R.ok(src.indexOf('<link rel="stylesheet" href="./tw.css">') > src.lastIndexOf('</style>'), 'hotfix 19: the compiled sheet loads AFTER the inline styles — the CDN always injected last, and app classes that set display (the archive toast) rely on the .hidden utility winning that tie');
+    R.ok(src.indexOf('<link rel="stylesheet" href="./tw.css">') > src.lastIndexOf('</style>', src.indexOf('<script')), 'hotfix 19: the compiled sheet loads AFTER the inline styles — the CDN always injected last, and app classes that set display (the archive toast) rely on the .hidden utility winning that tie');
+    // v1.43.0 hotfix (owner order): every hover utility in the compiled
+    // sheet sits behind (hover:hover) — a finger tap latches :hover on
+    // touch, and an ungated wash would stick as a pressed state after
+    // release (the same latch that washed out the gold toggle)
+    {
+        const twc = fs.readFileSync(__dirname + '/../tw.css', 'utf8');
+        const gated = [false];
+        let allHover = 0, badHover = 0;
+        for (let i = 0; i < twc.length; i++) {
+            const ch = twc[i];
+            if (ch === '{') {
+                const p = Math.max(twc.lastIndexOf('{', i - 1), twc.lastIndexOf('}', i - 1), 0);
+                const head = twc.slice(p + 1, i).trim();
+                gated.push(head.indexOf('@media') === 0 ? head.indexOf('hover:hover') !== -1 : gated[gated.length - 1]);
+            } else if (ch === '}') gated.pop();
+            else if (ch === ':' && twc.indexOf('hover', i) === i + 1 && twc.slice(i - 5, i) !== 'hover') { allHover++; if (!gated[gated.length - 1]) badHover++; }
+        }
+        R.ok(allHover > 0, 'the compiled sheet still carries hover utilities');
+        R.eq(badHover, 0, 'v1.43.0 hotfix: every hover utility compiles behind (hover:hover) — a finger tap can never latch one');
+        R.ok(twc.indexOf('@media (hover:hover)') !== -1, 'the hover gate is present in the compiled sheet');
+        R.ok(src.indexOf('@media (hover:hover)') < src.indexOf('.ca-arch-iconbtn:hover'), 'v1.43.0 hotfix: the inline hover rules stay inside their (hover:hover) gate too');
+    }
     R.ok(src.includes('id="ca-tw-probe"') && src.includes('function caTwLoaded()'), 'the shell guard probes the live stylesheet (the sentinel span) instead of a CDN global');
     R.ok(src.includes('ca-hit w-10 h-10'), 'send / roster / scroll buttons grow past 48px effective');
     R.ok(src.includes('ca-arch-del ca-hit p-3'), 'archive entry delete is a 50px effective target');

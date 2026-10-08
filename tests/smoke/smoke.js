@@ -63,7 +63,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
 (async () => {
     const exe = await chromium.executablePath();
-    const browser = await puppeteer.launch({ executablePath: exe, args: chromium.args, headless: chromium.headless, defaultViewport: { width: 390, height: 844 } });
+    const browser = await puppeteer.launch({ executablePath: exe, args: chromium.args, headless: chromium.headless, defaultViewport: { width: 390, height: 844, hasTouch: true } });
     try {
         const page = await browser.newPage();
         await page.emulateTimezone('Asia/Singapore');
@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 2 && e.items.map((i) => i.c).join(',') === 'new,new'; }), 'the changelog carries the 1.43.0 entry (destination overlay + roster capture)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v202'), 'the service-worker cache name is bumped to v202 (APP_VERSION 1.43.0)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 7 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + two hotfix rounds)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v204'), 'the service-worker cache name is bumped to v204 (APP_VERSION 1.43.0, hotfix round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -92,7 +92,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.43\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
-        ok(true, 'closing What\'s New releases the welcome chat');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'closing What\'s New releases the welcome chat (and hides its backdrop)');
 
         console.log('— v1.40.0 behaviour in the real browser —');
         // 1. A KUL transit of exactly 180 minutes (arrival 10:00, report 13:00 for a 14:00 departure) — the inclusive boundary — earns lunch.
@@ -207,6 +207,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => openRosterCalendar());
         await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden'), { timeout: 5000 });
         await sleep(600);
+        ok(await page.evaluate(() => document.getElementById('ca-rc-fold').nextElementSibling === document.getElementById('ca-rc-tag') && document.getElementById('ca-rc-tag').nextElementSibling === document.getElementById('ca-rc-shot')), 'hotfix: the tag and camera sit right of the chevron');
         ok(await page.evaluate(() => {
             const g = document.getElementById('ca-rc-grid');
             const tagBtn = document.getElementById('ca-rc-tag');
@@ -219,6 +220,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
         await sleep(300);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !document.getElementById('ca-rc-shot').classList.contains('hidden')), 'one tap lights the overlay and shows the camera');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle fills gold when on (computed — immune to the sticky touch hover)');
         ok(await page.evaluate(() => {
             const t9 = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
             const t10 = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-tag');
@@ -226,19 +228,53 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const t12 = document.querySelector('.ca-rc-day[data-ymd="2026-10-12"] .ca-rc-tag');
             const vis = (el) => !!el && getComputedStyle(el).display !== 'none';
             return vis(t9) && t9.textContent === 'SYD' && t9.className.includes('ca-rc-tag-lo')
-                && vis(t10) && t10.textContent === 'SYD' && t10.className.includes('ca-rc-tag-ta')
-                && vis(b10) && b10.textContent === '2'
+                && !t10 && vis(b10) && b10.textContent === '2'
                 && vis(t12) && t12.textContent === 'KUL' && t12.className.includes('ca-rc-tag-ta');
-        }), 'the tags render: SYD orange outbound, SYD green homecoming with band 2, KUL turnaround');
+        }), 'hotfix: the tags render once each — SYD orange on the outbound day only, band 2 homecoming, KUL turnaround');
         await page.evaluate(() => { window.__rcLastShot = null; document.getElementById('ca-rc-shot').click(); });
-        await sleep(900);
-        ok(await page.evaluate(() => { const sh = window.__rcLastShot; return !!sh && sh.name === 'CrewAssist-Roster-October-2026.png' && sh.size > 2000; }), 'the capture renders a real PNG named app + month + year');
+        await page.waitForFunction(() => !!window.__rcLastShot, { timeout: 10000 });
+        ok(await page.evaluate(() => { const sh = window.__rcLastShot; return sh.name === 'CrewAssist-Roster-October-2026.png' && sh.size > 2000; }), 'the capture renders a real PNG named app + month + year');
+        ok(await page.evaluate(async () => {
+            const bmp = await createImageBitmap(window.__rcLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const data = x.getImageData(0, 0, c.width, c.height).data;
+            const seen = new Set();
+            for (let i = 0; i < data.length; i += 40) seen.add(data[i] + ',' + data[i + 1] + ',' + data[i + 2]);
+            return seen.size > 8 && bmp.width > 200;
+        }), 'hotfix: the capture photographs the live grid as-is (a blank or header-only shot would carry ~3 colors)');
         await page.evaluate(() => document.getElementById('ca-rc-fold').click());
         await sleep(600);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('hidden') && document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-shot').classList.contains('hidden') && !document.getElementById('ca-rc-grid').classList.contains('rc-tags-on')), 'collapsing hides both buttons and forces the overlay off');
         await page.evaluate(() => document.getElementById('ca-rc-close').click());
         await sleep(800);
         ok(await page.evaluate(() => document.getElementById('ca-roster-cal').classList.contains('hidden')), 'the calendar closes');
+        // hotfix: a finger tap must return a button to its resting look —
+        // hover utilities now compile behind (hover:hover), so a touch tap
+        // can never latch a wash (toggles keep their class-based state)
+        // the rig's viewport runs hasTouch, so Chrome natively reports
+        // (hover: none) — the world the owner's phone lives in. First clear
+        // the stage: the restore journey's reload re-offers What's New (a
+        // restored backup carries no seen-marker), and its backdrop would
+        // eat every pointer tap.
+        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
+        // closing What's New releases the welcome chat — and the chat-busy
+        // rest (hotfix 12) correctly refuses the calendar button while it
+        // types, so wait for the chat to go idle like a real user would
+        await page.waitForFunction(() => !document.documentElement.classList.contains('chat-busy'), { timeout: 20000 });
+        await sleep(300);
+        const restBg = await page.evaluate(() => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor);
+        await (await page.$('#btn-roster-cal')).tap();
+        await sleep(300);
+        // the reopen glide must land before the tag is tappable
+        await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden') && !document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-tag').getBoundingClientRect().top > 0, { timeout: 8000 });
+        await sleep(400);
+        ok(await page.evaluate((before) => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor === before, restBg), 'hotfix: a finger tap settles back to rest — no sticky hover wash');
+        await (await page.$('#ca-rc-tag')).tap();
+        await sleep(300);
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle is exempt — its on-state survives the release');
+        await page.evaluate(() => document.getElementById('ca-rc-close').click());
+        await sleep(400);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.dutyDays'); localStorage.removeItem('crewAssist.allFlights'); });
 
         console.log('— health —');

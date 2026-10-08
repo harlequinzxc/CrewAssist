@@ -312,6 +312,13 @@
         #ca-rc-grid.rc-tags-on .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
         @keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 rgba(201,162,39,.9); } 100% { box-shadow: 0 0 0 14px rgba(201,162,39,0); } }
         .ca-rc-flash { animation: ca-rc-flash .45s ease-out; }
+        /* hotfix (owner report: the toggle never looked gold on the phone):
+           a tap latches :hover on touch devices, and the Tailwind hover wash
+           (class + pseudo-class) outranks a plain utility — an ID selector
+           outranks them both, so the gold survives the sticky hover. */
+        #ca-rc-tag.ca-rc-tagon { background: #C9A227; color: #0B0E14; }
+        /* hotfix: a day with two stops wears one tag per corner, same tilt */
+        .ca-rc-tag.slot-b { left: -3px; right: auto; }
         .ca-rc-nav { border-radius: 999px; transition: background-color .15s ease, transform .12s ease; }
         .ca-rc-nav:active { transform: scale(.92); }
         @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: rgba(127,127,127,.13); } }
@@ -1652,16 +1659,17 @@
                             <h3 id="ca-rc-month" class="font-bold text-base text-left leading-none"></h3>
                         </button>
                         <button type="button" id="ca-rc-fold" aria-label="Collapse calendar" class="ca-hit p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><span id="ca-rc-fold-up"><i data-lucide="chevron-up" class="w-5 h-5"></i></span><span id="ca-rc-fold-down" class="hidden"><i data-lucide="chevron-down" class="w-5 h-5"></i></span></button>
+                        <!-- v1.43.0 + hotfix (owner order): the destination overlay
+                             and the roster capture sit RIGHT OF THE CHEVRON. The tag
+                             fills gold while the overlay runs; the camera appears
+                             only when there are tags to capture; both hide when the
+                             calendar is collapsed. -->
+                        <button type="button" id="ca-rc-tag" aria-label="Destination tags" aria-pressed="false" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="tag" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-shot" aria-label="Capture the roster as an image" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="camera" class="w-5 h-5"></i></button>
                     </div>
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-next" aria-label="Next month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-                        <!-- v1.43.0 (owner spec): the destination overlay + the roster
-                             capture. The tag fills gold while the overlay runs; the
-                             camera appears only when there are tags to capture, and
-                             both hide when the calendar is collapsed. -->
-                        <button type="button" id="ca-rc-tag" aria-label="Destination tags" aria-pressed="false" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="tag" class="w-5 h-5"></i></button>
-                        <button type="button" id="ca-rc-shot" aria-label="Capture the roster as an image" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="camera" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
                 </div>
@@ -2112,6 +2120,11 @@
             { v: '1.43.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'Destination tags and arrival badges light up the roster calendar.' },
                 { c: 'new', t: 'Capture the roster as a PNG to share.' },
+                { c: 'fix', t: 'One tag per destination; multi-sector trips name every stop.' },
+                { c: 'fix', t: 'The tag toggle sits by the chevron and stays gold.' },
+                { c: 'fix', t: 'Each stop colors by its own layover or turnaround.' },
+                { c: 'fix', t: 'The capture photographs the calendar exactly as shown.' },
+                { c: 'fix', t: 'Tapped buttons settle back to rest on touch screens.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -4073,9 +4086,10 @@
                 if (t.sectors.some(s => !s.stdHm || !s.staHm || (!s.ftHm && !s.paxing) || !s.depDate || !s.arrDate)) {
                     trip.ok = false; trip.reason = (trip.reason ? trip.reason + '; ' : '') + 'some times could not be read';
                 }
-                if (!trip.ok) return trip;
-                // Layover vs turnaround: any intermediate ground time over 6h
-                // (same threshold as the LMA shuttle suggestion) is a layover.
+                // v1.43.0 hotfix: the Layover/Turnaround call moves ABOVE the
+                // ok-return — the calendar tags 3-sector stops (SIN-KUL-PEN-SIN)
+                // and the calculator's 2-or-4 support must not freeze them as
+                // default-Layover. Values for priced trips are unchanged.
                 let maxGround = -1;
                 for (let i = 0; i < t.sectors.length - 1; i++) {
                     const a = t.sectors[i], b = t.sectors[i + 1];
@@ -4085,6 +4099,7 @@
                     if (g > maxGround) maxGround = g;
                 }
                 trip.type = maxGround <= 360 ? 'Turnaround' : 'Layover';
+                if (!trip.ok) return trip;
                 for (let i = 0; i < t.sectors.length - 1; i++) {
                     const a = t.sectors[i], b = t.sectors[i + 1];
                     if (a.arr === 'SIN') continue;
@@ -4606,24 +4621,42 @@
             return rosterChainTrips(legs);
         }
         function rcMarksForMonth(ym) {
+            // v1.43.0 hotfix (owner orders): NO DUPLICATED IATA TAGS, and the
+            // color is PER STOP. Every DISTINCT stop appears exactly once, on
+            // the day the crew arrives there (SIN-SYD-SIN shows one SYD, on
+            // the outbound day; SIN-NRT-LAX-SIN shows NRT and LAX); the
+            // homecoming day carries only its arrival badge. A day caps at
+            // two tags — one per corner. Orange means the crew LAYS OVER at
+            // that station (>6h on the ground there); green means a quick
+            // turnaround — so SIN-JNB-CPT-JNB-SIN wears orange at JNB and
+            // green at CPT on the SAME trip.
             const marks = {};
             const put = (ymd, o) => { const cur = marks[ymd] || (marks[ymd] = {}); Object.keys(o).forEach((k) => { if (cur[k] === undefined) cur[k] = o[k]; }); };
             rcTripsAll().forEach((t) => {
                 if (!t || !t.sectors || !t.sectors.length) return;
-                const first = t.sectors[0], last = t.sectors[t.sectors.length - 1];
-                if (!first || !last) return;
-                const oneDay = first.depDate === last.arrDate;
-                if (first.dep === 'SIN' && first.arr && first.arr !== 'SIN' && first.depDate) {
-                    put(first.depDate, { tag: first.arr, tagKind: (oneDay || t.type !== 'Layover') ? 'ta' : 'lo' });
-                }
-                if (last.arr === 'SIN' && last.arrDate) {
-                    if (!oneDay && last.dep && last.dep !== 'SIN') put(last.arrDate, { tag: last.dep, tagKind: 'ta' });
+                const seen = {};
+                t.sectors.forEach((sec, i) => {
+                    if (!sec || !sec.arr || sec.arr === 'SIN' || seen[sec.arr] || !sec.arrDate) return;
+                    seen[sec.arr] = 1;
+                    // v1.43.0 hotfix: per-stop color — the ground time at THIS
+                    // station decides, not the trip's overall type
+                    const nxt = t.sectors[i + 1];
+                    const am = (sec.arrDate && sec.staHm) ? new Date(sec.arrDate + 'T' + sec.staHm + ':00') : null;
+                    const bm = (nxt && nxt.dep === sec.arr && nxt.depDate && nxt.stdHm) ? new Date(nxt.depDate + 'T' + nxt.stdHm + ':00') : null;
+                    const ground = (am && bm) ? (bm - am) / 60000 : 99999;
+                    const kind = ground > 360 ? 'lo' : 'ta';
+                    const cur = marks[sec.arrDate] || (marks[sec.arrDate] = {});
+                    if (!cur.tags) cur.tags = [];
+                    if (cur.tags.length < 2 && !cur.tags.some((x) => x.c === sec.arr)) cur.tags.push({ c: sec.arr, k: kind });
+                });
+                const last = t.sectors[t.sectors.length - 1];
+                if (last && last.arr === 'SIN' && last.arrDate) {
                     const band = rcArrivalBand(last.staHm);
                     if (band) put(last.arrDate, { badge: band });
                 }
             });
             const out = {};
-            Object.keys(marks).forEach((ymd) => { if (String(ymd).slice(0, 7) === ym) out[ymd] = marks[ymd]; });
+            Object.keys(marks).forEach((ymd) => { if (String(ymd).slice(0, 7) === ym && (marks[ymd].tags || marks[ymd].badge)) out[ymd] = marks[ymd]; });
             return out;
         }
         // the overlay's UI state — deliberately NOT persisted: every open
@@ -4637,17 +4670,20 @@
             if (grid) grid.classList.toggle('rc-tags-on', rcTagsOn);
             if (tagBtn) {
                 tagBtn.classList.toggle('hidden', !!collapsed);
-                tagBtn.classList.toggle('bg-sia-gold', rcTagsOn);
-                tagBtn.classList.toggle('text-black', rcTagsOn);
+                tagBtn.classList.toggle('ca-rc-tagon', rcTagsOn);
                 tagBtn.setAttribute('aria-pressed', rcTagsOn ? 'true' : 'false');
             }
             if (shotBtn) shotBtn.classList.toggle('hidden', !!collapsed || !rcTagsOn);
         }
-        // v1.43.0 (owner spec): the roster capture — month title, weekday
-        // labels and the full grid, redrawn onto a canvas at device density
-        // from the LIVE layout (real positions, real colors, real fonts),
-        // then the native share sheet on mobile, a download everywhere
-        // else. Faithful by construction: it walks the elements on screen.
+        // v1.43.0 (owner spec + hotfix): the roster capture — the month
+        // header is drawn by hand (the real header is buttons), and the grid
+        // is CAPTURED AS IS: a generic walker paints every element's live
+        // computed box (fill, border, radius, rotation) and every text run
+        // at its real Range-rect position, so the PNG mirrors the screen
+        // with zero calendar-specific drawing rules. (A foreignObject
+        // rasterizer was tried first — Chromium taints any canvas that drew
+        // an SVG containing a foreignObject, so toBlob refuses to export.
+        // Don't go back there.)
         function rosterShotTheme() {
             return document.documentElement.classList.contains('dark') ? { bg: '#080B14' } : { bg: '#F6F1E8' };
         }
@@ -4674,67 +4710,90 @@
             ctx.scale(dpr, dpr);
             ctx.fillStyle = rosterShotTheme().bg;
             ctx.fillRect(0, 0, w, h);
-            const cs = (el) => window.getComputedStyle(el);
-            const rel = (r) => ({ x: r.left - x0, y: r.top - y0, w: r.width, h: r.height });
-            const rrect = (x, y, ww, hh, rd) => { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, rd); else ctx.rect(x, y, ww, hh); ctx.fill(); };
-            // the month title, centered like a headline
-            const hcs = cs(header);
+            // the only hand-drawn part (owner order: capture the grid as
+            // is): the month title, centered like a headline — the real
+            // header is buttons, and buttons have no business in a share
+            const hcs = window.getComputedStyle(header);
             ctx.fillStyle = hcs.color || '#111827';
             ctx.font = (hcs.fontWeight || '700') + ' ' + (parseFloat(hcs.fontSize) || 16) + 'px "Plus Jakarta Sans", sans-serif';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(String(header.textContent || '').trim(), w / 2, Math.max(10, hRect.height / 2));
-            // weekday labels
-            grid.querySelectorAll('#ca-rc-dow > span').forEach((el) => {
-                const r = rel(el.getBoundingClientRect()); const st = cs(el);
-                ctx.fillStyle = st.color || '#9CA3AF';
-                ctx.font = (st.fontWeight || '700') + ' ' + (parseFloat(st.fontSize) || 11) + 'px "Plus Jakarta Sans", sans-serif';
-                ctx.fillText(String(el.textContent || '').trim(), r.x + r.w / 2, r.y + r.h / 2);
+            return { canvas: canvas, ctx: ctx, w: w, h: h, grid: grid, gy: gRect.top - y0 };
+        }
+        function rosterShotPaintBox(ctx, x, y, w, h, st) {
+            const bg = st.backgroundColor || '';
+            const hasBg = !!bg && !/,\s*0\)$/.test(bg);
+            const bwd = parseFloat(st.borderTopWidth) || 0;
+            const bc = st.borderTopColor || '';
+            const hasBorder = bwd > 0 && !!bc && !/,\s*0\)$/.test(bc);
+            if (!hasBg && !hasBorder) return;
+            const rd = String(st.borderRadius || '0').split(/\s+/).map(function (v) { return parseFloat(v) || 0; });
+            const radii = rd.length === 1 ? [rd[0], rd[0], rd[0], rd[0]] : [rd[0] || 0, rd[1] || 0, rd[2] || 0, rd[3] || 0];
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(x, y, w, h, radii); else ctx.rect(x, y, w, h);
+            if (hasBg) { ctx.fillStyle = bg; ctx.fill(); }
+            if (hasBorder) { ctx.lineWidth = bwd; ctx.strokeStyle = bc; ctx.stroke(); }
+        }
+        function rosterShotPaintTexts(ctx, el, st, toX, toY, local) {
+            // direct text runs only — containers own no glyphs
+            const texts = [];
+            for (let n = 0; n < el.childNodes.length; n++) {
+                const node = el.childNodes[n];
+                if (node.nodeType === 3 && node.nodeValue && node.nodeValue.trim()) texts.push(node);
+            }
+            if (!texts.length) return;
+            ctx.fillStyle = st.color || '#111827';
+            ctx.font = (st.fontStyle || 'normal') + ' ' + (st.fontWeight || '400') + ' ' + (st.fontSize || '12px') + ' ' + (st.fontFamily || 'sans-serif');
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            texts.forEach(function (node) {
+                const t = node.nodeValue.trim();
+                if (local) { ctx.fillText(t, 0, 0); return; }   // a rotated box — we sit at its center
+                try {
+                    const range = document.createRange();
+                    range.selectNodeContents(node);
+                    const rr = range.getBoundingClientRect();
+                    if (rr.width > 0 && rr.height > 0) ctx.fillText(t, toX(rr.left + rr.width / 2), toY(rr.top + rr.height / 2));
+                } catch (e) {}
             });
-            // the duty pills
-            grid.querySelectorAll('.ca-rc-pill').forEach((el) => {
-                const r = rel(el.getBoundingClientRect()); const st = cs(el);
-                ctx.fillStyle = st.backgroundColor || 'rgba(0,0,0,.2)';
-                const rd = String(st.borderRadius || '0').split(/\s+/).map((v) => parseFloat(v) || 0);
-                rrect(r.x, r.y, r.w, r.h, [rd[0] || 0, rd[1] || 0, rd[2] || 0, rd[3] || 0]);
+        }
+        function rosterShotPaintGrid(ctx, gridEl, ox, oy) {
+            // every visible element, painted from its own computed style —
+            // what is on screen is what lands in the PNG
+            const gRect = gridEl.getBoundingClientRect();
+            const walk = [gridEl].concat(Array.prototype.slice.call(gridEl.querySelectorAll('*')));
+            walk.forEach(function (el) {
+                const st = window.getComputedStyle(el);
+                if (st.display === 'none' || st.visibility === 'hidden') return;
+                const r = el.getBoundingClientRect();
+                if (r.width < 1 || r.height < 1) return;
+                const alpha = parseFloat(st.opacity);
+                ctx.save();
+                if (isFinite(alpha) && alpha < 1) ctx.globalAlpha = Math.max(0, alpha);
+                const tr = (st.transform && st.transform !== 'none') ? st.transform : '';
+                if (tr) {
+                    // the grid's only transform is a rotation about the
+                    // element's center — sit at the center, turn, paint the
+                    // untransformed box (rotation preserves the center)
+                    const m = tr.match(/matrix\(([^)]+)\)/);
+                    const parts = m ? m[1].split(',').map(parseFloat) : null;
+                    const ang = parts ? Math.atan2(parts[1], parts[0]) : 0;
+                    const bw = parseFloat(st.width) || r.width, bh = parseFloat(st.height) || r.height;
+                    ctx.translate(ox + r.left - gRect.left + r.width / 2, oy + r.top - gRect.top + r.height / 2);
+                    ctx.rotate(ang);
+                    rosterShotPaintBox(ctx, -bw / 2, -bh / 2, bw, bh, st);
+                    rosterShotPaintTexts(ctx, el, st, null, null, true);
+                } else {
+                    rosterShotPaintBox(ctx, ox + r.left - gRect.left, oy + r.top - gRect.top, r.width, r.height, st);
+                    rosterShotPaintTexts(ctx, el, st,
+                        function (v) { return v - gRect.left + ox; },
+                        function (v) { return v - gRect.top + oy; }, false);
+                }
+                ctx.restore();
             });
-            // numbers, today bars, tags, badges
-            grid.querySelectorAll('.ca-rc-day').forEach((day) => {
-                const num = day.querySelector('.ca-rc-num');
-                if (num) {
-                    const r = rel(num.getBoundingClientRect()); const st = cs(num);
-                    ctx.fillStyle = st.color || '#1F2937';
-                    ctx.font = (st.fontWeight || '700') + ' ' + (parseFloat(st.fontSize) || 13) + 'px "Plus Jakarta Sans", sans-serif';
-                    ctx.fillText(String(num.textContent || '').trim(), r.x + r.w / 2, r.y + r.h / 2);
-                }
-                const bar = day.querySelector('.ca-rc-bar.is-today');
-                if (bar) { const r = rel(bar.getBoundingClientRect()); ctx.fillStyle = '#c9a227'; rrect(r.x, r.y, r.w, r.h, r.h / 2); }
-                const tag = day.querySelector('.ca-rc-tag');
-                if (tag) {
-                    const r = rel(tag.getBoundingClientRect()); const st = cs(tag);
-                    ctx.save();
-                    ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
-                    ctx.rotate(-14 * Math.PI / 180);
-                    ctx.fillStyle = st.backgroundColor || '#15803D';
-                    rrect(-r.w / 2, -r.h / 2, r.w, r.h, 3);
-                    ctx.fillStyle = st.color || '#fff';
-                    ctx.font = '700 ' + (parseFloat(st.fontSize) || 8) + 'px "Space Mono", monospace';
-                    ctx.fillText(String(tag.textContent || '').trim(), 0, 0);
-                    ctx.restore();
-                }
-                const bdg = day.querySelector('.ca-rc-badge');
-                if (bdg) {
-                    const r = rel(bdg.getBoundingClientRect()); const st = cs(bdg);
-                    ctx.fillStyle = st.backgroundColor || '#111827';
-                    rrect(r.x, r.y, r.w, r.h, 3);
-                    ctx.fillStyle = st.color || '#F9FAFB';
-                    ctx.font = '800 ' + (parseFloat(st.fontSize) || 8.5) + 'px "Plus Jakarta Sans", sans-serif';
-                    ctx.fillText(String(bdg.textContent || '').trim(), r.x + r.w / 2, r.y + r.h / 2);
-                }
-            });
-            return { canvas: canvas, w: w, h: h };
         }
         function rosterShotDeliver(blob, name) {
-            try { window.__rcLastShot = { name: name, size: blob.size }; } catch (e) {}
+            try { window.__rcLastShot = { name: name, size: blob.size, blob: blob }; } catch (e) {}
             let shared = false;
             try {
                 const file = new File([blob], name, { type: 'image/png' });
@@ -4762,6 +4821,7 @@
             try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
             const built = buildRosterShotCanvas();
             if (!built) return;
+            try { rosterShotPaintGrid(built.ctx, built.grid, 0, built.gy); } catch (e) { return; }
             const name = rosterShotFilename(rcViewYm);
             try {
                 built.canvas.toBlob((blob) => { if (blob) rosterShotDeliver(blob, name); }, 'image/png');
@@ -4902,10 +4962,11 @@
                     if (dd < 1 || dd > daysIn) { html += '<span></span>'; continue; }
                     const ymd = ymdOf(dd);
                     const mk = marks[ymd] || null;
+                    const tagsHtml = (mk && mk.tags) ? mk.tags.map((tg, i) => '<span class="ca-rc-tag ca-rc-tag-' + tg.k + (i ? ' slot-b' : '') + '" aria-hidden="true">' + rosterEsc(tg.c) + '</span>').join('') : '';
                     html += '<button type="button" class="ca-rc-day" data-ymd="' + ymd + '" aria-label="' + rosterShortDate(ymd) + '">'
                         + '<span class="ca-rc-num">' + dd + '</span>'
                         + '<span class="ca-rc-bar' + (ymd === today ? ' is-today' : '') + '" aria-hidden="true"></span>'
-                        + (mk && mk.tag ? '<span class="ca-rc-tag ca-rc-tag-' + mk.tagKind + '" aria-hidden="true">' + rosterEsc(mk.tag) + '</span>' : '')
+                        + tagsHtml
                         + (mk && mk.badge ? '<span class="ca-rc-badge" aria-hidden="true">' + mk.badge + '</span>' : '')
                         + '</button>';
                 }
