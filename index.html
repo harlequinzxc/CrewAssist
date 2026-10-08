@@ -313,8 +313,12 @@
         html.dark .ca-rc-badge { background: rgba(0,0,0,.74); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
         @keyframes ca-rc-pop { from { opacity: 0; transform: rotate(-14deg) scale(.3); } to { opacity: 1; transform: rotate(-14deg) scale(1); } }
         @keyframes ca-rc-popb { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
-        #ca-rc-grid.rc-tags-on .ca-rc-tag { animation: ca-rc-pop .18s ease-out both; }
-        #ca-rc-grid.rc-tags-on .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
+        /* round 15 (owner order): the pop-in is a ONE-SHOT on the toggle
+           itself — the transient rc-tags-pop class carries it and leaves
+           after the window, so marks rendered by a month change (fresh DOM
+           under the persistent rc-tags-on) arrive already settled. */
+        #ca-rc-grid.rc-tags-pop .ca-rc-tag { animation: ca-rc-pop .18s ease-out both; }
+        #ca-rc-grid.rc-tags-pop .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
         /* hotfix (owner order): showing and hiding always ANIMATES — the
            marks pop back OUT before the overlay drops them, and the
            header buttons pop in and out instead of blinking. */
@@ -2148,6 +2152,8 @@
                 { c: 'fix', t: 'Tags and badges grow again, never touching each other.' },
                 { c: 'fix', t: 'The KUL wake-up and report lines sit closer to departure.' },
                 { c: 'fix', t: 'Time zones now self-check at boot; East Malaysia zones read true.' },
+                { c: 'fix', t: 'Marks pop in once; month changes never replay the pop.' },
+                { c: 'fix', t: 'The swipe respects the data edges exactly like the arrows.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -4717,7 +4723,17 @@
                 if (rcTagsOn) {
                     if (grid.__rcOutT) { clearTimeout(grid.__rcOutT); grid.__rcOutT = null; }
                     grid.classList.remove('rc-tags-out');
+                    // round 15 (owner order): only a true off→on transition
+                    // pops the marks in — re-syncs never replay it, and the
+                    // transient rc-tags-pop leaves after the window so
+                    // marks rendered later (month changes) stay settled
+                    const fresh = !grid.classList.contains('rc-tags-on');
                     grid.classList.add('rc-tags-on');
+                    if (fresh) {
+                        grid.classList.add('rc-tags-pop');
+                        if (grid.__rcPopT) clearTimeout(grid.__rcPopT);
+                        grid.__rcPopT = setTimeout(function () { grid.classList.remove('rc-tags-pop'); grid.__rcPopT = null; }, 400);
+                    }
                 } else if (grid.classList.contains('rc-tags-on')) {
                     // hotfix (owner order): the marks pop back OUT before
                     // the overlay drops them — a quick reverse of the pop-in
@@ -5054,6 +5070,11 @@
         function rcPaintGrid(ym) {
             const grid = document.getElementById('ca-rc-grid');
             if (!grid) return;
+            // round 15 (owner order): a repaint means the month changed —
+            // any live pop-in ends at once so the fresh marks (new DOM)
+            // never replay the animation
+            if (grid.__rcPopT) { clearTimeout(grid.__rcPopT); grid.__rcPopT = null; }
+            grid.classList.remove('rc-tags-pop');
             grid.innerHTML = rcMonthHtml(ym);
             const emptyEl = document.getElementById('ca-rc-empty');
             if (emptyEl) {
@@ -5962,6 +5983,22 @@
                             // for real horizontal intent before it takes the
                             // gesture — plain day taps must keep landing
                             if (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+                            // round 15 (owner order): a parked track must
+                            // respect the data edges exactly like the arrows —
+                            // a hold-then-swipe toward a month that isn't
+                            // there disarms at once (no rubber-band, no clone
+                            // sliding in) instead of dragging and snapping
+                            // back. The listeners stay live, so a finger that
+                            // swings the other way still engages normally.
+                            {
+                                const months = rosterCalMonths();
+                                const i = months.indexOf(rcViewYm);
+                                if ((dx > 0 && i <= 0) || (dx < 0 && i >= months.length - 1)) {
+                                    rcDragStop(true);
+                                    rcDrag.moved = false;
+                                    return;
+                                }
+                            }
                             rcDrag.moved = true;
                             grid.classList.add('ca-rc-drag');
                         }

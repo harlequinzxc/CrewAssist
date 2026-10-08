@@ -862,5 +862,95 @@ const synthItems = [].concat(
     }
   }
 
+  {
+    // ---- round 15 (owner orders): the marks pop in ONCE — month changes
+    // (arrow or swipe) never replay the pop — and a hold-then-swipe toward
+    // a month that isn't there is as dead as the greyed arrow ----
+    const { w, d } = await boot(APP, { now: '2026-10-04T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2026-10': [
+          { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-05', std: '08:25', sta: '09:35', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:10', ac: '7M8', rpt: '', pos: false },
+          { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-05', std: '10:25', sta: '11:45', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:20', ac: '7M8', rpt: '', pos: false }
+        ],
+        '2026-11': [
+          { fn: '118', dep: 'SIN', arr: 'KUL', ymd: '2026-11-14', std: '09:00', sta: '10:10', stdYmd: '2026-11-14', staYmd: '2026-11-14', ft: '01:10', ac: '7M8', rpt: '', pos: false }
+        ]
+      }));
+      x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({
+        '2026-10': [
+          { ymd: '2026-10-05', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k1' }
+        ],
+        '2026-11': [
+          { ymd: '2026-11-14', kind: 'fly', code: '', loc: '', fns: ['118'], dkey: 'k2' }
+        ]
+      }));
+    } });
+    w.eval('openRosterCalendar()');
+    await wait(500);
+    const grid = d.getElementById('ca-rc-grid');
+    const tagBtn = d.getElementById('ca-rc-tag');
+    const month = () => d.getElementById('ca-rc-month').textContent;
+    const src15 = fs.readFileSync(APP, 'utf8');
+    R.ok(src15.indexOf('#ca-rc-grid.rc-tags-pop .ca-rc-tag') !== -1 && src15.indexOf('rc-tags-on .ca-rc-tag { animation') === -1, 'the pop-in animation rides the transient rc-tags-pop class, never the persistent rc-tags-on');
+    // (1) a fresh on-transition pops; the transient class leaves after its window
+    tagBtn.click();
+    await wait(60);
+    R.ok(grid.classList.contains('rc-tags-on') && grid.classList.contains('rc-tags-pop'), 'a fresh on-transition pops the marks in');
+    await wait(500);
+    R.ok(!grid.classList.contains('rc-tags-pop') && grid.classList.contains('rc-tags-on'), 'the transient pop class leaves after its window — the overlay stays lit');
+    // (2) an ARROW month change never re-pops the fresh marks
+    d.getElementById('ca-rc-next').click();
+    await wait(500);
+    R.ok(month().indexOf('Nov 2026') === 0, 'the arrow advances to November');
+    R.ok(grid.classList.contains('rc-tags-on') && !grid.classList.contains('rc-tags-pop') && !!d.querySelector('.ca-rc-day[data-ymd="2026-11-14"] .ca-rc-tag'), 'an arrow month change keeps the overlay lit — the November mark arrives settled, never re-popped');
+    // (3) a SWIPE month change never re-pops either
+    d.getElementById('ca-rc-prev').click();
+    await wait(500);
+    const flick = (x1, x2) => {
+      const a = new w.Event('pointerdown', { bubbles: true }); a.clientX = x1; a.clientY = 300; grid.dispatchEvent(a);
+      const b = new w.Event('pointerup', { bubbles: true }); b.clientX = x2; b.clientY = 300; grid.dispatchEvent(b);
+    };
+    flick(200, 20);
+    await wait(600);
+    R.ok(month().indexOf('Nov 2026') === 0, 'the flick lands on November');
+    R.ok(grid.classList.contains('rc-tags-on') && !grid.classList.contains('rc-tags-pop'), 'a swipe month change never re-pops the marks either');
+    // (4) hotfix B: a HOLD-then-swipe toward a missing month is completely
+    // dead — the parked track disarms instead of rubber-banding a clone in
+    const holdSwipe = async (x1, x2) => {
+      const a = new w.Event('pointerdown', { bubbles: true }); a.clientX = x1; a.clientY = 300; grid.dispatchEvent(a);
+      await wait(180);   // past the 140ms park
+      for (let k = 1; k <= 4; k++) {
+        const mv = new w.Event('pointermove', { bubbles: true });
+        mv.clientX = Math.round(x1 + (x2 - x1) * k / 4); mv.clientY = 300;
+        grid.dispatchEvent(mv);
+      }
+    };
+    const lift = (x2) => { const b = new w.Event('pointerup', { bubbles: true }); b.clientX = x2; b.clientY = 300; grid.dispatchEvent(b); };
+    await holdSwipe(200, 20);   // at Nov (the LAST month) toward December — nothing there
+    R.ok(!grid.classList.contains('ca-rc-drag') && !grid.querySelector('.ca-rc-track'), 'a hold-then-swipe toward a missing month disarms at once — no rubber-band, no track');
+    lift(20);
+    await wait(600);
+    R.ok(month().indexOf('Nov 2026') === 0, 'the release changes nothing at the last data month');
+    // control: the same gesture toward a REAL month still glides (October)
+    await holdSwipe(200, 420);
+    R.ok(grid.classList.contains('ca-rc-drag'), 'a hold-then-swipe toward a real month takes the gesture');
+    lift(420);
+    await wait(600);
+    R.ok(month().indexOf('Oct 2026') === 0, 'the parked drag still glides into a real month — the disarm only guards the void');
+    // the mirror edge: at Oct (the FIRST month) toward September — dead too
+    await holdSwipe(200, 420);
+    R.ok(!grid.classList.contains('ca-rc-drag') && !grid.querySelector('.ca-rc-track'), 'the mirror edge: a hold-then-swipe before the first data month disarms too');
+    lift(420);
+    await wait(600);
+    R.ok(month().indexOf('Oct 2026') === 0, 'the release changes nothing at the first data month');
+    // (5) the fast race: a repaint mid-window strips the pop at once
+    tagBtn.click(); await wait(40); tagBtn.click(); await wait(40);   // off, rescue on — a fresh pop
+    R.ok(grid.classList.contains('rc-tags-on') && grid.classList.contains('rc-tags-pop'), 'each on-transition pops again (the rescue re-pops)');
+    d.getElementById('ca-rc-next').click();
+    await wait(80);
+    R.ok(!grid.classList.contains('rc-tags-pop'), 'a repaint mid-window strips the pop at once — marks rendered by a month change arrive settled');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

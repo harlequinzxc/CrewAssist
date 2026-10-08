@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 14 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + six hotfix rounds)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v208'), 'the service-worker cache name is bumped to v208 (APP_VERSION 1.43.0, hotfix round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 16 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + eight hotfix rounds)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v209'), 'the service-worker cache name is bumped to v209 (APP_VERSION 1.43.0, hotfix round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -208,12 +208,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
                 { ymd: '2026-10-09', kind: 'fly', code: '', loc: '', fns: ['231'], dkey: 'k1' },
                 { ymd: '2026-10-10', kind: 'fly', code: '', loc: '', fns: ['232'], dkey: 'k1' },
                 { ymd: '2026-10-12', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k2' },
+            ], '2026-11': [
+                { ymd: '2026-11-14', kind: 'fly', code: '', loc: '', fns: ['118'], dkey: 'k3' },
             ] }));
             localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
                 { fn: '231', dep: 'SIN', arr: 'SYD', ymd: '2026-10-09', std: '09:00', sta: '19:05', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '08:05', ac: '359', rpt: '', pos: false },
                 { fn: '232', dep: 'SYD', arr: 'SIN', ymd: '2026-10-10', std: '07:30', sta: '13:40', stdYmd: '2026-10-10', staYmd: '2026-10-10', ft: '08:10', ac: '359', rpt: '', pos: false },
                 { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-12', std: '08:25', sta: '09:35', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:10', ac: '7M8', rpt: '', pos: false },
                 { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-12', std: '10:25', sta: '11:45', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:20', ac: '7M8', rpt: '', pos: false },
+            ], '2026-11': [
+                { fn: '118', dep: 'SIN', arr: 'KUL', ymd: '2026-11-14', std: '09:00', sta: '10:10', stdYmd: '2026-11-14', staYmd: '2026-11-14', ft: '01:10', ac: '7M8', rpt: '', pos: false },
             ] }));
         });
         await page.evaluate(() => openRosterCalendar());
@@ -277,6 +281,44 @@ async function calcCard(page, { type, t1, t2, lma }) {
             for (let i = 0; i < data.length; i += 40) seen.add(data[i] + ',' + data[i + 1] + ',' + data[i + 2]);
             return seen.size > 8 && bmp.width > 200;
         }), 'hotfix: the capture photographs the live grid as-is (a blank or header-only shot would carry ~3 colors)');
+        // round 15 (owner orders): the pop-in is a ONE-SHOT on the toggle —
+        // a month change never replays it, and a hold-then-swipe toward a
+        // missing month is as dead as the greyed arrow (real gesture, real
+        // pointer stream, real Chromium)
+        ok(await page.evaluate(() => {
+            const g = document.getElementById('ca-rc-grid');
+            const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+            return g.classList.contains('rc-tags-on') && !g.classList.contains('rc-tags-pop') && getComputedStyle(t).animationName === 'none';
+        }), 'round 15: after the pop window the marks sit settled — overlay on, no animation running');
+        await page.evaluate(() => document.getElementById('ca-rc-tag').click());
+        await sleep(400);
+        await page.evaluate(() => document.getElementById('ca-rc-tag').click());
+        await sleep(150);
+        ok(await page.evaluate(() => {
+            const g = document.getElementById('ca-rc-grid');
+            const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+            return g.classList.contains('rc-tags-pop') && getComputedStyle(t).animationName === 'ca-rc-pop';
+        }), 'round 15: a fresh toggle still pops the marks in (the one-shot lives on the transition)');
+        await page.evaluate(() => document.getElementById('ca-rc-next').click());
+        await sleep(700);
+        ok(await page.evaluate(() => {
+            const g = document.getElementById('ca-rc-grid');
+            const t = document.querySelector('.ca-rc-day[data-ymd="2026-11-14"] .ca-rc-tag');
+            return document.getElementById('ca-rc-month').textContent.trim() === 'Nov 2026' && g.classList.contains('rc-tags-on') && !g.classList.contains('rc-tags-pop') && t && getComputedStyle(t).animationName === 'none';
+        }), 'round 15: an arrow month change lands on November settled — the fresh mark never re-pops');
+        {
+            const box = await page.evaluate(() => { const r = document.getElementById('ca-rc-grid').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+            await page.mouse.move(box.x, box.y);
+            await page.mouse.down();
+            await sleep(250);   // past the 140ms hold park
+            for (let i = 1; i <= 6; i++) await page.mouse.move(box.x - i * 25, box.y + (i % 2));
+            ok(await page.evaluate(() => !document.getElementById('ca-rc-grid').classList.contains('ca-rc-drag') && !document.querySelector('.ca-rc-track')), 'round 15: a hold-then-swipe toward the missing December disarms at once — no drag, no track');
+            await page.mouse.up();
+            await sleep(600);
+            ok(await page.evaluate(() => document.getElementById('ca-rc-month').textContent.trim() === 'Nov 2026'), 'round 15: the release changes nothing at the last data month — the swipe respects the edge like the arrow');
+        }
+        await page.evaluate(() => document.getElementById('ca-rc-prev').click());
+        await sleep(700);
         await page.evaluate(() => document.getElementById('ca-rc-fold').click());
         await sleep(600);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('hidden') && document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-shot').classList.contains('hidden') && !document.getElementById('ca-rc-grid').classList.contains('rc-tags-on')), 'collapsing hides both buttons and forces the overlay off');
