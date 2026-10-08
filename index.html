@@ -299,17 +299,28 @@
            invisible otherwise, with a quick pop-in when they arrive. */
         .ca-rc-tag, .ca-rc-badge { display: none; position: absolute; pointer-events: none; z-index: 2; }
         #ca-rc-grid.rc-tags-on .ca-rc-tag, #ca-rc-grid.rc-tags-on .ca-rc-badge { display: inline-flex; }
-        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 4.5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700; letter-spacing: .02em; line-height: 11px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: .02em; line-height: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
         .ca-rc-tag-lo { background: #C2410C; color: #FFF7ED; }
         .ca-rc-tag-ta { background: #15803D; color: #F0FDF4; }
         html.dark .ca-rc-tag-lo { background: rgba(251,146,60,.22); color: #FDBA74; box-shadow: inset 0 0 0 1px rgba(251,146,60,.5), 0 1px 2px rgba(0,0,0,.4); }
         html.dark .ca-rc-tag-ta { background: rgba(74,222,128,.22); color: #86EFAC; box-shadow: inset 0 0 0 1px rgba(74,222,128,.5), 0 1px 2px rgba(0,0,0,.4); }
-        .ca-rc-badge { bottom: 2px; right: 1px; align-items: center; justify-content: center; min-width: 12px; height: 12px; padding: 0 3px; border-radius: 4px; background: #111827; color: #F9FAFB; font-size: 8.5px; font-weight: 800; line-height: 12px; }
+        .ca-rc-badge { bottom: 4px; right: 4px; align-items: center; justify-content: center; min-width: 14px; height: 14px; padding: 0 4px; border-radius: 4px; background: #111827; color: #F9FAFB; font-size: 9.5px; font-weight: 800; line-height: 14px; }
         html.dark .ca-rc-badge { background: rgba(0,0,0,.74); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
         @keyframes ca-rc-pop { from { opacity: 0; transform: rotate(-14deg) scale(.3); } to { opacity: 1; transform: rotate(-14deg) scale(1); } }
         @keyframes ca-rc-popb { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
         #ca-rc-grid.rc-tags-on .ca-rc-tag { animation: ca-rc-pop .18s ease-out both; }
         #ca-rc-grid.rc-tags-on .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
+        /* hotfix (owner order): showing and hiding always ANIMATES — the
+           marks pop back OUT before the overlay drops them, and the
+           header buttons pop in and out instead of blinking. */
+        @keyframes ca-rc-popout { from { opacity: 1; transform: rotate(-14deg) scale(1); } to { opacity: 0; transform: rotate(-14deg) scale(.3); } }
+        @keyframes ca-rc-popbout { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.3); } }
+        #ca-rc-grid.rc-tags-out .ca-rc-tag { display: inline-flex; animation: ca-rc-popout .15s ease-in both; }
+        #ca-rc-grid.rc-tags-out .ca-rc-badge { display: inline-flex; animation: ca-rc-popbout .15s ease-in .05s both; }
+        @keyframes ca-rc-btnin { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
+        @keyframes ca-rc-btnout { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.55); } }
+        .ca-rc-btnin { animation: ca-rc-btnin .16s ease-out both; }
+        .ca-rc-btnout { animation: ca-rc-btnout .15s ease-in both; }
         @keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 rgba(201,162,39,.9); } 100% { box-shadow: 0 0 0 14px rgba(201,162,39,0); } }
         .ca-rc-flash { animation: ca-rc-flash .45s ease-out; }
         /* hotfix (owner report: the toggle never looked gold on the phone):
@@ -2125,6 +2136,9 @@
                 { c: 'fix', t: 'Each stop colors by its own layover or turnaround.' },
                 { c: 'fix', t: 'The capture photographs the calendar exactly as shown.' },
                 { c: 'fix', t: 'Tapped buttons settle back to rest on touch screens.' },
+                { c: 'fix', t: 'Tags and arrival badges read larger, badges tucked inward.' },
+                { c: 'fix', t: 'The tag and camera buttons pop in and out.' },
+                { c: 'fix', t: 'Hiding the tags pops them back out.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -4663,17 +4677,53 @@
         // starts clean, collapsing forces it off, and the camera only
         // exists while tags are actually on the grid.
         let rcTagsOn = false;
+        // hotfix (owner order): a button that shows or hides ANIMATES the
+        // change — pop in on arrival, pop out (then display:none) on exit.
+        // Rapid toggles cancel pending work; a rescue mid-pop-out just
+        // clears the out class and pops back in.
+        function rcBtnAnimate(el, show) {
+            if (!el) return;
+            if (el.__rcBtnT) { clearTimeout(el.__rcBtnT); el.__rcBtnT = null; }
+            if (show) {
+                const wasOut = el.classList.contains('ca-rc-btnout');
+                el.classList.remove('ca-rc-btnout');
+                if (!wasOut && !el.classList.contains('hidden')) return;   // already resting visible — never replay
+                el.classList.remove('hidden');
+                el.classList.remove('ca-rc-btnin');
+                void el.offsetWidth;   // reflow so the pop restarts
+                el.classList.add('ca-rc-btnin');
+                el.__rcBtnT = setTimeout(function () { el.classList.remove('ca-rc-btnin'); el.__rcBtnT = null; }, 260);
+            } else {
+                if (el.classList.contains('hidden')) return;
+                el.classList.remove('ca-rc-btnin');
+                el.classList.add('ca-rc-btnout');
+                el.__rcBtnT = setTimeout(function () { el.classList.add('hidden'); el.classList.remove('ca-rc-btnout'); el.__rcBtnT = null; }, 170);
+            }
+        }
         function rcTagsSync(collapsed) {
             const grid = document.getElementById('ca-rc-grid');
             const tagBtn = document.getElementById('ca-rc-tag');
             const shotBtn = document.getElementById('ca-rc-shot');
-            if (grid) grid.classList.toggle('rc-tags-on', rcTagsOn);
+            if (grid) {
+                if (rcTagsOn) {
+                    if (grid.__rcOutT) { clearTimeout(grid.__rcOutT); grid.__rcOutT = null; }
+                    grid.classList.remove('rc-tags-out');
+                    grid.classList.add('rc-tags-on');
+                } else if (grid.classList.contains('rc-tags-on')) {
+                    // hotfix (owner order): the marks pop back OUT before
+                    // the overlay drops them — a quick reverse of the pop-in
+                    grid.classList.remove('rc-tags-on');
+                    grid.classList.add('rc-tags-out');
+                    if (grid.__rcOutT) clearTimeout(grid.__rcOutT);
+                    grid.__rcOutT = setTimeout(function () { grid.classList.remove('rc-tags-out'); grid.__rcOutT = null; }, 260);
+                }
+            }
             if (tagBtn) {
-                tagBtn.classList.toggle('hidden', !!collapsed);
+                rcBtnAnimate(tagBtn, !collapsed);
                 tagBtn.classList.toggle('ca-rc-tagon', rcTagsOn);
                 tagBtn.setAttribute('aria-pressed', rcTagsOn ? 'true' : 'false');
             }
-            if (shotBtn) shotBtn.classList.toggle('hidden', !!collapsed || !rcTagsOn);
+            if (shotBtn) rcBtnAnimate(shotBtn, !collapsed && rcTagsOn);
         }
         // v1.43.0 (owner spec + hotfix): the roster capture — the month
         // header is drawn by hand (the real header is buttons), and the grid

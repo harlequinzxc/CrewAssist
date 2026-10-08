@@ -787,8 +787,29 @@ const synthItems = [].concat(
     R.ok(tagBtn.classList.contains('ca-rc-tagon') && tagBtn.getAttribute('aria-pressed') === 'true', 'the toggle fills gold while on (the hover-latch-proof class)');
     R.ok(!shotBtn.classList.contains('hidden'), 'the camera appears with the overlay');
     tagBtn.click();
-    await wait(60);
+    await wait(350);
     R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && shotBtn.classList.contains('hidden'), 'a second tap returns the default');
+    // hotfix (owner order): showing and hiding ANIMATES — the marks pop
+    // back out, the buttons pop out before display:none lands, and a
+    // quick re-toggle rescues mid-pop-out
+    R.ok(fs.readFileSync(APP, 'utf8').indexOf('@keyframes ca-rc-popout') !== -1 && fs.readFileSync(APP, 'utf8').indexOf('ca-rc-btnin') !== -1, 'the out animations exist in source');
+    tagBtn.click();
+    await wait(60);
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'overlay back on for the out-animation pins');
+    tagBtn.click();
+    await wait(40);
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-out') && shotBtn.classList.contains('ca-rc-btnout'), 'hiding pops OUT first — the classes land before display:none');
+    await wait(350);
+    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-out') && shotBtn.classList.contains('hidden') && !shotBtn.classList.contains('ca-rc-btnout'), 'the out pass cleans up and hidden lands');
+    tagBtn.click();
+    await wait(40);
+    tagBtn.click();
+    await wait(40);
+    tagBtn.click();
+    await wait(400);
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !d.getElementById('ca-rc-grid').classList.contains('rc-tags-out'), 'a quick re-toggle rescues the marks mid-pop-out');
+    tagBtn.click();
+    await wait(350);
     // tags never block a day tap
     tagBtn.click();
     await wait(60);
@@ -797,7 +818,7 @@ const synthItems = [].concat(
     R.ok(d.querySelector('.ca-rc-day[data-ymd="2026-10-09"]').classList.contains('is-selected'), 'tapping a tagged day still selects it');
     // collapse: overlay forced off, both buttons hidden; expand: back to default
     d.getElementById('ca-rc-fold').click();
-    await wait(120);
+    await wait(400);
     R.ok(d.getElementById('ca-rc-grid').classList.contains('hidden'), 'the fold collapses the grid');
     R.ok(tagBtn.classList.contains('hidden') && shotBtn.classList.contains('hidden'), 'collapsed hides both new buttons');
     R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'collapsing forces the overlay off');

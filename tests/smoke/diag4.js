@@ -278,32 +278,34 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // can never latch a wash (toggles keep their class-based state)
         // the rig's viewport runs hasTouch, so Chrome natively reports
         // (hover: none) — the world the owner's phone lives in. First clear
-        // the stage: any reload re-offers What's New (the v1.35.0 ruling —
-        // closing never counts as seen), and its backdrop would eat every
-        // pointer tap.
-        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
-        // the one-time install hint (a tab user with saved earnings — the
-        // restored phone qualifies) can land on a quiet moment too; dismiss
-        // it like a user would
-        await page.evaluate(() => { const dl = document.getElementById('app-dialog-backdrop'); if (dl && !dl.classList.contains('hidden')) document.getElementById('app-dialog-ok').click(); });
-        await sleep(400);
-        // closing What's New releases the welcome chat — and the chat-busy
-        // rest (hotfix 12) correctly refuses the calendar button while it
-        // types, so wait for the chat to go idle like a real user would
+        // the stage: the restore journey's reload re-offers What's New (a
+        // restored backup carries no seen-marker), and its backdrop would
+        // eat every pointer tap.
+        // DIAG v4
+        await page.evaluate(() => { const bd = document.getElementById('whatsnew-backdrop'); if (bd && !bd.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
         await page.waitForFunction(() => !document.documentElement.classList.contains('chat-busy'), { timeout: 20000 });
         await sleep(300);
-        const restBg = await page.evaluate(() => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor);
-        await (await page.$('#btn-roster-cal')).tap();
-        await sleep(300);
-        // the reopen glide must land before the tag is tappable
-        await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden') && !document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-tag').getBoundingClientRect().top > 0, { timeout: 8000 });
-        await sleep(400);
-        ok(await page.evaluate((before) => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor === before, restBg), 'hotfix: a finger tap settles back to rest — no sticky hover wash');
-        await (await page.$('#ca-rc-tag')).tap();
-        await sleep(300);
-        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle is exempt — its on-state survives the release');
-        await page.evaluate(() => document.getElementById('ca-rc-close').click());
-        await sleep(400);
+        const at = await page.evaluate(() => {
+            const b = document.getElementById('btn-roster-cal');
+            const r = b.getBoundingClientRect();
+            const el = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+            window.__tl = [];
+            window.addEventListener('touchstart', (e) => { window.__tl.push('ts:' + (e.target.id || e.target.tagName)); }, true);
+            window.addEventListener('click', (e) => { window.__tl.push('ck:' + (e.target.id || e.target.tagName)); }, true);
+            return {
+                hit: el ? (el.id || el.tagName + '.' + String(el.className).slice(0, 40)) : 'null',
+                rect: Math.round(r.left) + ',' + Math.round(r.top) + ' ' + Math.round(r.width) + 'x' + Math.round(r.height),
+                busy: document.documentElement.className,
+                settingsUp: !document.getElementById('settings-backdrop').classList.contains('hidden'),
+                dialogUp: !document.getElementById('app-dialog-backdrop').classList.contains('hidden'),
+                calSheetHidden: document.getElementById('ca-roster-cal').classList.contains('hidden'),
+            };
+        });
+        console.log('AT', JSON.stringify(at));
+        try { await (await page.$('#btn-roster-cal')).tap(); } catch (e) { console.log('TAP-ERR', e.message.slice(0, 90)); }
+        await sleep(1500);
+        console.log('TL', JSON.stringify(await page.evaluate(() => window.__tl)));
+        console.log('AFTER', JSON.stringify(await page.evaluate(() => ({ sheetHidden: document.getElementById('ca-roster-cal').classList.contains('hidden'), tagHidden: document.getElementById('ca-rc-tag').classList.contains('hidden'), tagTop: Math.round(document.getElementById('ca-rc-tag').getBoundingClientRect().top) }))));
         await page.evaluate(() => { localStorage.removeItem('crewAssist.dutyDays'); localStorage.removeItem('crewAssist.allFlights'); });
 
         console.log('— health —');
