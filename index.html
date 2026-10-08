@@ -291,6 +291,27 @@
         html.dark .ca-rc-k-lo { background: rgba(45,212,191,.34); }
         .ca-rc-k-al { background: rgba(168,85,247,.26); }
         html.dark .ca-rc-k-al { background: rgba(192,132,252,.34); }
+        /* v1.43.0 (owner spec): the destination overlay. Tags tilt one way
+           like little flags at the top edge; the arrival badge is a dark
+           chip at the bottom corner. Neither ever sits on the number.
+           Day theme runs saturated fills; night theme lighter, hairline-
+           bordered semi-transparents. Gated on the grid's rc-tags-on —
+           invisible otherwise, with a quick pop-in when they arrive. */
+        .ca-rc-tag, .ca-rc-badge { display: none; position: absolute; pointer-events: none; z-index: 2; }
+        #ca-rc-grid.rc-tags-on .ca-rc-tag, #ca-rc-grid.rc-tags-on .ca-rc-badge { display: inline-flex; }
+        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 4.5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 8px; font-weight: 700; letter-spacing: .02em; line-height: 11px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+        .ca-rc-tag-lo { background: #C2410C; color: #FFF7ED; }
+        .ca-rc-tag-ta { background: #15803D; color: #F0FDF4; }
+        html.dark .ca-rc-tag-lo { background: rgba(251,146,60,.22); color: #FDBA74; box-shadow: inset 0 0 0 1px rgba(251,146,60,.5), 0 1px 2px rgba(0,0,0,.4); }
+        html.dark .ca-rc-tag-ta { background: rgba(74,222,128,.22); color: #86EFAC; box-shadow: inset 0 0 0 1px rgba(74,222,128,.5), 0 1px 2px rgba(0,0,0,.4); }
+        .ca-rc-badge { bottom: 2px; right: 1px; align-items: center; justify-content: center; min-width: 12px; height: 12px; padding: 0 3px; border-radius: 4px; background: #111827; color: #F9FAFB; font-size: 8.5px; font-weight: 800; line-height: 12px; }
+        html.dark .ca-rc-badge { background: rgba(0,0,0,.74); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
+        @keyframes ca-rc-pop { from { opacity: 0; transform: rotate(-14deg) scale(.3); } to { opacity: 1; transform: rotate(-14deg) scale(1); } }
+        @keyframes ca-rc-popb { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
+        #ca-rc-grid.rc-tags-on .ca-rc-tag { animation: ca-rc-pop .18s ease-out both; }
+        #ca-rc-grid.rc-tags-on .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
+        @keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 rgba(201,162,39,.9); } 100% { box-shadow: 0 0 0 14px rgba(201,162,39,0); } }
+        .ca-rc-flash { animation: ca-rc-flash .45s ease-out; }
         .ca-rc-nav { border-radius: 999px; transition: background-color .15s ease, transform .12s ease; }
         .ca-rc-nav:active { transform: scale(.92); }
         @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: rgba(127,127,127,.13); } }
@@ -1635,6 +1656,12 @@
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-next" aria-label="Next month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+                        <!-- v1.43.0 (owner spec): the destination overlay + the roster
+                             capture. The tag fills gold while the overlay runs; the
+                             camera appears only when there are tags to capture, and
+                             both hide when the calendar is collapsed. -->
+                        <button type="button" id="ca-rc-tag" aria-label="Destination tags" aria-pressed="false" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="tag" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-shot" aria-label="Capture the roster as an image" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="camera" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
                 </div>
@@ -2060,7 +2087,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.42.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.43.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2082,6 +2109,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.43.0', d: '2026-10-08', items: [
+                { c: 'new', t: 'Destination tags and arrival badges light up the roster calendar.' },
+                { c: 'new', t: 'Capture the roster as a PNG to share.' },
+            ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
                 { c: 'fix', t: 'Settings buttons align to one width per section.' },
@@ -4548,6 +4579,194 @@
         // run, rounded only at its true ends and flush where the run
         // continues past a week or month edge. Tapping a day selects it and
         // the detail section below the divider retells that day.
+        // v1.43.0 (owner spec): the destination overlay's marks. Store legs
+        // are normalized into the calculator's chain shape, chained into
+        // SIN→SIN trips (same-day back-to-back turns merge, per
+        // rosterChainTrips), and each trip paints: an OUTBOUND tag on its
+        // departure day (orange for a layover, green for a turnaround), a
+        // HOMECOMING tag on the day it lands back at SIN (always green,
+        // naming the station it came home from — skipped when the whole
+        // trip is one day), and an ARRIVAL BADGE with the landing's band.
+        function rcArrivalBand(hm) {
+            const m = /^(\d{1,2}):(\d{2})/.exec(String(hm || ''));
+            if (!m) return 0;
+            const mins = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+            if (mins === 0) return 3;      // 0000H rides with the evening
+            if (mins <= 720) return 1;     // 0001–1200H, the morning
+            if (mins <= 1080) return 2;    // 1201–1800H, the afternoon
+            return 3;                      // 1801–2359H, the evening
+        }
+        function rcTripsAll() {
+            const store = loadAllFlights();
+            const legs = [];
+            Object.keys(store).forEach((mk) => { (store[mk] || []).forEach((f) => {
+                if (f && f.dep && f.arr && (f.stdYmd || f.ymd)) legs.push({ fn: f.fn, dep: f.dep, arr: f.arr, depDate: f.stdYmd || f.ymd, arrDate: f.staYmd || f.ymd, stdHm: f.std || '', staHm: f.sta || '', ftHm: f.ft || '' });
+            }); });
+            legs.sort((a, b) => String(a.depDate + a.stdHm).localeCompare(String(b.depDate + b.stdHm)));
+            return rosterChainTrips(legs);
+        }
+        function rcMarksForMonth(ym) {
+            const marks = {};
+            const put = (ymd, o) => { const cur = marks[ymd] || (marks[ymd] = {}); Object.keys(o).forEach((k) => { if (cur[k] === undefined) cur[k] = o[k]; }); };
+            rcTripsAll().forEach((t) => {
+                if (!t || !t.sectors || !t.sectors.length) return;
+                const first = t.sectors[0], last = t.sectors[t.sectors.length - 1];
+                if (!first || !last) return;
+                const oneDay = first.depDate === last.arrDate;
+                if (first.dep === 'SIN' && first.arr && first.arr !== 'SIN' && first.depDate) {
+                    put(first.depDate, { tag: first.arr, tagKind: (oneDay || t.type !== 'Layover') ? 'ta' : 'lo' });
+                }
+                if (last.arr === 'SIN' && last.arrDate) {
+                    if (!oneDay && last.dep && last.dep !== 'SIN') put(last.arrDate, { tag: last.dep, tagKind: 'ta' });
+                    const band = rcArrivalBand(last.staHm);
+                    if (band) put(last.arrDate, { badge: band });
+                }
+            });
+            const out = {};
+            Object.keys(marks).forEach((ymd) => { if (String(ymd).slice(0, 7) === ym) out[ymd] = marks[ymd]; });
+            return out;
+        }
+        // the overlay's UI state — deliberately NOT persisted: every open
+        // starts clean, collapsing forces it off, and the camera only
+        // exists while tags are actually on the grid.
+        let rcTagsOn = false;
+        function rcTagsSync(collapsed) {
+            const grid = document.getElementById('ca-rc-grid');
+            const tagBtn = document.getElementById('ca-rc-tag');
+            const shotBtn = document.getElementById('ca-rc-shot');
+            if (grid) grid.classList.toggle('rc-tags-on', rcTagsOn);
+            if (tagBtn) {
+                tagBtn.classList.toggle('hidden', !!collapsed);
+                tagBtn.classList.toggle('bg-sia-gold', rcTagsOn);
+                tagBtn.classList.toggle('text-black', rcTagsOn);
+                tagBtn.setAttribute('aria-pressed', rcTagsOn ? 'true' : 'false');
+            }
+            if (shotBtn) shotBtn.classList.toggle('hidden', !!collapsed || !rcTagsOn);
+        }
+        // v1.43.0 (owner spec): the roster capture — month title, weekday
+        // labels and the full grid, redrawn onto a canvas at device density
+        // from the LIVE layout (real positions, real colors, real fonts),
+        // then the native share sheet on mobile, a download everywhere
+        // else. Faithful by construction: it walks the elements on screen.
+        function rosterShotTheme() {
+            return document.documentElement.classList.contains('dark') ? { bg: '#080B14' } : { bg: '#F6F1E8' };
+        }
+        function rosterShotFilename(ym) {
+            const y = parseInt(String(ym).slice(0, 4), 10);
+            const m = parseInt(String(ym).slice(5), 10) - 1;
+            const name = (typeof CA_MONTHS !== 'undefined' && CA_MONTHS[m]) ? CA_MONTHS[m] : String(m + 1);
+            return 'CrewAssist-Roster-' + name + '-' + y + '.png';
+        }
+        function buildRosterShotCanvas() {
+            const header = document.getElementById('ca-rc-month');
+            const grid = document.getElementById('ca-rc-grid');
+            if (!header || !grid || grid.classList.contains('hidden')) return null;
+            const hRect = header.getBoundingClientRect();
+            const gRect = grid.getBoundingClientRect();
+            const x0 = gRect.left, y0 = hRect.top;
+            const w = Math.ceil(gRect.width), h = Math.ceil(gRect.bottom - y0);
+            if (w < 80 || h < 80) return null;   // no layout engine (jsdom) — nothing to paint
+            const dpr = Math.max(1, (window.devicePixelRatio || 1));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+            const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+            if (!ctx) return null;
+            ctx.scale(dpr, dpr);
+            ctx.fillStyle = rosterShotTheme().bg;
+            ctx.fillRect(0, 0, w, h);
+            const cs = (el) => window.getComputedStyle(el);
+            const rel = (r) => ({ x: r.left - x0, y: r.top - y0, w: r.width, h: r.height });
+            const rrect = (x, y, ww, hh, rd) => { ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, ww, hh, rd); else ctx.rect(x, y, ww, hh); ctx.fill(); };
+            // the month title, centered like a headline
+            const hcs = cs(header);
+            ctx.fillStyle = hcs.color || '#111827';
+            ctx.font = (hcs.fontWeight || '700') + ' ' + (parseFloat(hcs.fontSize) || 16) + 'px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(String(header.textContent || '').trim(), w / 2, Math.max(10, hRect.height / 2));
+            // weekday labels
+            grid.querySelectorAll('#ca-rc-dow > span').forEach((el) => {
+                const r = rel(el.getBoundingClientRect()); const st = cs(el);
+                ctx.fillStyle = st.color || '#9CA3AF';
+                ctx.font = (st.fontWeight || '700') + ' ' + (parseFloat(st.fontSize) || 11) + 'px "Plus Jakarta Sans", sans-serif';
+                ctx.fillText(String(el.textContent || '').trim(), r.x + r.w / 2, r.y + r.h / 2);
+            });
+            // the duty pills
+            grid.querySelectorAll('.ca-rc-pill').forEach((el) => {
+                const r = rel(el.getBoundingClientRect()); const st = cs(el);
+                ctx.fillStyle = st.backgroundColor || 'rgba(0,0,0,.2)';
+                const rd = String(st.borderRadius || '0').split(/\s+/).map((v) => parseFloat(v) || 0);
+                rrect(r.x, r.y, r.w, r.h, [rd[0] || 0, rd[1] || 0, rd[2] || 0, rd[3] || 0]);
+            });
+            // numbers, today bars, tags, badges
+            grid.querySelectorAll('.ca-rc-day').forEach((day) => {
+                const num = day.querySelector('.ca-rc-num');
+                if (num) {
+                    const r = rel(num.getBoundingClientRect()); const st = cs(num);
+                    ctx.fillStyle = st.color || '#1F2937';
+                    ctx.font = (st.fontWeight || '700') + ' ' + (parseFloat(st.fontSize) || 13) + 'px "Plus Jakarta Sans", sans-serif';
+                    ctx.fillText(String(num.textContent || '').trim(), r.x + r.w / 2, r.y + r.h / 2);
+                }
+                const bar = day.querySelector('.ca-rc-bar.is-today');
+                if (bar) { const r = rel(bar.getBoundingClientRect()); ctx.fillStyle = '#c9a227'; rrect(r.x, r.y, r.w, r.h, r.h / 2); }
+                const tag = day.querySelector('.ca-rc-tag');
+                if (tag) {
+                    const r = rel(tag.getBoundingClientRect()); const st = cs(tag);
+                    ctx.save();
+                    ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
+                    ctx.rotate(-14 * Math.PI / 180);
+                    ctx.fillStyle = st.backgroundColor || '#15803D';
+                    rrect(-r.w / 2, -r.h / 2, r.w, r.h, 3);
+                    ctx.fillStyle = st.color || '#fff';
+                    ctx.font = '700 ' + (parseFloat(st.fontSize) || 8) + 'px "Space Mono", monospace';
+                    ctx.fillText(String(tag.textContent || '').trim(), 0, 0);
+                    ctx.restore();
+                }
+                const bdg = day.querySelector('.ca-rc-badge');
+                if (bdg) {
+                    const r = rel(bdg.getBoundingClientRect()); const st = cs(bdg);
+                    ctx.fillStyle = st.backgroundColor || '#111827';
+                    rrect(r.x, r.y, r.w, r.h, 3);
+                    ctx.fillStyle = st.color || '#F9FAFB';
+                    ctx.font = '800 ' + (parseFloat(st.fontSize) || 8.5) + 'px "Plus Jakarta Sans", sans-serif';
+                    ctx.fillText(String(bdg.textContent || '').trim(), r.x + r.w / 2, r.y + r.h / 2);
+                }
+            });
+            return { canvas: canvas, w: w, h: h };
+        }
+        function rosterShotDeliver(blob, name) {
+            try { window.__rcLastShot = { name: name, size: blob.size }; } catch (e) {}
+            let shared = false;
+            try {
+                const file = new File([blob], name, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+                    shared = true;
+                    navigator.share({ files: [file], title: 'CrewAssist roster' }).catch(() => {});
+                }
+            } catch (e) {}
+            if (shared) { archToast('Roster screenshot saved'); return; }
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+            archToast('Roster screenshot saved');
+        }
+        async function captureRosterShot() {
+            const shotBtn = document.getElementById('ca-rc-shot');
+            if (shotBtn) {
+                shotBtn.classList.remove('ca-rc-flash');
+                void shotBtn.offsetWidth;
+                shotBtn.classList.add('ca-rc-flash');
+                setTimeout(() => { try { shotBtn.classList.remove('ca-rc-flash'); } catch (e) {} }, 500);
+            }
+            try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+            const built = buildRosterShotCanvas();
+            if (!built) return;
+            const name = rosterShotFilename(rcViewYm);
+            try {
+                built.canvas.toBlob((blob) => { if (blob) rosterShotDeliver(blob, name); }, 'image/png');
+            } catch (e) {}
+        }
         let rcViewYm = '';
         let rcSelected = '';
         function rosterCalMonths() {
@@ -4585,6 +4804,7 @@
             const y = parseInt(ym.slice(0, 4), 10);
             const m = parseInt(ym.slice(5), 10) - 1;
             const dayAt = rcDayLookup();
+            const marks = rcMarksForMonth(ym);
             const today = todayLocalYMD();
             const daysIn = new Date(y, m + 1, 0).getDate();
             const ymdOf = (dd) => y + '-' + String(m + 1).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
@@ -4669,7 +4889,7 @@
                 const rR = openR ? '0' : '999px';
                 return '<span class="ca-rc-pill is-capsule ca-rc-k-' + rcTintKind(r.kind, r.code) + '" style="left: ' + left + '; width: ' + width + '; border-radius: ' + rL + ' ' + rR + ' ' + rR + ' ' + rL + ';" aria-hidden="true"></span>';
             };
-            let html = '<div class="grid grid-cols-7 mb-1.5">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dw) => '<span class="ca-micro font-bold text-gray-400 dark:text-gray-500 text-center py-1">' + dw + '</span>').join('') + '</div>';
+            let html = '<div id="ca-rc-dow" class="grid grid-cols-7 mb-1.5">' + ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dw) => '<span class="ca-micro font-bold text-gray-400 dark:text-gray-500 text-center py-1">' + dw + '</span>').join('') + '</div>';
             const startPad = new Date(y, m, 1).getDay();
             const weeks = Math.ceil((startPad + daysIn) / 7);
             const segByRow = {};
@@ -4681,9 +4901,12 @@
                     const dd = wk * 7 + col - startPad + 1;
                     if (dd < 1 || dd > daysIn) { html += '<span></span>'; continue; }
                     const ymd = ymdOf(dd);
+                    const mk = marks[ymd] || null;
                     html += '<button type="button" class="ca-rc-day" data-ymd="' + ymd + '" aria-label="' + rosterShortDate(ymd) + '">'
                         + '<span class="ca-rc-num">' + dd + '</span>'
                         + '<span class="ca-rc-bar' + (ymd === today ? ' is-today' : '') + '" aria-hidden="true"></span>'
+                        + (mk && mk.tag ? '<span class="ca-rc-tag ca-rc-tag-' + mk.tagKind + '" aria-hidden="true">' + rosterEsc(mk.tag) + '</span>' : '')
+                        + (mk && mk.badge ? '<span class="ca-rc-badge" aria-hidden="true">' + mk.badge + '</span>' : '')
                         + '</button>';
                 }
                 html += '</div>';
@@ -5384,6 +5607,10 @@
             if (foldDown) foldDown.classList.add('hidden');
             const foldBtn = document.getElementById('ca-rc-fold');
             if (foldBtn) foldBtn.setAttribute('aria-label', 'Collapse calendar');
+            // v1.43.0 (owner spec): every open starts clean — expanded,
+            // overlay off, tag grey, camera hidden (nothing persists)
+            rcTagsOn = false;
+            rcTagsSync(false);
             // hotfix 7: the timeline spans every attached roster date
             rosterCalTimelineInit();
             renderRosterCalendar();
@@ -5475,6 +5702,11 @@
                     if (up) up.classList.toggle('hidden', collapsed);
                     if (down) down.classList.toggle('hidden', !collapsed);
                     if (btn) btn.setAttribute('aria-label', collapsed ? 'Expand calendar' : 'Collapse calendar');
+                    // v1.43.0 (owner spec): collapsing forces the overlay off
+                    // (no tags floating over empty space) and hides both
+                    // buttons; expanding returns the tag toggle to default
+                    rcTagsOn = false;
+                    rcTagsSync(collapsed);
                     // hotfix 8: the expand must come out of hiding BEFORE its
                     // layout is known — a display:none grid has no box, so
                     // measuring (and the animate-or-not decision) happen
@@ -5531,6 +5763,11 @@
                     }
                 });
                 on('ca-rc-close', () => closeRosterCalendar());
+                on('ca-rc-tag', () => {
+                    rcTagsOn = !rcTagsOn;
+                    rcTagsSync(document.getElementById('ca-rc-grid').classList.contains('hidden'));
+                });
+                on('ca-rc-shot', () => { captureRosterShot(); });
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
                 // hotfix 5 + 8 (owner orders): swipe the grid sideways to
                 // change months — now a finger-following glide. The track
@@ -5773,6 +6010,8 @@
             const wrap = document.getElementById('ca-roster-cal');
             const sheet = document.getElementById('ca-rc-sheet');
             if (!wrap || wrap.classList.contains('hidden')) return;
+            rcTagsOn = false;   // v1.43.0: the overlay never survives a close
+            rcTagsSync(true);
             rcRevealCancel();   // hotfix 10: no reveal pass outlives the sheet
             if (typeof caSheetFocusOut === 'function') { try { caSheetFocusOut(sheet); } catch (e) {} }
             const shade = wrap.querySelector('.ca-rc-shade');

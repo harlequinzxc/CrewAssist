@@ -81,15 +81,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const el = document.querySelector('.ca-micro'); return el && parseFloat(getComputedStyle(el).fontSize) <= 11.5; }), 'the compiled stylesheet applies (ca-micro renders at 11px)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.42.0', 'APP_VERSION is 1.42.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.42.0' && e.d === '2026-10-08' && e.items.length === 6 && e.items.map((i) => i.c).join(',') === 'new,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.42.0 entry (welcome restore + hotfix round)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v201'), 'the service-worker cache name is bumped to v201 (APP_VERSION 1.42.0, hotfix round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 2 && e.items.map((i) => i.c).join(',') === 'new,new'; }), 'the changelog carries the 1.43.0 entry (destination overlay + roster capture)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v202'), 'the service-worker cache name is bumped to v202 (APP_VERSION 1.43.0)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.42.0'; }), 'the What\'s New sheet carries the v1.42.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.43.0'; }), 'the What\'s New sheet carries the v1.43.0 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Transits of three hours or more now earn location meals.') !== -1), 'the What\'s New sheet carries the transit-meals pointer');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.42\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.43\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(true, 'closing What\'s New releases the welcome chat');
@@ -189,6 +189,57 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return ['btn-edit-profile', 'btn-replay-tour', 'btn-changelog'].every((id) => Math.abs(wd(document.getElementById(id)) - tg) < 1.5);
         }), 'hotfix: Edit, Replay, View and Telegram render one width (the compiled stylesheet carries w-32)');
         await page.evaluate(() => closeSettings());
+
+        // 8. v1.43.0: the destination overlay + the roster capture.
+        await page.evaluate(() => {
+            localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [
+                { ymd: '2026-10-09', kind: 'fly', code: '', loc: '', fns: ['231'], dkey: 'k1' },
+                { ymd: '2026-10-10', kind: 'fly', code: '', loc: '', fns: ['232'], dkey: 'k1' },
+                { ymd: '2026-10-12', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k2' },
+            ] }));
+            localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+                { fn: '231', dep: 'SIN', arr: 'SYD', ymd: '2026-10-09', std: '09:00', sta: '19:05', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '08:05', ac: '359', rpt: '', pos: false },
+                { fn: '232', dep: 'SYD', arr: 'SIN', ymd: '2026-10-10', std: '07:30', sta: '13:40', stdYmd: '2026-10-10', staYmd: '2026-10-10', ft: '08:10', ac: '359', rpt: '', pos: false },
+                { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-12', std: '08:25', sta: '09:35', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:10', ac: '7M8', rpt: '', pos: false },
+                { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-12', std: '10:25', sta: '11:45', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:20', ac: '7M8', rpt: '', pos: false },
+            ] }));
+        });
+        await page.evaluate(() => openRosterCalendar());
+        await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden'), { timeout: 5000 });
+        await sleep(600);
+        ok(await page.evaluate(() => {
+            const g = document.getElementById('ca-rc-grid');
+            const tagBtn = document.getElementById('ca-rc-tag');
+            return !!g && g.querySelectorAll('.ca-rc-day').length >= 30 && tagBtn && !tagBtn.classList.contains('hidden') && document.getElementById('ca-rc-shot').classList.contains('hidden') && !g.classList.contains('rc-tags-on');
+        }), 'the calendar opens with the overlay off and the camera hidden');
+        ok(await page.evaluate(() => {
+            const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+            return !t || getComputedStyle(t).display === 'none';
+        }), 'no tags are visible while the overlay is off');
+        await page.evaluate(() => document.getElementById('ca-rc-tag').click());
+        await sleep(300);
+        ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !document.getElementById('ca-rc-shot').classList.contains('hidden')), 'one tap lights the overlay and shows the camera');
+        ok(await page.evaluate(() => {
+            const t9 = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+            const t10 = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-tag');
+            const b10 = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-badge');
+            const t12 = document.querySelector('.ca-rc-day[data-ymd="2026-10-12"] .ca-rc-tag');
+            const vis = (el) => !!el && getComputedStyle(el).display !== 'none';
+            return vis(t9) && t9.textContent === 'SYD' && t9.className.includes('ca-rc-tag-lo')
+                && vis(t10) && t10.textContent === 'SYD' && t10.className.includes('ca-rc-tag-ta')
+                && vis(b10) && b10.textContent === '2'
+                && vis(t12) && t12.textContent === 'KUL' && t12.className.includes('ca-rc-tag-ta');
+        }), 'the tags render: SYD orange outbound, SYD green homecoming with band 2, KUL turnaround');
+        await page.evaluate(() => { window.__rcLastShot = null; document.getElementById('ca-rc-shot').click(); });
+        await sleep(900);
+        ok(await page.evaluate(() => { const sh = window.__rcLastShot; return !!sh && sh.name === 'CrewAssist-Roster-October-2026.png' && sh.size > 2000; }), 'the capture renders a real PNG named app + month + year');
+        await page.evaluate(() => document.getElementById('ca-rc-fold').click());
+        await sleep(600);
+        ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('hidden') && document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-shot').classList.contains('hidden') && !document.getElementById('ca-rc-grid').classList.contains('rc-tags-on')), 'collapsing hides both buttons and forces the overlay off');
+        await page.evaluate(() => document.getElementById('ca-rc-close').click());
+        await sleep(800);
+        ok(await page.evaluate(() => document.getElementById('ca-roster-cal').classList.contains('hidden')), 'the calendar closes');
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.dutyDays'); localStorage.removeItem('crewAssist.allFlights'); });
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

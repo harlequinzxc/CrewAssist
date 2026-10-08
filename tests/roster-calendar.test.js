@@ -691,5 +691,124 @@ const synthItems = [].concat(
     R.ok(fs.readFileSync(APP, 'utf8').indexOf('html.ca-tour-on #btn-roster-cal') >= 0, 'the tour locks the calendar button with the other chrome');
   }
 
+  // ---- v1.43.0 (owner spec): the destination overlay + the roster capture ----
+  {
+    const legs = [
+      { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-05', std: '08:25', sta: '09:35', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:10', ac: '7M8', rpt: '', pos: false },
+      { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-05', std: '10:25', sta: '11:45', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:20', ac: '7M8', rpt: '', pos: false },
+      { fn: '231', dep: 'SIN', arr: 'SYD', ymd: '2026-10-09', std: '09:00', sta: '19:05', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '08:05', ac: '359', rpt: '', pos: false },
+      { fn: '232', dep: 'SYD', arr: 'SIN', ymd: '2026-10-10', std: '07:30', sta: '13:40', stdYmd: '2026-10-10', staYmd: '2026-10-10', ft: '08:10', ac: '359', rpt: '', pos: false },
+      // a sub-6h overnight turn: the chain calls it a Turnaround even though
+      // it sleeps downroute — both its tags run green (only true layovers go orange)
+      { fn: '424', dep: 'SIN', arr: 'HKT', ymd: '2026-10-15', std: '23:30', sta: '00:50', stdYmd: '2026-10-15', staYmd: '2026-10-16', ft: '01:20', ac: '7M8', rpt: '', pos: false },
+      { fn: '425', dep: 'HKT', arr: 'SIN', ymd: '2026-10-16', std: '05:30', sta: '09:40', stdYmd: '2026-10-16', staYmd: '2026-10-16', ft: '01:10', ac: '7M8', rpt: '', pos: false },
+    ];
+    const { w, d } = await boot(APP, { now: '2026-10-04T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': legs }));
+      x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [
+        { ymd: '2026-10-05', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k1' },
+        { ymd: '2026-10-09', kind: 'fly', code: '', loc: '', fns: ['231'], dkey: 'k2' },
+        { ymd: '2026-10-10', kind: 'fly', code: '', loc: '', fns: ['232'], dkey: 'k2' },
+        { ymd: '2026-10-11', kind: 'off', code: 'OFFD', loc: '', fns: [], dkey: '' },
+        { ymd: '2026-10-15', kind: 'fly', code: '', loc: '', fns: ['424'], dkey: 'k3' },
+        { ymd: '2026-10-16', kind: 'fly', code: '', loc: '', fns: ['425'], dkey: 'k3' },
+      ] }));
+    } });
+    // the arrival bands: 0000 rides with the evening, the boundaries are inclusive
+    R.eq(w.eval("rcArrivalBand('00:00')"), 3, 'a midnight landing is band 3');
+    R.eq(w.eval("rcArrivalBand('00:01')"), 1, '0001H opens the morning');
+    R.eq(w.eval("rcArrivalBand('12:00')"), 1, '1200H closes the morning');
+    R.eq(w.eval("rcArrivalBand('12:01')"), 2, '1201H opens the afternoon');
+    R.eq(w.eval("rcArrivalBand('18:00')"), 2, '1800H closes the afternoon');
+    R.eq(w.eval("rcArrivalBand('18:01')"), 3, '1801H opens the evening');
+    R.eq(w.eval("rcArrivalBand('23:59')"), 3, '2359H is still the evening');
+    R.eq(w.eval("rcArrivalBand('')"), 0, 'an unreadable time earns no badge');
+    // the marks: what lands on which day
+    const mk = JSON.parse(w.eval("JSON.stringify(rcMarksForMonth('2026-10'))"));
+    R.eq(mk['2026-10-05'].tag + ':' + mk['2026-10-05'].tagKind + ':' + mk['2026-10-05'].badge, 'KUL:ta:1', 'a same-day turn: one green tag + the morning band');
+    R.eq(mk['2026-10-09'].tag + ':' + mk['2026-10-09'].tagKind, 'SYD:lo', 'a layover paints its outbound day orange');
+    R.ok(mk['2026-10-09'].badge === undefined, 'the outbound day carries no arrival badge');
+    R.eq(mk['2026-10-10'].tag + ':' + mk['2026-10-10'].tagKind + ':' + mk['2026-10-10'].badge, 'SYD:ta:2', 'the homecoming day: green tag naming the station + the afternoon band');
+    R.eq(mk['2026-10-15'].tag + ':' + mk['2026-10-15'].tagKind, 'HKT:ta', 'a sub-6h overnight turn stays green on its outbound day');
+    R.eq(mk['2026-10-16'].tag + ':' + mk['2026-10-16'].tagKind + ':' + mk['2026-10-16'].badge, 'HKT:ta:1', 'its homecoming day lands green with the morning band');
+    R.ok(!mk['2026-10-11'], 'OFF days never carry marks');
+    // the header: default state
+    w.eval('openRosterCalendar()');
+    await wait(400);
+    const tagBtn = d.getElementById('ca-rc-tag');
+    const shotBtn = d.getElementById('ca-rc-shot');
+    R.ok(!!tagBtn && !tagBtn.classList.contains('hidden'), 'the tag toggle shows on an expanded calendar');
+    R.eq((tagBtn.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide'), 'tag', 'the toggle wears the tag icon');
+    R.eq(tagBtn.getAttribute('aria-pressed'), 'false', 'the overlay starts off');
+    R.eq((shotBtn.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide'), 'camera', 'the camera wears the camera icon');
+    R.ok(shotBtn.classList.contains('hidden'), 'the camera starts hidden');
+    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'no marks are lit while the overlay is off');
+    // the marks ride the DOM regardless — the CSS gate decides visibility
+    const t9 = d.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+    R.ok(!!t9 && t9.textContent === 'SYD' && t9.className.indexOf('ca-rc-tag-lo') !== -1, 'the layover tag sits on its outbound day, orange');
+    const b10 = d.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-badge');
+    R.ok(!!b10 && b10.textContent === '2', 'the homecoming day carries its band');
+    const t12 = d.querySelector('.ca-rc-day[data-ymd="2026-10-11"] .ca-rc-tag');
+    R.ok(!t12, 'an OFF day never grows a tag');
+    // the toggle: on, gold, camera appears — and back
+    tagBtn.click();
+    await wait(60);
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'one tap lights the overlay');
+    R.ok(tagBtn.classList.contains('bg-sia-gold') && tagBtn.getAttribute('aria-pressed') === 'true', 'the toggle fills gold while on');
+    R.ok(!shotBtn.classList.contains('hidden'), 'the camera appears with the overlay');
+    tagBtn.click();
+    await wait(60);
+    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && shotBtn.classList.contains('hidden'), 'a second tap returns the default');
+    // tags never block a day tap
+    tagBtn.click();
+    await wait(60);
+    d.querySelector('.ca-rc-day[data-ymd="2026-10-09"]').click();
+    await wait(150);
+    R.ok(d.querySelector('.ca-rc-day[data-ymd="2026-10-09"]').classList.contains('is-selected'), 'tapping a tagged day still selects it');
+    // collapse: overlay forced off, both buttons hidden; expand: back to default
+    d.getElementById('ca-rc-fold').click();
+    await wait(120);
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('hidden'), 'the fold collapses the grid');
+    R.ok(tagBtn.classList.contains('hidden') && shotBtn.classList.contains('hidden'), 'collapsed hides both new buttons');
+    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'collapsing forces the overlay off');
+    d.getElementById('ca-rc-fold').click();
+    await wait(120);
+    R.ok(!tagBtn.classList.contains('hidden') && tagBtn.getAttribute('aria-pressed') === 'false' && shotBtn.classList.contains('hidden'), 'expanding returns the default: tag off, camera hidden');
+    // close + reopen: nothing persists
+    tagBtn.click();
+    await wait(60);
+    d.getElementById('ca-rc-close').click();
+    await wait(200);
+    w.eval('openRosterCalendar()');
+    await wait(400);
+    R.ok(tagBtn.getAttribute('aria-pressed') === 'false' && shotBtn.classList.contains('hidden') && !d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'a reopen always starts from the default state');
+    // the capture: filename, the jsdom guard, the flash
+    R.eq(w.eval("rosterShotFilename('2026-10')"), 'CrewAssist-Roster-October-2026.png', 'the capture names app + month + year');
+    R.eq(w.eval('buildRosterShotCanvas() === null'), true, 'without a layout engine the capture steps aside (jsdom guard)');
+    tagBtn.click();
+    await wait(60);
+    d.getElementById('ca-rc-shot').click();
+    R.ok(shotBtn.classList.contains('ca-rc-flash'), 'the shutter flashes on tap');
+    await wait(700);
+    R.ok(!shotBtn.classList.contains('ca-rc-flash'), 'the flash fades');
+    // the deliver paths: download when there is no share sheet
+    w.URL.createObjectURL = () => 'blob:shot'; w.URL.revokeObjectURL = () => {};
+    w.eval('window.__dl = 0; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === "a") { el.click = function () { window.__dl++; }; } return el; }; rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "CrewAssist-Roster-October-2026.png");');
+    await wait(80);
+    R.eq(w.eval('window.__dl'), 1, 'without a share sheet the capture downloads');
+    R.eq(w.eval('window.__rcLastShot && window.__rcLastShot.name'), 'CrewAssist-Roster-October-2026.png', 'the deliver records the shot');
+    R.ok((d.getElementById('ca-arch-toast') || {}).textContent.indexOf('Roster screenshot saved') !== -1, 'the toast confirms the capture');
+    w.eval('document.createElement = window.__mk;');
+    // the share sheet, when the platform has one
+    const canStub = w.eval("(function () { try { Object.defineProperty(navigator, 'canShare', { value: function (o) { return true; }, configurable: true }); Object.defineProperty(navigator, 'share', { value: function (o) { window.__shared = (window.__shared || 0) + 1; return Promise.resolve(); }, configurable: true }); return 'ok'; } catch (e) { return 'no'; } })()");
+    if (canStub === 'ok') {
+      w.eval('rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "s.png")');
+      await wait(80);
+      R.eq(w.eval('window.__shared'), 1, 'with a share sheet the capture shares');
+      R.eq(w.eval('window.__dl'), 1, 'the share path never fires a download');
+    }
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
