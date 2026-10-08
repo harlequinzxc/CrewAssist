@@ -4,6 +4,7 @@
 // departing inside the 48h window before you lose signal.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
+const fs = require('fs');
 
 const DAY = 86400000;
 function ymd(off) {
@@ -531,6 +532,36 @@ function rosterItems(flight, sector, dateTok, opts) {
     const after = d.getElementById('ca-nextflight-card');
     R.ok(after && /Menus saved/.test(after.textContent), 'the card flips to the saved badge');
     R.ok(after && !after.querySelector('#ca-nf-save'), 'no save button once everything is saved');
+  }
+  // ---- v1.43.0 hotfix round 12: the curated station list + full TZ coverage ----
+  {
+    // the list and the zone map are top-level consts — scoped to the eval'd
+    // app script, so the STRUCTURE is verified node-side from the source;
+    // the FUNCTIONS (which close over the consts) are verified page-side
+    const src = fs.readFileSync(APP, 'utf8');
+    const listSrc = src.match(/const airports = \[[\s\S]*?\n\];/)[0];
+    const tzSrc = src.match(/const AIRPORT_TZ = \{[\s\S]*?\n        \};/)[0];
+    const list = eval(listSrc + '; airports;');
+    const tz = eval('(' + tzSrc.replace('const AIRPORT_TZ =', '').replace(/;\s*$/, '') + ')');
+    R.eq(list.length, 139, 'the curated SQ + Scoot network list carries 139 stations (incl. KNO + PNH)');
+    const noTz = list.filter((a) => !tz[a.code]).map((a) => a.code);
+    R.eq(noTz.join(','), '', 'every station on the list has a timezone — full AIRPORT_TZ coverage');
+    const orphans = Object.keys(tz).filter((k) => !list.some((a) => a.code === k));
+    R.eq(orphans.join(','), '', 'no orphan AIRPORT_TZ entries — the map matches the list exactly');
+    const codes = list.map((a) => a.code);
+    R.ok(['KNO', 'KTI', 'PNH', 'WSI'].every((c) => codes.indexOf(c) !== -1), 'KNO (owner correction), KTI (Techo), PNH (Pochentong history) and WSI are all aboard');
+    R.eq(tz.KTI, 'Asia/Phnom_Penh', 'Techo keeps Phnom Penh clocks');
+    R.eq(tz.LGW, 'Europe/London', 'London Gatwick converts (the old map only knew Heathrow)');
+    R.eq(tz.DRW, 'Australia/Darwin', 'Darwin converts (+9:30)');
+    R.eq(tz.UPG, 'Asia/Makassar', 'Makassar is WITA, not Jakarta time');
+    // the live functions (they close over the eval-scoped consts)
+    const { w } = await boot(APP);
+    R.eq(w.eval("getRegionForAirport('BWN')"), 'Southeast Asia', 'Brunei joins the Southeast Asia rate family (owner order)');
+    R.eq(w.eval("getRegionForAirport('VTE')"), 'Southeast Asia', 'Laos joins the Southeast Asia rate family (owner order)');
+    R.eq(w.eval("airportZone('KTI')"), 'Asia/Phnom_Penh', 'airportZone resolves Techo');
+    R.eq(w.eval("airportZone('LGW')"), 'Europe/London', 'airportZone resolves Gatwick');
+    R.eq(w.eval("landingSgtPhrase('KTI', '2026-10-20', '10:00')"), '11:00 SGT', 'a Techo landing converts to SGT (Phnom Penh is +7)');
+    R.eq(w.eval("landingSgtPhrase('KNO', '2026-10-20', '10:00')"), '11:00 SGT', 'a Medan landing converts to SGT (WIB +7)');
   }
   process.exit(R.done() ? 1 : 0);
 })();

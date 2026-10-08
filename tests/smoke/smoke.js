@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 10 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + three hotfix rounds)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v205'), 'the service-worker cache name is bumped to v205 (APP_VERSION 1.43.0, hotfix round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 12 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + four hotfix rounds)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v206'), 'the service-worker cache name is bumped to v206 (APP_VERSION 1.43.0, hotfix round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -247,8 +247,18 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
             const b = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-badge');
             const ts = getComputedStyle(t), bs = getComputedStyle(b);
-            return parseFloat(ts.fontSize) >= 9 && parseFloat(bs.fontSize) >= 9.5 && parseFloat(bs.right) >= 4 && parseFloat(bs.bottom) >= 4;
+            return parseFloat(ts.fontSize) >= 10 && parseFloat(bs.fontSize) >= 10.5 && parseFloat(bs.right) >= 6 && parseFloat(bs.bottom) >= 6;
         }), 'hotfix: the tag and badge read larger, the badge tucked inward');
+        ok(await page.evaluate(() => {
+            const day = document.querySelector('.ca-rc-day[data-ymd="2026-10-12"]');
+            const t = day.querySelector('.ca-rc-tag');
+            const b = day.querySelector('.ca-rc-badge');
+            if (!t || !b || getComputedStyle(t).display === 'none') return false;
+            const rt = t.getBoundingClientRect(), rb = b.getBoundingClientRect();
+            const apart = rt.bottom <= rb.top + 0.5 || rb.bottom <= rt.top + 0.5 || rt.right <= rb.left + 0.5 || rb.right <= rt.left + 0.5;
+            // the badge is the homecoming arrival band (105 lands 11:45 → morning band 1)
+            return apart && b.textContent === '1';
+        }), 'hotfix: on a both-marks day the tag and the badge never intersect (tag owns the top band, badge the bottom)');
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
         await sleep(60);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-out') && getComputedStyle(document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag')).animationName === 'ca-rc-popout' && getComputedStyle(document.getElementById('ca-rc-shot')).animationName === 'ca-rc-btnout'), 'hotfix: hiding pops the marks back out — and the camera button pops out with them');
