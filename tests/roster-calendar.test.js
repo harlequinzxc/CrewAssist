@@ -706,6 +706,12 @@ const synthItems = [].concat(
       { fn: '131', dep: 'SIN', arr: 'KUL', ymd: '2026-10-18', std: '08:00', sta: '09:15', stdYmd: '2026-10-18', staYmd: '2026-10-18', ft: '01:15', ac: '7M8', rpt: '', pos: false },
       { fn: '132', dep: 'KUL', arr: 'PEN', ymd: '2026-10-18', std: '10:00', sta: '11:20', stdYmd: '2026-10-18', staYmd: '2026-10-18', ft: '01:20', ac: '7M8', rpt: '', pos: false },
       { fn: '133', dep: 'PEN', arr: 'SIN', ymd: '2026-10-18', std: '12:30', sta: '13:45', stdYmd: '2026-10-18', staYmd: '2026-10-18', ft: '01:15', ac: '7M8', rpt: '', pos: false },
+      // the owner's mixed-trip example (SIN-JNB-CPT-JNB-SIN): JNB is a
+      // true layover, CPT a quick turnaround — same trip, two colors
+      { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:10', sta: '07:05', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '10:55', ac: '77W', rpt: '', pos: false },
+      { fn: '484', dep: 'JNB', arr: 'CPT', ymd: '2026-10-21', std: '09:40', sta: '11:35', stdYmd: '2026-10-21', staYmd: '2026-10-21', ft: '01:55', ac: '7M8', rpt: '', pos: false },
+      { fn: '485', dep: 'CPT', arr: 'JNB', ymd: '2026-10-21', std: '13:30', sta: '15:25', stdYmd: '2026-10-21', staYmd: '2026-10-21', ft: '01:55', ac: '7M8', rpt: '', pos: false },
+      { fn: '472', dep: 'JNB', arr: 'SIN', ymd: '2026-10-21', std: '17:10', sta: '08:15', stdYmd: '2026-10-21', staYmd: '2026-10-22', ft: '10:05', ac: '77W', rpt: '', pos: false },
     ];
     const { w, d } = await boot(APP, { now: '2026-10-04T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
@@ -718,6 +724,9 @@ const synthItems = [].concat(
         { ymd: '2026-10-15', kind: 'fly', code: '', loc: '', fns: ['424'], dkey: 'k3' },
         { ymd: '2026-10-16', kind: 'fly', code: '', loc: '', fns: ['425'], dkey: 'k3' },
         { ymd: '2026-10-18', kind: 'fly', code: '', loc: '', fns: ['131', '132', '133'], dkey: 'k4' },
+        { ymd: '2026-10-20', kind: 'fly', code: '', loc: '', fns: ['471'], dkey: 'k5' },
+        { ymd: '2026-10-21', kind: 'fly', code: '', loc: '', fns: ['484', '485', '472'], dkey: 'k5' },
+        { ymd: '2026-10-22', kind: 'fly', code: '', loc: '', fns: [], dkey: 'k5' },
       ] }));
     } });
     // the arrival bands: 0000 rides with the evening, the boundaries are inclusive
@@ -740,6 +749,10 @@ const synthItems = [].concat(
     R.ok(!mk['2026-10-15'], 'the overnight-out day carries no marks (the HKT tag lands on arrival)');
     R.eq(tagOf('2026-10-16', 0) + ':' + mk['2026-10-16'].badge, 'HKT:ta:1', 'a sub-6h overnight turn stays green, on the day it arrives downroute');
     R.eq(tagOf('2026-10-18', 0) + '|' + tagOf('2026-10-18', 1) + ':' + mk['2026-10-18'].badge, 'KUL:ta|PEN:ta:2', 'hotfix: a multi-sector stop run names every stop — KUL and PEN, both green');
+    R.eq(tagOf('2026-10-20', 0), 'JNB:lo', 'hotfix: a mixed trip colors each stop by its own ground time — JNB lays over, orange');
+    R.eq(tagOf('2026-10-21', 0), 'CPT:ta', 'hotfix: the same trip turns around at CPT, green');
+    R.ok(mk['2026-10-21'].tags.length === 1, 'hotfix: the second JNB visit never re-tags');
+    R.eq(tagOf('2026-10-22', 0) + ':' + mk['2026-10-22'].badge, '(none):1', 'the mixed trip homes with only its morning band');
     R.ok(!mk['2026-10-11'], 'OFF days never carry marks');
     // the header: default state
     w.eval('openRosterCalendar()');
@@ -761,6 +774,10 @@ const synthItems = [].concat(
     R.ok(!!b10 && b10.textContent === '2', 'the homecoming day carries its band');
     const t18 = d.querySelectorAll('.ca-rc-day[data-ymd="2026-10-18"] .ca-rc-tag');
     R.ok(t18.length === 2 && t18[0].textContent === 'KUL' && !t18[0].className.includes('slot-b') && t18[1].textContent === 'PEN' && t18[1].className.includes('slot-b'), 'two stops on one day: slot-a and slot-b');
+    const t20 = d.querySelector('.ca-rc-day[data-ymd="2026-10-20"] .ca-rc-tag');
+    R.ok(!!t20 && t20.textContent === 'JNB' && t20.className.indexOf('ca-rc-tag-lo') !== -1, 'hotfix: JNB wears the layover orange');
+    const t21s = d.querySelectorAll('.ca-rc-day[data-ymd="2026-10-21"] .ca-rc-tag');
+    R.ok(t21s.length === 1 && t21s[0].textContent === 'CPT' && t21s[0].className.indexOf('ca-rc-tag-ta') !== -1, 'hotfix: CPT wears the turnaround green — and JNB never re-tags');
     const t12 = d.querySelector('.ca-rc-day[data-ymd="2026-10-11"] .ca-rc-tag');
     R.ok(!t12, 'an OFF day never grows a tag');
     // the toggle: on, gold, camera appears — and back
@@ -804,12 +821,14 @@ const synthItems = [].concat(
     R.ok(shotBtn.classList.contains('ca-rc-flash'), 'the shutter flashes on tap');
     await wait(700);
     R.ok(!shotBtn.classList.contains('ca-rc-flash'), 'the flash fades');
+    R.ok(w.eval('!window.__rcLastShot'), 'the jsdom guard stops the capture before any deliver');
     // the deliver paths: download when there is no share sheet
     w.URL.createObjectURL = () => 'blob:shot'; w.URL.revokeObjectURL = () => {};
     w.eval('window.__dl = 0; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === "a") { el.click = function () { window.__dl++; }; } return el; }; rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "CrewAssist-Roster-October-2026.png");');
     await wait(80);
     R.eq(w.eval('window.__dl'), 1, 'without a share sheet the capture downloads');
     R.eq(w.eval('window.__rcLastShot && window.__rcLastShot.name'), 'CrewAssist-Roster-October-2026.png', 'the deliver records the shot');
+    R.ok(w.eval('window.__rcLastShot && window.__rcLastShot.blob instanceof Blob'), 'the deliver keeps the blob — the smoke decodes it to prove the raster');
     R.ok((d.getElementById('ca-arch-toast') || {}).textContent.indexOf('Roster screenshot saved') !== -1, 'the toast confirms the capture');
     w.eval('document.createElement = window.__mk;');
     // the share sheet, when the platform has one
