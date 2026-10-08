@@ -592,6 +592,17 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.eq(w.eval("getRegionForAirport('VTE')"), 'Southeast Asia', 'Laos joins the Southeast Asia rate family (owner order)');
     R.eq(w.eval("airportZone('KTI')"), 'Asia/Phnom_Penh', 'airportZone resolves Techo');
     R.eq(w.eval("airportZone('LGW')"), 'Europe/London', 'airportZone resolves Gatwick');
+
+    // ---- round 14 (owner recode, adopted): the regrouped map, the load-time
+    // validator, and the single-digit-hour hardening ----
+    R.eq(tz.SUB, 'Asia/Jakarta', 'round 14: Surabaya keeps WIB — all of Java runs +7 (the recode had dropped SUB)');
+    R.ok(['BKI', 'KCH', 'MYY', 'SBW'].every((k) => tz[k] === 'Asia/Kuching'), 'round 14: East Malaysia carries its own geographically true zone (same UTC+8 clock as Kuala Lumpur)');
+    R.eq(w.eval("typeof validateAirportTimezones"), 'function', 'round 14: the load-time zone validator exists page-side');
+    R.ok(w.eval("JSON.stringify((function(){ var r = validateAirportTimezones(); return r.valid === true && r.missing.length === 0 && r.orphaned.length === 0; })())") === 'true', 'round 14: the validator passes clean — full coverage, zero orphans, no throw');
+    R.eq(w.eval("typeof TZ_VALIDATION"), 'undefined', 'round 14: the TZ_VALIDATION const stays eval-scoped (never a page global)');
+    R.ok(w.eval("JSON.stringify((function(){ var a = zonedWallToUtcMs('2027-01-15', '8:25', 'Asia/Makassar'); var b = zonedWallToUtcMs('2027-01-15', '08:25', 'Asia/Makassar'); return isFinite(a) && a === b; })())") === 'true', 'round 14: a single-digit hour pads before Date.parse (the guard always admitted it, the parser never did)');
+    R.eq(w.eval("landingSgtPhrase('BKI', '2026-10-20', '10:00')"), '', 'round 14: Kuching shares the SGT clock — the landing phrase stays empty (zone renamed, clock unchanged)');
+
     R.eq(w.eval("landingSgtPhrase('KTI', '2026-10-20', '10:00')"), '11:00 SGT', 'a Techo landing converts to SGT (Phnom Penh is +7)');
     R.eq(w.eval("landingSgtPhrase('KNO', '2026-10-20', '10:00')"), '11:00 SGT', 'a Medan landing converts to SGT (WIB +7)');
   }

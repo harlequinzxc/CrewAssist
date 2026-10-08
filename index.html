@@ -2147,6 +2147,7 @@
                 { c: 'fix', t: 'The station list refreshes to the current SQ and Scoot network.' },
                 { c: 'fix', t: 'Tags and badges grow again, never touching each other.' },
                 { c: 'fix', t: 'The KUL wake-up and report lines sit closer to departure.' },
+                { c: 'fix', t: 'Time zones now self-check at boot; East Malaysia zones read true.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -7793,46 +7794,250 @@ const airports = [
         // zone so Intl does DST-correct math (SYD, LHR, LAX all shift). A
         // station not listed simply gets no conversion — never a guessed
         // offset.
+        // v1.38.0 (A2): station time zones.
+        // The IATA airport list knows cities/stations, but not their civil clocks.
+        // This map gives every roster station its IANA timezone so Intl handles
+        // DST correctly where applicable.
+        //
+        // v1.43.0 hotfix round 14 (owner recode, adopted): regrouped by region
+        // with East Malaysia on its own geographically true zones, plus a
+        // load-time validator below.
+        //
+        // IMPORTANT:
+        // - Keep this map independent from the airport/country metadata.
+        // - Do NOT use fixed UTC offsets here.
+        // - If an airport can appear in a roster, it should have an entry here.
+        // - Historical airport codes can remain mapped even after an airport closes
+        //   or changes code (e.g. PNH -> KTI).
         const AIRPORT_TZ = {
-            // v1.43.0 hotfix round 12 (owner order): full coverage — every
-            // airport on the curated list carries its IANA zone, so the
-            // SGT landing conversion and the layover local clock work
-            // everywhere, not just at the old majors.
+
+            // ===== SINGAPORE =====
             SIN: 'Asia/Singapore',
-            // Cambodia (ICT +7)
-            KTI: 'Asia/Phnom_Penh', PNH: 'Asia/Phnom_Penh', SAI: 'Asia/Phnom_Penh',
+
+            // ===== SOUTHEAST ASIA =====
+
+            // Cambodia — ICT / UTC+7
+            KTI: 'Asia/Phnom_Penh',
+            PNH: 'Asia/Phnom_Penh',
+            SAI: 'Asia/Phnom_Penh',
+
+            // Brunei — UTC+8
             BWN: 'Asia/Brunei',
-            // Indonesia — WIB (+7) west, WITA (+8) centre/east
-            CGK: 'Asia/Jakarta', SUB: 'Asia/Jakarta', KNO: 'Asia/Jakarta', KJT: 'Asia/Jakarta', PDG: 'Asia/Jakarta', PLM: 'Asia/Jakarta', PKU: 'Asia/Jakarta', PNK: 'Asia/Jakarta', SRG: 'Asia/Jakarta', TJQ: 'Asia/Jakarta', YIA: 'Asia/Jakarta',
-            DPS: 'Asia/Makassar', BPN: 'Asia/Makassar', LBJ: 'Asia/Makassar', LOP: 'Asia/Makassar', MDC: 'Asia/Makassar', UPG: 'Asia/Makassar',
-            // Malaysia (+8)
-            KUL: 'Asia/Kuala_Lumpur', SZB: 'Asia/Kuala_Lumpur', PEN: 'Asia/Kuala_Lumpur', LGK: 'Asia/Kuala_Lumpur', IPH: 'Asia/Kuala_Lumpur', KBR: 'Asia/Kuala_Lumpur', BKI: 'Asia/Kuala_Lumpur', KUA: 'Asia/Kuala_Lumpur', KCH: 'Asia/Kuala_Lumpur', MKZ: 'Asia/Kuala_Lumpur', MYY: 'Asia/Kuala_Lumpur', SBW: 'Asia/Kuala_Lumpur',
+
+            // Indonesia
+            // WIB / UTC+7 — all of Java (incl. Surabaya) + Sumatra
+            CGK: 'Asia/Jakarta',
+            SUB: 'Asia/Jakarta',
+            KNO: 'Asia/Jakarta',
+            KJT: 'Asia/Jakarta',
+            PDG: 'Asia/Jakarta',
+            PLM: 'Asia/Jakarta',
+            PKU: 'Asia/Jakarta',
+            PNK: 'Asia/Jakarta',
+            SRG: 'Asia/Jakarta',
+            TJQ: 'Asia/Jakarta',
+            YIA: 'Asia/Jakarta',
+
+            // WITA / UTC+8 — Bali, Nusa Tenggara, Kalimantan, Sulawesi
+            DPS: 'Asia/Makassar',
+            BPN: 'Asia/Makassar',
+            LBJ: 'Asia/Makassar',
+            LOP: 'Asia/Makassar',
+            MDC: 'Asia/Makassar',
+            UPG: 'Asia/Makassar',
+
+            // Malaysia — Peninsular Malaysia / UTC+8
+            KUL: 'Asia/Kuala_Lumpur',
+            SZB: 'Asia/Kuala_Lumpur',
+            PEN: 'Asia/Kuala_Lumpur',
+            LGK: 'Asia/Kuala_Lumpur',
+            IPH: 'Asia/Kuala_Lumpur',
+            KBR: 'Asia/Kuala_Lumpur',
+            KUA: 'Asia/Kuala_Lumpur',
+            MKZ: 'Asia/Kuala_Lumpur',
+
+            // Malaysia — East Malaysia / UTC+8
+            // Same clock as Kuala Lumpur, but geographically correct IANA zones.
+            BKI: 'Asia/Kuching',
+            KCH: 'Asia/Kuching',
+            MYY: 'Asia/Kuching',
+            SBW: 'Asia/Kuching',
+
+            // Myanmar — UTC+6:30
             RGN: 'Asia/Yangon',
-            MNL: 'Asia/Manila', CEB: 'Asia/Manila', CRK: 'Asia/Manila', MPH: 'Asia/Manila', DVO: 'Asia/Manila', ILO: 'Asia/Manila',
-            BKK: 'Asia/Bangkok', CNX: 'Asia/Bangkok', CEI: 'Asia/Bangkok', HDY: 'Asia/Bangkok', KBV: 'Asia/Bangkok', HKT: 'Asia/Bangkok',
-            DAD: 'Asia/Ho_Chi_Minh', HAN: 'Asia/Ho_Chi_Minh', SGN: 'Asia/Ho_Chi_Minh', CXR: 'Asia/Ho_Chi_Minh', PQC: 'Asia/Ho_Chi_Minh',
+
+            // Philippines — UTC+8
+            MNL: 'Asia/Manila',
+            CEB: 'Asia/Manila',
+            CRK: 'Asia/Manila',
+            MPH: 'Asia/Manila',
+            DVO: 'Asia/Manila',
+            ILO: 'Asia/Manila',
+
+            // Thailand — UTC+7
+            BKK: 'Asia/Bangkok',
+            CNX: 'Asia/Bangkok',
+            CEI: 'Asia/Bangkok',
+            HDY: 'Asia/Bangkok',
+            KBV: 'Asia/Bangkok',
+            HKT: 'Asia/Bangkok',
+
+            // Vietnam — UTC+7
+            DAD: 'Asia/Ho_Chi_Minh',
+            HAN: 'Asia/Ho_Chi_Minh',
+            SGN: 'Asia/Ho_Chi_Minh',
+            CXR: 'Asia/Ho_Chi_Minh',
+            PQC: 'Asia/Ho_Chi_Minh',
+
+            // Laos — UTC+7
             VTE: 'Asia/Vientiane',
-            // China (all +8, one zone)
-            PEK: 'Asia/Shanghai', PKX: 'Asia/Shanghai', TFU: 'Asia/Shanghai', CKG: 'Asia/Shanghai', CAN: 'Asia/Shanghai', KWE: 'Asia/Shanghai', HAK: 'Asia/Shanghai', HGH: 'Asia/Shanghai', NKG: 'Asia/Shanghai', NNG: 'Asia/Shanghai', TAO: 'Asia/Shanghai', SWA: 'Asia/Shanghai', SHE: 'Asia/Shanghai', SZX: 'Asia/Shanghai', PVG: 'Asia/Shanghai', TSN: 'Asia/Shanghai', WUH: 'Asia/Shanghai', XIY: 'Asia/Shanghai', XMN: 'Asia/Shanghai', CGO: 'Asia/Shanghai',
-            HKG: 'Asia/Hong_Kong', TPE: 'Asia/Taipei', MFM: 'Asia/Macau',
-            // Japan / Korea (+9)
-            FUK: 'Asia/Tokyo', NGO: 'Asia/Tokyo', KIX: 'Asia/Tokyo', CTS: 'Asia/Tokyo', OKA: 'Asia/Tokyo', HND: 'Asia/Tokyo', NRT: 'Asia/Tokyo',
-            PUS: 'Asia/Seoul', CJU: 'Asia/Seoul', ICN: 'Asia/Seoul',
-            // India (+5:30)
-            AMD: 'Asia/Kolkata', BLR: 'Asia/Kolkata', MAA: 'Asia/Kolkata', CJB: 'Asia/Kolkata', DEL: 'Asia/Kolkata', HYD: 'Asia/Kolkata', COK: 'Asia/Kolkata', CCU: 'Asia/Kolkata', BOM: 'Asia/Kolkata', ATQ: 'Asia/Kolkata', TRV: 'Asia/Kolkata', TRZ: 'Asia/Kolkata', VTZ: 'Asia/Kolkata',
-            DAC: 'Asia/Dhaka', CMB: 'Asia/Colombo', MLE: 'Indian/Maldives', KTM: 'Asia/Kathmandu',
-            RUH: 'Asia/Riyadh', JED: 'Asia/Riyadh', DXB: 'Asia/Dubai',
-            CPT: 'Africa/Johannesburg', JNB: 'Africa/Johannesburg',
-            // Europe
-            AMS: 'Europe/Amsterdam', BCN: 'Europe/Madrid', MAD: 'Europe/Madrid', BRU: 'Europe/Brussels', CPH: 'Europe/Copenhagen',
-            FRA: 'Europe/Berlin', MUC: 'Europe/Berlin', IST: 'Europe/Istanbul',
-            LGW: 'Europe/London', LHR: 'Europe/London', MAN: 'Europe/London',
-            MXP: 'Europe/Rome', FCO: 'Europe/Rome', CDG: 'Europe/Paris', ZRH: 'Europe/Zurich', ATH: 'Europe/Athens',
-            // Americas
-            JFK: 'America/New_York', EWR: 'America/New_York', LAX: 'America/Los_Angeles', SFO: 'America/Los_Angeles', SEA: 'America/Los_Angeles',
-            // Australia / New Zealand
-            SYD: 'Australia/Sydney', WSI: 'Australia/Sydney', MEL: 'Australia/Melbourne', BNE: 'Australia/Brisbane', CNS: 'Australia/Brisbane', ADL: 'Australia/Adelaide', PER: 'Australia/Perth', DRW: 'Australia/Darwin',
-            AKL: 'Pacific/Auckland', CHC: 'Pacific/Auckland'
+
+
+            // ===== NORTH ASIA =====
+
+            // China — China Standard Time / UTC+8
+            PEK: 'Asia/Shanghai',
+            PKX: 'Asia/Shanghai',
+            TFU: 'Asia/Shanghai',
+            CKG: 'Asia/Shanghai',
+            CAN: 'Asia/Shanghai',
+            KWE: 'Asia/Shanghai',
+            HAK: 'Asia/Shanghai',
+            HGH: 'Asia/Shanghai',
+            NKG: 'Asia/Shanghai',
+            NNG: 'Asia/Shanghai',
+            TAO: 'Asia/Shanghai',
+            SWA: 'Asia/Shanghai',
+            SHE: 'Asia/Shanghai',
+            SZX: 'Asia/Shanghai',
+            PVG: 'Asia/Shanghai',
+            TSN: 'Asia/Shanghai',
+            WUH: 'Asia/Shanghai',
+            XIY: 'Asia/Shanghai',
+            XMN: 'Asia/Shanghai',
+            CGO: 'Asia/Shanghai',
+
+            // Hong Kong / Macau / Taiwan
+            HKG: 'Asia/Hong_Kong',
+            MFM: 'Asia/Macau',
+            TPE: 'Asia/Taipei',
+
+            // Japan — UTC+9
+            FUK: 'Asia/Tokyo',
+            NGO: 'Asia/Tokyo',
+            KIX: 'Asia/Tokyo',
+            CTS: 'Asia/Tokyo',
+            OKA: 'Asia/Tokyo',
+            HND: 'Asia/Tokyo',
+            NRT: 'Asia/Tokyo',
+
+            // South Korea — UTC+9
+            PUS: 'Asia/Seoul',
+            CJU: 'Asia/Seoul',
+            ICN: 'Asia/Seoul',
+
+
+            // ===== SOUTH ASIA / WEST ASIA & AFRICA =====
+
+            // India — UTC+5:30
+            AMD: 'Asia/Kolkata',
+            BLR: 'Asia/Kolkata',
+            MAA: 'Asia/Kolkata',
+            CJB: 'Asia/Kolkata',
+            DEL: 'Asia/Kolkata',
+            HYD: 'Asia/Kolkata',
+            COK: 'Asia/Kolkata',
+            CCU: 'Asia/Kolkata',
+            BOM: 'Asia/Kolkata',
+            ATQ: 'Asia/Kolkata',
+            TRV: 'Asia/Kolkata',
+            TRZ: 'Asia/Kolkata',
+            VTZ: 'Asia/Kolkata',
+
+            // Bangladesh — UTC+6
+            DAC: 'Asia/Dhaka',
+
+            // Sri Lanka — UTC+5:30
+            CMB: 'Asia/Colombo',
+
+            // Maldives — UTC+5
+            MLE: 'Indian/Maldives',
+
+            // Nepal — UTC+5:45
+            KTM: 'Asia/Kathmandu',
+
+            // Saudi Arabia — UTC+3
+            RUH: 'Asia/Riyadh',
+            JED: 'Asia/Riyadh',
+
+            // UAE — UTC+4
+            DXB: 'Asia/Dubai',
+
+            // South Africa — UTC+2
+            CPT: 'Africa/Johannesburg',
+            JNB: 'Africa/Johannesburg',
+
+
+            // ===== EUROPE =====
+
+            AMS: 'Europe/Amsterdam',
+            BCN: 'Europe/Madrid',
+            BRU: 'Europe/Brussels',
+            CPH: 'Europe/Copenhagen',
+
+            FRA: 'Europe/Berlin',
+            MUC: 'Europe/Berlin',
+
+            IST: 'Europe/Istanbul',
+
+            LGW: 'Europe/London',
+            LHR: 'Europe/London',
+            MAN: 'Europe/London',
+
+            MAD: 'Europe/Madrid',
+
+            MXP: 'Europe/Rome',
+            FCO: 'Europe/Rome',
+
+            CDG: 'Europe/Paris',
+
+            ZRH: 'Europe/Zurich',
+
+            ATH: 'Europe/Athens',
+
+
+            // ===== AMERICAS =====
+
+            // Eastern Time
+            JFK: 'America/New_York',
+            EWR: 'America/New_York',
+
+            // Pacific Time
+            LAX: 'America/Los_Angeles',
+            SFO: 'America/Los_Angeles',
+            SEA: 'America/Los_Angeles',
+
+
+            // ===== SOUTHWEST PACIFIC =====
+
+            // Australia
+            SYD: 'Australia/Sydney',
+            WSI: 'Australia/Sydney',
+
+            MEL: 'Australia/Melbourne',
+
+            BNE: 'Australia/Brisbane',
+            CNS: 'Australia/Brisbane',
+
+            ADL: 'Australia/Adelaide',
+
+            PER: 'Australia/Perth',
+
+            DRW: 'Australia/Darwin',
+
+            // New Zealand
+            AKL: 'Pacific/Auckland',
+            CHC: 'Pacific/Auckland'
         };
         function airportZone(code) { return AIRPORT_TZ[String(code || '').trim().toUpperCase()] || ''; }
         // A wall-clock time printed on a roster is LOCAL to its station. This
@@ -7840,8 +8045,10 @@ const airports = [
         // zone — two offset passes so DST boundaries land on the right side.
         function zonedWallToUtcMs(ymd, hm, zone) {
             try {
-                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || '')) || !/^\d{1,2}:\d{2}$/.test(String(hm || ''))) return NaN;
-                const wallMs = Date.parse(ymd + 'T' + hm + ':00Z');
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || '')) || !/^\d{1,2}:\d{2}$/.test(String(hm || '')) || !zone) return NaN;
+                // round 14: pad a single-digit hour ('8:25') — Date.parse
+                // rejects 'T8:25:00Z' even though the guard admits it
+                const wallMs = Date.parse(ymd + 'T' + String(hm).replace(/^(\d):/, '0$1:') + ':00Z');
                 const f = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
                 const readZoneAsUtc = (ms) => {
                     const p = {};
@@ -7865,6 +8072,42 @@ const airports = [
                 if (sgtHm === String(arrHm || '')) return ''; // same clock as SG (KUL) — nothing to convert
                 return sgtHm + ' SGT';
             } catch (e) { return ''; }
+        }
+
+        // ============================================================
+        // v1.43.0 hotfix round 14 (owner recode, adopted): load-time
+        // self-check — every station on the curated list must carry a
+        // zone. Never throws (a missing mapping must not crash the roster
+        // app): it console.errors missing entries (the browser smoke
+        // holds the app to zero console errors, so a miss fails the rig)
+        // and only warns on orphans (historical codes may linger).
+        // ============================================================
+        function validateAirportTimezones() {
+            const airportCodes = new Set(airports.map((a) => String(a.code || '').trim().toUpperCase()).filter(Boolean));
+            const timezoneCodes = new Set(Object.keys(AIRPORT_TZ).map((code) => String(code).trim().toUpperCase()));
+            const missing = [...airportCodes].filter((code) => !timezoneCodes.has(code)).sort();
+            const orphaned = [...timezoneCodes].filter((code) => !airportCodes.has(code)).sort();
+            if (missing.length) console.error('[AIRPORT_TZ] Missing timezone(s):', missing.join(', '));
+            if (orphaned.length) console.warn('[AIRPORT_TZ] Orphaned timezone(s):', orphaned.join(', '));
+            return { valid: missing.length === 0, missing, orphaned };
+        }
+        const TZ_VALIDATION = validateAirportTimezones();
+
+        // Console debug helpers (round 14) — inert unless called:
+        //   debugAirportTimezone('LHR'); debugSgtConversion('LHR', '2027-01-15', '10:00');
+        function debugAirportTimezone(code) {
+            const normalized = String(code || '').trim().toUpperCase();
+            const zone = airportZone(normalized);
+            return { code: normalized, zone: zone || '(unknown)' };
+        }
+        function debugSgtConversion(code, ymd, hm) {
+            const normalized = String(code || '').toUpperCase();
+            const zone = airportZone(code);
+            if (!zone) return { code: normalized, local: hm, zone: '(unknown)', sgt: '' };
+            const utcMs = zonedWallToUtcMs(ymd, hm, zone);
+            if (!Number.isFinite(utcMs)) return { code: normalized, local: hm, zone, sgt: '(conversion failed)' };
+            const sgt = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(utcMs));
+            return { code: normalized, local: hm, zone, sgt };
         }
 
 
