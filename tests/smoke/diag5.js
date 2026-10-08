@@ -278,32 +278,17 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // can never latch a wash (toggles keep their class-based state)
         // the rig's viewport runs hasTouch, so Chrome natively reports
         // (hover: none) — the world the owner's phone lives in. First clear
-        // the stage: any reload re-offers What's New (the v1.35.0 ruling —
-        // closing never counts as seen), and its backdrop would eat every
-        // pointer tap.
-        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
-        // the one-time install hint (a tab user with saved earnings — the
-        // restored phone qualifies) can land on a quiet moment too; dismiss
-        // it like a user would
-        await page.evaluate(() => { const dl = document.getElementById('app-dialog-backdrop'); if (dl && !dl.classList.contains('hidden')) document.getElementById('app-dialog-ok').click(); });
-        await sleep(400);
-        // closing What's New releases the welcome chat — and the chat-busy
-        // rest (hotfix 12) correctly refuses the calendar button while it
-        // types, so wait for the chat to go idle like a real user would
+        // the stage: the restore journey's reload re-offers What's New (a
+        // restored backup carries no seen-marker), and its backdrop would
+        // eat every pointer tap.
+        // DIAG v5
+        await page.evaluate(() => { const bd = document.getElementById('whatsnew-backdrop'); if (bd && !bd.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
         await page.waitForFunction(() => !document.documentElement.classList.contains('chat-busy'), { timeout: 20000 });
-        await sleep(300);
-        const restBg = await page.evaluate(() => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor);
-        await (await page.$('#btn-roster-cal')).tap();
-        await sleep(300);
-        // the reopen glide must land before the tag is tappable
-        await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden') && !document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-tag').getBoundingClientRect().top > 0, { timeout: 8000 });
-        await sleep(400);
-        ok(await page.evaluate((before) => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor === before, restBg), 'hotfix: a finger tap settles back to rest — no sticky hover wash');
-        await (await page.$('#ca-rc-tag')).tap();
-        await sleep(300);
-        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle is exempt — its on-state survives the release');
-        await page.evaluate(() => document.getElementById('ca-rc-close').click());
-        await sleep(400);
+        console.log('DLG', JSON.stringify(await page.evaluate(() => ({
+            up: !document.getElementById('app-dialog-backdrop').classList.contains('hidden'),
+            msg: (document.getElementById('app-dialog-msg') || {}).textContent,
+            title: (document.getElementById('app-dialog-title') || {}).textContent,
+        }))));
         await page.evaluate(() => { localStorage.removeItem('crewAssist.dutyDays'); localStorage.removeItem('crewAssist.allFlights'); });
 
         console.log('— health —');
