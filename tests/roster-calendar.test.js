@@ -702,6 +702,10 @@ const synthItems = [].concat(
       // it sleeps downroute — both its tags run green (only true layovers go orange)
       { fn: '424', dep: 'SIN', arr: 'HKT', ymd: '2026-10-15', std: '23:30', sta: '00:50', stdYmd: '2026-10-15', staYmd: '2026-10-16', ft: '01:20', ac: '7M8', rpt: '', pos: false },
       { fn: '425', dep: 'HKT', arr: 'SIN', ymd: '2026-10-16', std: '05:30', sta: '09:40', stdYmd: '2026-10-16', staYmd: '2026-10-16', ft: '01:10', ac: '7M8', rpt: '', pos: false },
+      // a same-day 3-sector stop run: KUL and PEN both land on the 18th
+      { fn: '131', dep: 'SIN', arr: 'KUL', ymd: '2026-10-18', std: '08:00', sta: '09:15', stdYmd: '2026-10-18', staYmd: '2026-10-18', ft: '01:15', ac: '7M8', rpt: '', pos: false },
+      { fn: '132', dep: 'KUL', arr: 'PEN', ymd: '2026-10-18', std: '10:00', sta: '11:20', stdYmd: '2026-10-18', staYmd: '2026-10-18', ft: '01:20', ac: '7M8', rpt: '', pos: false },
+      { fn: '133', dep: 'PEN', arr: 'SIN', ymd: '2026-10-18', std: '12:30', sta: '13:45', stdYmd: '2026-10-18', staYmd: '2026-10-18', ft: '01:15', ac: '7M8', rpt: '', pos: false },
     ];
     const { w, d } = await boot(APP, { now: '2026-10-04T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
@@ -713,6 +717,7 @@ const synthItems = [].concat(
         { ymd: '2026-10-11', kind: 'off', code: 'OFFD', loc: '', fns: [], dkey: '' },
         { ymd: '2026-10-15', kind: 'fly', code: '', loc: '', fns: ['424'], dkey: 'k3' },
         { ymd: '2026-10-16', kind: 'fly', code: '', loc: '', fns: ['425'], dkey: 'k3' },
+        { ymd: '2026-10-18', kind: 'fly', code: '', loc: '', fns: ['131', '132', '133'], dkey: 'k4' },
       ] }));
     } });
     // the arrival bands: 0000 rides with the evening, the boundaries are inclusive
@@ -726,12 +731,15 @@ const synthItems = [].concat(
     R.eq(w.eval("rcArrivalBand('')"), 0, 'an unreadable time earns no badge');
     // the marks: what lands on which day
     const mk = JSON.parse(w.eval("JSON.stringify(rcMarksForMonth('2026-10'))"));
-    R.eq(mk['2026-10-05'].tag + ':' + mk['2026-10-05'].tagKind + ':' + mk['2026-10-05'].badge, 'KUL:ta:1', 'a same-day turn: one green tag + the morning band');
-    R.eq(mk['2026-10-09'].tag + ':' + mk['2026-10-09'].tagKind, 'SYD:lo', 'a layover paints its outbound day orange');
+    const tagOf = (d, i) => (mk[d] && mk[d].tags && mk[d].tags[i]) ? mk[d].tags[i].c + ':' + mk[d].tags[i].k : '(none)';
+    R.eq(tagOf('2026-10-05', 0) + ':' + mk['2026-10-05'].badge, 'KUL:ta:1', 'a same-day turn: one green tag + the morning band');
+    R.eq(tagOf('2026-10-09', 0), 'SYD:lo', 'a layover paints its outbound day orange');
     R.ok(mk['2026-10-09'].badge === undefined, 'the outbound day carries no arrival badge');
-    R.eq(mk['2026-10-10'].tag + ':' + mk['2026-10-10'].tagKind + ':' + mk['2026-10-10'].badge, 'SYD:ta:2', 'the homecoming day: green tag naming the station + the afternoon band');
-    R.eq(mk['2026-10-15'].tag + ':' + mk['2026-10-15'].tagKind, 'HKT:ta', 'a sub-6h overnight turn stays green on its outbound day');
-    R.eq(mk['2026-10-16'].tag + ':' + mk['2026-10-16'].tagKind + ':' + mk['2026-10-16'].badge, 'HKT:ta:1', 'its homecoming day lands green with the morning band');
+    R.eq(tagOf('2026-10-10', 0), '(none)', 'hotfix: the homecoming day never repeats the outbound tag');
+    R.eq(mk['2026-10-10'].badge, 2, 'the homecoming day keeps only its arrival band');
+    R.ok(!mk['2026-10-15'], 'the overnight-out day carries no marks (the HKT tag lands on arrival)');
+    R.eq(tagOf('2026-10-16', 0) + ':' + mk['2026-10-16'].badge, 'HKT:ta:1', 'a sub-6h overnight turn stays green, on the day it arrives downroute');
+    R.eq(tagOf('2026-10-18', 0) + '|' + tagOf('2026-10-18', 1) + ':' + mk['2026-10-18'].badge, 'KUL:ta|PEN:ta:2', 'hotfix: a multi-sector stop run names every stop — KUL and PEN, both green');
     R.ok(!mk['2026-10-11'], 'OFF days never carry marks');
     // the header: default state
     w.eval('openRosterCalendar()');
@@ -739,6 +747,7 @@ const synthItems = [].concat(
     const tagBtn = d.getElementById('ca-rc-tag');
     const shotBtn = d.getElementById('ca-rc-shot');
     R.ok(!!tagBtn && !tagBtn.classList.contains('hidden'), 'the tag toggle shows on an expanded calendar');
+    R.ok(d.getElementById('ca-rc-fold').nextElementSibling === tagBtn && tagBtn.nextElementSibling === shotBtn, 'hotfix: the tag and camera sit right of the chevron');
     R.eq((tagBtn.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide'), 'tag', 'the toggle wears the tag icon');
     R.eq(tagBtn.getAttribute('aria-pressed'), 'false', 'the overlay starts off');
     R.eq((shotBtn.querySelector('i[data-lucide]') || {}).getAttribute('data-lucide'), 'camera', 'the camera wears the camera icon');
@@ -747,15 +756,18 @@ const synthItems = [].concat(
     // the marks ride the DOM regardless — the CSS gate decides visibility
     const t9 = d.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
     R.ok(!!t9 && t9.textContent === 'SYD' && t9.className.indexOf('ca-rc-tag-lo') !== -1, 'the layover tag sits on its outbound day, orange');
+    R.ok(!d.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-tag'), 'hotfix: the homecoming day carries no duplicate tag');
     const b10 = d.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-badge');
     R.ok(!!b10 && b10.textContent === '2', 'the homecoming day carries its band');
+    const t18 = d.querySelectorAll('.ca-rc-day[data-ymd="2026-10-18"] .ca-rc-tag');
+    R.ok(t18.length === 2 && t18[0].textContent === 'KUL' && !t18[0].className.includes('slot-b') && t18[1].textContent === 'PEN' && t18[1].className.includes('slot-b'), 'two stops on one day: slot-a and slot-b');
     const t12 = d.querySelector('.ca-rc-day[data-ymd="2026-10-11"] .ca-rc-tag');
     R.ok(!t12, 'an OFF day never grows a tag');
     // the toggle: on, gold, camera appears — and back
     tagBtn.click();
     await wait(60);
     R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'one tap lights the overlay');
-    R.ok(tagBtn.classList.contains('bg-sia-gold') && tagBtn.getAttribute('aria-pressed') === 'true', 'the toggle fills gold while on');
+    R.ok(tagBtn.classList.contains('ca-rc-tagon') && tagBtn.getAttribute('aria-pressed') === 'true', 'the toggle fills gold while on (the hover-latch-proof class)');
     R.ok(!shotBtn.classList.contains('hidden'), 'the camera appears with the overlay');
     tagBtn.click();
     await wait(60);

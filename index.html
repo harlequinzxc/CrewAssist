@@ -312,6 +312,13 @@
         #ca-rc-grid.rc-tags-on .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
         @keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 rgba(201,162,39,.9); } 100% { box-shadow: 0 0 0 14px rgba(201,162,39,0); } }
         .ca-rc-flash { animation: ca-rc-flash .45s ease-out; }
+        /* hotfix (owner report: the toggle never looked gold on the phone):
+           a tap latches :hover on touch devices, and the Tailwind hover wash
+           (class + pseudo-class) outranks a plain utility — an ID selector
+           outranks them both, so the gold survives the sticky hover. */
+        #ca-rc-tag.ca-rc-tagon { background: #C9A227; color: #0B0E14; }
+        /* hotfix: a day with two stops wears one tag per corner, same tilt */
+        .ca-rc-tag.slot-b { left: -3px; right: auto; }
         .ca-rc-nav { border-radius: 999px; transition: background-color .15s ease, transform .12s ease; }
         .ca-rc-nav:active { transform: scale(.92); }
         @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: rgba(127,127,127,.13); } }
@@ -1652,16 +1659,17 @@
                             <h3 id="ca-rc-month" class="font-bold text-base text-left leading-none"></h3>
                         </button>
                         <button type="button" id="ca-rc-fold" aria-label="Collapse calendar" class="ca-hit p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><span id="ca-rc-fold-up"><i data-lucide="chevron-up" class="w-5 h-5"></i></span><span id="ca-rc-fold-down" class="hidden"><i data-lucide="chevron-down" class="w-5 h-5"></i></span></button>
+                        <!-- v1.43.0 + hotfix (owner order): the destination overlay
+                             and the roster capture sit RIGHT OF THE CHEVRON. The tag
+                             fills gold while the overlay runs; the camera appears
+                             only when there are tags to capture; both hide when the
+                             calendar is collapsed. -->
+                        <button type="button" id="ca-rc-tag" aria-label="Destination tags" aria-pressed="false" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="tag" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-shot" aria-label="Capture the roster as an image" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="camera" class="w-5 h-5"></i></button>
                     </div>
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-next" aria-label="Next month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
-                        <!-- v1.43.0 (owner spec): the destination overlay + the roster
-                             capture. The tag fills gold while the overlay runs; the
-                             camera appears only when there are tags to capture, and
-                             both hide when the calendar is collapsed. -->
-                        <button type="button" id="ca-rc-tag" aria-label="Destination tags" aria-pressed="false" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="tag" class="w-5 h-5"></i></button>
-                        <button type="button" id="ca-rc-shot" aria-label="Capture the roster as an image" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="camera" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-close" aria-label="Close" class="ca-hit p-3.5 -mr-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
                     </div>
                 </div>
@@ -2112,6 +2120,8 @@
             { v: '1.43.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'Destination tags and arrival badges light up the roster calendar.' },
                 { c: 'new', t: 'Capture the roster as a PNG to share.' },
+                { c: 'fix', t: 'One tag per destination; multi-sector trips name every stop.' },
+                { c: 'fix', t: 'The tag toggle sits by the chevron and stays gold.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -4073,9 +4083,10 @@
                 if (t.sectors.some(s => !s.stdHm || !s.staHm || (!s.ftHm && !s.paxing) || !s.depDate || !s.arrDate)) {
                     trip.ok = false; trip.reason = (trip.reason ? trip.reason + '; ' : '') + 'some times could not be read';
                 }
-                if (!trip.ok) return trip;
-                // Layover vs turnaround: any intermediate ground time over 6h
-                // (same threshold as the LMA shuttle suggestion) is a layover.
+                // v1.43.0 hotfix: the Layover/Turnaround call moves ABOVE the
+                // ok-return — the calendar tags 3-sector stops (SIN-KUL-PEN-SIN)
+                // and the calculator's 2-or-4 support must not freeze them as
+                // default-Layover. Values for priced trips are unchanged.
                 let maxGround = -1;
                 for (let i = 0; i < t.sectors.length - 1; i++) {
                     const a = t.sectors[i], b = t.sectors[i + 1];
@@ -4085,6 +4096,7 @@
                     if (g > maxGround) maxGround = g;
                 }
                 trip.type = maxGround <= 360 ? 'Turnaround' : 'Layover';
+                if (!trip.ok) return trip;
                 for (let i = 0; i < t.sectors.length - 1; i++) {
                     const a = t.sectors[i], b = t.sectors[i + 1];
                     if (a.arr === 'SIN') continue;
@@ -4606,24 +4618,32 @@
             return rosterChainTrips(legs);
         }
         function rcMarksForMonth(ym) {
+            // v1.43.0 hotfix (owner order): NO DUPLICATED IATA TAGS. Every
+            // DISTINCT stop appears exactly once, on the day the crew arrives
+            // there (SIN-SYD-SIN shows one SYD, on the outbound day; SIN-NRT-
+            // LAX-SIN shows NRT and LAX); the homecoming day carries only its
+            // arrival badge. A day caps at two tags — one per corner.
             const marks = {};
             const put = (ymd, o) => { const cur = marks[ymd] || (marks[ymd] = {}); Object.keys(o).forEach((k) => { if (cur[k] === undefined) cur[k] = o[k]; }); };
             rcTripsAll().forEach((t) => {
                 if (!t || !t.sectors || !t.sectors.length) return;
-                const first = t.sectors[0], last = t.sectors[t.sectors.length - 1];
-                if (!first || !last) return;
-                const oneDay = first.depDate === last.arrDate;
-                if (first.dep === 'SIN' && first.arr && first.arr !== 'SIN' && first.depDate) {
-                    put(first.depDate, { tag: first.arr, tagKind: (oneDay || t.type !== 'Layover') ? 'ta' : 'lo' });
-                }
-                if (last.arr === 'SIN' && last.arrDate) {
-                    if (!oneDay && last.dep && last.dep !== 'SIN') put(last.arrDate, { tag: last.dep, tagKind: 'ta' });
+                const kind = (t.type === 'Layover') ? 'lo' : 'ta';
+                const seen = {};
+                t.sectors.forEach((sec) => {
+                    if (!sec || !sec.arr || sec.arr === 'SIN' || seen[sec.arr] || !sec.arrDate) return;
+                    seen[sec.arr] = 1;
+                    const cur = marks[sec.arrDate] || (marks[sec.arrDate] = {});
+                    if (!cur.tags) cur.tags = [];
+                    if (cur.tags.length < 2 && !cur.tags.some((x) => x.c === sec.arr)) cur.tags.push({ c: sec.arr, k: kind });
+                });
+                const last = t.sectors[t.sectors.length - 1];
+                if (last && last.arr === 'SIN' && last.arrDate) {
                     const band = rcArrivalBand(last.staHm);
                     if (band) put(last.arrDate, { badge: band });
                 }
             });
             const out = {};
-            Object.keys(marks).forEach((ymd) => { if (String(ymd).slice(0, 7) === ym) out[ymd] = marks[ymd]; });
+            Object.keys(marks).forEach((ymd) => { if (String(ymd).slice(0, 7) === ym && (marks[ymd].tags || marks[ymd].badge)) out[ymd] = marks[ymd]; });
             return out;
         }
         // the overlay's UI state — deliberately NOT persisted: every open
@@ -4637,8 +4657,7 @@
             if (grid) grid.classList.toggle('rc-tags-on', rcTagsOn);
             if (tagBtn) {
                 tagBtn.classList.toggle('hidden', !!collapsed);
-                tagBtn.classList.toggle('bg-sia-gold', rcTagsOn);
-                tagBtn.classList.toggle('text-black', rcTagsOn);
+                tagBtn.classList.toggle('ca-rc-tagon', rcTagsOn);
                 tagBtn.setAttribute('aria-pressed', rcTagsOn ? 'true' : 'false');
             }
             if (shotBtn) shotBtn.classList.toggle('hidden', !!collapsed || !rcTagsOn);
@@ -4708,8 +4727,7 @@
                 }
                 const bar = day.querySelector('.ca-rc-bar.is-today');
                 if (bar) { const r = rel(bar.getBoundingClientRect()); ctx.fillStyle = '#c9a227'; rrect(r.x, r.y, r.w, r.h, r.h / 2); }
-                const tag = day.querySelector('.ca-rc-tag');
-                if (tag) {
+                day.querySelectorAll('.ca-rc-tag').forEach((tag) => {
                     const r = rel(tag.getBoundingClientRect()); const st = cs(tag);
                     ctx.save();
                     ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
@@ -4720,7 +4738,7 @@
                     ctx.font = '700 ' + (parseFloat(st.fontSize) || 8) + 'px "Space Mono", monospace';
                     ctx.fillText(String(tag.textContent || '').trim(), 0, 0);
                     ctx.restore();
-                }
+                });
                 const bdg = day.querySelector('.ca-rc-badge');
                 if (bdg) {
                     const r = rel(bdg.getBoundingClientRect()); const st = cs(bdg);
@@ -4902,10 +4920,11 @@
                     if (dd < 1 || dd > daysIn) { html += '<span></span>'; continue; }
                     const ymd = ymdOf(dd);
                     const mk = marks[ymd] || null;
+                    const tagsHtml = (mk && mk.tags) ? mk.tags.map((tg, i) => '<span class="ca-rc-tag ca-rc-tag-' + tg.k + (i ? ' slot-b' : '') + '" aria-hidden="true">' + rosterEsc(tg.c) + '</span>').join('') : '';
                     html += '<button type="button" class="ca-rc-day" data-ymd="' + ymd + '" aria-label="' + rosterShortDate(ymd) + '">'
                         + '<span class="ca-rc-num">' + dd + '</span>'
                         + '<span class="ca-rc-bar' + (ymd === today ? ' is-today' : '') + '" aria-hidden="true"></span>'
-                        + (mk && mk.tag ? '<span class="ca-rc-tag ca-rc-tag-' + mk.tagKind + '" aria-hidden="true">' + rosterEsc(mk.tag) + '</span>' : '')
+                        + tagsHtml
                         + (mk && mk.badge ? '<span class="ca-rc-badge" aria-hidden="true">' + mk.badge + '</span>' : '')
                         + '</button>';
                 }

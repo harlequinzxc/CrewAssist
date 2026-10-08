@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 2 && e.items.map((i) => i.c).join(',') === 'new,new'; }), 'the changelog carries the 1.43.0 entry (destination overlay + roster capture)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v202'), 'the service-worker cache name is bumped to v202 (APP_VERSION 1.43.0)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 4 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + hotfixes)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v203'), 'the service-worker cache name is bumped to v203 (APP_VERSION 1.43.0, hotfix round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -207,6 +207,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => openRosterCalendar());
         await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden'), { timeout: 5000 });
         await sleep(600);
+        ok(await page.evaluate(() => document.getElementById('ca-rc-fold').nextElementSibling === document.getElementById('ca-rc-tag') && document.getElementById('ca-rc-tag').nextElementSibling === document.getElementById('ca-rc-shot')), 'hotfix: the tag and camera sit right of the chevron');
         ok(await page.evaluate(() => {
             const g = document.getElementById('ca-rc-grid');
             const tagBtn = document.getElementById('ca-rc-tag');
@@ -219,6 +220,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
         await sleep(300);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !document.getElementById('ca-rc-shot').classList.contains('hidden')), 'one tap lights the overlay and shows the camera');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle fills gold when on (computed — immune to the sticky touch hover)');
         ok(await page.evaluate(() => {
             const t9 = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
             const t10 = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-tag');
@@ -226,10 +228,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const t12 = document.querySelector('.ca-rc-day[data-ymd="2026-10-12"] .ca-rc-tag');
             const vis = (el) => !!el && getComputedStyle(el).display !== 'none';
             return vis(t9) && t9.textContent === 'SYD' && t9.className.includes('ca-rc-tag-lo')
-                && vis(t10) && t10.textContent === 'SYD' && t10.className.includes('ca-rc-tag-ta')
-                && vis(b10) && b10.textContent === '2'
+                && !t10 && vis(b10) && b10.textContent === '2'
                 && vis(t12) && t12.textContent === 'KUL' && t12.className.includes('ca-rc-tag-ta');
-        }), 'the tags render: SYD orange outbound, SYD green homecoming with band 2, KUL turnaround');
+        }), 'hotfix: the tags render once each — SYD orange on the outbound day only, band 2 homecoming, KUL turnaround');
         await page.evaluate(() => { window.__rcLastShot = null; document.getElementById('ca-rc-shot').click(); });
         await sleep(900);
         ok(await page.evaluate(() => { const sh = window.__rcLastShot; return !!sh && sh.name === 'CrewAssist-Roster-October-2026.png' && sh.size > 2000; }), 'the capture renders a real PNG named app + month + year');
