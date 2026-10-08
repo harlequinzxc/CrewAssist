@@ -447,6 +447,38 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(p1b.indexOf('SQ 802') >= 0 && p1b.indexOf('Departs 0945H') >= 0, 'the flight and its details still show');
   }
   {
+    // ---- round 13 (owner order): the KUL exception — a KUL-bound outbound
+    // wakes later (alarm STD−3h30m, report line STD−1h30m); every other
+    // station keeps the NRT-pinned −4h/−2h chain above ----
+    const { d } = await boot(APP, { now: '2026-10-11T20:00:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-12', std: '08:25', sta: '09:35', staYmd: '2026-10-12' }
+      ])));
+    } });
+    let k1 = null; const tK = Date.now();
+    while (Date.now() - tK < 9000 && !(k1 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const pk = k1 ? k1.textContent : '';
+    R.ok(k1 && pk.indexOf('Suggested alarm 0455H') >= 0, 'KUL outbound: alarm = STD − 3h30m (0825 − 0330)');
+    R.ok(pk.indexOf('Reporting 0655H') >= 0 && pk.indexOf('STD 0825H') >= 0, 'KUL outbound: report line = STD − 1h30m');
+    R.ok(pk.indexOf('SQ 106') >= 0 && pk.indexOf('KUL') >= 0, 'KUL outbound: the card still reads flight + station');
+  }
+  {
+    // the window follows the alarm it shows: 15h45m before a KUL STD the
+    // section still waits (15.75h > the KUL 15.5h opening) — an NRT card at
+    // the same offset would already show, because its window opens at 16h
+    const { d } = await boot(APP, { now: '2026-10-11T16:40:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-12', std: '08:25', sta: '09:35', staYmd: '2026-10-12' }
+      ])));
+    } });
+    let k2 = null; const tK2 = Date.now();
+    while (Date.now() - tK2 < 9000 && !(k2 = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const pk2 = k2 ? k2.textContent : '';
+    R.ok(k2 && pk2.indexOf('Suggested alarm') === -1 && pk2.indexOf('Departs 0825H') >= 0, 'KUL window: hidden at 15h45m out — the window follows the shorter alarm, not the flat 16h');
+  }
+  {
     // ---- part two: at the station + the layover time-zone card ----
     const { d } = await boot(APP, { now: '2026-10-07T14:32:00+08:00', seed: (x) => {
       seedProfile(x);

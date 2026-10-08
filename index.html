@@ -2146,6 +2146,7 @@
                 { c: 'fix', t: 'Hiding the tags pops them back out.' },
                 { c: 'fix', t: 'The station list refreshes to the current SQ and Scoot network.' },
                 { c: 'fix', t: 'Tags and badges grow again, never touching each other.' },
+                { c: 'fix', t: 'The KUL wake-up and report lines sit closer to departure.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -6362,13 +6363,21 @@
             // STD, prep 1h, transport 1h — the owner's own arithmetic)
             let alarmHtml = '';
             if (part1 && depMs && !inAir) {
+                // round 13 (owner order): a KUL-bound outbound wakes later —
+                // alarm STD−3h30m, report line STD−1h30m. Every other station
+                // keeps the original chain (alarm −4h, report −2h). The
+                // window still opens 12h before the alarm itself, so it
+                // follows the lead it is showing.
+                const kul = station === 'KUL';
+                const alarmLead = (kul ? 3.5 : 4) * 3600000;
+                const rptLead = (kul ? 1.5 : 2) * 3600000;
                 const now = Date.now();
-                if (now >= depMs - 16 * 3600000 && now < depMs) {
+                if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs) {
                     alarmHtml = '<div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
                         + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                         + '<span class="flex-1 min-w-0">'
-                        + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - 4 * 3600000, 'Asia/Singapore') + '</span>'
-                        + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - 2 * 3600000, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
+                        + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - alarmLead, 'Asia/Singapore') + '</span>'
+                        + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - rptLead, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
                         + '</span></div>';
                 }
             }
