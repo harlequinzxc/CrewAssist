@@ -82,8 +82,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 16 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + eight hotfix rounds)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v209'), 'the service-worker cache name is bumped to v209 (APP_VERSION 1.43.0, hotfix round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 18 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the extended 1.43.0 entry (destination overlay + roster capture + ten hotfix rounds)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v210'), 'the service-worker cache name is bumped to v210 (APP_VERSION 1.43.0, hotfix round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -319,6 +319,28 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }
         await page.evaluate(() => document.getElementById('ca-rc-prev').click());
         await sleep(700);
+        // round 16 (owner report, iPhone 11 — its zoomed-display mode runs an
+        // effective ~375px): the month NEVER wraps to two rows, and the
+        // trimmed header chrome keeps its distance on narrow screens
+        ok(await page.evaluate(() => {
+            const h3 = document.getElementById('ca-rc-month');
+            const left = h3.closest('.flex.items-center');
+            const right = document.getElementById('ca-rc-prev').parentElement;
+            return getComputedStyle(h3).whiteSpace === 'nowrap' && h3.getBoundingClientRect().height <= 18 && left.getBoundingClientRect().right <= right.getBoundingClientRect().left + 0.5;
+        }), 'round 16: at 390px with the overlay on, the month stays one row and the header groups never collide');
+        await page.setViewport({ width: 375, height: 844, hasTouch: true });
+        await sleep(300);
+        ok(await page.evaluate(() => {
+            const h3 = document.getElementById('ca-rc-month');
+            const left = h3.closest('.flex.items-center');
+            const right = document.getElementById('ca-rc-prev').parentElement;
+            return getComputedStyle(h3).whiteSpace === 'nowrap' && h3.getBoundingClientRect().height <= 18
+                && left.getBoundingClientRect().right <= right.getBoundingClientRect().left + 0.5
+                && parseFloat(getComputedStyle(document.getElementById('ca-rc-fold')).paddingLeft) <= 6.5
+                && parseFloat(getComputedStyle(document.getElementById('ca-rc-tag')).paddingLeft) <= 8.5;
+        }), 'round 16: at 375px (the zoomed-iPhone class) the trim engages — still one row, no collision, tighter buttons');
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(300);
         await page.evaluate(() => document.getElementById('ca-rc-fold').click());
         await sleep(600);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('hidden') && document.getElementById('ca-rc-tag').classList.contains('hidden') && document.getElementById('ca-rc-shot').classList.contains('hidden') && !document.getElementById('ca-rc-grid').classList.contains('rc-tags-on')), 'collapsing hides both buttons and forces the overlay off');

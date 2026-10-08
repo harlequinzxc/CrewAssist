@@ -893,6 +893,10 @@ const synthItems = [].concat(
     const month = () => d.getElementById('ca-rc-month').textContent;
     const src15 = fs.readFileSync(APP, 'utf8');
     R.ok(src15.indexOf('#ca-rc-grid.rc-tags-pop .ca-rc-tag') !== -1 && src15.indexOf('rc-tags-on .ca-rc-tag { animation') === -1, 'the pop-in animation rides the transient rc-tags-pop class, never the persistent rc-tags-on');
+    // round 16 (owner report, iPhone 11): the month label NEVER wraps to two
+    // rows — nowrap plus a sub-400px padding trim on the header buttons
+    R.ok(src15.indexOf('#ca-rc-month { white-space: nowrap; }') !== -1 && src15.indexOf('@media (max-width: 400px)') !== -1, 'the header contract lives in source: the month is pinned nowrap, and below 400px the header buttons trim their padding');
+    R.eq(w.getComputedStyle(d.getElementById('ca-rc-month')).whiteSpace, 'nowrap', 'the rendered month label computes nowrap — one row, whatever the width');
     // (1) a fresh on-transition pops; the transient class leaves after its window
     tagBtn.click();
     await wait(60);

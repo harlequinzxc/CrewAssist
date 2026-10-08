@@ -572,7 +572,10 @@ function rosterItems(flight, sector, dateTok, opts) {
     // the FUNCTIONS (which close over the consts) are verified page-side
     const src = fs.readFileSync(APP, 'utf8');
     const listSrc = src.match(/const airports = \[[\s\S]*?\n\];/)[0];
-    const tzSrc = src.match(/const AIRPORT_TZ = \{[\s\S]*?\n        \};/)[0];
+    // round 16: the map lives at column 0 in the owner's section format —
+    // the closer indent is no longer pinned (the old 8-space regex would
+    // run past the map and over-capture)
+    const tzSrc = src.match(/const AIRPORT_TZ = \{[\s\S]*?\n\s*\};/)[0];
     const list = eval(listSrc + '; airports;');
     const tz = eval('(' + tzSrc.replace('const AIRPORT_TZ =', '').replace(/;\s*$/, '') + ')');
     R.eq(list.length, 139, 'the curated SQ + Scoot network list carries 139 stations (incl. KNO + PNH)');
@@ -602,6 +605,8 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.eq(w.eval("typeof TZ_VALIDATION"), 'undefined', 'round 14: the TZ_VALIDATION const stays eval-scoped (never a page global)');
     R.ok(w.eval("JSON.stringify((function(){ var a = zonedWallToUtcMs('2027-01-15', '8:25', 'Asia/Makassar'); var b = zonedWallToUtcMs('2027-01-15', '08:25', 'Asia/Makassar'); return isFinite(a) && a === b; })())") === 'true', 'round 14: a single-digit hour pads before Date.parse (the guard always admitted it, the parser never did)');
     R.eq(w.eval("landingSgtPhrase('BKI', '2026-10-20', '10:00')"), '', 'round 14: Kuching shares the SGT clock — the landing phrase stays empty (zone renamed, clock unchanged)');
+    R.eq(w.eval("landingSgtPhrase('KUL', '2026-10-20', '8:25')"), '', 'round 16: the same-clock comparison pads single-digit hours — an unpadded KUL time never shows a spurious conversion');
+    R.eq(w.eval("landingSgtPhrase('KTI', '2026-10-20', '8:25')"), '09:25 SGT', 'round 16: an unpadded converting station still lands right');
 
     R.eq(w.eval("landingSgtPhrase('KTI', '2026-10-20', '10:00')"), '11:00 SGT', 'a Techo landing converts to SGT (Phnom Penh is +7)');
     R.eq(w.eval("landingSgtPhrase('KNO', '2026-10-20', '10:00')"), '11:00 SGT', 'a Medan landing converts to SGT (WIB +7)');
