@@ -8974,21 +8974,6 @@ function getRegionForAirport(code) {
             else doIt();
         }
 
-        function importDevRatesFile(file) {
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                let data; try { data = JSON.parse(ev.target.result); } catch (e) { appAlert('Import failed: that file is not valid JSON.'); return; }
-                const parsed = parseRates(data);
-                if (!parsed) { appAlert('Import failed: not a CrewAssist rates file.'); return; }
-                activeRates = cloneRates(parsed);
-                renderDevRatesEditor();
-                const n = document.querySelectorAll('#dev-rates-root input.dev-rate-input').length;
-                archToast('Imported ' + n + ' values - review, then Save.', null);
-            };
-            reader.readAsText(file);
-        }
-
         async function loadShippedRates() {
             try {
                 const res = await fetch('./rates.json', { cache: 'no-store' });
