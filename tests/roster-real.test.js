@@ -163,6 +163,24 @@ function expectedMonthLabel(f) {
         const lhr = (st.trips || []).find(t => t.ok && t.sectors.some(s => s.dep === 'LHR' || s.arr === 'LHR'));
         R.ok(!!lhr, 'Feb+Mar+Apr 2025 stitched: the LHR round trip completes');
     }
+    // ---- round 18 (improvement #2): the shared loadJsonStore keeps the
+    // three roster stores' guarded reads identical — corrupt JSON, an empty
+    // string and a stored JSON null each fall back to {} and the app stands
+    // (the missing-key path is every unseeded boot in every suite) ----
+    {
+        const { w, d } = await boot(APP, { seed: (x) => {
+            x.localStorage.setItem('crewAssist.upcoming', 'not json {{');
+            x.localStorage.setItem('crewAssist.allFlights', '');
+            x.localStorage.setItem('crewAssist.dutyDays', 'null');
+        } });
+        R.eq(w.eval('typeof loadJsonStore'), 'function', 'the shared loader is one page-side declaration');
+        R.eq(w.eval('JSON.stringify(loadUpcoming())'), '{}', 'corrupt upcoming (garbage) falls back to the empty store');
+        R.eq(w.eval('JSON.stringify(loadAllFlights())'), '{}', 'an empty-string allFlights value falls back too');
+        R.eq(w.eval('JSON.stringify(loadDutyDays())'), '{}', 'a stored JSON null dutyDays falls back too');
+        R.ok(!!d.getElementById('chat-container'), 'the app stands with all three stores unreadable');
+        w.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '1', ymd: '2026-10-02', std: '08:00' }] }));
+        R.eq(w.eval("loadUpcoming()['2026-10'].length"), 1, 'a valid store round-trips through the shared loader unchanged');
+    }
     process.exit(R.done());
 })().catch(e => { console.error(e); process.exit(1); });
 

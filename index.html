@@ -4527,8 +4527,17 @@
         const NUDGE_KEY = 'crewAssist.nudgeDismissed';
         const NUDGE_WINDOW_DAYS = 2; // 48h, date-granular
 
+        // round 18 (owner-approved improvement #2): the three roster stores
+        // (upcoming / allFlights / dutyDays) read through one identical
+        // guarded loader — parse the stored value, object-or-fallback, never
+        // throw. All three pass {} as the fallback, so the semantics are the
+        // originals verbatim: missing or empty value parses '{}', corrupt
+        // JSON and non-objects fall back, arrays pass through as objects.
+        function loadJsonStore(key, fallback) {
+            try { const v = JSON.parse(localStorage.getItem(key) || '{}'); return (v && typeof v === 'object') ? v : fallback; } catch (e) { return fallback; }
+        }
         function loadUpcoming() {
-            try { const v = JSON.parse(localStorage.getItem(UP_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+            return loadJsonStore(UP_KEY, {});
         }
         // v1.33.1 (owner report: a KUL turnaround that landed at 11:45 still
         // showed in the card at 17:58): a flight is OVER once it has landed,
@@ -4643,10 +4652,10 @@
         const DUTY_KEY = 'crewAssist.dutyDays';
         const ALL_KEY = 'crewAssist.allFlights';
         function loadAllFlights() {
-            try { const v = JSON.parse(localStorage.getItem(ALL_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+            return loadJsonStore(ALL_KEY, {});
         }
         function loadDutyDays() {
-            try { const v = JSON.parse(localStorage.getItem(DUTY_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+            return loadJsonStore(DUTY_KEY, {});
         }
         function dutyRemember(parsed) {
             const days = (parsed && parsed.days) || [];
@@ -8963,21 +8972,6 @@ function getRegionForAirport(code) {
             };
             if (devDirty) appConfirm('This file includes unsaved edits. Export anyway?').then((ok) => { if (ok) doIt(); });
             else doIt();
-        }
-
-        function importDevRatesFile(file) {
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                let data; try { data = JSON.parse(ev.target.result); } catch (e) { appAlert('Import failed: that file is not valid JSON.'); return; }
-                const parsed = parseRates(data);
-                if (!parsed) { appAlert('Import failed: not a CrewAssist rates file.'); return; }
-                activeRates = cloneRates(parsed);
-                renderDevRatesEditor();
-                const n = document.querySelectorAll('#dev-rates-root input.dev-rate-input').length;
-                archToast('Imported ' + n + ' values - review, then Save.', null);
-            };
-            reader.readAsText(file);
         }
 
         async function loadShippedRates() {
