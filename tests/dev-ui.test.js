@@ -455,7 +455,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('rec.endAt = dutyEnd'), 'save payloads record the duty landing time');
     R.ok(src.includes('function archEntryLanded'), 'a duty counts as flown once it has landed');
     R.ok(src.includes('function archLandedSweep'), 'the earnings sheet sweeps for landings');
-    R.ok(src.includes('const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); };'), 'both real-time tracks — plus the layover clock — share one sweep cadence');
+    R.ok(src.includes('const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); nfAlarmSweep(); };'), 'both real-time tracks — plus the layover clock and the alarm window — share one sweep cadence');
     // M1: surface tokens replaced the hand-mixed pairs everywhere
     R.ok(src.includes('--ca-surface-1: var(--glass-bg)') && src.includes('--ca-surface-2:') && src.includes('--ca-hairline:'), 'surface tokens are defined for both themes (M1)');
     R.ok(src.includes('.ca-inset { background-color: var(--ca-surface-2); }'), 'the inset token class exists (M1)');

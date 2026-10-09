@@ -1977,6 +1977,13 @@
         } catch (e) {
             console.error('Lucide icons error', e);
         }
+        // round 18 (refactor, owner-approved improvement #1): the one shared
+        // icon-refresh every render used to inline 37 times over — this is
+        // that exact guarded call, unchanged. The boot init above keeps its
+        // own logging catch on purpose: a first-load failure deserves noise.
+        function refreshIcons() {
+            try { lucide.createIcons(); } catch (e) {}
+        }
 
         // Sky Canvas Animation
         const canvas = document.getElementById('sky-canvas');
@@ -2172,6 +2179,8 @@
                 { c: 'fix', t: 'The swipe respects the data edges exactly like the arrows.' },
                 { c: 'fix', t: 'Landing conversions compare clocks with padded hours.' },
                 { c: 'fix', t: 'The calendar month never wraps to two rows.' },
+                { c: 'fix', t: 'A rung suggested alarm leaves the next-flight card.' },
+                { c: 'fix', t: 'Multi-sector days suggest one alarm — the first departure.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -2764,7 +2773,7 @@
                 '<div class="flex flex-col gap-1.5">' +
                 rows.map((r) => '<div class="flex items-center gap-2 ca-micro font-semibold ' + (r.ok ? 'text-gray-600 dark:text-gray-300' : 'text-amber-600') + '"><i data-lucide="' + (r.ok ? 'check' : 'x') + '" class="w-3.5 h-3.5 shrink-0"></i>' + r.label + '</div>').join('') +
                 '</div>';
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
         let netPopTimer = null;
         function toggleNetPopover(force) {
@@ -3053,7 +3062,7 @@
             btn.dataset.caRestore = btn.innerHTML;
             btn.classList.add('ca-twotap-armed');
             btn.innerHTML = (opts && opts.armedHtml) || 'Tap again to confirm';
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             btn.dataset.caTimer = String(setTimeout(() => disarmTwoTap(btn), 5000));
         }
         function disarmTwoTap(btn) {
@@ -3168,7 +3177,7 @@
             // (the 5:58pm unlock after an 11:45am landing). v1.33.2: the
             // earnings sheet rides the same triggers — a duty that lands while
             // the page is open flips the badges, projection and bars in place.
-            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); };
+            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); nfAlarmSweep(); };
             setInterval(caRealtimeSweep, 60000);
             document.addEventListener('visibilitychange', () => { if (!document.hidden) caRealtimeSweep(); });
             // v1.33.0 (owner-approved): the input teaches its own vocabulary —
@@ -3518,7 +3527,7 @@
             caSheetHideCancel(backdrop);   // hotfix 14
             backdrop.classList.remove('hidden');
             requestAnimationFrame(() => backdrop.classList.remove('opacity-0'));
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
 
         // v1.35.0 hotfix 3 (owner spec, no version bump): the Settings
@@ -3699,7 +3708,7 @@
             const clScroller = document.getElementById('ca-changelog-scroll');
             if (clScroller) clScroller.scrollTop = 0;
             clPaintTopBtn();
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
         function openChangelog() {
             const backdrop = document.getElementById('ca-changelog-backdrop');
@@ -3720,7 +3729,7 @@
                 // hotfix 13: the shared glide (reflow pin + heal passes)
                 caSheetGlideIn(sheet, backdrop);
             }, 10);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
         function closeChangelog() {
             const backdrop = document.getElementById('ca-changelog-backdrop');
@@ -3845,7 +3854,7 @@
             }
             
             chatContainer.appendChild(msgDiv);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             noteBubbleShown();
             if (appPrefs.autoScroll) scrollChatToBubble(msgDiv);
         }
@@ -4564,6 +4573,24 @@
             if (JSON.stringify(pruned) === JSON.stringify(store)) return;
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
             refreshNextFlightUi();
+        }
+        // round 17 (owner order): a suggested alarm that has already rung
+        // must leave the card at once — and one whose window opens
+        // mid-session must arrive. The minute sweep compares the card's
+        // stamped window edges against the clock and re-renders when the
+        // alarm block disagrees with it (the 60s tick is the same liveness
+        // the countdowns already trust).
+        function nfAlarmSweep() {
+            const card = document.getElementById('ca-nextflight-card');
+            if (!card) return;
+            const fromAttr = card.getAttribute('data-alarm-from');
+            const untilAttr = card.getAttribute('data-alarm-until');
+            if (fromAttr === null || untilAttr === null) return;
+            const from = Number(fromAttr), until = Number(untilAttr);
+            if (!isFinite(from) || !isFinite(until)) return;
+            const now = Date.now();
+            const has = !!card.querySelector('.ca-nf-alarm');
+            if (has !== (now >= from && now < until)) refreshNextFlightUi();
         }
         function upcomingList() {
             const store = upcomingPrune(loadUpcoming());
@@ -5451,7 +5478,7 @@
             // short of its row. hotfix 18: the scan runs only when a pass
             // actually mounted rows — it is a whole-document query and the
             // scroll handler fires at the display's rate
-            if (justMounted) { try { lucide.createIcons(); } catch (e) {} }
+            if (justMounted) { refreshIcons(); }
             // measured heights correct the estimates (browsers only — jsdom
             // reports 0 and keeps the estimates, which is fine for structure)
             let drifted = false;
@@ -5476,7 +5503,7 @@
                 // the viewport is never left outside the window (the owner's
                 // "bottom details not rendering" state)
                 const ab2 = rosterCalTLCover(el) || estimate();
-                if (apply(ab2[0], ab2[1])) { try { lucide.createIcons(); } catch (e) {} }
+                if (apply(ab2[0], ab2[1])) { refreshIcons(); }
             }
             rosterCalScheduleEarns();
         }
@@ -6230,6 +6257,21 @@
             }
             return { anchor: anchor, legs: legs, out: out, ret: ret };
         }
+        // round 17 (owner order): the suggested alarm is a wake-up — it
+        // belongs to the day's FIRST departure only. On a multi-sector
+        // turnaround the card later moves to the next SIN-departing sector
+        // of the same day, and by then the crew is already awake; any
+        // earlier leg that day silences it. The never-pruned allFlights
+        // twin supplies those legs — the upcoming store forgets them the
+        // moment they land.
+        function nfAlarmDayFirst(first) {
+            try {
+                const myMin = nfHmToMin(first && first.std);
+                if (myMin === null) return true; // no clock on record — keep the suggestion
+                const day = loadAllFlights()[String(first.ymd || '').slice(0, 7)] || [];
+                return !day.some((f) => f && f.ymd === first.ymd && nfHmToMin(f.std) !== null && nfHmToMin(f.std) < myMin);
+            } catch (e) { return true; }
+        }
         // 24-hour "HHMMH" clock — the format the roster itself prints.
         function hmH(hm) {
             const s = String(hm || '').replace(':', '');
@@ -6351,7 +6393,7 @@
                 if (old.getAttribute('data-sig') !== info.sig) {
                     old.setAttribute('data-sig', info.sig);
                     old.innerHTML = inner;
-                    try { lucide.createIcons(); } catch (e) {}
+                    refreshIcons();
                 }
                 return;
             }
@@ -6362,7 +6404,7 @@
             el.setAttribute('data-sig', info.sig);
             el.innerHTML = inner;
             chat.appendChild(el);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             scrollToBottom();
         }
         function renderNextFlightCard() {
@@ -6415,10 +6457,10 @@
             }
 
             // section 1 — the suggested alarm (part one, inside its window:
-            // from 12h before the alarm until departure; report 2h before
-            // STD, prep 1h, transport 1h — the owner's own arithmetic)
+            // from 12h before the alarm until the alarm itself rings; report
+            // 2h before STD, prep 1h, transport 1h — the owner's own arithmetic)
             let alarmHtml = '';
-            if (part1 && depMs && !inAir) {
+            if (part1 && depMs && !inAir && nfAlarmDayFirst(first)) {
                 // round 13 (owner order): a KUL-bound outbound wakes later —
                 // alarm STD−3h30m, report line STD−1h30m. Every other station
                 // keeps the original chain (alarm −4h, report −2h). The
@@ -6428,14 +6470,23 @@
                 const alarmLead = (kul ? 3.5 : 4) * 3600000;
                 const rptLead = (kul ? 1.5 : 2) * 3600000;
                 const now = Date.now();
-                if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs) {
-                    alarmHtml = '<div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
+                // round 17 (owner order): the suggestion retires the moment
+                // it rings — the window closes at the alarm itself, not at
+                // departure (a 0540H alarm is gone by 0541H; the reporting
+                // sub-line rides the block it belongs to)
+                if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs - alarmLead) {
+                    alarmHtml = '<div class="ca-nf-alarm flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
                         + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                         + '<span class="flex-1 min-w-0">'
                         + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - alarmLead, 'Asia/Singapore') + '</span>'
                         + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - rptLead, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
                         + '</span></div>';
                 }
+                // round 17: stamp the window edges on the card (present or
+                // not) so the minute sweep can retire or reveal the block
+                // without waiting for some other event to re-render
+                el.setAttribute('data-alarm-from', String(depMs - (alarmLead + 12 * 3600000)));
+                el.setAttribute('data-alarm-until', String(depMs - alarmLead));
             }
 
             const fns = legs.map((f) => 'SQ ' + rosterEsc(f.fn)).join(' &middot; ');
@@ -6457,7 +6508,7 @@
                 + '</div>'
                 + '</div>';
             chat.appendChild(el);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             const tapBtn = el.querySelector('#ca-nextflight-tap');
             if (tapBtn) {
                 const parts = (tapBtn.getAttribute('data-nf') || '').split('|');
@@ -6470,7 +6521,7 @@
                         tapBtn.innerHTML = busy
                             ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
                             : nfBtnHtml;
-                        try { lucide.createIcons(); } catch (e) {}
+                        refreshIcons();
                     };
                     openNextFlightMenus(fn, ymd, setBusy);
                 });
@@ -6481,7 +6532,7 @@
                 setChatBusy(true);
                 saveBtn.disabled = true;
                 saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Saving\u2026';
-                try { lucide.createIcons(); } catch (e) {}
+                refreshIcons();
                 let okCount = 0;
                 for (const f of legs) {
                     let r = { ok: false, saved: 0, cabins: 0 };
@@ -6536,7 +6587,7 @@
                 + '<button type="button" id="ca-menunudge-go" class="h-9 px-5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
                 + '</div></div>';
             chat.appendChild(el);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             scrollToBottom();
             document.getElementById('ca-menunudge-x').addEventListener('click', () => {
                 let dismissed = {};
@@ -6564,7 +6615,7 @@
                         goBtn.innerHTML = busy
                             ? '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Fetching menus&hellip;'
                             : goHtml;
-                        try { lucide.createIcons(); } catch (e) {}
+                        refreshIcons();
                     };
                     openNextFlightMenus(flights[0].fn, flights[0].ymd, setBusy);
                     return;
@@ -6772,14 +6823,14 @@
                 rosterPrefillCard(id, trip);
                 // v1.33.0: icons paint progressively — one pass every 15 cards
                 // beats a long empty-icon window before the sweep.
-                if (bound % 15 === 0) { try { lucide.createIcons(); } catch (e) {} }
+                if (bound % 15 === 0) { refreshIcons(); }
                 // The LAST bind ends bulk mode and runs the one sweep — every
                 // icon in one pass, one pill-fit, one UI sync, one validation
                 // per card. Calculate all waits for exactly this.
                 if (++bound === ok.length) {
                     setTimeout(() => {
                         caBulkBuild--;
-                        try { lucide.createIcons(); } catch (e) {}
+                        refreshIcons();
                         syncCalcUiAll();
                         fitCalcPills();
                         if (batch) {
@@ -6936,7 +6987,7 @@
             });
             document.getElementById('results-title').textContent = 'Summary';
             content.innerHTML = html;
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             const sticky = document.getElementById('ca-roster-sticky');
             if (sticky) {
                 sticky.innerHTML = '<span class="ca-micro font-bold uppercase tracking-wider">' + n + ' trip' + (n === 1 ? '' : 's') + '</span><span class="text-sm font-bold text-sia-gold ca-amt">' + formatMoney(grand) + '</span>';
@@ -7239,7 +7290,7 @@
             const els = buttons.map((b, k) => bubble.querySelector('.nat-cmd-btn-' + k));
             const retire = () => els.forEach((b) => { if (b) { b.disabled = true; b.classList.add('opacity-40', 'pointer-events-none'); } });
             buttons.forEach((b, k) => { if (els[k]) els[k].addEventListener('click', () => { retire(); b.act(); }); });
-            if (typeof lucide !== 'undefined') { try { lucide.createIcons(); } catch (e) {} }
+            if (typeof lucide !== 'undefined') { refreshIcons(); }
         }
         function natPairLabel(p) { return 'SQ ' + p.fn + ' \u00b7 ' + rosterShortDate(p.ymd); }
         async function runNaturalCommand(cmd) {
@@ -7410,7 +7461,7 @@
             if (protectedCount > 0) html += '<p class="ca-micro mt-2" style="color: var(--arch-muted)">' + protectedCount + ' upcoming duty flight' + (protectedCount === 1 ? '' : 's') + ' keep' + (protectedCount === 1 ? 's' : '') + ' their menus.</p>';
             html += '</div>';
             box.innerHTML = html;
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             const usageEl = document.getElementById('st-storage-usage');
             const persistEl = document.getElementById('st-storage-persisted');
             try {
@@ -7538,13 +7589,13 @@
             if (badge) {
                 badge.innerHTML = meta.badge ? '<i data-lucide="star" class="w-3 h-3 fill-current"></i>' + meta.badge : '';
                 badge.classList.toggle('hidden', !meta.badge);
-                if (meta.badge) { try { lucide.createIcons(); } catch (e) {} }
+                if (meta.badge) { refreshIcons(); }
             }
             const iconWrap = document.getElementById('calcui-desc-icon');
             if (iconWrap && iconWrap.getAttribute('data-icon') !== meta.icon) {
                 iconWrap.setAttribute('data-icon', meta.icon);
                 iconWrap.innerHTML = '<i data-lucide="' + meta.icon + '" class="w-4 h-4"></i>';
-                try { lucide.createIcons(); } catch (e) {}
+                refreshIcons();
             }
         }
 
@@ -8778,7 +8829,7 @@ function getRegionForAirport(code) {
                 el.addEventListener('input', sync);
                 sync();
             });
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             devRefresh();
         }
 
@@ -8857,7 +8908,7 @@ function getRegionForAirport(code) {
                 save.disabled = !devDirty;
                 save.classList.remove('is-saved');
                 save.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span>';
-                try { lucide.createIcons(); } catch (e) {}
+                refreshIcons();
             }
             root.querySelectorAll('input.dev-rate-input').forEach((el) => {
                 const snap = devSnapshotValue(el);
@@ -8893,7 +8944,7 @@ function getRegionForAirport(code) {
             save.disabled = true;
             save.classList.add('is-saved');
             save.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i><span>Saved</span>';
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             archToast('Rates saved to this device', null);
             setTimeout(() => { devSavedFlash = false; renderDevRatesEditor(); }, 1400);
         }
@@ -9370,7 +9421,7 @@ function getRegionForAirport(code) {
             ico.className = 'ca-fold-icon w-4 h-4 shrink-0';
             header.appendChild(ico);
             header.addEventListener('click', () => card.classList.toggle('ca-folded'));
-            if (!caBulkBuild) { try { lucide.createIcons(); } catch (e) {} } // bulk: the end-of-batch sweep converts every icon once
+            if (!caBulkBuild) { refreshIcons(); } // bulk: the end-of-batch sweep converts every icon once
         }
         function foldCard(card) {
             if (!card) return;
@@ -11637,7 +11688,7 @@ function getRegionForAirport(code) {
             b.disabled = !!disabled;
             b.classList.toggle('opacity-40', !!disabled);
             b.classList.toggle('pointer-events-none', !!disabled);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
 
         // v1.30.0 (owner ruling): tapping Save never writes straight away.
@@ -11742,7 +11793,7 @@ function getRegionForAirport(code) {
 
             document.getElementById('results-title').textContent = 'Summary';
             content.innerHTML = html;
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             if (mode === 'both' && archivePayload) {
                 setResultsAction('save', false);
                 const ab = document.getElementById('btn-results-action');
@@ -12458,13 +12509,13 @@ function getRegionForAirport(code) {
             if (!all.length) {
                 archEl('ca-arch-insights').classList.remove('ca-arch-insopen');
                 list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Entries appear when you tap Save on a calculation — or restore a backup in Settings → Data Management.</span></div>';
-                try { lucide.createIcons(); } catch (e) {}
+                refreshIcons();
                 return;
             }
             if (!vis.length) {
                 list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights found.<br><span class="text-xs">Try clearing the search or switching scope.</span><br><button type="button" id="ca-arch-reset" class="mt-3 px-4 py-2 rounded-full bg-black/10 dark:bg-white/10 text-xs font-bold">Reset</button></div>';
                 const r = archEl('ca-arch-reset'); if (r) r.onclick = () => { archState.search = ''; archState.scope = 'all'; archState.chartSel = null; const s = archEl('ca-arch-search'); if (s) s.value = ''; renderArch(); };
-                try { lucide.createIcons(); } catch (e) {}
+                refreshIcons();
                 return;
             }
             // Render-sorted only: flight date desc, ties by insertion order desc.
@@ -12555,7 +12606,7 @@ function getRegionForAirport(code) {
                 + '<div class="ca-arch-footline"></div></div>'
                 + '<div class="text-center ca-micro pb-2" style="color: var(--arch-muted)">Showing earnings since ' + archiveMonthLabel(firstMk) + '</div>';
             list.innerHTML = html;
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             if (scroll) scroll.scrollTop = keep;
             list.querySelectorAll('.ca-arch-group-head').forEach((hd) => hd.addEventListener('click', () => {
                 const k = hd.getAttribute('data-mk');
@@ -12683,7 +12734,7 @@ function getRegionForAirport(code) {
             archEl('ca-arch-m-avg').textContent = count ? formatMoney(total / count) : '\u2014';
             archEl('ca-arch-m-ctx-label').textContent = ctxLabel;
             archEl('ca-arch-m-ctx').innerHTML = ctxHtml;
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
         function statsLiFor(map, mk) {
             const li = map[archMonthAdd(mk, -12)];
@@ -12729,7 +12780,7 @@ function getRegionForAirport(code) {
                     + '</button>';
             });
             chart.innerHTML = html;
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             chart.querySelectorAll('.ca-arch-barcol').forEach((b) => b.addEventListener('click', () => {
                 const mk = b.getAttribute('data-mk');
                 archState.chartSel = mk;
@@ -12789,14 +12840,14 @@ function getRegionForAirport(code) {
                 const mw = box.querySelector('.ca-arch-insmore');
                 if (mw) mw.classList.toggle('ca-arch-insmore-hide', !archState.insightsAll);
                 mt.innerHTML = '<i data-lucide="' + (archState.insightsAll ? 'chevron-up' : 'chevron-down') + '" class="w-3.5 h-3.5"></i><span id="ca-arch-ins-mtoggle-label">' + (archState.insightsAll ? 'Show less' : 'Show all 12') + '</span>';
-                try { lucide.createIcons(); } catch (e) {}
+                refreshIcons();
             });
             // Keep the class in sync on every re-render (search typing, scope
             // changes) — visibility is owned by the animation classes, NEVER
             // by Tailwind's `hidden` (v1.27.1: that leftover display:none
             // made the first tap do nothing).
             box.classList.toggle('ca-arch-insopen', archState.insightsOpen);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
         }
         function ymdShift(ymd, n) {
             const d = new Date(ymd + 'T12:00:00');
@@ -13744,7 +13795,7 @@ function getRegionForAirport(code) {
             row.classList.toggle('max-h-0', !html);
             row.classList.toggle('opacity-0', !html);
             row.classList.toggle('max-h-12', !!html);
-            if (html && (typeof lucide !== 'undefined')) { try { lucide.createIcons(); } catch (e) {} }
+            if (html && (typeof lucide !== 'undefined')) { refreshIcons(); }
         }
 
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
@@ -16281,7 +16332,7 @@ function getRegionForAirport(code) {
 
             edit.innerHTML = '';
             edit.appendChild(frag);
-            try { lucide.createIcons(); } catch (e) {}
+            refreshIcons();
             playPrintContentAnim(edit);
         }
 
