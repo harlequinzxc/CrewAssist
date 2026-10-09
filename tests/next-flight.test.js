@@ -479,6 +479,77 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(k2 && pk2.indexOf('Suggested alarm') === -1 && pk2.indexOf('Departs 0825H') >= 0, 'KUL window: hidden at 15h45m out — the window follows the shorter alarm, not the flat 16h');
   }
   {
+    // ---- round 17 (owner order): a rung alarm retires — the window closes
+    // at the alarm itself, not at departure. Alarm 0545H, so at 0544H it is
+    // still suggesting and at 0546H it is gone (the reporting sub-line rides
+    // the block it belongs to) ----
+    const { d } = await boot(APP, { now: '2026-10-06T05:44:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '802', dep: 'SIN', arr: 'NRT', ymd: '2026-10-06', std: '09:45', sta: '18:27', staYmd: '2026-10-06' },
+        { fn: '807', dep: 'NRT', arr: 'SIN', ymd: '2026-10-08', std: '20:30', sta: '06:29', staYmd: '2026-10-09' }
+      ])));
+    } });
+    let r17a = null; const t17a = Date.now();
+    while (Date.now() - t17a < 9000 && !(r17a = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const p17a = r17a ? r17a.textContent : '';
+    R.ok(r17a && p17a.indexOf('Suggested alarm 0545H') >= 0, 'round 17: one minute before it rings the suggestion is still there');
+  }
+  {
+    const { w, d } = await boot(APP, { now: '2026-10-06T05:40:00+08:00', seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '802', dep: 'SIN', arr: 'NRT', ymd: '2026-10-06', std: '09:45', sta: '18:27', staYmd: '2026-10-06' }
+      ])));
+    } });
+    let r17b = null; const t17b = Date.now();
+    while (Date.now() - t17b < 9000 && !(r17b = d.getElementById('ca-nextflight-card'))) await wait(50);
+    const p17b0 = r17b ? r17b.textContent : '';
+    R.ok(r17b && p17b0.indexOf('Suggested alarm 0545H') >= 0, 'round 17: at 05:40 the card suggests the 0545H alarm');
+    R.ok(r17b && Number(r17b.getAttribute('data-alarm-until')) === Date.parse('2026-10-06T05:45:00+08:00'), 'round 17: the card stamps its alarm window edge (until = the alarm instant)');
+    // freeze the clock past the alarm and run the minute sweep by hand —
+    // the block must leave the card without any other event re-rendering
+    w.eval('(function(f){ const RD = Date; class F extends RD { constructor(...a){ super(...(a.length ? a : [f])); } static now(){ return f; } } window.Date = F; })(' + Date.parse('2026-10-06T05:46:00+08:00') + ')');
+    w.eval('nfAlarmSweep()');
+    await wait(400);
+    const r17b2 = d.getElementById('ca-nextflight-card');
+    const p17b2 = r17b2 ? r17b2.textContent : '';
+    R.ok(r17b2 && p17b2.indexOf('Suggested alarm') === -1 && p17b2.indexOf('Departs 0945H') >= 0 && p17b2.indexOf('SQ 802') >= 0, 'round 17: the sweep retires a rung alarm at once — the flight card itself stays');
+  }
+  {
+    // ---- round 17 (owner order): a multi-sector turnaround suggests the
+    // alarm ONCE — the day's first departure only. Two turnarounds on
+    // 2026-10-12: viewing mid-day (after the first landed) the card moves to
+    // the evening sector, whose alarm window is open — but the crew is
+    // already awake, so no suggestion; the same day viewed at 03:00 still
+    // suggests for the morning's first departure ----
+    const legs17 = [
+      { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-12', std: '08:25', sta: '09:35', staYmd: '2026-10-12' },
+      { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-12', std: '10:25', sta: '11:45', staYmd: '2026-10-12' },
+      { fn: '836', dep: 'SIN', arr: 'KUL', ymd: '2026-10-12', std: '23:00', sta: '00:10', staYmd: '2026-10-13' }
+    ];
+    const seed17 = (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore(legs17)));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify(mkStore(legs17)));
+    };
+    {
+      const { d } = await boot(APP, { now: '2026-10-12T12:00:00+08:00', seed: seed17 });
+      let r17c = null; const t17c = Date.now();
+      while (Date.now() - t17c < 9000 && !(r17c = d.getElementById('ca-nextflight-card'))) await wait(50);
+      const p17c = r17c ? r17c.textContent : '';
+      R.ok(r17c && p17c.indexOf('SQ 836') >= 0 && p17c.indexOf('Departs 2300H') >= 0, 'round 17: mid-day the card has moved to the evening sector');
+      R.ok(r17c && p17c.indexOf('Suggested alarm') === -1, 'round 17: the later same-day sector never suggests an alarm — the crew is already awake');
+    }
+    {
+      const { d } = await boot(APP, { now: '2026-10-12T03:00:00+08:00', seed: seed17 });
+      let r17d = null; const t17d = Date.now();
+      while (Date.now() - t17d < 9000 && !(r17d = d.getElementById('ca-nextflight-card'))) await wait(50);
+      const p17d = r17d ? r17d.textContent : '';
+      R.ok(r17d && p17d.indexOf('SQ 106') >= 0 && p17d.indexOf('Suggested alarm 0455H') >= 0, 'round 17: the day\u2019s first departure still gets its wake-up suggestion');
+    }
+  }
+  {
     // ---- part two: at the station + the layover time-zone card ----
     const { d } = await boot(APP, { now: '2026-10-07T14:32:00+08:00', seed: (x) => {
       seedProfile(x);

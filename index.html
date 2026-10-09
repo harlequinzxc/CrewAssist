@@ -2172,6 +2172,8 @@
                 { c: 'fix', t: 'The swipe respects the data edges exactly like the arrows.' },
                 { c: 'fix', t: 'Landing conversions compare clocks with padded hours.' },
                 { c: 'fix', t: 'The calendar month never wraps to two rows.' },
+                { c: 'fix', t: 'A rung suggested alarm leaves the next-flight card.' },
+                { c: 'fix', t: 'Multi-sector days suggest one alarm — the first departure.' },
             ] },
             { v: '1.42.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'New phone? Restore your backup straight from the welcome screen.' },
@@ -3168,7 +3170,7 @@
             // (the 5:58pm unlock after an 11:45am landing). v1.33.2: the
             // earnings sheet rides the same triggers — a duty that lands while
             // the page is open flips the badges, projection and bars in place.
-            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); };
+            const caRealtimeSweep = () => { nextFlightExpirySweep(); archLandedSweep(); renderLayoverTzCard(); nfAlarmSweep(); };
             setInterval(caRealtimeSweep, 60000);
             document.addEventListener('visibilitychange', () => { if (!document.hidden) caRealtimeSweep(); });
             // v1.33.0 (owner-approved): the input teaches its own vocabulary —
@@ -4564,6 +4566,24 @@
             if (JSON.stringify(pruned) === JSON.stringify(store)) return;
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
             refreshNextFlightUi();
+        }
+        // round 17 (owner order): a suggested alarm that has already rung
+        // must leave the card at once — and one whose window opens
+        // mid-session must arrive. The minute sweep compares the card's
+        // stamped window edges against the clock and re-renders when the
+        // alarm block disagrees with it (the 60s tick is the same liveness
+        // the countdowns already trust).
+        function nfAlarmSweep() {
+            const card = document.getElementById('ca-nextflight-card');
+            if (!card) return;
+            const fromAttr = card.getAttribute('data-alarm-from');
+            const untilAttr = card.getAttribute('data-alarm-until');
+            if (fromAttr === null || untilAttr === null) return;
+            const from = Number(fromAttr), until = Number(untilAttr);
+            if (!isFinite(from) || !isFinite(until)) return;
+            const now = Date.now();
+            const has = !!card.querySelector('.ca-nf-alarm');
+            if (has !== (now >= from && now < until)) refreshNextFlightUi();
         }
         function upcomingList() {
             const store = upcomingPrune(loadUpcoming());
@@ -6230,6 +6250,21 @@
             }
             return { anchor: anchor, legs: legs, out: out, ret: ret };
         }
+        // round 17 (owner order): the suggested alarm is a wake-up — it
+        // belongs to the day's FIRST departure only. On a multi-sector
+        // turnaround the card later moves to the next SIN-departing sector
+        // of the same day, and by then the crew is already awake; any
+        // earlier leg that day silences it. The never-pruned allFlights
+        // twin supplies those legs — the upcoming store forgets them the
+        // moment they land.
+        function nfAlarmDayFirst(first) {
+            try {
+                const myMin = nfHmToMin(first && first.std);
+                if (myMin === null) return true; // no clock on record — keep the suggestion
+                const day = loadAllFlights()[String(first.ymd || '').slice(0, 7)] || [];
+                return !day.some((f) => f && f.ymd === first.ymd && nfHmToMin(f.std) !== null && nfHmToMin(f.std) < myMin);
+            } catch (e) { return true; }
+        }
         // 24-hour "HHMMH" clock — the format the roster itself prints.
         function hmH(hm) {
             const s = String(hm || '').replace(':', '');
@@ -6415,10 +6450,10 @@
             }
 
             // section 1 — the suggested alarm (part one, inside its window:
-            // from 12h before the alarm until departure; report 2h before
-            // STD, prep 1h, transport 1h — the owner's own arithmetic)
+            // from 12h before the alarm until the alarm itself rings; report
+            // 2h before STD, prep 1h, transport 1h — the owner's own arithmetic)
             let alarmHtml = '';
-            if (part1 && depMs && !inAir) {
+            if (part1 && depMs && !inAir && nfAlarmDayFirst(first)) {
                 // round 13 (owner order): a KUL-bound outbound wakes later —
                 // alarm STD−3h30m, report line STD−1h30m. Every other station
                 // keeps the original chain (alarm −4h, report −2h). The
@@ -6428,14 +6463,23 @@
                 const alarmLead = (kul ? 3.5 : 4) * 3600000;
                 const rptLead = (kul ? 1.5 : 2) * 3600000;
                 const now = Date.now();
-                if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs) {
-                    alarmHtml = '<div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
+                // round 17 (owner order): the suggestion retires the moment
+                // it rings — the window closes at the alarm itself, not at
+                // departure (a 0540H alarm is gone by 0541H; the reporting
+                // sub-line rides the block it belongs to)
+                if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs - alarmLead) {
+                    alarmHtml = '<div class="ca-nf-alarm flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
                         + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
                         + '<span class="flex-1 min-w-0">'
                         + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - alarmLead, 'Asia/Singapore') + '</span>'
                         + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - rptLead, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
                         + '</span></div>';
                 }
+                // round 17: stamp the window edges on the card (present or
+                // not) so the minute sweep can retire or reveal the block
+                // without waiting for some other event to re-render
+                el.setAttribute('data-alarm-from', String(depMs - (alarmLead + 12 * 3600000)));
+                el.setAttribute('data-alarm-until', String(depMs - alarmLead));
             }
 
             const fns = legs.map((f) => 'SQ ' + rosterEsc(f.fn)).join(' &middot; ');
