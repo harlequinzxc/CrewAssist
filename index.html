@@ -4527,8 +4527,17 @@
         const NUDGE_KEY = 'crewAssist.nudgeDismissed';
         const NUDGE_WINDOW_DAYS = 2; // 48h, date-granular
 
+        // round 18 (owner-approved improvement #2): the three roster stores
+        // (upcoming / allFlights / dutyDays) read through one identical
+        // guarded loader — parse the stored value, object-or-fallback, never
+        // throw. All three pass {} as the fallback, so the semantics are the
+        // originals verbatim: missing or empty value parses '{}', corrupt
+        // JSON and non-objects fall back, arrays pass through as objects.
+        function loadJsonStore(key, fallback) {
+            try { const v = JSON.parse(localStorage.getItem(key) || '{}'); return (v && typeof v === 'object') ? v : fallback; } catch (e) { return fallback; }
+        }
         function loadUpcoming() {
-            try { const v = JSON.parse(localStorage.getItem(UP_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+            return loadJsonStore(UP_KEY, {});
         }
         // v1.33.1 (owner report: a KUL turnaround that landed at 11:45 still
         // showed in the card at 17:58): a flight is OVER once it has landed,
@@ -4643,10 +4652,10 @@
         const DUTY_KEY = 'crewAssist.dutyDays';
         const ALL_KEY = 'crewAssist.allFlights';
         function loadAllFlights() {
-            try { const v = JSON.parse(localStorage.getItem(ALL_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+            return loadJsonStore(ALL_KEY, {});
         }
         function loadDutyDays() {
-            try { const v = JSON.parse(localStorage.getItem(DUTY_KEY) || '{}'); return (v && typeof v === 'object') ? v : {}; } catch (e) { return {}; }
+            return loadJsonStore(DUTY_KEY, {});
         }
         function dutyRemember(parsed) {
             const days = (parsed && parsed.days) || [];
