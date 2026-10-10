@@ -388,7 +388,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // caught here so the health pins below measure the app, not that
         // known-and-out-of-scope fragility.)
         await page.evaluate(() => { try { renderFlightVerificationCard('menu'); } catch (e) {} });
-        await sleep(400);
+        // html.chat-busy locks every chat button under pointer-events:none while
+        // the typing queue runs (hotfix 12) — a real tap on a pointer-dead
+        // button never reaches the listener. The queue also pauses BETWEEN
+        // messages, so one wait isn't enough: wait for idle, confirm it STAYS
+        // idle 700ms, then tap.
+        for (;;) {
+            await page.waitForFunction(() => !document.documentElement.classList.contains('chat-busy'), { timeout: 20000 });
+            await sleep(700);
+            if (await page.evaluate(() => !document.documentElement.classList.contains('chat-busy'))) break;
+        }
         await (await page.$('[data-fv-act=today]')).tap();
         await sleep(300);
         ok(await page.evaluate(() => {
