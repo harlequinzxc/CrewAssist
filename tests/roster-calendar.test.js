@@ -176,7 +176,7 @@ const synthItems = [].concat(
     // The calendar now opens through the shared glide (reflow-pinned class
     // change + heal passes); the pin guards the wiring from drifting back
     // to a bare class toggle.
-    R.ok(/function openRosterCalendar[\s\S]*?setTimeout\(\(\) => \{\s*\n\s*const shade = wrap\.querySelector\('\.ca-rc-shade'\);\s*\n\s*\/\/ hotfix 13[\s\S]*?caSheetGlideIn\(sheet, shade\);/.test(src), 'the calendar opens through the shared glide (hotfix 13) — a canceled close can never leave the sheet stuck off-screen');
+    R.ok(/function openRosterCalendar[\s\S]*?caSheetGlideArm\(sheet, wrap\.querySelector\('\.ca-rc-shade'\)\);/.test(src), 'the calendar opens through the shared glide arm (hotfix 13, round 20) — a canceled close can never leave the sheet stuck off-screen');
     // hotfix 14 (owner report: contents "not rendering properly" on the
     // foldable): a quick close-and-reopen used to let the close's 300ms
     // display:none fire MID-OPEN — the whole calendar collapsed and the
