@@ -185,5 +185,80 @@ const EMDASH = '\u2014'; // —
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v211"), 'service-worker cache name bumped to v211');
   }
 
+  {
+    // ---- round 18 (improvement #5): the five flight-verification actions
+    // ride data-fv-* attributes + ONE delegated document listener. Real
+    // clicks, real bubbling — including a click on the submit button's
+    // nested icon — reproducing the exact effects the inline handlers had. ----
+    const srcFv = fs.readFileSync(APP, 'utf8');
+    R.ok((srcFv.match(/data-fv-act="/g) || []).length === 5
+        && srcFv.indexOf('onclick="setDateAndFetch') === -1
+        && srcFv.indexOf('onclick="showDatePickerUI') === -1
+        && srcFv.indexOf('onclick="submitFlightVerification') === -1, 'the five fv controls carry data-fv-act and no inline fv JS remains in HTML');
+    R.ok((srcFv.match(/document\.addEventListener\('click', function \(e\) \{\s*const btn = e\.target\.closest && e\.target\.closest\('\[data-fv-act\]'\)/g) || []).length === 1, 'exactly one delegated fv click listener is registered');
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'FV', gender: 'Male', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.wnSeen', '1.43.0');
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      const t = new Date(), pad = (n) => String(n).padStart(2, '0');
+      const today = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
+      x.localStorage.setItem('SQ11:' + today + ':CABINS', JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL', 'YCL'], legs: [{ flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'KUL' } }] } }));
+    } });
+    Object.defineProperty(w.navigator, 'onLine', { value: false, configurable: true });
+    w.eval("renderFlightVerificationCard('menu')");
+    await wait(400);
+    const uid = w.eval('(function(){ var b = document.querySelector("[data-fv-act=today]"); return b ? b.getAttribute("data-fv-id") : null; })()');
+    R.ok(!!uid, 'the flight-verification card renders with its date pills');
+    const hid = () => d.getElementById('fv-selected-date-' + uid);
+    // Tomorrow first, then Today — both through the delegated path
+    d.querySelector('[data-fv-act=tomorrow]').click();
+    await wait(100);
+    const tomBtn = d.querySelector('[data-fv-act=tomorrow]');
+    R.eq(hid().value, tomBtn.getAttribute('data-fv-date'), 'a delegated Tomorrow click stamps the hidden date with the button\u2019s own data-fv-date');
+    R.ok(tomBtn.classList.contains('selected-date') && !d.querySelector('[data-fv-act=today]').classList.contains('selected-date'), 'the tomorrow pill selects and today\u2019s clears');
+    d.querySelector('[data-fv-act=today]').click();
+    await wait(100);
+    R.eq(hid().value, w.eval('todayLocalYMD()'), 'a delegated Today click stamps today\u2019s local date');
+    R.ok(d.querySelector('[data-fv-act=today]').classList.contains('selected-date') && !tomBtn.classList.contains('selected-date'), 'the today pill selects and tomorrow\u2019s clears');
+    R.eq(d.querySelector('[data-fv-act=pick]').textContent, 'Pick Date', 'the pick label sits reset');
+    // Pick opens the shared date picker
+    d.querySelector('[data-fv-act=pick]').click();
+    await wait(100);
+    R.ok(!d.getElementById('cadate-backdrop').classList.contains('hidden'), 'a delegated Pick click opens the shared date picker');
+    // the whitelist guards: buttons without data-fv-id, or with an unknown
+    // action, are ignored — no crash, no state change
+    const before = hid().value;
+    w.eval('(function(){ var c = document.getElementById("chat-container"); var a = document.createElement("button"); a.setAttribute("data-fv-act", "today"); c.appendChild(a); a.click(); var b = document.createElement("button"); b.setAttribute("data-fv-act", "bogus"); b.setAttribute("data-fv-id", "' + uid + '"); c.appendChild(b); b.click(); })()');
+    await wait(100);
+    R.eq(hid().value, before, 'controls without data-fv-id or with an unknown action are ignored');
+    // the submit flow: saved schedule offline, then the real buttons
+    d.getElementById('fv-flight-' + uid).value = '11';
+    d.querySelector('[data-fv-act=today]').click();   // stamps the date AND fires checkAutoFetch
+    let t0 = Date.now();
+    while (Date.now() - t0 < 6000 && !d.querySelector('[data-fv-act=menu]')) await wait(50);
+    R.ok(!!d.querySelector('[data-fv-act=menu]'), 'the saved schedule renders the cabins and the menu submit offline');
+    R.eq(d.querySelectorAll('#fv-cabins-container-' + uid + ' [data-cabin]').length, 2, 'both saved cabins render as toggles');
+    // submit with no cabin — clicked through the button's NESTED icon
+    // (addBotMessage rides the typing queue, so the assertions poll for it)
+    const chatTxt = () => (d.getElementById('chat-container').textContent || '');
+    const untilTxt = async (needle, ms) => { const s = Date.now(); while (Date.now() - s < (ms || 6000) && chatTxt().indexOf(needle) === -1) await wait(50); };
+    d.querySelector('[data-fv-act=menu] i').click();
+    await untilTxt('Please select at least one cabin.');
+    R.ok(chatTxt().indexOf('Please select at least one cabin.') >= 0, 'a click on the submit\u2019s nested icon dispatches the action — the cabin guard speaks');
+    await wait(600);
+    R.eq(chatTxt().split('Please select at least one cabin.').length - 1, 1, 'one click fires exactly one action');
+    // select a cabin (its toggle is an out-of-scope INLINE handler — and the
+    // harness boots jsdom with runScripts:'outside-only', which never compiles
+    // attribute handlers; only real listeners like the delegated one run.
+    // Simulate the toggle's effect, then submit through the delegated path)
+    w.eval('(function(){ var b = document.querySelector("#fv-cabins-container-' + uid + ' [data-cabin=JCL]"); b.classList.add("selected-cabin", "bg-sia-gold", "text-black", "border-sia-gold"); checkCabinsSelected("' + uid + '"); })()');
+    await wait(100);
+    R.ok(!d.getElementById('fv-actions-section-' + uid).classList.contains('pointer-events-none'), 'choosing a cabin arms the submit');
+    d.querySelector('[data-fv-act=menu]').click();
+    await untilTxt('Fetching menu from seat pocket.');
+    await wait(600);
+    R.ok(chatTxt().indexOf('Fetching menu from seat pocket.') >= 0, 'the armed submit dispatches the fetch through the delegated path');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

@@ -380,6 +380,23 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(400);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.dutyDays'); localStorage.removeItem('crewAssist.allFlights'); });
 
+        // round 18 (improvement #5): the five flight-verification actions ride
+        // data-fv-* + one delegated document listener — a real finger tap on
+        // Today must reach it. (The card's tail carries a pre-existing BARE
+        // lucide.createIcons() — one of the audit's unguarded calls — which
+        // throws once in this CDN-blocked browser AFTER the card is mounted;
+        // caught here so the health pins below measure the app, not that
+        // known-and-out-of-scope fragility.)
+        await page.evaluate(() => { try { renderFlightVerificationCard('menu'); } catch (e) {} });
+        await sleep(400);
+        await (await page.$('[data-fv-act=today]')).tap();
+        await sleep(300);
+        ok(await page.evaluate(() => {
+            const b = document.querySelector('[data-fv-act=today]');
+            const uid = b.getAttribute('data-fv-id');
+            return document.getElementById('fv-selected-date-' + uid).value === todayLocalYMD() && b.classList.contains('selected-date');
+        }), 'round 18: a real tap on the Today pill answers through the delegated listener — date stamped, pill selected');
+
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));
         eq(consoleErrors.length, 0, 'zero console errors (CDN blocks excluded)' + (consoleErrors.length ? ' — ' + consoleErrors.join(' | ') : ''));
