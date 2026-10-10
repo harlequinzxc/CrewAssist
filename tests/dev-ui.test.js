@@ -819,5 +819,25 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(pick[0].disabled && pick[1].disabled, 'the choice pair retires once pressed');
   }
 
+  {
+    // ---- round 18 (improvement #4): the date-picker day button's CSS is
+    // ONE rule — the transition and the layout/typography declarations
+    // merged (two same-specificity rules, disjoint properties, nothing
+    // .cadate-day-matching between them, no media boundary crossed). jsdom
+    // resolves the layout longhands; the transition shorthand it cannot
+    // expand, so that rides a source pin. ----
+    const { w } = await boot(APP, {});
+    const cs = w.eval('(function(){ var b = document.createElement("button"); b.className = "cadate-day"; document.body.appendChild(b); var c = getComputedStyle(b); return { w: c.width, h: c.height, r: c.borderRadius, f: c.fontSize, fw: c.fontWeight, d: c.display }; })()');
+    R.eq(cs.w, '2.25rem', 'cadate-day: the merged rule keeps its width');
+    R.eq(cs.h, '2.25rem', 'cadate-day: the merged rule keeps its height');
+    R.eq(cs.r, '9999px', 'cadate-day: the merged rule keeps its pill radius');
+    R.eq(cs.f, '0.8rem', 'cadate-day: the merged rule keeps its type size');
+    R.eq(cs.fw, '700', 'cadate-day: the merged rule keeps its weight');
+    R.eq(cs.d, 'inline-flex', 'cadate-day: the merged rule keeps its display');
+    const cssSrc = require('fs').readFileSync(APP, 'utf8');
+    R.ok((cssSrc.match(/^ {8}\.cadate-day \{$/gm) || []).length === 1, 'cadate-day: exactly one standalone rule remains — the two same-specificity declarations are merged');
+    R.ok(/\.cadate-day \{\n\s*transition: background-color 0\.2s ease, color 0\.2s ease, box-shadow 0\.2s ease, transform 0\.2s ease, opacity 0\.2s ease;\n\s*width: 2\.25rem;/.test(cssSrc), 'cadate-day: the merged rule carries both the transition and the layout in one block');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

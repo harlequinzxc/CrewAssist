@@ -421,9 +421,6 @@
         /* hotfix 7 (owner order): the timeline scrolls with no scrollbar */
         #ca-rc-detail { scrollbar-width: none; -ms-overflow-style: none; }
         #ca-rc-detail::-webkit-scrollbar { display: none; width: 0; height: 0; }
-        .cadate-day {
-            transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
-        }
         #cadate-hairline,
         #cadate-hairline-foot {
             height: 1px;
@@ -459,6 +456,7 @@
             border: 1px solid rgba(201, 162, 39, 0.35);
         }
         .cadate-day {
+            transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
             width: 2.25rem;
             height: 2.25rem;
             border-radius: 9999px;
