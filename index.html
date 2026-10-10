@@ -13268,9 +13268,9 @@ function getRegionForAirport(code) {
                             <label class="block ca-micro font-semibold uppercase tracking-wider text-gray-500 mb-1">Departure Date</label>
                             
                             <div class="flex gap-2" id="fv-date-buttons-${uniqueId}">
-                                <button id="fv-btn-today-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${localISOTime}', 'today')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Today</button>
-                                <button id="fv-btn-tomorrow-${uniqueId}" onclick="setDateAndFetch('${uniqueId}', '${tomorrowISOTime}', 'tomorrow')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Tomorrow</button>
-                                <button id="fv-btn-pick-${uniqueId}" onclick="showDatePickerUI('${uniqueId}')" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Pick Date</button>
+                                <button id="fv-btn-today-${uniqueId}" data-fv-act="today" data-fv-id="${uniqueId}" data-fv-date="${localISOTime}" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Today</button>
+                                <button id="fv-btn-tomorrow-${uniqueId}" data-fv-act="tomorrow" data-fv-id="${uniqueId}" data-fv-date="${tomorrowISOTime}" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Tomorrow</button>
+                                <button id="fv-btn-pick-${uniqueId}" data-fv-act="pick" data-fv-id="${uniqueId}" class="flex-1 min-w-0 h-11 border border-black/10 dark:border-white/10 rounded-lg px-2 text-xs font-bold whitespace-nowrap transition-colors active:scale-95">Pick Date</button>
                             </div>
                             
                             <div id="fv-date-picker-wrap-${uniqueId}" class="hidden">
@@ -13297,6 +13297,25 @@ function getRegionForAirport(code) {
             renderRecentFlightChips(uniqueId);
             scrollChatToBubble(msgDiv);
         }
+
+        // round 18 (owner-approved improvement #5): the five
+        // flight-verification actions ride data-attributes + this ONE
+        // delegated listener — the buttons are re-rendered into the chat
+        // (and into #fv-action-area on every fetch), so inline JS-in-HTML
+        // was the fragile path. Same functions, same arguments, same order
+        // as the inline calls they replace; closest() so a tap on the
+        // submit icon reaches its button; anything without a data-fv-id or
+        // an action outside the five is ignored.
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest && e.target.closest('[data-fv-act]');
+            if (!btn) return;
+            const id = btn.getAttribute('data-fv-id');
+            const act = btn.getAttribute('data-fv-act');
+            if (!id) return;
+            if (act === 'today' || act === 'tomorrow') setDateAndFetch(id, btn.getAttribute('data-fv-date'), act);
+            else if (act === 'pick') showDatePickerUI(id);
+            else if (act === 'print' || act === 'menu') submitFlightVerification(id, act);
+        });
 
         function showDatePickerUI(id) {
             const hid = document.getElementById('fv-selected-date-' + id);
@@ -13562,10 +13581,10 @@ function getRegionForAirport(code) {
                     contentHtml += `
                         <div class="flex gap-2 opacity-50 pointer-events-none" id="fv-actions-section-${id}">
                             ${mode === 'print'
-                                ? `<button onclick="submitFlightVerification('${id}', 'print')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
+                                ? `<button data-fv-act="print" data-fv-id="${id}" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="printer" class="w-4 h-4"></i> Fetch menu
                             </button>`
-                                : `<button onclick="submitFlightVerification('${id}', 'menu')" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
+                                : `<button data-fv-act="menu" data-fv-id="${id}" class="cta-gold flex-1 py-4 px-4 rounded-full text-sm font-bold uppercase tracking-widest shadow-lg flex justify-center items-center gap-2 transition-transform active:scale-95 disabled:opacity-50 disabled:grayscale disabled:pointer-events-none">
                                 <i data-lucide="book-open" class="w-4 h-4"></i> Fetch menu
                             </button>`}
                         </div>
