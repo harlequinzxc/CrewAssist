@@ -911,8 +911,8 @@ function todayYmd() {
     await wait(300);
     const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
     R.ok(/Completed/.test(headOf('2026-09').textContent), 'a same-day duty that landed reads Completed, not In progress');
-    const body = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
-    R.ok(!body.querySelector('.ca-arch-dot-hollow'), 'no projected row once the day\u2019s duties have landed');
+    // round 22 (F-08): the .ca-arch-dot-hollow absence pin removed with the dead
+    // CSS — the class had no emitter anywhere, so the pin could never fail.
     // entries without an arrival on record keep the date rule
     w.localStorage.setItem('crewAssist.archive', JSON.stringify([
       { id: 'E9', savedAt: '2026-09-26T08:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-26', flightType: 'Layover', stationDisplay: 'HKT', amount: 100 }

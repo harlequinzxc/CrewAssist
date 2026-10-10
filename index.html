@@ -92,9 +92,12 @@
            sheet is full-bleed, so only the top edge of the outline showed). */
         .ca-focuscatch:focus, .ca-focuscatch:focus-visible { outline: none !important; }
 
-        /* v1.37.0: light mode gets a darker gold token for TEXT only — the
-           old #7d650f read as 3.9:1 on cream; icons and borders keep their
-           richer gold. Dark mode is untouched. */
+        /* v1.37.0: light mode's gold TEXT token — #7A620F measures 5.21:1 on
+           the cream base #F6F1E8 (the v1.31.0 ink #7d650f reads 4.99:1; both
+           clear WCAG AA — the old "3.9:1" note was a mismeasurement). Icons
+           and borders keep their richer gold. Dark mode is untouched. Round 22
+           removed a later same-specificity v1.31.0 rule that had silently
+           overridden this one since it shipped. */
         html:not(.dark) .text-sia-gold { color: #7A620F; }
 
         body {
@@ -381,14 +384,12 @@
         .ca-rc-row { display: flex; align-items: stretch; }
         .ca-rc-row + .ca-rc-row { border-top: 1px solid rgba(127,127,127,.14); }
         html.dark .ca-rc-row + .ca-rc-row { border-top-color: rgba(127,127,127,.18); }
-        .ca-rc-row.is-ctx { opacity: .58; }
         .ca-rc-gut { width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
         .ca-rc-gut .n { font-size: 15px; font-weight: 800; line-height: 1; color: rgba(31,41,55,.92); }
         html.dark .ca-rc-gut .n { color: rgba(229,231,235,.92); }
         .ca-rc-gut .m { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: rgba(31,41,55,.55); }
         html.dark .ca-rc-gut .m { color: rgba(229,231,235,.55); }
                 .ca-rc-gut::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: transparent; }
-        .ca-rc-row.is-ctx .ca-rc-gut::after { background: rgba(127,127,127,.18); }
         .ca-rc-gut.k-fly { background: rgba(37,99,235,.10); }
         html.dark .ca-rc-gut.k-fly { background: rgba(96,165,250,.12); }
         .ca-rc-gut.k-lo, .ca-rc-gut.k-off, .ca-rc-gut.k-al { background: rgba(127,127,127,.10); }
@@ -542,7 +543,6 @@
         .ca-arch-yoy-up { color: #34d399; font-weight: 700; }
         .ca-arch-yoy-down { color: #f87171; font-weight: 700; }
         .ca-arch-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sia-gold, #c9a227); flex: none; }
-        .ca-arch-dot-hollow { width: 5px; height: 5px; border-radius: 999px; border: 1.5px solid var(--sia-gold, #c9a227); background: transparent; flex: none; }
         .ca-arch-footline { height: 1px; flex: 1 1 0; background: var(--arch-hairline); }
         .ca-arch-chev { transition: transform .3s ease; }
         .ca-arch-group:not(.ca-arch-collapsed) .ca-arch-chev { transform: rotate(90deg); }
@@ -579,12 +579,14 @@
         html:not(.dark) #app-dialog-backdrop .glass-bubble {
             background: rgba(246, 241, 232, 0.96);
         }
-        /* v1.31.0: gold TEXT gets its own ink. The brand gold stays for fills,
-           borders and dark mode — but #c9a227 on white is 2.42:1 (WCAG AA needs
-           4.5:1), so light-mode text uses a measured 5.61:1 ink instead. */
+        /* v1.31.0: the gold-ink token. The brand gold stays for fills and
+           borders — but #c9a227 on white is 2.42:1 (WCAG AA needs 4.5:1), so
+           the light-mode ink is a measured 5.61:1. (.text-sia-gold itself is
+           styled exactly once, by the v1.37.0 rule near the top of the sheet —
+           round 22 removed this block's later same-specificity rule that had
+           been silently overriding it.) */
         :root { --sia-gold-ink: #7d650f; }
         .dark { --sia-gold-ink: #c9a227; }
-        html:not(.dark) .text-sia-gold { color: var(--sia-gold-ink, #7d650f); }
         /* v1.31.0: invisible hit-area growth — the icon keeps its visual size,
            the tap zone grows 5px around it (44px-class targets). */
         .ca-hit { position: relative; }
@@ -1285,14 +1287,14 @@
                         <button id="btn-roster-cal" aria-label="Roster calendar" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="calendar-days" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-theme" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-theme" aria-label="Toggle dark mode" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
                             <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
                         </button>
-                        <button id="btn-settings" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-settings" aria-label="Settings" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-reset" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-reset" aria-label="Reset chat" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="rotate-cw" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -1340,7 +1342,7 @@
                             <i data-lucide="paperclip" class="w-4 h-4"></i>
                         </button>
                         <input type="text" id="chat-input" placeholder="Try &quot;menu&quot;..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="ca-hit w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
+                        <button id="btn-send" aria-label="Send message" class="ca-hit w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
@@ -1367,7 +1369,7 @@
                 <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
-                    <button id="btn-close-settings" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-settings" aria-label="Close" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1727,7 +1729,7 @@
                 <div class="flex items-center gap-1">
                     <button id="btn-results-action" class="h-10 min-w-[88px] px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Save"></button>
                     <button id="btn-results-csv" class="ca-hit h-10 px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Export CSV"><i data-lucide="file-down" class="w-4 h-4 shrink-0"></i><span class="ca-micro font-bold uppercase tracking-wider">CSV</span></button>
-                    <button id="btn-close-results" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-results" aria-label="Close" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1817,7 +1819,7 @@
                     <button type="button" id="btn-menu-to-print" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 ca-inset shrink-0" aria-label="Print menu">
                         <i data-lucide="printer" class="w-4 h-4"></i>
                     </button>
-                    <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-menu" aria-label="Close" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1918,7 +1920,7 @@
                             <button type="button" data-export="word" class="w-full text-left px-3 py-2.5 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/10">Word document</button>
                         </div>
                     </div>
-                    <button type="button" id="btn-close-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0">
+                    <button type="button" id="btn-close-print" aria-label="Close" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -2811,6 +2813,11 @@
             initUI();
             bindEvents();
             loadShippedRates();
+            // round 22 (F-03): the v1.36.0 shell guard was born dead — defined,
+            // never called, while the changelog promised its repair screen. It
+            // is silent whenever the compiled stylesheet loads (caTwLoaded
+            // probes the live sheets for .hidden).
+            shellGuard();
 
             // Connection status dot + offline behaviour (v1.26.0)
             const netDotBtn = document.getElementById('net-status-dot');
@@ -3072,6 +3079,31 @@
             delete btn.dataset.caArmed; delete btn.dataset.caRestore; delete btn.dataset.caTimer;
         }
 
+        // round 22 (F-06): the float-pill visibility classes and the gold-pill
+        // selected/idle classes were inlined at two and six sites respectively
+        // (onboarding gender, onboarding rank, the changelog top pill and the
+        // chat jump-to-latest pill). One helper each — the lists exist once.
+        function caPillPaint(btn, show) {
+            if (show) {
+                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+            } else {
+                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+            }
+        }
+        function caGoldPillOn(el) {
+            el.classList.remove('ui-input', 'text-gray-600');
+            el.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+            const ic = el.querySelector('svg') || el.querySelector('i');
+            if (ic) ic.classList.add('text-black');
+        }
+        function caGoldPillOff(el) {
+            el.classList.add('ui-input', 'text-gray-600');
+            el.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+            const ic = el.querySelector('svg') || el.querySelector('i');
+            if (ic) ic.classList.remove('text-black');
+        }
         function bindEvents() {
             const wnClose = document.getElementById('whatsnew-close');
             if (wnClose) wnClose.addEventListener('click', closeWhatsNew);
@@ -3110,18 +3142,10 @@
 
             document.querySelectorAll('.ob-gender-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.ob-gender-btn').forEach(b => {
-                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                        b.classList.add('ui-input', 'text-gray-600');
-                        const icon = b.querySelector('svg') || b.querySelector('i');
-                        if(icon) icon.classList.remove('text-black');
-                    });
+                    document.querySelectorAll('.ob-gender-btn').forEach(b => caGoldPillOff(b));
                     const target = e.currentTarget;
-                    target.classList.remove('ui-input', 'text-gray-600');
-                    target.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    const icon = target.querySelector('svg') || target.querySelector('i');
-                    if(icon) icon.classList.add('text-black');
-                    
+                    caGoldPillOn(target);
+
                     tempProfile.gender = target.dataset.value;
                     tempProfile.rank = ''; // Reset rank
                     checkObReveal(); // v1.40.0 hotfix: Rank waits for name + date + gender
@@ -3356,19 +3380,12 @@
                 btn.textContent = r;
                 btn.dataset.value = r;
                 
-                if (tempProfile.rank === r) {
-                    btn.classList.remove('text-gray-600', 'ui-input');
-                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                }
+                if (tempProfile.rank === r) caGoldPillOn(btn);
 
                 btn.addEventListener('click', () => {
-                    document.querySelectorAll('.ob-rank-btn').forEach(b => {
-                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                        b.classList.add('text-gray-600', 'ui-input');
-                    });
-                    btn.classList.remove('text-gray-600', 'ui-input');
-                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    
+                    document.querySelectorAll('.ob-rank-btn').forEach(b => caGoldPillOff(b));
+                    caGoldPillOn(btn);
+
                     tempProfile.rank = r;
                     checkObSubmit();
                 });
@@ -3437,12 +3454,7 @@
                 tempProfile = { name: '', gender: '', rank: '', firstSoloYMD: '' };
                 document.getElementById('ob-name').value = '';
                 document.getElementById('ob-solo').value = '';
-                document.querySelectorAll('.ob-gender-btn').forEach(b => {
-                    b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    b.classList.add('ui-input', 'text-gray-600');
-                    const icon = b.querySelector('svg') || b.querySelector('i');
-                    if(icon) icon.classList.remove('text-black');
-                });
+                document.querySelectorAll('.ob-gender-btn').forEach(b => caGoldPillOff(b));
                 const rc = document.getElementById('ob-rank-container');
                 rc.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
                 rc.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
@@ -3589,13 +3601,7 @@
             const btn = document.getElementById('ca-cl-top');
             if (!scroller || !btn) return;
             const show = scroller.scrollTop > 48;
-            if (show) {
-                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
-            } else {
-                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
-            }
+            caPillPaint(btn, show);
         }
         function clPaintControls() {
             document.querySelectorAll('#ca-cl-chips .ca-cl-chip').forEach((chip) => {
@@ -3948,13 +3954,7 @@
             if (!btn) return;
             const typing = !!document.getElementById('typing-indicator');
             const show = !typing && !isChatNearBottom();
-            if (show) {
-                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
-            } else {
-                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
-            }
+            caPillPaint(btn, show);
         }
 
         function jumpChatToBottom() {
@@ -4076,9 +4076,13 @@
         const ROSTER_PDFJS_FONTS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/';
         const RO_MON = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
 
-        function rosterEsc(s) {
+        // round 22 (F-04): rosterEsc and ratesEsc were byte-equivalent copies
+        // of one security-relevant escape table. One implementation; the two
+        // legacy names stay as delegates so their 37 call sites read unchanged.
+        function caEsc(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
+        function rosterEsc(s) { return caEsc(s); }
         function rosterDateToYmd(s) {
             const m = String(s || '').match(/^(\d{2})([A-Za-z]{3})(\d{2})$/);
             if (!m) return '';
@@ -8572,11 +8576,8 @@ function getRegionForAirport(code) {
         let shippedRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
         let activeRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
 
-        function ratesEsc(s) {
-            return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[ch]));
-        }
+        // round 22 (F-04): delegate to the one escape table (caEsc above).
+        function ratesEsc(s) { return caEsc(s); }
 
         function cloneRates(obj) {
             return JSON.parse(JSON.stringify(obj || {}));
@@ -15153,16 +15154,9 @@ function getRegionForAirport(code) {
             if (inn) inn.disabled = z >= PRINT_ZOOM_MAX;
         }
 
-        function escapePrintHtml(str) {
-            if (str == null || str === '') return '';
-            return String(str).replace(/[&<>"']/g, (ch) => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
-            }[ch]));
-        }
+        // round 22 (F-04): a THIRD copy of the escape table (found by the
+        // one-table count pin) — delegates to caEsc like rosterEsc/ratesEsc.
+        function escapePrintHtml(str) { return caEsc(str); }
 
         function shortenCulinaryName(name) {
             if (!name) return '';
@@ -17819,8 +17813,5 @@ function getRegionForAirport(code) {
             setTimeout(tick, 2500);
         }
     </script>
-</body>
-</html>
-script>
 </body>
 </html>
