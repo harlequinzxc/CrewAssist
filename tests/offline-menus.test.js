@@ -199,6 +199,14 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
     R.ok(sw.includes("crewassist-v211"), 'service-worker cache name bumped to v211 (hotfix rounds: no version bump)');
+    // round 21 (README de-drift): the README carries no volatile literals —
+    // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
+    // run-all summary. The version mismatch that prompted this (1.40.0 vs
+    // 1.43.0 in the same file) must never be able to re-form silently.
+    const rd = fs.readFileSync(path.resolve(__dirname, '..', 'README.md'), 'utf8');
+    R.ok(!/\d+\.\d+\.\d+/.test(rd), 'README: no SemVer literals — APP_VERSION in index.html is the only version source');
+    R.ok(!/crewassist-v\d+/.test(rd), 'README: no cache-name literals — sw.js is the only source');
+    R.ok(!/\d+\s*suite/i.test(rd) && !/~\s*\d+\s*s\b/.test(rd), 'README: no suite-count or run-time claims — the run-all summary is the live source');
     // v1.38.0 review: forecast toggle, SGT conversions, storage panel
     R.ok(src.includes('ca-arch-proj-btn') && src.includes('ca-arch-proj-wrap'), 'the month total is a still-to-fly toggle (A1)');
     R.ok(src.includes("const AIRPORT_TZ = {"), 'a curated station-to-IANA-zone table powers SGT conversions (A2)');

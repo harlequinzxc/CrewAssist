@@ -2845,6 +2845,7 @@
                         const sheet = document.getElementById('results-sheet');
                         if (typeof caSheetFocusOut === 'function') caSheetFocusOut(sheet);
                         backdrop.classList.add('opacity-0');
+                        caSheetGlideCancel(sheet);
                         sheet.classList.add('translate-y-full');
                         caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
                     }]
@@ -3723,10 +3724,7 @@
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                caSheetGlideIn(sheet, backdrop);
-            }, 10);
+            caSheetGlideArm(sheet, backdrop);
             refreshIcons();
         }
         function closeChangelog() {
@@ -3735,6 +3733,7 @@
             if (!backdrop || !sheet) return;
             caSheetFocusOut(sheet); // v1.32.0 (M3): focus returns to the opener
             backdrop.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
             sheet.classList.add('translate-y-full');
             caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
@@ -6207,13 +6206,7 @@
             }
             // (the wrap was un-hidden at the top of this function — hotfix 9)
             if (typeof caSheetFocusIn === 'function') caSheetFocusIn(sheet);
-            setTimeout(() => {
-                const shade = wrap.querySelector('.ca-rc-shade');
-                // hotfix 13: the shared glide — reflow-pinned class change
-                // plus heal passes, so a canceled close can never leave the
-                // sheet stuck off-screen on a big foldable screen
-                caSheetGlideIn(sheet, shade);
-            }, 10);
+            caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-shade'));
         }
         function closeRosterCalendar() {
             const wrap = document.getElementById('ca-roster-cal');
@@ -6225,6 +6218,7 @@
             if (typeof caSheetFocusOut === 'function') { try { caSheetFocusOut(sheet); } catch (e) {} }
             const shade = wrap.querySelector('.ca-rc-shade');
             if (shade) shade.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
             sheet.classList.add('translate-y-full');
             caSheetHideArm(wrap);   // hotfix 14: arm, never a bare timer — a reopen cancels it
         }
@@ -7063,11 +7057,7 @@
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
-            setTimeout(() => {
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                caSheetGlideIn(sheet, backdrop);
-                content.scrollTop = 0;
-            }, 10);
+            caSheetGlideArm(sheet, backdrop, () => { content.scrollTop = 0; });
             setTimeout(() => {
                 addBotMessage(`Your total COP Allowance across ${n} trip${n === 1 ? '' : 's'} is ${formatMoney(grand)}`);
             }, 600);
@@ -7517,24 +7507,21 @@
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
-            // small delay to allow display:block to apply before opacity transition
-            setTimeout(() => {
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                caSheetGlideIn(sheet, backdrop);
-            }, 10);
+            caSheetGlideArm(sheet, backdrop);
         }
 
         function closeSettings() {
             const backdrop = document.getElementById('settings-backdrop');
             const sheet = document.getElementById('settings-sheet');
             caSheetFocusOut(sheet); // v1.32.0 (M3): focus returns to the opener
-            
+
             backdrop.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
             sheet.classList.add('translate-y-full');
-            
+
             caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
-        
+
         // ==========================================
         // ALLOWANCE CALCULATOR INTERFACE MODE
         // Settings > "Allowance calculator interface". One segmented pill:
@@ -11866,11 +11853,7 @@ function getRegionForAirport(code) {
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
-            setTimeout(() => {
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                caSheetGlideIn(sheet, backdrop);
-                content.scrollTop = 0;
-            }, 10);
+            caSheetGlideArm(sheet, backdrop, () => { content.scrollTop = 0; });
             
             // Post result message to chat
             let msg = '';
@@ -12369,6 +12352,25 @@ function getRegionForAirport(code) {
             clearTimeout(el.__caHideT);
             el.__caHideT = null;
         }
+        // round 20 (owner-approved ghost-sheet fix): the mirror of hotfix 14.
+        // An opener's 10ms glide timer used to fire even when a close beat it
+        // — re-opening the sheet over the backdrop-hider the close had armed,
+        // leaving a "ghost" sheet with no shade blocking the page. Opens park
+        // the timer on the sheet; every closer cancels it.
+        function caSheetGlideArm(sheet, shade, after) {
+            if (!sheet) return;
+            if (sheet.__caGlideT) clearTimeout(sheet.__caGlideT);
+            sheet.__caGlideT = setTimeout(() => {
+                sheet.__caGlideT = null;
+                caSheetGlideIn(sheet, shade);
+                if (after) after();
+            }, 10);
+        }
+        function caSheetGlideCancel(sheet) {
+            if (!sheet || !sheet.__caGlideT) return;
+            clearTimeout(sheet.__caGlideT);
+            sheet.__caGlideT = null;
+        }
         function caSheetFocusables(sheet) {
             return Array.prototype.filter.call(
                 sheet.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
@@ -12446,23 +12448,19 @@ function getRegionForAirport(code) {
             wrap.classList.remove('hidden');
             caSheetFocusIn(archEl('ca-arch-sub-sheet')); // v1.32.0 (M3): the sub-sheet traps too
             // Let the hidden->visible flip land first, then ease the sheet up.
-            setTimeout(() => {
-                const shade = wrap.querySelector('.ca-arch-sub-shade');
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                caSheetGlideIn(archEl('ca-arch-sub-sheet'), shade);
-                archEl('ca-arch-sub-body').scrollTop = 0;
-            }, 10);
+            caSheetGlideArm(archEl('ca-arch-sub-sheet'), wrap.querySelector('.ca-arch-sub-shade'), () => { archEl('ca-arch-sub-body').scrollTop = 0; });
         }
         function closeArchSub() {
             caSheetFocusOut(archEl('ca-arch-sub-sheet')); // v1.32.0 (M3): back to the archive sheet
             const wrap = archEl('ca-arch-sub');
             const shade = wrap.querySelector('.ca-arch-sub-shade');
             if (shade) shade.classList.add('opacity-0');
+            caSheetGlideCancel(archEl('ca-arch-sub-sheet'));
             archEl('ca-arch-sub-sheet').classList.add('translate-y-full');
             caSheetHideArm(wrap);   // hotfix 14: the shared arm (was a bespoke archSubTimer)
         }
-        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); setTimeout(() => { caSheetGlideIn(s, b); }, 10); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide */
-        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm */
+        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close */
+        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); caSheetGlideCancel(s); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm; round 20: cancel the pending glide */
 
         // v1.33.2: a fingerprint of which duties have landed — renderArch
         // stamps it, the sweep compares it, and the earnings page only
@@ -13119,10 +13117,11 @@ function getRegionForAirport(code) {
             const backdrop = document.getElementById('results-backdrop');
             const sheet = document.getElementById('results-sheet');
             caSheetFocusOut(sheet); // v1.32.0 (M3): focus returns to the opener
-            
+
             backdrop.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
             sheet.classList.add('translate-y-full');
-            
+
             caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         });
     </script>
@@ -13851,10 +13850,7 @@ function getRegionForAirport(code) {
             loadMenu(cabinClasses[0]);
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                caSheetGlideIn(sheet, backdrop);
-            }, 10);
+            caSheetGlideArm(sheet, backdrop);
         }
 
         // v1.28.2: the unified "show me this flight's menus" action. Cached →
@@ -13919,8 +13915,9 @@ function getRegionForAirport(code) {
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             closeMenuLightbox();
-            
+
             backdrop.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
             sheet.classList.add('translate-y-full');
             if (immediate === true) { caSheetHideCancel(backdrop); backdrop.classList.add('hidden'); }
             else caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
@@ -15184,7 +15181,7 @@ function getRegionForAirport(code) {
             const backdrop = document.getElementById('print-backdrop');
             const menu = document.getElementById('print-export-menu');
             if (menu) menu.classList.add('hidden');
-            if (overlay) overlay.classList.add('translate-y-full');
+            if (overlay) { caSheetGlideCancel(overlay); overlay.classList.add('translate-y-full'); }
             if (backdrop) {
                 backdrop.classList.add('opacity-0');
                 if (immediate === true) { caSheetHideCancel(backdrop); backdrop.classList.add('hidden'); }
@@ -15223,10 +15220,7 @@ function getRegionForAirport(code) {
             const backdrop = document.getElementById('print-backdrop');
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             if (backdrop) backdrop.classList.remove('hidden');
-            setTimeout(() => {
-                // hotfix 13: the shared glide (reflow pin + heal passes)
-                if (overlay) caSheetGlideIn(overlay, backdrop);
-            }, 10);
+            caSheetGlideArm(overlay, backdrop);
             lucide.createIcons();
         }
 

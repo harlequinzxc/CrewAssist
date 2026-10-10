@@ -349,7 +349,7 @@ const mkUntil = (d) => async (cond, ms) => {
         // glide, and the next open then never starts), and two heal passes
         // (+450 restart, +900 snap) never leave a sheet below the fold
         R.ok(src.includes('function caSheetGlideIn') && src.includes('function caSheetGlideStuck'), 'hotfix 13: the shared sheet glide exists (start-pose reflow + heal passes)');
-        R.ok(src.split('caSheetGlideIn(').length >= 10, 'hotfix 13: every sheet opener routes through the shared glide (' + (src.split('caSheetGlideIn(').length - 1) + ' call sites)');
+        R.ok(src.split('caSheetGlideArm(').length >= 10, 'hotfix 13 + round 20: every sheet opener routes through the shared glide arm (' + (src.split('caSheetGlideArm(').length - 1) + ' call sites)');
         R.ok(/function caSheetGlideIn[\s\S]*?void sheet\.offsetHeight;\s*\n\s*if \(shade\) shade\.classList\.remove\('opacity-0'\);\s*\n\s*sheet\.classList\.remove\('translate-y-full'\);/.test(src), 'the glide pins the start pose with a forced reflow BEFORE the class change');
         R.ok(/function caSheetGlideIn[\s\S]*?\}, 400\)/.test(src) && /function caSheetGlideIn[\s\S]*?\}, 750\)/.test(src), 'the heal passes arm at +400ms (restart) and +750ms (snap)');
         R.ok(src.includes("const gone = () => !sheet.isConnected || sheet.classList.contains('translate-y-full');"), 'a heal pass stands down the moment its sheet closes');
@@ -837,6 +837,33 @@ const mkUntil = (d) => async (cond, ms) => {
     const cssSrc = require('fs').readFileSync(APP, 'utf8');
     R.ok((cssSrc.match(/^ {8}\.cadate-day \{$/gm) || []).length === 1, 'cadate-day: exactly one standalone rule remains — the two same-specificity declarations are merged');
     R.ok(/\.cadate-day \{\n\s*transition: background-color 0\.2s ease, color 0\.2s ease, box-shadow 0\.2s ease, transform 0\.2s ease, opacity 0\.2s ease;\n\s*width: 2\.25rem;/.test(cssSrc), 'cadate-day: the merged rule carries both the transition and the layout in one block');
+  }
+
+  // round 20: the ghost-sheet race — a close inside the 10ms glide window
+  // must cancel the pending open (the smoke's fv pin exposed this; the
+  // deterministic Chromium repro is recorded in HANDOVER task #3)
+  {
+    const fs20 = require('fs');
+    const { w, d } = await boot(APP);
+    w.eval('openSettings(); closeSettings();');
+    await wait(500);
+    R.ok(d.getElementById('settings-sheet').classList.contains('translate-y-full') && d.getElementById('settings-backdrop').classList.contains('hidden'), 'a close inside the 10ms glide window cancels the pending open — no ghost sheet over the chat');
+    w.eval('openSettings();');
+    await wait(250);
+    R.ok(!d.getElementById('settings-sheet').classList.contains('translate-y-full'), 'a plain open still glides the sheet in');
+    w.eval('closeSettings();');
+    await wait(500);
+    R.ok(d.getElementById('settings-sheet').classList.contains('translate-y-full') && d.getElementById('settings-backdrop').classList.contains('hidden'), 'a gapped open+close still closes cleanly');
+    w.eval('openChangelog(); closeChangelog();');
+    await wait(500);
+    R.ok(d.getElementById('ca-changelog-sheet').classList.contains('translate-y-full') && d.getElementById('ca-changelog-backdrop').classList.contains('hidden'), 'the changelog sheet shares the cancellable glide');
+    w.eval('openArchOverlay(); closeArchOverlay();');
+    await wait(500);
+    R.ok(d.getElementById('ca-arch-sheet').classList.contains('translate-y-full'), 'the archive sheet shares the cancellable glide too');
+    const src20 = fs20.readFileSync(APP, 'utf8');
+    R.eq((src20.match(/caSheetGlideIn\(/g) || []).length, 2, 'caSheetGlideIn is reachable from exactly one place now — inside the arm helper');
+    R.eq((src20.match(/caSheetGlideArm\(/g) || []).length, 10, 'nine openers arm the glide through the shared helper');
+    R.eq((src20.match(/caSheetGlideCancel\(/g) || []).length, 10, 'nine closers cancel it — closes cancel, opens arm');
   }
 
   process.exit(R.done() ? 1 : 0);
