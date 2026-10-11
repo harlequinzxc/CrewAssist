@@ -260,5 +260,16 @@ const EMDASH = '\u2014'; // —
     R.ok(chatTxt().indexOf('Fetching menu from seat pocket.') >= 0, 'the armed submit dispatches the fetch through the delegated path');
   }
 
+  // ---- round 24 (owner diff, changes 3+4): cabin labels and list rows, once each ----
+  // cabinNames was inlined as two identical maps whose JCL/SCL/YCL values were
+  // hardcoded beside menuCabinLabel's own map — a live drift risk. The rows
+  // skeleton was inlined in three list builders.
+  {
+    const src24 = fs.readFileSync(APP, 'utf8');
+    R.eq((src24.match(/menuCabinNames\(\)/g) || []).length, 3, 'round 24: one menuCabinNames definition feeds both cabin paint sites (fv card + viewer)');
+    R.eq((src24.match(/Premium Economy/g) || []).length, 1, 'round 24: the Premium Economy label lives only in menuCabinLabel — no hardcoded copies can drift');
+    R.eq((src24.match(/menuItemRow\(item, '', '', ''\)/g) || []).length, 1, 'round 24: the bare-string row pattern exists once — inside the shared menuRowsFrom skeleton');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

@@ -880,6 +880,7 @@ const mkUntil = (d) => async (cond, ms) => {
     const src22 = fs22.readFileSync(APP, 'utf8');
     R.eq((src22.match(/'text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-\[0_0_15px_rgba\(201,162,39,0\.3\)\]', 'border-transparent'/g) || []).length, 2, 'F-06: the gold-pill class list exists exactly twice (caGoldPillOn add + caGoldPillOff remove) — was six inlined sites across gender, rank and reset');
     R.eq((src22.match(/'opacity-0', 'scale-75', 'pointer-events-none'/g) || []).length, 2, 'F-06: the float-pill class list exists exactly twice (inside caPillPaint) — was two inlined sites');
+    R.ok((src22.match(/target="_blank"/g) || []).length === (src22.match(/target="_blank" rel="noopener noreferrer"/g) || []).length, 'round 24: every _blank link carries rel="noopener noreferrer" (the Telegram link, and any future ones)');
   }
 
   process.exit(R.done() ? 1 : 0);

@@ -1394,7 +1394,7 @@
                             <span class="text-sm font-bold">Chat with the developer</span>
                             <span class="ca-micro text-gray-500">Usually replies within a few hours</span>
                         </div>
-                        <a href="https://t.me/harlequinzxc" target="_blank" class="w-32 justify-center px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                        <a href="https://t.me/harlequinzxc" target="_blank" rel="noopener noreferrer" class="w-32 justify-center px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
                             <i data-lucide="send" class="w-3.5 h-3.5"></i> Telegram
                         </a>
                     </div>
@@ -9421,6 +9421,30 @@
             }, 10);
         }
 
+        // The LMA and IFA trip bars paint the same route strip and differed only
+        // in the class prefix. Same shape -> update in place, so a sector that
+        // finishes fetching turns green without rebuilding (and losing) the row.
+        function caPaintTripRoute(route, nodes, fetched, prefix) {
+            const nodeCls = (n, k) => (n === '\u00b7\u00b7\u00b7'
+                ? 'text-gray-400 ca-inset border-black/10 dark:border-white/10'
+                : fetched[k]
+                    ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
+                    : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
+            const baseCls = prefix + '-trip-node shrink-0 px-2 py-1 rounded-lg border ca-micro font-bold transition-colors duration-200 ';
+            if (route.childElementCount === nodes.length * 2 - 1) {
+                nodes.forEach((n, k) => {
+                    const nd = route.children[k * 2];
+                    nd.textContent = n;
+                    nd.className = baseCls + nodeCls(n, k);
+                });
+            } else {
+                route.innerHTML = nodes.map((n, k) =>
+                    (k ? '<span class="' + prefix + '-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
+                    '<span class="' + baseCls + nodeCls(n, k) + '">' + n + '</span>'
+                ).join('');
+            }
+        }
+
         function bindCalculatorEvents(id, mode) {
             // Assigned by the LMA block below so an IFA dropdown change can reset
             // LMA stations too (null on the very first render — nothing to reset).
@@ -9521,25 +9545,7 @@
                     const nodes = ['SIN'];
                     const fetched = [false];
                     for (let i = 1; i <= count; i++) { nodes.push(lmaVal(i, 'iata') || '\u00b7\u00b7\u00b7'); fetched.push(lmaStationDone(i)); }
-                    const nodeCls = (n, k) => (n === '\u00b7\u00b7\u00b7'
-                        ? 'text-gray-400 ca-inset border-black/10 dark:border-white/10'
-                        : fetched[k]
-                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
-                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
-                    const baseCls = 'lma-trip-node shrink-0 px-2 py-1 rounded-lg border ca-micro font-bold transition-colors duration-200 ';
-                    if (route.childElementCount === nodes.length * 2 - 1) {
-                        // same shape: update in place so fetched boxes turn green smoothly
-                        nodes.forEach((n, k) => {
-                            const nd = route.children[k * 2];
-                            nd.textContent = n;
-                            nd.className = baseCls + nodeCls(n, k);
-                        });
-                    } else {
-                        route.innerHTML = nodes.map((n, k) =>
-                            (k ? '<span class="lma-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
-                            '<span class="' + baseCls + nodeCls(n, k) + '">' + n + '</span>'
-                        ).join('');
-                    }
+                    caPaintTripRoute(route, nodes, fetched, 'lma');
                 }
                 let done = 0, folded = 0;
                 for (let i = 1; i <= count; i++) {
@@ -9692,25 +9698,7 @@
                         nodes.push((c && c.getAttribute('data-arr-airport')) || '\u00b7\u00b7\u00b7');
                         fetched.push(ifaSectorState(i) === 'done');
                     }
-                    const nodeCls = (n, k) => (n === '\u00b7\u00b7\u00b7'
-                        ? 'text-gray-400 ca-inset border-black/10 dark:border-white/10'
-                        : fetched[k]
-                            ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 border-emerald-500/60'
-                            : 'text-sia-navy dark:text-white bg-white dark:bg-white/10 border-black/10 dark:border-white/15');
-                    const baseCls = 'ifa-trip-node shrink-0 px-2 py-1 rounded-lg border ca-micro font-bold transition-colors duration-200 ';
-                    if (route.childElementCount === nodes.length * 2 - 1) {
-                        // same shape: update in place so fetched boxes turn green smoothly
-                        nodes.forEach((n, k) => {
-                            const nd = route.children[k * 2];
-                            nd.textContent = n;
-                            nd.className = baseCls + nodeCls(n, k);
-                        });
-                    } else {
-                        route.innerHTML = nodes.map((n, k) =>
-                            (k ? '<span class="ifa-trip-arrow text-gray-400 shrink-0">\u2192</span>' : '') +
-                            '<span class="' + baseCls + nodeCls(n, k) + '">' + n + '</span>'
-                        ).join('');
-                    }
+                    caPaintTripRoute(route, nodes, fetched, 'ifa');
                 }
                 let done = 0, collapsed = 0;
                 for (let i = 1; i <= count; i++) {
@@ -13424,12 +13412,7 @@
                             <div class="flex flex-wrap gap-2 mb-4" id="fv-cabins-container-${id}">
                     `;
 
-                    const cabinNames = {
-                        'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
-                        'JCL': 'Business',
-                        'SCL': 'Premium Economy',
-                        'YCL': 'Economy'
-                    };
+                    const cabinNames = menuCabinNames();
 
                     data.cabinClasses.forEach(code => {
                         contentHtml += `
@@ -13684,12 +13667,7 @@
             const cabinLabel = document.getElementById('menu-cabin-label');
             cabinList.innerHTML = '';
 
-            const cabinNames = {
-                'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
-                'JCL': 'Business',
-                'SCL': 'Premium Economy',
-                'YCL': 'Economy'
-            };
+            const cabinNames = menuCabinNames();
 
             if (cabinClasses.length > 1) {
                 cabinWrap.classList.remove('hidden');
@@ -14301,6 +14279,18 @@
             return map[code] || code;
         }
 
+        // The cabin-name map the menu and printer both paint from. FCL is the
+        // only label that varies (Suites on the A380), and menuCabinLabel
+        // already owns that rule, so every entry routes through it.
+        function menuCabinNames() {
+            return {
+                'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
+                'JCL': menuCabinLabel('JCL'),
+                'SCL': menuCabinLabel('SCL'),
+                'YCL': menuCabinLabel('YCL')
+            };
+        }
+
         function menuBevItem(it, spec, sub, cat) {
             if (!it || typeof it === 'string') {
                 const name = cleanMenuText(it);
@@ -14411,7 +14401,10 @@
             return `<div class="divide-y divide-black/10 dark:divide-white/10">${parts.map(p => `<div class="py-3 first:pt-0 last:pb-0">${p}</div>`).join('')}</div>`;
         }
 
-        function menuPlainItems(items) {
+        // The three list builders below walked the same skid: skip empty entries,
+        // render a bare string as a plain row, otherwise build a row from the
+        // object. Only that last step differed, so it is the callback.
+        function menuRowsFrom(items, rowFor) {
             const parts = [];
             (items || []).forEach(item => {
                 if (item == null || item === '') return;
@@ -14419,15 +14412,21 @@
                     parts.push(menuItemRow(item, '', '', ''));
                     return;
                 }
+                parts.push(rowFor(item));
+            });
+            return menuItemsWrap(parts);
+        }
+
+        function menuPlainItems(items) {
+            return menuRowsFrom(items, item => {
                 const img = item._imgCands || (item._img ? [item._img] : photoCandidates(item));
-                parts.push(menuItemRow(
+                return menuItemRow(
                     cleanMenuText(item.name || item.itemName || ''),
                     cleanMenuText(item.description || item.itemDescription || ''),
                     item.iconsHtml || '',
                     img
-                ));
+                );
             });
-            return menuItemsWrap(parts);
         }
 
         function isLightBitesName(name) {
@@ -14435,36 +14434,20 @@
         }
 
         function menuSnackBullets(items) {
-            const parts = [];
-            (items || []).forEach(item => {
-                if (item == null || item === '') return;
-                if (typeof item === 'string') {
-                    parts.push(menuItemRow(item, '', '', ''));
-                    return;
-                }
-                parts.push(menuItemRow(
-                    cleanMenuText(item.name || item.itemName || item.title || ''),
-                    cleanMenuText(item.description || item.itemDescription || item.desc || ''),
-                    '',
-                    ''
-                ));
-            });
-            return menuItemsWrap(parts);
+            return menuRowsFrom(items, item => menuItemRow(
+                cleanMenuText(item.name || item.itemName || item.title || ''),
+                cleanMenuText(item.description || item.itemDescription || item.desc || ''),
+                '',
+                ''
+            ));
         }
 
         function menuBulletList(items, nameKey, descKey) {
-            const parts = [];
-            (items || []).forEach(item => {
-                if (item == null || item === '') return;
-                if (typeof item === 'string') {
-                    parts.push(menuItemRow(item, '', '', ''));
-                    return;
-                }
+            return menuRowsFrom(items, item => {
                 const name = (nameKey ? item[nameKey] : null) || item.name || item.itemName || '';
                 const desc = (descKey ? item[descKey] : null) || item.description || item.itemDescription || '';
-                parts.push(menuItemRow(cleanMenuText(name), cleanMenuText(desc), '', ''));
+                return menuItemRow(cleanMenuText(name), cleanMenuText(desc), '', '');
             });
-            return menuItemsWrap(parts);
         }
 
         function playMenuContentAnim(el) {
