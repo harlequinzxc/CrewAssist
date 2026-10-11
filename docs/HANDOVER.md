@@ -338,6 +338,13 @@ Owner scenario: look up a flight's menu pre-departure (all cabins), airplane mod
 
 Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #4".
 
+**v1.43.0 round 29 (owner-approved comment-only fix, 2026-10-11 — the sw.js "still-missing Tailwind" comment; sw.js + this entry ONLY; no behaviour change, no version bump, no sw bump, no sw.test.js pin, no changelog pointer):**
+
+- **The change.** The four-line comment above `CDN_RETRIES` still said the shell guard turns "a still-missing Tailwind" into the repair screen — written for the era when Tailwind rode the CDN list.
+  Since hotfixes 18/19 the stylesheet is the compiled first-party `tw.css` (precached with the shell; `CDN_ASSETS` is pdf.js ×2, lucide, Google Fonts CSS), and that is what the guard probes (the `ca-tw-probe` sentinel, pinned in dev-ui). The comment now says exactly that — the guard turns a still-missing stylesheet (the first-party tw.css, never a CDN dep) into an honest repair screen — matching the File map's corrected sw.js row (round 26, H-02).
+- **Scope discipline.** Comment bytes only — zero code, zero behaviour; `node --check` clean, sw suite 32/32, no pin touched. Per the owner's standing ruling for this fix: separate commit, no bump (comment-only — nothing to re-serve), no sw.test.js change.
+- **Census.** The `^\*\*` count moves 125→126 with this entry's title.
+
 **v1.43.0 round 28 (owner-approved test-side addition, 2026-10-11 — the §6 guard pins: a new logic-cases suite, nine + the multi-day boundary; tests/logic-cases.test.js + tests/README.md ONLY; no app code, no version bump, no sw bump, no changelog pointer):**
 
 - **What landed.** `tests/logic-cases.test.js` (run-all auto-globs it) pins every worked case in `docs/LOGIC.md` §6 through the shipping `computeCardResults` — 24 checks across the nine cases, with the document's exact figures: IFA 1 $194.00 (junior FS, $10 rate), IFA 2 $272.02 (plus the `toFixed(20)` stored-double pin `272.02499999999997726263`), IFA 3 $1,283.25, IFA 4 $2,857.75 (Direct US toggled on both sectors), LMA 5a $55.00 / 5b $0.00, and 6 / 6b×2 $576 / $668 / $576.

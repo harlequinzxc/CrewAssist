@@ -29,10 +29,10 @@ const CDN_ASSETS = [
     'https://unpkg.com/lucide@latest',
     FONTS_CSS_URL
 ];
-// A flaky CDN during install must not leave styles/icons silently missing
-// offline. Retry each CDN asset a few times; the app-side shell guard turns
-// a still-missing Tailwind into an honest repair screen instead of an
-// unstyled page.
+// A flaky CDN during install must not leave libraries/fonts silently
+// missing offline. Retry each CDN asset a few times; the app-side shell
+// guard turns a still-missing stylesheet (the first-party tw.css, never
+// a CDN dep) into an honest repair screen instead of an unstyled page.
 const CDN_RETRIES = 3;
 
 // Runtime backfill — first-party files and known CDNs are cached as they
