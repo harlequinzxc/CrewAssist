@@ -320,6 +320,40 @@ const synthItems = [].concat(
     R.ok(src.indexOf('[90, 360, 760]') >= 0, 'the open schedules three settle passes as the sheet slides in and settles');
     R.ok(src.indexOf("wrap.addEventListener('pointerdown', rcRevealCancel, true)") >= 0, 'a real touch cancels the pending reveal passes — the user owns the timeline');
     R.ok(src.indexOf('rcRevealCancel();   // hotfix 10') >= 0, 'closing the calendar cancels any reveal pass still pending');
+    // round 33 (owner report: the FIRST calendar open of a session on the PC
+    // showed blank space below the grid — zero rows in view — until a close
+    // and reopen; resizing did nothing). Root cause chain, found by rig
+    // telemetry on the anchor dance: on a fresh page the detail is empty, so
+    // the engine CLAMPS the reveal's first scrollTop write back to 0, and a
+    // correction based on the TARGET then double-counted the whole offset
+    // (target + the row's distance from a scroller that never moved),
+    // hurling the window into spacer-only land; the cover window's
+    // extrapolation divides the gap by the nearest mounted row's height (a
+    // 41px empty day standing in for 300px fly cards), so the re-derived
+    // window could start BELOW the resting scroller — the viewport sat
+    // inside the head spacer, blank, and every later pass re-derived the
+    // same wrong window. Three guarantees, one per link:
+    R.ok(src.indexOf('const next = Math.max(0, (det.scrollTop || 0) + delta);') >= 0, 'round 33: the reveal\u2019s correction bases itself on where the scroller ACTUALLY rests — identical when the scroller stuck, the row\u2019s true offset when the engine clamped the first write (the double-count is gone)');
+    R.ok(src.indexOf('if (next === target && (det.scrollTop || 0) === target) break;') >= 0, 'round 33: the dance only gives up when it is genuinely stuck at its own target — a clamped scroller with a matching correction keeps iterating to the landing');
+    R.ok(src.indexOf('for (let k = 0; k < 8; k++) {') >= 0, 'round 33: the anchor dance carries a wider convergence budget — a long-haul roster\u2019s estimate error takes more than four measured steps to walk down');
+    R.ok(/const estAb = estimate\(\);\s*\n\s*ab = \[Math\.min\(ab\[0\], estAb\[0\]\), Math\.max\(ab\[1\], estAb\[1\]\)\];/.test(src), 'round 33: the window unions the cover window with the estimate window — the estimate always covers the scroller\u2019s own position, so no window can ever start below the scroller or end above it (the head-spacer blank is impossible)');
+    R.ok(/const ab2e = estimate\(\);\s*\n\s*if \(apply\(Math\.min\(ab2\[0\], ab2e\[0\]\), Math\.max\(ab2\[1\], ab2e\[1\]\)\)\) \{ refreshIcons\(\); \}/.test(src), 'round 33: the post-correction second application unions too — the drift-corrected re-derivation can never leave the resting viewport outside the window');
+    R.ok(/const dr33 = det\.getBoundingClientRect\(\);\s*\n\s*if \(dr33\.height > 0\) \{[\s\S]*?if \(!anyInView\) rosterCalTLWindow\(true\);[\s\S]*?\}, ms\)\);/.test(src), 'round 33: each settle pass force-rebuilds the window when the viewport shows no row at all — a spacer-only state (whatever engine quirk produced it) heals within the pass, layout engines only');
+    // the spanning invariant, behaviourally: wherever the scroller is left
+    // resting, the rendered window must span it — the head spacer may never
+    // start below the scroller, and rows must be mounted
+    {
+        const dd = d.getElementById('ca-rc-detail');
+        const spans = (x) => {
+            dd.scrollTop = x;
+            w.eval('rosterCalTLWindow(true)');
+            const st = dd.scrollTop || 0;
+            const head = dd.firstElementChild;
+            const headH = head && head.style && head.style.height ? parseInt(head.style.height, 10) : -1;
+            return headH >= 0 && headH <= st + 25 && dd.querySelectorAll('.ca-rc-row').length > 0;
+        };
+        R.ok(spans(0) && spans(300) && spans(1200) && spans(999999), 'round 33: for every resting position the window spans the scroller — the head spacer never starts below it, rows are always mounted (the blank-timeline state cannot exist)');
+    }
     // owner report, issue 4: a FLOWN turnaround retells its legs
     const past = cells.find(c => c.getAttribute('data-ymd') === '2026-10-02');
     past.click();
