@@ -338,6 +338,16 @@ Owner scenario: look up a flight's menu pre-departure (all cabins), airplane mod
 
 Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #4".
 
+**v1.43.0 round 28 (owner-approved test-side addition, 2026-10-11 — the §6 guard pins: a new logic-cases suite, nine + the multi-day boundary; tests/logic-cases.test.js + tests/README.md ONLY; no app code, no version bump, no sw bump, no changelog pointer):**
+
+- **What landed.** `tests/logic-cases.test.js` (run-all auto-globs it) pins every worked case in `docs/LOGIC.md` §6 through the shipping `computeCardResults` — 24 checks across the nine cases, with the document's exact figures: IFA 1 $194.00 (junior FS, $10 rate), IFA 2 $272.02 (plus the `toFixed(20)` stored-double pin `272.02499999999997726263`), IFA 3 $1,283.25, IFA 4 $2,857.75 (Direct US toggled on both sectors), LMA 5a $55.00 / 5b $0.00, and 6 / 6b×2 $576 / $668 / $576.
+  The LMA 6/6b trio IS the multi-day report-time boundary round 25 offered as a pin (NRT arrive Mon 21:55 → depart Thu: report ≥ window start, inclusive at 12:30, lunch pays from 13:30, one minute earlier does not) — the smoke keeps only the single-day dinner form, so the jsdom side now owns both.
+- **Provenance.** The round-26 nine-case execution (24/24 against 1.43.0 on 2026-10-11) transplanted into the house harness: `R.eq`/`R.ok`, one boot, profile swaps + fresh cards per case, the sticky flight-type rule respected, helpers byte-identical to the verified throwaway except the destructured `wait`.
+  Determinism by construction: all input dates fixed (2026-10-05/08) and the junior tier is flight-date-relative (`ifaRankKeyForDate` compares firstSoloYMD + 24 months against the CARD's date, not the wall clock) — no clock pin, no midnight drift, and past-dated inputs are proven fine (the original run sat six days after the dates).
+- **Tests.** The suite passed 24/24 on its first standalone run. Battery 14/14 = **2,161 asserts**, 0 failed — the new floor (was 13/13 = 2,137; every other suite at its round-27 total). Smoke 62/62, run once for the record (no runtime change: app.html untouched, still the round-26 bytes).
+- **Bookkeeping.** tests/README.md gains the suite's table row; the `^\*\*` census moves 124→125 with this entry's title. One write_file corruption during creation (the `money` helper dropped a `+ ')'`) was caught by `node --check` before any run — the standing parse-after-write lesson holds.
+- **Flagged, not fixed (pre-existing, not this round's):** smoke.js's header comment still says "the jsdom suite (12 suites)" — stale since the 13th suite landed; belongs to a future tidy with the owner's nod.
+
 **v1.43.0 round 27 (owner-approved test-side fix, 2026-10-11 — the task-2 toggle flake, hardening option "class + bounded colour poll"; tests/smoke/smoke.js ONLY; no app code, no version bump, no sw bump, no changelog pointer):**
 
 - **The change.** The toggle-is-exempt pin (the last live TEST-MAINT task) no longer races a colour fade. The old form tapped `#ca-rc-tag`, slept a fixed 300ms, and string-compared the computed backgroundColor against the gold `rgb(201, 162, 39)`.
