@@ -84,7 +84,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
         ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 8 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the consolidated 1.43.0 entry (destination overlay + roster capture + the hotfix rounds as six themed fix pointers)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v214'), 'the service-worker cache name is bumped to v214 (APP_VERSION 1.43.0, round 32 nudge fixture)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v215'), 'the service-worker cache name is bumped to v215 (APP_VERSION 1.43.0, round 33 calendar first-open fix)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -224,6 +224,27 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => openRosterCalendar());
         await page.waitForFunction(() => !document.getElementById('ca-roster-cal').classList.contains('hidden'), { timeout: 5000 });
         await sleep(600);
+        // round 33 (owner report: the FIRST open of a session on the PC showed
+        // blank space below the grid until a close+reopen): the open itself
+        // must land the selected day flush at the detail's top with rows in
+        // view, and a window re-derived at an arbitrary resting position must
+        // span the scroller — the head-spacer blank cannot exist
+        ok(await page.evaluate(() => {
+            const det = document.getElementById('ca-rc-detail');
+            const sel = document.querySelector('.ca-rc-day.is-selected');
+            if (!det || !sel) return false;
+            const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + sel.getAttribute('data-ymd') + '"]');
+            const dr = det.getBoundingClientRect();
+            const inView = Array.from(det.querySelectorAll('.ca-rc-row')).filter((r) => { const t = r.getBoundingClientRect(); return t.bottom > dr.top + 2 && t.top < dr.bottom - 2; });
+            return !!row && Math.abs(row.getBoundingClientRect().top - dr.top) <= 2 && inView.length > 0;
+        }), 'round 33: the first open lands the selected day flush at the detail\u2019s top with rows in view \u2014 never blank');
+        ok(await page.evaluate(() => {
+            const det = document.getElementById('ca-rc-detail');
+            det.scrollTop = Math.max(0, Math.round((det.scrollHeight - det.clientHeight) / 2));
+            rosterCalTLWindow();
+            const dr = det.getBoundingClientRect();
+            return Array.from(det.querySelectorAll('.ca-rc-row')).some((r) => { const t = r.getBoundingClientRect(); return t.bottom > dr.top + 2 && t.top < dr.bottom - 2; });
+        }), 'round 33: a window re-derived at any resting position spans the scroller \u2014 the head-spacer blank cannot exist');
         ok(await page.evaluate(() => document.getElementById('ca-rc-fold').nextElementSibling === document.getElementById('ca-rc-tag') && document.getElementById('ca-rc-tag').nextElementSibling === document.getElementById('ca-rc-shot')), 'hotfix: the tag and camera sit right of the chevron');
         ok(await page.evaluate(() => {
             const g = document.getElementById('ca-rc-grid');

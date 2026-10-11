@@ -5307,7 +5307,7 @@
             // the reveal can never flip the month.
             rcTlProgUntil = Date.now() + 250;
             let target = Math.max(0, rcTL.off[i]);
-            for (let k = 0; k < 4; k++) {
+            for (let k = 0; k < 8; k++) {
                 det.scrollTop = target;            // sticks once the spacers give the scroller its range
                 rosterCalTLWindow();                // renders the window and corrects the offsets it measures
                 const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + rcSelected + '"]');
@@ -5317,11 +5317,20 @@
                 }
                 // engines disagree whether a scroller's padding-top scrolls
                 // with its content — measure where the row really sits and
-                // correct, never guess
+                // correct, never guess. Round 33 (owner report: the first
+                // calendar open of a session showed nothing below the grid):
+                // on that very first open the detail is still empty, so the
+                // engine CLAMPS the loop's first scrollTop write back to 0 —
+                // and a correction based on the target then double-counted
+                // the whole offset (target + the row's distance from a
+                // scroller that never moved), hurling the window into
+                // spacer-only land. Basing the correction on where the
+                // scroller actually rests is identical whenever the scroller
+                // stuck, and is the row's true offset whenever it clamped.
                 const delta = row.getBoundingClientRect().top - det.getBoundingClientRect().top;
                 if (Math.abs(delta) <= 1) break;   // the row starts exactly at the detail's top edge
-                const next = Math.max(0, target + delta);
-                if (next === target) break;
+                const next = Math.max(0, (det.scrollTop || 0) + delta);
+                if (next === target && (det.scrollTop || 0) === target) break;
                 target = next;
             }
             rcTlTopKnown = det.scrollTop;
@@ -5340,6 +5349,22 @@
                     const det = document.getElementById('ca-rc-detail');
                     if (!wrap || wrap.classList.contains('hidden') || !det || !rcTL) return;
                     if (rcTL.days.indexOf(rcSelected) < 0) return;
+                    // round 33: a pass that finds the viewport showing no row
+                    // at all (spacer-only — the blank first open, whatever
+                    // engine state produced it) force-rebuilds the window
+                    // before the reveal logic runs; the union with the
+                    // estimate window guarantees the rebuild covers wherever
+                    // the scroller actually rests
+                    const dr33 = det.getBoundingClientRect();
+                    if (dr33.height > 0) {
+                        let anyInView = false;
+                        det.querySelectorAll('.ca-rc-row').forEach((r) => {
+                            if (anyInView) return;
+                            const t = r.getBoundingClientRect();
+                            if (t.bottom > dr33.top + 2 && t.top < dr33.bottom - 2) anyInView = true;
+                        });
+                        if (!anyInView) rosterCalTLWindow(true);
+                    }
                     const row = det.querySelector('.ca-rc-row[data-rc-ymd="' + rcSelected + '"]');
                     let off = 0;
                     if (row) off = row.getBoundingClientRect().top - det.getBoundingClientRect().top;
@@ -5445,6 +5470,18 @@
                 return [Math.max(0, a - 6), Math.min(rcTL.days.length, b + 6)];
             };
             let ab = rosterCalTLCover(el) || estimate();
+            // round 33: the cover window extrapolates across territory whose
+            // rows are not the height of the row it extrapolates from (a
+            // 41px empty day standing in for a 300px fly card), so its
+            // window can start BELOW where the scroller rests — the viewport
+            // then sits inside the head spacer with no row in sight, and
+            // every later pass re-derived the same wrong window, so it sat
+            // there blank until a close+reopen (the owner's first-open
+            // report). The estimate window always covers the scroller's own
+            // position, so the two are unioned: no window can ever start
+            // below the scroller or end above it.
+            const estAb = estimate();
+            ab = [Math.min(ab[0], estAb[0]), Math.max(ab[1], estAb[1])];
             let a = ab[0], b = ab[1];
             if (!force && rcTL.rendered && rcTL.rendered[0] <= a && rcTL.rendered[1] >= b) { rosterCalScheduleEarns(); return; }
             const dayAt = rcDayLookup();
@@ -5536,7 +5573,8 @@
                 // the viewport is never left outside the window (the owner's
                 // "bottom details not rendering" state)
                 const ab2 = rosterCalTLCover(el) || estimate();
-                if (apply(ab2[0], ab2[1])) { refreshIcons(); }
+                const ab2e = estimate();
+                if (apply(Math.min(ab2[0], ab2e[0]), Math.max(ab2[1], ab2e[1]))) { refreshIcons(); }
             }
             rosterCalScheduleEarns();
         }
