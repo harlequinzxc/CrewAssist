@@ -84,7 +84,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
         ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 8 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the consolidated 1.43.0 entry (destination overlay + roster capture + the hotfix rounds as six themed fix pointers)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v212'), 'the service-worker cache name is bumped to v212 (APP_VERSION 1.43.0, hotfix round)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v213'), 'the service-worker cache name is bumped to v213 (APP_VERSION 1.43.0, round 31 feed rework)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -414,6 +414,42 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const uid = b.getAttribute('data-fv-id');
             return document.getElementById('fv-selected-date-' + uid).value === todayLocalYMD() && b.classList.contains('selected-date');
         }), 'round 18: a real tap on the Today pill answers through the delegated listener — date stamped, pill selected');
+
+        console.log('— round 31: the two-tier feed in the real browser —');
+        // Seed a flight tomorrow and refresh through the real entry point —
+        // online, chat tab active, so the nudge gate opens.
+        await page.evaluate(() => {
+            const t = new Date(Date.now() + 86400000);
+            const ymd = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+            localStorage.setItem('crewAssist.upcoming', JSON.stringify({ [ymd.slice(0, 7)]: [{ fn: '316', dep: 'SIN', arr: 'CMB', ymd, std: '0930' }] }));
+            refreshNextFlightUi();
+        });
+        await page.waitForFunction(() => !!document.getElementById('ca-menunudge-card') && !!document.getElementById('ca-nextflight-card'), { timeout: 8000 });
+        ok(await page.evaluate(() => {
+            const hero = document.querySelector('#ca-nextflight-card .ca-hero-card');
+            const nudge = document.querySelector('#ca-menunudge-card .ca-nudge-card');
+            if (!hero || !nudge) return false;
+            const hs = getComputedStyle(hero), ns = getComputedStyle(nudge);
+            return hs.backgroundImage !== 'none' && hs.borderRadius !== ns.borderRadius;
+        }), 'round 31: the hero fills with a gradient, the nudge stays flat, and their radii differ (two tiers)');
+        // Both themes are a hard acceptance criterion: the computed hero +
+        // nudge fills must shift with the dark class (real var() resolution).
+        ok(await page.evaluate(() => {
+            const h = document.documentElement;
+            const read = () => {
+                const hero = getComputedStyle(document.querySelector('#ca-nextflight-card .ca-hero-card'));
+                const nudge = getComputedStyle(document.querySelector('#ca-menunudge-card .ca-nudge-card'));
+                return [hero.backgroundColor, hero.backgroundImage, hero.borderTopLeftRadius, nudge.backgroundColor, nudge.borderTopLeftRadius].join('|');
+            };
+            const wasDark = h.classList.contains('dark');
+            h.classList.remove('dark');
+            const light = read();
+            h.classList.add('dark');
+            const dark = read();
+            if (wasDark) h.classList.add('dark'); else h.classList.remove('dark');
+            return light !== dark;
+        }), 'round 31: both themes carry the pair — hero + nudge computed fills shift with the dark class');
+        ok(await page.evaluate(() => !!document.querySelector('#ca-nextflight-card .ca-hero-edge') && getComputedStyle(document.querySelector('#ca-nextflight-card .ca-hero-edge')).height === '2px'), 'round 31: the gold top edge rides the hero (computed 2px)');
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

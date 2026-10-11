@@ -1,7 +1,8 @@
 // Next-flight awareness (v1.28.0): the roster import remembers upcoming
 // flights (positioning duties excluded), the greeting shows a tappable
-// next-flight card, and an amber nudge offers to save menus for flights
-// departing inside the 48h window before you lose signal.
+// next-flight card, and a gold nudge offers to save menus for flights
+// departing inside the 48h window before you lose signal. Round 31 recast
+// the trio: hero/nudge two-tier surfaces, pill states, slot-ordered feed.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 const fs = require('fs');
@@ -192,10 +193,11 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(nudge, 'flight inside the 48h window without saved menus → nudge appears');
     R.ok(nudge && nudge.textContent.indexOf('departs tomorrow') >= 0, 'single-flight copy names flight + timing');
     R.ok(nudge && nudge.textContent.indexOf('Open menus') >= 0, 'single-flight nudge offers Open menus');
-    R.ok(nudge && !!nudge.querySelector('[data-lucide="plane"]'), 'nudge carries the plane icon');
+    R.ok(nudge && !!nudge.querySelector('[data-lucide="utensils"]'), 'round 31: the nudge carries the utensils lead icon');
     R.ok(nudge && nudge.innerHTML.indexOf('wifi-off') < 0, 'no wifi-off icon anymore');
     R.ok(nudge && nudge.innerHTML.indexOf('departs tomorrow') < nudge.innerHTML.indexOf('ca-menunudge-go'), 'text sits above the button');
-    R.ok(nudge && nudge.querySelector('#ca-menunudge-go').parentElement.className.indexOf('justify-center') >= 0, 'button is centered below the text');
+    R.ok(nudge && !nudge.querySelector('.ca-menunudge-row'), 'single-flight nudge is headline + CTA only — no row (rows are the multi-flight pattern)');
+    R.ok(nudge && nudge.querySelector('#ca-menunudge-go').className.indexOf('w-full') >= 0, 'round 31: the CTA spans the full card width');
     // dismiss → animated away + remembered per flight
     R.ok(await waitChatIdle(w), 'chat settles before dismissing');
     d.getElementById('ca-menunudge-x').click();
@@ -237,16 +239,120 @@ function rosterItems(flight, sector, dateTok, opts) {
     const recent = JSON.parse(w.localStorage.getItem('crewAssist.recentFlights') || '[]');
     R.ok(recent.some((r) => r.flight === '301'), 'sweep registers the flight as recent (keeps the prune aligned)');
     await wait(500);
-    const launch = d.getElementById('ca-menulaunch-card');
-    R.ok(launch, 'a fully-saved sweep turns the reminder into a launcher');
-    R.ok(launch && launch.textContent.indexOf('Menus saved for 3 flights') >= 0, 'launcher copy counts the saved flights');
-    const goBtnAfter = launch && launch.querySelector('#ca-menunudge-go');
-    R.ok(goBtnAfter && goBtnAfter.style.pointerEvents === 'none', 'launcher button is inert');
-    launch.querySelector('.ca-menunudge-row').click();
+    const done = d.getElementById('ca-menunudge-card');
+    R.ok(done && done.dataset.nfDone === '1', 'round 31: a fully-saved sweep completes the nudge in place (nfDone flag, no launcher rename)');
+    R.ok(done && done.textContent.indexOf('Menus saved for 3 flights') >= 0, 'completed copy counts the saved flights');
+    R.ok(done && done.querySelectorAll('.ca-pill[data-state="ok"]').length === 3, 'every row pill reads Saved');
+    R.ok(!!d.getElementById('ca-nf-confirm'), 'the slim confirmation appears as the newest feed item');
+    const goBtnAfter = done && done.querySelector('#ca-menunudge-go');
+    R.ok(goBtnAfter && goBtnAfter.style.pointerEvents === 'none', 'completed CTA is inert');
+    done.querySelector('.ca-menunudge-row').click();
     await wait(300);
     R.ok(!d.getElementById('menu-backdrop').classList.contains('hidden'), 'tapping a saved row opens that flight menus directly');
     const card = d.getElementById('ca-nextflight-card');
     R.ok(card && /Menus saved/.test(card.textContent), 'next-flight card now carries the saved badge');
+    R.ok(card && done && (card.compareDocumentPosition(done) & d.defaultView.Node.DOCUMENT_POSITION_FOLLOWING) !== 0, 'round 31: the badge refresh keeps the card ABOVE the completed nudge');
+  }
+  {
+    // round 31 (owner spec): two-tier surfaces + canonical feed order
+    const { w, d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '301', dep: 'SIN', arr: 'ICN', ymd: ymd(0), std: '0100' },
+        { fn: '302', dep: 'SIN', arr: 'ICN', ymd: ymd(1), std: '0100' }
+      ])));
+    } });
+    await wait(5600);
+    const card = d.getElementById('ca-nextflight-card');
+    const nudge = d.getElementById('ca-menunudge-card');
+    R.ok(card && !!card.querySelector('.ca-hero-card'), 'the flight card rides the hero surface');
+    R.ok(card && !!card.querySelector('.ca-hero-edge'), 'the hero carries the gold top edge');
+    R.ok(nudge && !!nudge.querySelector('.ca-nudge-card'), 'the nudge rides the lighter surface');
+    R.ok(nudge && nudge.querySelectorAll('.ca-pill[data-state="ready"]').length === 2, 'each row starts with a Ready pill');
+    R.ok(nudge && !/amber/.test(nudge.innerHTML), 'the amber palette is retired from the nudge');
+    R.ok(card && nudge && (card.compareDocumentPosition(nudge) & d.defaultView.Node.DOCUMENT_POSITION_FOLLOWING) !== 0, 'the card sits above the nudge in the feed');
+    // a badge refresh keeps the order (the round-31 owner report: "it goes up")
+    w.eval('renderNextFlightCard()');
+    await wait(60);
+    const card2 = d.getElementById('ca-nextflight-card');
+    const nudge2 = d.getElementById('ca-menunudge-card');
+    R.ok(card2 && nudge2 && (card2.compareDocumentPosition(nudge2) & d.defaultView.Node.DOCUMENT_POSITION_FOLLOWING) !== 0, 'a re-rendered card keeps its slot above the nudge');
+    R.ok(nudge2 === nudge, 'a card refresh never reaps the live nudge');
+    // the full sweep completes the pills + confirms, X dismisses the confirm
+    w.fetch = async (u, opts) => {
+      const body = JSON.parse((opts && opts.body) || '{}');
+      if (body.endpoint === 'getcabin') return new Response(JSON.stringify({ statusCode: 200, cabinClasses: ['JCL'] }), { status: 200 });
+      if (body.endpoint === 'menu') return new Response(menuPayloadData, { status: 200 });
+      return new Response('{}', { status: 200 });
+    };
+    R.ok(await waitChatIdle(w), 'chat settles before the sweep');
+    d.getElementById('ca-menunudge-go').click();
+    await waitChatIdle(w);
+    await wait(500);
+    const doneN = d.getElementById('ca-menunudge-card');
+    R.ok(doneN && doneN.querySelectorAll('.ca-pill[data-state="ok"]').length === 2, 'full sweep turns every pill Saved');
+    R.ok(!!d.getElementById('ca-nf-confirm'), 'the confirmation card appears after a full sweep');
+    d.getElementById('ca-nf-confirm-x').click();
+    await wait(450);
+    R.ok(!d.getElementById('ca-nf-confirm'), 'the confirmation dismisses on X');
+  }
+  {
+    // round 31: pill semantics — Not published / partial count / Retry failed
+    const { w, d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '401', dep: 'SIN', arr: 'ICN', ymd: ymd(0), std: '0100' },
+        { fn: '402', dep: 'SIN', arr: 'ICN', ymd: ymd(1), std: '0100' }
+      ])));
+    } });
+    await wait(5600);
+    // 401 unpublished (getcabin → 101); 402 two cabins with one menu failing
+    let fixStub = false;
+    w.fetch = async (u, opts) => {
+      const body = JSON.parse((opts && opts.body) || '{}');
+      const s = JSON.stringify(body);
+      if (body.endpoint === 'getcabin') {
+        if (!fixStub && s.indexOf('401') >= 0) return new Response(JSON.stringify({ statusCode: 101 }), { status: 200 });
+        return new Response(JSON.stringify({ statusCode: 200, cabinClasses: s.indexOf('402') >= 0 ? ['JCL', 'YCL'] : ['JCL'] }), { status: 200 });
+      }
+      if (body.endpoint === 'menu') {
+        if (!fixStub && s.indexOf('402') >= 0 && s.indexOf('YCL') >= 0) return new Response(JSON.stringify({ statusCode: 101 }), { status: 200 });
+        return new Response(menuPayloadData, { status: 200 });
+      }
+      return new Response('{}', { status: 200 });
+    };
+    R.ok(await waitChatIdle(w), 'chat settles before the sweep');
+    d.getElementById('ca-menunudge-go').click();
+    await waitChatIdle(w);
+    await wait(500);
+    const nudge = d.getElementById('ca-menunudge-card');
+    const p401 = nudge && nudge.querySelector('.ca-menunudge-row[data-nf^="401|"] .ca-pill');
+    const p402 = nudge && nudge.querySelector('.ca-menunudge-row[data-nf^="402|"] .ca-pill');
+    R.ok(p401 && p401.dataset.state === 'unpub' && p401.textContent === 'Not published', 'unpublished flight: the grey info pill (statusCode 101 is not a red failure)');
+    R.ok(p402 && p402.dataset.state === 'partial' && p402.textContent === '1/2', 'half-saved flight: the gold partial pill keeps the count');
+    R.ok(nudge && nudge.textContent.indexOf('Retry failed') >= 0, 'an unfinished sweep flips the CTA to Retry failed');
+    // retry after the stub is fixed → both rows complete, confirm auto-dismisses
+    fixStub = true;
+    d.getElementById('ca-menunudge-go').click();
+    await waitChatIdle(w);
+    await wait(600);
+    const done = d.getElementById('ca-menunudge-card');
+    R.ok(done && done.dataset.nfDone === '1', 'the retry completes the nudge');
+    R.ok(done && done.querySelectorAll('.ca-pill[data-state="ok"]').length === 2, 'both pills read Saved after the retry');
+    const confirm = d.getElementById('ca-nf-confirm');
+    R.ok(confirm && confirm.textContent.indexOf('Menus saved. Available offline on your flights.') >= 0, 'the slim confirmation line appears');
+    await wait(7600);
+    R.ok(!d.getElementById('ca-nf-confirm'), 'the confirmation auto-dismisses after 7s');
+  }
+  {
+    // round 31: the source-level theme pins (jsdom can't resolve var(), so
+    // the computed both-theme checks live in smoke — these pin the PAIRS)
+    const src = fs.readFileSync(__dirname + '/../index.html', 'utf8');
+    R.eq((src.match(/--ca-hero-bg:/g) || []).length, 2, 'the hero gradient token is declared for both themes');
+    R.eq((src.match(/\.ca-pill\[data-state=/g) || []).length, 12, 'six pill states × light + dark = 12 declarations');
+    R.eq((src.match(/html\.dark \.ca-pill\[data-state=/g) || []).length, 6, 'every pill state has a dark twin');
+    R.ok(src.indexOf('const NF_FEED_ORDER') >= 0, 'the canonical feed order exists (TZ → card → nudge → confirm)');
+    R.eq((src.match(/nfInsertAtSlot\(el, \d\)/g) || []).length, 4, 'all four proactive cards take their slot instead of appending');
   }
   {
     // offline boot → no nudge; coming online brings it back
@@ -566,6 +672,7 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(p2.indexOf('Lands SIN 0629H SGT') >= 0, 'part two: the homebound landing reads in SGT');
     const tz = d.getElementById('ca-layover-tz-card');
     R.ok(!!tz, 'the layover time-zone card appears while at the station');
+    R.ok(!!(tz && tz.querySelector('.ca-hero-lite')), 'round 31: the TZ card rides the hero-lite surface (primary answer, non-dismissible, no CTA)');
     const tzTxt = tz ? tz.textContent : '';
     R.ok(tzTxt.indexOf('NRT \u2014 1532H') >= 0 && tzTxt.indexOf('1 hour ahead of SG') >= 0, 'the station line: live local time + offset from SG');
     R.ok(tzTxt.indexOf('SG \u2014 1432H') >= 0, 'the SG line: Singapore\u2019s own clock');
