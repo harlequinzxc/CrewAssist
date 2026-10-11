@@ -375,8 +375,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(400);
         ok(await page.evaluate((before) => getComputedStyle(document.getElementById('btn-roster-cal')).backgroundColor === before, restBg), 'hotfix: a finger tap settles back to rest — no sticky hover wash');
         await (await page.$('#ca-rc-tag')).tap();
-        await sleep(300);
-        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle is exempt — its on-state survives the release');
+        // hardening (round 27, owner-approved class + poll): the tap flips
+        // ca-rc-tagon instantly (index.html:4803), but the button carries
+        // Tailwind's transition-colors (150ms, index.html:1703) so the
+        // computed colour FADES to gold — under main-thread jank the fixed
+        // sleep(300) raced the fade and false-failed with the class
+        // correctly present. Assert the logical state first, then poll the
+        // gold to settled (bounded 2s, caught — a timeout is a real CSS
+        // failure reported as a failed check, never a rig crash).
+        ok(await page.evaluate(() => document.getElementById('ca-rc-tag').classList.contains('ca-rc-tagon')), 'hotfix: the toggle is exempt — the on-state class survives the release');
+        ok(await page.waitForFunction(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)', { timeout: 2000 }).then(() => true, () => false), 'hotfix: the toggle is exempt — the on-state gold settles (bounded poll)');
         await page.evaluate(() => document.getElementById('ca-rc-close').click());
         await sleep(400);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.dutyDays'); localStorage.removeItem('crewAssist.allFlights'); });
