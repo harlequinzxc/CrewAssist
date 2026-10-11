@@ -338,6 +338,23 @@ Owner scenario: look up a flight's menu pre-departure (all cabins), airplane mod
 
 Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #4".
 
+**v1.43.0 round 30 (owner-approved, 2026-10-11 — the 1.43.0 What's New consolidation: 20 pointers → 8; APP_VERSION frozen at 1.43.0, CACHE_NAME v211→v212; index.html + sw.js + five test-pin sites; no feature change, no changelog pointer added):**
+
+- **The change.** The 1.43.0 `APP_CHANGELOG` entry had grown one pointer per hotfix round — 2 `new` + 18 `fix` = 20 lines in the crew's face. Per the owner's order (and the E6 hotfix-12 convention: consolidated fix pointers, one sentence, ≤35 words), the 18 fixes merged into SIX themed lines; the two `new` pointers stay verbatim. All 18 originals are covered:
+  1. Calendar marks: one tag per destination with every stop named, each colored by its own layover or turnaround and sized to never touch, popping in only once. (27w — the one-tag rule, per-stop colors, both sizing rounds, the one-shot pop)
+  2. The tag and camera buttons sit by the chevron and stay gold, popping in and out cleanly; hiding the tags pops them back out. (24w)
+  3. The capture photographs the calendar exactly as shown; the month never wraps to two rows and swiping respects the data edges like the arrows. (24w)
+  4. The station list refreshes to the current SQ and Scoot network; time zones self-check at boot, East Malaysia reads true, and landing conversions pad their hours. (26w)
+  5. The next-flight card retires a rung suggested alarm, suggests one alarm for a multi-sector day, and reads the KUL wake-up lines closer to departure. (24w)
+  6. Tapped buttons settle back to rest on touch screens. (9w — app-wide touch behaviour, kept alone)
+- **Version handling (owner ruling via ask_user).** APP_VERSION frozen at 1.43.0, CACHE_NAME v211→v212 — the house hotfix pattern: the change ships inside 1.43.0; crew who already dismissed 1.43.0's news never re-see it, future updaters and Settings → Changelog get the concise version.
+- **Pins updated.** smoke.js:86 (entry pin 20→8 items + the `new,new,fix×6` category string, label reworded to "consolidated"), smoke.js:87 (v212), menu-extraction:185 (v212), offline-menus:201 (v212), sw.test.js (`CACHE` const + the two v212 labels).
+  dev-ui needed NO edit: its E6 pins run 3 asserts per current-release pointer (category, one sentence, word cap) and scaled automatically 507→471 — 12 fewer pointers × 3 = the exact −36, all green, which is also the proof the six lines satisfy every E6 rule.
+- **Measurements.** index.html 1,062,441 → **1,061,820 bytes** (−621), 17,662 → 17,650 lines (−12 = 18 out, 6 in). app.html rebuilt → **new byte floor 1,060,701 bytes, md5 4eea2188680c0056885c26bb2cfd9681**. Checklist: `function openMenuPrinter` ✓, 3 inline scripts `node --check` ✓ (real-newline join), all five changed files `node --check` ✓.
+- **Environment — drift #16 (the second variant, full signature).** The turn boundary wiped BOTH `node_modules` rigs and `/tmp/chr-libs` AND reset the local branch to the fork-point shallow clone (HEAD = `14409f3` "Ship v1.5.9", `.git/shallow` present, `origin/<branch>` missing locally). Symptoms in order: the battery's first attempt was 0/14 "(no summary)" = `MODULE_NOT_FOUND: jsdom` (rigs reinstalled, chromium re-extracted, all green after); the round-30 commit then landed on the stale base as a 13,611-line phantom diff and the push was rightly REJECTED — the remote held the true history through round 29. Recovery per the house recipe: `git fetch origin` (restored the branch ref) → `git reset origin/arena/01a0a47b-crewassist` (never `--hard`, never `--force`; the working tree survived with the round-30 edits intact) → `git status` showed ONLY the seven round-30 files → recommitted clean on the true base. The rejected push was the drift warning, exactly as the non-negotiable says.
+- **Tests.** Battery 14/14 = **2,125 asserts**, 0 failed — the new floor (dev-ui 471 with the E6 scaling, logic-cases 24, every other suite at its round-27 total). Smoke 62/62 on the rebuilt artifact, zero page/console errors.
+- **Census.** The `^\*\*` count moves 126→127 with this entry's title.
+
 **v1.43.0 round 29 (owner-approved comment-only fix, 2026-10-11 — the sw.js "still-missing Tailwind" comment; sw.js + this entry ONLY; no behaviour change, no version bump, no sw bump, no sw.test.js pin, no changelog pointer):**
 
 - **The change.** The four-line comment above `CDN_RETRIES` still said the shell guard turns "a still-missing Tailwind" into the repair screen — written for the era when Tailwind rode the CDN list.
