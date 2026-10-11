@@ -406,8 +406,11 @@ IF amount ≤ 0 → nothing to save
 | Monetary outputs | Round to 2 decimals **at display time only** (`$X.XX` via `toFixed(2)`) |
 | Internal calculations | Never round — full floating-point precision; totals sum unrounded |
 | Flight hours | Round to nearest minute for HH:MM display |
+| Half-way cases | `toFixed(2)` rounds the **stored binary double**, not the decimal you read. An exactly representable tie (`131.625`) rounds **up**; a value that merely *prints* as a tie (`272.025`, stored `272.02499…`) rounds **down**. Never predict a cent from the literal — evaluate it. |
 
-`7.5 × 13.5 × 1.3 = 131.625 → "$131.63"; 140.40 + 131.625 = 272.025 → "$272.03"`.
+`7.5 × 13.5 × 1.3 = 131.625 → "$131.63"` — 131.625 is exactly representable in binary and `toFixed` resolves an exact tie upward.
+
+`140.40 + 131.625` *prints* as `272.025`, but the stored double is `272.0249999999999773`, so `toFixed(2)` yields **`"$272.02"`** — not `$272.03`. Verified by execution against `formatMoney` (2026-10-11).
 
 ### 5.2 Boundary Conditions (Inclusive/Exclusive)
 
@@ -454,7 +457,10 @@ TOTAL = 194.00 ✓
 rank=FS/FSS, type=Layover, SG=08:00, ST=07:30
 SG SDP = 10.5h → 1.3×;  ST SDP = 9.0h → 1.3×
 SG = 8.0 × 13.5 × 1.3 = 140.40;  ST = 7.5 × 13.5 × 1.3 = 131.625 → $131.63
-TOTAL = 272.025 → $272.03 ✓
+TOTAL = 140.40 + 131.625 = 272.0249999999999773 (stored) → $272.02 ✓
+  NOTE: the two DISPLAYED sectors (140.40 + 131.63) add to $272.03 — one cent
+  above the displayed total. That gap is correct and intended: §5.1 sums
+  unrounded and rounds once, at display time. Do not "fix" it.
 ```
 
 ### IFA Test 3 — Turnaround, High Total SDP
@@ -491,9 +497,30 @@ Same station, arrival 12:00, departure 14:30 → report 13:30 → transit = 1.5h
 
 ```
 Station NRT (Japan: B 52 / L 92 / D 118), arrive 21:55 Mon, depart 12:15 Thu
-  Mon (arrival): 21:55 > 20:30 → dinner NO
+  Mon (arrival): the arrival-day test is `arrival ≤ window END` (§1.10)
+      21:55 is past 08:30 / 13:30 / 20:30 → no meals
   Tue, Wed (full days): B + L + D each = 262 × 2 = 524
-  Thu (departure): report 11:15 — breakfast 11:15 > 08:30 NO; lunch 11:15 < 12:30 NO; dinner NO
-  LMA = $524.00 ✓   (the old departure-time rule would also have paid nothing here —
-  the boundary matters when departure sits within an hour above a window start)
+  Thu (departure): the departure-day test is `report ≥ window START` (§1.10)
+      report = 12:15 − 60 = 11:15
+      breakfast  11:15 ≥ 07:30 → YES ($52)
+      lunch      11:15 <  12:30 → no
+      dinner     11:15 <  19:30 → no
+  LMA = 524 + 52 = $576.00 ✓
+```
+
+### LMA Test 6b — the boundary Test 6 does **not** reach
+
+Test 6 pays the same $576.00 under the pre-v1.40.0 departure-time rule, so on its
+own it does not prove the report-time rule. This pair does. It is the multi-day
+form of the 19:31 / 19:29 dinner boundary pinned in the browser smoke suite.
+
+```
+Same NRT layover (arrive 21:55 Mon); the lunch window starts 12:30:
+  depart 13:30 Thu → report 12:30 = window start, inclusive → lunch YES
+      524 + breakfast 52 + lunch 92 = $668.00 ✓
+  depart 13:29 Thu → report 12:29, one minute under → lunch NO
+      524 + breakfast 52 = $576.00 ✓
+  The pre-v1.40.0 rule compared the DEPARTURE time (13:30 and 13:29 are both
+  past 12:30), so it paid $668.00 for both. Clause 36(3) closes the day at
+  report time, which is what makes these two cases differ.
 ```
