@@ -2,6 +2,7 @@
 // updated in place (colour transition survives), via the real Fetch-all flow.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
+const fs = require('fs');
 (async () => {
   // IFA
   {
@@ -68,6 +69,15 @@ const { R, boot, wait, APP } = H;
     R.ok(node1b === node1, 'LMA: node updated in place');
     R.eq(node1b.textContent, 'JNB', 'LMA: fetched station shown');
     R.ok(node1b.className.includes('emerald'), 'LMA: fetched station box is green');
+  }
+
+  // ---- round 24 (owner diff, change 2): the shared trip-route painter ----
+  // The class list and the paint logic existed as two byte-equivalent inlines
+  // (LMA + IFA); the drift-guard keeps them from ever re-forming as copies.
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    R.eq((src.match(/caPaintTripRoute\(/g) || []).length, 3, 'round 24: one caPaintTripRoute definition paints both trip bars (def + LMA + IFA call sites)');
+    R.eq((src.match(/-trip-node shrink-0 px-2 py-1 rounded-lg border ca-micro font-bold transition-colors duration-200/g) || []).length, 1, 'round 24: the trip-node class list exists exactly once — inside the shared painter');
   }
 
   process.exit(R.done() ? 1 : 0);
