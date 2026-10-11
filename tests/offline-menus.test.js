@@ -230,6 +230,13 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(sw.includes("res.type === 'opaque'"), 'cross-origin CDN responses (opaque) are runtime-cacheable');
     R.ok(src.includes('id="ca-shell-fail"') && src.includes('function shellGuard()'), 'missing-Tailwind boot shows the honest repair screen (shell guard)');
     R.ok(src.includes('if (caTwLoaded()) return;'), 'the guard stays silent when the compiled stylesheet loads fine');
+    // round 22 (owner review F-01..F-08): single-source-of-truth cleanups.
+    // Each pin bites: every one fails against the pre-round-22 file.
+    R.ok(!/\nscript>\n/.test(src), 'F-01: no stray fragment after </html> — the document ends at one </html> (a stray "script>" line re-parents into <body> per spec)');
+    R.ok((src.match(/html:not\(\.dark\) \.text-sia-gold/g) || []).length === 1, 'F-02: the light-mode gold-text selector is styled exactly once — no later same-specificity rule can silently override the 7A620F token');
+    R.ok(/shellGuard\(\);/.test(src), 'F-03: the boot sequence actually calls shellGuard — the v1.36.0 repair screen was born dead until round 22');
+    R.ok((src.match(/\/\[&<>"'\]\/g/g) || []).length === 1, 'F-04: exactly one HTML-escape table (caEsc) — rosterEsc, ratesEsc and escapePrintHtml are delegates (the count caught a third copy the review missed)');
+    R.ok(!/is-ctx|dot-hollow/.test(src), 'F-08: the dead is-ctx / dot-hollow CSS is gone (no emitter ever existed; the old dot-hollow absence pin was vacuous)');
   }
 
   // ---- v1.39.0 (A5): the menu viewer's honest route-diff ----
@@ -280,6 +287,19 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     w.localStorage.removeItem('SQ321:2026-09-19:JCL');
     w.localStorage.removeItem(MENU_KEY);
     w.localStorage.removeItem(CABIN_KEY);
+  }
+
+  // ---- round 22 (F-03): the wired shell guard behaves ----
+  // jsdom loads no tw.css, so caTwLoaded() is genuinely false here — the
+  // exact condition the guard exists for. The online branch's 6s re-check
+  // cannot interleave with these synchronous evals.
+  {
+    setOnline(false);
+    w.eval('shellGuard();');
+    R.eq(d.getElementById('ca-shell-fail').style.display, 'flex', 'F-03: offline + styles missing → the repair screen shows at once (and the v1.36.0 changelog promise becomes true)');
+    setOnline(true);
+    w.eval("document.getElementById('ca-shell-fail').style.display = 'none'; caTwLoaded = () => true; shellGuard();");
+    R.eq(d.getElementById('ca-shell-fail').style.display, 'none', 'F-03: styles present → the guard stays silent');
   }
 
     process.exit(R.done() ? 1 : 0);

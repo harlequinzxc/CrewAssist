@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>CrewAssist</title>
-    
+
     <!-- PWA Meta Tags -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,400;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
-    
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -92,9 +92,12 @@
            sheet is full-bleed, so only the top edge of the outline showed). */
         .ca-focuscatch:focus, .ca-focuscatch:focus-visible { outline: none !important; }
 
-        /* v1.37.0: light mode gets a darker gold token for TEXT only — the
-           old #7d650f read as 3.9:1 on cream; icons and borders keep their
-           richer gold. Dark mode is untouched. */
+        /* v1.37.0: light mode's gold TEXT token — #7A620F measures 5.21:1 on
+           the cream base #F6F1E8 (the v1.31.0 ink #7d650f reads 4.99:1; both
+           clear WCAG AA — the old "3.9:1" note was a mismeasurement). Icons
+           and borders keep their richer gold. Dark mode is untouched. Round 22
+           removed a later same-specificity v1.31.0 rule that had silently
+           overridden this one since it shipped. */
         html:not(.dark) .text-sia-gold { color: #7A620F; }
 
         body {
@@ -381,14 +384,12 @@
         .ca-rc-row { display: flex; align-items: stretch; }
         .ca-rc-row + .ca-rc-row { border-top: 1px solid rgba(127,127,127,.14); }
         html.dark .ca-rc-row + .ca-rc-row { border-top-color: rgba(127,127,127,.18); }
-        .ca-rc-row.is-ctx { opacity: .58; }
         .ca-rc-gut { width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
         .ca-rc-gut .n { font-size: 15px; font-weight: 800; line-height: 1; color: rgba(31,41,55,.92); }
         html.dark .ca-rc-gut .n { color: rgba(229,231,235,.92); }
         .ca-rc-gut .m { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: rgba(31,41,55,.55); }
         html.dark .ca-rc-gut .m { color: rgba(229,231,235,.55); }
                 .ca-rc-gut::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: transparent; }
-        .ca-rc-row.is-ctx .ca-rc-gut::after { background: rgba(127,127,127,.18); }
         .ca-rc-gut.k-fly { background: rgba(37,99,235,.10); }
         html.dark .ca-rc-gut.k-fly { background: rgba(96,165,250,.12); }
         .ca-rc-gut.k-lo, .ca-rc-gut.k-off, .ca-rc-gut.k-al { background: rgba(127,127,127,.10); }
@@ -542,7 +543,6 @@
         .ca-arch-yoy-up { color: #34d399; font-weight: 700; }
         .ca-arch-yoy-down { color: #f87171; font-weight: 700; }
         .ca-arch-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sia-gold, #c9a227); flex: none; }
-        .ca-arch-dot-hollow { width: 5px; height: 5px; border-radius: 999px; border: 1.5px solid var(--sia-gold, #c9a227); background: transparent; flex: none; }
         .ca-arch-footline { height: 1px; flex: 1 1 0; background: var(--arch-hairline); }
         .ca-arch-chev { transition: transform .3s ease; }
         .ca-arch-group:not(.ca-arch-collapsed) .ca-arch-chev { transform: rotate(90deg); }
@@ -579,12 +579,14 @@
         html:not(.dark) #app-dialog-backdrop .glass-bubble {
             background: rgba(246, 241, 232, 0.96);
         }
-        /* v1.31.0: gold TEXT gets its own ink. The brand gold stays for fills,
-           borders and dark mode — but #c9a227 on white is 2.42:1 (WCAG AA needs
-           4.5:1), so light-mode text uses a measured 5.61:1 ink instead. */
+        /* v1.31.0: the gold-ink token. The brand gold stays for fills and
+           borders — but #c9a227 on white is 2.42:1 (WCAG AA needs 4.5:1), so
+           the light-mode ink is a measured 5.61:1. (.text-sia-gold itself is
+           styled exactly once, by the v1.37.0 rule near the top of the sheet —
+           round 22 removed this block's later same-specificity rule that had
+           been silently overriding it.) */
         :root { --sia-gold-ink: #7d650f; }
         .dark { --sia-gold-ink: #c9a227; }
-        html:not(.dark) .text-sia-gold { color: var(--sia-gold-ink, #7d650f); }
         /* v1.31.0: invisible hit-area growth — the icon keeps its visual size,
            the tap zone grows 5px around it (44px-class targets). */
         .ca-hit { position: relative; }
@@ -733,7 +735,7 @@
             z-index: -1;
             pointer-events: none;
         }
-        
+
         /* Unified UI input styles */
         .ui-input {
             background: rgba(255,255,255,0.03);
@@ -1285,14 +1287,14 @@
                         <button id="btn-roster-cal" aria-label="Roster calendar" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="calendar-days" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-theme" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-theme" aria-label="Toggle dark mode" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
                             <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
                         </button>
-                        <button id="btn-settings" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-settings" aria-label="Settings" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="settings" class="w-5 h-5"></i>
                         </button>
-                        <button id="btn-reset" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
+                        <button id="btn-reset" aria-label="Reset chat" class="p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-gray-600 dark:text-gray-300">
                             <i data-lucide="rotate-cw" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -1313,7 +1315,7 @@
                     <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="ca-hit absolute right-0 -top-11 z-30 w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
                     </button>
-                    
+
                     <!-- Quick Action Chips -->
                     <div id="action-chips" class="flex overflow-x-auto gap-2 no-scrollbar pb-1 pr-8 relative mask-edge">
                         <button class="action-chip shrink-0 glass-panel rounded-full px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap transition-colors inline-flex items-center gap-1.5" data-intent="total">
@@ -1340,7 +1342,7 @@
                             <i data-lucide="paperclip" class="w-4 h-4"></i>
                         </button>
                         <input type="text" id="chat-input" placeholder="Try &quot;menu&quot;..." class="flex-grow bg-transparent border-none focus:outline-none text-sm font-bold placeholder-gray-500 dark:placeholder-gray-400">
-                        <button id="btn-send" class="ca-hit w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
+                        <button id="btn-send" aria-label="Send message" class="ca-hit w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center p-0 leading-none shrink-0 shadow-md hover:shadow-lg transition-shadow active:scale-95">
                             <i data-lucide="send" class="w-4 h-4 block"></i>
                         </button>
                     </div>
@@ -1367,11 +1369,11 @@
                 <!-- Settings Content... -->
                 <div class="flex items-center justify-between">
                     <h3 class="text-xl font-bold">Settings</h3>
-                    <button id="btn-close-settings" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-settings" aria-label="Close" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
-                
+
                 <!-- Profile -->
                 <div>
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
@@ -1727,7 +1729,7 @@
                 <div class="flex items-center gap-1">
                     <button id="btn-results-action" class="h-10 min-w-[88px] px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Save"></button>
                     <button id="btn-results-csv" class="ca-hit h-10 px-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden inline-flex items-center justify-center gap-1.5 shrink-0" aria-label="Export CSV"><i data-lucide="file-down" class="w-4 h-4 shrink-0"></i><span class="ca-micro font-bold uppercase tracking-wider">CSV</span></button>
-                    <button id="btn-close-results" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-results" aria-label="Close" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1817,7 +1819,7 @@
                     <button type="button" id="btn-menu-to-print" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 ca-inset shrink-0" aria-label="Print menu">
                         <i data-lucide="printer" class="w-4 h-4"></i>
                     </button>
-                    <button id="btn-close-menu" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                    <button id="btn-close-menu" aria-label="Close" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1863,16 +1865,16 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Dynamic Pills & Tabs Injected Here -->
                         <div id="menu-category-pills-wrap"></div>
                         <div id="menu-meal-tabs-wrap"></div>
             </div>
             <div class="px-6 pt-4 pb-6 overflow-y-auto max-w-2xl mx-auto w-full flex-grow relative" id="menu-content">
-                
+
                 <!-- State 3: Menu Display -->
                 <div id="menu-state-3" class="hidden">
-                    
+
                     <div id="menu-offline-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-amber-600 bg-amber-500/10 p-2 mb-4 rounded-lg border border-amber-500/20">
                         <i data-lucide="wifi-off" class="w-4 h-4"></i><span id="menu-offline-badge-txt">Offline copy • may be outdated</span>
                     </div>
@@ -1881,7 +1883,7 @@
                     <div id="menu-meal-service-title" class="hidden text-center mb-6">
                         <h4 id="menu-meal-service-label" class="text-lg font-bold tracking-[0.18em] uppercase text-sia-navy dark:text-sia-gold"></h4>
                     </div>
-                    
+
                     <!-- Sector Content -->
                     <div id="menu-sector-content" class="space-y-6 relative z-10"></div>
                 </div>
@@ -1918,7 +1920,7 @@
                             <button type="button" data-export="word" class="w-full text-left px-3 py-2.5 text-xs font-bold rounded-xl hover:bg-black/5 dark:hover:bg-white/10">Word document</button>
                         </div>
                     </div>
-                    <button type="button" id="btn-close-print" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0">
+                    <button type="button" id="btn-close-print" aria-label="Close" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0">
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -1986,7 +1988,7 @@
         // Sky Canvas Animation
         const canvas = document.getElementById('sky-canvas');
         const ctx = canvas.getContext('2d');
-        
+
         let width, height;
         let stars = [];
         let shootingStars = [];
@@ -2067,13 +2069,13 @@
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
-            
+
             const isDark = document.documentElement.classList.contains('dark');
             if (!isDark) {
                 requestAnimationFrame(animate);
                 return;
             }
-            
+
             time++;
 
             drawAurora();
@@ -2108,10 +2110,10 @@
 
             for (let i = shootingStars.length - 1; i >= 0; i--) {
                 const ss = shootingStars[i];
-                
+
                 const grad = ctx.createLinearGradient(
-                    ss.x, ss.y, 
-                    ss.x - Math.cos(ss.angle) * ss.length, 
+                    ss.x, ss.y,
+                    ss.x - Math.cos(ss.angle) * ss.length,
                     ss.y - Math.sin(ss.angle) * ss.length
                 );
                 grad.addColorStop(0, `rgba(201, 162, 39, ${ss.opacity})`);
@@ -2706,7 +2708,7 @@
         let appProfile = null;
         let appPrefs = { autoScroll: true };
         let appDevMode = false;
-        
+
         let tempProfile = { name: '', gender: '', rank: '', firstSoloYMD: '' };
         // v1.40.0 hotfix (owner spec): the rank pills show the crew's real
         // ranks only. The JUNIOR tier is never picked — it is derived per
@@ -2724,7 +2726,7 @@
         // Elements
         const elObView = document.getElementById('onboarding-view');
         const elMainView = document.getElementById('main-view');
-        
+
         // Init
         // ---- Connection status (v1.26.0) ----
         // The green pulse dot beside the brand is now live: green pulse = online,
@@ -2806,11 +2808,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             resize();
             animate();
-            
+
             initData();
             initUI();
             bindEvents();
             loadShippedRates();
+            // round 22 (F-03): the v1.36.0 shell guard was born dead — defined,
+            // never called, while the changelog promised its repair screen. It
+            // is silent whenever the compiled stylesheet loads (caTwLoaded
+            // probes the live sheets for .hidden).
+            shellGuard();
 
             // Connection status dot + offline behaviour (v1.26.0)
             const netDotBtn = document.getElementById('net-status-dot');
@@ -2970,16 +2977,16 @@
             try {
                 const storedProfile = localStorage.getItem('crewAssist.profile');
                 if (storedProfile) appProfile = JSON.parse(storedProfile);
-                
+
                 const storedPrefs = localStorage.getItem('crewAssist.prefs');
                 if (storedPrefs) appPrefs = JSON.parse(storedPrefs);
-                
+
                 appDevMode = localStorage.getItem('crewAssist.devMode') === 'true';
-                
+
                 loadCalcUiMode();
-                
+
                 applyRatesFromStorage();
-                
+
                 const isLight = localStorage.getItem('crewAssist.theme') === 'light';
                 if (isLight) document.documentElement.classList.remove('dark');
             } catch (e) { console.error('Storage error', e); }
@@ -3072,6 +3079,31 @@
             delete btn.dataset.caArmed; delete btn.dataset.caRestore; delete btn.dataset.caTimer;
         }
 
+        // round 22 (F-06): the float-pill visibility classes and the gold-pill
+        // selected/idle classes were inlined at two and six sites respectively
+        // (onboarding gender, onboarding rank, the changelog top pill and the
+        // chat jump-to-latest pill). One helper each — the lists exist once.
+        function caPillPaint(btn, show) {
+            if (show) {
+                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
+            } else {
+                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
+                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
+            }
+        }
+        function caGoldPillOn(el) {
+            el.classList.remove('ui-input', 'text-gray-600');
+            el.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+            const ic = el.querySelector('svg') || el.querySelector('i');
+            if (ic) ic.classList.add('text-black');
+        }
+        function caGoldPillOff(el) {
+            el.classList.add('ui-input', 'text-gray-600');
+            el.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
+            const ic = el.querySelector('svg') || el.querySelector('i');
+            if (ic) ic.classList.remove('text-black');
+        }
         function bindEvents() {
             const wnClose = document.getElementById('whatsnew-close');
             if (wnClose) wnClose.addEventListener('click', closeWhatsNew);
@@ -3110,18 +3142,10 @@
 
             document.querySelectorAll('.ob-gender-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    document.querySelectorAll('.ob-gender-btn').forEach(b => {
-                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                        b.classList.add('ui-input', 'text-gray-600');
-                        const icon = b.querySelector('svg') || b.querySelector('i');
-                        if(icon) icon.classList.remove('text-black');
-                    });
+                    document.querySelectorAll('.ob-gender-btn').forEach(b => caGoldPillOff(b));
                     const target = e.currentTarget;
-                    target.classList.remove('ui-input', 'text-gray-600');
-                    target.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    const icon = target.querySelector('svg') || target.querySelector('i');
-                    if(icon) icon.classList.add('text-black');
-                    
+                    caGoldPillOn(target);
+
                     tempProfile.gender = target.dataset.value;
                     tempProfile.rank = ''; // Reset rank
                     checkObReveal(); // v1.40.0 hotfix: Rank waits for name + date + gender
@@ -3133,14 +3157,14 @@
                 // Auto-capitalize Name
                 const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                 tempProfile.name = nameParts.join(' ');
-                
+
                 appProfile = { ...tempProfile };
                 localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
-                
+
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
                 const avatar2 = document.getElementById('settings-avatar');
                 if (avatar2) avatar2.textContent = (String(appProfile.name || 'C').trim().charAt(0) || 'C').toUpperCase();
-                
+
                 showMain();
             });
 
@@ -3228,7 +3252,7 @@
                     confirm: () => initChat()
                 });
             });
-            
+
             // Settings Events
             document.getElementById('btn-close-settings').addEventListener('click', closeSettings);
             // hotfix 19: the summary overlay's own close button
@@ -3238,7 +3262,7 @@
             document.querySelectorAll('#calcui-segmented .calcui-pill').forEach((pill) => {
                 pill.addEventListener('click', () => setCalcUiMode(pill.getAttribute('data-calcui')));
             });
-            
+
             document.getElementById('btn-edit-profile').addEventListener('click', () => {
                 closeSettings();
                 showOnboarding();
@@ -3346,33 +3370,26 @@
             const container = document.getElementById('ob-rank-container');
             const list = document.getElementById('ob-rank-list');
             list.innerHTML = '';
-            
+
             container.classList.remove('opacity-0', 'max-h-0', 'pointer-events-none');
             container.classList.add('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
-            
+
             ranks[gender].forEach(r => {
                 const btn = document.createElement('button');
                 btn.className = 'py-3 px-5 rounded-full text-sm font-bold ui-input text-gray-600 transition-all ob-rank-btn';
                 btn.textContent = r;
                 btn.dataset.value = r;
-                
-                if (tempProfile.rank === r) {
-                    btn.classList.remove('text-gray-600', 'ui-input');
-                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                }
+
+                if (tempProfile.rank === r) caGoldPillOn(btn);
 
                 btn.addEventListener('click', () => {
-                    document.querySelectorAll('.ob-rank-btn').forEach(b => {
-                        b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                        b.classList.add('text-gray-600', 'ui-input');
-                    });
-                    btn.classList.remove('text-gray-600', 'ui-input');
-                    btn.classList.add('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    
+                    document.querySelectorAll('.ob-rank-btn').forEach(b => caGoldPillOff(b));
+                    caGoldPillOn(btn);
+
                     tempProfile.rank = r;
                     checkObSubmit();
                 });
-                
+
                 list.appendChild(btn);
             });
         }
@@ -3437,12 +3454,7 @@
                 tempProfile = { name: '', gender: '', rank: '', firstSoloYMD: '' };
                 document.getElementById('ob-name').value = '';
                 document.getElementById('ob-solo').value = '';
-                document.querySelectorAll('.ob-gender-btn').forEach(b => {
-                    b.classList.remove('text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-[0_0_15px_rgba(201,162,39,0.3)]', 'border-transparent');
-                    b.classList.add('ui-input', 'text-gray-600');
-                    const icon = b.querySelector('svg') || b.querySelector('i');
-                    if(icon) icon.classList.remove('text-black');
-                });
+                document.querySelectorAll('.ob-gender-btn').forEach(b => caGoldPillOff(b));
                 const rc = document.getElementById('ob-rank-container');
                 rc.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
                 rc.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
@@ -3589,13 +3601,7 @@
             const btn = document.getElementById('ca-cl-top');
             if (!scroller || !btn) return;
             const show = scroller.scrollTop > 48;
-            if (show) {
-                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
-            } else {
-                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
-            }
+            caPillPaint(btn, show);
         }
         function clPaintControls() {
             document.querySelectorAll('#ca-cl-chips .ca-cl-chip').forEach((chip) => {
@@ -3833,7 +3839,7 @@
         function addMessage(sender, text, animate = true) {
             const chatContainer = document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
-            
+
             if (sender === 'bot') {
                 msgDiv.className = 'flex items-start gap-3 mt-4' + (animate ? ' chat-anim-in' : '');
                 msgDiv.innerHTML = `
@@ -3849,7 +3855,7 @@
                     </div>
                 `;
             }
-            
+
             chatContainer.appendChild(msgDiv);
             refreshIcons();
             noteBubbleShown();
@@ -3948,13 +3954,7 @@
             if (!btn) return;
             const typing = !!document.getElementById('typing-indicator');
             const show = !typing && !isChatNearBottom();
-            if (show) {
-                btn.classList.remove('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.add('opacity-100', 'scale-100', 'pointer-events-auto');
-            } else {
-                btn.classList.add('opacity-0', 'scale-75', 'pointer-events-none');
-                btn.classList.remove('opacity-100', 'scale-100', 'pointer-events-auto');
-            }
+            caPillPaint(btn, show);
         }
 
         function jumpChatToBottom() {
@@ -4076,9 +4076,13 @@
         const ROSTER_PDFJS_FONTS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/';
         const RO_MON = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
 
-        function rosterEsc(s) {
+        // round 22 (F-04): rosterEsc and ratesEsc were byte-equivalent copies
+        // of one security-relevant escape table. One implementation; the two
+        // legacy names stay as delegates so their 37 call sites read unchanged.
+        function caEsc(s) {
             return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
+        function rosterEsc(s) { return caEsc(s); }
         function rosterDateToYmd(s) {
             const m = String(s || '').match(/^(\d{2})([A-Za-z]{3})(\d{2})$/);
             if (!m) return '';
@@ -7354,7 +7358,7 @@
 
         function analyzeIntent(text) {
             const lowerText = text.toLowerCase();
-            
+
             // NLP Intent Engine based on LOGIC.md
             // Tour first: "tour" (or a bare "help") starts the feature tour.
             if (/\btour\b|show me around|^\s*help\s*$/.test(lowerText)) {
@@ -7396,10 +7400,10 @@
         function toggleThemeShutter() {
             const shutter = document.getElementById('cabin-shutter');
             const isDark = document.documentElement.classList.contains('dark');
-            
+
             // Slide down
             shutter.style.height = '100vh';
-            
+
             setTimeout(() => {
                 if (isDark) {
                     document.documentElement.classList.remove('dark');
@@ -7408,10 +7412,10 @@
                     document.documentElement.classList.add('dark');
                     localStorage.setItem('crewAssist.theme', 'dark');
                 }
-                
+
                 // Re-render lucide icons immediately for theme buttons if needed
                 // It's handled by CSS (hidden dark:block) so no JS needed
-                
+
                 setTimeout(() => {
                     // Slide up
                     shutter.style.height = '0';
@@ -7684,515 +7688,486 @@
             ]
         };
 
-        
-const airports = [
-  // v1.43.0 hotfix round 12 (owner data): the curated SQ + Scoot network
-  // from the current "Where We Fly" map, replacing the 574-airport generic
-  // world list. KNO (Medan) added per owner correction; PNH kept alongside
-  // KTI — Pochentong was Phnom Penh's IATA code until Techo (KTI) opened
-  // 9 Sep 2025, and pre-switchover rosters still reference it.
-  // AIRPORT_TZ (just below) covers EVERY entry on this list.
-
-  // ===== SINGAPORE =====
-  { code: "SIN", city: "Singapore", country: "Singapore", countryCode: "SG" },
-
-  // ===== SOUTHEAST ASIA =====
-
-  // Brunei
-  { code: "BWN", city: "Bandar Seri Begawan", country: "Brunei", countryCode: "BN" },
-
-  // Cambodia
-  { code: "KTI", city: "Phnom Penh", country: "Cambodia", countryCode: "KH" },
-  { code: "PNH", city: "Phnom Penh (Pochentong, pre-Sep 2025)", country: "Cambodia", countryCode: "KH" },
-  { code: "SAI", city: "Siem Reap", country: "Cambodia", countryCode: "KH" },
-
-  // Indonesia
-  { code: "CGK", city: "Jakarta", country: "Indonesia", countryCode: "ID" },
-  { code: "DPS", city: "Denpasar (Bali)", country: "Indonesia", countryCode: "ID" },
-  { code: "SUB", city: "Surabaya", country: "Indonesia", countryCode: "ID" },
-  { code: "KNO", city: "Medan", country: "Indonesia", countryCode: "ID" },
-  { code: "BPN", city: "Balikpapan", country: "Indonesia", countryCode: "ID" },
-  { code: "KJT", city: "Majalengka", country: "Indonesia", countryCode: "ID" },
-  { code: "LBJ", city: "Labuan Bajo", country: "Indonesia", countryCode: "ID" },
-  { code: "LOP", city: "Lombok", country: "Indonesia", countryCode: "ID" },
-  { code: "MDC", city: "Manado", country: "Indonesia", countryCode: "ID" },
-  { code: "UPG", city: "Makassar", country: "Indonesia", countryCode: "ID" },
-  { code: "PDG", city: "Padang", country: "Indonesia", countryCode: "ID" },
-  { code: "PLM", city: "Palembang", country: "Indonesia", countryCode: "ID" },
-  { code: "PKU", city: "Pekanbaru", country: "Indonesia", countryCode: "ID" },
-  { code: "PNK", city: "Pontianak", country: "Indonesia", countryCode: "ID" },
-  { code: "SRG", city: "Semarang", country: "Indonesia", countryCode: "ID" },
-  { code: "TJQ", city: "Tanjung Pandan", country: "Indonesia", countryCode: "ID" },
-  { code: "YIA", city: "Yogyakarta", country: "Indonesia", countryCode: "ID" },
-
-  // Malaysia
-  { code: "KUL", city: "Kuala Lumpur", country: "Malaysia", countryCode: "MY" },
-  { code: "SZB", city: "Subang", country: "Malaysia", countryCode: "MY" },
-  { code: "PEN", city: "Penang", country: "Malaysia", countryCode: "MY" },
-  { code: "LGK", city: "Langkawi", country: "Malaysia", countryCode: "MY" },
-  { code: "IPH", city: "Ipoh", country: "Malaysia", countryCode: "MY" },
-  { code: "KBR", city: "Kota Bharu", country: "Malaysia", countryCode: "MY" },
-  { code: "BKI", city: "Kota Kinabalu", country: "Malaysia", countryCode: "MY" },
-  { code: "KUA", city: "Kuantan", country: "Malaysia", countryCode: "MY" },
-  { code: "KCH", city: "Kuching", country: "Malaysia", countryCode: "MY" },
-  { code: "MKZ", city: "Malacca", country: "Malaysia", countryCode: "MY" },
-  { code: "MYY", city: "Miri", country: "Malaysia", countryCode: "MY" },
-  { code: "SBW", city: "Sibu", country: "Malaysia", countryCode: "MY" },
-
-  // Myanmar
-  { code: "RGN", city: "Yangon", country: "Myanmar", countryCode: "MM" },
-
-  // Philippines
-  { code: "MNL", city: "Manila", country: "Philippines", countryCode: "PH" },
-  { code: "CEB", city: "Cebu", country: "Philippines", countryCode: "PH" },
-  { code: "CRK", city: "Clark", country: "Philippines", countryCode: "PH" },
-  { code: "MPH", city: "Caticlan", country: "Philippines", countryCode: "PH" },
-  { code: "DVO", city: "Davao", country: "Philippines", countryCode: "PH" },
-  { code: "ILO", city: "Iloilo", country: "Philippines", countryCode: "PH" },
-
-  // Thailand
-  { code: "BKK", city: "Bangkok", country: "Thailand", countryCode: "TH" },
-  { code: "CNX", city: "Chiang Mai", country: "Thailand", countryCode: "TH" },
-  { code: "CEI", city: "Chiang Rai", country: "Thailand", countryCode: "TH" },
-  { code: "HDY", city: "Hat Yai", country: "Thailand", countryCode: "TH" },
-  { code: "KBV", city: "Krabi", country: "Thailand", countryCode: "TH" },
-  { code: "HKT", city: "Phuket", country: "Thailand", countryCode: "TH" },
-
-  // Vietnam
-  { code: "DAD", city: "Da Nang", country: "Vietnam", countryCode: "VN" },
-  { code: "HAN", city: "Hanoi", country: "Vietnam", countryCode: "VN" },
-  { code: "SGN", city: "Ho Chi Minh City", country: "Vietnam", countryCode: "VN" },
-  { code: "CXR", city: "Nha Trang", country: "Vietnam", countryCode: "VN" },
-  { code: "PQC", city: "Phu Quoc", country: "Vietnam", countryCode: "VN" },
-
-  // Laos
-  { code: "VTE", city: "Vientiane", country: "Laos", countryCode: "LA" },
-
-
-  // ===== NORTH ASIA =====
-
-  // China
-  { code: "PEK", city: "Beijing", country: "China", countryCode: "CN" },
-  { code: "PKX", city: "Beijing Daxing", country: "China", countryCode: "CN" },
-  { code: "TFU", city: "Chengdu", country: "China", countryCode: "CN" },
-  { code: "CKG", city: "Chongqing", country: "China", countryCode: "CN" },
-  { code: "CAN", city: "Guangzhou", country: "China", countryCode: "CN" },
-  { code: "KWE", city: "Guiyang", country: "China", countryCode: "CN" },
-  { code: "HAK", city: "Haikou", country: "China", countryCode: "CN" },
-  { code: "HGH", city: "Hangzhou", country: "China", countryCode: "CN" },
-  { code: "NKG", city: "Nanjing", country: "China", countryCode: "CN" },
-  { code: "NNG", city: "Nanning", country: "China", countryCode: "CN" },
-  { code: "TAO", city: "Qingdao", country: "China", countryCode: "CN" },
-  { code: "SWA", city: "Shantou", country: "China", countryCode: "CN" },
-  { code: "SHE", city: "Shenyang", country: "China", countryCode: "CN" },
-  { code: "SZX", city: "Shenzhen", country: "China", countryCode: "CN" },
-  { code: "PVG", city: "Shanghai", country: "China", countryCode: "CN" },
-  { code: "TSN", city: "Tianjin", country: "China", countryCode: "CN" },
-  { code: "WUH", city: "Wuhan", country: "China", countryCode: "CN" },
-  { code: "XIY", city: "Xi'an", country: "China", countryCode: "CN" },
-  { code: "XMN", city: "Xiamen", country: "China", countryCode: "CN" },
-  { code: "CGO", city: "Zhengzhou", country: "China", countryCode: "CN" },
-
-  // Hong Kong / Macau / Taiwan
-  { code: "HKG", city: "Hong Kong", country: "Hong Kong", countryCode: "HK" },
-  { code: "MFM", city: "Macau", country: "Macau", countryCode: "MO" },
-  { code: "TPE", city: "Taipei", country: "Taiwan", countryCode: "TW" },
-
-  // Japan
-  { code: "FUK", city: "Fukuoka", country: "Japan", countryCode: "JP" },
-  { code: "NGO", city: "Nagoya", country: "Japan", countryCode: "JP" },
-  { code: "KIX", city: "Osaka", country: "Japan", countryCode: "JP" },
-  { code: "CTS", city: "Sapporo", country: "Japan", countryCode: "JP" },
-  { code: "OKA", city: "Okinawa", country: "Japan", countryCode: "JP" },
-  { code: "HND", city: "Tokyo Haneda", country: "Japan", countryCode: "JP" },
-  { code: "NRT", city: "Tokyo Narita", country: "Japan", countryCode: "JP" },
-
-  // South Korea
-  { code: "PUS", city: "Busan", country: "South Korea", countryCode: "KR" },
-  { code: "CJU", city: "Jeju", country: "South Korea", countryCode: "KR" },
-  { code: "ICN", city: "Seoul", country: "South Korea", countryCode: "KR" },
-
-
-  // ===== SOUTH ASIA / WEST ASIA & AFRICA =====
-
-  // India
-  { code: "AMD", city: "Ahmedabad", country: "India", countryCode: "IN" },
-  { code: "BLR", city: "Bengaluru", country: "India", countryCode: "IN" },
-  { code: "MAA", city: "Chennai", country: "India", countryCode: "IN" },
-  { code: "CJB", city: "Coimbatore", country: "India", countryCode: "IN" },
-  { code: "DEL", city: "Delhi", country: "India", countryCode: "IN" },
-  { code: "HYD", city: "Hyderabad", country: "India", countryCode: "IN" },
-  { code: "COK", city: "Kochi", country: "India", countryCode: "IN" },
-  { code: "CCU", city: "Kolkata", country: "India", countryCode: "IN" },
-  { code: "BOM", city: "Mumbai", country: "India", countryCode: "IN" },
-  { code: "ATQ", city: "Amritsar", country: "India", countryCode: "IN" },
-  { code: "TRV", city: "Thiruvananthapuram", country: "India", countryCode: "IN" },
-  { code: "TRZ", city: "Tiruchirappalli", country: "India", countryCode: "IN" },
-  { code: "VTZ", city: "Visakhapatnam", country: "India", countryCode: "IN" },
-
-  // Bangladesh / Sri Lanka / Maldives / Nepal
-  { code: "DAC", city: "Dhaka", country: "Bangladesh", countryCode: "BD" },
-  { code: "CMB", city: "Colombo", country: "Sri Lanka", countryCode: "LK" },
-  { code: "MLE", city: "Male", country: "Maldives", countryCode: "MV" },
-  { code: "KTM", city: "Kathmandu", country: "Nepal", countryCode: "NP" },
-
-  // Saudi Arabia / UAE / South Africa
-  { code: "RUH", city: "Riyadh", country: "Saudi Arabia", countryCode: "SA" },
-  { code: "JED", city: "Jeddah", country: "Saudi Arabia", countryCode: "SA" },
-  { code: "DXB", city: "Dubai", country: "United Arab Emirates", countryCode: "AE" },
-  { code: "CPT", city: "Cape Town", country: "South Africa", countryCode: "ZA" },
-  { code: "JNB", city: "Johannesburg", country: "South Africa", countryCode: "ZA" },
-
-
-  // ===== EUROPE =====
-
-  { code: "AMS", city: "Amsterdam", country: "Netherlands", countryCode: "NL" },
-  { code: "BCN", city: "Barcelona", country: "Spain", countryCode: "ES" },
-  { code: "BRU", city: "Brussels", country: "Belgium", countryCode: "BE" },
-  { code: "CPH", city: "Copenhagen", country: "Denmark", countryCode: "DK" },
-  { code: "FRA", city: "Frankfurt", country: "Germany", countryCode: "DE" },
-  { code: "IST", city: "Istanbul", country: "Türkiye", countryCode: "TR" },
-  { code: "LGW", city: "London Gatwick", country: "United Kingdom", countryCode: "GB" },
-  { code: "LHR", city: "London Heathrow", country: "United Kingdom", countryCode: "GB" },
-  { code: "MAD", city: "Madrid", country: "Spain", countryCode: "ES" },
-  { code: "MAN", city: "Manchester", country: "United Kingdom", countryCode: "GB" },
-  { code: "MXP", city: "Milan", country: "Italy", countryCode: "IT" },
-  { code: "MUC", city: "Munich", country: "Germany", countryCode: "DE" },
-  { code: "CDG", city: "Paris", country: "France", countryCode: "FR" },
-  { code: "FCO", city: "Rome", country: "Italy", countryCode: "IT" },
-  { code: "ZRH", city: "Zurich", country: "Switzerland", countryCode: "CH" },
-
-  // Scoot Europe
-  { code: "ATH", city: "Athens", country: "Greece", countryCode: "GR" },
-
-
-  // ===== AMERICAS =====
-
-  { code: "LAX", city: "Los Angeles", country: "United States", countryCode: "US" },
-  { code: "EWR", city: "Newark", country: "United States", countryCode: "US" },
-  { code: "JFK", city: "New York", country: "United States", countryCode: "US" },
-  { code: "SFO", city: "San Francisco", country: "United States", countryCode: "US" },
-  { code: "SEA", city: "Seattle", country: "United States", countryCode: "US" },
-
-
-  // ===== SOUTHWEST PACIFIC =====
-
-  // Australia
-  { code: "ADL", city: "Adelaide", country: "Australia", countryCode: "AU" },
-  { code: "BNE", city: "Brisbane", country: "Australia", countryCode: "AU" },
-  { code: "CNS", city: "Cairns", country: "Australia", countryCode: "AU" },
-  { code: "DRW", city: "Darwin", country: "Australia", countryCode: "AU" },
-  { code: "MEL", city: "Melbourne", country: "Australia", countryCode: "AU" },
-  { code: "PER", city: "Perth", country: "Australia", countryCode: "AU" },
-  { code: "SYD", city: "Sydney", country: "Australia", countryCode: "AU" },
-  { code: "WSI", city: "Sydney Western Sydney", country: "Australia", countryCode: "AU" },
-
-  // New Zealand
-  { code: "AKL", city: "Auckland", country: "New Zealand", countryCode: "NZ" },
-  { code: "CHC", city: "Christchurch", country: "New Zealand", countryCode: "NZ" },
-];
-
-// ============================================================
-// STATION TIME ZONES
-// ============================================================
-//
-// v1.43.0 hotfix round 14:
-// Regrouped by region with East Malaysia on geographically
-// appropriate IANA zones, plus a load-time coverage validator.
-//
-// IMPORTANT:
-// - Keep this map independent from airport/country metadata.
-// - Do NOT use fixed UTC offsets here.
-// - If an airport can appear in a roster, it should have an entry here.
-// - Historical airport codes can remain mapped after a code change
-//   or airport closure (e.g. PNH -> KTI).
-//
-const AIRPORT_TZ = {
-
-    // ===== SINGAPORE =====
-    SIN: 'Asia/Singapore',
-
-    // ===== SOUTHEAST ASIA =====
-
-    // Cambodia — ICT / UTC+7
-    KTI: 'Asia/Phnom_Penh',
-    PNH: 'Asia/Phnom_Penh',
-    SAI: 'Asia/Phnom_Penh',
-
-    // Brunei — UTC+8
-    BWN: 'Asia/Brunei',
-
-    // Indonesia — WIB / UTC+7
-    // Java + Sumatra + western Indonesia
-    CGK: 'Asia/Jakarta',
-    SUB: 'Asia/Jakarta',
-    KNO: 'Asia/Jakarta',
-    KJT: 'Asia/Jakarta',
-    PDG: 'Asia/Jakarta',
-    PLM: 'Asia/Jakarta',
-    PKU: 'Asia/Jakarta',
-    PNK: 'Asia/Jakarta',
-    SRG: 'Asia/Jakarta',
-    TJQ: 'Asia/Jakarta',
-    YIA: 'Asia/Jakarta',
-
-    // Indonesia — WITA / UTC+8
-    // Bali + Nusa Tenggara + Kalimantan + Sulawesi
-    DPS: 'Asia/Makassar',
-    BPN: 'Asia/Makassar',
-    LBJ: 'Asia/Makassar',
-    LOP: 'Asia/Makassar',
-    MDC: 'Asia/Makassar',
-    UPG: 'Asia/Makassar',
-
-    // Malaysia — Peninsular Malaysia / UTC+8
-    KUL: 'Asia/Kuala_Lumpur',
-    SZB: 'Asia/Kuala_Lumpur',
-    PEN: 'Asia/Kuala_Lumpur',
-    LGK: 'Asia/Kuala_Lumpur',
-    IPH: 'Asia/Kuala_Lumpur',
-    KBR: 'Asia/Kuala_Lumpur',
-    KUA: 'Asia/Kuala_Lumpur',
-    MKZ: 'Asia/Kuala_Lumpur',
-
-    // Malaysia — East Malaysia / UTC+8
-    // Same clock as Kuala Lumpur, but geographically appropriate
-    // IANA zone for Sabah and Sarawak.
-    BKI: 'Asia/Kuching',
-    KCH: 'Asia/Kuching',
-    MYY: 'Asia/Kuching',
-    SBW: 'Asia/Kuching',
-
-    // Myanmar — UTC+6:30
-    RGN: 'Asia/Yangon',
-
-    // Philippines — UTC+8
-    MNL: 'Asia/Manila',
-    CEB: 'Asia/Manila',
-    CRK: 'Asia/Manila',
-    MPH: 'Asia/Manila',
-    DVO: 'Asia/Manila',
-    ILO: 'Asia/Manila',
-
-    // Thailand — UTC+7
-    BKK: 'Asia/Bangkok',
-    CNX: 'Asia/Bangkok',
-    CEI: 'Asia/Bangkok',
-    HDY: 'Asia/Bangkok',
-    KBV: 'Asia/Bangkok',
-    HKT: 'Asia/Bangkok',
-
-    // Vietnam — UTC+7
-    DAD: 'Asia/Ho_Chi_Minh',
-    HAN: 'Asia/Ho_Chi_Minh',
-    SGN: 'Asia/Ho_Chi_Minh',
-    CXR: 'Asia/Ho_Chi_Minh',
-    PQC: 'Asia/Ho_Chi_Minh',
-
-    // Laos — UTC+7
-    VTE: 'Asia/Vientiane',
-
-
-    // ===== NORTH ASIA =====
-
-    // China — China Standard Time / UTC+8
-    PEK: 'Asia/Shanghai',
-    PKX: 'Asia/Shanghai',
-    TFU: 'Asia/Shanghai',
-    CKG: 'Asia/Shanghai',
-    CAN: 'Asia/Shanghai',
-    KWE: 'Asia/Shanghai',
-    HAK: 'Asia/Shanghai',
-    HGH: 'Asia/Shanghai',
-    NKG: 'Asia/Shanghai',
-    NNG: 'Asia/Shanghai',
-    TAO: 'Asia/Shanghai',
-    SWA: 'Asia/Shanghai',
-    SHE: 'Asia/Shanghai',
-    SZX: 'Asia/Shanghai',
-    PVG: 'Asia/Shanghai',
-    TSN: 'Asia/Shanghai',
-    WUH: 'Asia/Shanghai',
-    XIY: 'Asia/Shanghai',
-    XMN: 'Asia/Shanghai',
-    CGO: 'Asia/Shanghai',
-
-    // Hong Kong / Macau / Taiwan
-    HKG: 'Asia/Hong_Kong',
-    MFM: 'Asia/Macau',
-    TPE: 'Asia/Taipei',
-
-    // Japan — UTC+9
-    FUK: 'Asia/Tokyo',
-    NGO: 'Asia/Tokyo',
-    KIX: 'Asia/Tokyo',
-    CTS: 'Asia/Tokyo',
-    OKA: 'Asia/Tokyo',
-    HND: 'Asia/Tokyo',
-    NRT: 'Asia/Tokyo',
-
-    // South Korea — UTC+9
-    PUS: 'Asia/Seoul',
-    CJU: 'Asia/Seoul',
-    ICN: 'Asia/Seoul',
-
-
-    // ===== SOUTH ASIA / WEST ASIA & AFRICA =====
-
-    // India — UTC+5:30
-    AMD: 'Asia/Kolkata',
-    BLR: 'Asia/Kolkata',
-    MAA: 'Asia/Kolkata',
-    CJB: 'Asia/Kolkata',
-    DEL: 'Asia/Kolkata',
-    HYD: 'Asia/Kolkata',
-    COK: 'Asia/Kolkata',
-    CCU: 'Asia/Kolkata',
-    BOM: 'Asia/Kolkata',
-    ATQ: 'Asia/Kolkata',
-    TRV: 'Asia/Kolkata',
-    TRZ: 'Asia/Kolkata',
-    VTZ: 'Asia/Kolkata',
-
-    // Bangladesh — UTC+6
-    DAC: 'Asia/Dhaka',
-
-    // Sri Lanka — UTC+5:30
-    CMB: 'Asia/Colombo',
-
-    // Maldives — UTC+5
-    MLE: 'Indian/Maldives',
-
-    // Nepal — UTC+5:45
-    KTM: 'Asia/Kathmandu',
-
-    // Saudi Arabia — UTC+3
-    RUH: 'Asia/Riyadh',
-    JED: 'Asia/Riyadh',
-
-    // UAE — UTC+4
-    DXB: 'Asia/Dubai',
-
-    // South Africa — UTC+2
-    CPT: 'Africa/Johannesburg',
-    JNB: 'Africa/Johannesburg',
-
-
-    // ===== EUROPE =====
-
-    AMS: 'Europe/Amsterdam',
-    BCN: 'Europe/Madrid',
-    BRU: 'Europe/Brussels',
-    CPH: 'Europe/Copenhagen',
-
-    FRA: 'Europe/Berlin',
-    MUC: 'Europe/Berlin',
-
-    IST: 'Europe/Istanbul',
-
-    LGW: 'Europe/London',
-    LHR: 'Europe/London',
-    MAN: 'Europe/London',
-
-    MAD: 'Europe/Madrid',
-
-    MXP: 'Europe/Rome',
-    FCO: 'Europe/Rome',
-
-    CDG: 'Europe/Paris',
-
-    ZRH: 'Europe/Zurich',
-
-    ATH: 'Europe/Athens',
-
-
-    // ===== AMERICAS =====
-
-    // Eastern Time
-    JFK: 'America/New_York',
-    EWR: 'America/New_York',
-
-    // Pacific Time
-    LAX: 'America/Los_Angeles',
-    SFO: 'America/Los_Angeles',
-    SEA: 'America/Los_Angeles',
-
-
-    // ===== SOUTHWEST PACIFIC =====
-
-    // Australia
-    SYD: 'Australia/Sydney',
-    WSI: 'Australia/Sydney',
-
-    MEL: 'Australia/Melbourne',
-
-    BNE: 'Australia/Brisbane',
-    CNS: 'Australia/Brisbane',
-
-    ADL: 'Australia/Adelaide',
-
-    PER: 'Australia/Perth',
-
-    DRW: 'Australia/Darwin',
-
-    // New Zealand
-    AKL: 'Pacific/Auckland',
-    CHC: 'Pacific/Auckland'
-};
-
-// ============================================================
-// AIRPORT TIMEZONE HELPERS
-// ============================================================
-
-function airportZone(code) {
-    return AIRPORT_TZ[
-        String(code || '').trim().toUpperCase()
-    ] || '';
-}
-
-
-// ============================================================
-// LOCAL WALL-CLOCK -> UTC
-// ============================================================
-//
-// A wall-clock time printed on a roster is LOCAL to its station.
-// This converts that local wall-clock time into the corresponding
-// UTC instant using the station's IANA timezone.
-//
-// Two offset passes are used so DST transitions are handled correctly
-// for normal roster times.
-//
-function zonedWallToUtcMs(ymd, hm, zone) {
-
-    try {
-
-        if (
-            !/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || '')) ||
-            !/^\d{1,2}:\d{2}$/.test(String(hm || '')) ||
-            !zone
-        ) {
-            return NaN;
+        const airports = [
+            // v1.43.0 hotfix round 12 (owner data): the curated SQ + Scoot network
+            // from the current "Where We Fly" map, replacing the 574-airport generic
+            // world list. KNO (Medan) added per owner correction; PNH kept alongside
+            // KTI — Pochentong was Phnom Penh's IATA code until Techo (KTI) opened
+            // 9 Sep 2025, and pre-switchover rosters still reference it.
+            // AIRPORT_TZ (just below) covers EVERY entry on this list.
+
+            // ===== SINGAPORE =====
+            { code: "SIN", city: "Singapore", country: "Singapore", countryCode: "SG" },
+
+            // ===== SOUTHEAST ASIA =====
+
+            // Brunei
+            { code: "BWN", city: "Bandar Seri Begawan", country: "Brunei", countryCode: "BN" },
+
+            // Cambodia
+            { code: "KTI", city: "Phnom Penh", country: "Cambodia", countryCode: "KH" },
+            { code: "PNH", city: "Phnom Penh (Pochentong, pre-Sep 2025)", country: "Cambodia", countryCode: "KH" },
+            { code: "SAI", city: "Siem Reap", country: "Cambodia", countryCode: "KH" },
+
+            // Indonesia
+            { code: "CGK", city: "Jakarta", country: "Indonesia", countryCode: "ID" },
+            { code: "DPS", city: "Denpasar (Bali)", country: "Indonesia", countryCode: "ID" },
+            { code: "SUB", city: "Surabaya", country: "Indonesia", countryCode: "ID" },
+            { code: "KNO", city: "Medan", country: "Indonesia", countryCode: "ID" },
+            { code: "BPN", city: "Balikpapan", country: "Indonesia", countryCode: "ID" },
+            { code: "KJT", city: "Majalengka", country: "Indonesia", countryCode: "ID" },
+            { code: "LBJ", city: "Labuan Bajo", country: "Indonesia", countryCode: "ID" },
+            { code: "LOP", city: "Lombok", country: "Indonesia", countryCode: "ID" },
+            { code: "MDC", city: "Manado", country: "Indonesia", countryCode: "ID" },
+            { code: "UPG", city: "Makassar", country: "Indonesia", countryCode: "ID" },
+            { code: "PDG", city: "Padang", country: "Indonesia", countryCode: "ID" },
+            { code: "PLM", city: "Palembang", country: "Indonesia", countryCode: "ID" },
+            { code: "PKU", city: "Pekanbaru", country: "Indonesia", countryCode: "ID" },
+            { code: "PNK", city: "Pontianak", country: "Indonesia", countryCode: "ID" },
+            { code: "SRG", city: "Semarang", country: "Indonesia", countryCode: "ID" },
+            { code: "TJQ", city: "Tanjung Pandan", country: "Indonesia", countryCode: "ID" },
+            { code: "YIA", city: "Yogyakarta", country: "Indonesia", countryCode: "ID" },
+
+            // Malaysia
+            { code: "KUL", city: "Kuala Lumpur", country: "Malaysia", countryCode: "MY" },
+            { code: "SZB", city: "Subang", country: "Malaysia", countryCode: "MY" },
+            { code: "PEN", city: "Penang", country: "Malaysia", countryCode: "MY" },
+            { code: "LGK", city: "Langkawi", country: "Malaysia", countryCode: "MY" },
+            { code: "IPH", city: "Ipoh", country: "Malaysia", countryCode: "MY" },
+            { code: "KBR", city: "Kota Bharu", country: "Malaysia", countryCode: "MY" },
+            { code: "BKI", city: "Kota Kinabalu", country: "Malaysia", countryCode: "MY" },
+            { code: "KUA", city: "Kuantan", country: "Malaysia", countryCode: "MY" },
+            { code: "KCH", city: "Kuching", country: "Malaysia", countryCode: "MY" },
+            { code: "MKZ", city: "Malacca", country: "Malaysia", countryCode: "MY" },
+            { code: "MYY", city: "Miri", country: "Malaysia", countryCode: "MY" },
+            { code: "SBW", city: "Sibu", country: "Malaysia", countryCode: "MY" },
+
+            // Myanmar
+            { code: "RGN", city: "Yangon", country: "Myanmar", countryCode: "MM" },
+
+            // Philippines
+            { code: "MNL", city: "Manila", country: "Philippines", countryCode: "PH" },
+            { code: "CEB", city: "Cebu", country: "Philippines", countryCode: "PH" },
+            { code: "CRK", city: "Clark", country: "Philippines", countryCode: "PH" },
+            { code: "MPH", city: "Caticlan", country: "Philippines", countryCode: "PH" },
+            { code: "DVO", city: "Davao", country: "Philippines", countryCode: "PH" },
+            { code: "ILO", city: "Iloilo", country: "Philippines", countryCode: "PH" },
+
+            // Thailand
+            { code: "BKK", city: "Bangkok", country: "Thailand", countryCode: "TH" },
+            { code: "CNX", city: "Chiang Mai", country: "Thailand", countryCode: "TH" },
+            { code: "CEI", city: "Chiang Rai", country: "Thailand", countryCode: "TH" },
+            { code: "HDY", city: "Hat Yai", country: "Thailand", countryCode: "TH" },
+            { code: "KBV", city: "Krabi", country: "Thailand", countryCode: "TH" },
+            { code: "HKT", city: "Phuket", country: "Thailand", countryCode: "TH" },
+
+            // Vietnam
+            { code: "DAD", city: "Da Nang", country: "Vietnam", countryCode: "VN" },
+            { code: "HAN", city: "Hanoi", country: "Vietnam", countryCode: "VN" },
+            { code: "SGN", city: "Ho Chi Minh City", country: "Vietnam", countryCode: "VN" },
+            { code: "CXR", city: "Nha Trang", country: "Vietnam", countryCode: "VN" },
+            { code: "PQC", city: "Phu Quoc", country: "Vietnam", countryCode: "VN" },
+
+            // Laos
+            { code: "VTE", city: "Vientiane", country: "Laos", countryCode: "LA" },
+
+            // ===== NORTH ASIA =====
+
+            // China
+            { code: "PEK", city: "Beijing", country: "China", countryCode: "CN" },
+            { code: "PKX", city: "Beijing Daxing", country: "China", countryCode: "CN" },
+            { code: "TFU", city: "Chengdu", country: "China", countryCode: "CN" },
+            { code: "CKG", city: "Chongqing", country: "China", countryCode: "CN" },
+            { code: "CAN", city: "Guangzhou", country: "China", countryCode: "CN" },
+            { code: "KWE", city: "Guiyang", country: "China", countryCode: "CN" },
+            { code: "HAK", city: "Haikou", country: "China", countryCode: "CN" },
+            { code: "HGH", city: "Hangzhou", country: "China", countryCode: "CN" },
+            { code: "NKG", city: "Nanjing", country: "China", countryCode: "CN" },
+            { code: "NNG", city: "Nanning", country: "China", countryCode: "CN" },
+            { code: "TAO", city: "Qingdao", country: "China", countryCode: "CN" },
+            { code: "SWA", city: "Shantou", country: "China", countryCode: "CN" },
+            { code: "SHE", city: "Shenyang", country: "China", countryCode: "CN" },
+            { code: "SZX", city: "Shenzhen", country: "China", countryCode: "CN" },
+            { code: "PVG", city: "Shanghai", country: "China", countryCode: "CN" },
+            { code: "TSN", city: "Tianjin", country: "China", countryCode: "CN" },
+            { code: "WUH", city: "Wuhan", country: "China", countryCode: "CN" },
+            { code: "XIY", city: "Xi'an", country: "China", countryCode: "CN" },
+            { code: "XMN", city: "Xiamen", country: "China", countryCode: "CN" },
+            { code: "CGO", city: "Zhengzhou", country: "China", countryCode: "CN" },
+
+            // Hong Kong / Macau / Taiwan
+            { code: "HKG", city: "Hong Kong", country: "Hong Kong", countryCode: "HK" },
+            { code: "MFM", city: "Macau", country: "Macau", countryCode: "MO" },
+            { code: "TPE", city: "Taipei", country: "Taiwan", countryCode: "TW" },
+
+            // Japan
+            { code: "FUK", city: "Fukuoka", country: "Japan", countryCode: "JP" },
+            { code: "NGO", city: "Nagoya", country: "Japan", countryCode: "JP" },
+            { code: "KIX", city: "Osaka", country: "Japan", countryCode: "JP" },
+            { code: "CTS", city: "Sapporo", country: "Japan", countryCode: "JP" },
+            { code: "OKA", city: "Okinawa", country: "Japan", countryCode: "JP" },
+            { code: "HND", city: "Tokyo Haneda", country: "Japan", countryCode: "JP" },
+            { code: "NRT", city: "Tokyo Narita", country: "Japan", countryCode: "JP" },
+
+            // South Korea
+            { code: "PUS", city: "Busan", country: "South Korea", countryCode: "KR" },
+            { code: "CJU", city: "Jeju", country: "South Korea", countryCode: "KR" },
+            { code: "ICN", city: "Seoul", country: "South Korea", countryCode: "KR" },
+
+            // ===== SOUTH ASIA / WEST ASIA & AFRICA =====
+
+            // India
+            { code: "AMD", city: "Ahmedabad", country: "India", countryCode: "IN" },
+            { code: "BLR", city: "Bengaluru", country: "India", countryCode: "IN" },
+            { code: "MAA", city: "Chennai", country: "India", countryCode: "IN" },
+            { code: "CJB", city: "Coimbatore", country: "India", countryCode: "IN" },
+            { code: "DEL", city: "Delhi", country: "India", countryCode: "IN" },
+            { code: "HYD", city: "Hyderabad", country: "India", countryCode: "IN" },
+            { code: "COK", city: "Kochi", country: "India", countryCode: "IN" },
+            { code: "CCU", city: "Kolkata", country: "India", countryCode: "IN" },
+            { code: "BOM", city: "Mumbai", country: "India", countryCode: "IN" },
+            { code: "ATQ", city: "Amritsar", country: "India", countryCode: "IN" },
+            { code: "TRV", city: "Thiruvananthapuram", country: "India", countryCode: "IN" },
+            { code: "TRZ", city: "Tiruchirappalli", country: "India", countryCode: "IN" },
+            { code: "VTZ", city: "Visakhapatnam", country: "India", countryCode: "IN" },
+
+            // Bangladesh / Sri Lanka / Maldives / Nepal
+            { code: "DAC", city: "Dhaka", country: "Bangladesh", countryCode: "BD" },
+            { code: "CMB", city: "Colombo", country: "Sri Lanka", countryCode: "LK" },
+            { code: "MLE", city: "Male", country: "Maldives", countryCode: "MV" },
+            { code: "KTM", city: "Kathmandu", country: "Nepal", countryCode: "NP" },
+
+            // Saudi Arabia / UAE / South Africa
+            { code: "RUH", city: "Riyadh", country: "Saudi Arabia", countryCode: "SA" },
+            { code: "JED", city: "Jeddah", country: "Saudi Arabia", countryCode: "SA" },
+            { code: "DXB", city: "Dubai", country: "United Arab Emirates", countryCode: "AE" },
+            { code: "CPT", city: "Cape Town", country: "South Africa", countryCode: "ZA" },
+            { code: "JNB", city: "Johannesburg", country: "South Africa", countryCode: "ZA" },
+
+            // ===== EUROPE =====
+
+            { code: "AMS", city: "Amsterdam", country: "Netherlands", countryCode: "NL" },
+            { code: "BCN", city: "Barcelona", country: "Spain", countryCode: "ES" },
+            { code: "BRU", city: "Brussels", country: "Belgium", countryCode: "BE" },
+            { code: "CPH", city: "Copenhagen", country: "Denmark", countryCode: "DK" },
+            { code: "FRA", city: "Frankfurt", country: "Germany", countryCode: "DE" },
+            { code: "IST", city: "Istanbul", country: "Türkiye", countryCode: "TR" },
+            { code: "LGW", city: "London Gatwick", country: "United Kingdom", countryCode: "GB" },
+            { code: "LHR", city: "London Heathrow", country: "United Kingdom", countryCode: "GB" },
+            { code: "MAD", city: "Madrid", country: "Spain", countryCode: "ES" },
+            { code: "MAN", city: "Manchester", country: "United Kingdom", countryCode: "GB" },
+            { code: "MXP", city: "Milan", country: "Italy", countryCode: "IT" },
+            { code: "MUC", city: "Munich", country: "Germany", countryCode: "DE" },
+            { code: "CDG", city: "Paris", country: "France", countryCode: "FR" },
+            { code: "FCO", city: "Rome", country: "Italy", countryCode: "IT" },
+            { code: "ZRH", city: "Zurich", country: "Switzerland", countryCode: "CH" },
+
+            // Scoot Europe
+            { code: "ATH", city: "Athens", country: "Greece", countryCode: "GR" },
+
+            // ===== AMERICAS =====
+
+            { code: "LAX", city: "Los Angeles", country: "United States", countryCode: "US" },
+            { code: "EWR", city: "Newark", country: "United States", countryCode: "US" },
+            { code: "JFK", city: "New York", country: "United States", countryCode: "US" },
+            { code: "SFO", city: "San Francisco", country: "United States", countryCode: "US" },
+            { code: "SEA", city: "Seattle", country: "United States", countryCode: "US" },
+
+            // ===== SOUTHWEST PACIFIC =====
+
+            // Australia
+            { code: "ADL", city: "Adelaide", country: "Australia", countryCode: "AU" },
+            { code: "BNE", city: "Brisbane", country: "Australia", countryCode: "AU" },
+            { code: "CNS", city: "Cairns", country: "Australia", countryCode: "AU" },
+            { code: "DRW", city: "Darwin", country: "Australia", countryCode: "AU" },
+            { code: "MEL", city: "Melbourne", country: "Australia", countryCode: "AU" },
+            { code: "PER", city: "Perth", country: "Australia", countryCode: "AU" },
+            { code: "SYD", city: "Sydney", country: "Australia", countryCode: "AU" },
+            { code: "WSI", city: "Sydney Western Sydney", country: "Australia", countryCode: "AU" },
+
+            // New Zealand
+            { code: "AKL", city: "Auckland", country: "New Zealand", countryCode: "NZ" },
+            { code: "CHC", city: "Christchurch", country: "New Zealand", countryCode: "NZ" },
+        ];
+
+        // ============================================================
+        // STATION TIME ZONES
+        // ============================================================
+        //
+        // v1.43.0 hotfix round 14:
+        // Regrouped by region with East Malaysia on geographically
+        // appropriate IANA zones, plus a load-time coverage validator.
+        //
+        // IMPORTANT:
+        // - Keep this map independent from airport/country metadata.
+        // - Do NOT use fixed UTC offsets here.
+        // - If an airport can appear in a roster, it should have an entry here.
+        // - Historical airport codes can remain mapped after a code change
+        //   or airport closure (e.g. PNH -> KTI).
+        //
+        const AIRPORT_TZ = {
+            // ===== SINGAPORE =====
+            SIN: 'Asia/Singapore',
+
+            // ===== SOUTHEAST ASIA =====
+
+            // Cambodia — ICT / UTC+7
+            KTI: 'Asia/Phnom_Penh',
+            PNH: 'Asia/Phnom_Penh',
+            SAI: 'Asia/Phnom_Penh',
+
+            // Brunei — UTC+8
+            BWN: 'Asia/Brunei',
+
+            // Indonesia — WIB / UTC+7
+            // Java + Sumatra + western Indonesia
+            CGK: 'Asia/Jakarta',
+            SUB: 'Asia/Jakarta',
+            KNO: 'Asia/Jakarta',
+            KJT: 'Asia/Jakarta',
+            PDG: 'Asia/Jakarta',
+            PLM: 'Asia/Jakarta',
+            PKU: 'Asia/Jakarta',
+            PNK: 'Asia/Jakarta',
+            SRG: 'Asia/Jakarta',
+            TJQ: 'Asia/Jakarta',
+            YIA: 'Asia/Jakarta',
+
+            // Indonesia — WITA / UTC+8
+            // Bali + Nusa Tenggara + Kalimantan + Sulawesi
+            DPS: 'Asia/Makassar',
+            BPN: 'Asia/Makassar',
+            LBJ: 'Asia/Makassar',
+            LOP: 'Asia/Makassar',
+            MDC: 'Asia/Makassar',
+            UPG: 'Asia/Makassar',
+
+            // Malaysia — Peninsular Malaysia / UTC+8
+            KUL: 'Asia/Kuala_Lumpur',
+            SZB: 'Asia/Kuala_Lumpur',
+            PEN: 'Asia/Kuala_Lumpur',
+            LGK: 'Asia/Kuala_Lumpur',
+            IPH: 'Asia/Kuala_Lumpur',
+            KBR: 'Asia/Kuala_Lumpur',
+            KUA: 'Asia/Kuala_Lumpur',
+            MKZ: 'Asia/Kuala_Lumpur',
+
+            // Malaysia — East Malaysia / UTC+8
+            // Same clock as Kuala Lumpur, but geographically appropriate
+            // IANA zone for Sabah and Sarawak.
+            BKI: 'Asia/Kuching',
+            KCH: 'Asia/Kuching',
+            MYY: 'Asia/Kuching',
+            SBW: 'Asia/Kuching',
+
+            // Myanmar — UTC+6:30
+            RGN: 'Asia/Yangon',
+
+            // Philippines — UTC+8
+            MNL: 'Asia/Manila',
+            CEB: 'Asia/Manila',
+            CRK: 'Asia/Manila',
+            MPH: 'Asia/Manila',
+            DVO: 'Asia/Manila',
+            ILO: 'Asia/Manila',
+
+            // Thailand — UTC+7
+            BKK: 'Asia/Bangkok',
+            CNX: 'Asia/Bangkok',
+            CEI: 'Asia/Bangkok',
+            HDY: 'Asia/Bangkok',
+            KBV: 'Asia/Bangkok',
+            HKT: 'Asia/Bangkok',
+
+            // Vietnam — UTC+7
+            DAD: 'Asia/Ho_Chi_Minh',
+            HAN: 'Asia/Ho_Chi_Minh',
+            SGN: 'Asia/Ho_Chi_Minh',
+            CXR: 'Asia/Ho_Chi_Minh',
+            PQC: 'Asia/Ho_Chi_Minh',
+
+            // Laos — UTC+7
+            VTE: 'Asia/Vientiane',
+
+            // ===== NORTH ASIA =====
+
+            // China — China Standard Time / UTC+8
+            PEK: 'Asia/Shanghai',
+            PKX: 'Asia/Shanghai',
+            TFU: 'Asia/Shanghai',
+            CKG: 'Asia/Shanghai',
+            CAN: 'Asia/Shanghai',
+            KWE: 'Asia/Shanghai',
+            HAK: 'Asia/Shanghai',
+            HGH: 'Asia/Shanghai',
+            NKG: 'Asia/Shanghai',
+            NNG: 'Asia/Shanghai',
+            TAO: 'Asia/Shanghai',
+            SWA: 'Asia/Shanghai',
+            SHE: 'Asia/Shanghai',
+            SZX: 'Asia/Shanghai',
+            PVG: 'Asia/Shanghai',
+            TSN: 'Asia/Shanghai',
+            WUH: 'Asia/Shanghai',
+            XIY: 'Asia/Shanghai',
+            XMN: 'Asia/Shanghai',
+            CGO: 'Asia/Shanghai',
+
+            // Hong Kong / Macau / Taiwan
+            HKG: 'Asia/Hong_Kong',
+            MFM: 'Asia/Macau',
+            TPE: 'Asia/Taipei',
+
+            // Japan — UTC+9
+            FUK: 'Asia/Tokyo',
+            NGO: 'Asia/Tokyo',
+            KIX: 'Asia/Tokyo',
+            CTS: 'Asia/Tokyo',
+            OKA: 'Asia/Tokyo',
+            HND: 'Asia/Tokyo',
+            NRT: 'Asia/Tokyo',
+
+            // South Korea — UTC+9
+            PUS: 'Asia/Seoul',
+            CJU: 'Asia/Seoul',
+            ICN: 'Asia/Seoul',
+
+            // ===== SOUTH ASIA / WEST ASIA & AFRICA =====
+
+            // India — UTC+5:30
+            AMD: 'Asia/Kolkata',
+            BLR: 'Asia/Kolkata',
+            MAA: 'Asia/Kolkata',
+            CJB: 'Asia/Kolkata',
+            DEL: 'Asia/Kolkata',
+            HYD: 'Asia/Kolkata',
+            COK: 'Asia/Kolkata',
+            CCU: 'Asia/Kolkata',
+            BOM: 'Asia/Kolkata',
+            ATQ: 'Asia/Kolkata',
+            TRV: 'Asia/Kolkata',
+            TRZ: 'Asia/Kolkata',
+            VTZ: 'Asia/Kolkata',
+
+            // Bangladesh — UTC+6
+            DAC: 'Asia/Dhaka',
+
+            // Sri Lanka — UTC+5:30
+            CMB: 'Asia/Colombo',
+
+            // Maldives — UTC+5
+            MLE: 'Indian/Maldives',
+
+            // Nepal — UTC+5:45
+            KTM: 'Asia/Kathmandu',
+
+            // Saudi Arabia — UTC+3
+            RUH: 'Asia/Riyadh',
+            JED: 'Asia/Riyadh',
+
+            // UAE — UTC+4
+            DXB: 'Asia/Dubai',
+
+            // South Africa — UTC+2
+            CPT: 'Africa/Johannesburg',
+            JNB: 'Africa/Johannesburg',
+
+            // ===== EUROPE =====
+
+            AMS: 'Europe/Amsterdam',
+            BCN: 'Europe/Madrid',
+            BRU: 'Europe/Brussels',
+            CPH: 'Europe/Copenhagen',
+
+            FRA: 'Europe/Berlin',
+            MUC: 'Europe/Berlin',
+
+            IST: 'Europe/Istanbul',
+
+            LGW: 'Europe/London',
+            LHR: 'Europe/London',
+            MAN: 'Europe/London',
+
+            MAD: 'Europe/Madrid',
+
+            MXP: 'Europe/Rome',
+            FCO: 'Europe/Rome',
+
+            CDG: 'Europe/Paris',
+
+            ZRH: 'Europe/Zurich',
+
+            ATH: 'Europe/Athens',
+
+            // ===== AMERICAS =====
+
+            // Eastern Time
+            JFK: 'America/New_York',
+            EWR: 'America/New_York',
+
+            // Pacific Time
+            LAX: 'America/Los_Angeles',
+            SFO: 'America/Los_Angeles',
+            SEA: 'America/Los_Angeles',
+
+            // ===== SOUTHWEST PACIFIC =====
+
+            // Australia
+            SYD: 'Australia/Sydney',
+            WSI: 'Australia/Sydney',
+
+            MEL: 'Australia/Melbourne',
+
+            BNE: 'Australia/Brisbane',
+            CNS: 'Australia/Brisbane',
+
+            ADL: 'Australia/Adelaide',
+
+            PER: 'Australia/Perth',
+
+            DRW: 'Australia/Darwin',
+
+            // New Zealand
+            AKL: 'Pacific/Auckland',
+            CHC: 'Pacific/Auckland'
+        };
+
+        // ============================================================
+        // AIRPORT TIMEZONE HELPERS
+        // ============================================================
+
+        function airportZone(code) {
+            return AIRPORT_TZ[String(code || '').trim().toUpperCase()] || '';
         }
 
-        // Pad a single-digit hour such as "8:25" to "08:25".
-        // Date.parse does not reliably accept the unpadded form.
-        const normalizedHm =
-            String(hm).replace(/^(\d):/, '0$1:');
+        // ============================================================
+        // LOCAL WALL-CLOCK -> UTC
+        // ============================================================
+        //
+        // A wall-clock time printed on a roster is LOCAL to its station.
+        // This converts that local wall-clock time into the corresponding
+        // UTC instant using the station's IANA timezone.
+        //
+        // Two offset passes are used so DST transitions are handled correctly
+        // for normal roster times.
+        //
+        function zonedWallToUtcMs(ymd, hm, zone) {
+            try {
+                if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || '')) || !/^\d{1,2}:\d{2}$/.test(String(hm || '')) || !zone) {
+                    return NaN;
+                }
 
-        const wallMs =
-            Date.parse(
-                ymd + 'T' + normalizedHm + ':00Z'
-            );
+                // Pad a single-digit hour such as "8:25" to "08:25".
+                // Date.parse does not reliably accept the unpadded form.
+                const normalizedHm = String(hm).replace(/^(\d):/, '0$1:');
 
-        if (!Number.isFinite(wallMs)) {
-            return NaN;
-        }
+                const wallMs = Date.parse(ymd + 'T' + normalizedHm + ':00Z');
 
+                if (!Number.isFinite(wallMs)) {
+                    return NaN;
+                }
 
-        const formatter =
-            new Intl.DateTimeFormat(
-                'en-CA',
-                {
+                const formatter = new Intl.DateTimeFormat('en-CA', {
                     timeZone: zone,
                     year: 'numeric',
                     month: '2-digit',
@@ -8200,294 +8175,190 @@ function zonedWallToUtcMs(ymd, hm, zone) {
                     hour: '2-digit',
                     minute: '2-digit',
                     hourCycle: 'h23'
-                }
-            );
-
-
-        // Read the station-local clock at a given UTC instant,
-        // then represent those local fields as a UTC timestamp.
-        const readZoneAsUtc = (ms) => {
-
-            const parts = {};
-
-            formatter
-                .formatToParts(new Date(ms))
-                .forEach((part) => {
-                    parts[part.type] = part.value;
                 });
 
-            return Date.UTC(
-                Number(parts.year),
-                Number(parts.month) - 1,
-                Number(parts.day),
-                Number(parts.hour),
-                Number(parts.minute)
-            );
-        };
+                // Read the station-local clock at a given UTC instant,
+                // then represent those local fields as a UTC timestamp.
+                const readZoneAsUtc = (ms) => {
+                    const parts = {};
 
+                    formatter.formatToParts(new Date(ms)).forEach((part) => {
+                        parts[part.type] = part.value;
+                    });
 
-        // First offset estimate.
-        let utc =
-            wallMs -
-            (readZoneAsUtc(wallMs) - wallMs);
+                    return Date.UTC(Number(parts.year),
+                        Number(parts.month) - 1,
+                        Number(parts.day),
+                        Number(parts.hour),
+                        Number(parts.minute));
+                };
 
+                // First offset estimate.
+                let utc = wallMs - (readZoneAsUtc(wallMs) - wallMs);
 
-        // Second pass corrects the estimate around DST boundaries.
-        utc =
-            utc -
-            (readZoneAsUtc(utc) - wallMs);
+                // Second pass corrects the estimate around DST boundaries.
+                utc = utc - (readZoneAsUtc(utc) - wallMs);
 
+                return utc;
+            } catch (e) {
+                return NaN;
+            }
+        }
 
-        return utc;
+        // ============================================================
+        // LANDING TIME -> SGT
+        // ============================================================
+        //
+        // Converts a landing time printed in station-local time into
+        // Singapore Time.
+        //
+        // Returns:
+        //   "17:35 SGT"
+        //
+        // Returns an empty string when:
+        // - station is unknown
+        // - station is Singapore
+        // - conversion fails
+        // - station-local clock is already the same as SGT
+        //
+        // Note: this returns the SGT clock time only, not a date-change
+        // indicator if the conversion crosses midnight.
+        //
+        function landingSgtPhrase(arrCode, arrYmd, arrHm) {
+            const zone = airportZone(arrCode);
 
-    } catch (e) {
+            // Singapore local time is already SGT.
+            // Unknown stations are deliberately left unconverted.
+            if (!zone || zone === 'Asia/Singapore') {
+                return '';
+            }
 
-        return NaN;
-    }
-}
+            const ms = zonedWallToUtcMs(arrYmd,
+                arrHm,
+                zone);
 
+            if (!Number.isFinite(ms)) {
+                return '';
+            }
 
-// ============================================================
-// LANDING TIME -> SGT
-// ============================================================
-//
-// Converts a landing time printed in station-local time into
-// Singapore Time.
-//
-// Returns:
-//   "17:35 SGT"
-//
-// Returns an empty string when:
-// - station is unknown
-// - station is Singapore
-// - conversion fails
-// - station-local clock is already the same as SGT
-//
-// Note: this returns the SGT clock time only, not a date-change
-// indicator if the conversion crosses midnight.
-//
-function landingSgtPhrase(arrCode, arrYmd, arrHm) {
-
-    const zone = airportZone(arrCode);
-
-    // Singapore local time is already SGT.
-    // Unknown stations are deliberately left unconverted.
-    if (
-        !zone ||
-        zone === 'Asia/Singapore'
-    ) {
-        return '';
-    }
-
-
-    const ms =
-        zonedWallToUtcMs(
-            arrYmd,
-            arrHm,
-            zone
-        );
-
-    if (!Number.isFinite(ms)) {
-        return '';
-    }
-
-
-    try {
-
-        const sgtHm =
-            new Intl.DateTimeFormat(
-                'en-GB',
-                {
+            try {
+                const sgtHm = new Intl.DateTimeFormat('en-GB', {
                     timeZone: 'Asia/Singapore',
                     hour: '2-digit',
                     minute: '2-digit',
                     hourCycle: 'h23'
+                }).format(new Date(ms));
+
+                // Same clock as SGT (UTC+8) — nothing to convert.
+                // The comparison pads a single-digit hour ("8:25"),
+                // matching the SGT readout's always-padded form.
+                if (sgtHm === String(arrHm || '').replace(/^(\d):/, '0$1:')) {
+                    return '';
                 }
-            ).format(new Date(ms));
 
-
-        // Same clock as SGT (UTC+8) — nothing to convert.
-        // The comparison pads a single-digit hour ("8:25"),
-        // matching the SGT readout's always-padded form.
-        if (
-            sgtHm === String(arrHm || '').replace(/^(\d):/, '0$1:')
-        ) {
-            return '';
+                return sgtHm + ' SGT';
+            } catch (e) {
+                return '';
+            }
         }
 
+        // ============================================================
+        // AIRPORT TIMEZONE VALIDATION
+        // ============================================================
+        //
+        // Every airport in `airports` should have a corresponding entry
+        // in `AIRPORT_TZ`.
+        //
+        // Missing entries are console.errors because they represent a real
+        // data problem. Orphaned timezone entries only generate a warning,
+        // because historical codes may intentionally remain in the map.
+        //
+        function validateAirportTimezones() {
+            const airportCodes = new Set(airports.map((airport) =>
+                String(airport.code || '').trim().toUpperCase()).filter(Boolean));
 
-        return sgtHm + ' SGT';
+            const timezoneCodes = new Set(Object.keys(AIRPORT_TZ).map((code) =>
+                String(code).trim().toUpperCase()));
 
-    } catch (e) {
+            const missing = [...airportCodes].filter((code) =>
+                !timezoneCodes.has(code)).sort();
 
-        return '';
-    }
-}
+            const orphaned = [...timezoneCodes].filter((code) =>
+                !airportCodes.has(code)).sort();
 
+            if (missing.length) {
+                console.error('[AIRPORT_TZ] Missing timezone(s):',
+                    missing.join(', '));
+            }
 
-// ============================================================
-// AIRPORT TIMEZONE VALIDATION
-// ============================================================
-//
-// Every airport in `airports` should have a corresponding entry
-// in `AIRPORT_TZ`.
-//
-// Missing entries are console.errors because they represent a real
-// data problem. Orphaned timezone entries only generate a warning,
-// because historical codes may intentionally remain in the map.
-//
-function validateAirportTimezones() {
+            if (orphaned.length) {
+                console.warn('[AIRPORT_TZ] Orphaned timezone(s):',
+                    orphaned.join(', '));
+            }
 
-    const airportCodes =
-        new Set(
-            airports
-                .map((airport) =>
-                    String(
-                        airport.code || ''
-                    )
-                        .trim()
-                        .toUpperCase()
-                )
-                .filter(Boolean)
-        );
+            return {
+                valid: missing.length === 0,
+                missing,
+                orphaned
+            };
+        }
 
+        // Run the validation once when the app loads.
+        //
+        // This does not throw, so a missing timezone cannot crash the
+        // entire roster application.
+        const TZ_VALIDATION = validateAirportTimezones();
 
-    const timezoneCodes =
-        new Set(
-            Object.keys(AIRPORT_TZ)
-                .map((code) =>
-                    String(code)
-                        .trim()
-                        .toUpperCase()
-                )
-        );
+        // ============================================================
+        // CONSOLE DEBUG HELPERS
+        // ============================================================
+        //
+        // Inert unless explicitly called from the browser console.
+        //
+        // Examples:
+        //   debugAirportTimezone('LHR');
+        //   debugSgtConversion('LHR', '2027-01-15', '10:00');
+        //
 
+        function debugAirportTimezone(code) {
+            const normalized = String(code || '').trim().toUpperCase();
 
-    const missing =
-        [...airportCodes]
-            .filter(
-                (code) =>
-                    !timezoneCodes.has(code)
-            )
-            .sort();
+            const zone = airportZone(normalized);
 
+            return {
+                code: normalized,
+                zone: zone || '(unknown)'
+            };
+        }
 
-    const orphaned =
-        [...timezoneCodes]
-            .filter(
-                (code) =>
-                    !airportCodes.has(code)
-            )
-            .sort();
+        function debugSgtConversion(code, ymd, hm) {
+            const normalized = String(code || '').trim().toUpperCase();
 
+            const zone = airportZone(normalized);
 
-    if (missing.length) {
+            if (!zone) {
+                return {
+                    code: normalized,
+                    local: hm,
+                    zone: '(unknown)',
+                    sgt: ''
+                };
+            }
 
-        console.error(
-            '[AIRPORT_TZ] Missing timezone(s):',
-            missing.join(', ')
-        );
-    }
+            const utcMs = zonedWallToUtcMs(ymd,
+                hm,
+                zone);
 
+            if (!Number.isFinite(utcMs)) {
+                return {
+                    code: normalized,
+                    local: hm,
+                    zone,
+                    sgt: '(conversion failed)'
+                };
+            }
 
-    if (orphaned.length) {
-
-        console.warn(
-            '[AIRPORT_TZ] Orphaned timezone(s):',
-            orphaned.join(', ')
-        );
-    }
-
-
-    return {
-        valid: missing.length === 0,
-        missing,
-        orphaned
-    };
-}
-
-
-// Run the validation once when the app loads.
-//
-// This does not throw, so a missing timezone cannot crash the
-// entire roster application.
-const TZ_VALIDATION =
-    validateAirportTimezones();
-
-
-// ============================================================
-// CONSOLE DEBUG HELPERS
-// ============================================================
-//
-// Inert unless explicitly called from the browser console.
-//
-// Examples:
-//   debugAirportTimezone('LHR');
-//   debugSgtConversion('LHR', '2027-01-15', '10:00');
-//
-
-function debugAirportTimezone(code) {
-
-    const normalized =
-        String(code || '')
-            .trim()
-            .toUpperCase();
-
-    const zone =
-        airportZone(normalized);
-
-    return {
-        code: normalized,
-        zone: zone || '(unknown)'
-    };
-}
-
-
-function debugSgtConversion(code, ymd, hm) {
-
-    const normalized =
-        String(code || '')
-            .trim()
-            .toUpperCase();
-
-    const zone =
-        airportZone(normalized);
-
-
-    if (!zone) {
-
-        return {
-            code: normalized,
-            local: hm,
-            zone: '(unknown)',
-            sgt: ''
-        };
-    }
-
-
-    const utcMs =
-        zonedWallToUtcMs(
-            ymd,
-            hm,
-            zone
-        );
-
-
-    if (!Number.isFinite(utcMs)) {
-
-        return {
-            code: normalized,
-            local: hm,
-            zone,
-            sgt: '(conversion failed)'
-        };
-    }
-
-
-    const sgt =
-        new Intl.DateTimeFormat(
-            'en-GB',
-            {
+            const sgt = new Intl.DateTimeFormat('en-GB', {
                 timeZone: 'Asia/Singapore',
                 year: 'numeric',
                 month: '2-digit',
@@ -8495,35 +8366,32 @@ function debugSgtConversion(code, ymd, hm) {
                 hour: '2-digit',
                 minute: '2-digit',
                 hourCycle: 'h23'
-            }
-        ).format(new Date(utcMs));
+            }).format(new Date(utcMs));
 
+            return {
+                code: normalized,
+                local: hm,
+                zone,
+                sgt
+            };
+        }
+        const countryToRegion = {
+            AU: "Australia / New Zealand", NZ: "Australia / New Zealand",
+            CN: "Orient", HK: "Orient", MO: "Orient", TW: "Orient", KR: "Orient", MN: "Orient",
+            JP: "Japan",
+            US: "North America", CA: "North America", MX: "North America", BR: "North America", AR: "North America",
+            GB: "Europe", FR: "Europe", DE: "Europe", NL: "Europe", ES: "Europe", IT: "Europe", CH: "Europe", AT: "Europe", BE: "Europe", DK: "Europe", SE: "Europe", NO: "Europe", FI: "Europe", GR: "Europe", TR: "Europe", IE: "Europe", PL: "Europe",
+            AE: "Middle East", QA: "Middle East", SA: "Middle East", BH: "Middle East", KW: "Middle East", OM: "Middle East",
+            ZA: "South Africa",
+            IN: "South Asia", BD: "South Asia", LK: "South Asia", MV: "South Asia", NP: "South Asia",
+            SG: "Southeast Asia", MY: "Southeast Asia", TH: "Southeast Asia", ID: "Southeast Asia", PH: "Southeast Asia", VN: "Southeast Asia", MM: "Southeast Asia", KH: "Southeast Asia", BN: "Southeast Asia", LA: "Southeast Asia"  // v1.43.0 hotfix round 12: Brunei + Laos (owner order, SEA rates)
+        };
 
-    return {
-        code: normalized,
-        local: hm,
-        zone,
-        sgt
-    };
-}
-const countryToRegion = {
-  AU: "Australia / New Zealand", NZ: "Australia / New Zealand",
-  CN: "Orient", HK: "Orient", MO: "Orient", TW: "Orient", KR: "Orient", MN: "Orient",
-  JP: "Japan",
-  US: "North America", CA: "North America", MX: "North America", BR: "North America", AR: "North America",
-  GB: "Europe", FR: "Europe", DE: "Europe", NL: "Europe", ES: "Europe", IT: "Europe", CH: "Europe", AT: "Europe", BE: "Europe", DK: "Europe", SE: "Europe", NO: "Europe", FI: "Europe", GR: "Europe", TR: "Europe", IE: "Europe", PL: "Europe",
-  AE: "Middle East", QA: "Middle East", SA: "Middle East", BH: "Middle East", KW: "Middle East", OM: "Middle East",
-  ZA: "South Africa",
-  IN: "South Asia", BD: "South Asia", LK: "South Asia", MV: "South Asia", NP: "South Asia",
-  SG: "Southeast Asia", MY: "Southeast Asia", TH: "Southeast Asia", ID: "Southeast Asia", PH: "Southeast Asia", VN: "Southeast Asia", MM: "Southeast Asia", KH: "Southeast Asia", BN: "Southeast Asia", LA: "Southeast Asia"  // v1.43.0 hotfix round 12: Brunei + Laos (owner order, SEA rates)
-};
-
-
-function getRegionForAirport(code) {
-  const airport = airports.find((a) => a.code === code);
-  if (!airport) return null;
-  return countryToRegion[airport.countryCode] || null;
-}
+        function getRegionForAirport(code) {
+            const airport = airports.find((a) => a.code === code);
+            if (!airport) return null;
+            return countryToRegion[airport.countryCode] || null;
+        }
 
         function isUsAirport(code) {
             const raw = String(code || '').toUpperCase().replace(/[^A-Z]/g, '');
@@ -8572,11 +8440,8 @@ function getRegionForAirport(code) {
         let shippedRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
         let activeRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
 
-        function ratesEsc(s) {
-            return String(s == null ? '' : s).replace(/[&<>"']/g, (ch) => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[ch]));
-        }
+        // round 22 (F-04): delegate to the one escape table (caEsc above).
+        function ratesEsc(s) { return caEsc(s); }
 
         function cloneRates(obj) {
             return JSON.parse(JSON.stringify(obj || {}));
@@ -9417,12 +9282,12 @@ function getRegionForAirport(code) {
             // a hidden card — the same engine, no chat side effects.
             calcIdCounter++;
             const id = 'calc-' + calcIdCounter;
-            
+
             const chatContainer = target || document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
             msgDiv.className = 'flex items-start gap-3 mt-4 w-full chat-anim-in';
-            
-            
+
+
             let calcTitle = 'COP Allowance Calculator';
             let ifaHeader = '';
             let lmaHeader = '';
@@ -9521,7 +9386,7 @@ function getRegionForAirport(code) {
                     <p id="${id}-calc-hint" class="calc-hint empty:hidden ca-micro font-bold text-gray-500 text-center mt-2"></p>
                 </div>
             `;
-            
+
             chatContainer.appendChild(msgDiv);
             if (!target) {
                 noteBubbleShown();
@@ -9915,7 +9780,7 @@ function getRegionForAirport(code) {
             if (mode === 'ifa' || mode === 'both') {
                 const typeSel = document.getElementById(`${id}-flight-type`);
                 const cntSel = document.getElementById(`${id}-sector-count`);
-                
+
                 const renderIfaSectors = () => {
                     const container = document.getElementById(`${id}-ifa-sectors`);
                     const count = parseInt(cntSel.value);
@@ -10068,7 +9933,7 @@ function getRegionForAirport(code) {
                     div.setAttribute('data-idx', String(idx));
                     div.setAttribute('data-arr-state', 'idle');
                     div.setAttribute('data-dep-state', 'idle');
-                    
+
                     const today = todayLocalYMD();
                     let defaultArr = today;
                     let defaultDep = addLocalDays(today, 2);
@@ -10187,7 +10052,7 @@ function getRegionForAirport(code) {
                     }, 10);
                     bindTimeInputs(id);
                     if (!caBulkBuild) syncCalcUiAll();
-                    
+
                     if (idx === 3) btnAdd.classList.add('hidden'); // max 3
                     lmaPaintTripBar();
                 };
@@ -10238,7 +10103,7 @@ function getRegionForAirport(code) {
                         const idx = parseInt(e.target.dataset.idx);
                         const val = e.target.value;
                         if (!val) return;
-                        
+
                         let prevDep = addLocalDays(val, 1);
                         const dep = document.getElementById(`${id}-lma-d${idx}`);
                         if (dep) { dep.value = prevDep; syncDateBtn(dep); }
@@ -10291,7 +10156,7 @@ function getRegionForAirport(code) {
                 // Default mode hides the time / LMA fields, so the flight number is the
                 // one thing the crew must supply — keep Calculate greyed until it is.
                 const fnRequired = calcUiMode === 'default';
-                
+
                 const textInputs = containerNode.querySelectorAll('input[type="text"]');
                 textInputs.forEach(inp => {
                     if (!fnRequired && (inp.classList.contains('ifa-fn-input') || inp.classList.contains('lma-fn-input'))) return;
@@ -10316,7 +10181,7 @@ function getRegionForAirport(code) {
                         }
                     }
                 });
-                
+
                 // The flight time must be present whether the crew typed it or Fetch
                 // filled it. Default mode hides the field, so Fetch is how it lands —
                 // but Calculate must not fire on a sector with no duration at all.
@@ -10843,7 +10708,7 @@ function getRegionForAirport(code) {
                     } else if (val.length === 4) {
                         let hi = parseInt(val.slice(0, 2));
                         let mi = parseInt(val.slice(2, 4));
-                        
+
                         if (isLma) {
                             if (hi > 23) hi = 23;
                             if (mi > 59) mi = 59;
@@ -10901,11 +10766,11 @@ function getRegionForAirport(code) {
                 newInp.addEventListener('input', (e) => {
                     let val = e.target.value.trim().toUpperCase();
                     e.target.value = val;
-                    
+
                     const container = e.target.closest('.relative');
                     const checkIcon = container.querySelector('.absolute.right-3');
                     const infoText = container.nextElementSibling;
-                    
+
                     if (val.length === 3) {
                         const airport = airports.find(a => a.code === val);
                         if (airport) {
@@ -11034,7 +10899,7 @@ function getRegionForAirport(code) {
             // the archive's reopen-view need (frozen at calculate time, so later
             // rate edits never rewrite a saved summary).
             const snap = { v: 1, type: '', sectorCount: 0, rankRate: 0, sectors: [], bonusCount: 0, bonusAmount: 0, tripSdpHm: '', ifaTotal: 0, lmaTotal: 0, grandTotal: 0, stations: [] };
-            
+
             // IFA
             if (mode === 'ifa' || mode === 'both') {
                 const type = document.getElementById(`${id}-flight-type`).value;
@@ -11065,12 +10930,12 @@ function getRegionForAirport(code) {
                 snap.type = isTurnaround ? 'Turnaround' : 'Layover';
                 snap.sectorCount = count;
                 snap.rankRate = rankRate;
-                
+
                 // Determine SG logic per 2.1
-                const isSgArr = is4 
+                const isSgArr = is4
                     ? (isTurnaround ? [true, false, true, false] : [true, false, false, false])
                     : [true, false];
-                
+
                 let sectors = [];
                 let tripSdp = 0;
 
@@ -11078,7 +10943,7 @@ function getRegionForAirport(code) {
                     const tInp = document.getElementById(`${id}-ifa-t${i}`);
                     const usInp = document.getElementById(`${id}-ifa-us${i}`);
                     const pxInp = document.getElementById(`${id}-ifa-px${i}`);
-                    
+
                     let hours = parseDuration(tInp.value);
                     // v1.40.1: an empty paxing sector borrows its Singapore
                     // leg's time (see ifaPaxPartnerHours).
@@ -11091,7 +10956,7 @@ function getRegionForAirport(code) {
                         const sdp = hours + buffer;
                         const px = pxInp ? pxInp.checked : false;
                         const us = usInp ? usInp.checked : false;
-                        
+
                         sectors.push({ hours, sdp, paxing: px, directUs: us, isSg: isSgArr[i-1] });
                         if (!px) tripSdp += sdp;
                     } else {
@@ -11101,10 +10966,10 @@ function getRegionForAirport(code) {
 
                 const sharedTurnMult = isTurnaround ? getTurnaroundMultiplier(tripSdp) : 0;
                 snap.tripSdpHm = formatHoursHM(tripSdp);
-                
+
                 sectors.forEach((sec, idx) => {
                     if (!sec) return;
-                    
+
                     let mult = 0;
                     let logic = '';
                     if (sec.paxing) {
@@ -11120,7 +10985,7 @@ function getRegionForAirport(code) {
                         mult = getLayoverMultiplier(sec.sdp);
                         logic = `Layover Bracket (SDP ${formatHoursHM(sec.sdp)})`;
                     }
-                    
+
                     const allowance = sec.hours * rankRate * mult;
                     ifaTotal += allowance;
                     const secBlock = document.querySelector(`#${id}-ifa-sectors [data-ifa-sector="${idx + 1}"]`);
@@ -11141,7 +11006,7 @@ function getRegionForAirport(code) {
                         arrYmd: secBlock ? (secBlock.getAttribute('data-arr-ymd') || '') : '',
                         logic: logic
                     });
-                    
+
                     ifaDetails.push(`
                         <div class="mb-3 p-3 ca-inset rounded-xl border ca-hairline">
                             <div class="flex justify-between font-bold text-sm mb-1">
@@ -11179,7 +11044,7 @@ function getRegionForAirport(code) {
                 // Find all active LMA blocks
                 const container = document.getElementById(`${id}-lma-sectors`);
                 const blocks = container.querySelectorAll('.ui-input.uppercase');
-                
+
                 blocks.forEach(inp => {
                     const idxStr = inp.id.match(/\d+$/)[0];
                     const iata = inp.value.trim().toUpperCase();
@@ -11231,22 +11096,22 @@ function getRegionForAirport(code) {
                         return;
                     }
                     snapStation.region = region;
-                    
+
                     const rates = REGION_RATES[region];
-                    
+
                     const arrDt = new Date(aDate + 'T00:00:00');
                     const depDt = new Date(dDate + 'T00:00:00');
                     const msDiff = depDt.getTime() - arrDt.getTime();
                     const daysDiff = Math.round(msDiff / (1000 * 60 * 60 * 24));
-                    
+
                     if (daysDiff < 0) { snapStation.skipped = 'Departs before it arrives'; snap.stations.push(snapStation); return; }
-                    
+
                     const parseMins = (t) => {
                         const m = t.match(/^(\d{1,2}):(\d{2})$/);
                         if (!m) return -1;
                         return parseInt(m[1]) * 60 + parseInt(m[2]);
                     };
-                    
+
                     const arrMins = parseMins(aTime);
                     const depMins = parseMins(dTime);
                     if (arrMins < 0 || depMins < 0) { snapStation.skipped = 'Unreadable times'; snap.stations.push(snapStation); return; }
@@ -11268,11 +11133,11 @@ function getRegionForAirport(code) {
 
                     let stationTotal = 0;
                     let dayRows = [];
-                    
+
                     for (let d = 0; d <= daysDiff; d++) {
                         let currDt = new Date(arrDt.getTime() + d * 24*60*60*1000);
                         let bc=0, lc=0, dc=0;
-                        
+
                         if (daysDiff === 0) {
                             // v1.40.0, Clause 36(4): a same-day transit earns
                             // meals only when it spans 3h+ from arrival to
@@ -11295,7 +11160,7 @@ function getRegionForAirport(code) {
                         } else {
                             bc++; lc++; dc++;
                         }
-                        
+
                         let dayCost = (bc*rates.b) + (lc*rates.l) + (dc*rates.d);
                         stationTotal += dayCost;
                         mealB += bc;
@@ -11309,7 +11174,7 @@ function getRegionForAirport(code) {
                             b: bc, l: lc, d: dc,
                             cost: Math.round(dayCost * 100) / 100
                         });
-                        
+
                         if (bc>0 || lc>0 || dc>0) {
                             dayRows.push(`
                                 <div class="flex justify-between items-center py-1.5 border-b ca-hairline last:border-0">
@@ -11737,7 +11602,7 @@ function getRegionForAirport(code) {
             if (stv) stv.classList.add('hidden'); // the pinned totals bar is the combined summary's alone
             const csvBtnSingle = document.getElementById('btn-results-csv');
             if (csvBtnSingle) csvBtnSingle.classList.add('hidden'); // v1.33.0: CSV is the combined summary's
-            
+
             let html = `
                 <div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">
                     <p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>
@@ -11854,7 +11719,7 @@ function getRegionForAirport(code) {
             backdrop.classList.remove('hidden');
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             caSheetGlideArm(sheet, backdrop, () => { content.scrollTop = 0; });
-            
+
             // Post result message to chat
             let msg = '';
             if (isTurnaround && lmaDetails.length === 0) {
@@ -11869,7 +11734,7 @@ function getRegionForAirport(code) {
             } else {
                 msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
             }
-            
+
             setTimeout(() => {
                 addBotMessage(msg);
             }, 600);
@@ -13126,7 +12991,7 @@ function getRegionForAirport(code) {
         });
     </script>
     <script>
-        
+
 
         function loadRecentFlights() {
             try {
@@ -13227,23 +13092,23 @@ function getRegionForAirport(code) {
             const chatContainer = document.getElementById('chat-container');
             const msgDiv = document.createElement('div');
             msgDiv.className = 'flex items-start gap-3 mt-4 w-full chat-anim-in';
-            
+
             const uniqueId = Date.now();
-            
+
             const today = new Date();
             const tzOffset = today.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(today.getTime() - tzOffset)).toISOString().split('T')[0];
-            
+
             const tomorrow = new Date(today);
             tomorrow.setDate(today.getDate() + 1);
             const tomorrowISOTime = (new Date(tomorrow.getTime() - tzOffset)).toISOString().split('T')[0];
-            
+
             const maxDate = new Date(today);
             maxDate.setDate(today.getDate() + 42);
             const maxLocalISOTime = (new Date(maxDate.getTime() - tzOffset)).toISOString().split('T')[0];
 
             let headerText = 'Inflight Menu';
-            
+
             msgDiv.innerHTML = `
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">
                     <input type="hidden" id="fv-mode-${uniqueId}" value="${mode}">
@@ -13288,7 +13153,7 @@ function getRegionForAirport(code) {
                     </div>
                 </div>
             `;
-            
+
             chatContainer.appendChild(msgDiv);
             noteBubbleShown();
             makeCardFoldable(msgDiv.querySelector('.glass-bubble'));
@@ -13362,11 +13227,11 @@ function getRegionForAirport(code) {
             const dateInput = document.getElementById(`fv-selected-date-${id}`);
             const actionArea = document.getElementById(`fv-action-area-${id}`);
             const loading = document.getElementById(`fv-loading-${id}`);
-            
+
             let rawFlight = flightInput.value.trim().toUpperCase().replace(/\s+/g, '');
             const match = rawFlight.match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/);
             const dateStr = dateInput.value;
-            
+
             if (match && dateStr) {
                 const side = menuDateSide(dateStr);
                 if (side) {
@@ -13376,7 +13241,7 @@ function getRegionForAirport(code) {
                 actionArea.classList.add('hidden');
                 loading.classList.remove('hidden');
                 playChatAnim(loading);
-                
+
                 clearTimeout(fetchTimeout);
                 const run = () => executeFetchCabins(id, match[1], dateStr, document.getElementById('fv-mode-' + id).value);
                 if (immediate) run();
@@ -13411,7 +13276,7 @@ function getRegionForAirport(code) {
         async function executeFetchCabins(id, flightNumber, dateStr, mode, useSaved) {
             const actionArea = document.getElementById(`fv-action-area-${id}`);
             const loading = document.getElementById(`fv-loading-${id}`);
-            
+
             // v1.26.0: offline (or a retry after a failed fetch) renders the
             // flight card from the saved cabin schedule; the per-cabin menus
             // come from their own caches in the viewer/printer.
@@ -13428,7 +13293,7 @@ function getRegionForAirport(code) {
                     return;
                 }
             }
-            
+
             try {
                 let data, menuGuess = null;
                 const guessCabin = 'JCL';
@@ -13448,7 +13313,7 @@ function getRegionForAirport(code) {
                         fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin }) }),
                         fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'menu', payload: payloadMenuGuess }) })
                     ]);
-                    
+
                     try {
                         data = await res.json();
                     } catch(e) {
@@ -13459,12 +13324,12 @@ function getRegionForAirport(code) {
                     } catch (e) {
                         menuGuess = null;
                     }
-                    
+
                     if (data.error) {
                         throw new Error(data.error);
                     }
                 }
-                
+
                 if (data.statusCode === 101) {
                     loading.classList.add('hidden');
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Menus not published for this flight/date yet.</div>';
@@ -13475,7 +13340,7 @@ function getRegionForAirport(code) {
                 }
                 else if (data.statusCode === 200 && data.cabinClasses && data.cabinClasses.length > 0) {
                     try { localStorage.setItem(sqCabinCacheKey(flightNumber, dateStr), JSON.stringify({ timestamp: Date.now(), data: data })); } catch (e) {}
-                    
+
                     // Legs are flight-level; menu was fetched in parallel with JCL.
                     const firstCabin = data.cabinClasses[0];
                     let menuData = (menuGuess && menuGuess.statusCode === 200 && menuGuess.legs) ? menuGuess : null;
@@ -13516,22 +13381,22 @@ function getRegionForAirport(code) {
                     } else {
                         await fetchMenuIfNeeded();
                     }
-                    
+
                     loading.classList.add('hidden');
-                    
+
                     currentMenuSearch.flightNumber = flightNumber;
                     currentMenuSearch.date = dateStr;
                     currentMenuSearch.cabins = data.cabinClasses;
                     currentMenuSearch.aircraftType = data.aircraftType || data.aircraft || '';
-                    
+
                     const menuLegs = (menuData && Array.isArray(menuData.legs)) ? menuData.legs.filter(l =>
                         l && l.flightDetails && l.flightDetails.departureAirportCode
                     ) : [];
                     const legs = cabinLegs.length ? cabinLegs : menuLegs;
                     const isMultiSector = legs.length > 1;
-                    
+
                     let contentHtml = '';
-                    
+
                     // 1. Sectors
                     if (isMultiSector) {
                         contentHtml += `
@@ -13551,21 +13416,21 @@ function getRegionForAirport(code) {
                             </div>
                         `;
                     }
-                    
+
                     // 2. Cabins
                     contentHtml += `
                         <div id="fv-cabins-section-${id}">
                             <label class="block ca-micro font-semibold uppercase tracking-wider text-gray-500 mb-2">Select Cabin/s</label>
                             <div class="flex flex-wrap gap-2 mb-4" id="fv-cabins-container-${id}">
                     `;
-                    
+
                     const cabinNames = {
                         'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
                         'JCL': 'Business',
                         'SCL': 'Premium Economy',
                         'YCL': 'Economy'
                     };
-                    
+
                     data.cabinClasses.forEach(code => {
                         contentHtml += `
                             <button type="button" onclick="this.classList.toggle('selected-cabin'); this.classList.toggle('bg-sia-gold'); this.classList.toggle('text-black'); this.classList.toggle('border-sia-gold'); checkCabinsSelected('${id}');" data-cabin="${code}" class="h-11 px-3 border border-black/10 dark:border-white/10 rounded-lg text-xs font-bold whitespace-nowrap transition-colors">${cabinNames[code] || code}</button>
@@ -13575,7 +13440,7 @@ function getRegionForAirport(code) {
                             </div>
                         </div>
                     `;
-                    
+
                     // 3. Actions
                     contentHtml += `
                         <div class="flex gap-2 opacity-50 pointer-events-none" id="fv-actions-section-${id}">
@@ -13588,16 +13453,16 @@ function getRegionForAirport(code) {
                             </button>`}
                         </div>
                     `;
-                    
+
                     actionArea.innerHTML = contentHtml;
                     rememberRecentFlight(flightNumber, dateStr);
                     renderRecentFlightChips(id);
-                    
+
                     // Save sectors in dataset for single-sector flights
                     if (!isMultiSector && legs.length === 1) {
                         actionArea.dataset.singleSector = legs[0].flightDetails.departureAirportCode + '-' + legs[0].flightDetails.arrivalAirportCode;
                     }
-                    
+
                     actionArea.classList.remove('hidden');
                     playChatAnim(actionArea);
                     lucide.createIcons();
@@ -13625,7 +13490,7 @@ function getRegionForAirport(code) {
                     playChatAnim(actionArea);
             }
         }
-        
+
         function toggleSector(id, btn) {
             btn.classList.toggle('selected-sector');
             btn.classList.toggle('bg-sia-gold');
@@ -13633,7 +13498,7 @@ function getRegionForAirport(code) {
             btn.classList.toggle('border-sia-gold');
             checkCabinsSelected(id);
         }
-        
+
         function checkCabinsSelected(id) {
             const cabinContainer = document.getElementById(`fv-cabins-container-${id}`);
             const selectedCabins = cabinContainer ? cabinContainer.querySelectorAll('.selected-cabin') : [];
@@ -13661,7 +13526,7 @@ function getRegionForAirport(code) {
                 return;
             }
             const selectedCabins = Array.from(selectedCabinBtns).map(b => b.getAttribute('data-cabin'));
-            
+
             // Collect sectors
             const actionArea = document.getElementById(`fv-action-area-${id}`);
             const sectorContainer = document.getElementById(`fv-sectors-container-${id}`);
@@ -13676,15 +13541,15 @@ function getRegionForAirport(code) {
             } else if (actionArea && actionArea.dataset.singleSector) {
                 selectedSectors = [actionArea.dataset.singleSector];
             }
-            
+
             const flightInput = document.getElementById(`fv-flight-${id}`);
             const flightNumber = flightInput.value.trim().toUpperCase().replace(/\s+/g, '').match(/^(?:SQ|SIA)?0*(\d{1,4})[A-Z]?$/)[1];
             const date = document.getElementById(`fv-selected-date-${id}`).value;
-            
+
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
             currentMenuSearch.selectedSectors = selectedSectors;
-            
+
             addBotMessage('Fetching menu from seat pocket.');
             enqueueBot(() => {
                 if (actionType === 'menu') {
@@ -13698,13 +13563,13 @@ function getRegionForAirport(code) {
             });
         }
 
-        
+
         function toggleMenuDropdown(type) {
             const menu = document.getElementById('menu-' + type + '-menu');
             const icon = document.getElementById('menu-' + type + '-icon');
             const row = document.getElementById('menu-dropdown-row');
             const isClosed = menu.classList.contains('max-h-0');
-            
+
             // Close others
             ['cabin', 'sector', 'culinary'].forEach(t => {
                 const m = document.getElementById('menu-' + t + '-menu');
@@ -13715,7 +13580,7 @@ function getRegionForAirport(code) {
                     i.classList.remove('rotate-180');
                 }
             });
-            
+
             if (isClosed && menu && icon) {
                 if (row) {
                     row.classList.remove('overflow-x-auto', 'overflow-y-hidden');
@@ -13813,19 +13678,19 @@ function getRegionForAirport(code) {
             currentMenuSearch.selectedSector = '';
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
-            
+
             const cabinWrap = document.getElementById('menu-cabin-wrap');
             const cabinList = document.getElementById('menu-cabin-list');
             const cabinLabel = document.getElementById('menu-cabin-label');
             cabinList.innerHTML = '';
-            
+
             const cabinNames = {
                 'FCL': menuCabinLabel('FCL', currentMenuSearch.aircraftType),
                 'JCL': 'Business',
                 'SCL': 'Premium Economy',
                 'YCL': 'Economy'
             };
-            
+
             if (cabinClasses.length > 1) {
                 cabinWrap.classList.remove('hidden');
                 cabinClasses.forEach(code => {
@@ -13844,7 +13709,7 @@ function getRegionForAirport(code) {
             } else {
                 cabinWrap.classList.add('hidden');
             }
-            
+
             menuViewState = { category: 'meals', mealTab: 0 };
             currentMealServices = [];
             loadMenu(cabinClasses[0]);
@@ -13901,16 +13766,14 @@ function getRegionForAirport(code) {
             openNextFlightViewer(fn, ymd);
         }
 
+        // Inflight Menu Viewer Logic (Step 5)
 
-
-// Inflight Menu Viewer Logic (Step 5)
-        
         var currentMenuSearch = { flightNumber: '', date: '', cabins: [], selectedCabin: '', selectedSector: '', imageByName: Object.create(null), imageIdByName: Object.create(null) }; // var: the sector-filter state is reachable by the tests
         let menuViewState = { category: 'meals', mealTab: 0 };
         let currentMealServices = [];
         let menuLoadGen = 0;
         const SQ_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours
-        
+
         function closeMenuViewer(immediate) {
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
@@ -13957,12 +13820,12 @@ function getRegionForAirport(code) {
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeMenuLightbox();
         });
-        
+
         document.getElementById('menu-backdrop').addEventListener('click', closeMenuViewer);
         document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
         const menuToPrint = document.getElementById('btn-menu-to-print');
         if (menuToPrint) menuToPrint.addEventListener('click', switchViewerToPrint);
-        
+
         function showMenuState(state) {
             const st3 = document.getElementById('menu-state-3');
             const ldg = document.getElementById('menu-loading');
@@ -13970,14 +13833,14 @@ function getRegionForAirport(code) {
             if(st3) st3.classList.add('hidden');
             if(ldg) ldg.classList.add('hidden');
             if(sticky) sticky.classList.add('hidden');
-            
+
             if (state === 3 && st3) {
                 st3.classList.remove('hidden');
                 if (sticky) sticky.classList.remove('hidden');
             }
             else if (state === 'loading' && ldg) ldg.classList.remove('hidden');
         }
-        
+
         async function loadMenu(cabinClass) {
             const cacheKey = `SQ${currentMenuSearch.flightNumber}:${currentMenuSearch.date}:${cabinClass}`;
             currentMenuSearch.selectedCabin = cabinClass;
@@ -14020,14 +13883,14 @@ function getRegionForAirport(code) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ endpoint: 'menu', payload })
                 });
-                
+
                 const data = await res.json();
                 if (!stillMine()) return;
-                
+
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                
+
                 if (data.statusCode === 200 && data.legs) {
                     localStorage.setItem(cacheKey, JSON.stringify({
                         timestamp: Date.now(),
@@ -14043,7 +13906,7 @@ function getRegionForAirport(code) {
                 serveStaleCache(cacheKey, 'Network error while fetching menu. Details: ' + String(err.message || err));
             }
         }
-        
+
         function serveStaleCache(key, errMsg) {
             const cachedStr = localStorage.getItem(key);
             if (cachedStr) {
@@ -14063,7 +13926,7 @@ function getRegionForAirport(code) {
                 }
             }
         }
-        
+
         function formatDuration(depUtc, arrUtc) {
             if (!depUtc || !arrUtc) return '';
             // Format: "2026-08-29 21:20:00"
@@ -14071,24 +13934,24 @@ function getRegionForAirport(code) {
             const d2 = new Date(arrUtc.replace(' ', 'T') + 'Z');
             let diffMs = d2 - d1;
             if (diffMs < 0) diffMs = 0;
-            
+
             const hrs = Math.floor(diffMs / 3600000);
             const mins = Math.floor((diffMs % 3600000) / 60000);
             return `${hrs}h ${mins}m`;
         }
-        
+
         function getDayShift(depLocal, arrLocal) {
             // Format: "2026-08-29 14:20:00"
             const depDate = depLocal.split(' ')[0];
             const arrDate = arrLocal.split(' ')[0];
-            
+
             const d1 = new Date(depDate);
             const d2 = new Date(arrDate);
-            
+
             const shift = Math.round((d2 - d1) / 86400000);
             return shift > 0 ? `+${shift}d` : '';
         }
-        
+
         function renderMenu(data, isStale, savedAtTs) {
             const badge = document.getElementById('menu-offline-badge');
             if (isStale) {
@@ -14098,7 +13961,7 @@ function getRegionForAirport(code) {
             } else {
                 badge.classList.add('hidden');
             }
-            
+
             indexMenuImages(data);
             const sectorWrap = document.getElementById('menu-sector-wrap');
             const sectorList = document.getElementById('menu-sector-list');
@@ -14106,7 +13969,7 @@ function getRegionForAirport(code) {
             // Airport codes now travel inside markup (the lucide plane icon), so escape them.
             const escCode = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             sectorList.innerHTML = '';
-            
+
             // Filter legs based on user selection in chat card
             const filteredLegs = data.legs.filter(leg => {
                 if (!currentMenuSearch.selectedSectors || currentMenuSearch.selectedSectors.length === 0) return true;
@@ -14116,7 +13979,7 @@ function getRegionForAirport(code) {
             // v1.34.2: a sector filter that matches nothing must never leave
             // the previous flight's menu on screen — fall back to every leg.
             if (!filteredLegs.length && data.legs.length) filteredLegs.push(...data.legs);
-            
+
             const legCode = (leg) => leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
             const wanted = currentMenuSearch.selectedSector;
             const pick = filteredLegs.find((leg) => legCode(leg) === wanted) || filteredLegs[0];
@@ -14147,7 +14010,7 @@ function getRegionForAirport(code) {
 
             // Culinary Dropdown reset (will be populated in renderSector if applicable)
             document.getElementById('menu-culinary-wrap').classList.add('hidden');
-            
+
             showMenuState(3);
             if (pick) {
                 currentMenuSearch.selectedSector = legCode(pick);
@@ -14157,7 +14020,7 @@ function getRegionForAirport(code) {
             // or stale — because the comparison is about content, not age.
             renderMenuDiffRow(currentMenuSearch.selectedCabin, data);
         }
-        
+
         function menuHairlineTitle(text, extraHtml) {
             if (!text) return '';
             return `
@@ -14663,18 +14526,18 @@ function getRegionForAirport(code) {
         function renderSector(leg) {
             const container = document.getElementById('menu-sector-content');
             container.innerHTML = '';
-            
+
             // 1. Flight Details Header (Redesigned Hero Card)
             const fd = leg.flightDetails;
             const dur = formatDuration(fd.departureUtcDate, fd.arrivalUtcDate);
             const dayShift = getDayShift(fd.departureLocalDate, fd.arrivalLocalDate);
             const depTime = fd.departureLocalDate.substring(11, 16);
             const arrTime = fd.arrivalLocalDate.substring(11, 16);
-            
+
             const dObj = new Date(currentMenuSearch.date + 'T00:00:00');
             const dateDisplay = dObj.toLocaleDateString('en-GB', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'}).toUpperCase();
             const topHeader = `SQ${currentMenuSearch.flightNumber} - ${dateDisplay}`;
-            
+
             const headerHtml = `
                 <div class="bg-gradient-to-br from-[#F3E6C8] to-[#FBF7F0] text-sia-navy dark:from-[#081021] dark:to-black dark:text-white rounded-3xl p-5 relative overflow-hidden shadow-xl border border-sia-gold/30 dark:border-white/10 mb-4">
                     <div class="text-center ca-micro uppercase tracking-[0.2em] font-bold text-sia-gold mb-5 opacity-90">
@@ -14714,7 +14577,7 @@ function getRegionForAirport(code) {
                     </div>
                 </div>
             `;
-            
+
             const hc = document.getElementById('menu-hero-content');
             if (hc) hc.innerHTML = headerHtml;
             else container.insertAdjacentHTML('beforeend', headerHtml);
@@ -14750,7 +14613,7 @@ function getRegionForAirport(code) {
                 const culinaryList = document.getElementById('menu-culinary-list');
                 const culinaryLabel = document.getElementById('menu-culinary-label');
                 culinaryList.innerHTML = '';
-                
+
                 let defaultIdx = culinaryOptions[0] ? culinaryOptions[0].idx : 0;
                 let defaultName = culinaryOptions[0] ? culinaryOptions[0].name : 'Culinary';
                 culinaryOptions.forEach((opt) => {
@@ -14772,7 +14635,7 @@ function getRegionForAirport(code) {
                 });
                 culinaryLabel.textContent = defaultName;
                 culinaryWrap.classList.remove('hidden');
-                
+
                 setTimeout(() => { switchCulinarySelection(defaultIdx); }, 10);
             } else {
                 culinaryWrap.classList.add('hidden');
@@ -14792,14 +14655,14 @@ function getRegionForAirport(code) {
                     </div>
                 </div>
             `;
-            
+
             const pillWrap = document.getElementById('menu-category-pills-wrap');
             if (pillWrap) {
                 pillWrap.innerHTML = catPillsHtml;
             } else {
                 container.insertAdjacentHTML('beforeend', catPillsHtml);
             }
-            
+
             // Build wrappers
             const wrapHtml = `
                 <div id="menu-cat-meals" class="menu-cat-section space-y-4"></div>
@@ -14808,12 +14671,12 @@ function getRegionForAirport(code) {
                 <div id="menu-cat-amenities" class="menu-cat-section hidden space-y-4"></div>
             `;
             container.insertAdjacentHTML('beforeend', wrapHtml);
-            
+
             const mealsWrap = container.querySelector('#menu-cat-meals');
             const drinksWrap = container.querySelector('#menu-cat-drinks');
             const snacksWrap = container.querySelector('#menu-cat-snacks');
             const amWrap = container.querySelector('#menu-cat-amenities');
-            
+
             // Flags
             if (leg.isNoMenuPlanned) {
                 mealsWrap.insertAdjacentHTML('beforeend', `<div class="bg-blue-500/10 text-blue-600 dark:text-blue-400 p-3 rounded-xl text-sm border border-blue-500/20">Menu may change prior to departure.</div>`);
@@ -14840,7 +14703,7 @@ function getRegionForAirport(code) {
             if (hasMeals) {
                 const meals = menuEn.meals;
                 currentMealServices = meals.map(m => m.mealServiceName || 'Meal');
-                
+
                 // Build Tabs (Centered)
                 let mealTabsHtml = '';
                 if (meals.length > 1) {
@@ -14856,22 +14719,22 @@ function getRegionForAirport(code) {
                 } else {
                     mealsWrap.insertAdjacentHTML('beforeend', mealTabsHtml);
                 }
-                
+
                 meals.forEach((meal, idx) => {
                     const mealDiv = document.createElement('div');
                     mealDiv.className = `meal-tab-content space-y-4 ${idx === 0 ? '' : 'hidden'}`;
                     mealDiv.id = `meal-content-${idx}`;
-                    
+
                     if (meal.selectionDetails && meal.selectionDetails.length > 0) {
                         meal.selectionDetails.forEach((selection, selIdx) => {
                             const selDiv = document.createElement('div');
                             // If culinary dropdown exists, hide non-matching culinary choices
                             selDiv.className = `space-y-4 culinary-section-${selIdx} ${selIdx === 0 ? '' : 'hidden'}`;
-                            
+
                             if (meal.selectionDetails.length > 1) {
                                 selDiv.insertAdjacentHTML('beforeend', `<div class="font-bold text-sia-gold mb-2 text-center hidden">${selection.name}</div>`);
                             }
-                            
+
                             if (selection.mealCourses) {
                                 selection.mealCourses.forEach(course => {
                                     const dishCount = (course.items || []).length;
@@ -14879,7 +14742,7 @@ function getRegionForAirport(code) {
                                         ? `<div class="italic text-xs text-gray-500 dark:text-gray-400 text-center">Choose one of ${dishCount}</div>`
                                         : '';
                                     let courseHtml = menuHairlineTitle(course.category, choiceLine);
-                                    
+
                                     if (course.items) {
                                         const dishParts = [];
                                         course.items.forEach(item => {
@@ -15005,7 +14868,7 @@ function getRegionForAirport(code) {
             if (hasAmenities) {
                 amWrap.insertAdjacentHTML('beforeend', menuCourseCard(menuBulletList(leg.amenities.items, 'itemName', 'itemDescription')));
             }
-            
+
             applyMenuViewState();
             scrollMenuToTop();
             lucide.createIcons();
@@ -15050,7 +14913,7 @@ function getRegionForAirport(code) {
             }
             updateMealServiceTitle();
         }
-        
+
         function switchMenuCategory(cat, btnElement, opts) {
             opts = opts || {};
             menuViewState.category = cat;
@@ -15060,11 +14923,11 @@ function getRegionForAirport(code) {
             });
             btnElement.classList.remove('text-sia-navy', 'dark:text-gray-200');
             btnElement.classList.add('bg-sia-gold', 'text-black');
-            
+
             document.querySelectorAll('.menu-cat-section').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById('menu-cat-' + cat);
             if(target) target.classList.remove('hidden');
-            
+
             const tabsWrap = document.getElementById('menu-meal-tabs-wrap');
             if (tabsWrap) {
                 if (cat === 'meals') {
@@ -15080,7 +14943,7 @@ function getRegionForAirport(code) {
             }
             scheduleMenuDescToggles();
         }
-        
+
         function switchMealTab(idx, btnElement, opts) {
             opts = opts || {};
             menuViewState.mealTab = parseInt(idx, 10) || 0;
@@ -15090,7 +14953,7 @@ function getRegionForAirport(code) {
             });
             btnElement.classList.remove('text-gray-500', 'hover:text-gray-700', 'dark:hover:text-gray-300');
             btnElement.classList.add('text-sia-gold', 'border-b-2', 'border-sia-gold');
-            
+
             document.querySelectorAll('.meal-tab-content').forEach(el => el.classList.add('hidden'));
             const target = document.getElementById('meal-content-' + idx);
             if(target) target.classList.remove('hidden');
@@ -15153,16 +15016,9 @@ function getRegionForAirport(code) {
             if (inn) inn.disabled = z >= PRINT_ZOOM_MAX;
         }
 
-        function escapePrintHtml(str) {
-            if (str == null || str === '') return '';
-            return String(str).replace(/[&<>"']/g, (ch) => ({
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
-            }[ch]));
-        }
+        // round 22 (F-04): a THIRD copy of the escape table (found by the
+        // one-table count pin) — delegates to caEsc like rosterEsc/ratesEsc.
+        function escapePrintHtml(str) { return caEsc(str); }
 
         function shortenCulinaryName(name) {
             if (!name) return '';
@@ -16377,7 +16233,7 @@ function getRegionForAirport(code) {
             setPrintLoading(true);
             openPrintSheetChrome();
             applyPrintChrome();
-            
+
 
             const ordered = [...cabinClasses].sort((a, b) => {
                 const ia = PRINT_CABIN_ORDER.indexOf(a);
@@ -17819,8 +17675,5 @@ function getRegionForAirport(code) {
             setTimeout(tick, 2500);
         }
     </script>
-</body>
-</html>
-script>
 </body>
 </html>

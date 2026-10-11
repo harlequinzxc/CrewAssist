@@ -866,5 +866,21 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq((src20.match(/caSheetGlideCancel\(/g) || []).length, 10, 'nine closers cancel it — closes cancel, opens arm');
   }
 
+  // --- round 22 (owner review): accessible names, clean tail, one class list each ---
+  {
+    const fs22 = require('fs');
+    // fresh boot: the sweep must see pristine static markup, not buttons
+    // mutated by earlier pins (two-tap armed states etc.)
+    const { d: d22 } = await boot(APP);
+    const unlabelled = [...d22.querySelectorAll('button')]
+      .filter(b => !b.textContent.trim() && (b.querySelector('i,svg,img')) && !b.getAttribute('aria-label') && !b.getAttribute('title'))
+      .map(b => b.id);
+    R.eq(unlabelled.length, 0, 'F-05: every icon-only button carries an accessible name (was: theme, settings, reset, send + four sheet closers)');
+    R.ok(!d22.body.textContent.includes('script>'), 'F-01: no stray post-</html> text re-parented into <body>');
+    const src22 = fs22.readFileSync(APP, 'utf8');
+    R.eq((src22.match(/'text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-\[0_0_15px_rgba\(201,162,39,0\.3\)\]', 'border-transparent'/g) || []).length, 2, 'F-06: the gold-pill class list exists exactly twice (caGoldPillOn add + caGoldPillOff remove) — was six inlined sites across gender, rank and reset');
+    R.eq((src22.match(/'opacity-0', 'scale-75', 'pointer-events-none'/g) || []).length, 2, 'F-06: the float-pill class list exists exactly twice (inside caPillPaint) — was two inlined sites');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

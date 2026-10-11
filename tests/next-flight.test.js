@@ -642,7 +642,7 @@ function rosterItems(flight, sector, dateTok, opts) {
     // app script, so the STRUCTURE is verified node-side from the source;
     // the FUNCTIONS (which close over the consts) are verified page-side
     const src = fs.readFileSync(APP, 'utf8');
-    const listSrc = src.match(/const airports = \[[\s\S]*?\n\];/)[0];
+    const listSrc = src.match(/const airports = \[[\s\S]*?\n\s*\];/)[0]; // round 23: indent-agnostic closer, like the AIRPORT_TZ regex below (the round-23 reformat moved it onto the file ladder)
     // round 16: the map lives at column 0 in the owner's section format —
     // the closer indent is no longer pinned (the old 8-space regex would
     // run past the map and over-capture)
