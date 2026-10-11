@@ -84,7 +84,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
         ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 8 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the consolidated 1.43.0 entry (destination overlay + roster capture + the hotfix rounds as six themed fix pointers)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v213'), 'the service-worker cache name is bumped to v213 (APP_VERSION 1.43.0, round 31 feed rework)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v214'), 'the service-worker cache name is bumped to v214 (APP_VERSION 1.43.0, round 32 nudge fixture)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -450,6 +450,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return light !== dark;
         }), 'round 31: both themes carry the pair — hero + nudge computed fills shift with the dark class');
         ok(await page.evaluate(() => !!document.querySelector('#ca-nextflight-card .ca-hero-edge') && getComputedStyle(document.querySelector('#ca-nextflight-card .ca-hero-edge')).height === '2px'), 'round 31: the gold top edge rides the hero (computed 2px)');
+        // round 32: the nudge is a fixture — losing signal must never strip it
+        await page.setOfflineMode(true);
+        await page.evaluate(() => refreshNextFlightUi());
+        ok(await page.evaluate(() => !!document.getElementById('ca-menunudge-card')), 'round 32: going offline in the real browser never strips the live nudge');
+        await page.setOfflineMode(false);
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

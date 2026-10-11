@@ -13,7 +13,7 @@ const SW = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
 const IX = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 const BASE = 'https://crewassist.test';      // the SW's scope origin (no trailing slash)
 const ORIGIN = BASE + '/';                   // base for relative-URL resolution
-const CACHE = 'crewassist-v213';
+const CACHE = 'crewassist-v214';
 
 // Real CacheStorage keys are absolute URLs — normalise the same way so the
 // install's './index.html' and a navigation to the same document collide.
@@ -93,7 +93,7 @@ function bootSW() {
     const { env, fire, cache, tick } = bootSW();
     await fire('install'); await tick();
     const c = cache();
-    R.ok(!!c, 'install opens the v213 cache');
+    R.ok(!!c, 'install opens the v214 cache');
     R.ok(c.addAllCalls.indexOf(ORIGIN + 'index.html') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'tw.css') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'rates.json') !== -1, 'install precaches the shell, the compiled styles and rates');
     R.eq(c.addCalls.length, 4, 'the four CDN assets are fetched individually');
     fontsUrl = c.addCalls.filter((u) => u.indexOf('https://fonts.googleapis.com/css2') === 0)[0];

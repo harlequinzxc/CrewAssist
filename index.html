@@ -6597,31 +6597,112 @@
             const limit = ymdShift(todayLocalYMD(), NUDGE_WINDOW_DAYS);
             let dismissed = {};
             try { dismissed = JSON.parse(localStorage.getItem(NUDGE_KEY) || '{}') || {}; } catch (e) {}
-            return upcomingList().filter((f) => f.ymd <= limit && !menusSavedFor(f.fn, f.ymd) && !dismissed[f.fn + '|' + f.ymd]);
+            // round 32 (owner order): a saved flight no longer leaves the
+            // list — the nudge is a fixture until the crew closes it or the
+            // flight lands, so a reload keeps the tappable launcher alive
+            return upcomingList().filter((f) => f.ymd <= limit && !dismissed[f.fn + '|' + f.ymd]);
+        }
+        // round 32 (owner order): the nudge stays in the chat until the crew
+        // closes it or the flight lands — and when one sector of a
+        // multi-flight nudge is home, "just remove that line". These are the
+        // quiet-exit animations (the standing rule: nothing hides instantly).
+        function nfNudgeRowAway(row) {
+            row.style.transition = 'opacity .25s ease, max-height .25s ease, padding .25s ease';
+            row.style.maxHeight = row.offsetHeight + 'px';
+            row.style.overflow = 'hidden';
+            requestAnimationFrame(() => { row.style.opacity = '0'; row.style.maxHeight = '0'; row.style.paddingTop = '0'; row.style.paddingBottom = '0'; });
+            setTimeout(() => row.remove(), 280);
+        }
+        function nfNudgeCardAway(card) {
+            if (!card) return;
+            card.style.transition = 'opacity .25s ease, max-height .25s ease';
+            card.style.maxHeight = card.offsetHeight + 'px';
+            card.style.overflow = 'hidden';
+            requestAnimationFrame(() => { card.style.opacity = '0'; card.style.maxHeight = '0'; });
+            setTimeout(() => card.remove(), 280);
+        }
+        // one copy source for the render, the prune re-count and the sweep's
+        // done swap — modes: plain | saved (single, already offline) | done
+        function nfNudgeCopyHtml(flights, mode) {
+            if (mode === 'done') return 'Menus saved for <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> — tap one to open.';
+            const f = flights[0];
+            if (flights.length === 1) return mode === 'saved'
+                ? '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — menus saved, available offline for the flight.'
+                : '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.';
+            return 'You have <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> in the next 2 days — save all menus for offline view.';
+        }
+        // the surgical path: landed lines leave, the card itself stays as-is
+        function nfNudgePrune(card, flights, gone) {
+            gone.forEach((k) => {
+                const row = card.querySelector('.ca-menunudge-row[data-nf="' + k + '"]');
+                if (row) nfNudgeRowAway(row);
+            });
+            if (!flights.length) { nfNudgeCardAway(card); return; }
+            card.dataset.nfFlights = flights.map((f) => f.fn + '|' + f.ymd).join(',');
+            const copy = card.querySelector('.ca-nf-copy');
+            if (copy) copy.innerHTML = nfNudgeCopyHtml(flights, card.dataset.nfDone === '1' ? 'done' : 'plain');
         }
         function renderMenuNudge() {
             const old = document.getElementById('ca-menunudge-card');
-            // round 31: a nudge mid-sweep or already completed is live state
-            // — a refresh must not reap it (the old build renamed the id to
-            // a launcher for the same protection; same trick, cleaner form)
-            if (old && (old.dataset.nfBusy === '1' || old.dataset.nfDone === '1')) return;
+            // round 31: a sweep in flight is live state — untouched
+            if (old && old.dataset.nfBusy === '1') return;
+            // round 32 (owner order, "similar logic to What's New"): the
+            // nudge is a fixture of the chat. Offline it is never CREATED
+            // (the offer needs the network) — but a card already in the feed
+            // stays put, because the saved-rows launcher is most useful
+            // exactly when there is no signal.
+            if (!navigator.onLine) return;
+            const flights = menuNudgeFlights();
+            const stamp = flights.map((f) => f.fn + '|' + f.ymd).join(',');
+            const one = flights.length === 1;
+            const savedMark = one ? (menusSavedFor(flights[0].fn, flights[0].ymd) ? '1' : '0') : '';
+            if (old) {
+                const prev = (old.dataset.nfFlights || '').split(',').filter(Boolean);
+                if (prev.length) {
+                    // stable set (and stable single-save state) — untouched,
+                    // in any state: plain, partial or done
+                    if (prev.join(',') === stamp && (old.dataset.nfSaved || '') === savedMark) return;
+                    const nowKeys = flights.map((f) => f.fn + '|' + f.ymd);
+                    const gone = prev.filter((k) => nowKeys.indexOf(k) === -1);
+                    const added = nowKeys.filter((k) => prev.indexOf(k) === -1);
+                    if (gone.length && !added.length) { nfNudgePrune(old, flights, gone); return; }
+                    // a re-cast is due (the set grew) — but never on a
+                    // background tab: stripping a live card there is exactly
+                    // the vanishing the owner reported. The 60s sweep or the
+                    // visibilitychange re-cast it once the chat is back.
+                    if (!nextFlightChatActive()) return;
+                }
+                // the set grew or reshuffled (a fresh roster import), or the
+                // single flight's save state flipped — re-cast in place
+            }
             const hadOld = !!old;
             if (old) old.remove();
             if (!nextFlightChatActive()) return;
-            const flights = menuNudgeFlights();
             if (!flights.length) return;
             const el = document.createElement('div');
             el.id = 'ca-menunudge-card';
             el.className = 'flex items-start gap-3 mt-2 w-full' + (hadOld ? '' : ' chat-anim-in');
-            const one = flights.length === 1;
-            const copy = one
-                ? '<b class="text-sia-gold">SQ ' + rosterEsc(flights[0].fn) + '</b> to ' + rosterEsc(flights[0].arr) + ' departs <b>' + nextFlightRel(flights[0].ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.'
-                : 'You have <b class="text-sia-gold">' + flights.length + ' flights</b> in the next 2 days — save all menus for offline view.';
-            const rows = one ? '' : flights.map((f) =>
+            // round 32: the card carries its flight set (and, when single,
+            // its save state) — a later refresh prunes landed lines against
+            // this stamp instead of rebuilding under the crew's thumbs
+            el.dataset.nfFlights = stamp;
+            el.dataset.nfSaved = savedMark;
+            // round 32: saved flights ride as Saved pills; an all-saved multi
+            // set renders straight into the done form (a reload keeps the
+            // launcher alive — the What's New logic the owner ordered). A
+            // saved SINGLE keeps its live Open-menus door: it opens from the
+            // cache instantly, offline included.
+            const savedFlags = flights.map((f) => menusSavedFor(f.fn, f.ymd));
+            const done = !one && savedFlags.every(Boolean);
+            if (done) el.dataset.nfDone = '1';
+            const copy = nfNudgeCopyHtml(flights, done ? 'done' : (one && savedFlags[0] ? 'saved' : 'plain'));
+            const rows = one ? '' : flights.map((f, i) =>
                 '<button type="button" class="ca-menunudge-row w-full flex items-center gap-2 py-1.5 text-left" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '">'
                 + '<span class="text-xs font-bold whitespace-nowrap">SQ ' + rosterEsc(f.fn) + '</span>'
                 + '<span class="text-xs text-gray-500 dark:text-gray-400 flex-1 min-w-0 truncate">' + rosterEsc(f.dep) + '-' + rosterEsc(f.arr) + ' &middot; ' + rosterShortDate(f.ymd) + '</span>'
-                + '<span class="ca-pill" data-state="ready">Ready</span>'
+                + (savedFlags[i]
+                    ? '<span class="ca-pill" data-state="ok"><i data-lucide="check" class="w-3 h-3"></i> Saved</span>'
+                    : '<span class="ca-pill" data-state="ready">Ready</span>')
                 + '</button>').join('');
             el.innerHTML =
                 '<div class="ca-nudge-card p-3 text-sm w-[85%]" role="status">'
@@ -6632,7 +6713,9 @@
                 + '<p class="ca-nf-copy text-sm leading-relaxed">' + copy + '</p>'
                 + '</div></div>'
                 + (one ? '' : '<div class="mt-2">' + rows + '</div>')
-                + '<button type="button" id="ca-menunudge-go" class="mt-2.5 w-full h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
+                + '<button type="button" id="ca-menunudge-go" class="' + (done
+                    ? 'mt-2.5 w-full h-10 rounded-full bg-emerald-600 text-white ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5'
+                    : 'mt-2.5 w-full h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5') + '">' + (done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i> Saved' : (one ? 'Open menus' : 'Save all menus')) + '</button>'
                 + '</div>';
             nfInsertAtSlot(el, 2);
             refreshIcons();
@@ -6642,18 +6725,13 @@
                 try { dismissed = JSON.parse(localStorage.getItem(NUDGE_KEY) || '{}') || {}; } catch (e) {}
                 flights.forEach((f) => { dismissed[f.fn + '|' + f.ymd] = 1; });
                 try { localStorage.setItem(NUDGE_KEY, JSON.stringify(dismissed)); } catch (e) {}
-                const card = document.getElementById('ca-menunudge-card');
-                if (card) {
-                    // everything-moves: collapse away, then drop
-                    card.style.transition = 'opacity .25s ease, max-height .25s ease';
-                    card.style.maxHeight = card.offsetHeight + 'px';
-                    card.style.overflow = 'hidden';
-                    requestAnimationFrame(() => { card.style.opacity = '0'; card.style.maxHeight = '0'; });
-                    setTimeout(() => card.remove(), 280);
-                }
+                nfNudgeCardAway(document.getElementById('ca-menunudge-card'));
             });
             const goBtn = document.getElementById('ca-menunudge-go');
             const goHtml = goBtn.innerHTML;
+            // round 32: an all-saved reload renders straight into the done
+            // form — its CTA is the inert green receipt, rows stay tappable
+            if (done) { goBtn.disabled = true; goBtn.style.pointerEvents = 'none'; }
             // round 31: rows are live from the start — tapping one opens
             // (and saves) that flight’s menus directly
             el.querySelectorAll('.ca-menunudge-row').forEach((row) => {
@@ -6730,7 +6808,7 @@
                         goBtn.className = 'mt-2.5 w-full h-10 rounded-full bg-emerald-600 text-white ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5';
                         goBtn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5"></i> Saved';
                         const txt = el.querySelector('.ca-nf-copy');
-                        if (txt) txt.innerHTML = 'Menus saved for <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> — tap one to open.';
+                        if (txt) txt.innerHTML = nfNudgeCopyHtml(flights, 'done');
                         renderNextFlightCard(); // badge refresh — keeps its slot above the nudge
                         showNfConfirm();
                         refreshIcons();
