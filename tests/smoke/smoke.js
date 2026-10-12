@@ -83,8 +83,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 8 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the consolidated 1.43.0 entry (destination overlay + roster capture + the hotfix rounds as six themed fix pointers)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v215'), 'the service-worker cache name is bumped to v215 (APP_VERSION 1.43.0, round 33 calendar first-open fix)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 11 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the consolidated 1.43.0 entry (destination overlay + roster capture + six themed fix pointers + the round 31\u201333 fix pointers)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v216'), 'the service-worker cache name is bumped to v216 (APP_VERSION 1.43.0, round 34 changelog housekeeping)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });

@@ -304,6 +304,14 @@ const mkUntil = (d) => async (cond, ms) => {
         const cap = (it.c === 'fix') ? 35 : 12;
         R.ok(it.t.split(/\s+/).length <= cap, `current-release pointer stays within ${cap} words: "${it.t}" (E6)`);
       });
+      // round 34 (owner order: changelog housekeeping): the three rounds since
+      // the 1.43.0 consolidation fold into the current release as fix
+      // pointers, so a fresh install tells the crew what actually changed —
+      // the feed rework, the nudge-as-fixture, and the calendar first-open fix
+      R.eq(entries[0].items.length, 11, 'the 1.43.0 release carries the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
+      R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
+      R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
       const cmpV = (x, y) => { const A = x.split('.').map(Number), B = y.split('.').map(Number); return (A[0] - B[0]) || (A[1] - B[1]) || (A[2] - B[2]); };
       const badCat = [], badDate = [];
       entries.forEach((en) => {
