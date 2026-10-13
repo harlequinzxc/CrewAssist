@@ -2853,6 +2853,30 @@
                 toggleNetPopover(false);
             });
             document.addEventListener('keydown', (e) => {
+                // v1.44.0 (owner-approved): the arrow keys change the roster
+                // calendar's month while it is the sheet in front — the same
+                // path a chevron tap takes (data-edge no-ops included). They
+                // never act while an input owns the caret or a higher surface
+                // owns the key; the topmost check mirrors the Escape order
+                // below, so arrows only ever drive the frontmost sheet.
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    const calIds = ['whatsnew-backdrop', 'ca-changelog-sheet', 'ca-arch-sheet', 'settings-sheet', 'ca-roster-cal', 'menu-sheet', 'print-overlay', 'results-sheet'];
+                    let topSheet = '';
+                    for (let i = 0; i < calIds.length; i++) {
+                        const el = document.getElementById(calIds[i]);
+                        if (el && !el.classList.contains('hidden') && !el.classList.contains('translate-y-full')) { topSheet = calIds[i]; break; }
+                    }
+                    if (topSheet !== 'ca-roster-cal') return;
+                    // the wrap only hides at the end of the 300ms close glide —
+                    // the sheet parks (translate-y-full) the instant a close
+                    // starts, and arrows must stand down for that whole window
+                    const rcSheet = document.getElementById('ca-rc-sheet');
+                    if (rcSheet && rcSheet.classList.contains('translate-y-full')) return;
+                    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+                    const btn = document.getElementById(e.key === 'ArrowLeft' ? 'ca-rc-prev' : 'ca-rc-next');
+                    if (btn) { e.preventDefault(); btn.click(); }
+                    return;
+                }
                 if (e.key !== 'Escape') return;
                 toggleNetPopover(false);
                 // v1.37.0 (3.2): Escape also closes whichever sheet is on top.

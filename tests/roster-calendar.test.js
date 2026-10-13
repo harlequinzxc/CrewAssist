@@ -990,5 +990,41 @@ const synthItems = [].concat(
     R.ok(!grid.classList.contains('rc-tags-pop'), 'a repaint mid-window strips the pop at once — marks rendered by a month change arrive settled');
   }
 
+  // v1.44.0 (owner-approved): the arrow keys change the calendar's month
+  // while it is the sheet in front — the same path a chevron tap takes
+  {
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({
+        '2026-10': [{ ymd: '2026-10-05', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k1' }],
+        '2026-11': [{ ymd: '2026-11-14', kind: 'fly', code: '', loc: '', fns: ['118'], dkey: 'k2' }]
+      }));
+    } });
+    const label = () => d.getElementById('ca-rc-month').textContent;
+    const key = (k, target) => (target || d).dispatchEvent(new (w.KeyboardEvent || w.Event)('keydown', { key: k, bubbles: true, cancelable: true }));
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    R.ok(label().indexOf('Oct 2026') === 0, 'v1.44.0 setup: the calendar opens on the current month');
+    key('ArrowRight');
+    await wait(450);
+    R.ok(label().indexOf('Nov 2026') === 0, 'v1.44.0: ArrowRight glides to the next month, exactly like the chevron');
+    key('ArrowLeft');
+    await wait(450);
+    R.ok(label().indexOf('Oct 2026') === 0, 'v1.44.0: ArrowLeft glides back');
+    key('ArrowLeft');
+    await wait(450);
+    R.ok(label().indexOf('Oct 2026') === 0, 'v1.44.0: at the first data month ArrowLeft is the same no-op as the grayed chevron');
+    key('ArrowLeft', d.getElementById('chat-input'));
+    await wait(200);
+    R.ok(label().indexOf('Oct 2026') === 0, 'v1.44.0: an arrow typed into a text field never touches the calendar — the caret owns the key');
+    w.eval('closeRosterCalendar()');
+    await wait(100);
+    key('ArrowRight');
+    await wait(200);
+    R.ok(label().indexOf('Oct 2026') === 0, 'v1.44.0: with the calendar closed the arrows do nothing at all');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
