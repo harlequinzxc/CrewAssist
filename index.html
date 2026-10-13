@@ -857,6 +857,19 @@
         .chat-anim-in {
             animation: chat-anim-in 0.32s ease-out both;
         }
+        /* v1.44.0 hotfix (owner spec): the help card's rows and tokens. The
+           hover wash compiles behind (hover:hover) like every hover utility —
+           a finger tap must never latch it (the hotfix-18 lesson); the flash
+           is the tap's own feedback and fades on its own. */
+        .ca-help-row { transition: background-color .25s ease; }
+        @media (hover:hover) {
+            .ca-help-row:hover { background: rgba(127,127,127,.07); }
+        }
+        .ca-help-row.ca-help-flash { background: rgba(201,162,39,.16); }
+        .ca-help-token { background: rgba(127,127,127,.13); color: inherit; opacity: .78; }
+        /* the tips sit a tier dimmer than the rows — colour only; their size
+           is the app's single sanctioned micro token (ca-micro) */
+        .ca-help-tip { color: rgba(127,127,127,.95); }
         .menu-desc-chevron {
             transition: transform 0.3s ease;
         }
@@ -1372,7 +1385,12 @@
                     </div>
 
                     <!-- Chat Input -->
-                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)] bg-white/70 dark:bg-[#0b1a3a]/60">
+                    <!-- v1.44.0 hotfix (owner spec): dropped the composer's
+                         hardcoded background overrides (a white wash in light
+                         theme, NAVY in dark). The input bar now wears
+                         glass-panel's own var(--glass-solid-bg), the same
+                         warm charcoal every panel uses in night mode. -->
+                    <div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2 shadow-[0_4px_30px_rgba(0,0,0,0.15)]">
                         <button id="btn-roster" type="button" title="Import roster PDF" aria-label="Import roster PDF" class="ca-hit w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-gray-400 hover:text-sia-gold transition-colors active:scale-95">
                             <i data-lucide="paperclip" class="w-4 h-4"></i>
                         </button>
@@ -3404,6 +3422,36 @@
                 if (e.key === 'Enter') {
                     if (isChatBusy()) { e.preventDefault(); return; }
                     processInput(e.target.value);
+                }
+            });
+
+            // v1.44.0 hotfix (owner spec): the help card's tappable rows and
+            // its CTA. Delegated at document level — the card re-renders per
+            // message, so per-row bindings would rot (the fv pattern). A row
+            // tap inserts keyword + trailing space into the composer, focuses
+            // it at the end, and flashes the row gold; the CTA starts the
+            // feature tour. While the chat is busy these are already inert
+            // (html.chat-busy #chat-container button), the guard is
+            // belt-and-braces.
+            document.addEventListener('click', (e) => {
+                const row = e.target.closest ? e.target.closest('[data-ca-help-cmd]') : null;
+                if (row) {
+                    if (isChatBusy()) return;
+                    const inp = document.getElementById('chat-input');
+                    inp.value = row.getAttribute('data-ca-help-cmd') + ' ';
+                    inp.focus();
+                    const L = inp.value.length;
+                    try { inp.setSelectionRange(L, L); } catch (err) {}
+                    row.classList.remove('ca-help-flash');
+                    void row.offsetWidth; // restart the fade for a re-tap
+                    row.classList.add('ca-help-flash');
+                    setTimeout(() => row.classList.remove('ca-help-flash'), 400);
+                    return;
+                }
+                const cta = e.target.closest ? e.target.closest('[data-ca-help-tour]') : null;
+                if (cta) {
+                    if (isChatBusy()) return;
+                    if (typeof startCaTour === 'function') startCaTour(true);
                 }
             });
 
@@ -7643,22 +7691,72 @@
             ]);
         }
 
+        // v1.44.0 hotfix (owner spec): the help card. A structured onboarding
+        // surface — header tile, hairline, four tappable command rows (bold
+        // gold keyword, monospaced input token pill, one-phrase description),
+        // a dimmer tips block, and ONE outlined CTA. Iconography is Lucide
+        // only (category glyphs, the header bulb, the tip dots, the CTA
+        // arrow); no emoji, no custom SVGs, no new accent colours — gold/dark
+        // only, green reserved for success states elsewhere. The staggered
+        // entrance rides the app's own chat-anim-in spring with per-row
+        // delays. Tapping a row inserts its keyword into the composer (bound
+        // by the delegated listener at boot) and flashes the row gold.
+        function helpCardHtml() {
+            const row = (cmd, icon, token, desc, delay) => `
+                <button type="button" data-ca-help-cmd="${cmd}" class="ca-help-row chat-anim-in w-full text-left flex items-start gap-3 rounded-xl px-2 py-2" style="animation-delay:${delay}ms">
+                    <i data-lucide="${icon}" class="w-4 h-4 mt-1.5 text-gray-400 dark:text-gray-500 shrink-0"></i>
+                    <span class="min-w-0 flex-1 block">
+                        <span class="flex items-center gap-2 flex-wrap">
+                            <span class="font-bold text-sia-gold font-mono text-[13px] leading-none">${cmd}</span>
+                            <span class="ca-help-token font-mono ca-micro leading-none px-1.5 py-1 rounded-md">${token}</span>
+                        </span>
+                        <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">${desc}</span>
+                    </span>
+                </button>`;
+            const tip = (txt, delay) => `
+                <span class="ca-help-tip ca-micro chat-anim-in flex items-start gap-2" style="animation-delay:${delay}ms">
+                    <i data-lucide="dot" class="w-3.5 h-3.5 mt-0.5 shrink-0 text-sia-gold"></i>
+                    <span class="min-w-0 block">${txt}</span>
+                </span>`;
+            return `
+                <div data-ca-help-card class="min-w-0">
+                    <div class="flex items-center gap-3 chat-anim-in">
+                        <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-sia-gold/15 border border-sia-gold/30 text-sia-gold"><i data-lucide="lightbulb" class="w-4 h-4"></i></span>
+                        <span class="min-w-0 block">
+                            <span class="block font-bold text-sm">Quick shortcuts</span>
+                            <span class="block text-xs text-gray-500 dark:text-gray-400">Type or tap any command below</span>
+                        </span>
+                    </div>
+                    <div class="ca-hairline my-3"></div>
+                    <div class="flex flex-col gap-0.5">
+                        ${row('menu', 'utensils', 'sq802', 'Open a flight\u2019s inflight menus', 40)}
+                        ${row('ifa', 'calculator', 'sq802 4 oct', 'Price an inflight allowance', 80)}
+                        ${row('lma', 'sandwich', 'sq802 4 oct sq807 5 oct', 'Price a layover meal allowance', 120)}
+                        ${row('cop', 'map', 'sq802 4 oct sq807 5 oct', 'Price a whole trip, both allowances', 160)}
+                    </div>
+                    <div class="ca-hairline my-3"></div>
+                    <div class="flex flex-col gap-1.5">
+                        ${tip('Flights and dates write in plain English; \u201csq 802 4 october\u201d parses too.', 200)}
+                        ${tip('Up to four sectors per line. Upload your roster PDF for longer trips.', 230)}
+                        ${tip('Your attached roster answers first; the live schedule fills in when connected.', 260)}
+                    </div>
+                    <button type="button" data-ca-help-tour class="chat-anim-in mt-3 w-full h-11 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 active:scale-95 transition-transform" style="animation-delay:290ms">
+                        Take the feature tour <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>`;
+        }
+
         function analyzeIntent(text) {
             const lowerText = text.toLowerCase();
 
             // NLP Intent Engine based on LOGIC.md
-            // v1.44.0 (owner-approved): a bare "help" (or "?") answers with
-            // the command card — the chat's command language was powerful but
-            // invisible. "help" used to start the feature tour; the card now
-            // carries that pointer instead, and "tour" / "show me around"
-            // still start it.
+            // v1.44.0 hotfix (owner spec): the help card is a structured
+            // onboarding-style card, not a dense paragraph — gold icon-tile
+            // header, tappable command rows, dimmed tips, one outlined CTA.
+            // Every glyph is Lucide; the palette stays gold/dark; rows insert
+            // their keyword into the composer on tap.
             if (/^\s*(help|\?)\s*$/.test(lowerText)) {
-                addBotMessage('<b>menu</b> sq802 \u2014 that flight\u2019s inflight menus<br>'
-                    + '<b>ifa</b> sq802 4 oct \u2014 prefill the inflight allowance calculator<br>'
-                    + '<b>lma</b> sq802 4 oct sq807 5 oct \u2014 layover meal allowance, both sectors<br>'
-                    + '<b>cop</b> sq802 4 oct sq807 5 oct \u2014 the full allowance picture for a whole trip<br>'
-                    + 'Flights and dates write naturally \u2014 \u201csq 802 4 october\u201d works too. Up to four sectors per line; longer pairings belong to the roster PDF. Your attached roster answers first, the live schedule when connected.<br>'
-                    + 'Type <b>tour</b> or <b>show me around</b> for the feature tour.');
+                addBotMessage(helpCardHtml());
             }
             // Tour: "tour" or "show me around" starts the feature tour.
             else if (/\btour\b|show me around/.test(lowerText)) {

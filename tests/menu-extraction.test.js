@@ -182,7 +182,7 @@ const EMDASH = '\u2014'; // —
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
     R.ok(src.includes("var APP_VERSION = '1.44.0';"), 'APP_VERSION stamped 1.44.0');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v217"), 'service-worker cache name bumped to v217 (round 35: the 1.44.0 release)');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v218"), 'service-worker cache name bumped to v218 (the v1.44.0 help-card hotfix)');
   }
 
   {
