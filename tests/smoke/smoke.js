@@ -82,15 +82,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(122, 98, 15)', 'light-mode gold text computes to the 7A620F token (round 22 F-02: the dead v1.31.0 override was removed)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.43.0', 'APP_VERSION is 1.43.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.43.0' && e.d === '2026-10-08' && e.items.length === 11 && e.items.map((i) => i.c).join(',') === 'new,new,fix,fix,fix,fix,fix,fix,fix,fix,fix'; }), 'the changelog carries the consolidated 1.43.0 entry (destination overlay + roster capture + six themed fix pointers + the round 31\u201333 fix pointers)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v216'), 'the service-worker cache name is bumped to v216 (APP_VERSION 1.43.0, round 34 changelog housekeeping)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.44.0', 'APP_VERSION is 1.44.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.0' && e.d === '2026-10-13' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,new,imp'; }), 'the changelog carries the 1.44.0 release entry (help card, roster diff, arrow-key months)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v217'), 'the service-worker cache name is bumped to v217 (APP_VERSION 1.44.0, the round-35 release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.43.0'; }), 'the What\'s New sheet carries the v1.43.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.0'; }), 'the What\'s New sheet carries the v1.44.0 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Transits of three hours or more now earn location meals.') !== -1), 'the What\'s New sheet carries the transit-meals pointer');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.43\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'closing What\'s New releases the welcome chat (and hides its backdrop)');
