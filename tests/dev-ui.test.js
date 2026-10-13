@@ -308,7 +308,10 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      R.eq(entries[0].items.length, 11, 'the 1.43.0 release carries the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[0].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
+      R.eq(entries[1].v, '1.43.0', 'the 1.43.0 consolidation sits second, newest first');
+      R.eq(entries[1].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
@@ -781,6 +784,26 @@ const mkUntil = (d) => async (cond, ms) => {
     const oct4Year = g.w.eval("(function(){ const t = todayLocalYMD(); return (t <= '2026-10-04') ? '2026' : '2027'; })()");
     R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), oct4Year + '-10-04', 'spaced flight and month-first dates both parse');
     R.eq(g.w.eval("!!parseNaturalCommand('what can you do')"), false, 'ordinary sentences never parse as commands');
+
+    // v1.44.0: the help card — a bare "help" (or "?") lists the command
+    // language; "help" no longer starts the feature tour (the card points
+    // to it instead)
+    {
+        const hsrc = require('fs').readFileSync(APP, 'utf8');
+        const helpCards = () => chatTxt().split('that flight\u2019s inflight menus').length - 1;
+        const h0 = helpCards();
+        await send('help');
+        R.ok(helpCards() === h0 + 1 && chatTxt().indexOf('layover meal allowance, both sectors') >= 0 && chatTxt().indexOf('the full allowance picture for a whole trip') >= 0, 'a bare help answers with the command card \u2014 all four command words with their examples');
+        R.ok(chatTxt().indexOf('Up to four sectors per line') >= 0 && chatTxt().indexOf('Your attached roster answers first') >= 0, 'the card carries the natural-writing rules \u2014 four sectors max, the attached roster answers first');
+        R.ok(chatTxt().indexOf('show me around') >= 0, 'the card points to the feature tour \u2014 help no longer starts it itself');
+        await send('?');
+        R.eq(helpCards(), h0 + 2, 'a bare ? is the alias \u2014 the card answers again');
+        await send('HELP');
+        R.eq(helpCards(), h0 + 3, 'HELP parses case-insensitively like every command');
+        await send('help me');
+        R.eq(helpCards(), h0 + 3, 'only the bare word triggers \u2014 \u201chelp me\u201d falls through to the keyword engine untouched');
+        R.ok(hsrc.includes("if (/^\\s*(help|\\?)\\s*$/.test(lowerText)) {") && hsrc.includes("else if (/\\btour\\b|show me around/.test(lowerText)) {"), 'help owns its own branch above the tour \u2014 the tour keeps \u201ctour\u201d and \u201cshow me around\u201d as its triggers');
+    }
 
     // ifa: the card arrives prefilled from the roster (offline-honest)
     await send('ifa sq802 6 oct sq807 8 oct');

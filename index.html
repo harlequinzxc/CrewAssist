@@ -2173,7 +2173,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.43.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2195,6 +2195,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.0', d: '2026-10-13', items: [
+                { c: 'new', t: 'Type help in chat to see every command.' },
+                { c: 'new', t: 'Re-importing a roster month reports what changed.' },
+                { c: 'imp', t: 'Arrow keys change months on the roster calendar.' },
+            ] },
             { v: '1.43.0', d: '2026-10-08', items: [
                 { c: 'new', t: 'Destination tags and arrival badges light up the roster calendar.' },
                 { c: 'new', t: 'Capture the roster as a PNG to share.' },
@@ -2853,6 +2858,30 @@
                 toggleNetPopover(false);
             });
             document.addEventListener('keydown', (e) => {
+                // v1.44.0 (owner-approved): the arrow keys change the roster
+                // calendar's month while it is the sheet in front — the same
+                // path a chevron tap takes (data-edge no-ops included). They
+                // never act while an input owns the caret or a higher surface
+                // owns the key; the topmost check mirrors the Escape order
+                // below, so arrows only ever drive the frontmost sheet.
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    const calIds = ['whatsnew-backdrop', 'ca-changelog-sheet', 'ca-arch-sheet', 'settings-sheet', 'ca-roster-cal', 'menu-sheet', 'print-overlay', 'results-sheet'];
+                    let topSheet = '';
+                    for (let i = 0; i < calIds.length; i++) {
+                        const el = document.getElementById(calIds[i]);
+                        if (el && !el.classList.contains('hidden') && !el.classList.contains('translate-y-full')) { topSheet = calIds[i]; break; }
+                    }
+                    if (topSheet !== 'ca-roster-cal') return;
+                    // the wrap only hides at the end of the 300ms close glide —
+                    // the sheet parks (translate-y-full) the instant a close
+                    // starts, and arrows must stand down for that whole window
+                    const rcSheet = document.getElementById('ca-rc-sheet');
+                    if (rcSheet && rcSheet.classList.contains('translate-y-full')) return;
+                    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+                    const btn = document.getElementById(e.key === 'ArrowLeft' ? 'ca-rc-prev' : 'ca-rc-next');
+                    if (btn) { e.preventDefault(); btn.click(); }
+                    return;
+                }
                 if (e.key !== 'Escape') return;
                 toggleNetPopover(false);
                 // v1.37.0 (3.2): Escape also closes whichever sheet is on top.
@@ -4540,8 +4569,13 @@
                     fileName = unique.map(f => f.name).join(' + ');
                 }
                 const parsedRef = parsed, nameRef = fileName, monthRef = displayMonth;
+                // v1.44.0: snapshot the duty months this import replaces,
+                // BEFORE any store write — the card reports what changed
+                const dutyBefore = loadDutyDays();
+                const oldByMonth = {};
+                unique.forEach((f) => { if (dutyBefore[f.month] && dutyBefore[f.month].length) oldByMonth[f.month] = dutyBefore[f.month]; });
                 upcomingRemember(parsedRef); // v1.28.0: remember upcoming flights for the greeting card
-                await new Promise(res => enqueueBot(() => { renderRosterConfirm(parsedRef, nameRef, monthRef); res(); }));
+                await new Promise(res => enqueueBot(() => { renderRosterConfirm(parsedRef, nameRef, monthRef, oldByMonth); res(); }));
             } finally { setChatBusy(false); }
         }
 
@@ -6958,13 +6992,51 @@
             return parseInt(m[3], 10) + ' ' + (typeof CA_MONTHS_SHORT !== 'undefined' ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] : m[2]) + (withYear ? ' ' + m[1] : '');
         }
 
-        function renderRosterConfirm(parsed, fileName, displayMonth) {
+        // v1.44.0 (owner-approved): re-importing a month that already exists
+        // reports what changed — a day-level diff between the duty store's
+        // old bucket and the freshly parsed days, one honest line per
+        // replaced month. First imports stay silent (nothing to compare),
+        // and the comparison is store-truth: every parsed day row is what
+        // dutyRemember will file, so "duty" here means "a day the calendar
+        // holds", whatever its kind.
+        function rosterImportDiffLines(oldByMonth, parsedDays) {
+            const lines = [];
+            Object.keys(oldByMonth || {}).sort().forEach((mk) => {
+                const oldSet = {};
+                (oldByMonth[mk] || []).forEach((d) => { if (d && d.ymd) oldSet[d.ymd] = 1; });
+                const newSet = {};
+                (parsedDays || []).forEach((d) => { if (d && d.ymd && String(d.ymd).slice(0, 7) === mk) newSet[d.ymd] = 1; });
+                const added = Object.keys(newSet).filter((y) => !oldSet[y]).sort();
+                const removed = Object.keys(oldSet).filter((y) => !newSet[y]).sort();
+                const kept = Object.keys(oldSet).filter((y) => newSet[y]).length;
+                const mname = rosterMonthName(mk);
+                if (!added.length && !removed.length) { lines.push('Versus the ' + mname + ' you had: no changes.'); return; }
+                const mon3 = (typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[parseInt(mk.slice(5), 10) - 1] : mk).slice(0, 3);
+                const dates = (list) => {
+                    const ds = list.map((y) => String(parseInt(y.slice(8), 10)));
+                    const tail = ' ' + mon3;
+                    if (ds.length > 4) return ds.slice(0, 4).join(', ') + tail + ' +' + (ds.length - 4) + ' more';
+                    return ds.join(', ') + tail;
+                };
+                const bits = [];
+                if (added.length) bits.push(added.length + ' new ' + (added.length === 1 ? 'duty' : 'duties') + ' (' + dates(added) + ')');
+                if (removed.length) bits.push(removed.length + ' removed (' + dates(removed) + ')');
+                if (kept) bits.push('rest unchanged');
+                lines.push('Versus the ' + mname + ' you had: ' + bits.join(' \u00b7 ') + '.');
+            });
+            return lines;
+        }
+        function renderRosterConfirm(parsed, fileName, displayMonth, oldByMonth) {
             const tripsOk = parsed.trips.filter(t => t.ok);
             const flagged = parsed.trips.filter(t => !t.ok);
             const sectors = tripsOk.reduce((n, t) => n + t.sectors.length, 0);
             const lines = [];
             lines.push(`<b>${rosterEsc(fileName)}</b> — ${rosterEsc(displayMonth || rosterMonthName(parsed.monthLabel))}: <b>${tripsOk.length} trip${tripsOk.length === 1 ? '' : 's'} · ${sectors} sector${sectors === 1 ? '' : 's'}</b> across ${parsed.flyingDays} flying day${parsed.flyingDays === 1 ? '' : 's'}.`);
             if (parsed.skippedDays) lines.push(`Skipped ${parsed.skippedDays} non-flying day${parsed.skippedDays === 1 ? '' : 's'} (leave, off and standby rows).`);
+            // v1.44.0: the what-changed line rides the same card, right under
+            // the summary — silent on a first import, one line per replaced
+            // month otherwise
+            rosterImportDiffLines(oldByMonth || {}, parsed.days).forEach((l) => lines.push(l));
             // v1.32.1: flag lines carry the trip's date to the day and year,
             // same as the paxing note — the crew can find the duty on the
             // paper roster before deciding what to do about it.
@@ -7575,8 +7647,21 @@
             const lowerText = text.toLowerCase();
 
             // NLP Intent Engine based on LOGIC.md
-            // Tour first: "tour" (or a bare "help") starts the feature tour.
-            if (/\btour\b|show me around|^\s*help\s*$/.test(lowerText)) {
+            // v1.44.0 (owner-approved): a bare "help" (or "?") answers with
+            // the command card — the chat's command language was powerful but
+            // invisible. "help" used to start the feature tour; the card now
+            // carries that pointer instead, and "tour" / "show me around"
+            // still start it.
+            if (/^\s*(help|\?)\s*$/.test(lowerText)) {
+                addBotMessage('<b>menu</b> sq802 \u2014 that flight\u2019s inflight menus<br>'
+                    + '<b>ifa</b> sq802 4 oct \u2014 prefill the inflight allowance calculator<br>'
+                    + '<b>lma</b> sq802 4 oct sq807 5 oct \u2014 layover meal allowance, both sectors<br>'
+                    + '<b>cop</b> sq802 4 oct sq807 5 oct \u2014 the full allowance picture for a whole trip<br>'
+                    + 'Flights and dates write naturally \u2014 \u201csq 802 4 october\u201d works too. Up to four sectors per line; longer pairings belong to the roster PDF. Your attached roster answers first, the live schedule when connected.<br>'
+                    + 'Type <b>tour</b> or <b>show me around</b> for the feature tour.');
+            }
+            // Tour: "tour" or "show me around" starts the feature tour.
+            else if (/\btour\b|show me around/.test(lowerText)) {
                 if (typeof startCaTour === 'function') startCaTour(true);
             }
             // v1.39.0 (B7): structured commands beat keywords — "ifa sq802 4

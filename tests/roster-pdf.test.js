@@ -276,6 +276,29 @@ const MONTH = [
     R.ok(!/not built/.test(bt), 'nothing flagged in the stitched timeline');
   }
 
+  // ---- v1.44.0: the what-changed line (roster diff on re-import) ----
+  {
+    const { w, d } = await boot(APP);
+    // pure helper: the exact approved line shapes
+    const oct = (days) => days.map((n) => ({ ymd: '2026-10-' + String(n).padStart(2, '0'), kind: 'fly' }));
+    R.eq(JSON.stringify(w.rosterImportDiffLines({}, oct([1, 2, 3]))), '[]', 'a first import has nothing to compare — no line, silence');
+    R.eq(w.rosterImportDiffLines({ '2026-10': oct([1, 5, 17, 24, 31]) }, oct([1, 5, 17, 24])).join('|'), 'Versus the October 2026 you had: 1 removed (31 Oct) \u00b7 rest unchanged.', 'a removed day reads with its date, the kept days stay counted');
+    R.eq(w.rosterImportDiffLines({ '2026-10': oct([1, 5, 17]) }, oct([1, 5, 17])).join('|'), 'Versus the October 2026 you had: no changes.', 'an identical re-import says so honestly');
+    R.eq(w.rosterImportDiffLines({ '2026-10': oct([1, 5, 17]) }, oct([1, 17, 24])).join('|'), 'Versus the October 2026 you had: 1 new duty (24 Oct) \u00b7 1 removed (5 Oct) \u00b7 rest unchanged.', 'the approved shape: new duties, removed, rest unchanged');
+    const many = w.rosterImportDiffLines({ '2026-10': oct([1]) }, oct([2, 3, 4, 5, 6, 7, 8])).join('|');
+    R.ok(many.indexOf('7 new duties (2, 3, 4, 5 Oct +3 more)') >= 0, 'long date lists truncate honestly with a +N more tail');
+    // end-to-end: the card carries the line when the month already exists
+    w.eval("localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': " + JSON.stringify(oct([1, 5, 17]).map((x) => ({ ymd: x.ymd, kind: 'fly' }))) + " }))");
+    const parsed = w.rosterParse(buildRoster(MONTH));
+    w.renderRosterConfirm(parsed, 'Test Month.pdf', null, { '2026-10': oct([1, 5, 17]) });
+    await wait(100);
+    const bubble = d.getElementById('chat-container').lastElementChild;
+    R.ok(/Versus the October 2026 you had:/.test(bubble.textContent), 'the confirm card carries the what-changed line on a re-import');
+    w.renderRosterConfirm(parsed, 'First.pdf');
+    await wait(100);
+    R.ok(!/Versus the .* you had:/.test(d.getElementById('chat-container').lastElementChild.textContent), 'without old months the card carries no diff line');
+  }
+
   // ---- UI: confirm bubble -> Build -> prefilled cards ----
   {
     const { w, d } = await boot(APP);
