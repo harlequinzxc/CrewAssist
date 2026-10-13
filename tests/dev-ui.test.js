@@ -782,6 +782,26 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), oct4Year + '-10-04', 'spaced flight and month-first dates both parse');
     R.eq(g.w.eval("!!parseNaturalCommand('what can you do')"), false, 'ordinary sentences never parse as commands');
 
+    // v1.44.0: the help card — a bare "help" (or "?") lists the command
+    // language; "help" no longer starts the feature tour (the card points
+    // to it instead)
+    {
+        const hsrc = require('fs').readFileSync(APP, 'utf8');
+        const helpCards = () => chatTxt().split('that flight\u2019s inflight menus').length - 1;
+        const h0 = helpCards();
+        await send('help');
+        R.ok(helpCards() === h0 + 1 && chatTxt().indexOf('layover meal allowance, both sectors') >= 0 && chatTxt().indexOf('the full allowance picture for a whole trip') >= 0, 'a bare help answers with the command card \u2014 all four command words with their examples');
+        R.ok(chatTxt().indexOf('Up to four sectors per line') >= 0 && chatTxt().indexOf('Your attached roster answers first') >= 0, 'the card carries the natural-writing rules \u2014 four sectors max, the attached roster answers first');
+        R.ok(chatTxt().indexOf('show me around') >= 0, 'the card points to the feature tour \u2014 help no longer starts it itself');
+        await send('?');
+        R.eq(helpCards(), h0 + 2, 'a bare ? is the alias \u2014 the card answers again');
+        await send('HELP');
+        R.eq(helpCards(), h0 + 3, 'HELP parses case-insensitively like every command');
+        await send('help me');
+        R.eq(helpCards(), h0 + 3, 'only the bare word triggers \u2014 \u201chelp me\u201d falls through to the keyword engine untouched');
+        R.ok(hsrc.includes("if (/^\\s*(help|\\?)\\s*$/.test(lowerText)) {") && hsrc.includes("else if (/\\btour\\b|show me around/.test(lowerText)) {"), 'help owns its own branch above the tour \u2014 the tour keeps \u201ctour\u201d and \u201cshow me around\u201d as its triggers');
+    }
+
     // ifa: the card arrives prefilled from the roster (offline-honest)
     await send('ifa sq802 6 oct sq807 8 oct');
     const ifaCard = cards()[cards().length - 1];

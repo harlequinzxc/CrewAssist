@@ -7575,8 +7575,21 @@
             const lowerText = text.toLowerCase();
 
             // NLP Intent Engine based on LOGIC.md
-            // Tour first: "tour" (or a bare "help") starts the feature tour.
-            if (/\btour\b|show me around|^\s*help\s*$/.test(lowerText)) {
+            // v1.44.0 (owner-approved): a bare "help" (or "?") answers with
+            // the command card — the chat's command language was powerful but
+            // invisible. "help" used to start the feature tour; the card now
+            // carries that pointer instead, and "tour" / "show me around"
+            // still start it.
+            if (/^\s*(help|\?)\s*$/.test(lowerText)) {
+                addBotMessage('<b>menu</b> sq802 \u2014 that flight\u2019s inflight menus<br>'
+                    + '<b>ifa</b> sq802 4 oct \u2014 prefill the inflight allowance calculator<br>'
+                    + '<b>lma</b> sq802 4 oct sq807 5 oct \u2014 layover meal allowance, both sectors<br>'
+                    + '<b>cop</b> sq802 4 oct sq807 5 oct \u2014 the full allowance picture for a whole trip<br>'
+                    + 'Flights and dates write naturally \u2014 \u201csq 802 4 october\u201d works too. Up to four sectors per line; longer pairings belong to the roster PDF. Your attached roster answers first, the live schedule when connected.<br>'
+                    + 'Type <b>tour</b> or <b>show me around</b> for the feature tour.');
+            }
+            // Tour: "tour" or "show me around" starts the feature tour.
+            else if (/\btour\b|show me around/.test(lowerText)) {
                 if (typeof startCaTour === 'function') startCaTour(true);
             }
             // v1.39.0 (B7): structured commands beat keywords — "ifa sq802 4
