@@ -82,17 +82,18 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(122, 98, 15)', 'light-mode gold text computes to the 7A620F token (round 22 F-02: the dead v1.31.0 override was removed)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.44.2', 'APP_VERSION is 1.44.2');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.2' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.44.2 date-picker entry');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v220'), 'the service-worker cache name is bumped to v220 (the v1.44.2 date-picker round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.44.3', 'APP_VERSION is 1.44.3');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.3' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.44.3 swipe-visibility fix');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v221'), 'the service-worker cache name is bumped to v221 (the v1.44.3 swipe-visibility fix)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.2'; }), 'the What\'s New sheet carries the v1.44.2 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The date picker swipes and arrow-keys through months.') !== -1), 'the What\'s New sheet carries the 1.44.2 date-picker pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.3'; }), 'the What\'s New sheet carries the v1.44.3 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The date picker swipes and arrow-keys through months.') !== -1), 'the What\'s New sheet carries the 1.44.2 date-picker pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every label now shares one fixed type scale.') !== -1), 'the What\'s New sheet carries the 1.44.1 type-scale pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Type help in chat to see every command.') !== -1), 'the What\'s New sheet carries the 1.44.0 help pointer in the delta');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.2/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.3/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'closing What\'s New releases the welcome chat (and hides its backdrop)');
@@ -562,6 +563,29 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.mouse.move(gc.x, gc.y);
         await page.mouse.down();
         await page.mouse.move(gc.x - 160, gc.y, { steps: 8 });
+        // the v1.44.3 lesson: a present track is not a VISIBLE track. While
+        // the drag is HELD, the real browser must actually paint the gliding
+        // months — the grid stands down to a block layer, the track is three
+        // grid-widths wide, the middle third sits under the finger's offset,
+        // and the finger point hit-tests inside the track.
+        const held = await page.evaluate((cx, cy) => {
+            const grid = document.getElementById('cadate-grid');
+            const track = grid.querySelector('.ca-date-track');
+            if (!track) return null;
+            const gr = grid.getBoundingClientRect(), tr = track.getBoundingClientRect();
+            const mid = track.children[1].getBoundingClientRect();
+            const day = track.children[1].querySelector('.cadate-day');
+            const dr = day ? day.getBoundingClientRect() : null;
+            const hit = document.elementFromPoint(cx, cy);
+            const ts = getComputedStyle(track);
+            return { area: ts.gridArea, justifySelf: ts.justifySelf, trackW: Math.round(tr.width), gridW: Math.round(gr.width), midLeft: Math.round(mid.left), gridLeft: Math.round(gr.left), midH: Math.round(mid.height), gridH: Math.round(gr.height), dayW: dr ? Math.round(dr.width) : 0, hitInTrack: !!(hit && (hit === track || track.contains(hit))), hitTag: hit ? (hit.tagName + '.' + (typeof hit.className === 'string' ? hit.className : '')) : 'null', trackLeft: Math.round(tr.left) };
+        }, gc.x, gc.y);
+        ok(held && held.area === '1 / 1 / -1 / -1' && held.justifySelf === 'start', 'while held, the track spans the whole 7x6 grid pinned to start (the v1.44.3 fix)');
+        ok(held && Math.abs(held.trackW - held.gridW * 3) <= 6, 'while held, the track is three grid-widths wide');
+        ok(held && Math.abs(held.midH - held.gridH) <= 2, 'while held, the gliding month keeps the resting grid\u2019s height');
+        ok(held && Math.abs(held.midLeft - (held.gridLeft - 160)) <= 5, 'while held, the middle month sits exactly under the finger\u2019s offset (mid ' + (held && held.midLeft) + ' vs ' + (held && (held.gridLeft - 160)) + ')');
+        ok(held && held.dayW >= 20, 'while held, the gliding month carries real day cells (' + (held && held.dayW) + 'px wide)');
+        ok(held && held.hitInTrack, 'while held, the finger point hit-tests inside the track \u2014 months are painted under it, not clipped away (hit ' + (held && held.hitTag) + ')');
         await page.mouse.up();
         await sleep(500);
         ok((await pickerMonth()) !== beforeMonth, 'a real mouse drag on the day grid changes the month — the calendar\u2019s swipe, picker edition');

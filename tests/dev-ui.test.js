@@ -318,17 +318,20 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      R.eq(entries[0].v, '1.44.2', 'the 1.44.2 date-picker round sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.44.2 entry carries its single pointer');
+      R.eq(entries[0].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.44.3 entry carries its single pointer');
+      R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
+      R.eq(entries[1].v, '1.44.2', 'the 1.44.2 date-picker round sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[1].v, '1.44.1', 'the 1.44.1 typography round sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
+      R.eq(entries[2].v, '1.44.1', 'the 1.44.1 typography round sits third, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[2].v, '1.44.0', 'the 1.44.0 release sits third, newest first');
-      R.eq(entries[2].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[3].v, '1.44.0', 'the 1.44.0 release sits fourth, newest first');
+      R.eq(entries[3].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[3].v, '1.43.0', 'the 1.43.0 consolidation sits fourth, newest first');
-      R.eq(entries[3].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[4].v, '1.43.0', 'the 1.43.0 consolidation sits fifth, newest first');
+      R.eq(entries[4].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
@@ -969,6 +972,18 @@ const mkUntil = (d) => async (cond, ms) => {
     // the release past threshold commits (the track WAS the glide)
     pev('pointerdown', 200, 300); pev('pointermove', 160, 300);
     R.ok(!!d.querySelector('#cadate-grid .ca-date-track') && d.getElementById('cadate-grid').classList.contains('ca-date-drag'), 'a horizontal drag builds the three-thirds track and stands the day cells down');
+    // v1.44.3 (owner report): a present track is not a VISIBLE track \u2014 the
+    // grid's place-items: center treated the 300%-wide track as ONE centered
+    // grid item, a full grid-width off the finger, so the swipe glided over
+    // nothing. The track must SPAN the whole grid pinned to start, and each
+    // third must carry the resting grid's own template.
+    const track = d.querySelector('#cadate-grid .ca-date-track');
+    R.eq(track.children.length, 3, 'the track carries three month thirds');
+    R.ok([].slice.call(track.children).every((c) => c.classList.contains('ca-date-third')), 'every third carries the ca-date-third grid class');
+    R.ok(track.children[1].querySelectorAll('.cadate-day').length >= 28 && track.children[0].querySelectorAll('.cadate-day').length >= 27 && track.children[2].querySelectorAll('.cadate-day').length >= 27, 'all three thirds carry real month grids \u2014 the finger glides over months, never a void');
+    const navSrc = require('fs').readFileSync(APP, 'utf8');
+    R.ok(navSrc.includes('#cadate-grid.ca-date-drag { cursor: grabbing; overflow: hidden; }') && navSrc.includes('.ca-date-track {\n            grid-area: 1 / 1 / -1 / -1;\n            justify-self: start;\n            align-self: start;\n        }'), 'the track spans the whole 7x6 grid pinned to start \u2014 never a centered single cell (the v1.44.3 fix)');
+    R.ok(navSrc.includes('.ca-date-third {\n            display: grid;\n            grid-template-columns: repeat(7, minmax(0, 1fr));\n            grid-template-rows: repeat(6, 2.25rem);'), 'each third carries the resting grid\u2019s own 7x6 template');
     pev('pointerup', 60, 300);
     await wait(400);
     R.eq(month(), 'October 2026', 'a leftward swipe past the threshold lands the next month \u2014 no second slide, the track was the glide');
@@ -992,7 +1007,6 @@ const mkUntil = (d) => async (cond, ms) => {
     kd('ArrowRight');
     R.eq(month(), 'November 2026', 'once the closing window has passed, the arrows no longer drive the picker');
     // source pins: the wiring and its guards
-    const navSrc = require('fs').readFileSync(APP, 'utf8');
     R.ok(navSrc.indexOf('caDateMonthHtml(y, m - 1)') >= 0 && navSrc.indexOf('caDateMonthHtml(y, m + 1)') >= 0, 'the track\u2019s outer thirds are real months \u2014 never a void (the hotfix-17 lesson)');
     R.ok(navSrc.indexOf("document.getElementById(e.key === 'ArrowLeft' ? 'cadate-prev' : 'cadate-next')") >= 0 && navSrc.indexOf('#cadate-grid .ca-date-track') >= 0, 'the arrows drive the chevrons and stand down for a live drag');
     R.ok(navSrc.indexOf('.ca-date-track { user-select: none;') >= 0 && navSrc.indexOf('#cadate-grid.ca-date-drag .cadate-day { pointer-events: none; }') >= 0, 'the drag classes carry the calendar\u2019s own no-select + day stand-down');

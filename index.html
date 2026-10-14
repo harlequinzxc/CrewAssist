@@ -543,7 +543,25 @@
            day cells stand down, so a swipe can never also tap a day. */
         .ca-date-track { user-select: none; -webkit-user-select: none; }
         #cadate-grid.ca-date-drag .cadate-day { pointer-events: none; }
-        #cadate-grid.ca-date-drag { cursor: grabbing; }
+        /* v1.44.3 (owner report): the grid is itself a 7x6 CSS grid whose
+           place-items: center treated the 300%-wide track as ONE centered
+           item — a grid-width off the finger, so the swipe glided over
+           nothing. The track now SPANS the whole grid (all 7 columns, all
+           6 rows) pinned to start, which is deterministic in every engine,
+           and each third carries the resting grid's own template — so the
+           gliding months are pixel-identical to the resting one. */
+        #cadate-grid.ca-date-drag { cursor: grabbing; overflow: hidden; }
+        .ca-date-track {
+            grid-area: 1 / 1 / -1 / -1;
+            justify-self: start;
+            align-self: start;
+        }
+        .ca-date-third {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            grid-template-rows: repeat(6, 2.25rem);
+            place-items: center;
+        }
         .cadate-day.is-today:not(.is-sel) {
             box-shadow: inset 0 0 0 1.5px #C9A227;
         }
@@ -2225,7 +2243,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.3'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2247,6 +2265,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.3', d: '2026-10-14', items: [
+                { c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' },
+            ] },
             { v: '1.44.2', d: '2026-10-14', items: [
                 { c: 'imp', t: 'The date picker swipes and arrow-keys through months.' },
             ] },
@@ -9449,9 +9470,9 @@
             grid.style.overflow = 'hidden';
             grid.classList.add('ca-date-drag');
             grid.innerHTML = '<div class="ca-date-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
-                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateMonthHtml(y, m - 1) + '</div>'
-                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateDrag.base + '</div>'
-                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateMonthHtml(y, m + 1) + '</div></div>';
+                + '<div class="ca-date-third" style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateMonthHtml(y, m - 1) + '</div>'
+                + '<div class="ca-date-third" style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateDrag.base + '</div>'
+                + '<div class="ca-date-third" style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateMonthHtml(y, m + 1) + '</div></div>';
             caDateDrag.track = grid.firstChild;
         };
         const caDateDragMove = (e) => {
