@@ -46,8 +46,8 @@ const mkUntil = (d) => async (cond, ms) => {
   const reset = d.getElementById('btn-dev-reset');
   const clear = d.getElementById('btn-clear-data');
   R.ok(reset.classList.contains('hidden'), 'Reset hidden when dev mode off');
-  R.ok(reset.className.includes('text-red-600') && reset.className.includes('border-red-500'), 'hotfix: Reset runs the red destructive style');
-  R.ok(clear.className.includes('text-red-600') && clear.className.includes('border-red-500'), 'Clear All Data: red text + red border');
+  R.ok(reset.className.includes('text-[color:var(--ca-danger-strong)]') && reset.className.includes('border-[color:var(--ca-danger-strong-line)]'), 'hotfix: Reset runs the red destructive style (rides --ca-danger-strong since round 3 value 2)');
+  R.ok(clear.className.includes('text-[color:var(--ca-danger-strong)]') && clear.className.includes('border-[color:var(--ca-danger-strong-line)]'), 'Clear All Data: red text + red border (rides --ca-danger-strong since round 3 value 2)');
   R.ok(clear.className.includes('bg-transparent'), 'Clear All Data: transparent background');
   R.ok(bex.parentElement.className.includes('glass-panel'), 'v1.42.0: Data Management buttons sit in the house box — the same width as Clear saved menus');
   R.ok(!bex.parentElement.contains(reset), 'Reset left Data Management for the dev card (v1.42.0)');
@@ -219,6 +219,14 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('.print-edit-chev { transition: transform 280ms ease; color: var(--ca-gold); }') && src.includes('border: 1.5px dashed var(--ca-gold);') && src.includes('background: var(--ca-gold); margin-top: 11px;'), 'round 3 value 1: the print editor family rides var(--ca-gold)');
     R.ok(src.includes('letter-spacing:0.1em;color:var(--ca-gold);margin-bottom:0.75rem;') && src.includes('background:linear-gradient(to right,#E8C766,var(--ca-gold));'), 'round 3 value 1: the shell guard rides var(--ca-gold) (inline <style> tokens, not tw.css)');
     R.ok(src.includes('<stop offset="50%" style="stop-color:var(--ca-gold)" stop-opacity="1" />') && (src.match(/stop-color="#C9A227"/g) || []).length === 0, 'round 3 value 1: the archGrad stops take the style-attribute form (presentation attributes cannot carry var())');
+    // v1.44.7 audit fix 6, value 2 of 5 (#ff4c4c -> tokens, round 3): the
+    // destructive red rides --ca-danger-strong (dc2626/ff4c4c pair), its 50%
+    // border rides --ca-danger-strong-line, the Developer Mode label rides the
+    // constant --ca-danger-dev
+    R.ok(src.includes('--ca-danger-strong: #ff4c4c;') && src.includes('--ca-danger-strong: #dc2626;') && src.includes('--ca-danger-dev: #ff4c4c;'), 'round 3 value 2: the danger-strong tokens exist, both themes');
+    R.ok((src.match(/text-\[color:var\(--ca-danger-strong\)\]/g) || []).length === 6 && (src.match(/border-\[color:var\(--ca-danger-strong-line\)\]/g) || []).length === 3, 'round 3 value 2: six text pairs and three border pairs ride the tokens');
+    R.ok(!src.includes('dark:text-[#ff4c4c]') && !src.includes('dark:border-[#ff4c4c]') && !src.includes('text-[#ff4c4c]'), 'round 3 value 2: no #ff4c4c literal survives outside the token defs');
+    R.ok(src.includes('html.dark .ca-twotap-armed { color: var(--ca-danger-strong) !important;'), 'round 3 value 2: the two-tap armed red rides the token');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
@@ -803,7 +811,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(st.textContent.indexOf('1 upcoming duty flight keeps their menus') !== -1, 'the panel names the protected upcoming menus');
     const clr = f.d.getElementById('btn-clear-menus');
     R.ok(!!clr, 'the clear action exists');
-    R.ok(clr.className.includes('text-red-600') && clr.className.includes('border-red-500'), 'hotfix: Clear saved menus runs the red destructive style');
+    R.ok(clr.className.includes('text-[color:var(--ca-danger-strong)]') && clr.className.includes('border-[color:var(--ca-danger-strong-line)]'), 'hotfix: Clear saved menus runs the red destructive style (rides --ca-danger-strong since round 3 value 2)');
     clr.click();
     R.ok(clr.textContent.indexOf('Tap again to clear') !== -1, 'the first tap arms instead of firing');
     clr.click();
