@@ -211,6 +211,7 @@
             --ca-pink-line: rgba(240, 171, 252, 0.32);
             /* veils and shadows */
             --ca-lightbox-veil: rgba(4, 7, 15, 0.55);
+            --ca-arch-veil: rgba(8, 11, 20, 0.80);
             --ca-lightbox-shadow: rgba(0, 0, 0, 0.45);
             --ca-panel-shadow: rgba(0, 0, 0, 0.10);
             --ca-rc-tag-shadow: rgba(0, 0, 0, 0.18);
@@ -229,6 +230,7 @@
             --ca-input-wash: rgba(0, 0, 0, 0.03);
             --ca-input-line: rgba(0, 0, 0, 0.10);
             --ca-onboard-line: rgba(17, 24, 39, 0.20);
+            --ca-arch-veil: rgba(246, 241, 232, 0.90);
         }
         /* v1.32.0 (M1): surface tokens — one recipe per role, both themes.
            surface-1 is the glass panels and chips; surface-2 is inset fields
@@ -1455,13 +1457,13 @@
                             </linearGradient>
                         </defs>
                         <!-- Main Background (Transparent Glass) -->
-                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[#F6F1E8]/90 dark:fill-[#080B14]/80" />
+                        <path d="M0,40 Q50,-10 100,40 L100,40 L0,40 Z" class="fill-[color:var(--ca-arch-veil)]" />
                         <!-- Gold Border Line (Tapered) -->
                         <path d="M0,40 Q50,-10 100,40" fill="none" stroke="url(#archGrad)" stroke-width="1.5" vector-effect="non-scaling-stroke" class="opacity-60" />
                     </svg>
                 </div>
                 <!-- Form Container -->
-                <div class="bg-[#F6F1E8]/90 dark:bg-[#080B14]/80 h-full w-full px-8 pt-2 pb-8 flex flex-col">
+                <div class="bg-[color:var(--ca-arch-veil)] h-full w-full px-8 pt-2 pb-8 flex flex-col">
                     <div class="flex-grow overflow-y-auto max-w-sm mx-auto w-full flex flex-col">
                         <h2 class="text-2xl font-bold mb-8 text-center">Welcome aboard<span class="text-sia-gold">.</span></h2>
                         <!-- v1.40.1 (owner order): tighter field rhythm -->
@@ -2408,7 +2410,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.8'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.9'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2430,6 +2432,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.9', d: '2026-10-15', items: [
+                { c: 'imp', t: 'The archive veil rides its own token — same look, both themes.' },
+            ] },
             { v: '1.44.8', d: '2026-10-15', items: [
                 { c: 'imp', t: 'The last raw colours ride named tokens — same pixels, one spelling.' },
             ] },
