@@ -3,7 +3,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { endpoint, payload } = req.body;
+    const { endpoint, payload } = req.body || {};
     
     if (!endpoint || (endpoint !== 'getcabin' && endpoint !== 'menu')) {
         return res.status(400).json({ error: 'Invalid endpoint' });
@@ -11,10 +11,10 @@ export default async function handler(req, res) {
 
     const targetUrl = `https://cifp.auto.prod.c0.singaporeair.com/api/${endpoint}`;
 
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
 
+    try {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
@@ -27,8 +27,6 @@ export default async function handler(req, res) {
             signal: controller.signal
         });
 
-        clearTimeout(timeoutId);
-
         const data = await response.json();
         
         return res.status(200).json(data);
@@ -37,5 +35,7 @@ export default async function handler(req, res) {
             return res.status(504).json({ error: 'UPSTREAM_TIMEOUT' });
         }
         return res.status(502).json({ error: 'UPSTREAM_NETWORK', details: error.message });
+    } finally {
+        clearTimeout(timeoutId);
     }
 }
