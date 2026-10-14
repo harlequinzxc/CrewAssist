@@ -227,6 +227,13 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok((src.match(/text-\[color:var\(--ca-danger-strong\)\]/g) || []).length === 6 && (src.match(/border-\[color:var\(--ca-danger-strong-line\)\]/g) || []).length === 3, 'round 3 value 2: six text pairs and three border pairs ride the tokens');
     R.ok(!src.includes('dark:text-[#ff4c4c]') && !src.includes('dark:border-[#ff4c4c]') && !src.includes('text-[#ff4c4c]'), 'round 3 value 2: no #ff4c4c literal survives outside the token defs');
     R.ok(src.includes('html.dark .ca-twotap-armed { color: var(--ca-danger-strong) !important;'), 'round 3 value 2: the two-tap armed red rides the token');
+    // v1.44.7 audit fix 6, value 3 of 5 (#16294e -> var(--print-ink), round 3):
+    // the print sheet's navy ink is a named token on .print-paper, beside
+    // --print-type; the .pe-* family rides it (print = one physical medium,
+    // theme-independent)
+    R.ok(src.includes('--print-type: 1;\n            --print-ink: #16294e;') && (src.match(/var\(--print-ink\)/g) || []).length === 7, 'round 3 value 3: --print-ink defined once on .print-paper, seven call sites');
+    R.ok(!src.toLowerCase().replace('--print-ink: #16294e;', '').includes('#16294e'), 'round 3 value 3: no #16294e literal survives outside the def');
+    R.ok(!src.includes('--print-ink: var(--print-ink)'), 'round 3 value 3: the def is not self-referential (the diag-caught first-draft bug)');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
