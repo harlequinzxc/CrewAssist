@@ -240,7 +240,10 @@ const mkUntil = (d) => async (cond, ms) => {
     // capture canvas backdrop stay literal BY REPORT: no existing token carries
     // rgba(246,241,232,.9)/rgba(8,11,20,.8), and canvas fillStyle cannot var()
     R.ok(src.includes('from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90'), 'round 3 value 4: the composer fade rides the bg-color token, dark overrides intact');
-    R.ok((src.match(/#F6F1E8/g) || []).length >= 1 && src.includes('fill-[#F6F1E8]/90 dark:fill-[#080B14]/80'), 'round 3 value 4: the archive veil alpha pair stays literal (no token carries it)');
+    // v1.44.9 (owner order 'mint the token'): the two archive-veil alpha sites
+    // now ride --ca-arch-veil — the value-4 stay-literal ruling was overturned;
+    // the capture canvas backdrop remains the only #F6F1E8-family literal
+    R.ok(!src.includes('fill-[#F6F1E8]/90') && !src.includes('bg-[#F6F1E8]/90'), 'the archive veil alpha pair no longer sits in a class (rides --ca-arch-veil since v1.44.9)');
     // v1.44.7 audit fix 6, value 5 of 5 (#9ca3af, round 3): all four free
     // sites are stylesheet rules, where a Tailwind utility cannot live — they
     // ride --ca-ink-faint (the app's canonical gray-400 ink, its own comment
@@ -373,41 +376,46 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      // v1.44.8 (audit fix 6, the colour-sweep round 3 release): takes the head
-      // of the ladder. The previous rounds shift down one each.
-      R.eq(entries[0].v, '1.44.8', 'the 1.44.8 colour-sweep release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.44.8 entry carries its single pointer');
+      // v1.44.9 (audit fix 6 follow-up, the veil token): takes the head of the
+      // ladder. The previous rounds shift down one each.
+      R.eq(entries[0].v, '1.44.9', 'the 1.44.9 veil-token release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.44.9 entry carries its single pointer');
+      R.ok(src.includes("c: 'imp', t: 'The archive veil rides its own token \u2014 same look, both themes.' }"), 'the 1.44.9 pointer reads as approved, inside the twelve-word cap');
+      // v1.44.9: the veil token itself — the two archive-overlay alpha sites ride it
+      R.ok(src.includes('--ca-arch-veil: rgba(8, 11, 20, 0.80);') && src.includes('--ca-arch-veil: rgba(246, 241, 232, 0.90);') && src.includes('fill-[color:var(--ca-arch-veil)]') && src.includes('bg-[color:var(--ca-arch-veil)]'), 'v1.44.9: --ca-arch-veil exists (dark .80 / light .90) and both overlay sites ride it');
+      R.eq(entries[1].v, '1.44.8', 'the 1.44.8 colour-sweep release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.44.8 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The last raw colours ride named tokens \u2014 same pixels, one spelling.' }"), 'the 1.44.8 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[1].v, '1.44.7', 'the 1.44.7 audit-fix release sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.44.7 entry carries its single pointer');
+      R.eq(entries[2].v, '1.44.7', 'the 1.44.7 audit-fix release sits third, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.44.7 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' }"), 'the 1.44.7 pointer reads as approved, inside the twelve-word cap');
       // v1.44.7 audit fix 1: the flagged-trip warning is a Lucide icon, and the
       // source carries no warning-sign glyph anywhere (icons only, never emoji).
       R.eq((src.match(/data-lucide="alert-triangle"/g) || []).length, 1, 'exactly one alert-triangle icon - the flagged-trip line');
       R.ok(!src.includes('\u26a0'), 'no U+26A0 warning-sign glyph remains in the source');
-      R.eq(entries[2].v, '1.44.6', 'the 1.44.6 one-off retirement sits third, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.44.6 entry carries its single pointer');
+      R.eq(entries[3].v, '1.44.6', 'the 1.44.6 one-off retirement sits fourth, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.44.6 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' }"), 'the 1.44.6 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[3].v, '1.44.5', 'the 1.44.5 reopen-resets round sits fourth, newest first');
-      R.eq(entries[3].items.length, 1, 'the 1.44.5 entry carries its single pointer');
+      R.eq(entries[4].v, '1.44.5', 'the 1.44.5 reopen-resets round sits fifth, newest first');
+      R.eq(entries[4].items.length, 1, 'the 1.44.5 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' }"), 'the 1.44.5 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[4].v, '1.44.4', 'the 1.44.4 colour-token round sits fifth, newest first');
-      R.eq(entries[4].items.length, 1, 'the 1.44.4 entry carries its single pointer');
+      R.eq(entries[5].v, '1.44.4', 'the 1.44.4 colour-token round sits sixth, newest first');
+      R.eq(entries[5].items.length, 1, 'the 1.44.4 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' }"), 'the 1.44.4 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[5].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits sixth, newest first');
-      R.eq(entries[5].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
+      R.eq(entries[6].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits seventh, newest first');
+      R.eq(entries[6].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[6].v, '1.44.2', 'the 1.44.2 date-picker round sits seventh, newest first');
-      R.eq(entries[6].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
+      R.eq(entries[7].v, '1.44.2', 'the 1.44.2 date-picker round sits eighth, newest first');
+      R.eq(entries[7].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[7].v, '1.44.1', 'the 1.44.1 typography round sits eighth, newest first');
-      R.eq(entries[7].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
+      R.eq(entries[8].v, '1.44.1', 'the 1.44.1 typography round sits ninth, newest first');
+      R.eq(entries[8].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[8].v, '1.44.0', 'the 1.44.0 release sits ninth, newest first');
-      R.eq(entries[8].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
-      R.eq(entries[9].v, '1.43.0', 'the 1.43.0 consolidation sits tenth, newest first');
-      R.eq(entries[9].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[9].v, '1.44.0', 'the 1.44.0 release sits tenth, newest first');
+      R.eq(entries[9].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[10].v, '1.43.0', 'the 1.43.0 consolidation sits eleventh, newest first');
+      R.eq(entries[10].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');

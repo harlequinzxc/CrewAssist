@@ -199,7 +199,7 @@ The browser will pass the preflight, send the POST, then **refuse to let your JS
 So:
 
 - **JSON (`/getcabin`, `/menu`) → route through a tiny server-side proxy** (Node/Express, Cloudflare
-  Worker, Vercel/Netlify function — ~20 lines, see 5.5). Bonus: the proxy is the right place for caching.
+  Worker, Vercel/Netlify function — ~40 lines, see 5.5). Bonus: the proxy is the right place for caching.
 - **Images → no proxy needed.** Plain `<img src>` tags are not CORS-gated; point them straight at
   `https://inflightmenu.singaporeair.com/...`. (Only canvas pixel-manipulation would need CORS.)
 - If your app is server-rendered (Next.js/Nuxt routes, etc.) you can also just call the API from your
@@ -297,6 +297,12 @@ http.createServer(async (req, res) => {
 }).listen(8787, () => console.log('proxy on :8787'));
 ```
 
+**Note — the proxy that actually ships.** `sq.js` in this repo routes by a
+**body field** (`{ endpoint: 'getcabin' | 'menu', payload }`), not by URL path
+as the reference above does. The client posts every request to a single
+`/api/sq`. Follow `sq.js` when changing the app; section 5.5 is a generic
+illustration, not a description of this codebase.
+
 ### 5.6 Front-end logic — framework-agnostic (~50 lines)
 
 ```js
@@ -375,7 +381,10 @@ ships in a single response, so the toggle costs zero extra requests.
   responses (they're per-date and largely static once published), and honour any robots/terms changes.
   For anything beyond casual research, ask Singapore Airlines for API access.
 
-## 7. Toolkit in this workspace
+## 7. Toolkit (external research workspace — not part of this repo)
+
+These artifacts live in the separate harvesting workspace this reference was
+derived from. They are listed for provenance; none of them ships in this repo.
 
 | file | purpose |
 |------|---------|
