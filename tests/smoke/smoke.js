@@ -82,16 +82,17 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(122, 98, 15)', 'light-mode gold text computes to the 7A620F token (round 22 F-02: the dead v1.31.0 override was removed)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.44.1', 'APP_VERSION is 1.44.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.1' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.44.1 typography entry');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v219'), 'the service-worker cache name is bumped to v219 (the v1.44.1 typography round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.44.2', 'APP_VERSION is 1.44.2');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.2' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.44.2 date-picker entry');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v220'), 'the service-worker cache name is bumped to v220 (the v1.44.2 date-picker round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.1'; }), 'the What\'s New sheet carries the v1.44.1 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every label now shares one fixed type scale.') !== -1), 'the What\'s New sheet carries the 1.44.1 type-scale pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.2'; }), 'the What\'s New sheet carries the v1.44.2 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The date picker swipes and arrow-keys through months.') !== -1), 'the What\'s New sheet carries the 1.44.2 date-picker pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every label now shares one fixed type scale.') !== -1), 'the What\'s New sheet carries the 1.44.1 type-scale pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Type help in chat to see every command.') !== -1), 'the What\'s New sheet carries the 1.44.0 help pointer in the delta');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.1/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.2/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'closing What\'s New releases the welcome chat (and hides its backdrop)');
@@ -541,6 +542,34 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => refreshNextFlightUi());
         ok(await page.evaluate(() => !!document.getElementById('ca-menunudge-card')), 'round 32: going offline in the real browser never strips the live nudge');
         await page.setOfflineMode(false);
+
+        console.log('— v1.44.2: the date picker navigates like the calendar —');
+        // A real card's date button opens the picker; a REAL mouse drag on
+        // the day grid glides the month across (the calendar's own swipe),
+        // and the arrow keys walk it back.
+        await page.evaluate(() => renderCalculatorCard('both'));
+        // the card's sector fields mount a tick after the card itself, so
+        // the wait is on the date button — and the last card is picked by
+        // hand (:last-of-type lies once non-card divs follow it in the
+        // chat); the real gesture under test is the drag on the grid, not
+        // this opener
+        await page.waitForFunction(() => { const cs = document.querySelectorAll('#chat-container [data-calc-card]'); const c = cs[cs.length - 1]; return !!(c && c.querySelector('.ca-date-btn')); }, { timeout: 10000 });
+        await page.evaluate(() => { const cs = document.querySelectorAll('#chat-container [data-calc-card]'); const b = cs[cs.length - 1].querySelector('.ca-date-btn'); b.click(); });
+        await page.waitForFunction(() => !document.getElementById('cadate-backdrop').classList.contains('hidden'), { timeout: 10000 });
+        const pickerMonth = () => page.evaluate(() => document.getElementById('cadate-month').textContent);
+        const beforeMonth = await pickerMonth();
+        const gc = await page.evaluate(() => { const r = document.getElementById('cadate-grid').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+        await page.mouse.move(gc.x, gc.y);
+        await page.mouse.down();
+        await page.mouse.move(gc.x - 160, gc.y, { steps: 8 });
+        await page.mouse.up();
+        await sleep(500);
+        ok((await pickerMonth()) !== beforeMonth, 'a real mouse drag on the day grid changes the month — the calendar\u2019s swipe, picker edition');
+        await page.keyboard.press('ArrowLeft');
+        await sleep(150);
+        ok((await pickerMonth()) === beforeMonth, 'ArrowLeft walks the picker back a month');
+        await page.evaluate(() => document.getElementById('cadate-cancel').click());
+        await sleep(400);
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));
