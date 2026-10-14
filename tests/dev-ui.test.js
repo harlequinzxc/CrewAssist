@@ -211,6 +211,14 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('@keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 var(--ca-gold-glow-90); } 100% { box-shadow: 0 0 0 14px var(--ca-gold-clear); } }'), 'the flash and pulse keyframes ride the glow tokens');
     R.ok(src.includes('Nearby alphas merged only where the shift is'), 'the merge map is documented beside the round-2 token block');
     R.ok(!src.includes('rgba(127,127,127,.07)') && !src.includes('rgba(127,127,127,.14)') && !src.includes('rgba(201,162,39,.16)') && !src.includes('rgba(212,175,55,.28)'), 'the merged one-offs are gone from the call sites');
+    // v1.44.7 audit fix 6, value 1 of 5 (#c9a227 -> var(--ca-gold), round 3):
+    // the dev cluster, print editor, shell guard and archGrad stops ride the
+    // token; the only remaining literal is the canvas star fill (var() cannot
+    // paint a canvas) and the protected defs/fallbacks
+    R.ok(src.includes('.dev-rate-chev { transition: transform 280ms ease; color: var(--ca-gold); flex-shrink: 0; }') && src.includes('.dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: var(--ca-gold); }') && src.includes('.dev-bracket-arrow { color: var(--ca-gold); font-weight: 700; flex-shrink: 0; }'), 'round 3 value 1: the dev cluster chevrons and brackets ride var(--ca-gold)');
+    R.ok(src.includes('.print-edit-chev { transition: transform 280ms ease; color: var(--ca-gold); }') && src.includes('border: 1.5px dashed var(--ca-gold);') && src.includes('background: var(--ca-gold); margin-top: 11px;'), 'round 3 value 1: the print editor family rides var(--ca-gold)');
+    R.ok(src.includes('letter-spacing:0.1em;color:var(--ca-gold);margin-bottom:0.75rem;') && src.includes('background:linear-gradient(to right,#E8C766,var(--ca-gold));'), 'round 3 value 1: the shell guard rides var(--ca-gold) (inline <style> tokens, not tw.css)');
+    R.ok(src.includes('<stop offset="50%" style="stop-color:var(--ca-gold)" stop-opacity="1" />') && (src.match(/stop-color="#C9A227"/g) || []).length === 0, 'round 3 value 1: the archGrad stops take the style-attribute form (presentation attributes cannot carry var())');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');

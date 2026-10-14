@@ -1192,7 +1192,7 @@
         .print-a6 .pc-course { font-size: calc(6px * var(--print-type, 1)); }
         .print-bounds {
             position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
-            border: 1.5px dashed #C9A227; pointer-events: none; z-index: 5;
+            border: 1.5px dashed var(--ca-gold); pointer-events: none; z-index: 5;
         }
         .print-paper.print-a4 > .print-bounds { height: 297mm; }
         .print-paper.print-a6 > .print-bounds { height: 148mm; }
@@ -1217,7 +1217,7 @@
             filter: none;
         }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
+        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: var(--ca-gold); background: transparent; flex-shrink: 0; }
         .dev-rate-table { width: 100%; border-collapse: collapse; }
         .dev-rate-table th { text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; padding: 4px 6px; }
         .dev-rate-table td { padding: 4px 6px; font-size: 12px; font-weight: 600; vertical-align: middle; }
@@ -1240,30 +1240,30 @@
         .dev-rate-fold.is-open { grid-template-rows: 1fr; }
         .dev-rate-fold-inner { overflow: hidden; min-height: 0; }
         .dev-rate-pad { padding: 0 8px 10px; }
-        .dev-rate-chev { transition: transform 280ms ease; color: #C9A227; flex-shrink: 0; }
+        .dev-rate-chev { transition: transform 280ms ease; color: var(--ca-gold); flex-shrink: 0; }
         .dev-rate-card.is-expanded .dev-rate-chev { transform: rotate(180deg); }
         .dev-bracket { display: flex; flex-direction: column; gap: 8px; }
         .dev-bracket-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .dev-bracket-formula { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; font-size: 12px; font-weight: 600; }
-        .dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: #C9A227; }
+        .dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: var(--ca-gold); }
         .dev-bracket-op { color: #9CA3AF; font-weight: 700; font-size: 11px; white-space: nowrap; }
         .dev-bracket-echo { font-weight: 800; min-width: 1.5rem; text-align: center; }
-        .dev-bracket-arrow { color: #C9A227; font-weight: 700; flex-shrink: 0; }
+        .dev-bracket-arrow { color: var(--ca-gold); font-weight: 700; flex-shrink: 0; }
         .dev-rate-input.dev-bracket-num { width: 3.6rem; text-align: center; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
         .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
         .print-edit-fold.is-open { grid-template-rows: 1fr; }
         .print-edit-fold-inner { overflow: hidden; min-height: 0; }
-        .print-edit-chev { transition: transform 280ms ease; color: #C9A227; }
+        .print-edit-chev { transition: transform 280ms ease; color: var(--ca-gold); }
         .print-edit-card.is-expanded .print-edit-chev { transform: rotate(180deg); }
-        .print-edit-badge { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+        .print-edit-badge { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: var(--ca-gold); border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
         .print-edit-lab { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
         .print-edit-field { display: block; margin-top: 8px; }
         .print-edit-svc { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(201,162,39,0.18); }
         .print-edit-course { margin-top: 8px; padding-left: 10px; border-left: 2px solid rgba(201,162,39,0.55); }
         .print-edit-item { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; }
-        .print-edit-dot { width: 6px; height: 6px; border-radius: 999px; background: #C9A227; margin-top: 11px; flex-shrink: 0; }
-        .print-edit-x { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #C9A227; flex-shrink: 0; }
+        .print-edit-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ca-gold); margin-top: 11px; flex-shrink: 0; }
+        .print-edit-x { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--ca-gold); flex-shrink: 0; }
         .print-edit-title { font-size: 14px; font-weight: 700; background: transparent; border: none; color: inherit; min-width: 0; flex: 1; outline: none; }
         html.dark .print-edit-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
         .print-edit-card input:not(.print-edit-title), .print-edit-card textarea {
@@ -1406,10 +1406,10 @@
          relied on here); shellGuard() flips it to flex when needed. -->
     <div id="ca-shell-fail" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:#04070F;color:#EDE1C4;font-family:system-ui,-apple-system,sans-serif;padding:2rem;text-align:center;">
         <div style="max-width:26rem;">
-            <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:#C9A227;margin-bottom:0.75rem;">CREWASSIST</div>
+            <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:var(--ca-gold);margin-bottom:0.75rem;">CREWASSIST</div>
             <p style="font-size:0.875rem;line-height:1.6;opacity:0.9;margin:0 0 1.25rem;">This device's offline copy of the app is missing its style files, so the app can't render properly. <strong>Your data is safe.</strong></p>
             <p style="font-size:0.75rem;line-height:1.6;opacity:0.65;margin:0 0 1.5rem;">Connect to the internet once and reopen the app — it repairs itself automatically.</p>
-            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,#C9A227);color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.75rem;cursor:pointer;">Try again</button>
+            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,var(--ca-gold));color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.75rem;cursor:pointer;">Try again</button>
         </div>
     </div>
 
@@ -1442,9 +1442,9 @@
                     <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
                         <defs>
                             <linearGradient id="archGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#C9A227" stop-opacity="0" />
-                                <stop offset="50%" stop-color="#C9A227" stop-opacity="1" />
-                                <stop offset="100%" stop-color="#C9A227" stop-opacity="0" />
+                                <stop offset="0%" style="stop-color:var(--ca-gold)" stop-opacity="0" />
+                                <stop offset="50%" style="stop-color:var(--ca-gold)" stop-opacity="1" />
+                                <stop offset="100%" style="stop-color:var(--ca-gold)" stop-opacity="0" />
                             </linearGradient>
                         </defs>
                         <!-- Main Background (Transparent Glass) -->
