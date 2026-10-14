@@ -66,6 +66,78 @@
             --arch-badge-border: rgba(0, 0, 0, 0.12);
         }
 
+        /* v1.44.4 (owner order): the semantic colour tokens — the standing
+           rule's names carrying this app's exact values. Dark is the default
+           theme (:root); html:not(.dark) overrides for light. Every value is
+           what the swept call sites already carried — the style-snapshot rig
+           (tests/smoke/style-snapshot.js + style-diff.js) proves the sweep
+           computed-style-identical in both themes. New elements take these
+           names (or the older tokens above, e.g. --glass-*, --arch-*,
+           --sia-gold-ink); never a raw hex at a call site. Gold stays the
+           leitmotif; the paired tokens flip per theme so call sites never
+           copy a value across themes. */
+        :root {
+            /* the gold family */
+            --ca-gold: #C9A227;                        /* fills: selected, dots, switch-on, today bar */
+            --ca-gold-hi: #E8C766;                     /* the lighter gold: hero-edge centre, saving-pill ink */
+            --ca-gold-bright: #D4AF37;                 /* bright gold on near-black: toast outline, new-tag */
+            --ca-gold-soft-12: rgba(201, 162, 39, 0.12);
+            --ca-gold-soft-15: rgba(201, 162, 39, 0.15);
+            --ca-gold-line: rgba(201, 162, 39, 0.35);  /* the gold hairline */
+            --ca-gold-line-strong: rgba(201, 162, 39, 0.45);
+            --ca-gold-clear: rgba(201, 162, 39, 0);    /* gradient fade-out */
+            /* inks */
+            --ca-ink-navy: #0B1A3A;                    /* navy ink on gold-tinted fills (both themes) */
+            --ca-ink-deep: #111827;                    /* near-black: inverse text on gold, deep fills */
+            --ca-ink-faint: #9CA3AF;                   /* the gray-400 read */
+            --ca-ink-stone: #A8A29E;                   /* stone-400 muted text */
+            --ca-ink-stone-deep: #78716C;              /* stone-500 — stone-400's light-theme value */
+            /* the elevated panel pair (the date picker) */
+            --ca-panel-bg: #0B1A3A;
+            --ca-panel-ink: #F6F1E8;
+            --ca-panel-line: rgba(201, 162, 39, 0.35);
+            /* the gold CTA pair (the outlined secondary) */
+            --ca-cta-bg: #0B1A3A;
+            --ca-cta-ink: #C9A227;
+            /* the toast pair (dark card in light, cream card in dark) */
+            --ca-toast-bg: #F6F1E8;
+            --ca-toast-ink: #171D2B;
+            --ca-toast-undo: #7D650F;
+            /* status */
+            --ca-ok: #34D399;
+            --ca-danger-ink: #F87171;
+            --ca-danger-bright: #F87171;
+            --ca-danger-line: rgba(248, 113, 113, 0.35);
+            --ca-success-deep: #15803D;
+            /* roster calendar */
+            --ca-rc-num-ink: rgba(229, 231, 235, 0.92);
+            --ca-glow-28: rgba(255, 255, 255, 0.28);
+            --ca-shade-40: rgba(0, 0, 0, 0.4);
+            --ca-line-gray-13: rgba(127, 127, 127, 0.13);
+            --ca-line-gray-18: rgba(127, 127, 127, 0.18);
+            /* earnings archive */
+            --ca-arch-ink-gold: #E6C254;
+            --ca-arch-ink-on-gold: #1A1300;
+            /* surfaces that stay put */
+            --ca-cl-vhead-bg: rgba(4, 7, 15, 0.92);
+            --ca-sheet-solid: rgba(246, 241, 232, 0.96);
+            --ca-knob: #FFFFFF;
+            --ca-tip-ink: #FFFFFF;
+            --ca-switch-track: rgba(255, 255, 255, 0.15);
+        }
+        html:not(.dark) {
+            --ca-panel-bg: #F6F1E8;
+            --ca-panel-ink: #0B1A3A;
+            --ca-panel-line: rgba(201, 162, 39, 0.45);
+            --ca-cta-bg: #FFFFFF;
+            --ca-cta-ink: #0B1A3A;
+            --ca-toast-bg: #111111;
+            --ca-toast-ink: #FFFFFF;
+            --ca-toast-undo: #D4AF37;
+            --ca-danger-ink: #B91C1C;
+            --ca-rc-num-ink: rgba(31, 41, 55, 0.92);
+            --ca-cl-vhead-bg: rgba(246, 241, 232, 0.92);
+        }
         /* v1.32.0 (M1): surface tokens — one recipe per role, both themes.
            surface-1 is the glass panels and chips; surface-2 is inset fields
            and wells (the retired black-5 over white-5 background pair);
@@ -92,7 +164,7 @@
             --ca-hero-shadow: none;
         }
         .ca-hero-card { position: relative; background-color: var(--glass-bubble-bg); background-image: var(--ca-hero-bg); border: 1px solid var(--ca-hero-border); border-radius: 22px; border-top-left-radius: 0; box-shadow: var(--ca-hero-shadow); }
-        .ca-hero-edge { position: absolute; top: -1px; left: 14px; right: 14px; height: 2px; border-radius: 9999px; background: linear-gradient(90deg, rgba(201, 162, 39, 0) 0%, #C9A227 22%, #E8C766 50%, #C9A227 78%, rgba(201, 162, 39, 0) 100%); pointer-events: none; }
+        .ca-hero-edge { position: absolute; top: -1px; left: 14px; right: 14px; height: 2px; border-radius: 9999px; background: linear-gradient(90deg, var(--ca-gold-clear) 0%, var(--ca-gold) 22%, var(--ca-gold-hi) 50%, var(--ca-gold) 78%, var(--ca-gold-clear) 100%); pointer-events: none; }
         .ca-hero-lite { position: relative; background-color: var(--ca-surface-1); border: 1px solid var(--ca-hairline); border-radius: 22px; border-top-left-radius: 0; }
         .ca-nudge-card { position: relative; background-color: var(--ca-surface-1); border: 1px solid var(--ca-hairline); border-radius: 16px; border-top-left-radius: 0; }
         .ca-menunudge-row + .ca-menunudge-row { border-top: 1px solid var(--ca-hairline); }
@@ -103,13 +175,13 @@
            ring’s gold ink). */
         .ca-pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px; padding: 2px 8px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.02em; border: 1px solid; white-space: nowrap; }
         .ca-pill[data-state="ready"], .ca-pill[data-state="unpub"] { color: #6B7280; border-color: rgba(107, 114, 128, 0.30); background: rgba(107, 114, 128, 0.08); }
-        html.dark .ca-pill[data-state="ready"], html.dark .ca-pill[data-state="unpub"] { color: #9CA3AF; border-color: rgba(156, 163, 175, 0.30); background: rgba(156, 163, 175, 0.10); }
-        .ca-pill[data-state="saving"], .ca-pill[data-state="partial"] { color: #7d650f; border-color: rgba(201, 162, 39, 0.45); background: rgba(201, 162, 39, 0.12); }
-        html.dark .ca-pill[data-state="saving"], html.dark .ca-pill[data-state="partial"] { color: #E8C766; border-color: rgba(201, 162, 39, 0.45); background: rgba(201, 162, 39, 0.15); }
+        html.dark .ca-pill[data-state="ready"], html.dark .ca-pill[data-state="unpub"] { color: var(--ca-ink-faint); border-color: rgba(156, 163, 175, 0.30); background: rgba(156, 163, 175, 0.10); }
+        .ca-pill[data-state="saving"], .ca-pill[data-state="partial"] { color: var(--sia-gold-ink); border-color: var(--ca-gold-line-strong); background: var(--ca-gold-soft-12); }
+        html.dark .ca-pill[data-state="saving"], html.dark .ca-pill[data-state="partial"] { color: var(--ca-gold-hi); border-color: var(--ca-gold-line-strong); background: var(--ca-gold-soft-15); }
         .ca-pill[data-state="ok"] { color: #047857; border-color: rgba(16, 185, 129, 0.40); background: rgba(16, 185, 129, 0.10); }
-        html.dark .ca-pill[data-state="ok"] { color: #34D399; border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.10); }
-        .ca-pill[data-state="fail"] { color: #B91C1C; border-color: rgba(239, 68, 68, 0.40); background: rgba(239, 68, 68, 0.08); }
-        html.dark .ca-pill[data-state="fail"] { color: #F87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.10); }
+        html.dark .ca-pill[data-state="ok"] { color: var(--ca-ok); border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.10); }
+        .ca-pill[data-state="fail"] { color: var(--ca-danger-ink); border-color: rgba(239, 68, 68, 0.40); background: rgba(239, 68, 68, 0.08); }
+        html.dark .ca-pill[data-state="fail"] { color: var(--ca-danger-ink); border-color: var(--ca-danger-line); background: rgba(248, 113, 113, 0.10); }
         /* TYPOGRAPHY & COLOR DISCIPLINE — standing owner rule v2
            (2026-10-14; full text in docs/HANDOVER.md). One fixed design
            scale, chosen by role, never tuned by eye, in BOTH themes.
@@ -296,7 +368,7 @@
             height: 0.85rem;
             box-sizing: border-box;
             border: 2px solid rgba(201, 162, 39, 0.28);
-            border-top-color: #C9A227;
+            border-top-color: var(--ca-gold);
             border-radius: 50%;
             animation: ca-spin 0.7s linear infinite;
         }
@@ -332,11 +404,11 @@
            (hotfix 10). */
         .ca-rc-day { position: relative; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 0.75rem; transition: transform .12s ease, background-color .15s ease; -webkit-tap-highlight-color: transparent; }
         .ca-rc-day:active { transform: scale(.92); }
-        .ca-rc-num { font-size: 14px; font-weight: 700; line-height: 16px; color: rgba(31,41,55,.92); }
-        html.dark .ca-rc-num { color: rgba(229,231,235,.92); }
+        .ca-rc-num { font-size: 14px; font-weight: 700; line-height: 16px; color: var(--ca-rc-num-ink); }
+        html.dark .ca-rc-num { color: var(--ca-rc-num-ink); }
         .ca-rc-bar { width: 16px; height: 3px; border-radius: 999px; }
-        .ca-rc-bar.is-today { background: #c9a227; }
-        .ca-rc-day.is-selected::after { content: ''; position: absolute; inset: 1px; border: 1.5px solid #c9a227; border-radius: 0.75rem; pointer-events: none; }
+        .ca-rc-bar.is-today { background: var(--ca-gold); }
+        .ca-rc-day.is-selected::after { content: ''; position: absolute; inset: 1px; border: 1.5px solid var(--ca-gold); border-radius: 0.75rem; pointer-events: none; }
         .ca-rc-pill { position: absolute; top: 6px; height: 38px; pointer-events: none; }
         .ca-rc-pill.is-circle { width: 38px; border-radius: 999px; transform: translateX(-50%); }
         .ca-rc-pill.is-capsule { border-radius: 0; }
@@ -370,11 +442,11 @@
         #ca-rc-grid.rc-tags-on .ca-rc-tag, #ca-rc-grid.rc-tags-on .ca-rc-badge { display: inline-flex; }
         .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
         .ca-rc-tag-lo { background: #C2410C; color: #FFF7ED; }
-        .ca-rc-tag-ta { background: #15803D; color: #F0FDF4; }
-        html.dark .ca-rc-tag-lo { background: rgba(251,146,60,.22); color: #FDBA74; box-shadow: inset 0 0 0 1px rgba(251,146,60,.5), 0 1px 2px rgba(0,0,0,.4); }
-        html.dark .ca-rc-tag-ta { background: rgba(74,222,128,.22); color: #86EFAC; box-shadow: inset 0 0 0 1px rgba(74,222,128,.5), 0 1px 2px rgba(0,0,0,.4); }
-        .ca-rc-badge { bottom: 6px; right: 6px; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 4px; background: #111827; color: #F9FAFB; font-size: 11px; font-weight: 800; line-height: 15px; }
-        html.dark .ca-rc-badge { background: rgba(0,0,0,.74); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
+        .ca-rc-tag-ta { background: var(--ca-success-deep); color: #F0FDF4; }
+        html.dark .ca-rc-tag-lo { background: rgba(251,146,60,.22); color: #FDBA74; box-shadow: inset 0 0 0 1px rgba(251,146,60,.5), 0 1px 2px var(--ca-shade-40); }
+        html.dark .ca-rc-tag-ta { background: rgba(74,222,128,.22); color: #86EFAC; box-shadow: inset 0 0 0 1px rgba(74,222,128,.5), 0 1px 2px var(--ca-shade-40); }
+        .ca-rc-badge { bottom: 6px; right: 6px; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 4px; background: var(--ca-ink-deep); color: #F9FAFB; font-size: 11px; font-weight: 800; line-height: 15px; }
+        html.dark .ca-rc-badge { background: rgba(0,0,0,.74); box-shadow: inset 0 0 0 1px var(--ca-glow-28); }
         @keyframes ca-rc-pop { from { opacity: 0; transform: rotate(-14deg) scale(.3); } to { opacity: 1; transform: rotate(-14deg) scale(1); } }
         @keyframes ca-rc-popb { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
         /* round 15 (owner order): the pop-in is a ONE-SHOT on the toggle
@@ -400,7 +472,7 @@
            a tap latches :hover on touch devices, and the Tailwind hover wash
            (class + pseudo-class) outranks a plain utility — an ID selector
            outranks them both, so the gold survives the sticky hover. */
-        #ca-rc-tag.ca-rc-tagon { background: #C9A227; color: #0B0E14; }
+        #ca-rc-tag.ca-rc-tagon { background: var(--ca-gold); color: #0B0E14; }
         /* hotfix: a day with two stops wears one tag per corner, same tilt */
         .ca-rc-tag.slot-b { left: -3px; right: auto; }
         .ca-rc-nav { border-radius: 999px; transition: background-color .15s ease, transform .12s ease; }
@@ -421,7 +493,7 @@
             #ca-rc-tag, #ca-rc-shot, #ca-rc-prev, #ca-rc-next { padding: 8px; }
             #ca-rc-close { padding: 10px; }
         }
-        @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: rgba(127,127,127,.13); } }
+        @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: var(--ca-line-gray-13); } }
         /* hotfix 5 (owner order): sideways swipes change months — vertical
            pans must keep scrolling, so the grid owns only the horizontal */
         #ca-rc-grid { touch-action: pan-y; }
@@ -444,10 +516,10 @@
            the highlighted band, its trip flowing around it */
         .ca-rc-row { display: flex; align-items: stretch; }
         .ca-rc-row + .ca-rc-row { border-top: 1px solid rgba(127,127,127,.14); }
-        html.dark .ca-rc-row + .ca-rc-row { border-top-color: rgba(127,127,127,.18); }
+        html.dark .ca-rc-row + .ca-rc-row { border-top-color: var(--ca-line-gray-18); }
         .ca-rc-gut { width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
-        .ca-rc-gut .n { font-size: 14px; font-weight: 700; line-height: 1; color: rgba(31,41,55,.92); }
-        html.dark .ca-rc-gut .n { color: rgba(229,231,235,.92); }
+        .ca-rc-gut .n { font-size: 14px; font-weight: 700; line-height: 1; color: var(--ca-rc-num-ink); }
+        html.dark .ca-rc-gut .n { color: var(--ca-rc-num-ink); }
         .ca-rc-gut .m { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: rgba(31,41,55,.55); }
         html.dark .ca-rc-gut .m { color: rgba(229,231,235,.55); }
                 .ca-rc-gut::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: transparent; }
@@ -464,13 +536,13 @@
         html.dark .ca-rc-gut.k-fly.is-on::after { background: #60a5fa; }
         .ca-rc-gut.k-sb.is-on { background: rgba(21,128,61,.18); }
         html.dark .ca-rc-gut.k-sb.is-on { background: rgba(74,222,128,.20); }
-        .ca-rc-gut.k-sb.is-on::after { background: #15803d; }
+        .ca-rc-gut.k-sb.is-on::after { background: var(--ca-success-deep); }
         html.dark .ca-rc-gut.k-sb.is-on::after { background: #4ade80; }
         .ca-rc-gut.k-crs.is-on { background: rgba(146,94,14,.18); }
         html.dark .ca-rc-gut.k-crs.is-on { background: rgba(212,167,76,.20); }
         .ca-rc-gut.k-crs.is-on::after { background: #92600e; }
         html.dark .ca-rc-gut.k-crs.is-on::after { background: #d4a74c; }
-        .ca-rc-gut.k-lo.is-on, .ca-rc-gut.k-off.is-on, .ca-rc-gut.k-al.is-on { background: rgba(127,127,127,.18); }
+        .ca-rc-gut.k-lo.is-on, .ca-rc-gut.k-off.is-on, .ca-rc-gut.k-al.is-on { background: var(--ca-line-gray-18); }
         .ca-rc-gut.k-lo.is-on::after, .ca-rc-gut.k-off.is-on::after { background: rgba(127,127,127,.65); }
         .ca-rc-gut.k-al.is-on::after { background: rgba(168,85,247,.75); }
         .ca-rc-bd { flex: 1; min-width: 0; padding: 10px 0 10px 12px; }
@@ -479,7 +551,7 @@
            the plane nose-on between them */
         .ca-rc-trk { flex: 1; display: flex; align-items: center; min-width: 34px; }
         .ca-rc-trk .ln { flex: 1; border-top: 2px dashed rgba(201,162,39,.55); }
-        .ca-rc-trk .pt { width: 7px; height: 7px; border-radius: 999px; background: #c9a227; flex: none; }
+        .ca-rc-trk .pt { width: 7px; height: 7px; border-radius: 999px; background: var(--ca-gold); flex: none; }
         /* hotfix 7 (owner order): the timeline scrolls with no scrollbar */
         #ca-rc-detail { scrollbar-width: none; -ms-overflow-style: none; }
         #ca-rc-detail::-webkit-scrollbar { display: none; width: 0; height: 0; }
@@ -487,7 +559,7 @@
         #cadate-hairline-foot {
             height: 1px;
             width: 100%;
-            background: rgba(201, 162, 39, 0.35);
+            background: var(--ca-gold-line);
         }
         #cadate-hairline {
             margin: 0.75rem 0 1rem;
@@ -508,14 +580,14 @@
             to { transform: rotate(360deg); }
         }
         #cadate-panel {
-            background: #F6F1E8;
-            color: #0B1A3A;
-            border: 1px solid rgba(201, 162, 39, 0.45);
+            background: var(--ca-panel-bg);
+            color: var(--ca-panel-ink);
+            border: 1px solid var(--ca-panel-line);
         }
         html.dark #cadate-panel {
-            background: #0B1A3A;
-            color: #F6F1E8;
-            border: 1px solid rgba(201, 162, 39, 0.35);
+            background: var(--ca-panel-bg);
+            color: var(--ca-panel-ink);
+            border: 1px solid var(--ca-panel-line);
         }
         .cadate-day {
             transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
@@ -527,14 +599,14 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            color: #0B1A3A;
+            color: var(--ca-panel-ink);
         }
         html.dark .cadate-day {
-            color: #F6F1E8;
+            color: var(--ca-panel-ink);
         }
         .cadate-day.is-sel {
-            background: #C9A227;
-            color: #111827;
+            background: var(--ca-gold);
+            color: var(--ca-ink-deep);
         }
         /* v1.44.2 (owner order): the date picker takes the roster calendar's
            month swipe — a three-thirds track (prev | current | next) follows
@@ -563,7 +635,7 @@
             place-items: center;
         }
         .cadate-day.is-today:not(.is-sel) {
-            box-shadow: inset 0 0 0 1.5px #C9A227;
+            box-shadow: inset 0 0 0 1.5px var(--ca-gold);
         }
         /* The quick-action chips deliberately have NO hover tint. A gold hover
            read as the chip "staying gold" after a tap on touch screens and after a
@@ -580,10 +652,10 @@
         /* v1.31.1 (owner report): the toast is always outlined in gold — and in
            dark mode it inverts to a bright pill, because #111 on the dark app
            barely read. Day mode keeps the classic dark pill. */
-        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; border: 1.5px solid #d4af37; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 14px; }
-        .dark .ca-arch-toast { background: #f6f1e8; color: #171d2b; }
-        .ca-arch-toast .ca-toast-undo { color: #d4af37; font-weight: 700; }
-        .dark .ca-arch-toast .ca-toast-undo { color: #7d650f; }
+        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: var(--ca-toast-bg); color: var(--ca-toast-ink); padding: 10px 16px; border-radius: 999px; border: 1.5px solid var(--ca-gold-bright); box-shadow: 0 8px 24px var(--ca-shade-40); font-size: 14px; }
+        .dark .ca-arch-toast { background: var(--ca-toast-bg); color: var(--ca-toast-ink); }
+        .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); font-weight: 700; }
+        .dark .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
@@ -600,12 +672,12 @@
         .ca-arch-iconbtn:active { background: rgba(127,127,127,.15); }
         .ca-arch-goldcard {
             background: linear-gradient(135deg, #dcc163 0%, #c9a23e 60%, #b8942f 100%);
-            border-radius: 16px; color: #1a1300; position: relative;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,.28), 0 10px 28px -8px rgba(184,148,47,.55);
+            border-radius: 16px; color: var(--ca-arch-ink-on-gold); position: relative;
+            box-shadow: inset 0 1px 0 var(--ca-glow-28), 0 10px 28px -8px rgba(184,148,47,.55);
         }
         .ca-arch-segtrack { display: inline-flex; background: rgba(26,19,0,.1); border-radius: 999px; padding: 3px; gap: 2px; }
         .ca-arch-seg { border: none; background: transparent; color: rgba(26,19,0,.65); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
-        .ca-arch-seg.ca-arch-segon { background: #1a1300; color: #e6c254; }
+        .ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }
         .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
         .ca-arch-metadot { opacity: .3; font-weight: 700; }
@@ -614,22 +686,22 @@
         .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bararea { width: 100%; height: 120px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
         .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: rgba(212,175,55,.35); }
-        .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); }
+        .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, var(--ca-gold))); }
         .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed rgba(230,194,84,.75); background: repeating-linear-gradient(45deg, rgba(212,175,55,.28) 0 4px, rgba(212,175,55,.08) 4px 8px); }
         .ca-arch-barlab { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
         .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold-ink, #7d650f); }
-        .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: #fff; padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+        .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: var(--ca-tip-ink); padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
         .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
-        .ca-arch-badge-best { color: #e6c254; border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
-        .ca-arch-badge-low { color: #f87171; border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
+        .ca-arch-badge-best { color: var(--ca-arch-ink-gold); border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
+        .ca-arch-badge-low { color: var(--ca-danger-bright); border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
         .ca-arch-badge-prog { color: var(--arch-muted); border: 1px solid var(--arch-badge-border); }
         .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-inslabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-insval { font-size: 14px; font-weight: 700; color: var(--arch-fg); }
         .ca-arch-inssub { font-size: 11px; margin-top: 2px; }
-        .ca-arch-yoy-up { color: #34d399; font-weight: 700; }
-        .ca-arch-yoy-down { color: #f87171; font-weight: 700; }
-        .ca-arch-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sia-gold, #c9a227); flex: none; }
+        .ca-arch-yoy-up { color: var(--ca-ok); font-weight: 700; }
+        .ca-arch-yoy-down { color: var(--ca-danger-bright); font-weight: 700; }
+        .ca-arch-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sia-gold, var(--ca-gold)); flex: none; }
         .ca-arch-footline { height: 1px; flex: 1 1 0; background: var(--arch-hairline); }
         .ca-arch-chev { transition: transform .3s ease; }
         .ca-arch-group:not(.ca-arch-collapsed) .ca-arch-chev { transform: rotate(90deg); }
@@ -648,7 +720,7 @@
            composites to dark olive — under near-black light-mode text (3.4:1).
            Dark mode is untouched by every rule below. */
         html:not(.dark) #onboarding-view .ui-input {
-            background: rgba(255, 255, 255, 0.6);
+            background: var(--glass-bg);
             border-color: rgba(17, 24, 39, 0.2);
         }
         /* v1.37.0: dark-mode pills were near-white borders with gray/70
@@ -656,7 +728,7 @@
            ui-input) keeps its existing gold styling. */
         html.dark #onboarding-view .ui-input { color: rgba(255, 255, 255, 0.75); }
         html:not(.dark) #whatsnew-backdrop .glass-bubble {
-            background: rgba(246, 241, 232, 0.96); /* a cream card on the dim scrim */
+            background: var(--ca-sheet-solid); /* a cream card on the dim scrim */
         }
         /* v1.34.2 (owner report): every pop-up alert rides the same glass
            over the same scrim — the gold tint composites to dark olive with
@@ -664,7 +736,7 @@
            card too, so "Delete all entries?" is READABLE in light mode
            before anyone taps OK. */
         html:not(.dark) #app-dialog-backdrop .glass-bubble {
-            background: rgba(246, 241, 232, 0.96);
+            background: var(--ca-sheet-solid);
         }
         /* v1.31.0: the gold-ink token. The brand gold stays for fills and
            borders — but #c9a227 on white is 2.42:1 (WCAG AA needs 4.5:1), so
@@ -709,7 +781,7 @@
         /* hover is a mouse-only luxury: never a stuck state on touch */
         @media (hover:hover) {
             .ca-arch-iconbtn:hover { background: rgba(127,127,127,.12); }
-            .ca-arch-seg:hover { color: #1a1300; }
+            .ca-arch-seg:hover { color: var(--ca-arch-ink-on-gold); }
             .ca-arch-barcol:hover .ca-arch-bartip { display: block; }
             .ca-arch-barcol.ca-arch-baron .ca-arch-bartip { display: block; }
             .ca-arch-barcol:hover .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
@@ -864,13 +936,13 @@
 
         /* Gold CTA — light cream/navy, dark navy/gold */
         .cta-gold {
-            background: #FFFFFF;
-            color: #0B1A3A;
-            border: 1px solid #C9A227;
+            background: var(--ca-cta-bg);
+            color: var(--ca-cta-ink);
+            border: 1px solid var(--ca-gold);
         }
         html.dark .cta-gold {
-            background: #0b1a3a;
-            color: #C9A227;
+            background: var(--ca-cta-bg);
+            color: var(--ca-cta-ink);
         }
 
         .menu-desc-text {
@@ -918,7 +990,7 @@
             .ca-help-row:hover { background: rgba(127,127,127,.07); }
         }
         .ca-help-row.ca-help-flash { background: rgba(201,162,39,.16); }
-        .ca-help-token { background: rgba(127,127,127,.13); color: inherit; opacity: .78; }
+        .ca-help-token { background: var(--ca-line-gray-13); color: inherit; opacity: .78; }
         /* the tips sit a tier dimmer than the rows — colour only; their size
            is the app's single sanctioned micro token (ca-micro) */
         .ca-help-tip { color: rgba(127,127,127,.95); }
@@ -1162,7 +1234,7 @@
             background: rgba(0, 0, 0, 0.15);
             transition: background-color 0.2s ease;
         }
-        .dark .ca-switch { background: rgba(255, 255, 255, 0.15); }
+        .dark .ca-switch { background: var(--ca-switch-track); }
         .ca-switch::after {
             content: '';
             position: absolute;
@@ -1171,56 +1243,56 @@
             width: 1rem;
             height: 1rem;
             border-radius: 9999px;
-            background: #fff;
+            background: var(--ca-knob);
             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
             transition: transform 0.2s ease;
         }
-        .ca-switch-input:checked ~ .ca-switch { background: #C9A227; }
+        .ca-switch-input:checked ~ .ca-switch { background: var(--ca-gold); }
         .ca-switch-input:checked ~ .ca-switch::after { transform: translateX(1rem); }
         .ca-inline-icon { display: inline-block; vertical-align: -2px; flex-shrink: 0; }
 
         /* ---- Changelog sheet (v1.35.0 hotfix-3 redesign) ---- */
         .ca-cl-chips { scrollbar-width: none; }
         .ca-cl-chips::-webkit-scrollbar { display: none; }
-        .ca-cl-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; border: 1px solid rgba(168, 162, 158, 0.35); color: #a8a29e; background: transparent; min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+        .ca-cl-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; border: 1px solid rgba(168, 162, 158, 0.35); color: var(--ca-ink-stone); background: transparent; min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
         .ca-cl-chip svg { width: 12px; height: 12px; }
         html:not(.dark) .ca-cl-chip { color: #57534e; border-color: rgba(87, 83, 78, 0.3); }
         .ca-cl-chip:active { background: rgba(201, 162, 39, 0.18); }
-        .ca-cl-chip.ca-cl-chipon { background: #C9A227; border-color: #C9A227; color: #0B1A3A; }
+        .ca-cl-chip.ca-cl-chipon { background: var(--ca-gold); border-color: var(--ca-gold); color: var(--ca-ink-navy); }
         @media (hover: hover) { .ca-cl-chip:hover { border-color: rgba(201, 162, 39, 0.55); } }
-        .ca-cl-sumcard { border-radius: 1rem; padding: 12px 14px; border: 1px solid rgba(201, 162, 39, 0.35); background: rgba(201, 162, 39, 0.10); box-shadow: 0 0 24px rgba(201, 162, 39, 0.12); }
+        .ca-cl-sumcard { border-radius: 1rem; padding: 12px 14px; border: 1px solid var(--ca-gold-line); background: rgba(201, 162, 39, 0.10); box-shadow: 0 0 24px var(--ca-gold-soft-12); }
         html:not(.dark) .ca-cl-sumcard { background: rgba(201, 162, 39, 0.14); }
-        .ca-cl-sumbadge { width: 40px; height: 40px; border-radius: 9999px; background: linear-gradient(135deg, #C9A227, #a9861f); color: #0B1A3A; display: flex; align-items: center; justify-content: center; }
+        .ca-cl-sumbadge { width: 40px; height: 40px; border-radius: 9999px; background: linear-gradient(135deg, var(--ca-gold), #a9861f); color: var(--ca-ink-navy); display: flex; align-items: center; justify-content: center; }
         .ca-cl-sumpill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: rgba(11, 26, 58, 0.35); color: #E7D9B0; border: 1px solid rgba(201, 162, 39, 0.3); }
-        html:not(.dark) .ca-cl-sumpill { background: rgba(255, 255, 255, 0.6); color: #6b5613; }
+        html:not(.dark) .ca-cl-sumpill { background: var(--glass-bg); color: #6b5613; }
         .ca-cl-sumpill svg { width: 11px; height: 11px; }
         .ca-cl-group { animation: caClGroupIn .35s ease both; }
         @keyframes caClGroupIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
         @media (prefers-reduced-motion: reduce) { .ca-cl-group { animation: none; } }
-        .ca-cl-vhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: rgba(4, 7, 15, 0.92); border-bottom: 1px solid rgba(201, 162, 39, 0.35); }
-        html:not(.dark) .ca-cl-vhead { background: rgba(246, 241, 232, 0.92); }
-        .ca-cl-vdate { margin-left: auto; font-size: 11px; color: #a8a29e; }
-        html:not(.dark) .ca-cl-vdate { color: #78716c; }
+        .ca-cl-vhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: var(--ca-cl-vhead-bg); border-bottom: 1px solid var(--ca-gold-line); }
+        html:not(.dark) .ca-cl-vhead { background: var(--ca-cl-vhead-bg); }
+        .ca-cl-vdate { margin-left: auto; font-size: 11px; color: var(--ca-ink-stone); }
+        html:not(.dark) .ca-cl-vdate { color: var(--ca-ink-stone-deep); }
         .ca-cl-badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 9999px; }
-        .ca-cl-badge-new { background: #C9A227; color: #0B1A3A; animation: caClSoftPulse 2.2s ease-in-out infinite; }
+        .ca-cl-badge-new { background: var(--ca-gold); color: var(--ca-ink-navy); animation: caClSoftPulse 2.2s ease-in-out infinite; }
         @keyframes caClSoftPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
-        .ca-cl-badge-cur { border: 1px solid rgba(168, 162, 158, 0.5); color: #a8a29e; }
-        html:not(.dark) .ca-cl-badge-cur { color: #78716c; }
+        .ca-cl-badge-cur { border: 1px solid rgba(168, 162, 158, 0.5); color: var(--ca-ink-stone); }
+        html:not(.dark) .ca-cl-badge-cur { color: var(--ca-ink-stone-deep); }
         .ca-cl-row { position: relative; display: flex; align-items: baseline; padding: 5px 8px 5px 22px; }
-        .ca-cl-dot { position: absolute; left: 9px; top: calc(5px + 0.55em); width: 6px; height: 6px; border-radius: 9999px; background: #C9A227; }
+        .ca-cl-dot { position: absolute; left: 9px; top: calc(5px + 0.55em); width: 6px; height: 6px; border-radius: 9999px; background: var(--ca-gold); }
         .ca-cl-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; margin-right: 7px; flex-shrink: 0; border: 1px solid transparent; }
         .ca-cl-tag svg { width: 10px; height: 10px; }
-        .ca-cl-tag-new { color: #d4af37; background: rgba(201, 162, 39, 0.16); border-color: rgba(201, 162, 39, 0.4); }
-        html:not(.dark) .ca-cl-tag-new { color: #7d650f; }
-        .ca-cl-tag-fix { color: #f87171; background: rgba(248, 113, 113, 0.14); border-color: rgba(248, 113, 113, 0.35); }
-        html:not(.dark) .ca-cl-tag-fix { color: #b91c1c; }
+        .ca-cl-tag-new { color: var(--ca-gold-bright); background: rgba(201, 162, 39, 0.16); border-color: rgba(201, 162, 39, 0.4); }
+        html:not(.dark) .ca-cl-tag-new { color: var(--sia-gold-ink); }
+        .ca-cl-tag-fix { color: var(--ca-danger-ink); background: rgba(248, 113, 113, 0.14); border-color: var(--ca-danger-line); }
+        html:not(.dark) .ca-cl-tag-fix { color: var(--ca-danger-ink); }
         .ca-cl-tag-imp { color: #7dd3fc; background: rgba(125, 211, 252, 0.13); border-color: rgba(125, 211, 252, 0.32); }
         html:not(.dark) .ca-cl-tag-imp { color: #0369a1; }
         .ca-cl-tag-fun { color: #f0abfc; background: rgba(240, 171, 252, 0.13); border-color: rgba(240, 171, 252, 0.32); }
         html:not(.dark) .ca-cl-tag-fun { color: #a21caf; }
         .ca-cl-text { flex: 1; min-width: 0; }
         .ca-badge-green { background: rgba(34, 197, 94, 0.16); border: 1px solid rgba(34, 197, 94, 0.45); color: #22c55e; }
-        html:not(.dark) .ca-badge-green { color: #15803d; }
+        html:not(.dark) .ca-badge-green { color: var(--ca-success-deep); }
     </style>
     <!-- Tailwind CSS — hotfix 18: compiled at build time into ./tw.css
          (see tw.config.cjs). The app no longer runs the Play CDN JIT in the
@@ -1728,7 +1800,7 @@
                 </div>
                 <!-- 3b. insights -->
                 <button type="button" id="ca-arch-ins-toggle" class="w-full h-11 mt-3 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider rounded-full" style="color: var(--arch-muted)" aria-expanded="false">
-                    <i data-lucide="lightbulb" class="w-4 h-4" style="color: #d4af37"></i>
+                    <i data-lucide="lightbulb" class="w-4 h-4" style="color: var(--ca-gold-bright, #d4af37)"></i>
                     <span id="ca-arch-ins-toggle-label">View insights</span>
                     <i data-lucide="chevron-down" class="ca-arch-chev2 w-4 h-4"></i>
                 </button>
@@ -2243,7 +2315,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.3'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.4'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2265,6 +2337,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.4', d: '2026-10-14', items: [
+                { c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' },
+            ] },
             { v: '1.44.3', d: '2026-10-14', items: [
                 { c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' },
             ] },

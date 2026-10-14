@@ -197,6 +197,12 @@ const mkUntil = (d) => async (cond, ms) => {
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
     R.ok(src.includes('TYPOGRAPHY & COLOR DISCIPLINE \u2014 standing owner rule v2'), 'the scale is documented in the source, roles first');
+    // v1.44.4: the semantic colour tokens exist, both themes, and the
+    // flagship call sites ride them (the zero-diff proof lives in the
+    // style-snapshot rig, not here)
+    R.ok(src.includes('--ca-gold: #C9A227;') && src.includes('--ca-panel-bg: #0B1A3A;') && src.includes('html:not(.dark) {') && src.includes('--ca-panel-bg: #F6F1E8;'), 'the semantic colour tokens are defined for both themes');
+    R.ok(src.includes('border: 1px solid var(--ca-gold);') && /#cadate-panel \{\n\s*background: var\(--ca-panel-bg\);\n\s*color: var\(--ca-panel-ink\);/.test(src), 'the gold CTA and the date-picker panel ride the tokens');
+    R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
     R.ok(!/font-size: 0\.8rem;/.test(src), 'the date picker\u2019s day cells left the 12.8px one-off for the 14px day-number role');
@@ -247,8 +253,8 @@ const mkUntil = (d) => async (cond, ms) => {
     await wait(60);
     R.ok(dPill.classList.contains('bg-sia-gold') && dPill.getAttribute('aria-checked') === 'true', 'Default re-selects on return');
     // toasts: gold border always, bright pill in dark mode
-    R.ok(src.includes('border: 1.5px solid #d4af37'), 'every toast carries a gold border');
-    R.ok(src.includes('.dark .ca-arch-toast { background: #f6f1e8; color: #171d2b; }'), 'dark mode toasts invert to a bright pill');
+    R.ok(src.includes('border: 1.5px solid var(--ca-gold-bright)'), 'every toast carries a gold border'); // v1.44.4: the literal rides the token now
+    R.ok(src.includes('.dark .ca-arch-toast { background: var(--ca-toast-bg); color: var(--ca-toast-ink); }'), 'dark mode toasts invert to a bright pill'); // v1.44.4: the pair rides the tokens now
     R.ok(src.includes('.ca-arch-toast .ca-toast-undo'), 'the Undo action keeps a readable gold in both themes');
     void d;
   }
@@ -318,20 +324,23 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      R.eq(entries[0].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.44.3 entry carries its single pointer');
+      R.eq(entries[0].v, '1.44.4', 'the 1.44.4 colour-token round sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.44.4 entry carries its single pointer');
+      R.ok(src.includes("c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' }"), 'the 1.44.4 pointer reads as approved, inside the twelve-word cap');
+      R.eq(entries[1].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[1].v, '1.44.2', 'the 1.44.2 date-picker round sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
+      R.eq(entries[2].v, '1.44.2', 'the 1.44.2 date-picker round sits third, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[2].v, '1.44.1', 'the 1.44.1 typography round sits third, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
+      R.eq(entries[3].v, '1.44.1', 'the 1.44.1 typography round sits fourth, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[3].v, '1.44.0', 'the 1.44.0 release sits fourth, newest first');
-      R.eq(entries[3].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[4].v, '1.44.0', 'the 1.44.0 release sits fifth, newest first');
+      R.eq(entries[4].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[4].v, '1.43.0', 'the 1.43.0 consolidation sits fifth, newest first');
-      R.eq(entries[4].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[5].v, '1.43.0', 'the 1.43.0 consolidation sits sixth, newest first');
+      R.eq(entries[5].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
