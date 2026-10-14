@@ -30,6 +30,8 @@ the service-worker stamp. It checks:
   "menu " into the composer, focuses it, flashes the row gold and fades; and
   the composer's computed background resolves to the panel white by day and the
   warm charcoal rgba(4, 7, 15, 0.92) by night (the navy override is gone).
+- v1.44.1 typography discipline: the calendar's day numbers compute at 14px and
+  its tags/badges at the 11px MICRO floor, against the live stylesheet.
 
 ## Running it
 
