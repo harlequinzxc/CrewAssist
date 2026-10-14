@@ -2315,7 +2315,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.4'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.5'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2337,6 +2337,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.5', d: '2026-10-14', items: [
+                { c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' },
+            ] },
             { v: '1.44.4', d: '2026-10-14', items: [
                 { c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' },
             ] },
@@ -13604,6 +13607,14 @@
 
         function showArchiveOverlay() {
             archState.scope = 'all'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false; archState.insightsAll = false;
+            // v1.44.5 (owner order): a reopen always starts fresh. projOpen
+            // joins the reset (a projection left open used to survive the
+            // close), and the list scroll zeroes BEFORE renderArch so the
+            // v1.33.2 keep-scroll preservation reads 0 — the sheet slides
+            // off with translate-y-full, so it stays laid out and would
+            // otherwise hand the old scroll back on reopen.
+            archState.projOpen = {};
+            const archScroll = archEl('ca-arch-scroll'); if (archScroll) archScroll.scrollTop = 0;
             const s = archEl('ca-arch-search'); if (s) s.value = '';
             // Reset the insights toggle to its closed state too — closing with
             // insights open used to leave a stale "Hide insights" label,
@@ -14334,6 +14345,13 @@
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
             currentMenuSearch.selectedCabins = cabinClasses;
             currentMenuSearch.selectedSector = '';
+            // v1.44.5 (owner order): a reopen always starts fresh. The state
+            // reset (menuViewState, meal services) runs further down, just
+            // before loadMenu; what was missing is the pane itself — zero
+            // the scroll BEFORE the render so the sheet opens at the top
+            // even on the error path, where no renderSector scrolls back.
+            const menuScroll = document.getElementById('menu-content');
+            if (menuScroll) menuScroll.scrollTop = 0;
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
 
@@ -16885,9 +16903,26 @@
             currentMenuSearch.flightNumber = flightNumber;
             currentMenuSearch.date = date;
             currentMenuSearch.selectedCabins = cabinClasses;
+            // v1.44.5 (owner order): the print preview reopens at its
+            // defaults — layout, paper, protein marking, zooms and option
+            // pills all reset here, BEFORE applyPrintChrome() repaints the
+            // pill chrome from this state, and both scroll panes return to
+            // the top. Content edits reset too: the model is rebuilt below.
+            printState.layout = 'elegant';
+            printState.paper = 'a4';
+            printState.proteinMode = 'brackets';
+            printState.zoomElegant = 100;
+            printState.zoomCompact = 100;
+            printState.greyscale = false;
+            printState.descriptions = true;
+            printState.showBounds = true;
             printState.sectorIdx = 0;
             printState.tab = 'sheet';
             printState.model = null;
+            const printScroll = document.getElementById('print-paper-scroll');
+            if (printScroll) printScroll.scrollTop = 0;
+            const printEditScroll = document.getElementById('print-edit-scroll');
+            if (printEditScroll) printEditScroll.scrollTop = 0;
             setPrintLoading(true);
             openPrintSheetChrome();
             applyPrintChrome();

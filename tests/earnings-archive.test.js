@@ -1015,5 +1015,38 @@ function todayYmd() {
     R.ok(!e.d.querySelector('.ca-arch-group-head[data-mk="2026-07"]').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn'), 'completed past months keep a plain total');
     e.d.getElementById('ca-arch-backdrop').click();
   }
+  // v1.44.5 (owner order): a close+reopen always starts fresh — the search,
+  // the scope seg and the list scroll all reset at open. The v1.33.2
+  // keep-scroll preservation still holds DURING an open session (the dirty
+  // scroll survives below without a close); only the reopen boundary resets.
+  {
+    const { w, d } = await boot(APP, { now: '2026-09-20T12:00:00+08:00' });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'R1', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', stationDisplay: 'NRT/LAX', amount: 70 },
+      { id: 'R2', savedAt: '2026-08-15T10:00:00Z', monthKey: '2026-08', sectorDate: '2026-08-15', stationDisplay: 'JNB/CPT', amount: 50 }
+    ]));
+    w.showArchiveOverlay();
+    await wait(100);
+    const si = d.getElementById('ca-arch-search');
+    si.value = 'NRT';
+    si.dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(30);
+    R.ok(d.getElementById('ca-arch-list').textContent.includes('NRT') && !d.getElementById('ca-arch-list').textContent.includes('JNB'), 'the search filter takes before the close');
+    d.querySelector('.ca-arch-seg[data-scope="month"]').click();
+    await wait(30);
+    R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon'), 'the Month scope takes before the close');
+    d.getElementById('ca-arch-scroll').scrollTop = 777;
+    R.eq(d.getElementById('ca-arch-scroll').scrollTop, 777, 'the list scroll sits deep while the sheet stays open');
+    w.closeArchOverlay();
+    await wait(350); // the owner's flow: close, do something else, come back
+    w.showArchiveOverlay();
+    await wait(100);
+    R.eq(d.getElementById('ca-arch-search').value, '', 'v1.44.5: a reopen clears the search');
+    R.ok(d.getElementById('ca-arch-list').textContent.includes('JNB'), 'v1.44.5: a reopen lists every entry again');
+    R.ok(d.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon'), 'v1.44.5: the scope seg returns to All-time');
+    R.eq(d.getElementById('ca-arch-scroll').scrollTop, 0, 'v1.44.5: the list reopens scrolled to the top');
+    w.closeArchOverlay();
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
