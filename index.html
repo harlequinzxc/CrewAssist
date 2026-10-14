@@ -2408,7 +2408,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.7'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.8'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2430,6 +2430,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.8', d: '2026-10-15', items: [
+                { c: 'imp', t: 'The last raw colours ride named tokens — same pixels, one spelling.' },
+            ] },
             { v: '1.44.7', d: '2026-10-15', items: [
                 { c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' },
             ] },
