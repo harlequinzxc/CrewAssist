@@ -234,6 +234,13 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('--print-type: 1;\n            --print-ink: #16294e;') && (src.match(/var\(--print-ink\)/g) || []).length === 7, 'round 3 value 3: --print-ink defined once on .print-paper, seven call sites');
     R.ok(!src.toLowerCase().replace('--print-ink: #16294e;', '').includes('#16294e'), 'round 3 value 3: no #16294e literal survives outside the def');
     R.ok(!src.includes('--print-ink: var(--print-ink)'), 'round 3 value 3: the def is not self-referential (the diag-caught first-draft bug)');
+    // v1.44.7 audit fix 6, value 4 of 5 (#f6f1e8 -> the existing surface token,
+    // round 3): the composer fade's solid from/via ride var(--bg-color) (the
+    // token's exact pair). The archive veil's /90+/80 alpha pair and the
+    // capture canvas backdrop stay literal BY REPORT: no existing token carries
+    // rgba(246,241,232,.9)/rgba(8,11,20,.8), and canvas fillStyle cannot var()
+    R.ok(src.includes('from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90'), 'round 3 value 4: the composer fade rides the bg-color token, dark overrides intact');
+    R.ok((src.match(/#F6F1E8/g) || []).length >= 1 && src.includes('fill-[#F6F1E8]/90 dark:fill-[#080B14]/80'), 'round 3 value 4: the archive veil alpha pair stays literal (no token carries it)');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
