@@ -4,6 +4,9 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 
 ## Docs
 - [`docs/HANDOVER.md`](docs/HANDOVER.md) — next-agent instructions; start with its **Cold start** section
+- [`docs/STANDING_RULES.md`](docs/STANDING_RULES.md) — universal agent conduct: scope, safety, quality bars, verification, reporting
+- [`docs/UI_UX_DISCIPLINE.md`](docs/UI_UX_DISCIPLINE.md) — the binding UI rules: typography rungs, colour tokens, spacing, motion
+- [`docs/REPO_RULES.md`](docs/REPO_RULES.md) — how work lands: branch strategy, safe commands, build/test/release mechanics
 - [`docs/LOGIC.md`](docs/LOGIC.md) — the COP/IFA/LMA formulas, coefficients and rules
 - [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) — the SQ inflight-menu API map
 - [`docs/TOUR-BREAKDOWN.md`](docs/TOUR-BREAKDOWN.md) — the feature tour's beat-by-beat script
@@ -33,7 +36,7 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 - `rates.json` — default IFA modifiers and LMA region rates (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `icons/` — transparent dart for in-app (`logo-192.png`, `logo-512.png`); navy + gold PWA icons (`app-icon-180/192/512.png`).
-- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `API_REFERENCE.md` (SQ API), `TOUR-BREAKDOWN.md` (tour script), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
+- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `TOUR-BREAKDOWN.md` (tour script), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
 - `tests/` — the jsdom behaviour suite plus `tests/smoke/`, the real-Chromium browser rig (`cd tests && npm install && npm test`; see `tests/README.md`).
 - `README.md` — this overview.
 

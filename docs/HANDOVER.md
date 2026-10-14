@@ -1,8 +1,16 @@
-# AI Agent Handoff File (CrewAssist)
+# Handover
 
-**Read this file first.** Then `docs/LOGIC.md` (formulas), `docs/API_REFERENCE.md` (SQ menu API), `README.md` at the repo root (human overview). The product is a single-page PWA; almost all behaviour is in `index.html`.
+> Owns the project's memory: what was built and why, the technical decisions
+> behind it, known issues, pitfalls, unfinished work, and what the next agent
+> needs to know before touching anything.
+>
+> This file is **history and state, not rules**. Where a version entry below
+> describes a colour, size or icon, that is a record of what happened in that
+> round — the binding rule lives in `UI_UX_DISCIPLINE.md`, and the discipline
+> doc wins on any disagreement. Repo mechanics live in `REPO_RULES.md`;
+> universal agent conduct lives in `STANDING_RULES.md`.
 
-Latest app cache: `crewassist-v211` (`sw.js`). App SemVer: **1.43.0** (`APP_VERSION` in `index.html`, shown on onboarding as `#app-semver`). `APP_CHANGELOG` is the full version history, newest first (v1.0.0 → current) — the What’s New overlay shows the unseen delta; Settings → Changelog shows everything. Working branch: **this session's** `arena/<session-id>-crewassist` — resolve it, do not copy it (see **How to work in this repo → Branch**). Repo `harlequinzxc/CrewAssist`.
+---
 
 ## Cold start — the 60-second version
 
@@ -30,179 +38,20 @@ Non-negotiables (each one has cost a regression — details in the sections belo
 
 **Product status (owner, 2026-09-15):** v1.5.9 was **signed off** — its issues fixed (LMA out-date = the typed sector date; calendar weekday / Today button / fixed height). The v1.5.10 → v1.19.11 run that followed (calculator interface modes, Lucide icons, pill selectors, trip bars + Fetch all, the earnings archive, the refetch gate, scroll choreography) shipped release-by-release and was accepted; every feature through v1.19.22 was signed off 2026-09-19 and the app is **essentially complete**. What each version added lives in `APP_CHANGELOG` (v1.0.0 → current, in `index.html`) and the version-history sections below — this paragraph no longer repeats it. Two rulings from those rounds still bind: **Fetch may pre-tick Shuttle only when the transit is under 3 hours from scheduled arrival to report time (v1.40.0; the v1.5.9-era same-calendar-day-or-under-6h rule is superseded)**, and **never hardcode flight numbers** (no SQ478/479 or any other).
 
----
-
-## How to work in this repo
-
-- **Branch:** every Arena chat session gets its **own** branch, `arena/<session-id>-crewassist` (ids look like `01a0a47b-…`). It is **different for every chat** and changes when the owner jumps between chats, so a branch name you read in this file, in an old commit message, or from a previous session is **already stale**. First action in any session: `BR=$(git branch --show-current)`, and use `$BR` everywhere below. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
-- **Sandbox drift:** this environment can silently **re-clone the repo onto an outdated/stale commit** — your commits vanish from local history while your file edits survive as uncommitted changes, and `/tmp` plus any background process are wiped. `git reflog` shows the signature: a fresh `clone: from …` followed by `checkout: moving from main to arena/…`. The remote is **not** damaged. Recover with (`$BR` = this session's branch):
-  ```
-  BR=$(git branch --show-current)
-  git fetch origin "refs/heads/$BR:refs/remotes/origin/$BR"   # a plain `git fetch origin` does NOT restore the ref
-  git reset --hard "origin/$BR"
-  ```
-  Then re-apply the change you were making and commit it again. Confirm with `git ls-remote origin "refs/heads/$BR"` that local HEAD equals the remote SHA.
-  **A rejected non-fast-forward push is this drift, not a sync problem** — it means the remote is *ahead* and your local branch was reset to a stale base. **Never `git push --force`;** that erases the good upstream commits. Seen first-hand 2026-09-15: three already-pushed commits disappeared locally, the remote was untouched, and the rejected push was the only warning.
-- **Drift, second variant (seen 2026-09-24):** the sandbox came back as a **shallow clone rooted at the session branch's original fork point** (a `Ship v1.5.9`-era commit). Signature: HEAD is an ancient commit, `.git/shallow` exists, `origin/<session-branch>` is missing locally, and `git ls-remote origin` shows the true tip intact. The **working tree survives with your uncommitted edits** — so `git reset --hard` from the recipe above would **destroy a round of work**. With uncommitted changes, fetch the branch and rebase the branch pointer with **`git reset --mixed FETCH_HEAD`** (moves the branch onto the remote tip, leaves the working tree alone); afterwards `git status` must show *only* your real edits — if it shows more, stop and reconcile before committing.
-- **Clock & calendar:** the sandbox runs **UTC**; the owner lives in Singapore (**UTC+8**) — late in the owner's day, jsdom's `todayLocalYMD()` reads a day behind the owner's wall clock. Date-derived behaviour (current-month expansion, month projections, demo dates) and the date-anchored test seeds follow jsdom's clock, and expected figures are computed from the run date, never hardcoded. When the calendar month rolls over, the date-anchored tests fail **loudly on purpose** — reseed the months and expectations, never change app behaviour to match stale seeds. (Anchor while writing this: September 2026.)
-- **Patching `index.html`:** it is ~1.06 MB (17.7k lines) with three inline scripts plus one external `<script src>` (lucide) — re-verify before relying on the count. Prefer **Python unique-string replace** (`count == 1`) over editor search/replace. Never `innerHTML +=` on complex trees. After a write, assert `function openMenuPrinter` and size. Syntax-check inline scripts with `node --check` using **real newlines** between script bodies (`'\n;\n'.join` — a checker `\\n;\\n` string is a SyntaxError).
-- **Do not edit `HANDOVER.md` in parallel.** Two concurrent search/replaces race; the later write wins and drops the other. README then HANDOVER, **one file at a time**, after every commit.
-- **Keep history entries readable by tooling.** Wrap new entries at sentence boundaries and keep any single line under ~1,500 characters; split longer rounds into sub-bullets. Entries of 3,000–6,000 characters on one line have already caused a chunked read to silently drop the v1.40.0 meal ruling (the 3,773-character transit-meals entry) and produce two wrong findings. Rendered markdown is identical either way.
-- **SemVer + cache on every app change:** bump `APP_VERSION` in `index.html` (patch x.y.Z for polish, minor x.Y.0 for features) **and** `CACHE_NAME` in `sw.js` (`crewassist-vN`). The onboarding stamp is how the owner confirms the phone has the build. Docs-only README/HANDOVER tweaks have sometimes shipped without a bump; app/JS/CSS changes must bump both. **Owner ruling (2026-10-03, standing): the DEFAULT is bump both on every app change. When the owner says “do not bump version”, `APP_VERSION` freezes (the change ships inside the current version) but `CACHE_NAME` still bumps — the cache swap is delivery plumbing, not a version change.**
-- **Ask for review** before starting the next slice.
-- **No secrets.** No GitHub tokens, no API keys in the tree or the PWA. SQ menu JSON is unauthenticated; images are public CDN.
-- **Do not call SQ / cifp from the browser.** JSON goes through `POST /api/sq` only.
 
 ---
 
-## Typography & color discipline — standing owner rule (v2, 2026-10-14; supersedes the v1.44.1 typography-only text, which is preserved in that round's entry)
+## In-Progress / Known Gaps
 
-The app already has a fixed design scale defined by role, not by number, and it ships in both a dark theme and a light theme. When adding any new feature, element, label, badge, chip, button, divider, input, empty state, tooltip, CTA, or surface, you MUST pick its typography and its color from the existing scale below. Never invent a new font size, weight, hex color, opacity value, or shadow for a new element. Before rendering a new element, scan the current UI and find the element whose purpose and surface most closely matches yours — then reuse that exact treatment end to end (size, weight, letter-spacing, color, opacity, background, border, shadow, radius, line-height).
+Owner considers the app **essentially complete**. Do not start a new slice without a request.
 
-==========================================================
-1. TYPOGRAPHIC SCALE — pick by role, never by number
-==========================================================
-The fixed scale (refer to these by role name):
+Honest leftovers (do not “fix” unless asked):
 
-- **HERO** — page/screen titles and the single most important number on a page. Used once per screen at most.
-- **TITLE** — card titles, section headers, flight numbers, large button labels.
-- **BODY** — primary readable text, chat bubble messages, form labels, chip labels, standard button labels, input text.
-- **SUBTITLE** — secondary metadata under a title (departure times, dates, helper lines, quiet CTAs, placeholder text).
-- **CAPTION** — tertiary metadata, status pills, timestamps, tab labels, small chip labels, form hints.
-- **MICRO** — the smallest readable text (badge numbers, counts, character counters, divider labels). Do not go smaller than MICRO for any readable content.
+- **Publish rates to all installs** is still: export or edit `rates.json`, commit, merge via GitHub Desktop. No one-tap GitHub write from the PWA (rejected).
+- **Icons, not emoji (v1.9.0):** the app carries **no emoji**. Two glyphs stay on purpose — `◆` in the elegant print-sheet header (the sheet takes **no icons**; the compact export draws and measures text on a canvas) and the typographic minus in the `A−` / `A+` type-size buttons. Where markup never gets a `lucide.createIcons()` pass (the menu viewer) or lands in a `textContent` sink, use the inlined constants `LUCIDE_PLANE_SVG` / `LUCIDE_X_SVG` (declared just above `lmaMealBadge`) instead of `<i data-lucide>` — a stray `<i>` there renders as an empty tag. If you add icons to `renderIfaSectors`, note that it calls `lucide.createIcons()` right after `container.innerHTML = html` for exactly this reason.
+- **Toggle switches (`.ca-switch`):** every on/off control is a switch now — **Direct US** (`flag`, `ULR flight — {directUSMultiplier}×`), **Paxing** (`armchair`, `Deadheading — {paxingMultiplier}×`, **its own row**, not beside Direct US) and **Shuttle**. Multipliers are read live from `IFA_CONFIG`, never hardcoded. The switch is CSS-only: a visually hidden `<input type="checkbox" class="ca-switch-input sr-only">` followed by `<span class="ca-switch">`, styled by the `.ca-switch-input:checked ~ .ca-switch` rules at the end of the `<style>` block. **Keep the real checkbox** — `validateInputs`, `executeCalculation`, the Fetch auto-tick and `suggestShuttle` all read `.checked` by id (`{id}-ifa-us{i}`, `{id}-ifa-px{i}`, `{id}-lma-sh{idx}`), so replacing it with a `<div>` would silently break the engine.
+- **tw.css trailing newline (audit FIX 7 — owner hold, 2026-10-15):** the audit's last fix would add a trailing newline to `tw.css`, but its premise was wrong — the file is **tracked** and rebuilt with the CLI (`tests/smoke/node_modules/.bin/tailwindcss -c tw.config.cjs -o tw.css --minify`), which emits no trailing newline; a hand-added one is reverted by the next rebuild. Held pending a corrected brief. Do not hand-edit the file to "fix" this.
 
-Typography rules:
-
-- **MATCH BEFORE MAKING.** Identify which existing element plays the same role (primary label / secondary metadata / tertiary status / CTA / etc.) and copy its typography verbatim. If there is no exact match, use the role above whose description fits — do not interpolate.
-- **NO IN-BETWEEN SIZES.** You may not create a size between two roles. If something feels too large, step down one role; if too small, step up one. Do not tune by eye.
-- **WEIGHT + COLOR COME WITH THE ROLE.** Each role has a fixed weight (regular / semibold / bold) and a fixed tone. Do not mix weights within a role.
-- **BADGES / SINGLE-DIGIT INDICATORS** always use MICRO (tight letter spacing, bold) unless an existing badge uses CAPTION — then match that. Never render a one- or two-digit badge at BODY size.
-- **BUTTON LABELS** use BODY for primary CTAs, CAPTION for secondary/outlined/small CTAs.
-- **STACKED METADATA** under a title uses a size/weight step-down per line (e.g. line 1 = SUBTITLE, line 2 = CAPTION-dim). Never render two stacked metadata lines at the same weight/size — it flattens hierarchy.
-- **INPUT TEXT and PLACEHOLDER** use BODY size; the placeholder is dimmer but same size.
-
-==========================================================
-2. COLOR SCALE — semantic tokens, never raw hex
-==========================================================
-All colors are semantic tokens. The dark and light theme each map these tokens to concrete values; you never write a hex directly, and you never introduce a new token. Use tokens by name:
-
-SURFACE TIERS (backgrounds — layered, from back to front):
-
-- **bg-base** — page/screen background (the deepest layer)
-- **bg-raised** — cards, bubbles, sheets that sit on bg-base
-- **bg-elevated** — popovers, menus, toasts, dialogs that float above cards
-- **bg-pressed** — active/press state for interactive surfaces
-- **bg-input** — composer / text field fill
-
-TEXT (four contrast tiers — must be reused by role):
-
-- **text-primary** — primary readable copy (maps to HERO/TITLE/BODY role in default state)
-- **text-secondary** — metadata, helper lines, subtitles
-- **text-tertiary** — captions, timestamps, placeholder, disabled labels
-- **text-inverse** — text on top of gold-filled CTAs or other filled accents (near-black on gold, near-white on dark fills)
-
-ACCENTS (use sparingly, for purpose only):
-
-- **accent-gold** — primary brand accent. Used for: filled primary CTAs, active toggle icon fill, selected/active text, brand-highlighted keywords, gold icon tiles. Do not use for body text.
-- **accent-gold-soft** — translucent gold for icon tile backgrounds, selected chip backgrounds, outlines on secondary CTAs, pulse rings.
-- **success** — green family. Saved states, success checks, confirmation nudges, "complete" badges.
-- **warning** — amber/warm tone. Only for genuine alerts (delay, caution, attention needed). Do not use this as a decorative color.
-- **danger** — red family. Errors, destructive actions only.
-- **info** — cool blue/cyan. Non-critical informational states.
-
-BORDERS:
-
-- **border-subtle** — hairline dividers between sections (very low opacity)
-- **border-default** — card outlines, input borders
-- **border-strong** — focused input, selected items, drag handles
-
-INTERACTIVE STATES (for buttons, rows, chips — reuse existing state treatments): rest → hover → pressed → disabled → selected/on. Never invent a new state color. Match the state treatment of an existing button/row of the same weight.
-
-Color discipline rules:
-
-- **MATCH BEFORE MAKING for color too.** Find the existing element that does the same job (primary CTA vs. secondary CTA vs. quiet icon button vs. dismiss X vs. chip) and reuse its color token + state colors.
-- **ONE ACCENT AT A TIME PER SURFACE.** A card should not simultaneously use gold, green, orange, and blue unless each of those states is genuinely present (e.g. gold for the primary CTA, green for a "saved" badge, neutral grey for "ready"). Decorative colors beyond these tokens are not allowed.
-- **GOLD IS THE LEITMOTIF.** Gold is the hero accent; every other accent color earns its place by meaning (green=success, red=danger, etc.). If a piece of UI is decorative and not signaling a state, it should be gold/grey/neutral — not a new hue.
-- **DO NOT COPY-PASTE COLORS FROM DARK THEME INTO LIGHT THEME OR VICE VERSA.** Always map through the semantic token (e.g. "this text is text-secondary") and let the theme resolve the value.
-- **DIVIDERS / BORDERS** use the border tokens; they must be visible but quiet — if a divider competes with the text next to it, you used border-default instead of border-subtle.
-- **ICONS** inherit the text color of their parent (text-secondary for muted icons, accent-gold for active icons, text-tertiary for dismiss X at rest). Colored icons beyond the token set are not allowed.
-- **SHADOWS** follow the surface tier (raised vs elevated) and are softer/larger in dark theme, subtler/tighter in light theme. No colored glows except a very subtle gold halo on accent-gold CTAs.
-- **GRADIENTS**, if used, must already exist in the UI (e.g. the gold CTA gradient). Do not invent new gradients. The page background may use a subtle gradient but no multi-color rainbow effects.
-
-==========================================================
-3. THEME HANDLING — dark AND light must both be readable
-==========================================================
-The app must render correctly in dark theme AND light theme. Every element you build must work in both. You cannot optimize only for dark.
-
-- **BUILD ON TOKENS, NOT VALUES.** If you write a color directly (any literal color value), you are almost certainly breaking the other theme. Always reference the semantic tokens above.
-- **TEST CONTRAST IN BOTH THEMES MENTALLY** before output: text-primary on its background must be comfortably readable (~7:1 for BODY-and-larger on its immediate surface in BOTH themes); text-secondary clearly readable but not loud (~4.5:1 minimum); text-tertiary intentionally dim but legible at arm's length in both themes — if a tertiary text blends into the background in one theme, the token value is wrong for that theme, fix the token, don't reach for a custom color. Accent-gold on gold-filled CTAs is paired with text-inverse (dark text) to guarantee contrast; never place white text on a gold fill, or dark text on a soft-gold translucent background, without checking contrast. Badge numbers (MICRO, single digits) must be readable against their pill background in both themes.
-- **SURFACES SCALE WITH THEME.** In dark theme: bg-base is near-black, cards a few steps lighter. In light theme: bg-base is off-white / very light warm grey, cards pure white or one step up. The layering order (base < raised < elevated) must hold in both; never let an elevated card end up darker than its parent in light mode.
-- **BORDERS ADAPT.** Subtle borders in dark theme are low-opacity white; in light theme low-opacity dark (grey). If you hardcode a white border at 6% opacity it will be invisible in light theme — always use the border tokens so the polarity flips correctly.
-- **ICONS INVERT POLARITY.** Muted icons are light grey/blue-grey in dark theme; medium grey in light theme. Active/gold icons stay gold in both (the gold may need a slightly deeper tone in light mode to keep contrast — handled at the token level, not by picking a new color per use).
-- **SUCCESS / WARNING / DANGER** must be tested against both themes. Green on a "saved" badge must not look pastel-invisible in light theme or neon-harsh in dark theme. Use the existing tokens; do not retune saturation per-element.
-- **PLACEHOLDER TEXT IN LIGHT THEME** is a medium grey, not the same grey as dark theme (a dim grey that works on a near-black input will be nearly illegible on a near-white input). Use the text-tertiary token — it resolves per-theme.
-- **SHADOWS ARE STRONGER IN LIGHT THEME.** In dark theme, separation is mostly done by subtle edge lighting and very soft shadows; in light theme, shadows carry more of the depth. Use the surface-tier shadow token rather than writing raw box-shadow values.
-- **STARFIELDS / AMBIENT BACKGROUNDS** are a dark-theme treatment only. In light theme the background is clean (warm off-white or very soft gradient). No dark-mode decoration (twinkling stars, glow gradients) persists into light mode, except subtle accents on CTAs.
-- **IMAGES / MEDIA** must not rely on being on a dark background. If a chart, QR code, or generated image assumes a dark background, it must be re-themable (transparent-aware) or you must provide a light-theme variant.
-
-==========================================================
-4. INTERACTION STATES — desktop AND mobile
-==========================================================
-Every interactive element (buttons, chips, command rows, list items, toggles, icon buttons, card-close buttons, links, tabs, segmented controls) must define complete, consistent state treatments for BOTH pointer types — mouse on desktop and touch on mobile. You cannot design for one and hope the other works. Do not invent state colors; use the existing pressed/focused/disabled/selected tokens.
-
-DESKTOP (mouse pointer): rest / hover (MUST exist — the only clear sign of clickability) / active (mouse held) / focus (keyboard focus ring, never removed entirely) / disabled (greyed, not clickable, default cursor) / selected-on (a stable state, not a press transient).
-
-MOBILE (touch): rest / pressed (finger down — the equivalent of desktop active) / released (returns to rest OR transitions to selected if a toggle) / disabled / selected-on — and NO hover: never rely on hover-only affordances on mobile; anything revealed only on hover must also be reachable by tap, or not be critical information.
-
-State treatment rules:
-
-- **MATCH BEFORE MAKING, STATES EDITION.** Before styling a new interactive element, find an existing element of the same weight (primary CTA / outlined secondary button / ghost icon button / chip / list row / dismiss X) and copy its state transitions verbatim. A new button should not feel heavier on press than the existing buttons.
-- **HOVER IS SUBTLE, NOT A REDESIGN.** On desktop hover, change one or two of: background tint (toward accent-gold-soft for gold-family elements), text/icon color (muted → accent), shadow lift (1–2px), or border color. Do not change border radius, typography, or size on hover. Transition duration is quick (the app's short ease — typically 120–180ms for colour/background, slightly longer for shadow/movement). No heavy animation on hover.
-- **ACTIVE / PRESSED IS ALWAYS A SLIGHT SCALE-DOWN OR DARKEN, never a scale-up.** Standard treatment is scale to ~0.96–0.98 or slightly darker background — "pressing a real button" on both mouse and finger. Release animates back to rest (or to selected if toggled on).
-- **TOUCH TARGETS ON MOBILE** are at least fingertip size (~44×44px minimum hit area even if the visible icon is smaller). Use invisible padding around small icons to expand the hit area without making the icon visually bigger. On desktop the visible target can be tighter, but never below comfortable click size.
-- **CURSOR FEEDBACK ON DESKTOP:** buttons, chips, rows, and toggles show the pointer cursor on hover. Disabled elements show the default cursor and do not respond. Non-interactive elements (text, badges, status pills, dividers) show the default/text cursor.
-- **FOCUS RINGS FOR KEYBOARD NAVIGATION:** on keyboard focus, a visible ring using accent-gold-soft (2–3px offset outline). It appears on desktop and mobile (hardware keyboard attached). Sufficient contrast in both themes. Never `outline:none` without an alternative focus style.
-- **SELECTED / ON STATE IS VISUALLY DISTINCT** from rest and from pressed: accent-gold fill or accent-gold text and a matching icon color — obviously "on" without a separate label. Pressed is a transient animation; selected is a stable visual.
-- **DISABLED STATE** drops opacity, desaturates, and uses text-tertiary / bg-pressed styling. No hover, click, or tap response; default cursor; press animation suppressed.
-- **LOADING / IN-PROGRESS STATE** (e.g. "Saving…") disables the button, shows a small spinner in the button label's color family, and changes the label text. Hover and press suppressed while loading; cursor default/wait. On completion, transition to the success/selected state with a short animation (icon swap to check, label change, subtle green accent for a save/confirmation).
-- **TRANSITIONS BETWEEN STATES** use the app's existing easing and duration. Do not make a new button's press animation slower than the existing buttons'. All state changes animate — instant flips feel jarring — but no transition longer than ~250ms except deliberate entry motion like cards fading in.
-- **NO HOVER-ONLY CONTENT ON MOBILE.** If a tooltip, secondary action, or menu is revealed on hover, that exact content must also be accessible via tap (tap-and-hold, tap to toggle, or a persistent affordance).
-- **RIGHT-CLICK / LONG-PRESS ARE OPTIONAL.** If implemented, long-press duration follows platform conventions (~400–500ms) and must not conflict with scroll gestures.
-- **DISABLE HOVER ON TOUCH DEVICES** via the appropriate CSS mechanism (hover media queries) so that a tapped element does not get "stuck" in the hover visual state after release — after a tap-and-release the element must return cleanly to rest or selected with zero residual hover.
-- **SCROLL GESTURES DO NOT TRIGGER PRESS STATES.** A finger that lands on a button/row and immediately begins scrolling should NOT trigger the pressed visual or the tap action; only a stationary tap within the tap-time/movement threshold triggers press → release → action.
-
-==========================================================
-5. SELF-CHECK (run this in your head before rendering)
-==========================================================
-After building any new element, verify all of the following. If any answer is "no", refactor before output:
-
-TYPOGRAPHY — (a) which existing element is this matching verbatim (name it)? (b) which typographic role does each piece of text use? (c) did I introduce any font size, weight, letter-spacing, or line-height that does not already exist in the current UI?
-
-COLOR — (d) which semantic color tokens for background, text, border, icon, and state (name them)? (e) did I introduce any color or opacity not already present elsewhere on screen? (f) if interactive, do I have tokens for rest / hover / pressed / focus / disabled / selected — and do they match an existing element's states?
-
-THEME — (g) does text-primary stay readable in BOTH themes? (h) does text-secondary remain comfortable in BOTH? (i) are badges, chips, and CTAs readable against their background in BOTH? (j) do borders and dividers stay visible-but-quiet after polarity flips? (k) tokens everywhere, not raw values (a hex/rgba anywhere is a fail unless inside a token definition)?
-
-INTERACTION — (l) desktop: rest / hover / active / focus / disabled / selected each defined, hover consistent with existing buttons? (m) mobile: rest / pressed / released / disabled / selected each defined, no hover dependency, adequate touch targets? (n) after a tap, clean return to rest/selected (no stuck hover)? (o) pointer cursor on desktop hover only where clickable? (p) visible keyboard focus ring?
-
-==========================================================
-6. PRINCIPLE
-==========================================================
-Consistency beats "perfect" sizing or coloring on every individual element. A UI where every new feature reuses the existing typographic roles and color tokens feels professional, calm, and designed. A UI where every feature has its own bespoke size or "slightly adjusted" color feels like a prototype, even if each element looks nice in isolation. When in doubt, copy the nearest existing element that does the same job.
-
-**This app's concrete rungs** (documented beside the tokens at the head of index.html's `<style>` block; the money ladder is the v1.32.0 E5 ruling):
-
-| Rung | Treatment | Serves |
-| --- | --- | --- |
-| MICRO | 11px — `ca-micro` | badges, counts, tiny uppercase labels |
-| CAPTION | 12px — `text-xs` | chips, timestamps, tab labels, metadata |
-| BODY | 14px — `text-sm` | bubbles, labels, buttons, inputs |
-| AMOUNT | 17px — `text-[17px]` + `ca-amt`, tabular | money figures |
-| COMPACT | 18px — `text-lg` | top-bar title, section labels |
-| TITLE | 20px — `text-xl` | sheet titles, trip-card station codes |
-| DISPLAY | 24px — `text-2xl` | screen titles, hero-card codes + times |
-| HERO | 36px — `text-4xl` | the single most important number, once per screen |
-
-**The color tokens as this app already implements them** (match these, never raw values): surfaces — bg-base is the sky canvas + body (dark `#04070F` family, light warm off-white); bg-raised is `glass-panel` / `glass-bubble` via `var(--glass-solid-bg)` (dark `rgba(4,7,15,.92)`, light `rgba(255,255,255,.94)`); bg-elevated is the popover/toast family (`ca-arch-toast` `#111`, the net popover); bg-input is the composer's glass fill; bg-pressed is the `active:scale-95` + tint family. Text — primary is the default ink; secondary is the `text-gray-400/500` + `dark:text-gray-300/400` ladder; tertiary is `placeholder-gray-500` / `text-gray-500` / `white/45`; inverse is near-black on gold (`text-black` on the `from-sia-goldlt to-sia-gold` fill). Accents — gold is `text-sia-gold` (light-mode text uses the measured `--sia-gold-ink` #7d650f) and the gold CTA gradient; gold-soft is `bg-sia-gold/10-15` + `border-sia-gold/30-60` + `rgba(201,162,39,.12-.16)`; success is the emerald `ca-pill` ok family; danger is the red-600 family; warning and info appear only where a real state calls for them. Borders — subtle is `ca-hairline` / `rgba(127,127,127,.14-.18)`; default is the black/10–white/10 card outline pair; strong is the gold selection ring. States — hover compiles behind `(hover:hover)` (tw.config's `hoverOnlyWhenSupported`), pressed is `active:scale-95`, focus is the `:focus-visible` gold ring. **Scope notes:** print sheets (`.pe-*`, `--print-type`) are a physical medium with their own measured scale; icon glyph sizes are not text.
 
 ---
 
@@ -276,43 +125,12 @@ Consistency beats "perfect" sizing or coloring on every individual element. A UI
   - Compact PNG/JPEG: **custom 300 dpi canvas** (`exportCompactImage`). Do **not** send compact through html2canvas (failed through 1.4.19–1.4.21: grid circles, `text-transform`, inline `.pc-hl`, nested invert, sibling header rules, baked `<img>`s). Elegant html2canvas scale 3 / JPEG 0.95 is OK.
   - Print footer: `Menu content © Singapore Airlines · Compiled with CrewAssist — an unofficial crew tool`. Caps only: masthead, cabin band, route block, beverage group heads. Elegant type = weight / italic / navy — not extra sheet typefaces. No photos/icons/veg leaf/timeline through rings.
 
----
-
-## In-Progress / Known Gaps
-
-Owner considers the app **essentially complete**. Do not start a new slice without a request.
-
-Honest leftovers (do not “fix” unless asked):
-
-- **Publish rates to all installs** is still: export or edit `rates.json`, commit, merge via GitHub Desktop. No one-tap GitHub write from the PWA (rejected).
-- **Icons, not emoji (v1.9.0):** the app carries **no emoji**. Two glyphs stay on purpose — `◆` in the elegant print-sheet header (the sheet takes **no icons**; the compact export draws and measures text on a canvas) and the typographic minus in the `A−` / `A+` type-size buttons. Where markup never gets a `lucide.createIcons()` pass (the menu viewer) or lands in a `textContent` sink, use the inlined constants `LUCIDE_PLANE_SVG` / `LUCIDE_X_SVG` (declared just above `lmaMealBadge`) instead of `<i data-lucide>` — a stray `<i>` there renders as an empty tag. If you add icons to `renderIfaSectors`, note that it calls `lucide.createIcons()` right after `container.innerHTML = html` for exactly this reason.
-- **Toggle switches (`.ca-switch`):** every on/off control is a switch now — **Direct US** (`flag`, `ULR flight — {directUSMultiplier}×`), **Paxing** (`armchair`, `Deadheading — {paxingMultiplier}×`, **its own row**, not beside Direct US) and **Shuttle**. Multipliers are read live from `IFA_CONFIG`, never hardcoded. The switch is CSS-only: a visually hidden `<input type="checkbox" class="ca-switch-input sr-only">` followed by `<span class="ca-switch">`, styled by the `.ca-switch-input:checked ~ .ca-switch` rules at the end of the `<style>` block. **Keep the real checkbox** — `validateInputs`, `executeCalculation`, the Fetch auto-tick and `suggestShuttle` all read `.checked` by id (`{id}-ifa-us{i}`, `{id}-ifa-px{i}`, `{id}-lma-sh{idx}`), so replacing it with a `<div>` would silently break the engine.
 
 ---
 
-## Key Architecture Decisions & Constraints
+## Subsystem decisions and constraints
 
 These have already caused regressions. Treat them as locks.
-
-### Git, patching, docs
-
-- Unique-string Python replace on `index.html`; assert `function openMenuPrinter` and size > ~280k after every write.
-- After every commit update `README.md`, `HANDOVER.md`, and **`LOGIC.md` if the change touches formulas or calculator rules**, to match the build. Edit those files **sequentially** (never two HANDOVER writes at once).
-- Periodically scan for unused files in the repo and unused variables/functions in `index.html`; remove them when found (`crewAssist.modifiers` / `appModifiers` were removed in 1.5.1).
-- Bump `APP_VERSION` + `sw.js` `CACHE_NAME` on every app change.
-- Only push the session branch (`$BR`). Recover sandbox drift with explicit fetch + `reset --hard` of that branch — do not rebase onto old `main`.
-- No tokens in files. Screenshots in chat are OK.
-
-### DOM / CSS traps
-
-**Sticky `:hover` on touch (v1.19.1, resolved v1.19.2).** A phone keeps `:hover` applied after a tap, and a desktop keeps it while the cursor rests on the element, so any `hover:` tint reads as "still gold after the tap". Wrapping it in `@media (hover: hover)` did NOT fix it (the owner's preview matched the query), so as of v1.19.2 the quick-action chips have **no hover tint whatsoever** - the default look is the only look. For any other tappable surface that needs hover feedback, prefer a transient `:active` press effect over `:hover`.
-
-- **Do not** use `container.innerHTML += ...` for complex dynamic trees (menu loops). It re-parses the subtree, drops listeners, and yields `null` on mobile. Use `insertAdjacentHTML('beforeend', ...)` or `document.createElement`. Single `innerHTML = html` assignment for a freshly built string (rates editor) is OK.
-- **Do not** restore `#menu-dropdown-row { overflow-x: auto }` — it clips overlay dropdowns.
-- **Do not** re-apply global `tabular-nums` on `body` — it fought overlay type. `formatMoney` / compact amounts may use `tabular-nums` locally.
-- Accordion clip (rates + print Edit): `grid-template-rows: 0fr` **plus** `overflow: hidden` on the fold **and** padding on a **grandchild**, not on `.dev-rate-fold-inner`. Padding on the `0fr` child leaks table headers on iOS (seen in 1.4.28).
-- Chat lock: `html.chat-busy` disables send/chips/lookup until bubbles finish. Do **not** show `#btn-scroll-bottom` while typing. Do **not** add `opacity: 1 !important` under `html.chat-busy`.
-- Overlay dropdowns (IFA/COP/menu) must be `position: absolute` glass over content, not a layout push. Date + time same height, no overlap; “Pick Date” one line.
 
 ### SQ inflight menu (vital)
 
@@ -345,27 +163,13 @@ These have already caused regressions. Treat them as locks.
 - View↔print: `currentMenuCabins()` / `currentMenuSearch`; `closeMenuPrinter(true)` / `closeMenuViewer(true)`.
 - Compact wine hide keys order: fortif / white / red before champagne. SCL compact hide + YCL cheese/crackers: `printHideCompactScl`.
 
-### Design / copy
 
-- Palette: SIA Navy `#0B1A3A`, Charcoal, SIA Gold `#C9A227`. Glass: `glass-bubble`, `glass-sheet`. Mobile-first iOS.
-- Logo: transparent gold origami dart; inner fold opaque bronze; navy-key fuzz ≤8–10%. PWA `app-icon-*`: navy `#0B1A3A` + gold rim. Onboarding dart `w-48`, title `-mb-12`; header dart `w-10` `py-1.5`.
-- Elegant type: weight / italic / navy — not extra sheet typefaces. No photos/icons/veg leaf/timeline through rings.
-- Native dialogs only. Footer as specified. Caps only where listed.
-- **Everything moves (project rule, formalised 2026-09-26):** anything that appears, disappears, expands, collapses, scrolls or transitions is animated — fade, slide, scale — never an instant pop or jump. Existing overlays, sheets, dropdowns, chat bubbles and tour beats already obey; the rule was written down when the net-status popover initially shipped unanimated (fixed in v1.26.1); the earnings insights panel and the search clear button were the second catch (v1.27.0 — insights now expand/collapse via the `.ca-arch-insights` max-height+opacity transition like the month groups, the clear × fades via `opacity-0 pointer-events-none transition-opacity`). v1.27.1 lesson: when converting a `hidden`-toggled element to animation classes, grep EVERY code path that touches the element's classes — `renderArchInsights` still toggled `hidden` after the fill, so the panel stayed `display:none` and the first tap did nothing until an unrelated re-render. **jsdom is blind to this whole bug class**: the harness strips Tailwind, so `hidden` is inert in tests — assert the absence of `hidden` (not just the presence of the animation class) when a real device owns display via Tailwind.
+---
 
-### Chat cadence (project rule)
+## Feature history
 
-After every chat bubble (user or bot, including calculator and lookup cards) fully animates in, wait 500ms before showing another bubble or the typing indicator. Do not start typing until that gap has elapsed. Typing may be followed immediately by the next bot bubble once typing hides. Do not let the user send or press chat/chip/lookup buttons until on-screen bubbles have fully displayed.
-
-### Chat scrolling (project rule)
-
-Calculator and flight/menu cards always open top-aligned and hold that position (re-asserted ~70ms apart for ~2s, with a scroll lock that suppresses automatic bottom-scrolls). Text bubbles use the taller-than-window → top, else bottom rule. The top-align animates `scrollTop` directly via rAF — do NOT revert to native `scrollTo({behavior:"smooth"})` for card top-align: iOS Safari cancels it mid-layout.
-
-### Release notes + housekeeping (project rule)
-
-`APP_CHANGELOG` (since v1.35.0) is the app's **full version history**, newest first — 113 entries, v1.0.0 → current. Each release **appends one new entry at the top** (never rewrite, reorder or re-summarise the entries below it), gives it `d` (the release date) and categorises every pointer as `{ c, t }` — **one pointer = one sentence**, several pointers per release encouraged (`c` is `new` / `fix` / `imp` / `fun`; FUN is for lighthearted entries like the menu-extraction rulings). Past features never re-show because the What's New delta stops at `crewAssist.wnSeen` — the v1.34.3 no-accumulate intent lives on inside the entry you append. dev-ui's E6 block machine-checks the structure (≥60 entries, strictly descending versions, newest === `APP_VERSION`, the current release's pointers one sentence and ≤12 words each, every pointer categorised, and a release date on every version — the inception dates are owner-supplied, the v1.5.9 → current run is approximate from the development log). Run a dead-code sweep each release (unused `let`/`const`/`function`/files) and remove findings; the sweep is a simple identifier-count over `index.html`.
-
-**v1.25.1 sweep (2026-09-26, repo-wide):** removed `ARCH_MU` (dead month array), `.chat-anim-out` + its keyframes (all bubbles animate with `chat-anim-in`), the `.print-edit-block` selector arm (class never assigned), and the dead `id="calcui-pill-default"` / `id="dev-save-label"` attributes; deleted superseded scratch `_inbox/menu/compact-preview.html`. Kept: `btn-dev-import` id (test hook in dev-ui), `_inbox/menu/extraction-digest.md` (ground-truth reference). **Sweep traps learned:** named IIFEs (`(function bindArchUi(){…})()`) self-execute — not dead; and classes/ids constructed at runtime (`'print-paper print-' + paper`, `'menu-' + type + '-menu'`, `'ca-arch-yoy-' + dir`) are invisible to plain string searches — grep the PREFIX (`'print-'`, `'-menu'`, `'-' +`) before declaring anything dead. 1,470 declarations scanned, 2 JS candidates, only 1 real.
+Dated, round-by-round record. Archaeology — consult it when the question is
+"why is this the way it is?"
 
 ### Earnings archive (v1.19.13 redesign; earnings page v1.24.0; save-dedupe v1.28.1; corrections + broad search + save honesty v1.29.0)
 
@@ -558,6 +362,10 @@ Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #
 - **Environment.** Drift #20 at the turn boundary (git on the ancient base, .gitignore modified, two docs deleted, node_modules wiped) — recovered with the standing recipe (fetch + mixed reset to 4024166, reinstall both rigs) before any work; tree clean at the release commit.
 - **Census.** The `^\*\*` count moves 135→136 with this entry's title.
 
+**v1.44.9 (the four-file documentation split, owner-approved after review 2026-10-15; docs-only, no version bump):** the repo's written matter now splits four ways, all under `docs/`: `STANDING_RULES.md` (universal agent conduct — scope, safety, quality bars, verification, reporting), `UI_UX_DISCIPLINE.md` (the BINDING UI rules — typography rungs, colour tokens, spacing, motion; it wins over any version entry in this file), `REPO_RULES.md` (branch strategy, safe commands, per-file precautions, build/test/release mechanics, the file map and the localStorage table), and this file (history and state only). This file replaces the old 1,021-line HANDOVER wholesale — contracts, subsystem decisions, feature history and dead ends all carried over and reorganised by feature; the how-to-work content moved to REPO_RULES. Review fixes applied at landing, all owner-approved: REPO_RULES gained the smoke-rig block in ship step 3 and lost its stale "sandbox has no browser" claim (the rig has run real Chromium since 2026-10-07); UI_UX's chat cadence corrected to the shipped fast lane (250ms default since v1.28.4 via `CHAT_FAST_GAP_MS`; the classic 500ms `CHAT_GAP_MS` is tour-only behind `ca-tour-on`); the audit-fix-2 entry's "Cloudflare Worker" corrected to the Vercel proxy (README's wording is the truth); REPO_RULES anchors refreshed (index.html ~1.12 MB / 18.5k lines, size floor ~1,000k, 14 suites / 2,331 asserts at v1.44.9 with `logic-cases` + `roster-calendar` + `sw` added to the suite list, and the file map now lists all four docs); STANDING_RULES §9's three missing opening parens; UI_UX's everything-moves date harmonised (owner ruling 2026-09-16, formalised 2026-09-26); and the FIX 7 hold recorded under Known Gaps (the `tw.css` trailing newline, held pending a corrected brief). README's Docs section and file-structure list now name all four files. **Tests: battery 14/14 = 2,331 asserts, 0 failed; smoke 87/87, zero page/console errors** (offline-menus' README pin re-verified — no cache-name literals); `app.html` rebuilt by the rig at exactly the tracked 1,117,883 bytes.
+
+- **Census.** The `^\*\*` count moves 153→154 with this entry's title (earlier census lines record the pre-split file).
+
 **v1.44.9 (audit fix 6 follow-up — the veil token, owner order "mint the token" after the value-4 report; APP_VERSION 1.44.8→1.44.9 + CACHE_NAME v228→v229 per the standing bump-both default):** the two archive-overlay alpha sites that stayed literal in the sweep now ride a minted pair token: `--ca-arch-veil: rgba(8, 11, 20, 0.80)` (dark) / `rgba(246, 241, 232, 0.90)` (light) — defined in the round-2 token block's veils section and the light override block. The curve path's `fill-[#F6F1E8]/90 dark:fill-[#080B14]/80` became `fill-[color:var(--ca-arch-veil)]` and the overlay body's `bg-[…]` pair became `bg-[color:var(--ca-arch-veil)]` (one class each — the theme flip lives inside the token; Tailwind v3 cannot alpha-modify a var(), so the alphas are baked into the values exactly as before). tw.css rebuilt: selector diff exactly **+2/−4**. **Verification (executed):** before/after snapshots taken via a stash cycle (HEAD build vs the edited build) = **zero computed-style diffs, 6,282 elements × both themes** — the rig captures `fill`, so the SVG curve is verified end-to-end, not just the overlay body. The capture canvas backdrop (`rosterShotTheme`) remains the only #F6F1E8-family literal, as before — canvas cannot var(). Changelog head `{ c: 'imp', t: 'The archive veil rides its own token — same look, both themes.' }`; E6 ladder re-pointed (head 1.44.9, … 1.43.0→[10]); the v1.44.8-era "veil stays literal" pin re-pointed (the ruling it pinned was overturned by this order). **Tests: battery 14/14 = 2,331 asserts, 0 failed** (dev-ui 581 — the first full-battery run was 13/14 with exactly that stale pin, re-run clean after the re-point); **smoke 87/87 first run**, zero page/console errors; app.html new floor 1,117,883 bytes.
 
 - **Census.** The `^\*\*` count moves 157→158 with this entry's title.
@@ -606,7 +414,7 @@ Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #
 
 - **Census.** The `^\*\*` count moves 146→147 with this entry's title.
 
-**v1.44.6 audit fix 2 of 7 (owner sign-off "apply exactly as proposed", 2026-10-15 — the RE-AUDIT-2026-10-14 brief, `api/sq.js` hardening; NO version bump — this is the Cloudflare Worker, not the PWA):** whole-file rewrite applied byte-exact from the audit's proposed file (md5 `011defe8ebf3bcbc7ba538907bf68712`, verified pre-apply by diff against the shipped `76fd47be…` = exactly the five deltas and nothing else). The five deltas: (1) the L6 destructure is guarded — `const { endpoint, payload } = req.body || {}` — so a bodyless POST reads as `{}` and fails the endpoint check as a 400 instead of throwing; (2) `const controller = new AbortController()` and the 12s `setTimeout(() => controller.abort(), 12000)` move ABOVE the `try`; (3) the success-path `clearTimeout` is gone; (4) `finally { clearTimeout(timeoutId); }` clears the timer on every exit path; (5) the file gains a trailing newline at EOF (unlisted in the brief, reported to the owner, included on the "apply exactly" order — 40→41 lines). Everything else preserved verbatim: 200-on-any-upstream-status, the 405/400/504/502 bodies, the spoofed browser headers, the 12s timeout, the `cachedNoStore`/`Access-Control-Allow-Origin` headers. **Verification discrepancies found and reported, not silently fixed:** the brief said "seven client call sites" — there are NINE, every one POSTing to `/api/sq` and branching on the response BODY (`data.error` / `data.statusCode`); zero `res.ok`/`.status` uses on `/api/sq` (the three `res.ok` uses elsewhere are `./rates.json` and `persistArchive`), so no client contract moves. `node --check api/sq.js` passes. The audit's other fixes follow in their own commits.
+**v1.44.6 audit fix 2 of 7 (owner sign-off "apply exactly as proposed", 2026-10-15 — the RE-AUDIT-2026-10-14 brief, `api/sq.js` hardening; NO version bump — this is the Vercel proxy, not the PWA):** whole-file rewrite applied byte-exact from the audit's proposed file (md5 `011defe8ebf3bcbc7ba538907bf68712`, verified pre-apply by diff against the shipped `76fd47be…` = exactly the five deltas and nothing else). The five deltas: (1) the L6 destructure is guarded — `const { endpoint, payload } = req.body || {}` — so a bodyless POST reads as `{}` and fails the endpoint check as a 400 instead of throwing; (2) `const controller = new AbortController()` and the 12s `setTimeout(() => controller.abort(), 12000)` move ABOVE the `try`; (3) the success-path `clearTimeout` is gone; (4) `finally { clearTimeout(timeoutId); }` clears the timer on every exit path; (5) the file gains a trailing newline at EOF (unlisted in the brief, reported to the owner, included on the "apply exactly" order — 40→41 lines). Everything else preserved verbatim: 200-on-any-upstream-status, the 405/400/504/502 bodies, the spoofed browser headers, the 12s timeout, the `cachedNoStore`/`Access-Control-Allow-Origin` headers. **Verification discrepancies found and reported, not silently fixed:** the brief said "seven client call sites" — there are NINE, every one POSTing to `/api/sq` and branching on the response BODY (`data.error` / `data.statusCode`); zero `res.ok`/`.status` uses on `/api/sq` (the three `res.ok` uses elsewhere are `./rates.json` and `persistArchive`), so no client contract moves. `node --check api/sq.js` passes. The audit's other fixes follow in their own commits.
 
 - **Census.** The `^\*\*` count moves 145→146 with this entry's title.
 
@@ -912,110 +720,15 @@ Everything before the v1.5.9 sign-off predates this handover file. The owner sup
 
 ---
 
-## File map
-
-| Path | Role |
-|---|---|
-| `index.html` | Entire UI + engine (~1.06 MB, 17.7k lines). Three inline `<script>` blocks + one external (lucide). |
-| `tw.css` | The compiled Tailwind stylesheet (~39 kB), first-party and precached by `sw.js`; linked from `index.html` AFTER the inline `<style>` block (hotfix 19 — do not reorder). Committed and served as-is; rebuild with `tests/smoke/node_modules/.bin/tailwindcss -c tw.config.cjs -o tw.css --minify` from the repo root when class names change. The smoke rig builds its OWN copy next to `app.html` — that copy is the "generated, not persisted" one. |
-| `tw.config.cjs` | Tailwind config that rebuilds `tw.css`; sets `future: { hoverOnlyWhenSupported: true }` so every hover utility compiles behind `@media (hover:hover)`. The CLI rides `tests/smoke/node_modules` — the repo root stays package-free. |
-| `sw.js` | Cache `crewassist-vN` (live N = the stamp at the top of this file; bump on every app change). Precaches the first-party shell (`./`, `index.html`, `manifest.json`, `tw.css`, `rates.json` + all six `icons/`) and then the four CDN runtime deps (**pdf.js, pdf.worker, lucide, Google Fonts CSS** — v1.36.0) with retries. **Tailwind is NOT a CDN dep** — it is the precached first-party `./tw.css`; no CSS compiler runs in the browser; runtime-backfills first-party + allowlisted CDN responses (incl. opaque). Network-first for navigate/document/`index.html`/`sw.js`/`rates.json`. |
-| `rates.json` | Default IFA + LMA numbers (`version`, `ifa.*`, `lma.regions`). |
-| `api/sq.js` | Vercel POST proxy; only `getcabin` \| `menu`; 12s abort; Origin/Referer spoof official site. |
-| `manifest.json` | PWA; `start_url` `./index.html`; theme `#0B1A3A`. |
-| `docs/LOGIC.md` | Formulas/rules. Behaviour wins here; live rates win on numbers. Archive sections are **spec-only**. |
-| `docs/API_REFERENCE.md` | SQ API, image fields, CORS. User-uploaded (`81c1e1e`). Do not skip its “missing image = 200 HTML” gotcha. |
-| `icons/` | `logo-192/512` in-app dart; `app-icon-180/192/512` PWA; `favicon.png`. |
-| `tests/` | jsdom behaviour suite (`run-all.js` auto-globs `*.test.js`); contracts in `tests/README.md`. `npm install` inside `tests/` first — `node_modules` dies at sandbox turn boundaries. |
-| `app.html` | **Generated build artifact**, not source. `node tests/smoke/build-app.js` produces it (with a local `tw.css`) for the real-Chromium smoke rig. Gitignored (`tests/smoke/.gitignore`), not persisted across workspace restores — run the builder FIRST or the smoke server 404s 'nope'. Its byte size is recorded every round in these entries. |
-| `docs/TOUR-BREAKDOWN.md` | The feature tour's beat-by-beat script. Sync + commit after every tour change (owner references beats by number). |
-| `docs/CA_058_of_2025_Singapore_Airlines_Staff_Members_Agreement.pdf` | The full Staff Collective Agreement 2025–2027, uploaded by the owner (2026-10-07). **Only Clauses 34–36 concern this app** (COP/IFA/LMA) — the rest is reference. `docs/LOGIC.md` §0 maps every formula to those clauses. |
-| `docs/_reference_rosters/` | The owner's real monthly roster + menu PDFs (2024–2026) and `menu/sq_main_courses.json` — committed fixtures `roster-real`/`roster-calendar` read directly (renamed from `_inbox/`, owner order 2026-10-07). |
-| `README.md` | Human overview. |
-| `HANDOVER.md` | This file. |
-
-The frontend has **no bundler and no build step**; behaviour tests live in `tests/` (jsdom — see **Testing** near the end).
 
 ---
 
-## localStorage keys
-
-| Key | Purpose |
-|---|---|
-| `crewAssist.profile` | Onboarding profile (name, rank, gender, …). |
-| `crewAssist.theme` | `'light'` or dark. |
-| `crewAssist.prefs` | `{ autoScroll }` (autoscroll toggle UI was removed). |
-| `crewAssist.devMode` | `'true'` / `'false'`. |
-| `crewAssist.rates` | Device override of `rates.json` (including meal windows). Absent → use shipped file. |
-| `crewAssist.hideWhatsNew` | `APP_VERSION` if the user ticked “Do not show again” for that stamp. |
-| `crewAssist.wnSeen` | Version stamp last marked seen via the What’s New checkbox; the WN delta = every `APP_CHANGELOG` entry newer than it (v1.35.0). |
-| `crewAssist.calcUi` | Calculator interface mode: `default` (absent/unknown) \| `manual` \| `advanced` (developer mode only). |
-| `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
-| `crewAssist.tourOffered` | `'1'` once the first-run tour offer has been shown (never re-offered). |
-| `crewAssist.ratesCheckedAt` | Timestamp of the last successful network rates check (shown in the status popover; v1.26.0). |
-| `SQ<flight>:<date>:CABINS`, `SQ<flight>:<date>:<cabin>` | Saved SQ payloads: cabin schedule + per-cabin menus, `{timestamp, data}`. Menus cache with a 6 h freshness TTL but serve stale forever offline; pruned to the 5 recent flights (v1.26.0 formalised the CABINS key + prune). |
-| `crewAssist.tourDone` | `'1'` once the tour finished or was skipped (ends offers; the `tour` intent still works). |
-| `crewAssist.lastBackupAt` | Timestamp of the last **full backup** export (v1.41.0: the earnings JSON extract no longer stamps it — only Settings → Data Management → Export backup does); read by the backup nudge. |
-| `crewAssist.backupNudgeSnoozedAt` | Timestamp of the last nudge snooze (2-week quiet period). |
-| `crewAssist.upcoming` | Roster-remembered upcoming flights `{ '<monthKey>': [{ fn, dep, arr, ymd, std }] }`, positioning excluded (v1.28.0). |
-| `crewAssist.archive` | The earnings archive: saved calculation snapshots `{ id, savedAt, monthKey, sectorDate, flightType, stationDisplay, amount, snapshot }`. |
-| `crewAssist.dutyDays` | Roster-remembered duty days (month-replaced like `upcoming`); drives the calendar's duty pills and timeline (v1.39.0 B6). |
-| `crewAssist.allFlights` | Never-pruned roster flight store (leg times, aircraft, report times) — the calendar's live-pricing fallback across months. |
-| `crewAssist.manualEdits` | Counter of hand-edits to fetched sectors; at 2 it arms the one-time Manual-mode nudge. |
-| `crewAssist.nudgedCalcUi` | `'1'` once the Manual-mode nudge has been offered. |
-| `crewAssist.manualCards` | Counter of fully hand-typed calculator cards; at 2 it arms the one-time roster-import nudge. |
-| `crewAssist.nudgedRoster` | `'1'` once the roster-import nudge has been offered. |
-| `crewAssist.installHintDone` | `'1'` once the install-as-PWA hint has been shown. |
-| `crewAssist.ratesUpdatedAt` | Timestamp of the last rates *edit* on this device (honest staleness display, v1.33.0). |
-| `crewAssist.nudgeDismissed` | Map of `fn\|ymd` → 1 for menu-nudge dismissals (v1.28.0). |
-
----
-
-## How to ship a change
-
-Resolve the session branch first and reuse it — never type a branch name from memory:
-
-```
-BR=$(git branch --show-current)   # this session's arena/<session-id>-crewassist
-```
-
-1. Implement on `$BR`. Do not start a new slice until the owner signs off the last one.
-2. Bump **both** stamps together: `APP_VERSION` (`index.html` — patch x.y.Z for polish, minor x.Y.0 for a feature) and `CACHE_NAME` (`sw.js`, `crewassist-vN`). Without the cache bump the owner's phone keeps serving the old build and the change never ships.
-3. Verify before committing. This sandbox has **no browser**, so drive the real code:
-   - `node --check` **every** inline script (join with **real** newlines). Catches a write that broke a script mid-block; it **cannot** see a whole missing block.
-   - `node --check sw.js`. `python3 -m json.tool rates.json manifest.json` if either changed — a malformed `rates.json` parses to garbage and silently mis-computes allowances.
-   - For DOM / CSS / JS behaviour, load `index.html` in jsdom and call the **shipping** function (`openCaDatePicker`, `maybeWhatsNewOverlay`, `executeCalculation`), then assert DOM order and `getComputedStyle`.
-   - If `rates.json` or a formula changed, re-run the `LOGIC.md` §6 test cases through `executeCalculation`. All nine cases (IFA 1–4, LMA 5a/5b, 6, 6b×2) were executed green against 1.43.0 on 2026-10-11 (re-verified: 24 checks across the nine cases).
-   - Truncation / drift net: the `function openMenuPrinter` + size assertion (see **How to work in this repo → Patching `index.html`**) is the only check that catches a whole-block loss.
-4. Commit, then update docs **one file at a time**: README → HANDOVER → LOGIC (only if formulas or calculator rules changed). Never two HANDOVER writes at once.
-5. `git push origin "$BR"`.
-6. Ask the owner to review on the **phone** — the onboarding stamp must read the new `APP_VERSION`. A mismatch means cache, not code.
-7. Owner merges arena → main in GitHub Desktop when they want production. No agent pushes `main`.
-
-To publish new **rates** to everyone: change `rates.json` (or paste an Export), commit, merge. Devices without a `crewAssist.rates` override pick it up on next network-first fetch. Devices with an override keep the override until Reset.
-
----
-
-
-## Testing (in-repo jsdom suite)
-`tests/` contains the behaviour suite introduced 2026-09-19 (owner-approved). Run: `cd tests && npm install && npm test` (or `node tests/run-all.js`). Suites are named by feature — `dev-rates`, `dev-ui`, `earnings-archive`, `exports`, `trip-bar`, `roster-pdf`, `roster-real` (every `_inbox/` PDF through the real pipeline), `tour` — and assert OUTCOMES, not internals, so they survive refactors. `run-all.js` auto-globs `*.test.js` with a 300s cap per suite (11 suites / 1409 asserts at v1.35.0, incl. `menu-extraction` + `offline-menus` + `next-flight`). `roster-pdf` generates synthetic rosters with the real generator's geometry (rotated table, echo rows, column splits) — real roster data is never committed. Rules: every new feature ships with its test block; an intentional behaviour change updates the matching block in the same commit; never dispatch DOMContentLoaded manually in the harness (jsdom fires its own — double-firing double-binds every listener); dialog close fades take 200ms, wait >=400ms before asserting hidden. `tests/package.json` pins jsdom (committed via a `.gitignore` negation; the root package files stay ignored by repo convention) — `node_modules` and lockfiles are never committed.
-
-## Recovery / dead ends (do not retry)
+## Product dead ends — do not retry
 
 - **Android share-target roster import — shipped in v1.27.0, REMOVED in v1.27.1 at the owner's direction.** The owner prefers the paperclip (`#btn-roster` → `#roster-file-input`) as the only roster entry point. Do NOT re-introduce `share_target`/`file_handlers` in manifest.json, the SW POST/multipart stash, or a boot-time pickup — the paperclip flow is the spec.
-
-- **Mid-turn file corruption (2026-09-25, once):** during a run of `edit_file` calls, `index.html` grew spliced lines (`document.getElementById('chat-input').vaER PDF IMPORT`), a garbled comment, a mangled airports entry and 22 duplicated lines past `</html>` — byte-level tearing, not a bad text match, and `node --check`-style parsing caught it (`Unexpected identifier 'PDF'`). Recovery: `git checkout HEAD -- <file>`, re-apply the edits with **python count-asserted replaces**, then verify — parse every inline script (`new vm.Script(code)`), `git diff | grep ^@@` to audit hunk locations, and grep the corruption signatures. After any bulk edit session, run the parse + hunk audit before committing.
 - Prefixing SQ relative images with `/assets/` 404ed thumbs.
 - Nested parent `url` / `path` / `src` scans assigned junk. `data-src` / `revealMenuImages` left thumbs without `src`.
 - Trusting HTTP status for IFE photos fails (200 HTML).
 - html2canvas for compact invert/header (1.4.19–1.4.21).
-- `innerHTML +=` on menu trees.
-- Body-wide `tabular-nums`; `#menu-dropdown-row { overflow-x: auto }`.
-- Rebasing `arena` onto a stale `main`.
-- Parallel `HANDOVER.md` search/replaces.
-- `must(old, new, 2)` treating `2` as a label.
-- `node --check` with `'\\n;\\n'.join` (checker SyntaxError).
-- Calling cifp from the browser / this sandbox (CORS / TLS EOF).
-- Deriving a scroll-to-row anchor from `getComputedStyle` padding (hotfix 9): the sign is engine-dependent — this Chromium anchors content BELOW the scroller's fixed padding, so subtracting it doubled the error (13px → 26px). Always measure `row.getBoundingClientRect().top − scroller.getBoundingClientRect().top` and add the delta to `scrollTop`.
-- Measuring virtualized rows before `lucide.createIcons()` (hotfix 9): the placeholder `<i>` and its svg differ in size, so offsets go stale. Create icons first, then measure — and never rely on a re-measure happening (TLWindow's dedup early-return skips unchanged windows; store corrected offsets instead).
-- Padding on a `0fr` accordion inner (iOS header leak).
+
+---
