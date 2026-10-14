@@ -734,7 +734,7 @@
            click on any pointer that rests on the chip, so the default look is the
            only look. */
         /* Earnings archive redesign (v1.19.13) */
-        .ca-arch-search:focus { border-color: var(--sia-gold, #c9a227); }
+        .ca-arch-search:focus { border-color: var(--sia-gold, #C9A227); }
         /* v1.29.0: two-tap armed state (owner design) — the same red family as
         the clear-data pill, so day and night both read it as danger. */
         .ca-twotap-armed { color: #dc2626 !important; border-color: var(--ca-twotap-line) !important; background: var(--ca-twotap-wash) !important; }
@@ -837,7 +837,7 @@
            round 22 removed this block's later same-specificity rule that had
            been silently overriding it.) */
         :root { --sia-gold-ink: #7d650f; }
-        .dark { --sia-gold-ink: #c9a227; }
+        .dark { --sia-gold-ink: #C9A227; }
         /* v1.31.0: invisible hit-area growth — the icon keeps its visual size,
            the tap zone grows 5px around it (44px-class targets). */
         .ca-hit { position: relative; }
@@ -1232,10 +1232,10 @@
         html.dark .dev-rate-input { border-color: rgba(255,255,255,0.12); }
         .dev-save[disabled] { opacity: .42; box-shadow: none; pointer-events: none; }
         .dev-save.is-saved { background: #1D2B1F; color: #6EE7A0; border: 1px solid rgba(110,231,160,.5); }
-        .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
-        .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
+        .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #C9A227); }
+        .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #C9A227); }
         .dev-edited-tag { color: var(--sia-gold-ink, #7d650f); font-size: 11px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
-        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); margin-left: 6px; flex: 0 0 auto; }
+        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #C9A227); margin-left: 6px; flex: 0 0 auto; }
         .dev-sec-dot.is-on { display: inline-block; }
         .dev-reset-pill { animation: devResetIn 280ms ease; }
         @keyframes devResetIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
@@ -6800,7 +6800,7 @@
             const old = document.getElementById('ca-layover-tz-card');
             if (!info) { if (old) old.remove(); return; }
             const inner = '<div class="ca-hero-lite p-3.5 text-sm w-[85%]">'
-                + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="globe" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i><span class="ca-micro font-bold uppercase tracking-wider" style="color: var(--sia-gold, #c9a227)">Layover time zone</span></div>'
+                + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="globe" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i><span class="ca-micro font-bold uppercase tracking-wider" style="color: var(--sia-gold, #C9A227)">Layover time zone</span></div>'
                 // hotfix 8 (owner order): one line when the clocks match —
                 // "PEK \u2014 1432H same as SGT"; the two-line card otherwise
                 + '<p class="text-sm font-bold">' + rosterEsc(info.station) + ' \u2014 ' + info.stH + ' <span class="font-normal text-gray-500">'
@@ -6856,7 +6856,7 @@
             const inAir = !!(depMs && arrMsFirst && Date.now() >= depMs && Date.now() < arrMsFirst);
             let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(first.ymd) + ' &middot; <b>' + nextFlightRel(first.ymd) + '</b></span>';
             if (inAir) {
-                detail += '<span class="block mt-1 font-bold whitespace-nowrap" style="color: var(--sia-gold, #c9a227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
+                detail += '<span class="block mt-1 font-bold whitespace-nowrap" style="color: var(--sia-gold, #C9A227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
             } else {
                 detail += '<span class="block mt-1 whitespace-nowrap">Departs ' + hmH(first.std) + (part1 ? '' : ' local') + (depMs ? ' &middot; ' + nfCountdown(depMs - Date.now()) : '') + '</span>';
             }
@@ -6896,7 +6896,7 @@
                 // sub-line rides the block it belongs to)
                 if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs - alarmLead) {
                     alarmHtml = '<div class="ca-nf-alarm flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
-                        + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                        + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i></span>'
                         + '<span class="flex-1 min-w-0">'
                         + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - alarmLead, 'Asia/Singapore') + '</span>'
                         + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - rptLead, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
@@ -6917,7 +6917,7 @@
                 + '<div class="flex items-start gap-2.5">'
                 + '<button type="button" id="ca-nextflight-tap" class="ca-nextflight-tap flex-1 min-w-0 text-left" data-nf="' + rosterEsc(first.fn) + '|' + rosterEsc(first.ymd) + '" aria-label="Open menus for SQ ' + rosterEsc(first.fn) + '">'
                 + '<span class="flex items-center gap-2.5">'
-                + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i></span>'
                 + '<span class="flex-1 min-w-0">'
                 + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">' + fns + ' <span class="font-normal">&middot; ' + rosterEsc(station) + '</span></span>'
                 + '</span></span>'
@@ -6940,7 +6940,7 @@
                     const setBusy = (busy) => {
                         tapBtn.disabled = busy;
                         tapBtn.innerHTML = busy
-                            ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
+                            ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #C9A227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
                             : nfBtnHtml;
                         refreshIcons();
                     };
@@ -7084,7 +7084,7 @@
                 '<div class="ca-nudge-card p-3 text-sm w-[85%]" role="status">'
                 + '<button type="button" id="ca-menunudge-x" aria-label="Dismiss reminder" class="absolute top-1.5 right-1.5 p-1.5 text-gray-400 dark:text-gray-500 active:text-sia-gold"><i data-lucide="x" class="w-4 h-4"></i></button>'
                 + '<div class="flex items-center gap-2.5 pr-8">'
-                + '<span class="w-8 h-8 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="utensils" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                + '<span class="w-8 h-8 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="utensils" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i></span>'
                 + '<div class="flex-1 min-w-0">'
                 + '<p class="ca-nf-copy text-sm leading-relaxed">' + copy + '</p>'
                 + '</div></div>'

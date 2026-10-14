@@ -247,6 +247,10 @@ const mkUntil = (d) => async (cond, ms) => {
     // says so), theme-constant like the literals they replace
     R.ok(src.includes('.dev-rate-acc-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ca-ink-faint); }') && src.includes('.dev-bracket-op { color: var(--ca-ink-faint);'), 'round 3 value 5: the dev cluster labels ride --ca-ink-faint');
     R.ok((src.match(/color: #9[cC][aA]3[aA][fF]/g) || []).length === 0, 'round 3 value 5: no #9ca3af literal survives in a rule');
+    // round 3 casing pass (the brief's LAST step): every remaining gold
+    // literal spells #C9A227 — the 11 var(--sia-gold, ...) fallbacks and the
+    // .dark --sia-gold-ink def; the WCAG comment keeps its original prose
+    R.ok((src.match(/var\(--sia-gold, #C9A227\)/g) || []).length === 11 && src.includes('.dark { --sia-gold-ink: #C9A227; }') && (src.match(/#c9a227/g) || []).length === 1, 'round 3 casing: 11 fallbacks + the dark def uppercase, only the WCAG comment stays lowercase');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
