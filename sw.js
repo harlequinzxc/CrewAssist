@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v225';
+const CACHE_NAME = 'crewassist-v226';
 const ASSETS = [
     './',
     './index.html',
@@ -54,7 +54,7 @@ function addWithRetry(cache, url, tries) {
 
 function cachePut(req, res) {
     const copy = res.clone();
-    caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
+    return caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
 }
 
 self.addEventListener('install', (event) => {
