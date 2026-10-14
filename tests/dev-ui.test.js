@@ -46,8 +46,8 @@ const mkUntil = (d) => async (cond, ms) => {
   const reset = d.getElementById('btn-dev-reset');
   const clear = d.getElementById('btn-clear-data');
   R.ok(reset.classList.contains('hidden'), 'Reset hidden when dev mode off');
-  R.ok(reset.className.includes('text-red-600') && reset.className.includes('border-red-500'), 'hotfix: Reset runs the red destructive style');
-  R.ok(clear.className.includes('text-red-600') && clear.className.includes('border-red-500'), 'Clear All Data: red text + red border');
+  R.ok(reset.className.includes('text-[color:var(--ca-danger-strong)]') && reset.className.includes('border-[color:var(--ca-danger-strong-line)]'), 'hotfix: Reset runs the red destructive style (rides --ca-danger-strong since round 3 value 2)');
+  R.ok(clear.className.includes('text-[color:var(--ca-danger-strong)]') && clear.className.includes('border-[color:var(--ca-danger-strong-line)]'), 'Clear All Data: red text + red border (rides --ca-danger-strong since round 3 value 2)');
   R.ok(clear.className.includes('bg-transparent'), 'Clear All Data: transparent background');
   R.ok(bex.parentElement.className.includes('glass-panel'), 'v1.42.0: Data Management buttons sit in the house box — the same width as Clear saved menus');
   R.ok(!bex.parentElement.contains(reset), 'Reset left Data Management for the dev card (v1.42.0)');
@@ -211,6 +211,46 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('@keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 var(--ca-gold-glow-90); } 100% { box-shadow: 0 0 0 14px var(--ca-gold-clear); } }'), 'the flash and pulse keyframes ride the glow tokens');
     R.ok(src.includes('Nearby alphas merged only where the shift is'), 'the merge map is documented beside the round-2 token block');
     R.ok(!src.includes('rgba(127,127,127,.07)') && !src.includes('rgba(127,127,127,.14)') && !src.includes('rgba(201,162,39,.16)') && !src.includes('rgba(212,175,55,.28)'), 'the merged one-offs are gone from the call sites');
+    // v1.44.7 audit fix 6, value 1 of 5 (#c9a227 -> var(--ca-gold), round 3):
+    // the dev cluster, print editor, shell guard and archGrad stops ride the
+    // token; the only remaining literal is the canvas star fill (var() cannot
+    // paint a canvas) and the protected defs/fallbacks
+    R.ok(src.includes('.dev-rate-chev { transition: transform 280ms ease; color: var(--ca-gold); flex-shrink: 0; }') && src.includes('.dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: var(--ca-gold); }') && src.includes('.dev-bracket-arrow { color: var(--ca-gold); font-weight: 700; flex-shrink: 0; }'), 'round 3 value 1: the dev cluster chevrons and brackets ride var(--ca-gold)');
+    R.ok(src.includes('.print-edit-chev { transition: transform 280ms ease; color: var(--ca-gold); }') && src.includes('border: 1.5px dashed var(--ca-gold);') && src.includes('background: var(--ca-gold); margin-top: 11px;'), 'round 3 value 1: the print editor family rides var(--ca-gold)');
+    R.ok(src.includes('letter-spacing:0.1em;color:var(--ca-gold);margin-bottom:0.75rem;') && src.includes('background:linear-gradient(to right,#E8C766,var(--ca-gold));'), 'round 3 value 1: the shell guard rides var(--ca-gold) (inline <style> tokens, not tw.css)');
+    R.ok(src.includes('<stop offset="50%" style="stop-color:var(--ca-gold)" stop-opacity="1" />') && (src.match(/stop-color="#C9A227"/g) || []).length === 0, 'round 3 value 1: the archGrad stops take the style-attribute form (presentation attributes cannot carry var())');
+    // v1.44.7 audit fix 6, value 2 of 5 (#ff4c4c -> tokens, round 3): the
+    // destructive red rides --ca-danger-strong (dc2626/ff4c4c pair), its 50%
+    // border rides --ca-danger-strong-line, the Developer Mode label rides the
+    // constant --ca-danger-dev
+    R.ok(src.includes('--ca-danger-strong: #ff4c4c;') && src.includes('--ca-danger-strong: #dc2626;') && src.includes('--ca-danger-dev: #ff4c4c;'), 'round 3 value 2: the danger-strong tokens exist, both themes');
+    R.ok((src.match(/text-\[color:var\(--ca-danger-strong\)\]/g) || []).length === 6 && (src.match(/border-\[color:var\(--ca-danger-strong-line\)\]/g) || []).length === 3, 'round 3 value 2: six text pairs and three border pairs ride the tokens');
+    R.ok(!src.includes('dark:text-[#ff4c4c]') && !src.includes('dark:border-[#ff4c4c]') && !src.includes('text-[#ff4c4c]'), 'round 3 value 2: no #ff4c4c literal survives outside the token defs');
+    R.ok(src.includes('html.dark .ca-twotap-armed { color: var(--ca-danger-strong) !important;'), 'round 3 value 2: the two-tap armed red rides the token');
+    // v1.44.7 audit fix 6, value 3 of 5 (#16294e -> var(--print-ink), round 3):
+    // the print sheet's navy ink is a named token on .print-paper, beside
+    // --print-type; the .pe-* family rides it (print = one physical medium,
+    // theme-independent)
+    R.ok(src.includes('--print-type: 1;\n            --print-ink: #16294e;') && (src.match(/var\(--print-ink\)/g) || []).length === 7, 'round 3 value 3: --print-ink defined once on .print-paper, seven call sites');
+    R.ok(!src.toLowerCase().replace('--print-ink: #16294e;', '').includes('#16294e'), 'round 3 value 3: no #16294e literal survives outside the def');
+    R.ok(!src.includes('--print-ink: var(--print-ink)'), 'round 3 value 3: the def is not self-referential (the diag-caught first-draft bug)');
+    // v1.44.7 audit fix 6, value 4 of 5 (#f6f1e8 -> the existing surface token,
+    // round 3): the composer fade's solid from/via ride var(--bg-color) (the
+    // token's exact pair). The archive veil's /90+/80 alpha pair and the
+    // capture canvas backdrop stay literal BY REPORT: no existing token carries
+    // rgba(246,241,232,.9)/rgba(8,11,20,.8), and canvas fillStyle cannot var()
+    R.ok(src.includes('from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90'), 'round 3 value 4: the composer fade rides the bg-color token, dark overrides intact');
+    R.ok((src.match(/#F6F1E8/g) || []).length >= 1 && src.includes('fill-[#F6F1E8]/90 dark:fill-[#080B14]/80'), 'round 3 value 4: the archive veil alpha pair stays literal (no token carries it)');
+    // v1.44.7 audit fix 6, value 5 of 5 (#9ca3af, round 3): all four free
+    // sites are stylesheet rules, where a Tailwind utility cannot live — they
+    // ride --ca-ink-faint (the app's canonical gray-400 ink, its own comment
+    // says so), theme-constant like the literals they replace
+    R.ok(src.includes('.dev-rate-acc-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ca-ink-faint); }') && src.includes('.dev-bracket-op { color: var(--ca-ink-faint);'), 'round 3 value 5: the dev cluster labels ride --ca-ink-faint');
+    R.ok((src.match(/color: #9[cC][aA]3[aA][fF]/g) || []).length === 0, 'round 3 value 5: no #9ca3af literal survives in a rule');
+    // round 3 casing pass (the brief's LAST step): every remaining gold
+    // literal spells #C9A227 — the 11 var(--sia-gold, ...) fallbacks and the
+    // .dark --sia-gold-ink def; the WCAG comment keeps its original prose
+    R.ok((src.match(/var\(--sia-gold, #C9A227\)/g) || []).length === 11 && src.includes('.dark { --sia-gold-ink: #C9A227; }') && (src.match(/#c9a227/g) || []).length === 1, 'round 3 casing: 11 fallbacks + the dark def uppercase, only the WCAG comment stays lowercase');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
@@ -333,31 +373,41 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      // v1.44.6 (owner order "proceed with 2"): the one-off retirement takes
-      // the head of the ladder. The previous rounds shift down one each.
-      R.eq(entries[0].v, '1.44.6', 'the 1.44.6 one-off retirement sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.44.6 entry carries its single pointer');
+      // v1.44.8 (audit fix 6, the colour-sweep round 3 release): takes the head
+      // of the ladder. The previous rounds shift down one each.
+      R.eq(entries[0].v, '1.44.8', 'the 1.44.8 colour-sweep release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.44.8 entry carries its single pointer');
+      R.ok(src.includes("c: 'imp', t: 'The last raw colours ride named tokens \u2014 same pixels, one spelling.' }"), 'the 1.44.8 pointer reads as approved, inside the twelve-word cap');
+      R.eq(entries[1].v, '1.44.7', 'the 1.44.7 audit-fix release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.44.7 entry carries its single pointer');
+      R.ok(src.includes("c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' }"), 'the 1.44.7 pointer reads as approved, inside the twelve-word cap');
+      // v1.44.7 audit fix 1: the flagged-trip warning is a Lucide icon, and the
+      // source carries no warning-sign glyph anywhere (icons only, never emoji).
+      R.eq((src.match(/data-lucide="alert-triangle"/g) || []).length, 1, 'exactly one alert-triangle icon - the flagged-trip line');
+      R.ok(!src.includes('\u26a0'), 'no U+26A0 warning-sign glyph remains in the source');
+      R.eq(entries[2].v, '1.44.6', 'the 1.44.6 one-off retirement sits third, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.44.6 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' }"), 'the 1.44.6 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[1].v, '1.44.5', 'the 1.44.5 reopen-resets round sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.44.5 entry carries its single pointer');
+      R.eq(entries[3].v, '1.44.5', 'the 1.44.5 reopen-resets round sits fourth, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.44.5 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' }"), 'the 1.44.5 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[2].v, '1.44.4', 'the 1.44.4 colour-token round sits third, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.44.4 entry carries its single pointer');
+      R.eq(entries[4].v, '1.44.4', 'the 1.44.4 colour-token round sits fifth, newest first');
+      R.eq(entries[4].items.length, 1, 'the 1.44.4 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' }"), 'the 1.44.4 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[3].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits fourth, newest first');
-      R.eq(entries[3].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
+      R.eq(entries[5].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits sixth, newest first');
+      R.eq(entries[5].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[4].v, '1.44.2', 'the 1.44.2 date-picker round sits fifth, newest first');
-      R.eq(entries[4].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
+      R.eq(entries[6].v, '1.44.2', 'the 1.44.2 date-picker round sits seventh, newest first');
+      R.eq(entries[6].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[5].v, '1.44.1', 'the 1.44.1 typography round sits sixth, newest first');
-      R.eq(entries[5].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
+      R.eq(entries[7].v, '1.44.1', 'the 1.44.1 typography round sits eighth, newest first');
+      R.eq(entries[7].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[6].v, '1.44.0', 'the 1.44.0 release sits seventh, newest first');
-      R.eq(entries[6].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
-      R.eq(entries[7].v, '1.43.0', 'the 1.43.0 consolidation sits eighth, newest first');
-      R.eq(entries[7].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[8].v, '1.44.0', 'the 1.44.0 release sits ninth, newest first');
+      R.eq(entries[8].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[9].v, '1.43.0', 'the 1.43.0 consolidation sits tenth, newest first');
+      R.eq(entries[9].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
@@ -788,7 +838,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(st.textContent.indexOf('1 upcoming duty flight keeps their menus') !== -1, 'the panel names the protected upcoming menus');
     const clr = f.d.getElementById('btn-clear-menus');
     R.ok(!!clr, 'the clear action exists');
-    R.ok(clr.className.includes('text-red-600') && clr.className.includes('border-red-500'), 'hotfix: Clear saved menus runs the red destructive style');
+    R.ok(clr.className.includes('text-[color:var(--ca-danger-strong)]') && clr.className.includes('border-[color:var(--ca-danger-strong-line)]'), 'hotfix: Clear saved menus runs the red destructive style (rides --ca-danger-strong since round 3 value 2)');
     clr.click();
     R.ok(clr.textContent.indexOf('Tap again to clear') !== -1, 'the first tap arms instead of firing');
     clr.click();

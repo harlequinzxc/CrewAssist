@@ -108,6 +108,9 @@
             --ca-danger-ink: #F87171;
             --ca-danger-bright: #F87171;
             --ca-danger-line: rgba(248, 113, 113, 0.35);
+            --ca-danger-strong: #ff4c4c;
+            --ca-danger-strong-line: rgba(255, 76, 76, 0.5);
+            --ca-danger-dev: #ff4c4c;
             --ca-success-deep: #15803D;
             /* roster calendar */
             --ca-rc-num-ink: rgba(229, 231, 235, 0.92);
@@ -135,6 +138,9 @@
             --ca-toast-ink: #FFFFFF;
             --ca-toast-undo: #D4AF37;
             --ca-danger-ink: #B91C1C;
+            --ca-danger-strong: #dc2626;
+            --ca-danger-strong-line: rgba(239, 68, 68, 0.5);
+            --ca-danger-dev: #ff4c4c;
             --ca-rc-num-ink: rgba(31, 41, 55, 0.92);
             --ca-cl-vhead-bg: rgba(246, 241, 232, 0.92);
         }
@@ -728,11 +734,11 @@
            click on any pointer that rests on the chip, so the default look is the
            only look. */
         /* Earnings archive redesign (v1.19.13) */
-        .ca-arch-search:focus { border-color: var(--sia-gold, #c9a227); }
+        .ca-arch-search:focus { border-color: var(--sia-gold, #C9A227); }
         /* v1.29.0: two-tap armed state (owner design) — the same red family as
         the clear-data pill, so day and night both read it as danger. */
         .ca-twotap-armed { color: #dc2626 !important; border-color: var(--ca-twotap-line) !important; background: var(--ca-twotap-wash) !important; }
-        html.dark .ca-twotap-armed { color: #ff4c4c !important; border-color: var(--ca-twotap-line-dark) !important; background: var(--ca-twotap-wash-dark) !important; }
+        html.dark .ca-twotap-armed { color: var(--ca-danger-strong) !important; border-color: var(--ca-twotap-line-dark) !important; background: var(--ca-twotap-wash-dark) !important; }
         .ca-arch-amt { font-variant-numeric: tabular-nums; }
         .ca-arch-num { font-variant-numeric: tabular-nums; }
         /* v1.31.1 (owner report): the toast is always outlined in gold — and in
@@ -831,7 +837,7 @@
            round 22 removed this block's later same-specificity rule that had
            been silently overriding it.) */
         :root { --sia-gold-ink: #7d650f; }
-        .dark { --sia-gold-ink: #c9a227; }
+        .dark { --sia-gold-ink: #C9A227; }
         /* v1.31.0: invisible hit-area growth — the icon keeps its visual size,
            the tap zone grows 5px around it (44px-class targets). */
         .ca-hit { position: relative; }
@@ -1104,6 +1110,7 @@
             overflow: hidden;
             position: relative;
             --print-type: 1;
+            --print-ink: #16294e;
         }
         .print-paper.print-a4 { width: 210mm; min-height: 297mm; box-sizing: border-box; }
         .print-paper.print-a6 { width: 105mm; min-height: 148mm; box-sizing: border-box; }
@@ -1125,26 +1132,26 @@
         .pe-dia { display: inline-block; font-size: calc(5px * var(--print-type, 1)); color: #c9b06a; letter-spacing: 0; margin: 0 0.4em; vertical-align: 1px; }
         .pe-band { display: flex; align-items: center; gap: 10px; margin: 7mm 0 4mm; }
         .pe-band-line { flex: 1; height: 1px; background: rgba(22,41,78,0.18); }
-        .pe-band-txt { font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #16294e; white-space: nowrap; }
+        .pe-band-txt { font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--print-ink); white-space: nowrap; }
         .pe-svc-wrap { margin: 4mm 0 2mm; }
         .pe-svc-head { display: grid; grid-template-columns: 22mm 1px 1fr; column-gap: 3.5mm; align-items: center; }
         .pe-route { font-size: calc(8.5px * var(--print-type, 1)); font-weight: 600; letter-spacing: 0.10em; text-transform: uppercase; color: #3c465c; text-align: right; line-height: 1.45; }
-        .pe-vrule { width: 1px; align-self: stretch; background: #16294e; }
-        .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(24px * var(--print-type, 1)); font-weight: 600; color: #16294e; line-height: 1.1; }
-        .pe-svc-rule { height: 0.7mm; background: #16294e; margin: 2mm 0 3.5mm 25.5mm; }
-        .pe-cui { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(15px * var(--print-type, 1)); font-weight: 600; color: #16294e; margin: 1.5mm 0 2.5mm 34.5mm; }
+        .pe-vrule { width: 1px; align-self: stretch; background: var(--print-ink); }
+        .pe-svc-name { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(24px * var(--print-type, 1)); font-weight: 600; color: var(--print-ink); line-height: 1.1; }
+        .pe-svc-rule { height: 0.7mm; background: var(--print-ink); margin: 2mm 0 3.5mm 25.5mm; }
+        .pe-cui { font-family: "Cormorant Garamond", "Times New Roman", serif; font-size: calc(15px * var(--print-type, 1)); font-weight: 600; color: var(--print-ink); margin: 1.5mm 0 2.5mm 34.5mm; }
         .pe-row { display: grid; grid-template-columns: 26mm 9mm 1fr; align-items: start; padding: 1.7mm 0; }
         .pe-label { text-align: right; padding-right: 4.5mm; }
         .pe-course { font-size: calc(10.5px * var(--print-type, 1)); font-style: italic; font-weight: 500; color: #2b3245; line-height: 1.25; letter-spacing: 0; text-transform: none; padding-top: 0; }
         .pe-choose { font-size: calc(7.5px * var(--print-type, 1)); font-style: normal; font-weight: 500; color: #9aa3b5; letter-spacing: 0.04em; margin-top: 1px; }
         .pe-mark { display: flex; justify-content: center; padding-top: 2.5px; }
-        .pe-ring { width: 2.4mm; height: 2.4mm; border: 0.4mm solid #16294e; border-radius: 50%; background: #fff; box-sizing: border-box; display: block; }
+        .pe-ring { width: 2.4mm; height: 2.4mm; border: 0.4mm solid var(--print-ink); border-radius: 50%; background: #fff; box-sizing: border-box; display: block; }
         .pe-dishes { min-width: 0; }
         .pe-dish { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; letter-spacing: 0.01em; line-height: 1.3; text-align: left; }
         .pe-desc { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-style: italic; font-weight: 400; color: #5a6377; line-height: 1.45; margin: 0.5mm 0 2.4mm; text-align: left; }
         .pe-bev-group { margin: 0 0 3.2mm; padding: 0 0 2.2mm; }
         .pe-bev-group + .pe-bev-group { margin-top: 1.6mm; padding-top: 2.4mm; border-top: 0.5px solid rgba(22,41,78,0.14); }
-        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: #16294e; letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 1.6mm; }
+        .pe-bev-cat { font-family: "Plus Jakarta Sans", sans-serif; font-size: calc(9.5px * var(--print-type, 1)); font-weight: 700; color: var(--print-ink); letter-spacing: 0.06em; text-transform: uppercase; margin: 0 0 1.6mm; }
         .pe-plain { font-size: calc(11.5px * var(--print-type, 1)); font-weight: 700; color: #171d2b; line-height: 1.4; margin: 0 0 0.8mm; }
         .pe-bev-item { font-weight: 600; line-height: 1.45; margin: 0 0 1.15mm; }
         .pe-plain-slate { color: #3c465c; }
@@ -1192,7 +1199,7 @@
         .print-a6 .pc-course { font-size: calc(6px * var(--print-type, 1)); }
         .print-bounds {
             position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
-            border: 1.5px dashed #C9A227; pointer-events: none; z-index: 5;
+            border: 1.5px dashed var(--ca-gold); pointer-events: none; z-index: 5;
         }
         .print-paper.print-a4 > .print-bounds { height: 297mm; }
         .print-paper.print-a6 > .print-bounds { height: 148mm; }
@@ -1217,53 +1224,53 @@
             filter: none;
         }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
+        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: var(--ca-gold); background: transparent; flex-shrink: 0; }
         .dev-rate-table { width: 100%; border-collapse: collapse; }
-        .dev-rate-table th { text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; padding: 4px 6px; }
+        .dev-rate-table th { text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ca-ink-faint); padding: 4px 6px; }
         .dev-rate-table td { padding: 4px 6px; font-size: 12px; font-weight: 600; vertical-align: middle; }
         .dev-rate-input { width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 6px 8px; font-size: 14px; font-weight: 700; color: inherit; outline: none; }
         html.dark .dev-rate-input { border-color: rgba(255,255,255,0.12); }
         .dev-save[disabled] { opacity: .42; box-shadow: none; pointer-events: none; }
         .dev-save.is-saved { background: #1D2B1F; color: #6EE7A0; border: 1px solid rgba(110,231,160,.5); }
-        .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
-        .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #c9a227); }
+        .dev-row-edited td:first-child { box-shadow: inset 3px 0 0 var(--sia-gold, #C9A227); }
+        .dev-bracket-row.dev-row-edited { box-shadow: inset 3px 0 0 var(--sia-gold, #C9A227); }
         .dev-edited-tag { color: var(--sia-gold-ink, #7d650f); font-size: 11px; font-weight: 700; letter-spacing: .06em; margin-left: 6px; vertical-align: middle; }
-        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #c9a227); margin-left: 6px; flex: 0 0 auto; }
+        .dev-sec-dot { display: none; width: 7px; height: 7px; border-radius: 9999px; background: var(--sia-gold, #C9A227); margin-left: 6px; flex: 0 0 auto; }
         .dev-sec-dot.is-on { display: inline-block; }
         .dev-reset-pill { animation: devResetIn 280ms ease; }
         @keyframes devResetIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
         .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
         .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
-        .dev-rate-acc-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; }
+        .dev-rate-acc-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ca-ink-faint); }
         .dev-rate-fold { display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows 280ms ease; }
         .dev-rate-fold.is-open { grid-template-rows: 1fr; }
         .dev-rate-fold-inner { overflow: hidden; min-height: 0; }
         .dev-rate-pad { padding: 0 8px 10px; }
-        .dev-rate-chev { transition: transform 280ms ease; color: #C9A227; flex-shrink: 0; }
+        .dev-rate-chev { transition: transform 280ms ease; color: var(--ca-gold); flex-shrink: 0; }
         .dev-rate-card.is-expanded .dev-rate-chev { transform: rotate(180deg); }
         .dev-bracket { display: flex; flex-direction: column; gap: 8px; }
         .dev-bracket-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .dev-bracket-formula { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; flex-wrap: wrap; font-size: 12px; font-weight: 600; }
-        .dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: #C9A227; }
-        .dev-bracket-op { color: #9CA3AF; font-weight: 700; font-size: 11px; white-space: nowrap; }
+        .dev-bracket-var { font-weight: 800; letter-spacing: 0.04em; color: var(--ca-gold); }
+        .dev-bracket-op { color: var(--ca-ink-faint); font-weight: 700; font-size: 11px; white-space: nowrap; }
         .dev-bracket-echo { font-weight: 800; min-width: 1.5rem; text-align: center; }
-        .dev-bracket-arrow { color: #C9A227; font-weight: 700; flex-shrink: 0; }
+        .dev-bracket-arrow { color: var(--ca-gold); font-weight: 700; flex-shrink: 0; }
         .dev-rate-input.dev-bracket-num { width: 3.6rem; text-align: center; flex-shrink: 0; }
         .print-edit-acc { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; }
         .print-edit-fold { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
         .print-edit-fold.is-open { grid-template-rows: 1fr; }
         .print-edit-fold-inner { overflow: hidden; min-height: 0; }
-        .print-edit-chev { transition: transform 280ms ease; color: #C9A227; }
+        .print-edit-chev { transition: transform 280ms ease; color: var(--ca-gold); }
         .print-edit-card.is-expanded .print-edit-chev { transform: rotate(180deg); }
-        .print-edit-badge { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
-        .print-edit-lab { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
+        .print-edit-badge { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: var(--ca-gold); border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+        .print-edit-lab { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ca-ink-faint); margin-bottom: 4px; }
         .print-edit-field { display: block; margin-top: 8px; }
         .print-edit-svc { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(201,162,39,0.18); }
         .print-edit-course { margin-top: 8px; padding-left: 10px; border-left: 2px solid rgba(201,162,39,0.55); }
         .print-edit-item { display: flex; align-items: flex-start; gap: 8px; margin-top: 8px; }
-        .print-edit-dot { width: 6px; height: 6px; border-radius: 999px; background: #C9A227; margin-top: 11px; flex-shrink: 0; }
-        .print-edit-x { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #C9A227; flex-shrink: 0; }
+        .print-edit-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--ca-gold); margin-top: 11px; flex-shrink: 0; }
+        .print-edit-x { width: 28px; height: 28px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: var(--ca-gold); flex-shrink: 0; }
         .print-edit-title { font-size: 14px; font-weight: 700; background: transparent; border: none; color: inherit; min-width: 0; flex: 1; outline: none; }
         html.dark .print-edit-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
         .print-edit-card input:not(.print-edit-title), .print-edit-card textarea {
@@ -1406,10 +1413,10 @@
          relied on here); shellGuard() flips it to flex when needed. -->
     <div id="ca-shell-fail" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:#04070F;color:#EDE1C4;font-family:system-ui,-apple-system,sans-serif;padding:2rem;text-align:center;">
         <div style="max-width:26rem;">
-            <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:#C9A227;margin-bottom:0.75rem;">CREWASSIST</div>
+            <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:var(--ca-gold);margin-bottom:0.75rem;">CREWASSIST</div>
             <p style="font-size:0.875rem;line-height:1.6;opacity:0.9;margin:0 0 1.25rem;">This device's offline copy of the app is missing its style files, so the app can't render properly. <strong>Your data is safe.</strong></p>
             <p style="font-size:0.75rem;line-height:1.6;opacity:0.65;margin:0 0 1.5rem;">Connect to the internet once and reopen the app — it repairs itself automatically.</p>
-            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,#C9A227);color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.75rem;cursor:pointer;">Try again</button>
+            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,var(--ca-gold));color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.75rem;cursor:pointer;">Try again</button>
         </div>
     </div>
 
@@ -1442,9 +1449,9 @@
                     <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="absolute bottom-0 w-full h-[40px]">
                         <defs>
                             <linearGradient id="archGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stop-color="#C9A227" stop-opacity="0" />
-                                <stop offset="50%" stop-color="#C9A227" stop-opacity="1" />
-                                <stop offset="100%" stop-color="#C9A227" stop-opacity="0" />
+                                <stop offset="0%" style="stop-color:var(--ca-gold)" stop-opacity="0" />
+                                <stop offset="50%" style="stop-color:var(--ca-gold)" stop-opacity="1" />
+                                <stop offset="100%" style="stop-color:var(--ca-gold)" stop-opacity="0" />
                             </linearGradient>
                         </defs>
                         <!-- Main Background (Transparent Glass) -->
@@ -1568,7 +1575,7 @@
 
             <!-- Input Area -->
             <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#F6F1E8] via-[#F6F1E8] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
                 <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
                     <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="ca-hit absolute right-0 -top-11 z-30 w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
                         <i data-lucide="chevron-down" class="w-4 h-4"></i>
@@ -1711,7 +1718,7 @@
 
                 <!-- Developer Section -->
                 <div id="settings-developer" class="hidden">
-                    <p class="ca-micro text-[#ff4c4c] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
+                    <p class="ca-micro text-[color:var(--ca-danger-dev)] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
                         <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
                     </p>
                     <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
@@ -1726,7 +1733,7 @@
                         <div class="flex flex-col gap-2">
                             <button type="button" id="btn-dev-save" class="dev-save w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
                             <button type="button" id="btn-dev-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export rates.json"><i data-lucide="download" class="w-4 h-4"></i>Export rates.json</button>
-                            <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to default"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to default</button>
+                            <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to default"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to default</button>
                         </div>
                     </div>
                 </div>
@@ -1748,7 +1755,7 @@
                              also reads the old earnings/rates exports. -->
                         <button type="button" id="btn-backup-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export everything as one backup file"><i data-lucide="download" class="w-4 h-4"></i>Export backup</button>
                         <button type="button" id="btn-backup-restore" class="relative overflow-hidden w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Restore from a backup file"><i data-lucide="upload" class="w-4 h-4"></i>Restore backup<input type="file" id="backup-file-restore" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
-                        <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
+                        <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
                             <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
                         </button>
                     </div>
@@ -2401,7 +2408,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.6'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.8'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2423,6 +2430,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.8', d: '2026-10-15', items: [
+                { c: 'imp', t: 'The last raw colours ride named tokens — same pixels, one spelling.' },
+            ] },
+            { v: '1.44.7', d: '2026-10-15', items: [
+                { c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' },
+            ] },
             { v: '1.44.6', d: '2026-10-14', items: [
                 { c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' },
             ] },
@@ -6790,7 +6803,7 @@
             const old = document.getElementById('ca-layover-tz-card');
             if (!info) { if (old) old.remove(); return; }
             const inner = '<div class="ca-hero-lite p-3.5 text-sm w-[85%]">'
-                + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="globe" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i><span class="ca-micro font-bold uppercase tracking-wider" style="color: var(--sia-gold, #c9a227)">Layover time zone</span></div>'
+                + '<div class="flex items-center gap-1.5 mb-1.5"><i data-lucide="globe" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i><span class="ca-micro font-bold uppercase tracking-wider" style="color: var(--sia-gold, #C9A227)">Layover time zone</span></div>'
                 // hotfix 8 (owner order): one line when the clocks match —
                 // "PEK \u2014 1432H same as SGT"; the two-line card otherwise
                 + '<p class="text-sm font-bold">' + rosterEsc(info.station) + ' \u2014 ' + info.stH + ' <span class="font-normal text-gray-500">'
@@ -6846,7 +6859,7 @@
             const inAir = !!(depMs && arrMsFirst && Date.now() >= depMs && Date.now() < arrMsFirst);
             let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(first.ymd) + ' &middot; <b>' + nextFlightRel(first.ymd) + '</b></span>';
             if (inAir) {
-                detail += '<span class="block mt-1 font-bold whitespace-nowrap" style="color: var(--sia-gold, #c9a227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
+                detail += '<span class="block mt-1 font-bold whitespace-nowrap" style="color: var(--sia-gold, #C9A227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
             } else {
                 detail += '<span class="block mt-1 whitespace-nowrap">Departs ' + hmH(first.std) + (part1 ? '' : ' local') + (depMs ? ' &middot; ' + nfCountdown(depMs - Date.now()) : '') + '</span>';
             }
@@ -6886,7 +6899,7 @@
                 // sub-line rides the block it belongs to)
                 if (now >= depMs - (alarmLead + 12 * 3600000) && now < depMs - alarmLead) {
                     alarmHtml = '<div class="ca-nf-alarm flex items-center gap-2.5 pb-2.5 mb-2.5 border-b ca-hairline">'
-                        + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                        + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="alarm-clock" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i></span>'
                         + '<span class="flex-1 min-w-0">'
                         + '<span class="block font-bold text-sia-navy dark:text-sia-gold whitespace-nowrap">Suggested alarm ' + hmHFromDate(depMs - alarmLead, 'Asia/Singapore') + '</span>'
                         + '<span class="block text-xs mt-0.5 text-gray-500 whitespace-nowrap">Reporting ' + hmHFromDate(depMs - rptLead, 'Asia/Singapore') + ' &middot; STD ' + hmH(first.std) + '</span>'
@@ -6907,7 +6920,7 @@
                 + '<div class="flex items-start gap-2.5">'
                 + '<button type="button" id="ca-nextflight-tap" class="ca-nextflight-tap flex-1 min-w-0 text-left" data-nf="' + rosterEsc(first.fn) + '|' + rosterEsc(first.ymd) + '" aria-label="Open menus for SQ ' + rosterEsc(first.fn) + '">'
                 + '<span class="flex items-center gap-2.5">'
-                + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                + '<span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="plane" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i></span>'
                 + '<span class="flex-1 min-w-0">'
                 + '<span class="block font-bold text-sia-navy dark:text-sia-gold truncate">' + fns + ' <span class="font-normal">&middot; ' + rosterEsc(station) + '</span></span>'
                 + '</span></span>'
@@ -6930,7 +6943,7 @@
                     const setBusy = (busy) => {
                         tapBtn.disabled = busy;
                         tapBtn.innerHTML = busy
-                            ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #c9a227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
+                            ? '<span class="flex items-center gap-2.5"><span class="w-9 h-9 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="loader-2" class="w-4 h-4 animate-spin" style="color: var(--sia-gold, #C9A227)"></i></span><span class="text-xs font-bold text-gray-500">Fetching every cabin for SQ ' + rosterEsc(fn) + '\u2026</span></span>'
                             : nfBtnHtml;
                         refreshIcons();
                     };
@@ -7074,7 +7087,7 @@
                 '<div class="ca-nudge-card p-3 text-sm w-[85%]" role="status">'
                 + '<button type="button" id="ca-menunudge-x" aria-label="Dismiss reminder" class="absolute top-1.5 right-1.5 p-1.5 text-gray-400 dark:text-gray-500 active:text-sia-gold"><i data-lucide="x" class="w-4 h-4"></i></button>'
                 + '<div class="flex items-center gap-2.5 pr-8">'
-                + '<span class="w-8 h-8 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="utensils" class="w-4 h-4" style="color: var(--sia-gold, #c9a227)"></i></span>'
+                + '<span class="w-8 h-8 rounded-xl bg-sia-gold/15 flex items-center justify-center shrink-0"><i data-lucide="utensils" class="w-4 h-4" style="color: var(--sia-gold, #C9A227)"></i></span>'
                 + '<div class="flex-1 min-w-0">'
                 + '<p class="ca-nf-copy text-sm leading-relaxed">' + copy + '</p>'
                 + '</div></div>'
@@ -7333,7 +7346,7 @@
             // paper roster before deciding what to do about it.
             flagged.forEach(t => {
                 const fd = rosterShortDate((t.sectors[0] || {}).depDate, true);
-                lines.push(`⚠ ${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')}${fd ? ' (' + fd + ')' : ''} — ${t.reason}; not built.`);
+                lines.push(`<i data-lucide="alert-triangle" class="inline-block w-3.5 h-3.5 align-[-2px] mr-1 text-amber-600 dark:text-amber-400"></i>${t.sectors.map(s => s.dep + '–' + s.arr).join(' ')}${fd ? ' (' + fd + ')' : ''} — ${t.reason}; not built.`);
             });
             // v1.32.1: positioning trips BUILD (paxing) instead of refusing —
             // say so, date them (the crew can find the duty on the paper
@@ -7524,7 +7537,7 @@
             if (skipped) html += `
                 <div class="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl border border-amber-500/20 text-center mb-4">${skipped} card${skipped === 1 ? '' : 's'} skipped — incomplete fields. Calculate ${skipped === 1 ? 'it' : 'them'} individually once filled.</div>`;
             if (rateBlocked) html += `
-                <div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center mb-4">${rateBlocked} card${rateBlocked === 1 ? '' : 's'} blocked — rank rate isn\u2019t set. Settings \u2192 Rates, then Calculate again.</div>`;
+                <div class="p-3 bg-red-500/10 text-[color:var(--ca-danger-strong)] text-xs font-bold rounded-xl border border-red-500/20 text-center mb-4">${rateBlocked} card${rateBlocked === 1 ? '' : 's'} blocked — rank rate isn\u2019t set. Settings \u2192 Rates, then Calculate again.</div>`;
             // v1.33.0 (owner-approved): a multi-month batch groups by month —
             // each header carries the month's trip count and its subtotal, so
             // "how much did I earn in June?" reads straight off the sheet.
@@ -7563,7 +7576,7 @@
                     ${overviewBlock(flightOverviewText(r.res.detail))}
                     ${r.res.ifaDetails.join('')}
                     ${r.res.isTurnaround && r.res.lmaDetails.length === 0
-                        ? '<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
+                        ? '<div class="p-3 bg-red-500/10 text-[color:var(--ca-danger-strong)] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>'
                         : r.res.lmaDetails.join('')}
                     </div>
                 </div>`;
@@ -8099,7 +8112,7 @@
                 + '<div class="border-t ca-hairline"></div>'
                 + row('Persistent storage', '\u2026', 'st-storage-persisted')
                 + '<div class="border-t ca-hairline my-1"></div>'
-                + '<button type="button" id="btn-clear-menus" class="w-full h-[42px] rounded-full bg-transparent text-red-600 dark:text-[#ff4c4c] border border-red-500/50 dark:border-[#ff4c4c]/50 hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Clear saved menus"><i data-lucide="eraser" class="w-4 h-4"></i>Clear saved menus</button>';
+                + '<button type="button" id="btn-clear-menus" class="w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Clear saved menus"><i data-lucide="eraser" class="w-4 h-4"></i>Clear saved menus</button>';
             if (protectedCount > 0) html += '<p class="ca-micro mt-2" style="color: var(--arch-muted)">' + protectedCount + ' upcoming duty flight' + (protectedCount === 1 ? '' : 's') + ' keep' + (protectedCount === 1 ? 's' : '') + ' their menus.</p>';
             html += '</div>';
             box.innerHTML = html;
@@ -12478,7 +12491,7 @@
             // Post result message to chat
             let msg = '';
             if (isTurnaround && lmaDetails.length === 0) {
-                html += `<div class="p-3 bg-red-500/10 text-red-600 dark:text-[#ff4c4c] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>`;
+                html += `<div class="p-3 bg-red-500/10 text-[color:var(--ca-danger-strong)] text-xs font-bold rounded-xl border border-red-500/20 text-center">LMA is not eligible for Turnaround flights.</div>`;
             }
             if (isTurnaround && mode === 'both') {
                 msg = 'Your total COP Allowance is ' + formatMoney(grandTotal);
