@@ -241,6 +241,12 @@ const mkUntil = (d) => async (cond, ms) => {
     // rgba(246,241,232,.9)/rgba(8,11,20,.8), and canvas fillStyle cannot var()
     R.ok(src.includes('from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90'), 'round 3 value 4: the composer fade rides the bg-color token, dark overrides intact');
     R.ok((src.match(/#F6F1E8/g) || []).length >= 1 && src.includes('fill-[#F6F1E8]/90 dark:fill-[#080B14]/80'), 'round 3 value 4: the archive veil alpha pair stays literal (no token carries it)');
+    // v1.44.7 audit fix 6, value 5 of 5 (#9ca3af, round 3): all four free
+    // sites are stylesheet rules, where a Tailwind utility cannot live — they
+    // ride --ca-ink-faint (the app's canonical gray-400 ink, its own comment
+    // says so), theme-constant like the literals they replace
+    R.ok(src.includes('.dev-rate-acc-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ca-ink-faint); }') && src.includes('.dev-bracket-op { color: var(--ca-ink-faint);'), 'round 3 value 5: the dev cluster labels ride --ca-ink-faint');
+    R.ok((src.match(/color: #9[cC][aA]3[aA][fF]/g) || []).length === 0, 'round 3 value 5: no #9ca3af literal survives in a rule');
     R.ok(require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-snapshot.js')) && require('fs').existsSync(require('path').join(__dirname, 'smoke', 'style-diff.js')), 'the computed-style snapshot rig ships with the app (re-run it around any CSS-touching round)');
     R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
     R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
