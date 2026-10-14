@@ -138,6 +138,92 @@
             --ca-rc-num-ink: rgba(31, 41, 55, 0.92);
             --ca-cl-vhead-bg: rgba(246, 241, 232, 0.92);
         }
+        /* round 2 (owner order "proceed with 2"): the one-off retirement —
+           every remaining wash, line, glow and gradient stop rides a named
+           token. Nearby alphas merged only where the shift is ≤.03 on the
+           same base (invisible in place): gray .07/.09/.10 → line-gray-10,
+           .12/.14 → -13, .15 → -18; gold .10 → soft-12, .16/.18 → soft-15,
+           .28/.30 → soft-30. Untouched by ruling: the calendar's duty
+           palette, the chart tooltip, every text ink, print/dev styles and
+           the shell-fail failsafes. */
+        :root {
+            --ca-line-gray-10: rgba(127, 127, 127, 0.10);
+            --ca-gold-soft-08: rgba(201, 162, 39, 0.08);
+            --ca-gold-soft-30: rgba(201, 162, 39, 0.30);
+            --ca-gold-soft-40: rgba(201, 162, 39, 0.40);
+            --ca-gold-soft-55: rgba(201, 162, 39, 0.55);
+            --ca-gold-glow-22: rgba(201, 162, 39, 0.22);
+            --ca-gold-glow-42: rgba(201, 162, 39, 0.42);
+            --ca-gold-glow-90: rgba(201, 162, 39, 0.90);
+            --ca-gold-glow-95: rgba(201, 162, 39, 0.95);
+            /* the feed's save-state pills */
+            --ca-pill-gray-line: rgba(107, 114, 128, 0.30);
+            --ca-pill-gray-wash: rgba(107, 114, 128, 0.08);
+            --ca-pill-faint-line: rgba(156, 163, 175, 0.30);
+            --ca-pill-faint-wash: rgba(156, 163, 175, 0.10);
+            --ca-pill-ok-line: rgba(16, 185, 129, 0.40);
+            --ca-pill-ok-wash: rgba(16, 185, 129, 0.10);
+            --ca-pill-ok-line-dark: rgba(52, 211, 153, 0.35);
+            --ca-pill-ok-wash-dark: rgba(52, 211, 153, 0.10);
+            --ca-pill-fail-line: rgba(239, 68, 68, 0.40);
+            --ca-pill-fail-wash: rgba(239, 68, 68, 0.08);
+            /* danger washes: the pill's dark fail, the low badge, the fix tag */
+            --ca-danger-soft-10: rgba(248, 113, 113, 0.10);
+            --ca-danger-soft-14: rgba(248, 113, 113, 0.14);
+            --ca-danger-soft-45: rgba(248, 113, 113, 0.45);
+            /* the two-tap confirm's armed state */
+            --ca-twotap-wash: rgba(239, 68, 68, 0.12);
+            --ca-twotap-line: rgba(239, 68, 68, 0.55);
+            --ca-twotap-wash-dark: rgba(255, 76, 76, 0.12);
+            --ca-twotap-line-dark: rgba(255, 76, 76, 0.55);
+            /* the green offline badge */
+            --ca-badge-green-wash: rgba(34, 197, 94, 0.16);
+            --ca-badge-green-line: rgba(34, 197, 94, 0.45);
+            /* the earnings chart's gold family (212/230 = gold-bright and
+               arch-ink-gold bases at measured alphas) */
+            --ca-arch-bar: rgba(212, 175, 55, 0.35);
+            --ca-arch-proj: rgba(212, 175, 55, 0.28);
+            --ca-arch-proj-fade: rgba(212, 175, 55, 0.08);
+            --ca-arch-best-line: rgba(212, 175, 55, 0.12);
+            --ca-arch-best-wash: rgba(230, 194, 84, 0.45);
+            --ca-arch-proj-ink: rgba(230, 194, 84, 0.75);
+            --ca-arch-segtrack: rgba(26, 19, 0, 0.10);
+            --ca-arch-seg-ink: rgba(26, 19, 0, 0.65);
+            --ca-arch-card-hi: #dcc163;
+            --ca-arch-card-mid: #c9a23e;
+            --ca-arch-card-lo: #b8942f;
+            --ca-arch-card-glow: rgba(184, 148, 47, 0.55);
+            /* the changelog summary + stone hairlines */
+            --ca-cl-sumpill-bg: rgba(11, 26, 58, 0.35);
+            --ca-cl-sumbadge-lo: #a9861f;
+            --ca-stone-line: rgba(168, 162, 158, 0.35);
+            --ca-stone-line-strong: rgba(168, 162, 158, 0.50);
+            --ca-stone-line-light: rgba(87, 83, 78, 0.30);
+            --ca-sky-wash: rgba(125, 211, 252, 0.13);
+            --ca-sky-line: rgba(125, 211, 252, 0.32);
+            --ca-pink-wash: rgba(240, 171, 252, 0.13);
+            --ca-pink-line: rgba(240, 171, 252, 0.32);
+            /* veils and shadows */
+            --ca-lightbox-veil: rgba(4, 7, 15, 0.55);
+            --ca-lightbox-shadow: rgba(0, 0, 0, 0.45);
+            --ca-panel-shadow: rgba(0, 0, 0, 0.10);
+            --ca-rc-tag-shadow: rgba(0, 0, 0, 0.18);
+            --ca-knob-shadow: rgba(0, 0, 0, 0.25);
+            /* paired surfaces (flip per theme; the switch track's dark value
+               already lives in the block above) */
+            --ca-sticky-bg: rgba(11, 26, 58, 0.95);
+            --ca-sticky-line: rgba(255, 255, 255, 0.06);
+            --ca-input-wash: rgba(255, 255, 255, 0.03);
+            --ca-input-line: rgba(255, 255, 255, 0.10);
+        }
+        html:not(.dark) {
+            --ca-switch-track: rgba(0, 0, 0, 0.15);
+            --ca-sticky-bg: rgba(255, 255, 255, 0.95);
+            --ca-sticky-line: rgba(0, 0, 0, 0.06);
+            --ca-input-wash: rgba(0, 0, 0, 0.03);
+            --ca-input-line: rgba(0, 0, 0, 0.10);
+            --ca-onboard-line: rgba(17, 24, 39, 0.20);
+        }
         /* v1.32.0 (M1): surface tokens — one recipe per role, both themes.
            surface-1 is the glass panels and chips; surface-2 is inset fields
            and wells (the retired black-5 over white-5 background pair);
@@ -174,14 +260,14 @@
            existing failure red; light text ink #7d650f mirrors the focus
            ring’s gold ink). */
         .ca-pill { display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px; padding: 2px 8px; font-size: 11px; line-height: 16px; font-weight: 700; letter-spacing: 0.02em; border: 1px solid; white-space: nowrap; }
-        .ca-pill[data-state="ready"], .ca-pill[data-state="unpub"] { color: #6B7280; border-color: rgba(107, 114, 128, 0.30); background: rgba(107, 114, 128, 0.08); }
-        html.dark .ca-pill[data-state="ready"], html.dark .ca-pill[data-state="unpub"] { color: var(--ca-ink-faint); border-color: rgba(156, 163, 175, 0.30); background: rgba(156, 163, 175, 0.10); }
+        .ca-pill[data-state="ready"], .ca-pill[data-state="unpub"] { color: #6B7280; border-color: var(--ca-pill-gray-line); background: var(--ca-pill-gray-wash); }
+        html.dark .ca-pill[data-state="ready"], html.dark .ca-pill[data-state="unpub"] { color: var(--ca-ink-faint); border-color: var(--ca-pill-faint-line); background: var(--ca-pill-faint-wash); }
         .ca-pill[data-state="saving"], .ca-pill[data-state="partial"] { color: var(--sia-gold-ink); border-color: var(--ca-gold-line-strong); background: var(--ca-gold-soft-12); }
         html.dark .ca-pill[data-state="saving"], html.dark .ca-pill[data-state="partial"] { color: var(--ca-gold-hi); border-color: var(--ca-gold-line-strong); background: var(--ca-gold-soft-15); }
-        .ca-pill[data-state="ok"] { color: #047857; border-color: rgba(16, 185, 129, 0.40); background: rgba(16, 185, 129, 0.10); }
-        html.dark .ca-pill[data-state="ok"] { color: var(--ca-ok); border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.10); }
-        .ca-pill[data-state="fail"] { color: var(--ca-danger-ink); border-color: rgba(239, 68, 68, 0.40); background: rgba(239, 68, 68, 0.08); }
-        html.dark .ca-pill[data-state="fail"] { color: var(--ca-danger-ink); border-color: var(--ca-danger-line); background: rgba(248, 113, 113, 0.10); }
+        .ca-pill[data-state="ok"] { color: #047857; border-color: var(--ca-pill-ok-line); background: var(--ca-pill-ok-wash); }
+        html.dark .ca-pill[data-state="ok"] { color: var(--ca-ok); border-color: var(--ca-pill-ok-line-dark); background: var(--ca-pill-ok-wash-dark); }
+        .ca-pill[data-state="fail"] { color: var(--ca-danger-ink); border-color: var(--ca-pill-fail-line); background: var(--ca-pill-fail-wash); }
+        html.dark .ca-pill[data-state="fail"] { color: var(--ca-danger-ink); border-color: var(--ca-danger-line); background: var(--ca-danger-soft-10); }
         /* TYPOGRAPHY & COLOR DISCIPLINE — standing owner rule v2
            (2026-10-14; full text in docs/HANDOVER.md). One fixed design
            scale, chosen by role, never tuned by eye, in BOTH themes.
@@ -249,7 +335,7 @@
                blur does not. */
             background: var(--glass-solid-bg);
             border: 1px solid var(--glass-border);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 30px var(--ca-panel-shadow);
         }
 
         .glass-bubble {
@@ -367,7 +453,7 @@
             width: 0.85rem;
             height: 0.85rem;
             box-sizing: border-box;
-            border: 2px solid rgba(201, 162, 39, 0.28);
+            border: 2px solid var(--ca-gold-soft-30);
             border-top-color: var(--ca-gold);
             border-radius: 50%;
             animation: ca-spin 0.7s linear infinite;
@@ -440,7 +526,7 @@
            invisible otherwise, with a quick pop-in when they arrive. */
         .ca-rc-tag, .ca-rc-badge { display: none; position: absolute; pointer-events: none; z-index: 2; }
         #ca-rc-grid.rc-tags-on .ca-rc-tag, #ca-rc-grid.rc-tags-on .ca-rc-badge { display: inline-flex; }
-        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 14px; box-shadow: 0 1px 2px var(--ca-rc-tag-shadow); }
         .ca-rc-tag-lo { background: #C2410C; color: #FFF7ED; }
         .ca-rc-tag-ta { background: var(--ca-success-deep); color: #F0FDF4; }
         html.dark .ca-rc-tag-lo { background: rgba(251,146,60,.22); color: #FDBA74; box-shadow: inset 0 0 0 1px rgba(251,146,60,.5), 0 1px 2px var(--ca-shade-40); }
@@ -466,7 +552,7 @@
         @keyframes ca-rc-btnout { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.55); } }
         .ca-rc-btnin { animation: ca-rc-btnin .16s ease-out both; }
         .ca-rc-btnout { animation: ca-rc-btnout .15s ease-in both; }
-        @keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 rgba(201,162,39,.9); } 100% { box-shadow: 0 0 0 14px rgba(201,162,39,0); } }
+        @keyframes ca-rc-flash { 0% { box-shadow: 0 0 0 0 var(--ca-gold-glow-90); } 100% { box-shadow: 0 0 0 14px var(--ca-gold-clear); } }
         .ca-rc-flash { animation: ca-rc-flash .45s ease-out; }
         /* hotfix (owner report: the toggle never looked gold on the phone):
            a tap latches :hover on touch devices, and the Tailwind hover wash
@@ -493,7 +579,7 @@
             #ca-rc-tag, #ca-rc-shot, #ca-rc-prev, #ca-rc-next { padding: 8px; }
             #ca-rc-close { padding: 10px; }
         }
-        @media (hover:hover) { .ca-rc-day:hover { background: rgba(127,127,127,.09); } .ca-rc-nav:hover { background: var(--ca-line-gray-13); } }
+        @media (hover:hover) { .ca-rc-day:hover { background: var(--ca-line-gray-10); } .ca-rc-nav:hover { background: var(--ca-line-gray-13); } }
         /* hotfix 5 (owner order): sideways swipes change months — vertical
            pans must keep scrolling, so the grid owns only the horizontal */
         #ca-rc-grid { touch-action: pan-y; }
@@ -515,7 +601,7 @@
            a date gutter per row, tinted by duty state, the selected day as
            the highlighted band, its trip flowing around it */
         .ca-rc-row { display: flex; align-items: stretch; }
-        .ca-rc-row + .ca-rc-row { border-top: 1px solid rgba(127,127,127,.14); }
+        .ca-rc-row + .ca-rc-row { border-top: 1px solid var(--ca-line-gray-13); }
         html.dark .ca-rc-row + .ca-rc-row { border-top-color: var(--ca-line-gray-18); }
         .ca-rc-gut { width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
         .ca-rc-gut .n { font-size: 14px; font-weight: 700; line-height: 1; color: var(--ca-rc-num-ink); }
@@ -525,7 +611,7 @@
                 .ca-rc-gut::after { content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: transparent; }
         .ca-rc-gut.k-fly { background: rgba(37,99,235,.10); }
         html.dark .ca-rc-gut.k-fly { background: rgba(96,165,250,.12); }
-        .ca-rc-gut.k-lo, .ca-rc-gut.k-off, .ca-rc-gut.k-al { background: rgba(127,127,127,.10); }
+        .ca-rc-gut.k-lo, .ca-rc-gut.k-off, .ca-rc-gut.k-al { background: var(--ca-line-gray-10); }
         .ca-rc-gut.k-sb { background: rgba(21,128,61,.09); }
         html.dark .ca-rc-gut.k-sb { background: rgba(74,222,128,.10); }
         .ca-rc-gut.k-crs { background: rgba(146,94,14,.09); }
@@ -546,11 +632,11 @@
         .ca-rc-gut.k-lo.is-on::after, .ca-rc-gut.k-off.is-on::after { background: rgba(127,127,127,.65); }
         .ca-rc-gut.k-al.is-on::after { background: rgba(168,85,247,.75); }
         .ca-rc-bd { flex: 1; min-width: 0; padding: 10px 0 10px 12px; }
-        .ca-rc-row.is-on .ca-rc-bd { background: linear-gradient(90deg, rgba(201,162,39,.08), transparent 55%); }
+        .ca-rc-row.is-on .ca-rc-bd { background: linear-gradient(90deg, var(--ca-gold-soft-08), transparent 55%); }
         /* the flight card's dashed route track: filled dots at the ends,
            the plane nose-on between them */
         .ca-rc-trk { flex: 1; display: flex; align-items: center; min-width: 34px; }
-        .ca-rc-trk .ln { flex: 1; border-top: 2px dashed rgba(201,162,39,.55); }
+        .ca-rc-trk .ln { flex: 1; border-top: 2px dashed var(--ca-gold-soft-55); }
         .ca-rc-trk .pt { width: 7px; height: 7px; border-radius: 999px; background: var(--ca-gold); flex: none; }
         /* hotfix 7 (owner order): the timeline scrolls with no scrollbar */
         #ca-rc-detail { scrollbar-width: none; -ms-overflow-style: none; }
@@ -645,8 +731,8 @@
         .ca-arch-search:focus { border-color: var(--sia-gold, #c9a227); }
         /* v1.29.0: two-tap armed state (owner design) — the same red family as
         the clear-data pill, so day and night both read it as danger. */
-        .ca-twotap-armed { color: #dc2626 !important; border-color: rgba(239,68,68,0.55) !important; background: rgba(239,68,68,0.12) !important; }
-        html.dark .ca-twotap-armed { color: #ff4c4c !important; border-color: rgba(255,76,76,0.55) !important; background: rgba(255,76,76,0.12) !important; }
+        .ca-twotap-armed { color: #dc2626 !important; border-color: var(--ca-twotap-line) !important; background: var(--ca-twotap-wash) !important; }
+        html.dark .ca-twotap-armed { color: #ff4c4c !important; border-color: var(--ca-twotap-line-dark) !important; background: var(--ca-twotap-wash-dark) !important; }
         .ca-arch-amt { font-variant-numeric: tabular-nums; }
         .ca-arch-num { font-variant-numeric: tabular-nums; }
         /* v1.31.1 (owner report): the toast is always outlined in gold — and in
@@ -669,14 +755,14 @@
            Dark surfaces follow the app theme — #141823 at night, the app's
            light glass by day — so the page reads in both. */
         .ca-arch-iconbtn { width: 48px; height: 48px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; color: var(--arch-fg, #374151); transition: background .15s ease; -webkit-tap-highlight-color: transparent; }
-        .ca-arch-iconbtn:active { background: rgba(127,127,127,.15); }
+        .ca-arch-iconbtn:active { background: var(--ca-line-gray-18); }
         .ca-arch-goldcard {
-            background: linear-gradient(135deg, #dcc163 0%, #c9a23e 60%, #b8942f 100%);
+            background: linear-gradient(135deg, var(--ca-arch-card-hi) 0%, var(--ca-arch-card-mid) 60%, var(--ca-arch-card-lo) 100%);
             border-radius: 16px; color: var(--ca-arch-ink-on-gold); position: relative;
-            box-shadow: inset 0 1px 0 var(--ca-glow-28), 0 10px 28px -8px rgba(184,148,47,.55);
+            box-shadow: inset 0 1px 0 var(--ca-glow-28), 0 10px 28px -8px var(--ca-arch-card-glow);
         }
-        .ca-arch-segtrack { display: inline-flex; background: rgba(26,19,0,.1); border-radius: 999px; padding: 3px; gap: 2px; }
-        .ca-arch-seg { border: none; background: transparent; color: rgba(26,19,0,.65); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
+        .ca-arch-segtrack { display: inline-flex; background: var(--ca-arch-segtrack); border-radius: 999px; padding: 3px; gap: 2px; }
+        .ca-arch-seg { border: none; background: transparent; color: var(--ca-arch-seg-ink); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
         .ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }
         .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -685,15 +771,15 @@
         .ca-arch-barcol { border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex: 1 1 0; min-width: 0; }
         .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bararea { width: 100%; height: 120px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
-        .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: rgba(212,175,55,.35); }
+        .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: var(--ca-arch-bar); }
         .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, var(--ca-gold))); }
-        .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed rgba(230,194,84,.75); background: repeating-linear-gradient(45deg, rgba(212,175,55,.28) 0 4px, rgba(212,175,55,.08) 4px 8px); }
+        .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed var(--ca-arch-proj-ink); background: repeating-linear-gradient(45deg, var(--ca-arch-proj) 0 4px, var(--ca-arch-proj-fade) 4px 8px); }
         .ca-arch-barlab { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
         .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: var(--ca-tip-ink); padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
         .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
-        .ca-arch-badge-best { color: var(--ca-arch-ink-gold); border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
-        .ca-arch-badge-low { color: var(--ca-danger-bright); border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
+        .ca-arch-badge-best { color: var(--ca-arch-ink-gold); border: 1px solid var(--ca-arch-best-wash); background: var(--ca-arch-best-line); }
+        .ca-arch-badge-low { color: var(--ca-danger-bright); border: 1px solid var(--ca-danger-soft-45); background: var(--ca-danger-soft-10); }
         .ca-arch-badge-prog { color: var(--arch-muted); border: 1px solid var(--arch-badge-border); }
         .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-inslabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
@@ -721,7 +807,7 @@
            Dark mode is untouched by every rule below. */
         html:not(.dark) #onboarding-view .ui-input {
             background: var(--glass-bg);
-            border-color: rgba(17, 24, 39, 0.2);
+            border-color: var(--ca-onboard-line);
         }
         /* v1.37.0: dark-mode pills were near-white borders with gray/70
            text — brightened to /75, and the selected state (which drops
@@ -770,8 +856,8 @@
            the line box past a hand-guessed cap. The cap now carries generous
            headroom, the line-height is pinned, and the row centers instead of
            baseline-aligning, so no font can outgrow it. */
-        .ca-roster-sticky { display: flex; align-items: center; justify-content: center; gap: 8px; max-height: 0; opacity: 0; overflow: hidden; padding: 0 24px; line-height: 1.2; border-bottom: 1px solid rgba(0,0,0,.06); background: rgba(255,255,255,.95); transition: max-height .25s ease, opacity .25s ease, padding .25s ease; }
-        .dark .ca-roster-sticky { background: rgba(11,26,58,.95); border-bottom-color: rgba(255,255,255,.06); }
+        .ca-roster-sticky { display: flex; align-items: center; justify-content: center; gap: 8px; max-height: 0; opacity: 0; overflow: hidden; padding: 0 24px; line-height: 1.2; border-bottom: 1px solid var(--ca-sticky-line); background: var(--ca-sticky-bg); transition: max-height .25s ease, opacity .25s ease, padding .25s ease; }
+        .dark .ca-roster-sticky { background: var(--ca-sticky-bg); border-bottom-color: var(--ca-sticky-line); }
         .ca-roster-sticky.ca-on { max-height: 96px; opacity: 1; padding: 9px 24px; }
         /* v1.31.0: curated insights — the top four lead, the rest unfold */
         .ca-arch-insmore { overflow: hidden; max-height: 2400px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
@@ -780,7 +866,7 @@
         .ca-arch-insopen .ca-arch-chev2 { transform: rotate(180deg); }
         /* hover is a mouse-only luxury: never a stuck state on touch */
         @media (hover:hover) {
-            .ca-arch-iconbtn:hover { background: rgba(127,127,127,.12); }
+            .ca-arch-iconbtn:hover { background: var(--ca-line-gray-13); }
             .ca-arch-seg:hover { color: var(--ca-arch-ink-on-gold); }
             .ca-arch-barcol:hover .ca-arch-bartip { display: block; }
             .ca-arch-barcol.ca-arch-baron .ca-arch-bartip { display: block; }
@@ -803,8 +889,8 @@
            narration names. The pulse is eased, never a snap, and the ring
            borrows the element's own corner shape (box-shadow follows radius). */
         @keyframes caTourPulse {
-            0%, 100% { box-shadow: 0 0 0 2px rgba(201,162,39,.95), 0 0 0 7px rgba(201,162,39,.22); }
-            50% { box-shadow: 0 0 0 3px rgba(201,162,39,1), 0 0 0 11px rgba(201,162,39,.42); }
+            0%, 100% { box-shadow: 0 0 0 2px var(--ca-gold-glow-95), 0 0 0 7px var(--ca-gold-glow-22); }
+            50% { box-shadow: 0 0 0 3px var(--ca-gold), 0 0 0 11px var(--ca-gold-glow-42); }
         }
         .ca-tour-glow { position: relative; z-index: 5; animation: caTourPulse 1.4s ease-in-out infinite; }
         /* While the tour runs, the chrome around the chat is hands-off:
@@ -897,8 +983,8 @@
 
         /* Unified UI input styles */
         .ui-input {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--ca-input-wash);
+            border: 1px solid var(--ca-input-line);
             height: 2.75rem;
             min-height: 2.75rem;
             box-sizing: border-box;
@@ -906,8 +992,8 @@
             max-width: 100%;
         }
         html:not(.dark) .ui-input {
-            background: rgba(0,0,0,0.03);
-            border: 1px solid rgba(0,0,0,0.1);
+            background: var(--ca-input-wash);
+            border: 1px solid var(--ca-input-line);
         }
 
         /* Number / date fields match IFA·LMA·COP inputs */
@@ -987,9 +1073,9 @@
            is the tap's own feedback and fades on its own. */
         .ca-help-row { transition: background-color .25s ease; }
         @media (hover:hover) {
-            .ca-help-row:hover { background: rgba(127,127,127,.07); }
+            .ca-help-row:hover { background: var(--ca-line-gray-10); }
         }
-        .ca-help-row.ca-help-flash { background: rgba(201,162,39,.16); }
+        .ca-help-row.ca-help-flash { background: var(--ca-gold-soft-15); }
         .ca-help-token { background: var(--ca-line-gray-13); color: inherit; opacity: .78; }
         /* the tips sit a tier dimmer than the rows — colour only; their size
            is the app's single sanctioned micro token (ca-micro) */
@@ -1001,12 +1087,12 @@
             transform: rotate(180deg);
         }
         #menu-lightbox {
-            background: rgba(4, 7, 15, 0.55);
+            background: var(--ca-lightbox-veil);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
         }
         #menu-lightbox img {
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+            box-shadow: 0 12px 40px var(--ca-lightbox-shadow);
         }
 
         /* Inflight Menu Printer */
@@ -1231,7 +1317,7 @@
             width: 2.25rem;
             height: 1.25rem;
             border-radius: 9999px;
-            background: rgba(0, 0, 0, 0.15);
+            background: var(--ca-switch-track);
             transition: background-color 0.2s ease;
         }
         .dark .ca-switch { background: var(--ca-switch-track); }
@@ -1244,7 +1330,7 @@
             height: 1rem;
             border-radius: 9999px;
             background: var(--ca-knob);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 1px 2px var(--ca-knob-shadow);
             transition: transform 0.2s ease;
         }
         .ca-switch-input:checked ~ .ca-switch { background: var(--ca-gold); }
@@ -1254,16 +1340,16 @@
         /* ---- Changelog sheet (v1.35.0 hotfix-3 redesign) ---- */
         .ca-cl-chips { scrollbar-width: none; }
         .ca-cl-chips::-webkit-scrollbar { display: none; }
-        .ca-cl-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; border: 1px solid rgba(168, 162, 158, 0.35); color: var(--ca-ink-stone); background: transparent; min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+        .ca-cl-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; border: 1px solid var(--ca-stone-line); color: var(--ca-ink-stone); background: transparent; min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
         .ca-cl-chip svg { width: 12px; height: 12px; }
-        html:not(.dark) .ca-cl-chip { color: #57534e; border-color: rgba(87, 83, 78, 0.3); }
-        .ca-cl-chip:active { background: rgba(201, 162, 39, 0.18); }
+        html:not(.dark) .ca-cl-chip { color: #57534e; border-color: var(--ca-stone-line-light); }
+        .ca-cl-chip:active { background: var(--ca-gold-soft-15); }
         .ca-cl-chip.ca-cl-chipon { background: var(--ca-gold); border-color: var(--ca-gold); color: var(--ca-ink-navy); }
-        @media (hover: hover) { .ca-cl-chip:hover { border-color: rgba(201, 162, 39, 0.55); } }
-        .ca-cl-sumcard { border-radius: 1rem; padding: 12px 14px; border: 1px solid var(--ca-gold-line); background: rgba(201, 162, 39, 0.10); box-shadow: 0 0 24px var(--ca-gold-soft-12); }
-        html:not(.dark) .ca-cl-sumcard { background: rgba(201, 162, 39, 0.14); }
-        .ca-cl-sumbadge { width: 40px; height: 40px; border-radius: 9999px; background: linear-gradient(135deg, var(--ca-gold), #a9861f); color: var(--ca-ink-navy); display: flex; align-items: center; justify-content: center; }
-        .ca-cl-sumpill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: rgba(11, 26, 58, 0.35); color: #E7D9B0; border: 1px solid rgba(201, 162, 39, 0.3); }
+        @media (hover: hover) { .ca-cl-chip:hover { border-color: var(--ca-gold-soft-55); } }
+        .ca-cl-sumcard { border-radius: 1rem; padding: 12px 14px; border: 1px solid var(--ca-gold-line); background: var(--ca-gold-soft-12); box-shadow: 0 0 24px var(--ca-gold-soft-12); }
+        html:not(.dark) .ca-cl-sumcard { background: var(--ca-gold-soft-15); }
+        .ca-cl-sumbadge { width: 40px; height: 40px; border-radius: 9999px; background: linear-gradient(135deg, var(--ca-gold), var(--ca-cl-sumbadge-lo)); color: var(--ca-ink-navy); display: flex; align-items: center; justify-content: center; }
+        .ca-cl-sumpill { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; background: var(--ca-cl-sumpill-bg); color: #E7D9B0; border: 1px solid var(--ca-gold-soft-30); }
         html:not(.dark) .ca-cl-sumpill { background: var(--glass-bg); color: #6b5613; }
         .ca-cl-sumpill svg { width: 11px; height: 11px; }
         .ca-cl-group { animation: caClGroupIn .35s ease both; }
@@ -1276,22 +1362,22 @@
         .ca-cl-badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 9999px; }
         .ca-cl-badge-new { background: var(--ca-gold); color: var(--ca-ink-navy); animation: caClSoftPulse 2.2s ease-in-out infinite; }
         @keyframes caClSoftPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
-        .ca-cl-badge-cur { border: 1px solid rgba(168, 162, 158, 0.5); color: var(--ca-ink-stone); }
+        .ca-cl-badge-cur { border: 1px solid var(--ca-stone-line-strong); color: var(--ca-ink-stone); }
         html:not(.dark) .ca-cl-badge-cur { color: var(--ca-ink-stone-deep); }
         .ca-cl-row { position: relative; display: flex; align-items: baseline; padding: 5px 8px 5px 22px; }
         .ca-cl-dot { position: absolute; left: 9px; top: calc(5px + 0.55em); width: 6px; height: 6px; border-radius: 9999px; background: var(--ca-gold); }
         .ca-cl-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; margin-right: 7px; flex-shrink: 0; border: 1px solid transparent; }
         .ca-cl-tag svg { width: 10px; height: 10px; }
-        .ca-cl-tag-new { color: var(--ca-gold-bright); background: rgba(201, 162, 39, 0.16); border-color: rgba(201, 162, 39, 0.4); }
+        .ca-cl-tag-new { color: var(--ca-gold-bright); background: var(--ca-gold-soft-15); border-color: var(--ca-gold-soft-40); }
         html:not(.dark) .ca-cl-tag-new { color: var(--sia-gold-ink); }
-        .ca-cl-tag-fix { color: var(--ca-danger-ink); background: rgba(248, 113, 113, 0.14); border-color: var(--ca-danger-line); }
+        .ca-cl-tag-fix { color: var(--ca-danger-ink); background: var(--ca-danger-soft-14); border-color: var(--ca-danger-line); }
         html:not(.dark) .ca-cl-tag-fix { color: var(--ca-danger-ink); }
-        .ca-cl-tag-imp { color: #7dd3fc; background: rgba(125, 211, 252, 0.13); border-color: rgba(125, 211, 252, 0.32); }
+        .ca-cl-tag-imp { color: #7dd3fc; background: var(--ca-sky-wash); border-color: var(--ca-sky-line); }
         html:not(.dark) .ca-cl-tag-imp { color: #0369a1; }
-        .ca-cl-tag-fun { color: #f0abfc; background: rgba(240, 171, 252, 0.13); border-color: rgba(240, 171, 252, 0.32); }
+        .ca-cl-tag-fun { color: #f0abfc; background: var(--ca-pink-wash); border-color: var(--ca-pink-line); }
         html:not(.dark) .ca-cl-tag-fun { color: #a21caf; }
         .ca-cl-text { flex: 1; min-width: 0; }
-        .ca-badge-green { background: rgba(34, 197, 94, 0.16); border: 1px solid rgba(34, 197, 94, 0.45); color: #22c55e; }
+        .ca-badge-green { background: var(--ca-badge-green-wash); border: 1px solid var(--ca-badge-green-line); color: #22c55e; }
         html:not(.dark) .ca-badge-green { color: var(--ca-success-deep); }
     </style>
     <!-- Tailwind CSS — hotfix 18: compiled at build time into ./tw.css
@@ -2315,7 +2401,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.5'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.6'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2337,6 +2423,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.6', d: '2026-10-14', items: [
+                { c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' },
+            ] },
             { v: '1.44.5', d: '2026-10-14', items: [
                 { c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' },
             ] },
