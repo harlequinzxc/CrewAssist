@@ -110,14 +110,24 @@
         html.dark .ca-pill[data-state="ok"] { color: #34D399; border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.10); }
         .ca-pill[data-state="fail"] { color: #B91C1C; border-color: rgba(239, 68, 68, 0.40); background: rgba(239, 68, 68, 0.08); }
         html.dark .ca-pill[data-state="fail"] { color: #F87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.10); }
-        /* TYPOGRAPHY DISCIPLINE — standing owner rule (2026-10-14; full
-           text in docs/HANDOVER.md). The app has ONE fixed type scale,
-           chosen by role, never tuned by eye. Before styling any new
-           element, find the existing element with the same semantic job
-           and copy its treatment verbatim (size, weight, letter-spacing,
-           colour, line-height). Nothing readable goes below MICRO; nothing
-           is invented between rungs; inputs match BODY; badges are MICRO
-           (all caps, bold, tight tracking). The rungs:
+        /* TYPOGRAPHY & COLOR DISCIPLINE — standing owner rule v2
+           (2026-10-14; full text in docs/HANDOVER.md). One fixed design
+           scale, chosen by role, never tuned by eye, in BOTH themes.
+           Before styling any new element, find the existing element with
+           the same semantic job and copy its treatment verbatim (size,
+           weight, letter-spacing, colour, opacity, background, border,
+           shadow, radius, line-height — and its rest/hover/pressed/focus/
+           disabled/selected states). Nothing readable goes below MICRO;
+           nothing between rungs; inputs match BODY; badges are MICRO.
+           Colours are semantic tokens by name (surface tiers bg-base/
+           raised/elevated/pressed/input; text tiers primary/secondary/
+           tertiary/inverse; accents gold, gold-soft, success, warning,
+           danger, info; borders subtle/default/strong) — never a raw hex
+           at a call site, never a new token, never a colour copied across
+           themes: the token resolves per theme. Gold is the leitmotif;
+           every other hue earns its place by meaning. Icons inherit their
+           parent's text colour. Hover exists only behind (hover:hover) —
+           touch never latches it. The type rungs:
            MICRO    11  ca-micro (badges, counts, tiny uppercase labels)
            CAPTION  12  text-xs  (chips, timestamps, tab labels, metadata)
            BODY     14  text-sm  (bubbles, labels, buttons, inputs)
@@ -526,6 +536,14 @@
             background: #C9A227;
             color: #111827;
         }
+        /* v1.44.2 (owner order): the date picker takes the roster calendar's
+           month swipe — a three-thirds track (prev | current | next) follows
+           the finger so the resistance slides over real months, never a void
+           (the calendar's hotfix-17 lesson); while a drag owns the grid the
+           day cells stand down, so a swipe can never also tap a day. */
+        .ca-date-track { user-select: none; -webkit-user-select: none; }
+        #cadate-grid.ca-date-drag .cadate-day { pointer-events: none; }
+        #cadate-grid.ca-date-drag { cursor: grabbing; }
         .cadate-day.is-today:not(.is-sel) {
             box-shadow: inset 0 0 0 1.5px #C9A227;
         }
@@ -2207,7 +2225,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2229,6 +2247,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.2', d: '2026-10-14', items: [
+                { c: 'imp', t: 'The date picker swipes and arrow-keys through months.' },
+            ] },
             { v: '1.44.1', d: '2026-10-14', items: [
                 { c: 'imp', t: 'Every label now shares one fixed type scale.' },
             ] },
@@ -2902,6 +2923,21 @@
                 // owns the key; the topmost check mirrors the Escape order
                 // below, so arrows only ever drive the frontmost sheet.
                 if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                    // v1.44.2 (owner order): the date picker takes the arrows
+                    // while it is open — it is a modal (z-[92], above every
+                    // sheet), so it owns the key outright. The same guards as
+                    // the calendar: never while an input owns the caret, and
+                    // the closing window (the backdrop already faded to
+                    // opacity-0) stands down. A live drag track owns the grid
+                    // too — the snap commit is already in flight.
+                    const caBd = document.getElementById('cadate-backdrop');
+                    if (caBd && !caBd.classList.contains('hidden') && !caBd.classList.contains('opacity-0')) {
+                        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+                        if (document.querySelector('#cadate-grid .ca-date-track')) return;
+                        const btn = document.getElementById(e.key === 'ArrowLeft' ? 'cadate-prev' : 'cadate-next');
+                        if (btn) { e.preventDefault(); btn.click(); }
+                        return;
+                    }
                     const calIds = ['whatsnew-backdrop', 'ca-changelog-sheet', 'ca-arch-sheet', 'settings-sheet', 'ca-roster-cal', 'menu-sheet', 'print-overlay', 'results-sheet'];
                     let topSheet = '';
                     for (let i = 0; i < calIds.length; i++) {
@@ -9321,23 +9357,14 @@
             caDateOnCommit = null;
         }
 
-        function renderCaDateGrid(slideDir) {
-            const heading = document.getElementById('cadate-heading');
-            const monthEl = document.getElementById('cadate-month');
-            const grid = document.getElementById('cadate-grid');
-            if (!grid) return;
-            const y = caDateView.getFullYear();
-            const m = caDateView.getMonth();
-            const picked = String(caDatePicked || '').split('-');
-            const pY = parseInt(picked[0], 10);
-            const pM = parseInt(picked[1], 10);
-            const pD = parseInt(picked[2], 10);
-            const headD = isFinite(pD) ? pD : 1;
-            const headM = isFinite(pM) ? pM - 1 : m;
-            const headY = isFinite(pY) ? pY : y;
-            const headDt = new Date(headY, headM, headD);
-            if (heading) heading.textContent = CA_DOW[headDt.getDay()] + ', ' + headD + ' ' + CA_MONTHS_SHORT[headM] + ' ' + headY;
-            if (monthEl) monthEl.textContent = CA_MONTHS[m] + ' ' + y;
+        // v1.44.2: one builder for the month cells — the rendered grid and
+        // the swipe track's clone thirds share it, so a dragged-in month is
+        // pixel-identical to the one the chevrons land on. The date is
+        // normalised first so a clone's minus-one / plus-one month rolls
+        // the year honestly.
+        function caDateMonthHtml(y, m) {
+            const dt = new Date(y, m, 1);
+            y = dt.getFullYear(); m = dt.getMonth();
             const first = new Date(y, m, 1);
             const startPad = first.getDay();
             const daysIn = new Date(y, m + 1, 0).getDate();
@@ -9354,7 +9381,28 @@
                 html += '<button type="button" class="' + cls + '" data-ymd="' + ymd + '">' + d + '</button>';
             }
             for (let i = 0; i < empties; i++) html += '<span></span>';
-            grid.innerHTML = html;
+            return html;
+        }
+
+        function renderCaDateGrid(slideDir) {
+            const heading = document.getElementById('cadate-heading');
+            const monthEl = document.getElementById('cadate-month');
+            const grid = document.getElementById('cadate-grid');
+            if (!grid) return;
+            if (caDateDrag.track || caDateDrag.snapT) caDateDragStop(false);
+            const y = caDateView.getFullYear();
+            const m = caDateView.getMonth();
+            const picked = String(caDatePicked || '').split('-');
+            const pY = parseInt(picked[0], 10);
+            const pM = parseInt(picked[1], 10);
+            const pD = parseInt(picked[2], 10);
+            const headD = isFinite(pD) ? pD : 1;
+            const headM = isFinite(pM) ? pM - 1 : m;
+            const headY = isFinite(pY) ? pY : y;
+            const headDt = new Date(headY, headM, headD);
+            if (heading) heading.textContent = CA_DOW[headDt.getDay()] + ', ' + headD + ' ' + CA_MONTHS_SHORT[headM] + ' ' + headY;
+            if (monthEl) monthEl.textContent = CA_MONTHS[m] + ' ' + y;
+            grid.innerHTML = caDateMonthHtml(y, m);
             if (slideDir) {
                 grid.style.transition = 'none';
                 grid.style.transform = 'translateX(' + (slideDir * 18) + '%)';
@@ -9368,6 +9416,99 @@
                 });
             }
         }
+
+        // v1.44.2 (owner order): the date picker swipes through months the
+        // way the roster calendar does — pointer events (finger and mouse
+        // alike), horizontal intent at 12px (and 1.2x the vertical), a
+        // three-thirds clone track so the finger slides over real months
+        // (never a void), commit past max(48px, 22% of the grid) on the
+        // calendar's own .24s curve, spring back otherwise. Quick flicks
+        // that never engaged a track keep the classic 48px threshold and
+        // ride the chevrons' slide animation. Months are unbounded here
+        // (the chevrons never grey out), so there is no rubber band and no
+        // edge disarm. Rebuilding the innerHTML on stop destroys the
+        // pressed node, so a spring-back can never also tap a day.
+        const caDateDrag = { x0: null, y0: 0, on: false, base: '', w: 0, track: null, snapT: null, snapFn: null };
+        const caDateDragStop = (restore) => {
+            const grid = document.getElementById('cadate-grid');
+            if (caDateDrag.snapT) { clearTimeout(caDateDrag.snapT); caDateDrag.snapT = null; caDateDrag.snapFn = null; }
+            if (caDateDrag.track) {
+                caDateDrag.track = null;
+                if (restore && grid) grid.innerHTML = caDateDrag.base;
+                if (grid) { grid.style.overflow = ''; grid.classList.remove('ca-date-drag'); }
+            }
+            caDateDrag.on = false;
+        };
+        const caDateDragEngage = () => {
+            const grid = document.getElementById('cadate-grid');
+            if (!grid) return;
+            const y = caDateView.getFullYear(), m = caDateView.getMonth();
+            caDateDrag.on = true;
+            caDateDrag.base = grid.innerHTML;
+            caDateDrag.w = grid.offsetWidth || 0;
+            grid.style.overflow = 'hidden';
+            grid.classList.add('ca-date-drag');
+            grid.innerHTML = '<div class="ca-date-track" style="display:flex;width:300%;will-change:transform;transform:translateX(-33.3333%)">'
+                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateMonthHtml(y, m - 1) + '</div>'
+                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateDrag.base + '</div>'
+                + '<div style="flex:0 0 33.3333%;min-width:33.3333%">' + caDateMonthHtml(y, m + 1) + '</div></div>';
+            caDateDrag.track = grid.firstChild;
+        };
+        const caDateDragMove = (e) => {
+            if (caDateDrag.x0 === null || !e || e.clientX == null) return;
+            const dx = e.clientX - caDateDrag.x0, dy = (e.clientY != null ? e.clientY : 0) - caDateDrag.y0;
+            if (!caDateDrag.on && (Math.abs(dx) < 12 || Math.abs(dx) < Math.abs(dy) * 1.2)) return;
+            if (!caDateDrag.on) caDateDragEngage();
+            if (caDateDrag.track) caDateDrag.track.style.transform = 'translateX(calc(-33.3333% ' + (dx >= 0 ? '+ ' + Math.round(dx) : '- ' + Math.abs(Math.round(dx))) + 'px))';
+        };
+        const caDateDragEnd = (e) => {
+            if (caDateDrag.x0 === null) return;
+            const grid = document.getElementById('cadate-grid');
+            const dx = (e && e.clientX != null ? e.clientX : caDateDrag.x0) - caDateDrag.x0;
+            const dy = (e && e.clientY != null ? e.clientY : 0) - caDateDrag.y0;
+            caDateDrag.x0 = null;
+            window.removeEventListener('pointermove', caDateDragMove);
+            window.removeEventListener('pointerup', caDateDragEnd);
+            window.removeEventListener('pointercancel', caDateDragCancel);
+            if (caDateDrag.on && caDateDrag.track) {
+                const dir = dx < 0 ? 1 : -1;
+                const far = caDateDrag.w ? Math.abs(dx) > Math.max(48, caDateDrag.w * 0.22) : Math.abs(dx) >= 48;
+                const live = caDateDrag.track.parentNode === grid;
+                if (far && live) {
+                    caDateDrag.track.style.transition = 'transform .24s cubic-bezier(.25,.8,.25,1)';
+                    caDateDrag.track.style.transform = 'translateX(' + (dir > 0 ? '-66.6667%' : '0%') + ')';
+                    const f = () => {
+                        if (!caDateDrag.track || caDateDrag.track.parentNode !== grid) { caDateDragStop(false); return; }
+                        caDateDragStop(false);
+                        caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() + dir, 1);
+                        renderCaDateGrid();   // the track WAS the glide — no second slide
+                    };
+                    caDateDrag.snapFn = f;
+                    caDateDrag.snapT = setTimeout(f, 260);
+                } else {
+                    caDateDrag.track.style.transition = 'transform .24s ease';
+                    caDateDrag.track.style.transform = 'translateX(-33.3333%)';
+                    const f = () => { if (caDateDrag.track && caDateDrag.track.parentNode === grid) caDateDragStop(true); else caDateDragStop(false); };
+                    caDateDrag.snapFn = f;
+                    caDateDrag.snapT = setTimeout(f, 260);
+                }
+                caDateDrag.on = false;
+                return;
+            }
+            // no tracked drag: a quick flick keeps the classic threshold
+            if (Math.abs(dx) >= 48 && Math.abs(dx) >= Math.abs(dy) * 1.5) {
+                const dir = dx < 0 ? 1 : -1;
+                caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() + dir, 1);
+                renderCaDateGrid(dir);
+            }
+        };
+        const caDateDragCancel = () => {
+            if (caDateDrag.on) caDateDragStop(true);
+            caDateDrag.x0 = null;
+            window.removeEventListener('pointermove', caDateDragMove);
+            window.removeEventListener('pointerup', caDateDragEnd);
+            window.removeEventListener('pointercancel', caDateDragCancel);
+        };
 
         function openCaDatePicker(inputEl, strict, onCommit, minYmd) {
             if (!inputEl) return;
@@ -9418,6 +9559,27 @@
                 requestAnimationFrame(() => { heading.style.opacity = '1'; });
             }
         });
+        // v1.44.2: the swipe wiring — the grid owns pointerdown; the window
+        // (and the grid, bubbles) carry the move. No setPointerCapture: it
+        // would retarget the tap's own click to the grid and break day taps.
+        (function () {
+            const grid = document.getElementById('cadate-grid');
+            if (!grid) return;
+            grid.addEventListener('pointerdown', (e) => {
+                if (caDateDrag.snapT) { const f = caDateDrag.snapFn; clearTimeout(caDateDrag.snapT); caDateDrag.snapT = null; caDateDrag.snapFn = null; if (f) f(); }
+                if (caDateDrag.on) caDateDragStop(true);
+                caDateDrag.x0 = (e && e.clientX != null) ? e.clientX : null;
+                caDateDrag.y0 = (e && e.clientY != null) ? e.clientY : 0;
+                caDateDrag.on = false;
+                if (caDateDrag.x0 === null) return;
+                window.addEventListener('pointermove', caDateDragMove);
+                window.addEventListener('pointerup', caDateDragEnd);
+                window.addEventListener('pointercancel', caDateDragCancel);
+            });
+            grid.addEventListener('pointermove', caDateDragMove);
+            grid.addEventListener('pointerup', caDateDragEnd);
+            grid.addEventListener('pointercancel', caDateDragCancel);
+        })();
         document.getElementById('cadate-prev').addEventListener('click', (e) => {
             e.stopPropagation();
             caDateView = new Date(caDateView.getFullYear(), caDateView.getMonth() - 1, 1);

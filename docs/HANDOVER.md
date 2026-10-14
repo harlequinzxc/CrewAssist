@@ -55,32 +55,139 @@ Non-negotiables (each one has cost a regression — details in the sections belo
 
 ---
 
-## Typography discipline — standing owner rule (added 2026-10-14, applied project-wide as v1.44.1)
+## Typography & color discipline — standing owner rule (v2, 2026-10-14; supersedes the v1.44.1 typography-only text, which is preserved in that round's entry)
 
-The app already has a fixed typographic scale defined by role, not by number. When adding any new feature, element, label, badge, chip, button, empty state, tooltip, or CTA, you MUST pick its font size, weight, and color from the existing scale below. Never invent a new font size, weight, or color value for a new element. Before rendering a new element, scan the current UI and find the element whose purpose most closely matches yours — then reuse that exact typographic treatment end to end (size, weight, letter-spacing, color, opacity, line-height).
+The app already has a fixed design scale defined by role, not by number, and it ships in both a dark theme and a light theme. When adding any new feature, element, label, badge, chip, button, divider, input, empty state, tooltip, CTA, or surface, you MUST pick its typography and its color from the existing scale below. Never invent a new font size, weight, hex color, opacity value, or shadow for a new element. Before rendering a new element, scan the current UI and find the element whose purpose and surface most closely matches yours — then reuse that exact treatment end to end (size, weight, letter-spacing, color, opacity, background, border, shadow, radius, line-height).
 
-The fixed scale (refer to these by role, never by value):
+==========================================================
+1. TYPOGRAPHIC SCALE — pick by role, never by number
+==========================================================
+The fixed scale (refer to these by role name):
 
-- **HERO** — page/screen titles and the single most important number on a page. Used once per screen.
+- **HERO** — page/screen titles and the single most important number on a page. Used once per screen at most.
 - **TITLE** — card titles, section headers, flight numbers, large button labels.
-- **BODY** — primary readable text, bubble messages, form labels, chip labels, standard button labels.
-- **SUBTITLE** — secondary metadata under a title (departure times, dates, helper lines, quiet CTAs).
-- **CAPTION** — tertiary metadata, status pills, timestamps, tab labels, small chip labels.
-- **MICRO** — the smallest readable text (badge numbers, input character counts, dividers with labels). Do not go smaller than MICRO for any readable content.
+- **BODY** — primary readable text, chat bubble messages, form labels, chip labels, standard button labels, input text.
+- **SUBTITLE** — secondary metadata under a title (departure times, dates, helper lines, quiet CTAs, placeholder text).
+- **CAPTION** — tertiary metadata, status pills, timestamps, tab labels, small chip labels, form hints.
+- **MICRO** — the smallest readable text (badge numbers, counts, character counters, divider labels). Do not go smaller than MICRO for any readable content.
 
-Rules:
+Typography rules:
 
-1. **MATCH BEFORE MAKING.** Before styling a new element, identify which existing element in the UI plays the same role (primary label / secondary metadata / tertiary status / CTA / etc.) and copy its typography verbatim. If you cannot find an exact match, use the role above whose description fits — do not interpolate.
-2. **NO IN-BETWEEN SIZES.** You may not create a size between two existing roles. If a piece of text feels too large, step down one role; if too small, step up one role. Do not tune by eye with arbitrary values.
-3. **WEIGHT + COLOR COME WITH THE ROLE.** Each role has a fixed weight (regular / semibold / bold) and a fixed color tone (primary white, secondary grey, dim grey, accent gold, success green, danger). Do not mix weights within a role. Do not make a caption gold unless an existing gold caption already exists.
-4. **NEW FEATURES INHERIT, DON'T INTRODUCE.** A new badge, a new pill, a new empty state, a new tour CTA, a new nudge title — these must reuse an existing role's exact typography. It is always better for a new element to look like an existing element than to have its own bespoke sizing. Consistency beats "perfect" sizing every time.
-5. **COUNTS, BADGES, SINGLE-DIGIT INDICATORS** always use MICRO (all caps, tight letter spacing, bold weight) unless an existing badge already uses CAPTION — in that case match that badge. Never render a one- or two-digit badge at BODY size; it will look oversized and shout.
-6. **BUTTON LABELS** use BODY for primary CTAs and CAPTION for secondary/tiny CTAs. Pick whichever matches an existing button of the same visual weight.
-7. **METADATA LINES** stacked under a title (dates, times, routes) follow the hierarchy: line 1 = SUBTITLE, line 2 = CAPTION if it's less important. Don't render two stacked metadata lines at the same weight/size — it flattens hierarchy.
-8. **TEXT INSIDE INPUTS/COMPOSERS** matches BODY size, same as chat bubble body text. Placeholder text uses the same size in a dimmer color — do not shrink the placeholder to "fit more".
-9. **SELF-CHECK BEFORE DELIVERING.** After building any new element, list out: (a) which existing element it matches, (b) which typographic role it uses, (c) whether any size/weight/color was introduced that does not already exist elsewhere on screen. If (c) is yes, refactor before rendering.
+- **MATCH BEFORE MAKING.** Identify which existing element plays the same role (primary label / secondary metadata / tertiary status / CTA / etc.) and copy its typography verbatim. If there is no exact match, use the role above whose description fits — do not interpolate.
+- **NO IN-BETWEEN SIZES.** You may not create a size between two roles. If something feels too large, step down one role; if too small, step up one. Do not tune by eye.
+- **WEIGHT + COLOR COME WITH THE ROLE.** Each role has a fixed weight (regular / semibold / bold) and a fixed tone. Do not mix weights within a role.
+- **BADGES / SINGLE-DIGIT INDICATORS** always use MICRO (tight letter spacing, bold) unless an existing badge uses CAPTION — then match that. Never render a one- or two-digit badge at BODY size.
+- **BUTTON LABELS** use BODY for primary CTAs, CAPTION for secondary/outlined/small CTAs.
+- **STACKED METADATA** under a title uses a size/weight step-down per line (e.g. line 1 = SUBTITLE, line 2 = CAPTION-dim). Never render two stacked metadata lines at the same weight/size — it flattens hierarchy.
+- **INPUT TEXT and PLACEHOLDER** use BODY size; the placeholder is dimmer but same size.
 
-If you are ever unsure what size to use, look at the closest existing element with the same semantic job and copy it exactly. Err on the side of matching existing typography rather than optimizing a single element. A UI where every element matches the established scale feels professional; a UI where every element has its own "optimized" size feels like a prototype.
+==========================================================
+2. COLOR SCALE — semantic tokens, never raw hex
+==========================================================
+All colors are semantic tokens. The dark and light theme each map these tokens to concrete values; you never write a hex directly, and you never introduce a new token. Use tokens by name:
+
+SURFACE TIERS (backgrounds — layered, from back to front):
+
+- **bg-base** — page/screen background (the deepest layer)
+- **bg-raised** — cards, bubbles, sheets that sit on bg-base
+- **bg-elevated** — popovers, menus, toasts, dialogs that float above cards
+- **bg-pressed** — active/press state for interactive surfaces
+- **bg-input** — composer / text field fill
+
+TEXT (four contrast tiers — must be reused by role):
+
+- **text-primary** — primary readable copy (maps to HERO/TITLE/BODY role in default state)
+- **text-secondary** — metadata, helper lines, subtitles
+- **text-tertiary** — captions, timestamps, placeholder, disabled labels
+- **text-inverse** — text on top of gold-filled CTAs or other filled accents (near-black on gold, near-white on dark fills)
+
+ACCENTS (use sparingly, for purpose only):
+
+- **accent-gold** — primary brand accent. Used for: filled primary CTAs, active toggle icon fill, selected/active text, brand-highlighted keywords, gold icon tiles. Do not use for body text.
+- **accent-gold-soft** — translucent gold for icon tile backgrounds, selected chip backgrounds, outlines on secondary CTAs, pulse rings.
+- **success** — green family. Saved states, success checks, confirmation nudges, "complete" badges.
+- **warning** — amber/warm tone. Only for genuine alerts (delay, caution, attention needed). Do not use this as a decorative color.
+- **danger** — red family. Errors, destructive actions only.
+- **info** — cool blue/cyan. Non-critical informational states.
+
+BORDERS:
+
+- **border-subtle** — hairline dividers between sections (very low opacity)
+- **border-default** — card outlines, input borders
+- **border-strong** — focused input, selected items, drag handles
+
+INTERACTIVE STATES (for buttons, rows, chips — reuse existing state treatments): rest → hover → pressed → disabled → selected/on. Never invent a new state color. Match the state treatment of an existing button/row of the same weight.
+
+Color discipline rules:
+
+- **MATCH BEFORE MAKING for color too.** Find the existing element that does the same job (primary CTA vs. secondary CTA vs. quiet icon button vs. dismiss X vs. chip) and reuse its color token + state colors.
+- **ONE ACCENT AT A TIME PER SURFACE.** A card should not simultaneously use gold, green, orange, and blue unless each of those states is genuinely present (e.g. gold for the primary CTA, green for a "saved" badge, neutral grey for "ready"). Decorative colors beyond these tokens are not allowed.
+- **GOLD IS THE LEITMOTIF.** Gold is the hero accent; every other accent color earns its place by meaning (green=success, red=danger, etc.). If a piece of UI is decorative and not signaling a state, it should be gold/grey/neutral — not a new hue.
+- **DO NOT COPY-PASTE COLORS FROM DARK THEME INTO LIGHT THEME OR VICE VERSA.** Always map through the semantic token (e.g. "this text is text-secondary") and let the theme resolve the value.
+- **DIVIDERS / BORDERS** use the border tokens; they must be visible but quiet — if a divider competes with the text next to it, you used border-default instead of border-subtle.
+- **ICONS** inherit the text color of their parent (text-secondary for muted icons, accent-gold for active icons, text-tertiary for dismiss X at rest). Colored icons beyond the token set are not allowed.
+- **SHADOWS** follow the surface tier (raised vs elevated) and are softer/larger in dark theme, subtler/tighter in light theme. No colored glows except a very subtle gold halo on accent-gold CTAs.
+- **GRADIENTS**, if used, must already exist in the UI (e.g. the gold CTA gradient). Do not invent new gradients. The page background may use a subtle gradient but no multi-color rainbow effects.
+
+==========================================================
+3. THEME HANDLING — dark AND light must both be readable
+==========================================================
+The app must render correctly in dark theme AND light theme. Every element you build must work in both. You cannot optimize only for dark.
+
+- **BUILD ON TOKENS, NOT VALUES.** If you write a color directly (any literal color value), you are almost certainly breaking the other theme. Always reference the semantic tokens above.
+- **TEST CONTRAST IN BOTH THEMES MENTALLY** before output: text-primary on its background must be comfortably readable (~7:1 for BODY-and-larger on its immediate surface in BOTH themes); text-secondary clearly readable but not loud (~4.5:1 minimum); text-tertiary intentionally dim but legible at arm's length in both themes — if a tertiary text blends into the background in one theme, the token value is wrong for that theme, fix the token, don't reach for a custom color. Accent-gold on gold-filled CTAs is paired with text-inverse (dark text) to guarantee contrast; never place white text on a gold fill, or dark text on a soft-gold translucent background, without checking contrast. Badge numbers (MICRO, single digits) must be readable against their pill background in both themes.
+- **SURFACES SCALE WITH THEME.** In dark theme: bg-base is near-black, cards a few steps lighter. In light theme: bg-base is off-white / very light warm grey, cards pure white or one step up. The layering order (base < raised < elevated) must hold in both; never let an elevated card end up darker than its parent in light mode.
+- **BORDERS ADAPT.** Subtle borders in dark theme are low-opacity white; in light theme low-opacity dark (grey). If you hardcode a white border at 6% opacity it will be invisible in light theme — always use the border tokens so the polarity flips correctly.
+- **ICONS INVERT POLARITY.** Muted icons are light grey/blue-grey in dark theme; medium grey in light theme. Active/gold icons stay gold in both (the gold may need a slightly deeper tone in light mode to keep contrast — handled at the token level, not by picking a new color per use).
+- **SUCCESS / WARNING / DANGER** must be tested against both themes. Green on a "saved" badge must not look pastel-invisible in light theme or neon-harsh in dark theme. Use the existing tokens; do not retune saturation per-element.
+- **PLACEHOLDER TEXT IN LIGHT THEME** is a medium grey, not the same grey as dark theme (a dim grey that works on a near-black input will be nearly illegible on a near-white input). Use the text-tertiary token — it resolves per-theme.
+- **SHADOWS ARE STRONGER IN LIGHT THEME.** In dark theme, separation is mostly done by subtle edge lighting and very soft shadows; in light theme, shadows carry more of the depth. Use the surface-tier shadow token rather than writing raw box-shadow values.
+- **STARFIELDS / AMBIENT BACKGROUNDS** are a dark-theme treatment only. In light theme the background is clean (warm off-white or very soft gradient). No dark-mode decoration (twinkling stars, glow gradients) persists into light mode, except subtle accents on CTAs.
+- **IMAGES / MEDIA** must not rely on being on a dark background. If a chart, QR code, or generated image assumes a dark background, it must be re-themable (transparent-aware) or you must provide a light-theme variant.
+
+==========================================================
+4. INTERACTION STATES — desktop AND mobile
+==========================================================
+Every interactive element (buttons, chips, command rows, list items, toggles, icon buttons, card-close buttons, links, tabs, segmented controls) must define complete, consistent state treatments for BOTH pointer types — mouse on desktop and touch on mobile. You cannot design for one and hope the other works. Do not invent state colors; use the existing pressed/focused/disabled/selected tokens.
+
+DESKTOP (mouse pointer): rest / hover (MUST exist — the only clear sign of clickability) / active (mouse held) / focus (keyboard focus ring, never removed entirely) / disabled (greyed, not clickable, default cursor) / selected-on (a stable state, not a press transient).
+
+MOBILE (touch): rest / pressed (finger down — the equivalent of desktop active) / released (returns to rest OR transitions to selected if a toggle) / disabled / selected-on — and NO hover: never rely on hover-only affordances on mobile; anything revealed only on hover must also be reachable by tap, or not be critical information.
+
+State treatment rules:
+
+- **MATCH BEFORE MAKING, STATES EDITION.** Before styling a new interactive element, find an existing element of the same weight (primary CTA / outlined secondary button / ghost icon button / chip / list row / dismiss X) and copy its state transitions verbatim. A new button should not feel heavier on press than the existing buttons.
+- **HOVER IS SUBTLE, NOT A REDESIGN.** On desktop hover, change one or two of: background tint (toward accent-gold-soft for gold-family elements), text/icon color (muted → accent), shadow lift (1–2px), or border color. Do not change border radius, typography, or size on hover. Transition duration is quick (the app's short ease — typically 120–180ms for colour/background, slightly longer for shadow/movement). No heavy animation on hover.
+- **ACTIVE / PRESSED IS ALWAYS A SLIGHT SCALE-DOWN OR DARKEN, never a scale-up.** Standard treatment is scale to ~0.96–0.98 or slightly darker background — "pressing a real button" on both mouse and finger. Release animates back to rest (or to selected if toggled on).
+- **TOUCH TARGETS ON MOBILE** are at least fingertip size (~44×44px minimum hit area even if the visible icon is smaller). Use invisible padding around small icons to expand the hit area without making the icon visually bigger. On desktop the visible target can be tighter, but never below comfortable click size.
+- **CURSOR FEEDBACK ON DESKTOP:** buttons, chips, rows, and toggles show the pointer cursor on hover. Disabled elements show the default cursor and do not respond. Non-interactive elements (text, badges, status pills, dividers) show the default/text cursor.
+- **FOCUS RINGS FOR KEYBOARD NAVIGATION:** on keyboard focus, a visible ring using accent-gold-soft (2–3px offset outline). It appears on desktop and mobile (hardware keyboard attached). Sufficient contrast in both themes. Never `outline:none` without an alternative focus style.
+- **SELECTED / ON STATE IS VISUALLY DISTINCT** from rest and from pressed: accent-gold fill or accent-gold text and a matching icon color — obviously "on" without a separate label. Pressed is a transient animation; selected is a stable visual.
+- **DISABLED STATE** drops opacity, desaturates, and uses text-tertiary / bg-pressed styling. No hover, click, or tap response; default cursor; press animation suppressed.
+- **LOADING / IN-PROGRESS STATE** (e.g. "Saving…") disables the button, shows a small spinner in the button label's color family, and changes the label text. Hover and press suppressed while loading; cursor default/wait. On completion, transition to the success/selected state with a short animation (icon swap to check, label change, subtle green accent for a save/confirmation).
+- **TRANSITIONS BETWEEN STATES** use the app's existing easing and duration. Do not make a new button's press animation slower than the existing buttons'. All state changes animate — instant flips feel jarring — but no transition longer than ~250ms except deliberate entry motion like cards fading in.
+- **NO HOVER-ONLY CONTENT ON MOBILE.** If a tooltip, secondary action, or menu is revealed on hover, that exact content must also be accessible via tap (tap-and-hold, tap to toggle, or a persistent affordance).
+- **RIGHT-CLICK / LONG-PRESS ARE OPTIONAL.** If implemented, long-press duration follows platform conventions (~400–500ms) and must not conflict with scroll gestures.
+- **DISABLE HOVER ON TOUCH DEVICES** via the appropriate CSS mechanism (hover media queries) so that a tapped element does not get "stuck" in the hover visual state after release — after a tap-and-release the element must return cleanly to rest or selected with zero residual hover.
+- **SCROLL GESTURES DO NOT TRIGGER PRESS STATES.** A finger that lands on a button/row and immediately begins scrolling should NOT trigger the pressed visual or the tap action; only a stationary tap within the tap-time/movement threshold triggers press → release → action.
+
+==========================================================
+5. SELF-CHECK (run this in your head before rendering)
+==========================================================
+After building any new element, verify all of the following. If any answer is "no", refactor before output:
+
+TYPOGRAPHY — (a) which existing element is this matching verbatim (name it)? (b) which typographic role does each piece of text use? (c) did I introduce any font size, weight, letter-spacing, or line-height that does not already exist in the current UI?
+
+COLOR — (d) which semantic color tokens for background, text, border, icon, and state (name them)? (e) did I introduce any color or opacity not already present elsewhere on screen? (f) if interactive, do I have tokens for rest / hover / pressed / focus / disabled / selected — and do they match an existing element's states?
+
+THEME — (g) does text-primary stay readable in BOTH themes? (h) does text-secondary remain comfortable in BOTH? (i) are badges, chips, and CTAs readable against their background in BOTH? (j) do borders and dividers stay visible-but-quiet after polarity flips? (k) tokens everywhere, not raw values (a hex/rgba anywhere is a fail unless inside a token definition)?
+
+INTERACTION — (l) desktop: rest / hover / active / focus / disabled / selected each defined, hover consistent with existing buttons? (m) mobile: rest / pressed / released / disabled / selected each defined, no hover dependency, adequate touch targets? (n) after a tap, clean return to rest/selected (no stuck hover)? (o) pointer cursor on desktop hover only where clickable? (p) visible keyboard focus ring?
+
+==========================================================
+6. PRINCIPLE
+==========================================================
+Consistency beats "perfect" sizing or coloring on every individual element. A UI where every new feature reuses the existing typographic roles and color tokens feels professional, calm, and designed. A UI where every feature has its own bespoke size or "slightly adjusted" color feels like a prototype, even if each element looks nice in isolation. When in doubt, copy the nearest existing element that does the same job.
 
 **This app's concrete rungs** (documented beside the tokens at the head of index.html's `<style>` block; the money ladder is the v1.32.0 E5 ruling):
 
@@ -95,7 +202,7 @@ If you are ever unsure what size to use, look at the closest existing element wi
 | DISPLAY | 24px — `text-2xl` | screen titles, hero-card codes + times |
 | HERO | 36px — `text-4xl` | the single most important number, once per screen |
 
-**Scope notes:** print sheets (`.pe-*`, `--print-type`) are a physical medium with their own measured scale and stay untouched; icon glyph sizes are not text. The dev-ui type-floor pin enforces the no-arbitrary-utility side of this rule; a smoke pin computes the calendar's rungs in the real browser.
+**The color tokens as this app already implements them** (match these, never raw values): surfaces — bg-base is the sky canvas + body (dark `#04070F` family, light warm off-white); bg-raised is `glass-panel` / `glass-bubble` via `var(--glass-solid-bg)` (dark `rgba(4,7,15,.92)`, light `rgba(255,255,255,.94)`); bg-elevated is the popover/toast family (`ca-arch-toast` `#111`, the net popover); bg-input is the composer's glass fill; bg-pressed is the `active:scale-95` + tint family. Text — primary is the default ink; secondary is the `text-gray-400/500` + `dark:text-gray-300/400` ladder; tertiary is `placeholder-gray-500` / `text-gray-500` / `white/45`; inverse is near-black on gold (`text-black` on the `from-sia-goldlt to-sia-gold` fill). Accents — gold is `text-sia-gold` (light-mode text uses the measured `--sia-gold-ink` #7d650f) and the gold CTA gradient; gold-soft is `bg-sia-gold/10-15` + `border-sia-gold/30-60` + `rgba(201,162,39,.12-.16)`; success is the emerald `ca-pill` ok family; danger is the red-600 family; warning and info appear only where a real state calls for them. Borders — subtle is `ca-hairline` / `rgba(127,127,127,.14-.18)`; default is the black/10–white/10 card outline pair; strong is the gold selection ring. States — hover compiles behind `(hover:hover)` (tw.config's `hoverOnlyWhenSupported`), pressed is `active:scale-95`, focus is the `:focus-visible` gold ring. **Scope notes:** print sheets (`.pe-*`, `--print-type`) are a physical medium with their own measured scale; icon glyph sizes are not text.
 
 ---
 
@@ -450,6 +557,14 @@ Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #
 - **Tests.** dev-ui's help block rewritten: 30 pins replacing the 7 round-35 ones (471→494) — card structure, the four rows in order with their glyph names, keyword/token styling, jsdom taps (insert + focus + flash + fade), the CTA starting and standing down the tour cleanly, the ?/HELP/"help me" behaviour kept verbatim, the source wiring (helpCardHtml, branch order, delegated listener), the composer, the chips, and the no-emoji/arrow regex. smoke +5 = **73/73 first run**, zero page/console errors: the card typed through the real composer with Enter, the Lucide-names contract (the rig blocks the CDN so icons stay `<i>` stubs — the browser layer pins the declared names, the rendering itself is jsdom-stubbed by design), a real tap's insert + focus + flash, and the both-theme composer colours. Battery **14/14 = 2,210 asserts, 0 failed** (every suite at its release total except dev-ui +23). sw pins re-stamped v218 at five sites; the release-stamp pins keep reading APP_VERSION 1.44.0 unchanged. app.html new floor: 1,090,291 bytes.
 - **Environment.** Drift #20 at the turn boundary (git on the ancient base, .gitignore modified, two docs deleted, node_modules wiped) — recovered with the standing recipe (fetch + mixed reset to 4024166, reinstall both rigs) before any work; tree clean at the release commit.
 - **Census.** The `^\*\*` count moves 135→136 with this entry's title.
+
+**v1.44.2 (owner order, 2026-10-14 — the standing rule extended to COLOR+THEME+INTERACTION (v2 text adopted into this file's own section, replacing the v1 typography-only standing section), plus the date-picker navigation hotfix: swipe + arrow keys; APP_VERSION 1.44.1→1.44.2 + CACHE_NAME v219→v220 per the standing bump-both default; index.html + tw.css + sw.js + dev-ui + smoke + menu-extraction + offline-menus + sw.test pins + this entry):**
+
+- **The rule swap.** The owner expanded the standing typography rule into a six-section "TYPOGRAPHY & COLOR DISCIPLINE" ruling: the type scale (unchanged from v1.44.1) now rides with (1) a semantic colour-token scale (surface tiers bg-base/raised/elevated/pressed/input; text tiers primary/secondary/tertiary/inverse; accents gold, gold-soft, success, warning, danger, info; borders subtle/default/strong — never a raw hex at a call site, never a new token, one accent per surface, gold as the leitmotif), (2) theme discipline (both themes readable — ~7:1 primary, ~4.5:1 secondary, tertiary legible; borders/icons/placeholders polarity-correct; dark-only ambient stays dark-only), (3) interaction discipline (complete state sets — desktop rest/hover/active/focus/disabled/selected, mobile rest/pressed/released/disabled/selected; press = scale-down 0.96–0.98; ≥44px touch targets; visible focus rings; no hover-only content; hover disabled on touch; scroll ≠ press; ≤250ms transitions), (4) the 22-question self-check, and (5) the consistency principle. The full text replaces the old standing section above (the v1 wording survives in the v1.44.1 entry below), and the in-source ladder comment at the head of index.html's style block now covers colour+states too. The concrete mapping is pinned in the section: the rungs table (MICRO 11 / CAPTION 12 / BODY 14 / AMOUNT 17 / COMPACT 18 / TITLE 20 / DISPLAY 24 / HERO 36) plus how this codebase already implements each token (glass-panel/glass-bubble = bg-raised; the gray-400/500 + dark:gray-300/400 ladder = text-secondary; sia-gold + --sia-gold-ink = accent-gold; ca-hairline = border-subtle; active:scale-95 = pressed; hoverOnlyWhenSupported = hover-behind-media-query). Scope note: a colour-token NORMALIZATION SWEEP of the existing CSS was NOT ordered — existing call sites are untouched; the rule governs new elements and any element that gets touched anyway. Offered as a future round.
+- **The hotfix — the date picker navigates like the calendar.** Mirrors the roster calendar's hotfix-18 patterns exactly: (1) a pointer-driven three-thirds swipe — pointerdown on the day grid arms, intent locks at |dx| ≥ 12px and ≥ 1.2×|dy| (a vertical scroll never engages), the engage builds a 300%-wide track at translateX(-33.3333%) holding the current month plus real clones of the neighbouring months (`caDateMonthHtml(y, m ∓ 1)` — the hotfix-17 "never a void" lesson, and the month HTML is normalised through a Date roll so a December/January clone crosses the year honestly), the live months' day buttons stand down (`pointer-events: none` via the `ca-date-drag` class, `user-select: none` on the track); release past the threshold (max(48px, 22% of width) — the picker's months are unbounded so there is no rubber band, unlike the calendar) commits the month change with a 240ms snap to the resting third and re-renders WITHOUT a second slide (the track WAS the glide); a short drag springs back to the resting month, restoring the base grid so no synthetic day-click leaks; a fast flick with no move events (≥48px) falls back to the chevron's canned slide. (2) The arrow keys — while the picker backdrop is open the arrows drive `cadate-prev`/`cadate-next`, with the calendar's own guards: the caret guard (INPUT/TEXTAREA/contentEditable keeps its arrows), the closing-window guard (the backdrop's 200ms fade-out — `opacity-0` — stands down; note the open's own 10ms fade-in start shares the class, so the keys arm ~10ms after open), a live-track guard (a mid-snap drag owns the grid), and a modal-ownership check BEFORE the calendar's topSheet branch — the picker sits at z-[92] above every sheet, so it takes the key outright. renderCaDateGrid also now flushes any live drag at the top (a re-render during a snap cancels cleanly). Touch and mouse both ride the same pointer events — no separate mouse path, matching the calendar.
+- **tw.css:** rebuilt with the sanctioned command — byte-identical (the new styles are custom CSS classes, not utilities; one self-catch: a comment phrase "a clone's m-1 / m+1" made the scanner mint a stray `.m-1` — reworded to "minus-one / plus-one" and the build came back identical).
+- **Tests.** dev-ui 520/520 (was 500): E6 re-points (1.44.2 head with its single pointer, 1.44.1 → entries[1], 1.44.0 → entries[2], 1.43.0 → entries[3]); a new picker-navigation block pins the whole contract jsdom-side — open on a fixed date, arrows walk months and preventDefault, the caret guard, the engage (track + drag class), the commit (no second slide, track gone, month +1), the spring-back (month untouched, day buttons restored), the no-move flick, the vertical-dominant guard, the closed-picker stand-down, and source pins (real neighbouring clones, the chevron wiring + live-track guard, the no-select/stand-down CSS); the will-change census grows 2→3 (the calendar's drag + glide tracks plus the picker's swipe track — all transient, none at rest); the documented-scale pin follows the v2 title. smoke 78/78 (was 75): release stamps re-pointed (APP_VERSION 1.44.2, changelog entry, What's New v1.44.2 header + the picker pointer + the 1.44.1 type-scale pointer in the delta, version-once, sw v220) plus a real-gesture block — a real card's date button opens the picker, a REAL mouse drag (-160px, steps 8) changes the month, ArrowLeft walks back, cancel closes (two rig lessons: `:last-of-type` lies once non-card divs follow the card in the chat, and the card's sector fields mount a tick after the card, so the wait is on the date button itself). menu-extraction/offline-menus/sw.test literals re-stamped (1.44.2 / v220). Battery **14/14 = 2,236 asserts, 0 failed**. app.html new floor: 1,102,020 bytes.
+
 
 **v1.44.1 (owner ruling adopted + applied project-wide, 2026-10-14 — TYPOGRAPHY DISCIPLINE, a standing rule: one fixed type scale chosen by role, never tuned by eye; APP_VERSION 1.44.0→1.44.1 + CACHE_NAME v218→v219 per the standing bump-both default; index.html + tw.css + sw.js + dev-ui + smoke + menu-extraction + offline-menus + sw.test pins + this entry):**
 
