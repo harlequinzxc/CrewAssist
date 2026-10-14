@@ -181,8 +181,8 @@ const EMDASH = '\u2014'; // —
     // black square invert opt-in; hidden proteins surface on non-mains too.
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.44.0';"), 'APP_VERSION stamped 1.44.0');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v218"), 'service-worker cache name bumped to v218 (the v1.44.0 help-card hotfix)');
+    R.ok(src.includes("var APP_VERSION = '1.44.1';"), 'APP_VERSION stamped 1.44.1');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v219"), 'service-worker cache name bumped to v219 (the v1.44.1 typography round)');
   }
 
   {
@@ -198,7 +198,7 @@ const EMDASH = '\u2014'; // —
     R.ok((srcFv.match(/document\.addEventListener\('click', function \(e\) \{\s*const btn = e\.target\.closest && e\.target\.closest\('\[data-fv-act\]'\)/g) || []).length === 1, 'exactly one delegated fv click listener is registered');
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'FV', gender: 'Male', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.wnSeen', '1.44.0');
+      x.localStorage.setItem('crewAssist.wnSeen', '1.44.1');
       x.localStorage.setItem('crewAssist.tourDone', '1');
       const t = new Date(), pad = (n) => String(n).padStart(2, '0');
       const today = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());

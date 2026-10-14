@@ -110,10 +110,27 @@
         html.dark .ca-pill[data-state="ok"] { color: #34D399; border-color: rgba(52, 211, 153, 0.35); background: rgba(52, 211, 153, 0.10); }
         .ca-pill[data-state="fail"] { color: #B91C1C; border-color: rgba(239, 68, 68, 0.40); background: rgba(239, 68, 68, 0.08); }
         html.dark .ca-pill[data-state="fail"] { color: #F87171; border-color: rgba(248, 113, 113, 0.35); background: rgba(248, 113, 113, 0.10); }
-        /* v1.32.0 (E5): the money type ladder — size encodes importance and
-           every figure sets tabular-nums so columns of digits stay aligned.
-           micro 11 (ca-micro) · body 14 (text-sm) · amount 17 (text-[17px])
-           · display 24 (text-2xl) · hero 36 (text-4xl). */
+        /* TYPOGRAPHY DISCIPLINE — standing owner rule (2026-10-14; full
+           text in docs/HANDOVER.md). The app has ONE fixed type scale,
+           chosen by role, never tuned by eye. Before styling any new
+           element, find the existing element with the same semantic job
+           and copy its treatment verbatim (size, weight, letter-spacing,
+           colour, line-height). Nothing readable goes below MICRO; nothing
+           is invented between rungs; inputs match BODY; badges are MICRO
+           (all caps, bold, tight tracking). The rungs:
+           MICRO    11  ca-micro (badges, counts, tiny uppercase labels)
+           CAPTION  12  text-xs  (chips, timestamps, tab labels, metadata)
+           BODY     14  text-sm  (bubbles, labels, buttons, inputs)
+           AMOUNT   17  text-[17px] ca-amt, tabular (money figures —
+                        the v1.32.0 E5 ladder: size encodes importance)
+           COMPACT  18  text-lg  (top-bar title, section labels)
+           TITLE    20  text-xl  (sheet titles: Settings, Earnings,
+                        Summary, Inflight Menu; trip-card station codes)
+           DISPLAY  24  text-2xl (screen titles, hero-card codes + times)
+           HERO     36  text-4xl (the single most important number, once
+                        per screen: results and archive totals)
+           Print sheets (.pe-*, --print-type) are a physical medium with
+           their own measured scale; icon glyph sizes are not text. */
         .ca-amt { font-variant-numeric: tabular-nums; }
         /* v1.32.0 (E3): keyboards get a gold focus ring. :focus-visible never
            paints for thumb taps, so the touch experience is unchanged; inputs
@@ -224,7 +241,6 @@
             min-width: 0;
             width: 100%;
             max-width: 100%;
-            font-size: 13px;
         }
         #chat-container input[type="date"]::-webkit-date-and-time-value {
             text-align: left;
@@ -306,7 +322,7 @@
            (hotfix 10). */
         .ca-rc-day { position: relative; height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border-radius: 0.75rem; transition: transform .12s ease, background-color .15s ease; -webkit-tap-highlight-color: transparent; }
         .ca-rc-day:active { transform: scale(.92); }
-        .ca-rc-num { font-size: 13px; font-weight: 700; line-height: 16px; color: rgba(31,41,55,.92); }
+        .ca-rc-num { font-size: 14px; font-weight: 700; line-height: 16px; color: rgba(31,41,55,.92); }
         html.dark .ca-rc-num { color: rgba(229,231,235,.92); }
         .ca-rc-bar { width: 16px; height: 3px; border-radius: 999px; }
         .ca-rc-bar.is-today { background: #c9a227; }
@@ -342,12 +358,12 @@
            invisible otherwise, with a quick pop-in when they arrive. */
         .ca-rc-tag, .ca-rc-badge { display: none; position: absolute; pointer-events: none; z-index: 2; }
         #ca-rc-grid.rc-tags-on .ca-rc-tag, #ca-rc-grid.rc-tags-on .ca-rc-badge { display: inline-flex; }
-        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .02em; line-height: 13px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+        .ca-rc-tag { top: 1px; right: -3px; transform: rotate(-14deg); align-items: center; padding: 1px 5px; border-radius: 4px; font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .02em; line-height: 14px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
         .ca-rc-tag-lo { background: #C2410C; color: #FFF7ED; }
         .ca-rc-tag-ta { background: #15803D; color: #F0FDF4; }
         html.dark .ca-rc-tag-lo { background: rgba(251,146,60,.22); color: #FDBA74; box-shadow: inset 0 0 0 1px rgba(251,146,60,.5), 0 1px 2px rgba(0,0,0,.4); }
         html.dark .ca-rc-tag-ta { background: rgba(74,222,128,.22); color: #86EFAC; box-shadow: inset 0 0 0 1px rgba(74,222,128,.5), 0 1px 2px rgba(0,0,0,.4); }
-        .ca-rc-badge { bottom: 6px; right: 6px; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 4px; background: #111827; color: #F9FAFB; font-size: 10.5px; font-weight: 800; line-height: 15px; }
+        .ca-rc-badge { bottom: 6px; right: 6px; align-items: center; justify-content: center; min-width: 15px; height: 15px; padding: 0 4px; border-radius: 4px; background: #111827; color: #F9FAFB; font-size: 11px; font-weight: 800; line-height: 15px; }
         html.dark .ca-rc-badge { background: rgba(0,0,0,.74); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28); }
         @keyframes ca-rc-pop { from { opacity: 0; transform: rotate(-14deg) scale(.3); } to { opacity: 1; transform: rotate(-14deg) scale(1); } }
         @keyframes ca-rc-popb { from { opacity: 0; transform: scale(.3); } to { opacity: 1; transform: scale(1); } }
@@ -420,7 +436,7 @@
         .ca-rc-row + .ca-rc-row { border-top: 1px solid rgba(127,127,127,.14); }
         html.dark .ca-rc-row + .ca-rc-row { border-top-color: rgba(127,127,127,.18); }
         .ca-rc-gut { width: 46px; flex: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; }
-        .ca-rc-gut .n { font-size: 15px; font-weight: 800; line-height: 1; color: rgba(31,41,55,.92); }
+        .ca-rc-gut .n { font-size: 14px; font-weight: 700; line-height: 1; color: rgba(31,41,55,.92); }
         html.dark .ca-rc-gut .n { color: rgba(229,231,235,.92); }
         .ca-rc-gut .m { font-size: 11px; font-weight: 700; letter-spacing: .1em; color: rgba(31,41,55,.55); }
         html.dark .ca-rc-gut .m { color: rgba(229,231,235,.55); }
@@ -496,7 +512,7 @@
             width: 2.25rem;
             height: 2.25rem;
             border-radius: 9999px;
-            font-size: 0.8rem;
+            font-size: 0.875rem;
             font-weight: 700;
             display: inline-flex;
             align-items: center;
@@ -528,7 +544,7 @@
         /* v1.31.1 (owner report): the toast is always outlined in gold — and in
            dark mode it inverts to a bright pill, because #111 on the dark app
            barely read. Day mode keeps the classic dark pill. */
-        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; border: 1.5px solid #d4af37; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 13px; }
+        .ca-arch-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 80; display: flex; align-items: center; gap: 12px; background: #111; color: #fff; padding: 10px 16px; border-radius: 999px; border: 1.5px solid #d4af37; box-shadow: 0 8px 24px rgba(0,0,0,.4); font-size: 14px; }
         .dark .ca-arch-toast { background: #f6f1e8; color: #171d2b; }
         .ca-arch-toast .ca-toast-undo { color: #d4af37; font-weight: 700; }
         .dark .ca-arch-toast .ca-toast-undo { color: #7d650f; }
@@ -554,8 +570,8 @@
         .ca-arch-segtrack { display: inline-flex; background: rgba(26,19,0,.1); border-radius: 999px; padding: 3px; gap: 2px; }
         .ca-arch-seg { border: none; background: transparent; color: rgba(26,19,0,.65); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
         .ca-arch-seg.ca-arch-segon { background: #1a1300; color: #e6c254; }
-        .ca-arch-metalabel { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
-        .ca-arch-metaval { font-weight: 700; font-size: 13px; font-variant-numeric: tabular-nums; }
+        .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
+        .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
         .ca-arch-metadot { opacity: .3; font-weight: 700; }
         .ca-arch-surface { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-barcol { border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex: 1 1 0; min-width: 0; }
@@ -564,15 +580,15 @@
         .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: rgba(212,175,55,.35); }
         .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, #c9a227)); }
         .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed rgba(230,194,84,.75); background: repeating-linear-gradient(45deg, rgba(212,175,55,.28) 0 4px, rgba(212,175,55,.08) 4px 8px); }
-        .ca-arch-barlab { font-size: 10px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
+        .ca-arch-barlab { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
         .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold-ink, #7d650f); }
-        .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 10px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: #fff; padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
-        .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
+        .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: #fff; padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+        .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
         .ca-arch-badge-best { color: #e6c254; border: 1px solid rgba(230,194,84,.45); background: rgba(212,175,55,.12); }
         .ca-arch-badge-low { color: #f87171; border: 1px solid rgba(248,113,113,.45); background: rgba(248,113,113,.10); }
         .ca-arch-badge-prog { color: var(--arch-muted); border: 1px solid var(--arch-badge-border); }
         .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
-        .ca-arch-inslabel { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
+        .ca-arch-inslabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-insval { font-size: 14px; font-weight: 700; color: var(--arch-fg); }
         .ca-arch-inssub { font-size: 11px; margin-top: 2px; }
         .ca-arch-yoy-up { color: #34d399; font-weight: 700; }
@@ -1007,11 +1023,11 @@
             filter: none;
         }
         .print-edit-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
+        .print-edit-eye { min-height: 44px; padding: 0 10px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid rgba(201,162,39,0.45); color: #C9A227; background: transparent; flex-shrink: 0; }
         .dev-rate-table { width: 100%; border-collapse: collapse; }
-        .dev-rate-table th { text-align: left; font-size: 9px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; padding: 4px 6px; }
+        .dev-rate-table th { text-align: left; font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; padding: 4px 6px; }
         .dev-rate-table td { padding: 4px 6px; font-size: 12px; font-weight: 600; vertical-align: middle; }
-        .dev-rate-input { width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 6px 8px; font-size: 12px; font-weight: 700; color: inherit; outline: none; }
+        .dev-rate-input { width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; padding: 6px 8px; font-size: 14px; font-weight: 700; color: inherit; outline: none; }
         html.dark .dev-rate-input { border-color: rgba(255,255,255,0.12); }
         .dev-save[disabled] { opacity: .42; box-shadow: none; pointer-events: none; }
         .dev-save.is-saved { background: #1D2B1F; color: #6EE7A0; border: 1px solid rgba(110,231,160,.5); }
@@ -1025,7 +1041,7 @@
         .dev-rate-card { border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; overflow: hidden; }
         html.dark .dev-rate-card { border-color: rgba(255,255,255,0.08); }
         .dev-rate-acc { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; text-align: left; padding: 10px 8px; }
-        .dev-rate-acc-title { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; }
+        .dev-rate-acc-title { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #9CA3AF; }
         .dev-rate-fold { display: grid; grid-template-rows: 0fr; overflow: hidden; transition: grid-template-rows 280ms ease; }
         .dev-rate-fold.is-open { grid-template-rows: 1fr; }
         .dev-rate-fold-inner { overflow: hidden; min-height: 0; }
@@ -1046,8 +1062,8 @@
         .print-edit-fold-inner { overflow: hidden; min-height: 0; }
         .print-edit-chev { transition: transform 280ms ease; color: #C9A227; }
         .print-edit-card.is-expanded .print-edit-chev { transform: rotate(180deg); }
-        .print-edit-badge { font-size: 9px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
-        .print-edit-lab { display: block; font-size: 9px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
+        .print-edit-badge { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; border: 1px solid rgba(201,162,39,0.7); color: #C9A227; border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
+        .print-edit-lab { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9CA3AF; margin-bottom: 4px; }
         .print-edit-field { display: block; margin-top: 8px; }
         .print-edit-svc { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(201,162,39,0.18); }
         .print-edit-course { margin-top: 8px; padding-left: 10px; border-left: 2px solid rgba(201,162,39,0.55); }
@@ -1058,7 +1074,7 @@
         html.dark .print-edit-card { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
         .print-edit-card input:not(.print-edit-title), .print-edit-card textarea {
             width: 100%; background: transparent; border: 1px solid rgba(0,0,0,0.12);
-            border-radius: 10px; color: inherit; font-size: 12px; padding: 8px 10px; outline: none;
+            border-radius: 10px; color: inherit; font-size: 14px; padding: 8px 10px; outline: none;
         }
         html.dark .print-edit-card input:not(.print-edit-title), html.dark .print-edit-card textarea {
             border-color: rgba(255,255,255,0.12);
@@ -1149,14 +1165,14 @@
         html:not(.dark) .ca-cl-vhead { background: rgba(246, 241, 232, 0.92); }
         .ca-cl-vdate { margin-left: auto; font-size: 11px; color: #a8a29e; }
         html:not(.dark) .ca-cl-vdate { color: #78716c; }
-        .ca-cl-badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 9999px; }
+        .ca-cl-badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 9999px; }
         .ca-cl-badge-new { background: #C9A227; color: #0B1A3A; animation: caClSoftPulse 2.2s ease-in-out infinite; }
         @keyframes caClSoftPulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
         .ca-cl-badge-cur { border: 1px solid rgba(168, 162, 158, 0.5); color: #a8a29e; }
         html:not(.dark) .ca-cl-badge-cur { color: #78716c; }
         .ca-cl-row { position: relative; display: flex; align-items: baseline; padding: 5px 8px 5px 22px; }
         .ca-cl-dot { position: absolute; left: 9px; top: calc(5px + 0.55em); width: 6px; height: 6px; border-radius: 9999px; background: #C9A227; }
-        .ca-cl-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; margin-right: 7px; flex-shrink: 0; border: 1px solid transparent; }
+        .ca-cl-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 1px 6px; border-radius: 9999px; margin-right: 7px; flex-shrink: 0; border: 1px solid transparent; }
         .ca-cl-tag svg { width: 10px; height: 10px; }
         .ca-cl-tag-new { color: #d4af37; background: rgba(201, 162, 39, 0.16); border-color: rgba(201, 162, 39, 0.4); }
         html:not(.dark) .ca-cl-tag-new { color: #7d650f; }
@@ -1197,9 +1213,9 @@
     <div id="ca-shell-fail" style="display:none;position:fixed;inset:0;z-index:9999;align-items:center;justify-content:center;background:#04070F;color:#EDE1C4;font-family:system-ui,-apple-system,sans-serif;padding:2rem;text-align:center;">
         <div style="max-width:26rem;">
             <div style="font-size:1.5rem;font-weight:700;letter-spacing:0.1em;color:#C9A227;margin-bottom:0.75rem;">CREWASSIST</div>
-            <p style="font-size:0.95rem;line-height:1.6;opacity:0.9;margin:0 0 1.25rem;">This device's offline copy of the app is missing its style files, so the app can't render properly. <strong>Your data is safe.</strong></p>
-            <p style="font-size:0.85rem;line-height:1.6;opacity:0.65;margin:0 0 1.5rem;">Connect to the internet once and reopen the app — it repairs itself automatically.</p>
-            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,#C9A227);color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.8rem;cursor:pointer;">Try again</button>
+            <p style="font-size:0.875rem;line-height:1.6;opacity:0.9;margin:0 0 1.25rem;">This device's offline copy of the app is missing its style files, so the app can't render properly. <strong>Your data is safe.</strong></p>
+            <p style="font-size:0.75rem;line-height:1.6;opacity:0.65;margin:0 0 1.5rem;">Connect to the internet once and reopen the app — it repairs itself automatically.</p>
+            <button id="ca-shell-retry" type="button" style="background:linear-gradient(to right,#E8C766,#C9A227);color:#0B1A3A;border:none;border-radius:9999px;padding:0.85rem 2.2rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;font-size:0.75rem;cursor:pointer;">Try again</button>
         </div>
     </div>
 
@@ -2191,7 +2207,7 @@
             requestAnimationFrame(animate);
         }
 
-        var APP_VERSION = '1.44.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.44.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2213,6 +2229,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.44.1', d: '2026-10-14', items: [
+                { c: 'imp', t: 'Every label now shares one fixed type scale.' },
+            ] },
             { v: '1.44.0', d: '2026-10-13', items: [
                 { c: 'new', t: 'Type help in chat to see every command.' },
                 { c: 'new', t: 'Re-importing a roster month reports what changed.' },
@@ -7707,7 +7726,7 @@
                     <i data-lucide="${icon}" class="w-4 h-4 mt-1.5 text-gray-400 dark:text-gray-500 shrink-0"></i>
                     <span class="min-w-0 flex-1 block">
                         <span class="flex items-center gap-2 flex-wrap">
-                            <span class="font-bold text-sia-gold font-mono text-[13px] leading-none">${cmd}</span>
+                            <span class="font-bold text-sia-gold font-mono text-sm leading-none">${cmd}</span>
                             <span class="ca-help-token font-mono ca-micro leading-none px-1.5 py-1 rounded-md">${token}</span>
                         </span>
                         <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">${desc}</span>
@@ -14927,7 +14946,7 @@
                     <div class="flex justify-between items-start relative z-10">
                         <!-- Left Zone: Origin -->
                         <div class="flex flex-col flex-1 items-end text-right">
-                            <div class="text-3xl font-bold tracking-tight">${fd.departureAirportCode}</div>
+                            <div class="text-2xl font-bold tracking-tight">${fd.departureAirportCode}</div>
                             <div class="ca-micro uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pl-2 w-full">${fd.departureCityName}</div>
                             <div class="text-2xl font-bold">${depTime}</div>
                         </div>
@@ -14948,7 +14967,7 @@
                         
                         <!-- Right Zone: Destination -->
                         <div class="flex flex-col items-start flex-1 text-left">
-                            <div class="text-3xl font-bold tracking-tight">${fd.arrivalAirportCode}</div>
+                            <div class="text-2xl font-bold tracking-tight">${fd.arrivalAirportCode}</div>
                             <div class="ca-micro uppercase tracking-[0.2em] text-sia-navy/40 dark:text-white/50 font-bold mb-3 truncate pr-2 w-full">${fd.arrivalCityName}</div>
                             <div class="text-2xl font-bold relative">
                                 ${arrTime}
@@ -16537,7 +16556,7 @@
                         cDot.className = 'print-edit-dot';
                         cDot.style.marginTop = '0';
                         const cName = document.createElement('input');
-                        cName.className = 'print-edit-title text-[13px]';
+                        cName.className = 'print-edit-title';
                         cName.value = course.label || '';
                         cName.addEventListener('input', () => { course.label = cName.value; });
                         cLeft.appendChild(cDot);

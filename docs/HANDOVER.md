@@ -55,6 +55,50 @@ Non-negotiables (each one has cost a regression — details in the sections belo
 
 ---
 
+## Typography discipline — standing owner rule (added 2026-10-14, applied project-wide as v1.44.1)
+
+The app already has a fixed typographic scale defined by role, not by number. When adding any new feature, element, label, badge, chip, button, empty state, tooltip, or CTA, you MUST pick its font size, weight, and color from the existing scale below. Never invent a new font size, weight, or color value for a new element. Before rendering a new element, scan the current UI and find the element whose purpose most closely matches yours — then reuse that exact typographic treatment end to end (size, weight, letter-spacing, color, opacity, line-height).
+
+The fixed scale (refer to these by role, never by value):
+
+- **HERO** — page/screen titles and the single most important number on a page. Used once per screen.
+- **TITLE** — card titles, section headers, flight numbers, large button labels.
+- **BODY** — primary readable text, bubble messages, form labels, chip labels, standard button labels.
+- **SUBTITLE** — secondary metadata under a title (departure times, dates, helper lines, quiet CTAs).
+- **CAPTION** — tertiary metadata, status pills, timestamps, tab labels, small chip labels.
+- **MICRO** — the smallest readable text (badge numbers, input character counts, dividers with labels). Do not go smaller than MICRO for any readable content.
+
+Rules:
+
+1. **MATCH BEFORE MAKING.** Before styling a new element, identify which existing element in the UI plays the same role (primary label / secondary metadata / tertiary status / CTA / etc.) and copy its typography verbatim. If you cannot find an exact match, use the role above whose description fits — do not interpolate.
+2. **NO IN-BETWEEN SIZES.** You may not create a size between two existing roles. If a piece of text feels too large, step down one role; if too small, step up one role. Do not tune by eye with arbitrary values.
+3. **WEIGHT + COLOR COME WITH THE ROLE.** Each role has a fixed weight (regular / semibold / bold) and a fixed color tone (primary white, secondary grey, dim grey, accent gold, success green, danger). Do not mix weights within a role. Do not make a caption gold unless an existing gold caption already exists.
+4. **NEW FEATURES INHERIT, DON'T INTRODUCE.** A new badge, a new pill, a new empty state, a new tour CTA, a new nudge title — these must reuse an existing role's exact typography. It is always better for a new element to look like an existing element than to have its own bespoke sizing. Consistency beats "perfect" sizing every time.
+5. **COUNTS, BADGES, SINGLE-DIGIT INDICATORS** always use MICRO (all caps, tight letter spacing, bold weight) unless an existing badge already uses CAPTION — in that case match that badge. Never render a one- or two-digit badge at BODY size; it will look oversized and shout.
+6. **BUTTON LABELS** use BODY for primary CTAs and CAPTION for secondary/tiny CTAs. Pick whichever matches an existing button of the same visual weight.
+7. **METADATA LINES** stacked under a title (dates, times, routes) follow the hierarchy: line 1 = SUBTITLE, line 2 = CAPTION if it's less important. Don't render two stacked metadata lines at the same weight/size — it flattens hierarchy.
+8. **TEXT INSIDE INPUTS/COMPOSERS** matches BODY size, same as chat bubble body text. Placeholder text uses the same size in a dimmer color — do not shrink the placeholder to "fit more".
+9. **SELF-CHECK BEFORE DELIVERING.** After building any new element, list out: (a) which existing element it matches, (b) which typographic role it uses, (c) whether any size/weight/color was introduced that does not already exist elsewhere on screen. If (c) is yes, refactor before rendering.
+
+If you are ever unsure what size to use, look at the closest existing element with the same semantic job and copy it exactly. Err on the side of matching existing typography rather than optimizing a single element. A UI where every element matches the established scale feels professional; a UI where every element has its own "optimized" size feels like a prototype.
+
+**This app's concrete rungs** (documented beside the tokens at the head of index.html's `<style>` block; the money ladder is the v1.32.0 E5 ruling):
+
+| Rung | Treatment | Serves |
+| --- | --- | --- |
+| MICRO | 11px — `ca-micro` | badges, counts, tiny uppercase labels |
+| CAPTION | 12px — `text-xs` | chips, timestamps, tab labels, metadata |
+| BODY | 14px — `text-sm` | bubbles, labels, buttons, inputs |
+| AMOUNT | 17px — `text-[17px]` + `ca-amt`, tabular | money figures |
+| COMPACT | 18px — `text-lg` | top-bar title, section labels |
+| TITLE | 20px — `text-xl` | sheet titles, trip-card station codes |
+| DISPLAY | 24px — `text-2xl` | screen titles, hero-card codes + times |
+| HERO | 36px — `text-4xl` | the single most important number, once per screen |
+
+**Scope notes:** print sheets (`.pe-*`, `--print-type`) are a physical medium with their own measured scale and stay untouched; icon glyph sizes are not text. The dev-ui type-floor pin enforces the no-arbitrary-utility side of this rule; a smoke pin computes the calendar's rungs in the real browser.
+
+---
+
 ## Behaviour contracts by subsystem (built Step 1 → Step 6; all still current)
 
 - **Step 1:** PWA scaffold, animated starry sky canvas, theme toggles, gold paper-plane (origami dart) logo.
@@ -406,6 +450,15 @@ Improvement #4 SHIPPED — see the entry titled "v1.43.0 round 18, improvement #
 - **Tests.** dev-ui's help block rewritten: 30 pins replacing the 7 round-35 ones (471→494) — card structure, the four rows in order with their glyph names, keyword/token styling, jsdom taps (insert + focus + flash + fade), the CTA starting and standing down the tour cleanly, the ?/HELP/"help me" behaviour kept verbatim, the source wiring (helpCardHtml, branch order, delegated listener), the composer, the chips, and the no-emoji/arrow regex. smoke +5 = **73/73 first run**, zero page/console errors: the card typed through the real composer with Enter, the Lucide-names contract (the rig blocks the CDN so icons stay `<i>` stubs — the browser layer pins the declared names, the rendering itself is jsdom-stubbed by design), a real tap's insert + focus + flash, and the both-theme composer colours. Battery **14/14 = 2,210 asserts, 0 failed** (every suite at its release total except dev-ui +23). sw pins re-stamped v218 at five sites; the release-stamp pins keep reading APP_VERSION 1.44.0 unchanged. app.html new floor: 1,090,291 bytes.
 - **Environment.** Drift #20 at the turn boundary (git on the ancient base, .gitignore modified, two docs deleted, node_modules wiped) — recovered with the standing recipe (fetch + mixed reset to 4024166, reinstall both rigs) before any work; tree clean at the release commit.
 - **Census.** The `^\*\*` count moves 135→136 with this entry's title.
+
+**v1.44.1 (owner ruling adopted + applied project-wide, 2026-10-14 — TYPOGRAPHY DISCIPLINE, a standing rule: one fixed type scale chosen by role, never tuned by eye; APP_VERSION 1.44.0→1.44.1 + CACHE_NAME v218→v219 per the standing bump-both default; index.html + tw.css + sw.js + dev-ui + smoke + menu-extraction + offline-menus + sw.test pins + this entry):**
+
+- **The rule.** The owner's nine-point typography ruling is now a standing rule, added verbatim as its own HANDOVER section ("Typography discipline — standing owner rule") with this app's concrete rungs mapped beside it: MICRO 11 (`ca-micro`) · CAPTION 12 (`text-xs`) · BODY 14 (`text-sm`) · AMOUNT 17 (`text-[17px]` + `ca-amt`, tabular — the v1.32.0 E5 money ladder, kept) · COMPACT 18 (`text-lg`) · TITLE 20 (`text-xl`) · DISPLAY 24 (`text-2xl`) · HERO 36 (`text-4xl`). The same ladder is documented in-source at the head of index.html's `<style>` block, where the old money-only ladder comment lived. Print sheets (`.pe-*`, `--print-type`) keep their own physically measured scale; icon glyph sizes are not text.
+- **The sweep — every off-scale size in the app UI moved onto a rung.** Sub-MICRO text is gone (nothing readable below 11px): the calendar's tags 10→11 and arrival badge 10.5→11; the earnings archive's meta labels, bar labels, bar tooltips, badges and insight labels 10→11; the changelog sheet's NEW/CURRENT badges 9→11 and new/fix/imp/fun tags 9.5→11; the dev rates table headers 9→11 and accordion titles 10→11; the print editor's eye buttons 10→11, badges 9→11, field labels 9→11. In-between sizes are gone: the calendar's two day-number treatments now MATCH end to end (pill-grid `.ca-rc-num` 13→14, timeline gutter `.n` 15→14 with weight 800→700 — same job, same treatment); the custom date picker's day cells 12.8→14; the chat-card date inputs dropped their 13px one-off and inherit BODY like every sibling input; the archive meta values 13→14 and toast 13→14; the help-card keyword and the print-editor title input 13→14; the route hero's station codes stepped down one rung 30→24 (nothing sits between DISPLAY and HERO — the codes now match their times); the shell-guard fallback screen's body/secondary/CTA 15.2/13.6/12.8→14/12/12. Rule 8 (inputs = BODY): the dev rates inputs and print-editor fields 12→14.
+- **Nothing else moved.** Weights, colours, letter-spacing and line-heights are untouched except the one gutter-weight unification; the AMOUNT role keeps its documented 17px; print CSS untouched; icon sizes untouched.
+- **tw.css rebuilt:** net −3 selectors (`.text-3xl`, `.text-[13px]` — both dropped from source — and `.tabular-nums`, which turned out to be comment-induced dead CSS: no element carries the class, the token only appeared in the old ladder COMMENT, and the Tailwind scanner extracts tokens from comments — the same gotcha that once re-emitted a dead navy utility, running in reverse: a comment keeping a dead utility alive).
+- **Tests.** dev-ui 500/500 (was 494): the E6 block re-points (1.44.1 head with its one pointer, 1.44.0 → entries[1], the 1.43.0 consolidation → entries[2]; word-cap loops re-size with the data), the type-floor pin extends to all arbitrary utilities, and a new typography-discipline pin set holds the rungs (no sub-MICRO CSS, no 12.8/13/15 CSS, no `text-3xl`, the two day-number rules matching, inputs at BODY, the ladder documented in-source); the cadate merged-rule pin re-points to 0.875rem; the help-keyword pin now asserts its BODY rung. smoke 75/75 first run (was 73): release stamps re-pointed (APP_VERSION 1.44.1, the changelog entry, What's New v1.44.1 header + the type-scale pointer + the 1.44.0 help pointer still in the delta, version-once, sw v219), the marks pin tightened to the 11px MICRO floor, and a new computed pin reads the calendar's rungs in the real browser (day numbers 14, marks 11). menu-extraction/offline-menus/sw.test literals re-stamped (one self-catch: the first menu-extraction re-stamp changed the pin's label but not its `crewassist-v218` literal — the battery caught it, both now v219). Battery **14/14 = 2,216 asserts, 0 failed**. app.html new floor: 1,091,597 bytes.
+- **Census.** The `^\*\*` count moves 136→139: this entry's title, plus the new standing-rule section's two bold paragraph leads (`**This app's concrete rungs**`, `**Scope notes:**`) — the census counts bold-led lines, not just round titles.
 
 **v1.43.0 round 31 (owner-approved rework, 2026-10-11 — the proactive-trio visual + behaviour rework, rulings A–L all ruled in; APP_VERSION stays 1.43.0, CACHE_NAME v212→v213; index.html + sw.js + next-flight + smoke pins + this entry):**
 

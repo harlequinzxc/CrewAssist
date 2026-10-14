@@ -82,15 +82,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(122, 98, 15)', 'light-mode gold text computes to the 7A620F token (round 22 F-02: the dead v1.31.0 override was removed)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.44.0', 'APP_VERSION is 1.44.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.0' && e.d === '2026-10-13' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,new,imp'; }), 'the changelog carries the 1.44.0 release entry (help card, roster diff, arrow-key months)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v218'), 'the service-worker cache name is bumped to v218 (the v1.44.0 help-card hotfix; APP_VERSION stays 1.44.0)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.44.1', 'APP_VERSION is 1.44.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.1' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.44.1 typography entry');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v219'), 'the service-worker cache name is bumped to v219 (the v1.44.1 typography round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.0'; }), 'the What\'s New sheet carries the v1.44.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Transits of three hours or more now earn location meals.') !== -1), 'the What\'s New sheet carries the transit-meals pointer');
-        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.0/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.1'; }), 'the What\'s New sheet carries the v1.44.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every label now shares one fixed type scale.') !== -1), 'the What\'s New sheet carries the 1.44.1 type-scale pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Type help in chat to see every command.') !== -1), 'the What\'s New sheet carries the 1.44.0 help pointer in the delta');
+        ok(await page.evaluate(() => (document.getElementById('whatsnew-list').innerText.match(/1\.44\.1/g) || []).length === 1), 'the version appears exactly once (the white duplicate line is gone)');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'closing What\'s New releases the welcome chat (and hides its backdrop)');
@@ -328,8 +329,17 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
             const b = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-badge');
             const ts = getComputedStyle(t), bs = getComputedStyle(b);
-            return parseFloat(ts.fontSize) >= 10 && parseFloat(bs.fontSize) >= 10.5 && parseFloat(bs.right) >= 6 && parseFloat(bs.bottom) >= 6;
+            return parseFloat(ts.fontSize) >= 11 && parseFloat(bs.fontSize) >= 11 && parseFloat(bs.right) >= 6 && parseFloat(bs.bottom) >= 6;
         }), 'hotfix: the tag and badge read larger, the badge tucked inward');
+        // v1.44.1 typography discipline: the calendar's marks sit at the MICRO
+        // rung (11px) and the day numbers at the BODY rung (14px) — computed
+        // in the real browser against the live stylesheet
+        ok(await page.evaluate(() => {
+            const n = document.querySelector('.ca-rc-day[data-ymd="2026-10-12"] .ca-rc-num');
+            const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+            const b = document.querySelector('.ca-rc-day[data-ymd="2026-10-10"] .ca-rc-badge');
+            return n && parseFloat(getComputedStyle(n).fontSize) === 14 && parseFloat(getComputedStyle(t).fontSize) === 11 && parseFloat(getComputedStyle(b).fontSize) === 11;
+        }), 'v1.44.1: the calendar type sits on the fixed scale — day numbers at 14, marks at the 11px MICRO floor');
         ok(await page.evaluate(() => {
             const day = document.querySelector('.ca-rc-day[data-ymd="2026-10-12"]');
             const t = day.querySelector('.ca-rc-tag');

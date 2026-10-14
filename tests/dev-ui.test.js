@@ -191,8 +191,18 @@ const mkUntil = (d) => async (cond, ms) => {
   {
     const fs = require('fs');
     const src = fs.readFileSync(APP, 'utf8');
-    R.ok(!/text-\[(9|9\.5|10|11)px\]/.test(src), 'nothing renders below the 11px type floor');
+    R.ok(!/text-\[(9|9\.5|10|10\.5|11|12\.8|13|15)px\]/.test(src), 'no arbitrary utility size exists \u2014 nothing below the 11px floor, nothing between rungs');
     R.ok(src.includes('.ca-micro { font-size: 11px; }'), 'the micro tier is one token');
+    // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
+    // fixed scale by role, documented at the head of the <style> block. These
+    // pins hold the floor and the rungs.
+    R.ok(src.includes('TYPOGRAPHY DISCIPLINE \u2014 standing owner rule'), 'the scale is documented in the source, roles first');
+    R.ok(!/font-size: (9|9\.5|10|10\.5)px;/.test(src), 'no readable text sits below the MICRO rung (11px) \u2014 CSS side');
+    R.ok(!/font-size: (12\.8|13|15)px;/.test(src), 'no in-between CSS sizes survive \u2014 12.8/13/15 are gone');
+    R.ok(!/font-size: 0\.8rem;/.test(src), 'the date picker\u2019s day cells left the 12.8px one-off for the 14px day-number role');
+    R.ok(!src.includes('text-3xl'), 'the route hero\u2019s station codes stepped down to the 24px rung \u2014 nothing sits between DISPLAY and HERO');
+    R.ok(src.includes('.ca-rc-num { font-size: 14px; font-weight: 700;') && src.includes('.ca-rc-gut .n { font-size: 14px; font-weight: 700;'), 'the calendar\u2019s two day-number treatments match end to end (BODY 14/700)');
+    R.ok(src.includes('font-size: 0.875rem;') && !src.includes('text-[13px]'), 'inputs sit at BODY \u2014 the date picker and the print editor dropped their 13px one-offs');
     R.ok(src.includes('--sia-gold-ink: #7d650f') && src.includes('html:not(.dark) .text-sia-gold'), 'light-mode gold text uses the measured ink');
     R.ok(src.includes('min-w-[88px]') && src.includes("actionText = { save: 'Save', check: 'Saved'"), 'the save action is a labelled pill');
     R.ok(src.includes('.ca-hit::after'), 'invisible hit-area growth exists');
@@ -308,10 +318,14 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      R.eq(entries[0].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[0].v, '1.44.1', 'the 1.44.1 typography round sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.44.1 entry carries its single pointer');
+      R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
+      R.eq(entries[1].v, '1.44.0', 'the 1.44.0 release sits second, newest first');
+      R.eq(entries[1].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[1].v, '1.43.0', 'the 1.43.0 consolidation sits second, newest first');
-      R.eq(entries[1].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[2].v, '1.43.0', 'the 1.43.0 consolidation sits third, newest first');
+      R.eq(entries[2].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
@@ -805,7 +819,7 @@ const mkUntil = (d) => async (cond, ms) => {
         R.eq(rows.map((r) => r.querySelector('i[data-lucide]').getAttribute('data-lucide')).join(','), 'utensils,calculator,sandwich,map', 'each row carries its category glyph \u2014 utensils, calculator, sandwich, map');
         R.ok(rows.every((r) => r.tagName === 'BUTTON'), 'every row is a real button \u2014 tappable');
         const kw = rows[0].querySelector('span.font-mono');
-        R.ok(!!kw && kw.textContent === 'menu' && kw.className.indexOf('text-sia-gold') >= 0, 'the keyword is bold gold in the monospace face');
+        R.ok(!!kw && kw.textContent === 'menu' && kw.className.indexOf('text-sia-gold') >= 0 && kw.className.indexOf('text-sm') >= 0, 'the keyword is bold gold in the monospace face at the BODY rung');
         const tok = rows[1].querySelector('.ca-help-token');
         R.ok(!!tok && tok.textContent === 'sq802 4 oct' && tok.className.indexOf('font-mono') >= 0, 'the example argument rides beside the keyword as a monospaced input-token pill, never em-dash prose');
         R.ok(htxt.indexOf('Open a flight\u2019s inflight menus') >= 0 && htxt.indexOf('Price a whole trip, both allowances') >= 0, 'each row keeps its one-phrase description on the line below');
@@ -913,7 +927,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq(cs.w, '2.25rem', 'cadate-day: the merged rule keeps its width');
     R.eq(cs.h, '2.25rem', 'cadate-day: the merged rule keeps its height');
     R.eq(cs.r, '9999px', 'cadate-day: the merged rule keeps its pill radius');
-    R.eq(cs.f, '0.8rem', 'cadate-day: the merged rule keeps its type size');
+    R.eq(cs.f, '0.875rem', 'cadate-day: the day cells sit at the 14px day-number rung (v1.44.1 typography round)');
     R.eq(cs.fw, '700', 'cadate-day: the merged rule keeps its weight');
     R.eq(cs.d, 'inline-flex', 'cadate-day: the merged rule keeps its display');
     const cssSrc = require('fs').readFileSync(APP, 'utf8');
