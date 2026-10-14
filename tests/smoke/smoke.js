@@ -84,7 +84,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         console.log('— release stamps —');
         eq(await page.evaluate(() => window.APP_VERSION), '1.44.0', 'APP_VERSION is 1.44.0');
         ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.0' && e.d === '2026-10-13' && e.items.length === 3 && e.items.map((i) => i.c).join(',') === 'new,new,imp'; }), 'the changelog carries the 1.44.0 release entry (help card, roster diff, arrow-key months)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v217'), 'the service-worker cache name is bumped to v217 (APP_VERSION 1.44.0, the round-35 release)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v218'), 'the service-worker cache name is bumped to v218 (the v1.44.0 help-card hotfix; APP_VERSION stays 1.44.0)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
@@ -94,6 +94,61 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => document.getElementById('chat-container').innerText.trim().length > 20, { timeout: 15000 });
         ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'closing What\'s New releases the welcome chat (and hides its backdrop)');
+
+        console.log('— v1.44.0 hotfix: the help card in the real browser —');
+        // The greeting types first; a real user waits for the chat to go idle
+        // before typing. Then "help" goes through the real composer: typed
+        // key by key, sent with Enter.
+        await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
+        await page.type('#chat-input', 'help');
+        await page.keyboard.press('Enter');
+        await page.waitForSelector('[data-ca-help-card]', { timeout: 15000 });
+        ok(await page.evaluate(() => {
+            const card = document.querySelector('[data-ca-help-card]');
+            const rows = Array.from(card.querySelectorAll('[data-ca-help-cmd]'));
+            const t = card.textContent.replace(/\s+/g, ' ');
+            return rows.length === 4 && rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(',') === 'menu,ifa,lma,cop'
+                && t.indexOf('Quick shortcuts') !== -1 && t.indexOf('Type or tap any command below') !== -1;
+        }), 'typing help answers with the structured card — four rows in order, title + subtitle');
+        // The rig serves no CDN (lucide ships from unpkg — blocked by policy),
+        // so icons stay <i data-lucide> stubs here. The contract this layer
+        // can pin: every glyph the card declares is a named Lucide icon —
+        // bulb, four category icons, three tip dots, the CTA arrow — no
+        // emoji, no custom SVG anywhere in the card.
+        ok(await page.evaluate(() => {
+            const card = document.querySelector('[data-ca-help-card]');
+            const names = Array.from(card.querySelectorAll('i[data-lucide]')).map((i) => i.getAttribute('data-lucide'));
+            const need = ['lightbulb', 'utensils', 'calculator', 'sandwich', 'map', 'dot', 'dot', 'dot', 'arrow-right'];
+            return names.length === 9 && need.every((n) => names.indexOf(n) !== -1) && !/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{FE0F}]/u.test(card.textContent);
+        }), 'the card declares only Lucide glyphs — bulb, four category icons, three tip dots, the CTA arrow — and no emoji');
+        // A real tap on a row: the keyword lands in the composer, focus
+        // follows, and the row flashes gold (then the flash fades on its own).
+        // Wait for idle first — while the chat is busy every chat button is
+        // pointer-inert (the anti-double-fire rule), so a mid-typing tap
+        // would rightly be swallowed.
+        await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
+        await page.click('[data-ca-help-cmd="menu"]');
+        ok(await page.evaluate(() => {
+            const row = document.querySelector('[data-ca-help-cmd="menu"]');
+            const inp = document.getElementById('chat-input');
+            return inp.value === 'menu ' && document.activeElement === inp && row.classList.contains('ca-help-flash');
+        }), 'a real tap inserts "menu " into the composer, focuses it, and flashes the row gold');
+        await new Promise((r) => setTimeout(r, 600));
+        ok(await page.evaluate(() => !document.querySelector('[data-ca-help-cmd="menu"]').classList.contains('ca-help-flash')), 'the gold flash fades on its own — no stuck state');
+        // The composer wears the warm charcoal family in night mode, never
+        // navy: real var() resolution, both themes (a standing criterion).
+        ok(await page.evaluate(() => {
+            const h = document.documentElement;
+            const bar = document.querySelector('#chat-input').closest('.glass-panel');
+            const read = () => getComputedStyle(bar).backgroundColor;
+            const wasDark = h.classList.contains('dark');
+            h.classList.remove('dark'); const light = read();
+            h.classList.add('dark'); const dark = read();
+            if (wasDark) h.classList.add('dark'); else h.classList.remove('dark');
+            return light === 'rgba(255, 255, 255, 0.94)' && dark === 'rgba(4, 7, 15, 0.92)';
+        }), 'the composer\'s glass resolves to the panel white by day and the warm charcoal by night — the navy override is gone');
+        await page.evaluate(() => { document.getElementById('chat-input').value = ''; });
+
 
         console.log('— v1.40.0 behaviour in the real browser —');
         // 1. A KUL transit of exactly 180 minutes (arrival 10:00, report 13:00 for a 14:00 departure) — the inclusive boundary — earns lunch.

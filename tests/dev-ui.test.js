@@ -785,24 +785,75 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), oct4Year + '-10-04', 'spaced flight and month-first dates both parse');
     R.eq(g.w.eval("!!parseNaturalCommand('what can you do')"), false, 'ordinary sentences never parse as commands');
 
-    // v1.44.0: the help card — a bare "help" (or "?") lists the command
-    // language; "help" no longer starts the feature tour (the card points
-    // to it instead)
+    // v1.44.0 hotfix (owner spec): the help card is a structured onboarding
+    // surface — gold icon-tile header, four tappable command rows (Lucide
+    // category glyphs, bold gold monospaced keywords, input-token pills),
+    // dimmer tips with Lucide dots, and ONE outlined CTA that starts the
+    // feature tour
     {
         const hsrc = require('fs').readFileSync(APP, 'utf8');
-        const helpCards = () => chatTxt().split('that flight\u2019s inflight menus').length - 1;
+        const helpCards = () => g.d.querySelectorAll('[data-ca-help-card]').length;
         const h0 = helpCards();
         await send('help');
-        R.ok(helpCards() === h0 + 1 && chatTxt().indexOf('layover meal allowance, both sectors') >= 0 && chatTxt().indexOf('the full allowance picture for a whole trip') >= 0, 'a bare help answers with the command card \u2014 all four command words with their examples');
-        R.ok(chatTxt().indexOf('Up to four sectors per line') >= 0 && chatTxt().indexOf('Your attached roster answers first') >= 0, 'the card carries the natural-writing rules \u2014 four sectors max, the attached roster answers first');
-        R.ok(chatTxt().indexOf('show me around') >= 0, 'the card points to the feature tour \u2014 help no longer starts it itself');
+        R.eq(helpCards(), h0 + 1, 'a bare help answers with the structured card');
+        const card = g.d.querySelector('[data-ca-help-card]');
+        const htxt = card.textContent.replace(/\s+/g, ' ');
+        R.ok(htxt.indexOf('Quick shortcuts') >= 0 && htxt.indexOf('Type or tap any command below') >= 0, 'the header pairs a bold title with a quiet subtitle');
+        R.ok(!!card.querySelector('[data-lucide="lightbulb"]'), 'the header tile is Lucide lightbulb \u2014 icons only, never emoji');
+        const rows = Array.from(card.querySelectorAll('[data-ca-help-cmd]'));
+        R.eq(rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(','), 'menu,ifa,lma,cop', 'four command rows \u2014 menu, ifa, lma, cop, in that order');
+        R.eq(rows.map((r) => r.querySelector('i[data-lucide]').getAttribute('data-lucide')).join(','), 'utensils,calculator,sandwich,map', 'each row carries its category glyph \u2014 utensils, calculator, sandwich, map');
+        R.ok(rows.every((r) => r.tagName === 'BUTTON'), 'every row is a real button \u2014 tappable');
+        const kw = rows[0].querySelector('span.font-mono');
+        R.ok(!!kw && kw.textContent === 'menu' && kw.className.indexOf('text-sia-gold') >= 0, 'the keyword is bold gold in the monospace face');
+        const tok = rows[1].querySelector('.ca-help-token');
+        R.ok(!!tok && tok.textContent === 'sq802 4 oct' && tok.className.indexOf('font-mono') >= 0, 'the example argument rides beside the keyword as a monospaced input-token pill, never em-dash prose');
+        R.ok(htxt.indexOf('Open a flight\u2019s inflight menus') >= 0 && htxt.indexOf('Price a whole trip, both allowances') >= 0, 'each row keeps its one-phrase description on the line below');
+        R.eq(card.querySelectorAll('.ca-hairline').length, 2, 'two hairlines frame the command list');
+        // tap: insert + focus + flash
+        const inp = g.d.getElementById('chat-input');
+        rows[0].click();
+        R.eq(inp.value, 'menu ', 'tapping a row inserts keyword + trailing space into the composer');
+        R.ok(g.d.activeElement === inp, 'the tap focuses the composer at the end');
+        R.ok(rows[0].classList.contains('ca-help-flash'), 'the tapped row flashes gold');
+        rows[1].click();
+        R.eq(inp.value, 'ifa ', 'a second row tap replaces the draft with its own keyword');
+        await wait(500);
+        R.ok(!rows[0].classList.contains('ca-help-flash'), 'the flash fades on its own \u2014 no stuck state');
+        inp.value = '';
+        // tips: dimmer, Lucide dots, no emoji anywhere in the card
+        const tips = Array.from(card.querySelectorAll('.ca-help-tip'));
+        R.eq(tips.length, 3, 'three tips follow the second hairline');
+        R.ok(tips.every((t) => !!t.querySelector('[data-lucide="dot"]')), 'tip bullets are Lucide dots');
+        R.ok(htxt.indexOf('plain English') >= 0 && htxt.indexOf('Upload your roster PDF for longer trips') >= 0 && htxt.indexOf('Your attached roster answers first') >= 0, 'the tips carry the plain-English, roster-PDF, and roster-first notes');
+        R.ok(!/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{FE0F}]/u.test(htxt), 'the card carries no emoji and no Unicode arrows');
+        // the CTA owns the tour now
+        const cta = card.querySelector('[data-ca-help-tour]');
+        R.ok(!!cta && cta.textContent.indexOf('Take the feature tour') >= 0 && !!cta.querySelector('[data-lucide="arrow-right"]'), 'one outlined CTA \u2014 Take the feature tour, with a trailing arrow');
+        // the boot does not seed tourOffered, so the greeting\u2019s tour offer can
+        // still be typing here \u2014 while busy, html.chat-busy makes every chat
+        // button inert (the real anti-double-fire behaviour). Wait it out,
+        // exactly like a crew member who reads the card first.
+        await idle(); await wait(250);
+        cta.click();
+        R.ok(await gUntil(() => g.d.documentElement.classList.contains('ca-tour-on'), 15000), 'the CTA starts the feature tour \u2014 help itself never did');
+        await g.w.eval('finishCaTour(false, true)');
+        R.ok(await gUntil(() => !g.d.documentElement.classList.contains('ca-tour-on'), 15000), 'the tour stands down cleanly for the rest of the suite');
+        // the alias and the fallthrough keep their round-35 behaviour
         await send('?');
         R.eq(helpCards(), h0 + 2, 'a bare ? is the alias \u2014 the card answers again');
         await send('HELP');
         R.eq(helpCards(), h0 + 3, 'HELP parses case-insensitively like every command');
         await send('help me');
         R.eq(helpCards(), h0 + 3, 'only the bare word triggers \u2014 \u201chelp me\u201d falls through to the keyword engine untouched');
+        // source wiring: the builder, the branch order, the delegated listener,
+        // the composer\u2019s lost navy, the chips\u2019 scroll
+        R.ok(hsrc.includes('function helpCardHtml()') && hsrc.includes('addBotMessage(helpCardHtml())'), 'the card is built by helpCardHtml() and the help branch renders it');
         R.ok(hsrc.includes("if (/^\\s*(help|\\?)\\s*$/.test(lowerText)) {") && hsrc.includes("else if (/\\btour\\b|show me around/.test(lowerText)) {"), 'help owns its own branch above the tour \u2014 the tour keeps \u201ctour\u201d and \u201cshow me around\u201d as its triggers');
+        R.ok(hsrc.includes("closest('[data-ca-help-cmd]')") && hsrc.includes("closest('[data-ca-help-tour]')"), 'one delegated document-level listener wires every row and the CTA \u2014 re-render-proof');
+        const comp = (hsrc.match(/<div class="glass-panel rounded-full flex items-center px-4 py-2 gap-2[^"]*"/) || [''])[0];
+        R.ok(comp.length > 0 && comp.indexOf('bg-') < 0, 'the composer wears glass-panel\u2019s own charcoal \u2014 the navy override is gone');
+        R.ok(hsrc.includes('id="action-chips" class="flex overflow-x-auto') && (hsrc.match(/action-chip shrink-0/g) || []).length >= 4, 'the suggestion chips scroll horizontally, each shrink-0 \u2014 no truncation');
     }
 
     // ifa: the card arrives prefilled from the roster (offline-honest)
