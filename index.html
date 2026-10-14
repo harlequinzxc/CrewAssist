@@ -14264,6 +14264,29 @@
             }
         }
 
+        function closeMenuDropdowns() {
+            // v1.44.5 hotfix (owner order, no version bump): a dropdown left
+            // open used to survive the close — close + reopen showed it still
+            // dangling over the sheet. Same treatment as the lightbox: the
+            // close folds every dropdown (the class swap rides the same
+            // 300ms transition toggleMenuDropdown uses) and hands the row
+            // its horizontal scroll back.
+            ['cabin', 'sector', 'culinary'].forEach(t => {
+                const m = document.getElementById('menu-' + t + '-menu');
+                const i = document.getElementById('menu-' + t + '-icon');
+                if (m && i) {
+                    m.classList.remove('opacity-100', 'max-h-[300px]', 'pointer-events-auto');
+                    m.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
+                    i.classList.remove('rotate-180');
+                }
+            });
+            const row = document.getElementById('menu-dropdown-row');
+            if (row) {
+                row.style.overflow = '';
+                row.classList.add('overflow-x-auto', 'overflow-y-hidden');
+            }
+        }
+
         // ================= v1.39.0 (A5): menu route-diff =================
         // "vs your 1 Oct lookup: 2 mains changed, same desserts" — an honest
         // comparison of THIS date's menu against the crew's most recent
@@ -14449,6 +14472,7 @@
             const backdrop = document.getElementById('menu-backdrop');
             const sheet = document.getElementById('menu-sheet');
             closeMenuLightbox();
+            closeMenuDropdowns();   // v1.44.5 hotfix: no dropdown outlives the close
 
             backdrop.classList.add('opacity-0');
             caSheetGlideCancel(sheet);

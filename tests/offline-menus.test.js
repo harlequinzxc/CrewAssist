@@ -215,7 +215,7 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v223"), 'service-worker cache name bumped to v223 (the v1.44.5 reopen-resets round)');
+    R.ok(sw.includes("crewassist-v224"), 'service-worker cache name bumped to v224 (the v1.44.5 dropdown hotfix — cache-only, no version bump)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs
@@ -342,6 +342,33 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(d.querySelector('.menu-cat-pill[data-cat="meals"]').classList.contains('bg-sia-gold'), 'v1.44.5: a reopen returns to the meals pill');
     R.ok(!d.querySelector('.menu-cat-pill[data-cat="drinks"]').classList.contains('bg-sia-gold'), 'v1.44.5: the drinks pill is off again after a reopen');
     R.eq(d.getElementById('menu-content').scrollTop, 0, 'v1.44.5: the pane reopens at the top');
+    w.eval('closeMenuViewer()');
+  }
+
+  // --- v1.44.5 hotfix (owner report, no version bump): a dropdown left open
+  // used to survive the close — reopen showed it still dangling. The close
+  // now folds every dropdown and hands the row its scroll back.
+  {
+    w.localStorage.setItem(MENU_KEY, richMenuPayload(Date.now()));
+    await w.eval(`currentMenuSearch.flightNumber='${FLIGHT}'; currentMenuSearch.date='${DATE}'; openMenuViewerForCabins('${FLIGHT}','${DATE}',['JCL','YCL'])`);
+    await wait(200);
+    const dd = () => d.getElementById('menu-cabin-menu');
+    const ic = () => d.getElementById('menu-cabin-icon');
+    const row = () => d.getElementById('menu-dropdown-row');
+    // the harness's jsdom never fires inline onclick attributes, so the pin
+    // drives the dropdown's own toggle — the same call a real tap makes
+    w.eval("toggleMenuDropdown('cabin')");
+    R.ok(!dd().classList.contains('max-h-0') && dd().classList.contains('pointer-events-auto'), 'the cabin dropdown opens on tap');
+    R.ok(ic().classList.contains('rotate-180'), 'the chevron flips while open');
+    R.eq(row().style.overflow, 'visible', 'the row lets the dropdown escape its scroll while open');
+    w.eval('closeMenuViewer()');
+    R.ok(dd().classList.contains('max-h-0') && dd().classList.contains('opacity-0') && dd().classList.contains('pointer-events-none'), 'v1.44.5 hotfix: the close folds the open dropdown');
+    R.ok(!ic().classList.contains('rotate-180'), 'the chevron stands back up on the close');
+    R.ok(row().classList.contains('overflow-x-auto') && row().style.overflow !== 'visible', 'the row takes its horizontal scroll back on the close');
+    await wait(350);
+    await w.eval(`openMenuViewerForCabins('${FLIGHT}','${DATE}',['JCL','YCL'])`);
+    await wait(200);
+    R.ok(dd().classList.contains('max-h-0') && dd().classList.contains('pointer-events-none'), 'v1.44.5 hotfix: the reopened sheet shows the dropdown closed (the owner report)');
     w.eval('closeMenuViewer()');
   }
 
