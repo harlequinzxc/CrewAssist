@@ -1,4 +1,4 @@
-# Feature Tour — Full Breakdown (v1.23.11)
+# Feature Tour — Full Breakdown (v1.44.6)
 
 Every beat from the first chat message to the last, with exact machine timings, numbered for reference. Quote the number (e.g. "2.14") when telling me what to modify, add or remove.
 
