@@ -82,14 +82,14 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(122, 98, 15)', 'light-mode gold text computes to the 7A620F token (round 22 F-02: the dead v1.31.0 override was removed)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.44.4', 'APP_VERSION is 1.44.4');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.4' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.44.4 colour-token entry');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v222'), 'the service-worker cache name is bumped to v222 (the v1.44.4 colour-token round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.44.5', 'APP_VERSION is 1.44.5');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.5' && e.d === '2026-10-14' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.44.5 reopen-resets entry');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v223'), 'the service-worker cache name is bumped to v223 (the v1.44.5 reopen-resets round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.4'; }), 'the What\'s New sheet carries the v1.44.4 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Colours now flow through named tokens, identical pixels.') !== -1), 'the What\'s New sheet carries the 1.44.4 colour-token pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.5'; }), 'the What\'s New sheet carries the v1.44.5 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The date picker swipes and arrow-keys through months.') !== -1), 'the What\'s New sheet carries the 1.44.2 date-picker pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every label now shares one fixed type scale.') !== -1), 'the What\'s New sheet carries the 1.44.1 type-scale pointer in the delta');

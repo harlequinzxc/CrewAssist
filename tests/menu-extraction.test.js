@@ -181,8 +181,8 @@ const EMDASH = '\u2014'; // —
     // black square invert opt-in; hidden proteins surface on non-mains too.
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.44.4';"), 'APP_VERSION stamped 1.44.4');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v222"), 'service-worker cache name bumped to v222 (the v1.44.4 colour-token round)');
+    R.ok(src.includes("var APP_VERSION = '1.44.5';"), 'APP_VERSION stamped 1.44.5');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v223"), 'service-worker cache name bumped to v223 (the v1.44.5 reopen-resets round)');
   }
 
   {
@@ -198,7 +198,7 @@ const EMDASH = '\u2014'; // —
     R.ok((srcFv.match(/document\.addEventListener\('click', function \(e\) \{\s*const btn = e\.target\.closest && e\.target\.closest\('\[data-fv-act\]'\)/g) || []).length === 1, 'exactly one delegated fv click listener is registered');
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'FV', gender: 'Male', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.wnSeen', '1.44.4');
+      x.localStorage.setItem('crewAssist.wnSeen', '1.44.5');
       x.localStorage.setItem('crewAssist.tourDone', '1');
       const t = new Date(), pad = (n) => String(n).padStart(2, '0');
       const today = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
@@ -269,6 +269,39 @@ const EMDASH = '\u2014'; // —
     R.eq((src24.match(/menuCabinNames\(\)/g) || []).length, 3, 'round 24: one menuCabinNames definition feeds both cabin paint sites (fv card + viewer)');
     R.eq((src24.match(/Premium Economy/g) || []).length, 1, 'round 24: the Premium Economy label lives only in menuCabinLabel — no hardcoded copies can drift');
     R.eq((src24.match(/menuItemRow\(item, '', '', ''\)/g) || []).length, 1, 'round 24: the bare-string row pattern exists once — inside the shared menuRowsFrom skeleton');
+  }
+
+  // v1.44.5 (owner order): the print preview reopens at its defaults —
+  // layout, paper, protein marking, zooms, option pills, tab, sector and
+  // both scroll panes. openMenuPrinter's fetch fails in jsdom (nothing
+  // saved, no network) but the reset precedes the fetch, so the state
+  // asserts hold on the error path too.
+  {
+    const { w, d } = await boot(APP);
+    w.printState.layout = 'compact';
+    w.printState.paper = 'a6';
+    w.printState.proteinMode = 'square';
+    w.printState.zoomCompact = 120;
+    w.printState.greyscale = true;
+    w.printState.descriptions = false;
+    w.printState.showBounds = false;
+    w.printState.tab = 'edit';
+    w.printState.sectorIdx = 2;
+    d.getElementById('print-paper-scroll').scrollTop = 444;
+    d.getElementById('print-edit-scroll').scrollTop = 333;
+    await w.eval("openMenuPrinter('231','2026-10-09',['JCL'])");
+    R.eq(w.printState.layout, 'elegant', 'v1.44.5: a reopen resets the layout to Elegant');
+    R.eq(w.printState.paper, 'a4', 'v1.44.5: a reopen resets the paper to A4');
+    R.eq(w.printState.proteinMode, 'brackets', 'v1.44.5: a reopen resets the protein marking to brackets');
+    R.eq(w.printState.zoomElegant, 100, 'v1.44.5: a reopen resets the Elegant zoom to 100%');
+    R.eq(w.printState.zoomCompact, 100, 'v1.44.5: a reopen resets the Compact zoom to 100%');
+    R.eq(w.printState.greyscale, false, 'v1.44.5: a reopen resets greyscale to off');
+    R.eq(w.printState.descriptions, true, 'v1.44.5: a reopen resets descriptions to on');
+    R.eq(w.printState.showBounds, true, 'v1.44.5: a reopen resets the bounds option to on');
+    R.eq(w.printState.tab, 'sheet', 'v1.44.5: a reopen resets to the Menu sheet tab');
+    R.eq(w.printState.sectorIdx, 0, 'v1.44.5: a reopen resets the sector to the first');
+    R.eq(d.getElementById('print-paper-scroll').scrollTop, 0, 'v1.44.5: the sheet pane reopens at the top');
+    R.eq(d.getElementById('print-edit-scroll').scrollTop, 0, 'v1.44.5: the edit pane reopens at the top');
   }
 
   process.exit(R.done() ? 1 : 0);

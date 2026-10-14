@@ -29,6 +29,23 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
         flightDuration: '6h 45m'
     } }]
 }});
+// v1.44.5: the reopen-defaults pin needs a menu with real meal and beverage
+// blocks, so the category pills render as meals + drinks + snacks and the
+// default (meals) is distinct from a dirtyable choice (drinks)
+const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
+    statusCode: 200,
+    legs: [{ flightDetails: {
+        departureAirportCode: 'SIN', arrivalAirportCode: 'NRT',
+        departureLocalDate: '2026-09-26 09:20:00', arrivalLocalDate: '2026-09-26 16:05:00',
+        departureUtcDate: '2026-09-26 01:20:00', arrivalUtcDate: '2026-09-26 08:05:00',
+        flightDuration: '6h 45m'
+    }, menu: { language: { EN_UK: { meals: [
+        { mealServiceName: 'Lunch', selectionDetails: [{ mealCourses: [{ items: [{ name: 'Chicken Rice', description: 'Hainanese' }] }] }] },
+        { mealServiceName: 'Supper', selectionDetails: [{ mealCourses: [{ items: [{ name: 'Sandwich' }] }] }] }
+    ] } } }, beverage: { language: { EN_UK: { categories: [
+        { name: 'Wines', items: [{ name: 'Bordeaux' }] }
+    ] } } } }]
+}});
 
 (async () => {
   const { w, d } = await boot(APP);
@@ -194,11 +211,11 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.44.4';"), 'APP_VERSION stamped 1.44.4');
+    R.ok(src.includes("var APP_VERSION = '1.44.5';"), 'APP_VERSION stamped 1.44.5');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v222"), 'service-worker cache name bumped to v222 (the v1.44.4 colour-token round)');
+    R.ok(sw.includes("crewassist-v223"), 'service-worker cache name bumped to v223 (the v1.44.5 reopen-resets round)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs
@@ -300,6 +317,32 @@ const menuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     setOnline(true);
     w.eval("document.getElementById('ca-shell-fail').style.display = 'none'; caTwLoaded = () => true; shellGuard();");
     R.eq(d.getElementById('ca-shell-fail').style.display, 'none', 'F-03: styles present → the guard stays silent');
+  }
+
+  // --- v1.44.5 (owner order): the menu viewer reopens at its defaults ---
+  // category pills back to meals, the pane back to the top. The cabin
+  // dropdown already re-defaults to the first cabin on every open.
+  {
+    w.localStorage.setItem(MENU_KEY, richMenuPayload(Date.now()));
+    await w.eval(`openMenuViewerForCabins('${FLIGHT}','${DATE}',['JCL'])`);
+    await wait(200);
+    R.ok(d.querySelectorAll('.menu-cat-pill').length >= 2, 'the seeded menu renders the meals and drinks pills');
+    R.ok(d.querySelector('.menu-cat-pill[data-cat="meals"]').classList.contains('bg-sia-gold'), 'meals is the default category on open');
+    // the harness's jsdom never fires inline onclick attributes, so the pin
+    // drives the pill's own handler — the same call a real tap makes
+    await w.eval("switchMenuCategory('drinks', document.querySelector('.menu-cat-pill[data-cat=\"drinks\"]'))");
+    await wait(50);
+    R.ok(d.querySelector('.menu-cat-pill[data-cat="drinks"]').classList.contains('bg-sia-gold'), 'switching to drinks takes before the close');
+    d.getElementById('menu-content').scrollTop = 555;
+    R.eq(d.getElementById('menu-content').scrollTop, 555, 'the pane sits scrolled before the close');
+    w.eval('closeMenuViewer()');
+    await wait(350);
+    await w.eval(`openMenuViewerForCabins('${FLIGHT}','${DATE}',['JCL'])`);
+    await wait(200);
+    R.ok(d.querySelector('.menu-cat-pill[data-cat="meals"]').classList.contains('bg-sia-gold'), 'v1.44.5: a reopen returns to the meals pill');
+    R.ok(!d.querySelector('.menu-cat-pill[data-cat="drinks"]').classList.contains('bg-sia-gold'), 'v1.44.5: the drinks pill is off again after a reopen');
+    R.eq(d.getElementById('menu-content').scrollTop, 0, 'v1.44.5: the pane reopens at the top');
+    w.eval('closeMenuViewer()');
   }
 
     process.exit(R.done() ? 1 : 0);
