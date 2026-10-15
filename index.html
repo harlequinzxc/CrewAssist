@@ -2519,7 +2519,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2541,6 +2541,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.2', d: '2026-10-15', items: [
+                { c: 'imp', t: 'Settings descriptions ride one micro size, rows and panels alike.' },
+            ] },
             { v: '1.45.1', d: '2026-10-15', items: [
                 { c: 'fix', t: 'Reduced motion skips the typing bubble entirely.' },
                 { c: 'fix', t: 'The menu nudge arrives as its own chat message.' },
