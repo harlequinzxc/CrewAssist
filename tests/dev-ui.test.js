@@ -210,6 +210,11 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('id="motion-pill-reduced"') && src.includes('id="motion-pill-full"') && src.includes('id="motion-segmented"'), 'the binary Reduced/Full toggle lives in Settings');
     R.ok(src.includes("'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates'"), 'the motion key rides the backup set');
     R.ok(src.includes('function syncSkyMotion()') && src.includes('skyAnimating = false;'), 'the sky rests on a still frame and restarts when motion returns');
+    // v1.45.1 (owner hotfix 1): the typing bubble never appears under reduced motion
+    R.ok(src.includes("if (document.documentElement.classList.contains('ca-reduced')) return;\n            const chatContainer = document.getElementById('chat-container');"), 'the reduced-motion guard sits at the head of showTypingIndicator');
+    // v1.45.1 (owner hotfix 2): the nudge arrives as its own chat message
+    R.ok(src.includes('enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); });\n                enqueueBot(() => { renderMenuNudge(); });'), 'the menu nudge rides its own bot turn - never bundled with the flight card');
+    R.ok(src.includes("el.className = 'flex items-start gap-3 mt-4 w-full'"), 'the nudge row carries standard message spacing (mt-4)');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
@@ -394,50 +399,52 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      // v1.45.0 (divergence #1a + the binary Motion toggle): takes the
-      // head. The previous rounds shift down one each.
-      R.eq(entries[0].v, '1.45.0', 'the 1.45.0 motion release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.45.0 entry carries its single pointer');
-      R.ok(src.includes("c: 'new', t: 'Reduce Motion lands: OS-following by default, with a Settings toggle.' }"), 'the 1.45.0 pointer reads as approved, inside the twelve-word cap');
+      // v1.45.1 (owner hotfixes 1 + 2): takes the head. The previous
+      // rounds shift down one each.
+      R.eq(entries[0].v, '1.45.1', 'the 1.45.1 hotfix release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 2, 'the 1.45.1 entry carries its two hotfix pointers');
+      R.ok(src.includes("c: 'fix', t: 'Reduced motion skips the typing bubble entirely.' }") && src.includes("c: 'fix', t: 'The menu nudge arrives as its own chat message.' }"), 'both 1.45.1 pointers read as approved, inside the twelve-word cap');
       // v1.44.9: the veil token itself — the two archive-overlay alpha sites ride it
       R.ok(src.includes('--ca-arch-veil: rgba(8, 11, 20, 0.80);') && src.includes('--ca-arch-veil: rgba(246, 241, 232, 0.90);') && src.includes('fill-[color:var(--ca-arch-veil)]') && src.includes('bg-[color:var(--ca-arch-veil)]'), 'v1.44.9: --ca-arch-veil exists (dark .80 / light .90) and both overlay sites ride it');
-      R.eq(entries[1].v, '1.44.10', 'the 1.44.10 scale-and-ink release sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.44.10 entry carries its single pointer');
+      R.eq(entries[1].v, '1.45.0', 'the 1.45.0 motion release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.45.0 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The last raw colours ride named tokens \u2014 same pixels, one spelling.' }"), 'the 1.44.8 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[2].v, '1.44.9', 'the 1.44.9 veil-token release sits third, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.44.9 entry carries its single pointer');
+      R.eq(entries[2].v, '1.44.10', 'the 1.44.10 scale-and-ink release sits third, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.44.10 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' }"), 'the 1.44.7 pointer reads as approved, inside the twelve-word cap');
       // v1.44.7 audit fix 1: the flagged-trip warning is a Lucide icon, and the
       // source carries no warning-sign glyph anywhere (icons only, never emoji).
       R.eq((src.match(/data-lucide="alert-triangle"/g) || []).length, 1, 'exactly one alert-triangle icon - the flagged-trip line');
       R.ok(!src.includes('\u26a0'), 'no U+26A0 warning-sign glyph remains in the source');
-      R.eq(entries[3].v, '1.44.8', 'the 1.44.8 colour-sweep release sits fourth, newest first');
-      R.eq(entries[3].items.length, 1, 'the 1.44.8 entry carries its single pointer');
+      R.eq(entries[3].v, '1.44.9', 'the 1.44.9 veil-token release sits fourth, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.44.9 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' }"), 'the 1.44.6 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[4].v, '1.44.7', 'the 1.44.7 audit-fix release sits fifth, newest first');
-      R.eq(entries[4].items.length, 1, 'the 1.44.7 entry carries its single pointer');
+      R.eq(entries[4].v, '1.44.8', 'the 1.44.8 colour-sweep release sits fifth, newest first');
+      R.eq(entries[4].items.length, 1, 'the 1.44.8 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' }"), 'the 1.44.5 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[5].v, '1.44.6', 'the 1.44.6 one-off retirement sits sixth, newest first');
-      R.eq(entries[5].items.length, 1, 'the 1.44.6 entry carries its single pointer');
+      R.eq(entries[5].v, '1.44.7', 'the 1.44.7 audit-fix release sits sixth, newest first');
+      R.eq(entries[5].items.length, 1, 'the 1.44.7 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' }"), 'the 1.44.4 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[6].v, '1.44.5', 'the 1.44.5 reopen-resets round sits seventh, newest first');
-      R.eq(entries[6].items.length, 1, 'the 1.44.5 entry keeps its single pointer');
+      R.eq(entries[6].v, '1.44.6', 'the 1.44.6 one-off retirement sits seventh, newest first');
+      R.eq(entries[6].items.length, 1, 'the 1.44.6 entry keeps its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[7].v, '1.44.4', 'the 1.44.4 colour-token round sits eighth, newest first');
-      R.eq(entries[7].items.length, 1, 'the 1.44.4 entry keeps its single pointer');
+      R.eq(entries[7].v, '1.44.5', 'the 1.44.5 reopen-resets round sits eighth, newest first');
+      R.eq(entries[7].items.length, 1, 'the 1.44.5 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[8].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits ninth, newest first');
-      R.eq(entries[8].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
+      R.eq(entries[8].v, '1.44.4', 'the 1.44.4 colour-token round sits ninth, newest first');
+      R.eq(entries[8].items.length, 1, 'the 1.44.4 entry keeps its single pointer');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[9].v, '1.44.2', 'the 1.44.2 date-picker round sits tenth, newest first');
-      R.eq(entries[9].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
-      R.eq(entries[10].v, '1.44.1', 'the 1.44.1 typography round sits eleventh, newest first');
-      R.eq(entries[10].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
-      R.eq(entries[11].v, '1.44.0', 'the 1.44.0 release sits twelfth, newest first');
-      R.eq(entries[11].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
-      R.eq(entries[12].v, '1.43.0', 'the 1.43.0 consolidation sits thirteenth, newest first');
-      R.eq(entries[12].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
+      R.eq(entries[9].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits tenth, newest first');
+      R.eq(entries[9].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
+      R.eq(entries[10].v, '1.44.2', 'the 1.44.2 date-picker round sits eleventh, newest first');
+      R.eq(entries[10].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
+      R.eq(entries[11].v, '1.44.1', 'the 1.44.1 typography round sits twelfth, newest first');
+      R.eq(entries[11].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
+      R.eq(entries[12].v, '1.44.0', 'the 1.44.0 release sits thirteenth, newest first');
+      R.eq(entries[12].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[13].v, '1.43.0', 'the 1.43.0 consolidation sits fourteenth, newest first');
+      R.eq(entries[13].items.length, 11, 'the 1.43.0 release keeps the round-30 consolidation plus the three round 31\u201333 fix pointers (11 total)');
       R.ok(src.includes("t: 'The next-flight feed holds its order \\u2014 time zone card, flight card, menu nudge \\u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' }"), 'round 31\u2019s feed rework is a changelog pointer (order held, honest save pills)');
       R.ok(src.includes("t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' }"), 'round 32\u2019s nudge-as-fixture is a changelog pointer');
       R.ok(src.includes("t: 'The calendar\\u2019s first open of a session lands on today\\u2019s timeline on every device \\u2014 the blank first open some screens showed is gone.' }"), 'round 33\u2019s calendar first-open fix is a changelog pointer');
@@ -1178,6 +1185,12 @@ const mkUntil = (d) => async (cond, ms) => {
       m3.w.eval("setMotionPref('full')");
       R.ok(!m3.d.documentElement.classList.contains('ca-reduced'), 'tapping Full clears the marker again');
       R.eq(m3.w.eval("localStorage.getItem('crewAssist.motion')"), 'full', 'and persists the Full choice');
+      // v1.45.1 (owner hotfix 1): the typing bubble never appears under reduced motion
+      m1.w.eval('showTypingIndicator()');
+      R.ok(!m1.d.getElementById('typing-indicator'), 'reduced motion: the typing bubble never appears');
+      m3.w.eval('showTypingIndicator()');
+      R.ok(!!m3.d.getElementById('typing-indicator'), 'full motion: the typing bubble still shows');
+      m3.w.eval('hideTypingIndicator()');
   }
 
   process.exit(R.done() ? 1 : 0);

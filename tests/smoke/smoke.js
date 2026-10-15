@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.0', 'APP_VERSION is 1.45.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.0' && e.d === '2026-10-15' && e.items.length === 1 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.0 motion entry');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v231'), 'the service-worker cache name is bumped to v231 (the v1.45.0 motion release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.1', 'APP_VERSION is 1.45.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.1' && e.d === '2026-10-15' && e.items.length === 2 && e.items[0].c === 'fix' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.45.1 hotfix pair');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v232'), 'the service-worker cache name is bumped to v232 (the v1.45.1 hotfix release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.0'; }), 'the What\'s New sheet carries the v1.45.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.1'; }), 'the What\'s New sheet carries the v1.45.1 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fourth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
@@ -274,6 +274,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return mk('chat-anim-in') === 'ca-reduce-fade' && mk('animate-pulse') === 'none';
         }), 'OS reduce: entries collapse to ca-reduce-fade, loops stop');
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('settings-sheet')).transitionDuration === '0s'), 'OS reduce: sheets snap open (transition-transform gated)');
+        ok(await page.evaluate(() => { showTypingIndicator(); return !document.getElementById('typing-indicator'); }), 'OS reduce: the typing bubble never appears (hotfix 1)');
         await page.evaluate(() => openSettings());
         await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('motion-pill-reduced').getAttribute('aria-checked') === 'true' && document.getElementById('motion-pill-full').getAttribute('aria-checked') === 'false' && document.getElementById('motion-desc').textContent.indexOf('following') !== -1), 'the toggle mirrors the resolved state (Reduced, following the OS)');
@@ -548,6 +549,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             refreshNextFlightUi();
         });
         await page.waitForFunction(() => !!document.getElementById('ca-menunudge-card') && !!document.getElementById('ca-nextflight-card'), { timeout: 8000 });
+        ok(await page.evaluate(() => document.getElementById('ca-menunudge-card').className.indexOf('mt-4') !== -1 && document.getElementById('ca-menunudge-card').className.indexOf('mt-2') === -1), 'the nudge rides its own message row, not the flight card cluster (hotfix 2)');
         ok(await page.evaluate(() => {
             const hero = document.querySelector('#ca-nextflight-card .ca-hero-card');
             const nudge = document.querySelector('#ca-menunudge-card .ca-nudge-card');

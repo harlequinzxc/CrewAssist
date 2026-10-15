@@ -2519,7 +2519,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2541,6 +2541,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.1', d: '2026-10-15', items: [
+                { c: 'fix', t: 'Reduced motion skips the typing bubble entirely.' },
+                { c: 'fix', t: 'The menu nudge arrives as its own chat message.' },
+            ] },
             { v: '1.45.0', d: '2026-10-15', items: [
                 { c: 'new', t: 'Reduce Motion lands: OS-following by default, with a Settings toggle.' },
             ] },
@@ -4310,9 +4314,13 @@
                 const firstName = appProfile.name.split(' ')[0];
                 addBotMessage(greeting + ', ' + appProfile.rank + ' ' + firstName + '!');
                 addBotMessage('How can I help you today?');
-                // v1.28.0: next-flight card + offline pre-save nudge ride the
-                // same bot queue, so they land after the greeting bubbles.
-                enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); renderMenuNudge(); });
+                // v1.28.0: the feed cards ride the same bot queue, so they
+                // land after the greeting bubbles. 2026-10-15 (owner hotfix
+                // 2): the menu nudge gets its OWN turn after the flight card
+                // — it arrives as a single chat message, never bundled with
+                // the next-flight card.
+                enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); });
+                enqueueBot(() => { renderMenuNudge(); });
             };
             if (!kids.length) {
                 greet();
@@ -4348,6 +4356,12 @@
         }
 
         function showTypingIndicator() {
+            // 2026-10-15 (owner hotfix 1, reduced motion): the dots ARE
+            // motion — under ca-reduced the typing bubble never appears.
+            // The chat cadence (the gaps between bubbles) is untouched, so
+            // replies still land at their own pace; hideTypingIndicator()
+            // already tolerates the bubble's absence.
+            if (document.documentElement.classList.contains('ca-reduced')) return;
             const chatContainer = document.getElementById('chat-container');
             const div = document.createElement('div');
             div.id = 'typing-indicator';
@@ -7078,6 +7092,13 @@
             }
             const saveBtn = el.querySelector('#ca-nf-save');
             if (saveBtn) saveBtn.addEventListener('click', async () => {
+                // hotfix 2 follow-up (2026-10-15): the nudge now arrives in
+                // its own turn, so the card — and this button — can appear
+                // while the queue is still busy. The old drop-on-busy would
+                // eat a fast Save tap in that window; the tap now waits
+                // (bounded) and always lands.
+                const busyT0 = Date.now();
+                while (isChatBusy() && Date.now() - busyT0 < 3000) await new Promise((r) => setTimeout(r, 60));
                 if (isChatBusy()) return;
                 setChatBusy(true);
                 saveBtn.disabled = true;
@@ -7186,7 +7207,7 @@
             if (!flights.length) return;
             const el = document.createElement('div');
             el.id = 'ca-menunudge-card';
-            el.className = 'flex items-start gap-3 mt-2 w-full' + (hadOld ? '' : ' chat-anim-in');
+            el.className = 'flex items-start gap-3 mt-4 w-full' + (hadOld ? '' : ' chat-anim-in'); // hotfix 2: its own message row
             // round 32: the card carries its flight set (and, when single,
             // its save state) — a later refresh prunes landed lines against
             // this stamp instead of rebuilding under the crew's thumbs
