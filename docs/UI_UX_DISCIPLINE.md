@@ -479,7 +479,7 @@ new patterns are established.
 
 | Job / meaning                | Lucide name          |
 |------------------------------|----------------------|
-| Assistant / bot avatar       | `bot`                |
+| Calculator modes (default · manual · advanced) | `sparkles`, `pen-line`, `sliders-horizontal` |
 | Help / tips / onboarding     | `lightbulb`          |
 | Alarm / reminder / wake time | `alarm-clock`        |
 | Add / set / create           | `plus`               |
@@ -495,7 +495,7 @@ new patterns are established.
 | Tag / label / overlay        | `tag`                |
 | Camera / screenshot / share  | `camera`             |
 | Attachment / paperclip       | `paperclip`          |
-| Send / submit                | `send-horizontal`    |
+| Send / submit                | `send`               |
 | Navigation / collapse chevrons | `chevron-left`, `chevron-right`, `chevron-up`, `chevron-down` |
 | Dismiss / close              | `x`                  |
 | Trailing CTA arrow           | `arrow-right`        |
@@ -514,7 +514,7 @@ new patterns are established.
 | Home                         | `home`               |
 | Bell / notifications         | `bell`               |
 | Star / favorite              | `star`               |
-| Edit / pencil                | `pencil-line`, `square-pen` |
+| Edit / pencil                | `pen-line`, `pencil-line`, `square-pen` |
 | Delete / trash               | `trash-2`            |
 | Refresh / reload             | `refresh-cw`         |
 | Share                        | `share-2`            |
@@ -522,3 +522,26 @@ new patterns are established.
 | Wifi / connection            | `wifi`, `wifi-off`   |
 | Battery                      | `battery-full` etc.  |
 | Signal                       | `signal`             |
+| Print / print sheet           | `printer`            |
+| Saved menus / reading         | `book-open`          |
+| History / recent              | `history`            |
+| Trend up / down               | `trending-up`, `trending-down` |
+| Theme toggle                  | `moon`, `sun`        |
+| Reset / retry                 | `rotate-cw`, `rotate-ccw` |
+| Save to archive               | `save`               |
+| Export / import               | `upload`, `file-down` |
+| No results                    | `search-x`           |
+| Play / start tour             | `play`               |
+| Developer tools               | `terminal`, `bug`, `wrench` |
+| Sort / reorder                | `arrow-up-wide-narrow`, `arrow-down-wide-narrow`, `arrow-up`, `arrow-down` |
+| Advanced filters              | `sliders-horizontal` |
+| Celebration (new month)       | `party-popper`       |
+| Duty toggles (Direct US / Paxing / Shuttle) | `flag`, `armchair`, `repeat` |
+| Backup / restore              | `hard-drive-download` |
+| Best month                    | `trophy`             |
+| Projection / goal             | `target`             |
+| Compare vs last year          | `git-compare-arrows` |
+| Menu category pills (drinks / snacks) | `glass-water`, `cookie` |
+| Region / worldwide            | `globe`              |
+| Clear / erase                 | `eraser`             |
+| New-item chip                 | `sparkles`           |
