@@ -263,6 +263,39 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }), 'hotfix: Edit, Replay, View and Telegram render one width (the compiled stylesheet carries w-32)');
         await page.evaluate(() => closeSettings());
 
+        // 7b. v1.45.0 (divergence #1a + the owner's binary toggle): reduced
+        // motion — the OS switch lands the marker, the toggle overrides it,
+        // and a cleared key goes back to following the OS.
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-reduced')), 'normal boot: full motion, no ca-reduced marker');
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        ok(await page.evaluate(() => {
+            const mk = (cls) => { const p = document.createElement('div'); p.className = cls; document.body.appendChild(p); const n = getComputedStyle(p).animationName; p.remove(); return n; };
+            return mk('chat-anim-in') === 'ca-reduce-fade' && mk('animate-pulse') === 'none';
+        }), 'OS reduce: entries collapse to ca-reduce-fade, loops stop');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('settings-sheet')).transitionDuration === '0s'), 'OS reduce: sheets snap open (transition-transform gated)');
+        await page.evaluate(() => openSettings());
+        await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
+        ok(await page.evaluate(() => document.getElementById('motion-pill-reduced').getAttribute('aria-checked') === 'true' && document.getElementById('motion-pill-full').getAttribute('aria-checked') === 'false' && document.getElementById('motion-desc').textContent.indexOf('following') !== -1), 'the toggle mirrors the resolved state (Reduced, following the OS)');
+        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
+        await sleep(400);
+        await (await page.$('#motion-pill-full')).tap();
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.motion') === 'full' && document.getElementById('motion-desc').textContent.indexOf('overrides') !== -1), 'tapping Full stores the override and clears the marker live');
+        await page.evaluate(() => closeSettings());
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.motion'); });
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await page.waitForSelector('#chat-container', { timeout: 20000 });
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-reduced')), 'cleared key: back to following the OS (no preference = full motion)');
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        ok(true, 'with no stored key the OS switch still lands the marker');
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
+        await sleep(400);
+
         // 8. v1.43.0: the destination overlay + the roster capture.
         await page.evaluate(() => {
             localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': [

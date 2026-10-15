@@ -361,6 +361,17 @@ Reuse existing durations and easings; do not invent new ones per component.
 - No animation on a non-interactive element unless it serves a purpose (ambient starfield, pulse ring on an active toggle).
 - Respect the user's reduced-motion preference: collapse entry motion to simple opacity fades; remove spring, pulse, parallax, and twinkle effects when reduced motion is requested.
 
+### Reduced motion (v1.45.0)
+
+The app honours `prefers-reduced-motion: reduce` **and** adds a binary Settings toggle — **Motion: Reduced · Full** (owner ruling 2026-10-15). One marker, `html.ca-reduced`, drives every reduction:
+
+- `crewAssist.motion` = `'reduced'` forces the marker on, `'full'` forces it off, and a missing key follows the OS — the toggle never guts the OS-following default. Before any tap, the toggle simply mirrors the resolved state and says so.
+- Entry animations collapse to one shared 150ms opacity fade (`ca-reduce-fade`); spring, pop, and slide keyframes do not run.
+- Loops stop: pulses, floats, jumps, bounces, the tour glow, the badge soft-pulse, sky twinkle, and shooting stars. The sky paints one still frame and repaints it on resize; when motion returns, the loop restarts.
+- Spinners stay — `ca-spin` and `animate-spin` encode progress, not decoration.
+- Position transitions snap: chevrons, the switch knob, calendar nav, date cells, the fetch face, and every Tailwind `transition-transform` surface (sheets open instantly instead of gliding). Colour transitions are not motion and may stay.
+- All rules are class-gated (`html.ca-reduced …`) in one copy in the `<style>` block — never a second `@media (prefers-reduced-motion)` variant; Tailwind overrides ride the `html .` specificity prefix as usual. The OS media query is read once in `applyMotionClass()`, which also listens for its `change` event.
+
 ---
 
 ## Copy & Language
@@ -480,6 +491,7 @@ new patterns are established.
 | Job / meaning                | Lucide name          |
 |------------------------------|----------------------|
 | Calculator modes (default · manual · advanced) | `sparkles`, `pen-line`, `sliders-horizontal` |
+| Motion preference (Reduced · Full) | `circle-pause`, `orbit` |
 | Help / tips / onboarding     | `lightbulb`          |
 | Alarm / reminder / wake time | `alarm-clock`        |
 | Add / set / create           | `plus`               |

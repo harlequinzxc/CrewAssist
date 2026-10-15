@@ -200,6 +200,16 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('id="ca-rc-month" class="font-bold text-lg text-left leading-none"'), 'calendar month header at COMPACT 18px');
     R.ok(src.includes('dark:text-sia-gold mb-4 flex items-center'), 'Inflight Menu card header inherits BODY 14px from its bubble - no off-rung 16px');
     R.ok(!src.includes('rounded-[100%]'), 'no arbitrary radii - the timeline rail rides rounded-full');
+    // v1.45.0 (divergence #1a + the owner's binary toggle): reduced motion
+    R.ok(src.includes('@keyframes ca-reduce-fade { from { opacity: 0; } to { opacity: 1; } }'), 'one shared 150ms fade for every reduced entry');
+    R.ok(src.includes('html.ca-reduced .chat-anim-in') && src.includes('html.ca-reduced .ca-cl-badge-new') && src.includes('html.ca-reduced .animate-pulse'), 'entries fade and loops stop behind the ca-reduced gate');
+    R.ok(src.includes('html.ca-reduced .transition-transform'), 'position transitions snap - sheets included');
+    R.ok(!/@media \(prefers-reduced-motion/.test(src), 'no media-query-only motion rules remain - the class gate owns every reduction');
+    R.ok(src.includes("localStorage.getItem('crewAssist.motion')") && src.includes("localStorage.setItem('crewAssist.motion', pref)"), 'crewAssist.motion is the toggle storage, read and written');
+    R.ok(src.includes("if (pref === 'reduced') return true;") && src.includes("if (pref === 'full') return false;") && src.includes("matchMedia('(prefers-reduced-motion: reduce)')"), 'an absent key follows the OS - the toggle never guts the default');
+    R.ok(src.includes('id="motion-pill-reduced"') && src.includes('id="motion-pill-full"') && src.includes('id="motion-segmented"'), 'the binary Reduced/Full toggle lives in Settings');
+    R.ok(src.includes("'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates'"), 'the motion key rides the backup set');
+    R.ok(src.includes('function syncSkyMotion()') && src.includes('skyAnimating = false;'), 'the sky rests on a still frame and restarts when motion returns');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
@@ -1148,6 +1158,24 @@ const mkUntil = (d) => async (cond, ms) => {
     R.eq((src22.match(/'text-black', 'bg-gradient-to-r', 'from-sia-goldlt', 'to-sia-gold', 'shadow-\[0_0_15px_rgba\(201,162,39,0\.3\)\]', 'border-transparent'/g) || []).length, 2, 'F-06: the gold-pill class list exists exactly twice (caGoldPillOn add + caGoldPillOff remove) — was six inlined sites across gender, rank and reset');
     R.eq((src22.match(/'opacity-0', 'scale-75', 'pointer-events-none'/g) || []).length, 2, 'F-06: the float-pill class list exists exactly twice (inside caPillPaint) — was two inlined sites');
     R.ok((src22.match(/target="_blank"/g) || []).length === (src22.match(/target="_blank" rel="noopener noreferrer"/g) || []).length, 'round 24: every _blank link carries rel="noopener noreferrer" (the Telegram link, and any future ones)');
+  }
+
+  // v1.45.0 (divergence #1a + the owner's binary toggle): the motion
+  // guard, functionally — storage wins, absent follows the OS.
+  {
+      const m1 = await boot(APP, { seed: (x) => { x.localStorage.setItem('crewAssist.motion', 'reduced'); } });
+      R.ok(m1.d.documentElement.classList.contains('ca-reduced'), "crewAssist.motion='reduced' marks html.ca-reduced at boot");
+      R.eq(m1.w.eval('caMotionReduced()'), true, 'the guard resolves reduced from storage');
+      const m2 = await boot(APP, { seed: (x) => { x.localStorage.setItem('crewAssist.motion', 'full'); } });
+      R.ok(!m2.d.documentElement.classList.contains('ca-reduced'), "'full' forces motion on, overriding any OS request");
+      const m3 = await boot(APP, {});
+      R.ok(!m3.d.documentElement.classList.contains('ca-reduced'), 'an absent key follows the OS (jsdom reports no preference)');
+      m3.w.eval("setMotionPref('reduced')");
+      R.ok(m3.d.documentElement.classList.contains('ca-reduced'), 'tapping Reduced marks the marker immediately');
+      R.eq(m3.w.eval("localStorage.getItem('crewAssist.motion')"), 'reduced', 'the tap persists crewAssist.motion');
+      m3.w.eval("setMotionPref('full')");
+      R.ok(!m3.d.documentElement.classList.contains('ca-reduced'), 'tapping Full clears the marker again');
+      R.eq(m3.w.eval("localStorage.getItem('crewAssist.motion')"), 'full', 'and persists the Full choice');
   }
 
   process.exit(R.done() ? 1 : 0);

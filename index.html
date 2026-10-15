@@ -1363,7 +1363,41 @@
         .ca-cl-sumpill svg { width: 11px; height: 11px; }
         .ca-cl-group { animation: caClGroupIn .35s ease both; }
         @keyframes caClGroupIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-        @media (prefers-reduced-motion: reduce) { .ca-cl-group { animation: none; } }
+        /* ===== Reduced motion (divergence #1a + the binary Motion toggle,
+           2026-10-15): html.ca-reduced marks every reduction. It is set by
+           the OS media query (prefers-reduced-motion: reduce) and by the
+           Settings toggle — crewAssist.motion = 'reduced' forces it on,
+           'full' forces it off, a missing key follows the OS, so the toggle
+           never guts the OS-following default. Entries collapse to one
+           shared 150ms fade (ca-reduce-fade); loops stop; spinners stay
+           (they encode progress); position transitions snap; the sky paints
+           one still frame. This gate replaces the old media-query-only rule
+           for .ca-cl-group so a Full override can win over an OS request. */
+        @keyframes ca-reduce-fade { from { opacity: 0; } to { opacity: 1; } }
+        html.ca-reduced .chat-anim-in, html.ca-reduced .menu-anim-in,
+        html.ca-reduced .ca-rc-btnin, html.ca-reduced .ca-rc-btnout,
+        html.ca-reduced #ca-rc-grid.rc-tags-pop .ca-rc-tag,
+        html.ca-reduced #ca-rc-grid.rc-tags-pop .ca-rc-badge,
+        html.ca-reduced #ca-rc-grid.rc-tags-out .ca-rc-tag,
+        html.ca-reduced #ca-rc-grid.rc-tags-out .ca-rc-badge,
+        html.ca-reduced .ca-cl-group, html.ca-reduced .dev-reset-pill {
+            animation: ca-reduce-fade 150ms ease-out both;
+        }
+        html.ca-reduced .ca-rc-flash, html.ca-reduced .ca-cl-badge-new,
+        html.ca-reduced .ca-tour-glow, html.ca-reduced .animate-float,
+        html.ca-reduced .animate-jump, html.ca-reduced .animate-pulse,
+        html.ca-reduced .animate-bounce {
+            animation: none;
+        }
+        html.ca-reduced .ca-arch-chev, html.ca-reduced .ca-trip-chev,
+        html.ca-reduced .ca-switch::after,
+        html.ca-reduced .ca-arch-chev2, html.ca-reduced .ca-fold-icon,
+        html.ca-reduced .menu-desc-chevron, html.ca-reduced .dev-rate-chev,
+        html.ca-reduced .print-edit-chev, html.ca-reduced .ca-rc-nav,
+        html.ca-reduced .cadate-day, html.ca-reduced .fetch-face,
+        html.ca-reduced .transition-transform {
+            transition: none;
+        }
         .ca-cl-vhead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 10px 0 8px; background: var(--ca-cl-vhead-bg); border-bottom: 1px solid var(--ca-gold-line); }
         html:not(.dark) .ca-cl-vhead { background: var(--ca-cl-vhead-bg); }
         .ca-cl-vdate { margin-left: auto; font-size: 11px; color: var(--ca-ink-stone); }
@@ -1715,6 +1749,22 @@
                             <span id="calcui-desc-badge" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full ca-micro font-bold whitespace-nowrap ca-badge-green"><i data-lucide="star" class="w-3 h-3 fill-current"></i>Recommended</span>
                         </div>
                         <p id="calcui-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-1.5 leading-relaxed">Just enter your flight number and date — sector time, stations, and arrival/departure times fill in automatically.</p>
+                    </div>
+                </div>
+
+                <!-- Motion Section (divergence #1a + the binary toggle, 2026-10-15) -->
+                <div>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Motion</p>
+                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
+                        <div id="motion-segmented" class="flex w-full flex-nowrap items-stretch rounded-xl ca-inset p-0.5 border border-black/10 dark:border-white/10" role="radiogroup" aria-label="Motion preference">
+                            <button type="button" id="motion-pill-reduced" data-motion="reduced" role="radio" aria-checked="false" class="motion-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200">
+                                <i data-lucide="circle-pause" class="w-3.5 h-3.5"></i> Reduced
+                            </button>
+                            <button type="button" id="motion-pill-full" data-motion="full" role="radio" aria-checked="true" class="motion-pill flex-1 min-w-0 py-2 px-2 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1 text-sia-navy dark:text-gray-200">
+                                <i data-lucide="orbit" class="w-3.5 h-3.5"></i> Full
+                            </button>
+                        </div>
+                        <p id="motion-desc" class="text-sm text-gray-600 dark:text-gray-300 mt-3.5 leading-relaxed">Full, following your device’s Reduce Motion switch.</p>
                     </div>
                 </div>
 
@@ -2265,6 +2315,8 @@
         let stars = [];
         let shootingStars = [];
         let time = 0;
+        let skyAnimating = false;
+        let skyReady = false;
 
         function resize() {
             width = window.innerWidth;
@@ -2274,9 +2326,39 @@
             canvas.height = height * dpr;
             ctx.scale(dpr, dpr);
             initStars();
+            // reduced motion: no live loop — repaint the one still frame
+            if (document.documentElement.classList.contains('ca-reduced')) requestAnimationFrame(animate);
         }
 
         window.addEventListener('resize', resize);
+
+        // ===== Motion preference (divergence #1a + the owner's binary
+        // toggle, 2026-10-15): html.ca-reduced marks every reduction.
+        // crewAssist.motion = 'reduced' forces it on, 'full' forces it off,
+        // and a missing key follows the OS (prefers-reduced-motion) — the
+        // toggle never guts the OS-following default.
+        function caMotionPref() {
+            try { return localStorage.getItem('crewAssist.motion') || ''; } catch (e) { return ''; }
+        }
+        function caMotionReduced() {
+            const pref = caMotionPref();
+            if (pref === 'reduced') return true;
+            if (pref === 'full') return false;
+            return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+        }
+        function applyMotionClass() {
+            document.documentElement.classList.toggle('ca-reduced', caMotionReduced());
+            syncSkyMotion();
+        }
+        applyMotionClass();
+        try {
+            const caMotionMQ = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+            if (caMotionMQ) {
+                const onCaMotionMQ = () => applyMotionClass();
+                if (caMotionMQ.addEventListener) caMotionMQ.addEventListener('change', onCaMotionMQ);
+                else if (caMotionMQ.addListener) caMotionMQ.addListener(onCaMotionMQ);
+            }
+        } catch (e) {}
 
         function initStars() {
             stars = [];
@@ -2340,6 +2422,25 @@
         }
 
         function animate() {
+            // reduced motion (divergence #1a): one still frame — the stars
+            // stay put, no twinkle, no shooting stars, no aurora — then the
+            // loop rests until motion returns (syncSkyMotion restarts it)
+            if (document.documentElement.classList.contains('ca-reduced')) {
+                skyAnimating = false;
+                ctx.clearRect(0, 0, width, height);
+                if (document.documentElement.classList.contains('dark')) {
+                    stars.forEach((star) => {
+                        ctx.globalAlpha = 0.8;
+                        ctx.fillStyle = star.color;
+                        ctx.beginPath();
+                        ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                    ctx.globalAlpha = 1;
+                }
+                return;
+            }
+            skyAnimating = true;
             ctx.clearRect(0, 0, width, height);
 
             const isDark = document.documentElement.classList.contains('dark');
@@ -2408,6 +2509,14 @@
             }
 
             requestAnimationFrame(animate);
+        }
+
+        // Motion returned (the OS switch or the Settings toggle): restart
+        // the sky loop if it had rested on a still frame.
+        function syncSkyMotion() {
+            if (skyReady && !document.documentElement.classList.contains('ca-reduced') && !skyAnimating) {
+                requestAnimationFrame(animate);
+            }
         }
 
         var APP_VERSION = '1.44.10'; // var: tests and the console can read the running version
@@ -3104,6 +3213,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            applyMotionClass(); // re-resolve once storage has settled (late seeds, embeds)
+            skyReady = true;
             resize();
             animate();
 
@@ -3598,6 +3709,10 @@
 
             document.querySelectorAll('#calcui-segmented .calcui-pill').forEach((pill) => {
                 pill.addEventListener('click', () => setCalcUiMode(pill.getAttribute('data-calcui')));
+            });
+
+            document.querySelectorAll('#motion-segmented .motion-pill').forEach((pill) => {
+                pill.addEventListener('click', () => setMotionPref(pill.getAttribute('data-motion')));
             });
 
             document.getElementById('btn-edit-profile').addEventListener('click', () => {
@@ -8166,10 +8281,40 @@
             renderStoragePanel(); // v1.38.0 (B9): fresh counts on every open
         }
 
+        // The binary Motion toggle (owner ruling 2026-10-15): Reduced · Full.
+        // A tap stores crewAssist.motion and re-marks html.ca-reduced; before
+        // any tap the highlight mirrors the resolved (OS-following) state.
+        function setMotionPref(pref) {
+            if (pref !== 'reduced' && pref !== 'full') return;
+            try { localStorage.setItem('crewAssist.motion', pref); } catch (e) {}
+            applyMotionClass();
+            renderMotionRow();
+        }
+        function renderMotionRow() {
+            const reduced = document.documentElement.classList.contains('ca-reduced');
+            document.querySelectorAll('#motion-segmented .motion-pill').forEach((pill) => {
+                const on = (pill.getAttribute('data-motion') === 'reduced') === reduced;
+                pill.classList.toggle('bg-sia-gold', on);
+                pill.classList.toggle('text-black', on);
+                pill.classList.toggle('text-sia-navy', !on);
+                pill.classList.toggle('dark:text-gray-200', !on);
+                pill.setAttribute('aria-checked', on ? 'true' : 'false');
+            });
+            const d = document.getElementById('motion-desc');
+            if (!d) return;
+            const stored = caMotionPref();
+            if (stored === 'reduced') d.textContent = 'Reduced — your choice overrides the device switch.';
+            else if (stored === 'full') d.textContent = 'Full — your choice overrides the device switch.';
+            else d.textContent = reduced
+                ? 'Reduced, following your device’s Reduce Motion switch. Tap Full to override.'
+                : 'Full, following your device’s Reduce Motion switch. Tap Reduced to override.';
+        }
+
         function openSettings() {
             const backdrop = document.getElementById('settings-backdrop');
             const sheet = document.getElementById('settings-sheet');
             resetSettingsSheet();
+            renderMotionRow();
             caSheetFocusIn(sheet); // v1.32.0 (M3): focus enters with the sheet
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
@@ -13537,7 +13682,7 @@
         // Everything worth keeping on this device, as one file. Menu caches and
         // one-time flags are deliberately absent — caches re-fetch, flags are
         // this device's own business.
-        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards'];
+        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards'];
         function buildFullBackup() {
             const data = {};
             BACKUP_KEYS.forEach((k) => {

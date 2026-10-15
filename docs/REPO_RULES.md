@@ -129,6 +129,7 @@ The frontend has **no bundler and no build step**; behaviour tests live in `test
 | `crewAssist.hideWhatsNew` | `APP_VERSION` if the user ticked “Do not show again” for that stamp. |
 | `crewAssist.wnSeen` | Version stamp last marked seen via the What’s New checkbox; the WN delta = every `APP_CHANGELOG` entry newer than it (v1.35.0). |
 | `crewAssist.calcUi` | Calculator interface mode: `default` (absent/unknown) \| `manual` \| `advanced` (developer mode only). |
+| `crewAssist.motion` | Motion preference (v1.45.0): `reduced` \| `full`; absent → follow the OS Reduce Motion switch (`prefers-reduced-motion`). |
 | `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
 | `crewAssist.tourOffered` | `'1'` once the first-run tour offer has been shown (never re-offered). |
 | `crewAssist.ratesCheckedAt` | Timestamp of the last successful network rates check (shown in the status popover; v1.26.0). |
