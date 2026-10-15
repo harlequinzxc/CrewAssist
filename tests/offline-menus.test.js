@@ -211,11 +211,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.44.9';"), 'APP_VERSION stamped 1.44.9');
+    R.ok(src.includes("var APP_VERSION = '1.44.10';"), 'APP_VERSION stamped 1.44.10');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v229"), 'service-worker cache name bumped to v229 (the v1.44.9 veil-token release)');
+    R.ok(sw.includes("crewassist-v230"), 'service-worker cache name bumped to v230 (the v1.44.10 scale-and-ink release)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs
@@ -231,7 +231,7 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.includes('function renderStoragePanel'), 'settings renders an honest storage panel (B9)');
     R.ok(src.includes('id="ob-name" maxlength="23"'), 'profile name input caps at 23 characters including spaces');
     // v1.37.0 review: contrast, tap targets, and the install hint
-    R.ok(src.includes('html:not(.dark) .text-sia-gold { color: #7A620F; }'), 'light-mode gold TEXT gets the darker 7A620F token (borders and icons keep their gold)');
+    R.ok(src.includes('html:not(.dark) .text-sia-gold { color: var(--sia-gold-ink); }'), 'light-mode gold TEXT rides the measured #7d650f ink via the var token (borders and icons keep their gold)');
     R.ok(src.includes('html.dark #onboarding-view .ui-input { color: rgba(255, 255, 255, 0.75); }'), 'dark-mode onboarding pills brighten to white/75');
     R.ok(src.includes('w-11 h-11 flex items-center justify-center rounded-full transition-colors'), 'the connection dot reaches the 44px tap standard');
     R.ok(src.includes('.print-edit-eye { min-height: 44px;'), 'the print-edit eye reaches the 44px tap standard');
