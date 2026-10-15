@@ -278,6 +278,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => openSettings());
         await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('motion-pill-reduced').getAttribute('aria-checked') === 'true' && document.getElementById('motion-pill-full').getAttribute('aria-checked') === 'false' && document.getElementById('motion-desc').textContent.indexOf('following') !== -1), 'the toggle mirrors the resolved state (Reduced, following the OS)');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('motion-desc')).fontSize === '11px' && getComputedStyle(document.getElementById('calcui-desc')).fontSize === '11px'), 'panel descriptions ride the row species - 11px, like the Feedback row (v1.45.2)');
         await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
         await sleep(400);
         await (await page.$('#motion-pill-full')).tap();

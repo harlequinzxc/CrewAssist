@@ -116,6 +116,7 @@ text — neither is governed by the rungs above.
 - Button labels: BODY for primary CTAs, CAPTION for secondary/outlined CTAs.
 - Stacked metadata under a title steps down one size/weight per line (e.g. line 1 = SUBTITLE, line 2 = CAPTION-dim). Never render two stacked metadata lines at the same weight/size.
 - Input text and placeholder text use BODY size; the placeholder is dimmer, not smaller.
+- Settings descriptions are one species — `ca-micro` in `text-gray-500` — in the simple rows and the panel blocks alike (calculator interface, motion). Panel titles stay 14px bold (v1.45.2, owner order).
 - Money figures use AMOUNT with tabular figures, always. This is the one rung with no discretion attached to it.
 
 ---

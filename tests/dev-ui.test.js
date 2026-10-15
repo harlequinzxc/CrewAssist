@@ -215,6 +215,10 @@ const mkUntil = (d) => async (cond, ms) => {
     // v1.45.1 (owner hotfix 2): the nudge arrives as its own chat message
     R.ok(src.includes('enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); });\n                enqueueBot(() => { renderMenuNudge(); });'), 'the menu nudge rides its own bot turn - never bundled with the flight card');
     R.ok(src.includes("el.className = 'flex items-start gap-3 mt-4 w-full'"), 'the nudge row carries standard message spacing (mt-4)');
+    // v1.45.2 (owner order): settings descriptions ride one species - ca-micro gray-500
+    R.ok(src.includes('id="calcui-desc" class="ca-micro text-gray-500 mt-1.5 leading-relaxed"'), 'the calculator description rides the row species (ca-micro, gray-500)');
+    R.ok(src.includes('id="motion-desc" class="ca-micro text-gray-500 mt-3.5 leading-relaxed"'), 'the motion description rides the row species (ca-micro, gray-500)');
+    R.ok(!src.includes('id="calcui-desc" class="text-sm') && !src.includes('id="motion-desc" class="text-sm'), 'no panel description keeps the old 14px species');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
