@@ -269,6 +269,7 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('.ca-rc-num { font-size: 14px; font-weight: 700;') && src.includes('.ca-rc-gut .n { font-size: 14px; font-weight: 700;'), 'the calendar\u2019s two day-number treatments match end to end (BODY 14/700)');
     R.ok(src.includes('font-size: 0.875rem;') && !src.includes('text-[13px]'), 'inputs sit at BODY \u2014 the date picker and the print editor dropped their 13px one-offs');
     R.ok(src.includes('--sia-gold-ink: #7d650f') && src.includes('html:not(.dark) .text-sia-gold'), 'light-mode gold text uses the measured ink');
+    R.ok(src.includes('html:not(.dark) .text-sia-gold { color: var(--sia-gold-ink); }'), 'light gold text rides the token - no raw #7A620F bypass (divergence #3b, 2026-10-15)');
     R.ok(src.includes('min-w-[88px]') && src.includes("actionText = { save: 'Save', check: 'Saved'"), 'the save action is a labelled pill');
     R.ok(src.includes('.ca-hit::after'), 'invisible hit-area growth exists');
     R.ok(src.includes('px-4 py-3.5 min-h-[48px] text-xs font-bold whitespace-nowrap'), 'quick-action chips reach the 48px standard');

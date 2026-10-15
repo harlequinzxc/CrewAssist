@@ -326,7 +326,7 @@
            and borders keep their richer gold. Dark mode is untouched. Round 22
            removed a later same-specificity v1.31.0 rule that had silently
            overridden this one since it shipped. */
-        html:not(.dark) .text-sia-gold { color: #7A620F; }
+        html:not(.dark) .text-sia-gold { color: var(--sia-gold-ink); }
 
         body {
             background-color: var(--bg-color);
