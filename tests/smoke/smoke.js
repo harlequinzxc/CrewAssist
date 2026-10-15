@@ -79,16 +79,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(true, 'the app boots to the chat view');
         ok(await page.evaluate(() => { const el = document.getElementById('ca-shell-fail'); return !el || getComputedStyle(el).display === 'none'; }), 'the shell guard passes (tw.css loaded, no repair screen)');
         ok(await page.evaluate(() => { const el = document.querySelector('.ca-micro'); return el && parseFloat(getComputedStyle(el).fontSize) <= 11.5; }), 'the compiled stylesheet applies (ca-micro renders at 11px)');
-        ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(122, 98, 15)', 'light-mode gold text computes to the 7A620F token (round 22 F-02: the dead v1.31.0 override was removed)');
+        ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.44.9', 'APP_VERSION is 1.44.9');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.44.9' && e.d === '2026-10-15' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.44.9 veil-token entry');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v229'), 'the service-worker cache name is bumped to v229 (the v1.44.9 veil-token release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.0', 'APP_VERSION is 1.45.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.0' && e.d === '2026-10-15' && e.items.length === 1 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.0 motion entry');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v231'), 'the service-worker cache name is bumped to v231 (the v1.45.0 motion release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.44.9'; }), 'the What\'s New sheet carries the v1.44.9 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.0'; }), 'the What\'s New sheet carries the v1.45.0 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fourth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
@@ -262,6 +262,39 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return ['btn-edit-profile', 'btn-replay-tour', 'btn-changelog'].every((id) => Math.abs(wd(document.getElementById(id)) - tg) < 1.5);
         }), 'hotfix: Edit, Replay, View and Telegram render one width (the compiled stylesheet carries w-32)');
         await page.evaluate(() => closeSettings());
+
+        // 7b. v1.45.0 (divergence #1a + the owner's binary toggle): reduced
+        // motion — the OS switch lands the marker, the toggle overrides it,
+        // and a cleared key goes back to following the OS.
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-reduced')), 'normal boot: full motion, no ca-reduced marker');
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        ok(await page.evaluate(() => {
+            const mk = (cls) => { const p = document.createElement('div'); p.className = cls; document.body.appendChild(p); const n = getComputedStyle(p).animationName; p.remove(); return n; };
+            return mk('chat-anim-in') === 'ca-reduce-fade' && mk('animate-pulse') === 'none';
+        }), 'OS reduce: entries collapse to ca-reduce-fade, loops stop');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('settings-sheet')).transitionDuration === '0s'), 'OS reduce: sheets snap open (transition-transform gated)');
+        await page.evaluate(() => openSettings());
+        await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
+        ok(await page.evaluate(() => document.getElementById('motion-pill-reduced').getAttribute('aria-checked') === 'true' && document.getElementById('motion-pill-full').getAttribute('aria-checked') === 'false' && document.getElementById('motion-desc').textContent.indexOf('following') !== -1), 'the toggle mirrors the resolved state (Reduced, following the OS)');
+        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
+        await sleep(400);
+        await (await page.$('#motion-pill-full')).tap();
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.motion') === 'full' && document.getElementById('motion-desc').textContent.indexOf('overrides') !== -1), 'tapping Full stores the override and clears the marker live');
+        await page.evaluate(() => closeSettings());
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.motion'); });
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await page.waitForSelector('#chat-container', { timeout: 20000 });
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-reduced')), 'cleared key: back to following the OS (no preference = full motion)');
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        ok(true, 'with no stored key the OS switch still lands the marker');
+        await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
+        await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
+        await sleep(400);
 
         // 8. v1.43.0: the destination overlay + the roster capture.
         await page.evaluate(() => {

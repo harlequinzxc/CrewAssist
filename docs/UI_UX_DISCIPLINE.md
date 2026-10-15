@@ -35,7 +35,7 @@ anything, ask "how does the app already do this?" and use that pattern.
 
 | Job                          | Established pattern                                                              |
 |------------------------------|----------------------------------------------------------------------------------|
-| Primary call to action       | Filled gold gradient button (single style, radius-lg, elevate-mid, UPPERCASE label)|
+| Primary call to action       | Filled gold gradient button (single style, `rounded-full` pill, elevate-mid, UPPERCASE label)|
 | Secondary action             | Outlined gold button (transparent fill, gold border + text, Title Case)          |
 | Tertiary / ghost action      | Text or icon button, minimal styling, gold on press                              |
 | Dismiss / close              | Quiet X icon (`x` Lucide), text-tertiary at rest, gold on press, corner placement |
@@ -251,11 +251,11 @@ of the same role rather than hand-tuning.
 
 Every surface uses exactly one of these. No in-between values.
 
-- **radius-sm** — badges, pills, small chips.
-- **radius-md** — inputs, icon buttons, small inline buttons.
-- **radius-lg** — cards, bubbles, primary buttons.
-- **radius-pill** — fully rounded ends for CTAs, chips, segmented pieces.
-- **radius-full** — perfect circles (icon buttons, avatars, circular toggles).
+- **radius-sm** — badges, pills, small chips → `rounded-md`.
+- **radius-md** — segmented pieces and small inline buttons → `rounded-lg`; text inputs → `rounded-xl`.
+- **radius-lg** — cards and glass panels → `rounded-2xl`; the largest hero bubbles → `rounded-3xl`. Primary CTAs are pills, not radius-lg — see radius-pill.
+- **radius-pill** — fully rounded ends for CTAs and chips → `rounded-full`.
+- **radius-full** — perfect circles (icon buttons, avatars, circular toggles) → also `rounded-full`; pill and circle share the utility — the shape comes from the element's proportions.
 
 ### Elevation / shadow tiers
 
@@ -360,6 +360,17 @@ Reuse existing durations and easings; do not invent new ones per component.
 - Stagger delays use consistent small equal increments when several items appear together. Do not randomize per feature.
 - No animation on a non-interactive element unless it serves a purpose (ambient starfield, pulse ring on an active toggle).
 - Respect the user's reduced-motion preference: collapse entry motion to simple opacity fades; remove spring, pulse, parallax, and twinkle effects when reduced motion is requested.
+
+### Reduced motion (v1.45.0)
+
+The app honours `prefers-reduced-motion: reduce` **and** adds a binary Settings toggle — **Motion: Reduced · Full** (owner ruling 2026-10-15). One marker, `html.ca-reduced`, drives every reduction:
+
+- `crewAssist.motion` = `'reduced'` forces the marker on, `'full'` forces it off, and a missing key follows the OS — the toggle never guts the OS-following default. Before any tap, the toggle simply mirrors the resolved state and says so.
+- Entry animations collapse to one shared 150ms opacity fade (`ca-reduce-fade`); spring, pop, and slide keyframes do not run.
+- Loops stop: pulses, floats, jumps, bounces, the tour glow, the badge soft-pulse, sky twinkle, and shooting stars. The sky paints one still frame and repaints it on resize; when motion returns, the loop restarts.
+- Spinners stay — `ca-spin` and `animate-spin` encode progress, not decoration.
+- Position transitions snap: chevrons, the switch knob, calendar nav, date cells, the fetch face, and every Tailwind `transition-transform` surface (sheets open instantly instead of gliding). Colour transitions are not motion and may stay.
+- All rules are class-gated (`html.ca-reduced …`) in one copy in the `<style>` block — never a second `@media (prefers-reduced-motion)` variant; Tailwind overrides ride the `html .` specificity prefix as usual. The OS media query is read once in `applyMotionClass()`, which also listens for its `change` event.
 
 ---
 
@@ -479,7 +490,8 @@ new patterns are established.
 
 | Job / meaning                | Lucide name          |
 |------------------------------|----------------------|
-| Assistant / bot avatar       | `bot`                |
+| Calculator modes (default · manual · advanced) | `sparkles`, `pen-line`, `sliders-horizontal` |
+| Motion preference (Reduced · Full) | `circle-pause`, `orbit` |
 | Help / tips / onboarding     | `lightbulb`          |
 | Alarm / reminder / wake time | `alarm-clock`        |
 | Add / set / create           | `plus`               |
@@ -495,7 +507,7 @@ new patterns are established.
 | Tag / label / overlay        | `tag`                |
 | Camera / screenshot / share  | `camera`             |
 | Attachment / paperclip       | `paperclip`          |
-| Send / submit                | `send-horizontal`    |
+| Send / submit                | `send`               |
 | Navigation / collapse chevrons | `chevron-left`, `chevron-right`, `chevron-up`, `chevron-down` |
 | Dismiss / close              | `x`                  |
 | Trailing CTA arrow           | `arrow-right`        |
@@ -514,7 +526,7 @@ new patterns are established.
 | Home                         | `home`               |
 | Bell / notifications         | `bell`               |
 | Star / favorite              | `star`               |
-| Edit / pencil                | `pencil-line`, `square-pen` |
+| Edit / pencil                | `pen-line`, `pencil-line`, `square-pen` |
 | Delete / trash               | `trash-2`            |
 | Refresh / reload             | `refresh-cw`         |
 | Share                        | `share-2`            |
@@ -522,3 +534,26 @@ new patterns are established.
 | Wifi / connection            | `wifi`, `wifi-off`   |
 | Battery                      | `battery-full` etc.  |
 | Signal                       | `signal`             |
+| Print / print sheet           | `printer`            |
+| Saved menus / reading         | `book-open`          |
+| History / recent              | `history`            |
+| Trend up / down               | `trending-up`, `trending-down` |
+| Theme toggle                  | `moon`, `sun`        |
+| Reset / retry                 | `rotate-cw`, `rotate-ccw` |
+| Save to archive               | `save`               |
+| Export / import               | `upload`, `file-down` |
+| No results                    | `search-x`           |
+| Play / start tour             | `play`               |
+| Developer tools               | `terminal`, `bug`, `wrench` |
+| Sort / reorder                | `arrow-up-wide-narrow`, `arrow-down-wide-narrow`, `arrow-up`, `arrow-down` |
+| Advanced filters              | `sliders-horizontal` |
+| Celebration (new month)       | `party-popper`       |
+| Duty toggles (Direct US / Paxing / Shuttle) | `flag`, `armchair`, `repeat` |
+| Backup / restore              | `hard-drive-download` |
+| Best month                    | `trophy`             |
+| Projection / goal             | `target`             |
+| Compare vs last year          | `git-compare-arrows` |
+| Menu category pills (drinks / snacks) | `glass-water`, `cookie` |
+| Region / worldwide            | `globe`              |
+| Clear / erase                 | `eraser`             |
+| New-item chip                 | `sparkles`           |
