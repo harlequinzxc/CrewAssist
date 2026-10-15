@@ -28,7 +28,7 @@ Reading guide: `→` is the proposed second line. `⚠ meat:` marks A/B dishes t
 - **Apple Crepes** → `wedge`  *(SCL ×21 flights)*
   "Delicate crepes filled with caramelized apples, layered with cinnamon creme, apple wedge, and finished with toasted pistachios"
 - **Assorted Dim Sum Selection** → `buns`  ⚠ also: `dumpling`, `dumplings`  ⚠ meat: `shrimp`, `chicken`, `pork`  *(FCL ×6 flights)*
-  "An assorted dim sum selection featuring our signature dragonfruit skin crabmeat dumpling - delicately sweet, vibrant, and filled with savoury crabmeat. 
+  "An assorted dim sum selection featuring our signature dragonfruit skin crabmeat dumpling - delicately sweet, vibrant, and filled with savoury crabmeat.
 Accompanied by shrimp siew mai, chicken mushroom, and vegetable dumplings, and served with double pork buns for a satisfying taste of local Chinese delights"
 - **Assorted In-house Made Dim Sum** → `rice`  ⚠ also: `dumpling`, `egg white dumpling`  ⚠ meat: `Prawn`, `seared pork`, `smoked duck`  *(JCL ×16 flights)*
   "Prawn and baby spinach dumpling, pan-seared pork pancake, egg white dumpling with orange skin, glutinous rice delicately infused with savoury seasonings, topped with tender slices of smoked duck, and served with dim sum chilli sauce"
@@ -53,8 +53,8 @@ Accompanied by shrimp siew mai, chicken mushroom, and vegetable dumplings, and s
 - **Barbeque Chicken Thigh in Barbeque Sauce** → `roasted potatoes`  *(YCL ×2 flights)*
   "Served with vegetable medley and roasted potatoes"
 - **Beef Bourguignon** → `gratin`  ⚠ also: `potato`  *(SCL ×2 flights)*
-  "Classic beef slow-cooked in red wine with mushrooms, 
-onions, and herbs, served with potato gratin, 
+  "Classic beef slow-cooked in red wine with mushrooms,
+onions, and herbs, served with potato gratin,
 green beans, and slow-roasted cherry tomatoes"
 - **Beef Cheek in Red Wine Sauce** → `fingerling potatoes`  *(JCL ×9 flights)*
   "With fingerling potatoes, portobello mushrooms, sauteed vegetables, and salsa verde"
@@ -624,7 +624,7 @@ Baked Pork Water Chestnut Pastry"
 - **Spanish Omelette** → `potato hash`  ⚠ meat: `chicken`, `sausage`  *(JCL ×5 flights)*
   "With chicken chipolata sausage, potato hash with vegetables, Gruyère cheese"
 - **Spiced Beef Short Rib** → `sweet potato`  ⚠ also: `noodles`  *(FCL)*
-  "Tender short ribs slow-braised in ginger, garlic and fermented chilli bean paste on a bed of tangy white kimchi and sweet potato noodles with sesame seeds. 
+  "Tender short ribs slow-braised in ginger, garlic and fermented chilli bean paste on a bed of tangy white kimchi and sweet potato noodles with sesame seeds.
 High Protein | Mineral Rich | Calming"
 - **Spinach and Chorizo Frittata** → `roasted potato`  ⚠ also: `wedges`  *(JCL ×2 flights)*
   "Oven-baked until lightly set and golden, layered with sauteed spinach and smoky Chorizo, served with pan-fried pork sausages, tomato and roasted potato wedges"
@@ -1223,7 +1223,7 @@ fruits & nuts, served with black-eyed bean masala and cumin-flavoured basmati ri
 - **Panang Moo** → `steamed rice`  ⚠ meat: `pork`  *(JCL ×6 flights)*
   "Thai-style spicy coconut pork curry, steamed rice, and seasonal vegetables with mushroom"
 - **Paneer Makhani, Hara Moong Dal, Subzi Pulao** → `rice`  *(YCL ×23 flights)*
-  "Indian cottage cheese simmered in tomato butter curry, 
+  "Indian cottage cheese simmered in tomato butter curry,
 served with Spiced green moong dal curry and Mixed vegetable in aromatic basmati rice"
 - **Parmesan and Tomato Omelette** → `potatoes`  ⚠ meat: `pan-fried veal sausage`  *(JCL)*
   "A fluffy omelette enriched with Parmesan and semi-dried tomatoes, served alongside with pan-fried veal sausage, tomato, and Lyonnaise potatoes"
@@ -1296,8 +1296,8 @@ served with Spiced green moong dal curry and Mixed vegetable in aromatic basmati
 - **Sake Teriyaki** → `rice`  ⚠ meat: `Salmon`  *(SCL)*
   "Salmon fillet marinated and grilled with a rich and savoury teriyaki sauce. Accompanied with seasonal vegetables and seaweed flavoured rice"
 - **Salmon Steak** → `steamed potato`  *(SCL)*
-  "Marinated and roasted to perfection served with 
-a creamy white wine sauce, buttered vegetables and 
+  "Marinated and roasted to perfection served with
+a creamy white wine sauce, buttered vegetables and
 steamed potato with chopped parsley"
 - **Salsiccia con Mafaldine** → `pasta`  ⚠ meat: `pork sausage`  *(JCL ×3 flights)*
   "Italian pork sausage ragout served over ribbon shaped pasta, topped with roasted zucchini, eggplant, Kalamata olives, toasted pine nuts and creamy burrata cheese"
@@ -1374,7 +1374,7 @@ steamed potato with chopped parsley"
 - **Selection of Dim Sum** → `rice`  ⚠ also: `dumplings`  ⚠ meat: `chicken`, `shrimps`, `pork`, `prawn`  *(YCL)*
   "Steamed glutinous rice with chicken, dried shrimps and mushrooms, pork dumplings and prawn dumplings"
 - **Selection of Dim Sum** → `Steamed yam cake`  ⚠ also: `dumpling`  ⚠ meat: `lobster`, `chicken`, `prawn`  *(FCL)*
-  "Steamed yam cake, lobster dumpling, chicken siew mai, 
+  "Steamed yam cake, lobster dumpling, chicken siew mai,
 prawn beancurd and har kow"
 - **Seogogi Juk** → `congee`  ⚠ meat: `minced beef`  *(YCL ×2 flights)*
   "Korean minced beef congee with vegetables"
@@ -1420,7 +1420,7 @@ A local favourite served with sambal chilli"
   "Berkshire pork loin, cooked sous vide and pan-seared, topped with a sweet and savoury onion balsamic jam. Served alongside a rich black pepper sauce, seasonal vegetables, and creamy truffle-infused mashed potatoes"
 - **Slow Cooked Lamb Neck with Red Wine Sauce** → `potato`  ⚠ also: `mash`  *(JCL ×2 flights)*
   "Confit of Onion cippolini, grilled green asparagus and roasted parsnip potato mash"
-- **Slow Cooked Lamb with Preserved Lemon 
+- **Slow Cooked Lamb with Preserved Lemon
 and Dried Apricot** → `roasted sweet potatoes`  *(SCL ×3 flights)*
   "Vegetable medley and roasted sweet potatoes"
 - **Slow Roasted Lamb Shoulder with Lamb Jus** → `potatoes`  *(JCL ×2 flights)*
@@ -1687,7 +1687,7 @@ Prawn cocktail, kalamata olives
 Gorgonzola, nuts, roasted fig"
 - **Selection of Open-Faced Sandwiches** → meat: `ham`, `Prawn`, `Anchovies`  *(JCL · no starch found)*
   "Parma ham, mozzarella cheese, green salad
-Prawn cocktail, Kalamata olives 
+Prawn cocktail, Kalamata olives
 Anchovies, smoked provolone, mascarpone, salad"
 - **Signature Barramundi A La Provençale** → meat: `seabass`  *(JCL ×4 flights · no starch found)*
   "Pan-seared Asian seabass fillet on a vibrant Provençale-style stew of tomatoes, zucchini, chickpeas, and Kalamata olives, finished with fresh basil oil and citrus zest"
@@ -1821,9 +1821,9 @@ Served with cucumber pineapple salad and mint chutney"
   "Chicken baked in flavoured spiced rice"
 - **Chicken Biryani, Tale Ande Ka Salan**  *(YCL)*
   "Chicken biryani with fried egg in onion-tomato gravy"
-- **Chicken Kheema with Roti Paratha & 
+- **Chicken Kheema with Roti Paratha &
 Tomato Upma**  *(YCL ×4 flights)*
-  "Chicken Kheema with Roti Paratha & 
+  "Chicken Kheema with Roti Paratha &
 Tomato Upma"
 - **Chicken Kheema With Roti Paratha And Tomato Upma**  *(YCL ×3 flights)*
   "Chicken kheema served with tomato upma and plain paratha, showcasing traditional Indian flavours and cooking techniques with aromatic spices and fresh ingredients."
@@ -1979,7 +1979,7 @@ with mushroom spiced rice, stir-fried baby corn with black pepper, South Indian 
 - **Prawn Meatball with Vermicelli Soup**  *(FCL)*
   "Garnished with leafy greens and mushrooms"
 - **Prawn Mee Rebus**  *(FCL ×5 flights)*
-  "An elevated Southeast Asian nostalgic comfort dish of yellow noodles drenched in an aromatic, thick sweet potato gravy enriched with peanuts and a robust stock made with prawns and dried shrimps, topped with steamed prawns, fried beancurd, bean sprouts, fried shallots, and a half-boiled egg. 
+  "An elevated Southeast Asian nostalgic comfort dish of yellow noodles drenched in an aromatic, thick sweet potato gravy enriched with peanuts and a robust stock made with prawns and dried shrimps, topped with steamed prawns, fried beancurd, bean sprouts, fried shallots, and a half-boiled egg.
 Best enjoyed with a squeeze of fresh lime and the addition of fresh green chilli for extra heat."
 - **Prawn Wanton Noodle**  *(JCL ×2 flights)*
   "Springy egg noodles tossed in a savoury shrimp roe sauce, topped with succulent prawn dumplings and tender leafy greens. Served with a side of tangy pickled green chillies"
@@ -2046,7 +2046,7 @@ Best enjoyed with a squeeze of fresh lime and the addition of fresh green chilli
 - **Singapore Style Roasted Chicken Rice with Oriental Vegetables**  *(JCL ×14 flights)*
   "Served with chilli sauce"
 - **Slow Braised Beef Cheek with Truffle Mash Potatoes and Red wine Jus**  *(FCL/JCL ×31 flights)*
-  "This dish honours the rustic elegance of French bistro cooking, where humble beef cheek transforms through patient braising into silk-tender perfection. 
+  "This dish honours the rustic elegance of French bistro cooking, where humble beef cheek transforms through patient braising into silk-tender perfection.
 Our chefs slow-cook this forgotten cut for hours in robust red wine, creating an intensely flavourful jus that celebrates time-honoured Burgundian techniques elevated for your journey."
 - **Soy Garlic Chicken with Yellow Noodles**  *(YCL ×2 flights)*
   "Springy yellow noodles served with tender soy garlic chicken, accompanied by shiitake mushrooms, Asian greens, and finished with a light savoury garlic sauce and fried shallot for added aroma and texture."
@@ -2059,7 +2059,7 @@ Our chefs slow-cook this forgotten cut for hours in robust red wine, creating an
 - **Soya Sauce Chicken with Spring Onion Oil Noodle**  *(JCL ×5 flights)*
   "Served with Chinese greens"
 - **Spicy Yam Rice With Chicken and Sambal**  *(YCL ×21 flights)*
-  "Rice cooked with dark soy sauce and yam, served with sambal on the side 
+  "Rice cooked with dark soy sauce and yam, served with sambal on the side
 
 Contains dried shrimp"
 - **Sri Lankan Mutton Curry with Suwandel Rice**  *(JCL ×2 flights)*
@@ -2154,8 +2154,8 @@ Contains dried shrimp"
 - **Belgian Waffles with Warm Apple Sultana Compote**  *(JCL ×4 flights)*
   "Vanilla yoghurt"
 - **Blueberry Pancakes with Apple Compote**  *(SCL)*
-  "Fluffy blueberry-studded pancakes, warm apple 
-compote, silky vanilla custard, and garnished 
+  "Fluffy blueberry-studded pancakes, warm apple
+compote, silky vanilla custard, and garnished
 with granola"
 - **Braised Lamb Shank with Thyme Jus**  *(FCL ×2 flights)*
   "Buttered vegetable medley and roasted pumpkin"
@@ -2335,7 +2335,7 @@ Toasted pumpkins seeds and maple strawberry and orange."
 - **Warm Homemade Pancakes**  *(JCL)*
   "Fluffy golden pancakes served with a medley of fresh seasonal berries, accompanied by maple syrup and lightly whipped cream"
 - **Wholesome Coconut Pancakes**  *(FCL ×6 flights)*
-  "Nine grains and coconut pancakes, maple-poached banana with cashew cream and fresh blueberries 
+  "Nine grains and coconut pancakes, maple-poached banana with cashew cream and fresh blueberries
 Vitamin Rich | High Protein | Digestive Support"
 
 ---
