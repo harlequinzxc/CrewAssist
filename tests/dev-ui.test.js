@@ -193,6 +193,13 @@ const mkUntil = (d) => async (cond, ms) => {
     const src = fs.readFileSync(APP, 'utf8');
     R.ok(!/text-\[(9|9\.5|10|10\.5|11|12\.8|13|15)px\]/.test(src), 'no arbitrary utility size exists \u2014 nothing below the 11px floor, nothing between rungs');
     R.ok(src.includes('.ca-micro { font-size: 11px; }'), 'the micro tier is one token');
+    // 2026-10-15 (divergence #2): the last off-rung text-base sites rejoin the scale
+    R.ok(!src.includes('text-base'), 'zero text-base anywhere - nothing renders between the rungs (14/17)');
+    R.ok(src.includes('id="settings-avatar" class="w-9 h-9 rounded-full flex items-center justify-center border border-sia-gold/70 bg-sia-gold/10 text-sia-gold font-bold text-lg'), 'settings avatar initial at COMPACT 18px');
+    R.ok(src.includes('class="font-bold text-lg truncate" id="settings-profile-name"'), 'settings profile name at COMPACT 18px');
+    R.ok(src.includes('id="ca-rc-month" class="font-bold text-lg text-left leading-none"'), 'calendar month header at COMPACT 18px');
+    R.ok(src.includes('dark:text-sia-gold mb-4 flex items-center'), 'Inflight Menu card header inherits BODY 14px from its bubble - no off-rung 16px');
+    R.ok(!src.includes('rounded-[100%]'), 'no arbitrary radii - the timeline rail rides rounded-full');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.

@@ -1651,8 +1651,8 @@
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Profile</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex items-center gap-2.5">
-                            <div id="settings-avatar" class="w-9 h-9 rounded-full flex items-center justify-center border border-sia-gold/70 bg-sia-gold/10 text-sia-gold font-bold text-base select-none" aria-hidden="true">J</div>
-                            <p class="font-bold text-base truncate" id="settings-profile-name">Johnathan</p>
+                            <div id="settings-avatar" class="w-9 h-9 rounded-full flex items-center justify-center border border-sia-gold/70 bg-sia-gold/10 text-sia-gold font-bold text-lg select-none" aria-hidden="true">J</div>
+                            <p class="font-bold text-lg truncate" id="settings-profile-name">Johnathan</p>
                         </div>
                         <button id="btn-edit-profile" class="w-32 shrink-0 px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors">Edit</button>
                     </div>
@@ -1964,7 +1964,7 @@
                 <div class="flex items-center justify-between gap-1 flex-none">
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-jump" aria-label="Press and hold the month for today" class="ca-hit -ml-2 pl-1 pr-2 py-1.5 rounded-xl active:scale-95 transition-transform">
-                            <h3 id="ca-rc-month" class="font-bold text-base text-left leading-none"></h3>
+                            <h3 id="ca-rc-month" class="font-bold text-lg text-left leading-none"></h3>
                         </button>
                         <button type="button" id="ca-rc-fold" aria-label="Collapse calendar" class="ca-hit p-2.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors"><span id="ca-rc-fold-up"><i data-lucide="chevron-up" class="w-5 h-5"></i></span><span id="ca-rc-fold-down" class="hidden"><i data-lucide="chevron-down" class="w-5 h-5"></i></span></button>
                         <!-- v1.43.0 + hotfix (owner order): the destination overlay
@@ -13893,7 +13893,7 @@
             msgDiv.innerHTML = `
                 <div class="glass-bubble p-4 rounded-2xl rounded-tl-none text-sm w-[85%] shadow-sm">
                     <input type="hidden" id="fv-mode-${uniqueId}" value="${mode}">
-                    <div class="ca-card-header font-bold text-sia-navy dark:text-sia-gold mb-4 text-base flex items-center gap-2">
+                    <div class="ca-card-header font-bold text-sia-navy dark:text-sia-gold mb-4 flex items-center gap-2">
                         <i data-lucide="plane" class="w-5 h-5"></i> ${headerText}
                     </div>
                     
@@ -15361,7 +15361,7 @@
                         <!-- Center Zone: Dotted Arc + Plane + Duration -->
                         <div class="flex flex-col items-center justify-center flex-[1.2] relative pt-2 px-2">
                             <!-- Dotted Arc -->
-                            <div class="w-full h-12 absolute top-2 border-t-2 border-dotted border-sia-navy/20 dark:border-white/20 rounded-[100%]"></div>
+                            <div class="w-full h-12 absolute top-2 border-t-2 border-dotted border-sia-navy/20 dark:border-white/20 rounded-full"></div>
                             <!-- Plane Icon centered exactly on arc apex -->
                             <div class="absolute -top-1 text-sia-gold">
                                 <i data-lucide="plane" class="w-5 h-5 fill-current"></i>
