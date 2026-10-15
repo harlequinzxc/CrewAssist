@@ -212,6 +212,9 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('function syncSkyMotion()') && src.includes('skyAnimating = false;'), 'the sky rests on a still frame and restarts when motion returns');
     // v1.45.1 (owner hotfix 1): the typing bubble never appears under reduced motion
     R.ok(src.includes("if (document.documentElement.classList.contains('ca-reduced')) return;\n            const chatContainer = document.getElementById('chat-container');"), 'the reduced-motion guard sits at the head of showTypingIndicator');
+    // v1.45.1 (owner hotfix 2): the nudge arrives as its own chat message
+    R.ok(src.includes('enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); });\n                enqueueBot(() => { renderMenuNudge(); });'), 'the menu nudge rides its own bot turn - never bundled with the flight card');
+    R.ok(src.includes("el.className = 'flex items-start gap-3 mt-4 w-full'"), 'the nudge row carries standard message spacing (mt-4)');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.

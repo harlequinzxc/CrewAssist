@@ -4310,9 +4310,13 @@
                 const firstName = appProfile.name.split(' ')[0];
                 addBotMessage(greeting + ', ' + appProfile.rank + ' ' + firstName + '!');
                 addBotMessage('How can I help you today?');
-                // v1.28.0: next-flight card + offline pre-save nudge ride the
-                // same bot queue, so they land after the greeting bubbles.
-                enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); renderMenuNudge(); });
+                // v1.28.0: the feed cards ride the same bot queue, so they
+                // land after the greeting bubbles. 2026-10-15 (owner hotfix
+                // 2): the menu nudge gets its OWN turn after the flight card
+                // — it arrives as a single chat message, never bundled with
+                // the next-flight card.
+                enqueueBot(() => { renderLayoverTzCard(); renderNextFlightCard(); });
+                enqueueBot(() => { renderMenuNudge(); });
             };
             if (!kids.length) {
                 greet();
@@ -7084,6 +7088,13 @@
             }
             const saveBtn = el.querySelector('#ca-nf-save');
             if (saveBtn) saveBtn.addEventListener('click', async () => {
+                // hotfix 2 follow-up (2026-10-15): the nudge now arrives in
+                // its own turn, so the card — and this button — can appear
+                // while the queue is still busy. The old drop-on-busy would
+                // eat a fast Save tap in that window; the tap now waits
+                // (bounded) and always lands.
+                const busyT0 = Date.now();
+                while (isChatBusy() && Date.now() - busyT0 < 3000) await new Promise((r) => setTimeout(r, 60));
                 if (isChatBusy()) return;
                 setChatBusy(true);
                 saveBtn.disabled = true;
@@ -7192,7 +7203,7 @@
             if (!flights.length) return;
             const el = document.createElement('div');
             el.id = 'ca-menunudge-card';
-            el.className = 'flex items-start gap-3 mt-2 w-full' + (hadOld ? '' : ' chat-anim-in');
+            el.className = 'flex items-start gap-3 mt-4 w-full' + (hadOld ? '' : ' chat-anim-in'); // hotfix 2: its own message row
             // round 32: the card carries its flight set (and, when single,
             // its save state) — a later refresh prunes landed lines against
             // this stamp instead of rebuilding under the crew's thumbs

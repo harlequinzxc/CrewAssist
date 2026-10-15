@@ -549,6 +549,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             refreshNextFlightUi();
         });
         await page.waitForFunction(() => !!document.getElementById('ca-menunudge-card') && !!document.getElementById('ca-nextflight-card'), { timeout: 8000 });
+        ok(await page.evaluate(() => document.getElementById('ca-menunudge-card').className.indexOf('mt-4') !== -1 && document.getElementById('ca-menunudge-card').className.indexOf('mt-2') === -1), 'the nudge rides its own message row, not the flight card cluster (hotfix 2)');
         ok(await page.evaluate(() => {
             const hero = document.querySelector('#ca-nextflight-card .ca-hero-card');
             const nudge = document.querySelector('#ca-menunudge-card .ca-nudge-card');
