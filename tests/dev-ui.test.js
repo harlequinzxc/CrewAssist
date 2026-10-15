@@ -210,6 +210,8 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('id="motion-pill-reduced"') && src.includes('id="motion-pill-full"') && src.includes('id="motion-segmented"'), 'the binary Reduced/Full toggle lives in Settings');
     R.ok(src.includes("'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates'"), 'the motion key rides the backup set');
     R.ok(src.includes('function syncSkyMotion()') && src.includes('skyAnimating = false;'), 'the sky rests on a still frame and restarts when motion returns');
+    // v1.45.1 (owner hotfix 1): the typing bubble never appears under reduced motion
+    R.ok(src.includes("if (document.documentElement.classList.contains('ca-reduced')) return;\n            const chatContainer = document.getElementById('chat-container');"), 'the reduced-motion guard sits at the head of showTypingIndicator');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
@@ -1178,6 +1180,12 @@ const mkUntil = (d) => async (cond, ms) => {
       m3.w.eval("setMotionPref('full')");
       R.ok(!m3.d.documentElement.classList.contains('ca-reduced'), 'tapping Full clears the marker again');
       R.eq(m3.w.eval("localStorage.getItem('crewAssist.motion')"), 'full', 'and persists the Full choice');
+      // v1.45.1 (owner hotfix 1): the typing bubble never appears under reduced motion
+      m1.w.eval('showTypingIndicator()');
+      R.ok(!m1.d.getElementById('typing-indicator'), 'reduced motion: the typing bubble never appears');
+      m3.w.eval('showTypingIndicator()');
+      R.ok(!!m3.d.getElementById('typing-indicator'), 'full motion: the typing bubble still shows');
+      m3.w.eval('hideTypingIndicator()');
   }
 
   process.exit(R.done() ? 1 : 0);

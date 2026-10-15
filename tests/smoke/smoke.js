@@ -274,6 +274,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return mk('chat-anim-in') === 'ca-reduce-fade' && mk('animate-pulse') === 'none';
         }), 'OS reduce: entries collapse to ca-reduce-fade, loops stop');
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('settings-sheet')).transitionDuration === '0s'), 'OS reduce: sheets snap open (transition-transform gated)');
+        ok(await page.evaluate(() => { showTypingIndicator(); return !document.getElementById('typing-indicator'); }), 'OS reduce: the typing bubble never appears (hotfix 1)');
         await page.evaluate(() => openSettings());
         await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('motion-pill-reduced').getAttribute('aria-checked') === 'true' && document.getElementById('motion-pill-full').getAttribute('aria-checked') === 'false' && document.getElementById('motion-desc').textContent.indexOf('following') !== -1), 'the toggle mirrors the resolved state (Reduced, following the OS)');

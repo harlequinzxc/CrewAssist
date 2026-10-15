@@ -4348,6 +4348,12 @@
         }
 
         function showTypingIndicator() {
+            // 2026-10-15 (owner hotfix 1, reduced motion): the dots ARE
+            // motion — under ca-reduced the typing bubble never appears.
+            // The chat cadence (the gaps between bubbles) is untouched, so
+            // replies still land at their own pace; hideTypingIndicator()
+            // already tolerates the bubble's absence.
+            if (document.documentElement.classList.contains('ca-reduced')) return;
             const chatContainer = document.getElementById('chat-container');
             const div = document.createElement('div');
             div.id = 'typing-indicator';
