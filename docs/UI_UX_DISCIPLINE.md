@@ -35,7 +35,7 @@ anything, ask "how does the app already do this?" and use that pattern.
 
 | Job                          | Established pattern                                                              |
 |------------------------------|----------------------------------------------------------------------------------|
-| Primary call to action       | Filled gold gradient button (single style, radius-lg, elevate-mid, UPPERCASE label)|
+| Primary call to action       | Filled gold gradient button (single style, `rounded-full` pill, elevate-mid, UPPERCASE label)|
 | Secondary action             | Outlined gold button (transparent fill, gold border + text, Title Case)          |
 | Tertiary / ghost action      | Text or icon button, minimal styling, gold on press                              |
 | Dismiss / close              | Quiet X icon (`x` Lucide), text-tertiary at rest, gold on press, corner placement |
@@ -251,11 +251,11 @@ of the same role rather than hand-tuning.
 
 Every surface uses exactly one of these. No in-between values.
 
-- **radius-sm** — badges, pills, small chips.
-- **radius-md** — inputs, icon buttons, small inline buttons.
-- **radius-lg** — cards, bubbles, primary buttons.
-- **radius-pill** — fully rounded ends for CTAs, chips, segmented pieces.
-- **radius-full** — perfect circles (icon buttons, avatars, circular toggles).
+- **radius-sm** — badges, pills, small chips → `rounded-md`.
+- **radius-md** — segmented pieces and small inline buttons → `rounded-lg`; text inputs → `rounded-xl`.
+- **radius-lg** — cards and glass panels → `rounded-2xl`; the largest hero bubbles → `rounded-3xl`. Primary CTAs are pills, not radius-lg — see radius-pill.
+- **radius-pill** — fully rounded ends for CTAs and chips → `rounded-full`.
+- **radius-full** — perfect circles (icon buttons, avatars, circular toggles) → also `rounded-full`; pill and circle share the utility — the shape comes from the element's proportions.
 
 ### Elevation / shadow tiers
 
