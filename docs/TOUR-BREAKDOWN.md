@@ -56,6 +56,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 ## Step 2 — Roster showpiece (paperclip → demo month → save → earnings)
 
 ### 2A. The paperclip
+
 | # | Beat | Timing |
 |---|---|---|
 | 2.1 | *"See that paperclip down there?"* | [typing] |
@@ -65,6 +66,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.5 | **Next / Skip tour** | [USER] |
 
 ### 2B. The fictitious roster
+
 | # | Beat | Timing |
 |---|---|---|
 | 2.6 | *"In this demo, I will attach a fictitious roster — with three different flights: **SQ442/441** a Kathmandu layover, **SQ740/739** a Phuket turnaround, and **SQ 134/133/138/137** a four sector Penang shuttle."* | [typing] |
@@ -72,6 +74,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.8 | The demo "attaches": **roster confirm card** renders — "July 2026 - Demo.pdf — Jul 2026: 3 trips · 8 sectors", the three trips listed, **[Build cards] [Discard]** (secondary) and **[Calculate all]** (primary gold). All the card's buttons are dimmed and untappable — a prop, not a control panel; the demo does the driving | [typing] |
 
 ### 2C. Build vs Calculate
+
 | # | Beat | Timing |
 |---|---|---|
 | 2.9 | *"Press **Build cards** to tweak your flight details (if any) or press **Calculate all** and let me compute your total allowance."* | [typing] |
@@ -80,6 +83,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.12 | **Next / Skip tour** | [USER] |
 
 ### 2D. The summary page (only after 2.12)
+
 | # | Beat | Timing |
 |---|---|---|
 | 2.13 | Nothing is highlighted. Demo presses **Calculate all** | [wait 0.6s] then tap |
@@ -98,6 +102,7 @@ Every beat from the first chat message to the last, with exact machine timings, 
 | 2.26 | Pause | [wait 1.2s] |
 
 ### 2E. The earnings chapter
+
 | # | Beat | Timing |
 |---|---|---|
 | 2.27 | *"Tap on the **"How much have I earned?"** quick action chip to view your archived earning/s."* | [typing] |

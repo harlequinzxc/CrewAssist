@@ -14,7 +14,7 @@
 
 - **Branch:** every Arena chat session gets its **own** branch, `arena/<session-id>-crewassist` (ids look like `01a0a47b-…`). It is **different for every chat** and changes when the owner jumps between chats, so a branch name you read in this file, in an old commit message, or from a previous session is **already stale**. First action in any session: `BR=$(git branch --show-current)`, and use `$BR` everywhere below. Push only that branch. Merging `arena` → `main` in **GitHub Desktop** is the correct publish path. Do not rebase `arena` onto a stale `main`.
 - **Sandbox drift:** this environment can silently **re-clone the repo onto an outdated/stale commit** — your commits vanish from local history while your file edits survive as uncommitted changes, and `/tmp` plus any background process are wiped. `git reflog` shows the signature: a fresh `clone: from …` followed by `checkout: moving from main to arena/…`. The remote is **not** damaged. Recover with (`$BR` = this session's branch):
-  ```
+  ```bash
   BR=$(git branch --show-current)
   git fetch origin "refs/heads/$BR:refs/remotes/origin/$BR"   # a plain `git fetch origin` does NOT restore the ref
   git reset --hard "origin/$BR"
@@ -50,19 +50,19 @@
 
 Resolve the session branch first and reuse it — never type a branch name from memory:
 
-```
+```bash
 BR=$(git branch --show-current)   # this session's arena/<session-id>-crewassist
 ```
 
 1. Implement on `$BR`. Do not start a new slice until the owner signs off the last one.
 2. Bump **both** stamps together: `APP_VERSION` (`index.html` — patch x.y.Z for polish, minor x.Y.0 for a feature) and `CACHE_NAME` (`sw.js`, `crewassist-vN`). Without the cache bump the owner's phone keeps serving the old build and the change never ships.
 3. Verify before committing. There is **no interactive browser** here, so drive the real code:
-   - `node --check` **every** inline script (join with **real** newlines). Catches a write that broke a script mid-block; it **cannot** see a whole missing block.
-   - `node --check sw.js`. `python3 -m json.tool rates.json manifest.json` if either changed — a malformed `rates.json` parses to garbage and silently mis-computes allowances.
-   - For DOM / CSS / JS behaviour, load `index.html` in jsdom and call the **shipping** function (`openCaDatePicker`, `maybeWhatsNewOverlay`, `executeCalculation`), then assert DOM order and `getComputedStyle`.
-   - If `rates.json` or a formula changed, re-run the `LOGIC.md` §6 test cases through `executeCalculation`. All nine cases (IFA 1–4, LMA 5a/5b, 6, 6b×2) were executed green against 1.43.0 on 2026-10-11 (re-verified: 24 checks across the nine cases).
-   - **The smoke rig (real Chromium, since 2026-10-07):** `node tests/smoke/build-app.js` (rebuilds `app.html`), then `node tests/smoke/run.js` — 87 checks against the real app with CDNs blocked (icons stay `<i>` stubs; correctness is proven by name-resolution, not rendered pixels). Any colour/CSS change additionally rides the **style-snapshot protocol**: snapshot the same DOM before and after, both themes, diff computed styles — **zero diffs** is the pass bar. Chromium libs auto-extract to `/tmp/chr-libs`; `/tmp` is ephemeral, re-extract after a sandbox rebuild.
-   - Truncation / drift net: the `function openMenuPrinter` + size assertion (see **How to work in this repo → Patching `index.html`**) is the only check that catches a whole-block loss.
+    - `node --check` **every** inline script (join with **real** newlines). Catches a write that broke a script mid-block; it **cannot** see a whole missing block.
+    - `node --check sw.js`. `python3 -m json.tool rates.json manifest.json` if either changed — a malformed `rates.json` parses to garbage and silently mis-computes allowances.
+    - For DOM / CSS / JS behaviour, load `index.html` in jsdom and call the **shipping** function (`openCaDatePicker`, `maybeWhatsNewOverlay`, `executeCalculation`), then assert DOM order and `getComputedStyle`.
+    - If `rates.json` or a formula changed, re-run the `LOGIC.md` §6 test cases through `executeCalculation`. All nine cases (IFA 1–4, LMA 5a/5b, 6, 6b×2) were executed green against 1.43.0 on 2026-10-11 (re-verified: 24 checks across the nine cases).
+    - **The smoke rig (real Chromium, since 2026-10-07):** `node tests/smoke/build-app.js` (rebuilds `app.html`), then `node tests/smoke/run.js` — 87 checks against the real app with CDNs blocked (icons stay `<i>` stubs; correctness is proven by name-resolution, not rendered pixels). Any colour/CSS change additionally rides the **style-snapshot protocol**: snapshot the same DOM before and after, both themes, diff computed styles — **zero diffs** is the pass bar. Chromium libs auto-extract to `/tmp/chr-libs`; `/tmp` is ephemeral, re-extract after a sandbox rebuild.
+    - Truncation / drift net: the `function openMenuPrinter` + size assertion (see **How to work in this repo → Patching `index.html`**) is the only check that catches a whole-block loss.
 4. Commit, then update docs **one file at a time**: README → HANDOVER → LOGIC (only if formulas or calculator rules changed). Never two HANDOVER writes at once.
 5. `git push origin "$BR"`.
 6. Ask the owner to review on the **phone** — the onboarding stamp must read the new `APP_VERSION`. A mismatch means cache, not code.
@@ -74,6 +74,7 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 ---
 
 ## Testing (jsdom battery + real-Chromium smoke)
+
 `tests/` contains the behaviour suite introduced 2026-09-19 (owner-approved). Run: `cd tests && npm install && npm test` (or `node tests/run-all.js`). Suites are named by feature — `dev-rates`, `dev-ui`, `earnings-archive`, `exports`, `trip-bar`, `roster-pdf`, `roster-real` (every `_inbox/` PDF through the real pipeline), `tour`, `logic-cases`, `roster-calendar`, `sw` — and assert OUTCOMES, not internals, so they survive refactors. `run-all.js` auto-globs `*.test.js` with a 300s cap per suite (14 suites / 2,331 asserts at v1.44.9, incl. `menu-extraction` + `offline-menus` + `next-flight` + `logic-cases` + `roster-calendar` + `sw`). `roster-pdf` generates synthetic rosters with the real generator's geometry (rotated table, echo rows, column splits) — real roster data is never committed. Rules: every new feature ships with its test block; an intentional behaviour change updates the matching block in the same commit; never dispatch DOMContentLoaded manually in the harness (jsdom fires its own — double-firing double-binds every listener); dialog close fades take 200ms, wait >=400ms before asserting hidden. `tests/package.json` pins jsdom (committed via a `.gitignore` negation; the root package files stay ignored by repo convention) — `node_modules` and lockfiles are never committed. The real-Chromium smoke rig and the style-snapshot protocol live in **How to ship a change → step 3**.
 
 ---

@@ -35,7 +35,7 @@ Two definitions from Clause 34(7) anchor the math:
 
 ### 1.1 IFA — Scheduled Duty Period (SDP)
 
-```
+```text
 SDP_sector = flight_time_hours + buffer
 
 WHERE:
@@ -47,7 +47,7 @@ WHERE:
 
 ### 1.2 IFA — Total Trip SDP (Turnaround only)
 
-```
+```text
 total_SDP = Σ (SDP_sector_i)   for all valid sectors i
 ```
 
@@ -74,7 +74,7 @@ total_SDP = Σ (SDP_sector_i)   for all valid sectors i
 
 ### 1.4 IFA — Multiplier Overrides
 
-```
+```text
 IF isDirectUS == true:
     multiplier = directUSMultiplier       (default 3.5, no hour condition — Clause 34(2)(b))
 
@@ -92,7 +92,7 @@ IF isPaxing == true:
 
 ### 1.5 IFA — Sector Allowance
 
-```
+```text
 Normal:
   allowance_sector = flight_time_hours × base_rate × multiplier
 
@@ -102,7 +102,7 @@ Paxing:
 
 ### 1.6 IFA — Turnaround Bonus
 
-```
+```text
 turnaround_bonus_count = 2  IF flight_type == Turnaround AND is4Sector
 turnaround_bonus_count = 1  IF flight_type == Turnaround AND NOT is4Sector
 turnaround_bonus_count = 0  IF flight_type == Layover
@@ -112,7 +112,7 @@ turnaround_bonus = turnaround_bonus_count × turnaroundBonusAmount   (default 90
 
 ### 1.7 IFA — Trip Total
 
-```
+```text
 IFA_total = Σ (allowance_sector_i) + turnaround_bonus
 ```
 
@@ -120,7 +120,7 @@ IFA_total = Σ (allowance_sector_i) + turnaround_bonus
 
 Duty time at a slip station runs from the **scheduled arrival** to the **report time for the next departure** — Clause 36(3). The engine takes the report time as **one hour before the scheduled departure**:
 
-```
+```text
 arrival_boundary   = arrival time (station local)
 departure_boundary = departure time − 60 minutes   (the report time)
 ```
@@ -129,7 +129,7 @@ A report before midnight (departure before 01:00) lands negative and simply earn
 
 ### 1.9 LMA — Meal Eligibility (Same-Day, including transits)
 
-```
+```text
 transit_minutes = departure_boundary − arrival_boundary
 
 meal_earned = (transit_minutes ≥ 180)
@@ -141,7 +141,7 @@ meal_earned = (transit_minutes ≥ 180)
 
 ### 1.10 LMA — Meal Eligibility (Multi-Day)
 
-```
+```text
 ARRIVAL DAY:
     meal_earned = (arrival_minutes ≤ meal_window_end_minutes)
 
@@ -154,14 +154,14 @@ DEPARTURE DAY:
 
 ### 1.11 LMA — Sector and Trip Totals
 
-```
+```text
 LMA_sector_total = (breakfast_count × breakfast_rate) + (lunch_count × lunch_rate) + (dinner_count × dinner_rate)
 LMA_trip_total   = Σ (LMA_sector_total_i)
 ```
 
 ### 1.12 Grand Total
 
-```
+```text
 grand_total = IFA_total + LMA_trip_total
 ```
 
@@ -169,7 +169,7 @@ LMA contributes on layovers **and on turnarounds with a 3h+ overseas transit** (
 
 ### 1.13 Duration Parsing
 
-```
+```text
 HH:MM → decimal hours:  hours = floor(HH) + (MM / 60)      e.g. 07:30 → 7.5
 decimal → HH:MM:        total_minutes = round(h × 60); HH = floor(m/60); MM = m mod 60
 ```
@@ -320,7 +320,7 @@ Region derives from the airport's **ISO country code**, not the airport. All Chi
 
 ### 4.1 IFA Multiplier Selection
 
-```
+```text
 IF isDirectUS == true
     THEN multiplier = 3.5                       ("Direct US flight → 3.5×")
 ELSE IF isPaxing == true
@@ -340,14 +340,14 @@ ELSE (Layover)
 | Turnaround + 2-sector | ❌ Hide | ✅ Show |
 | Turnaround + 4-sector | ❌ Hide | ❌ Hide |
 
-```
+```text
 canShowDirectUS = (flightType == "Layover") AND (is4Sector == false)
 canShowPaxing   = (is4Sector == false)
 ```
 
 ### 4.3a Shuttle (no LMA at that station)
 
-```
+```text
 IF LMA station shuttle == true
     THEN LMA_sector_total = 0, no meals earned, IFA unchanged
 ```
@@ -356,7 +356,7 @@ Shuttle is a **per-station** skip. Auto-fill ticks it only for **under-3-hour tu
 
 ### 4.3 LMA Section Visibility
 
-```
+```text
 IF flightType == "Turnaround" AND no LMA station data on the card
     THEN the LMA section stays hidden          (a plain turnaround earns no LMA)
 ELSE
@@ -366,7 +366,7 @@ ELSE
 
 ### 4.4 LMA Same-Day vs Multi-Day
 
-```
+```text
 IF dateDiffDays(arrivalDate, departureDate) == 0
     THEN same-day logic (§1.9) — the 3h transit gate applies
 ELSE IF dateDiffDays > 0
@@ -377,7 +377,7 @@ ELSE
 
 ### 4.5 LMA Date Chaining (4-Sector Mode)
 
-```
+```text
 IF user changes sector[i].arrivalDate
     THEN sector[i].departureDate = arrivalDate + 1 day
     AND cascade: sector[j>i].arrivalDate = sector[j-1].departureDate + 1 day, departureDate = arrivalDate + 1 day
@@ -388,7 +388,7 @@ IF user changes sector[i].departureDate
 
 ### 4.6 Archive Amount Source
 
-```
+```text
 amount = IFA_total + LMA_trip_total    (always — v1.40.0: a turnaround with a
                                         3h+ transit files the full COP, Clause 36(4))
 IF amount ≤ 0 → nothing to save
@@ -431,7 +431,7 @@ All bracket upper bounds are **inclusive** (`≤`), lower bounds strict (`>`). E
 
 **Never use `toISOString()`** — it converts to UTC and shifts dates backward in positive-offset timezones (UTC+8 turns Jan 1 into Dec 31).
 
-```
+```js
 // WRONG:  d.toISOString().split("T")[0]
 // CORRECT: new Date(y, m-1, d); d.getFullYear(), d.getMonth()+1, d.getDate()
 // Parsing YYYY-MM-DD locally: append T00:00:00 — new Date("2025-01-01T00:00:00")
@@ -443,7 +443,7 @@ All bracket upper bounds are **inclusive** (`≤`), lower bounds strict (`>`). E
 
 ### IFA Test 1 — Turnaround, Total-SDP Rule
 
-```
+```text
 rank=Jr. FS/FSS, type=Turnaround, SG=04:00, ST=04:00, directUS=no, paxing=no
 baseRate = 10.00
 SG SDP = 4.0 + 2.5 = 6.5h;  ST SDP = 4.0 + 1.5 = 5.5h;  totalSDP = 12.0h → ≤12 → 1.3×
@@ -453,7 +453,7 @@ TOTAL = 194.00 ✓
 
 ### IFA Test 2 — Layover, Per-Sector SDP
 
-```
+```text
 rank=FS/FSS, type=Layover, SG=08:00, ST=07:30
 SG SDP = 10.5h → 1.3×;  ST SDP = 9.0h → 1.3×
 SG = 8.0 × 13.5 × 1.3 = 140.40;  ST = 7.5 × 13.5 × 1.3 = 131.625 → $131.63
@@ -465,7 +465,7 @@ TOTAL = 140.40 + 131.625 = 272.0249999999999773 (stored) → $272.02 ✓
 
 ### IFA Test 3 — Turnaround, High Total SDP
 
-```
+```text
 rank=CS/CSS, type=Turnaround, SG=11:00, ST=10:30
 SG SDP = 13.5h;  ST SDP = 12.0h;  totalSDP = 25.5h → >18 → 3.0×
 SG = 11.0 × 18.5 × 3.0 = 610.50;  ST = 10.5 × 18.5 × 3.0 = 582.75;  bonus = 90.00
@@ -474,7 +474,7 @@ TOTAL = 1283.25 ✓
 
 ### IFA Test 4 — Layover, Direct US Override
 
-```
+```text
 rank=IFM, type=Layover, SG=17:30, ST=18:00, directUS=yes/yes
 SG = 17.5 × 23 × 3.5 = 1408.75;  ST = 18.0 × 23 × 3.5 = 1449.00;  bonus = 0
 TOTAL = 2857.75 ✓
@@ -482,7 +482,7 @@ TOTAL = 2857.75 ✓
 
 ### LMA Test 5 — Same-Day Transit, the 3-Hour Gate (Clause 36(4))
 
-```
+```text
 Station KUL (Southeast Asia: B 31 / L 55 / D 70), same day:
   arrival 10:00, departure 15:30 → report 14:30 → transit = 4.5h ≥ 3h
   Breakfast: arrival 10:00 > 08:30 → no.   Lunch: 10:00 ≤ 13:30 AND 14:30 ≥ 12:30 → YES ($55).
@@ -495,7 +495,7 @@ Same station, arrival 12:00, departure 14:30 → report 13:30 → transit = 1.5h
 
 ### LMA Test 6 — Multi-Day Layover, Report-Time Boundary (Clause 36(3))
 
-```
+```text
 Station NRT (Japan: B 52 / L 92 / D 118), arrive 21:55 Mon, depart 12:15 Thu
   Mon (arrival): the arrival-day test is `arrival ≤ window END` (§1.10)
       21:55 is past 08:30 / 13:30 / 20:30 → no meals
@@ -514,7 +514,7 @@ Test 6 pays the same $576.00 under the pre-v1.40.0 departure-time rule, so on it
 own it does not prove the report-time rule. This pair does. It is the multi-day
 form of the 19:31 / 19:29 dinner boundary pinned in the browser smoke suite.
 
-```
+```text
 Same NRT layover (arrive 21:55 Mon); the lunch window starts 12:30:
   depart 13:30 Thu → report 12:30 = window start, inclusive → lunch YES
       524 + breakfast 52 + lunch 92 = $668.00 ✓

@@ -436,6 +436,7 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 - Padding on a `0fr` accordion inner (iOS header leak).
 
 ---
+
 ## UI Pre-Delivery Checklist
 
 Run this before calling any UI change done. The general, non-UI delivery
@@ -469,6 +470,7 @@ checks live in `STANDING_RULES.md`.
 
 
 ---
+
 ## Icon Reference (Lucide)
 
 Canonical Lucide icon names for common UI jobs. Use these exact glyphs; do

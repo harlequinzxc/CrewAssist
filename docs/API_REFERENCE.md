@@ -10,7 +10,7 @@
 The site is a static React SPA (Vite/Rolldown build) hosted on S3 + CloudFront. All data comes from an
 **unauthenticated JSON API**:
 
-```
+```http
 POST https://cifp.auto.prod.c0.singaporeair.com/api/menu
 POST https://cifp.auto.prod.c0.singaporeair.com/api/getcabin
 POST https://cifp.auto.prod.c0.singaporeair.com/api/trackusage   (analytics only)
@@ -76,7 +76,7 @@ Request:
 
 Response (abridged — full field tree in §4):
 
-```
+```text
 carrierId, flightNumber, flightDate, cabinClass, fbpDate, serviceType,
 legs[]
   ├─ legseqno
@@ -128,7 +128,7 @@ The menu payloads carry 8 image-ish field families. Verified against all 840 har
 **The big one — dish photos are constructible from dish IDs.** Even where `imagePathIfe*` is empty,
 the photo usually exists on the CDN. Item `id` → URL:
 
-```
+```text
 id: "DH021259-v3-FCL"   →  https://inflightmenu.singaporeair.com/fabs/IFE/INFM/FCL/HIGH/DH021259_FCL.png        ✅ 746 KB
 id: "DH026749-001-SCL"  →  https://inflightmenu.singaporeair.com/fabs/IFE/INFM/SCL/HIGH/DH026749-001_SCL.png   ✅ (API itself links this one)
 ```
