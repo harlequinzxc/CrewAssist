@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.1', 'APP_VERSION is 1.45.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.1' && e.d === '2026-10-15' && e.items.length === 2 && e.items[0].c === 'fix' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.45.1 hotfix pair');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v232'), 'the service-worker cache name is bumped to v232 (the v1.45.1 hotfix release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.2', 'APP_VERSION is 1.45.2');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.2' && e.d === '2026-10-15' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.2 description-species entry');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v233'), 'the service-worker cache name is bumped to v233 (the v1.45.2 description release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.1'; }), 'the What\'s New sheet carries the v1.45.1 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.2'; }), 'the What\'s New sheet carries the v1.45.2 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fourth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
@@ -278,6 +278,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => openSettings());
         await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('motion-pill-reduced').getAttribute('aria-checked') === 'true' && document.getElementById('motion-pill-full').getAttribute('aria-checked') === 'false' && document.getElementById('motion-desc').textContent.indexOf('following') !== -1), 'the toggle mirrors the resolved state (Reduced, following the OS)');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('motion-desc')).fontSize === '11px' && getComputedStyle(document.getElementById('calcui-desc')).fontSize === '11px'), 'panel descriptions ride the row species - 11px, like the Feedback row (v1.45.2)');
         await page.evaluate(() => { const b = document.getElementById('whatsnew-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('whatsnew-close').click(); });
         await sleep(400);
         await (await page.$('#motion-pill-full')).tap();
