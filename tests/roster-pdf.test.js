@@ -287,6 +287,19 @@ const MONTH = [
     R.eq(w.rosterImportDiffLines({ '2026-10': oct([1, 5, 17]) }, oct([1, 17, 24])).join('|'), 'Versus the October 2026 you had: 1 new duty (24 Oct) \u00b7 1 removed (5 Oct) \u00b7 rest unchanged.', 'the approved shape: new duties, removed, rest unchanged');
     const many = w.rosterImportDiffLines({ '2026-10': oct([1]) }, oct([2, 3, 4, 5, 6, 7, 8])).join('|');
     R.ok(many.indexOf('7 new duties (2, 3, 4, 5 Oct +3 more)') >= 0, 'long date lists truncate honestly with a +N more tail');
+    // v1.45.4 (owner report): a same-date duty change is the diff's job —
+    // standby to flight was reading as "no changes"
+    const mkday = (n, o) => Object.assign({ ymd: '2026-10-' + String(n).padStart(2, '0'), kind: 'fly', code: '', loc: '', fns: [], dkey: '' }, o);
+    const sby12 = mkday(12, { kind: 'duty', code: 'SBY30' });
+    const fly12 = mkday(12, { kind: 'fly', fns: ['231'], dkey: '2026-10-12' });
+    R.eq(w.rosterImportDiffLines({ '2026-10': [sby12] }, [fly12]).join('|'), 'Versus the October 2026 you had: 1 changed (12 Oct: SBY30 \u2192 SQ231).', 'a standby that became a flight reads as changed (the owner report)');
+    R.eq(w.rosterImportDiffLines({ '2026-10': [fly12] }, [sby12]).join('|'), 'Versus the October 2026 you had: 1 changed (12 Oct: SQ231 \u2192 SBY30).', 'and in reverse — a flight that became a standby');
+    const fly5a = mkday(5, { fns: ['111'] });
+    const fly5b = mkday(5, { fns: ['222'] });
+    const fly6 = mkday(6, { fns: ['333'] });
+    R.eq(w.rosterImportDiffLines({ '2026-10': [fly5a, fly6, sby12] }, [fly5b, fly6, fly12]).join('|'), 'Versus the October 2026 you had: 2 changed (5 Oct: SQ111 \u2192 SQ222, 12 Oct: SBY30 \u2192 SQ231) \u00b7 rest unchanged.', 'changed days list their dates with old duty to new, kept days still count');
+    const three = w.rosterImportDiffLines({ '2026-10': [fly5a, fly6, sby12] }, [fly5b, mkday(6, { fns: ['999'] }), fly12]).join('|');
+    R.ok(three.indexOf('3 changed (5 Oct: SQ111 \u2192 SQ222, 6 Oct: SQ333 \u2192 SQ999, +1 more)') >= 0, 'a long change list caps at two details with a +N more tail');
     // end-to-end: the card carries the line when the month already exists
     w.eval("localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-10': " + JSON.stringify(oct([1, 5, 17]).map((x) => ({ ymd: x.ymd, kind: 'fly' }))) + " }))");
     const parsed = w.rosterParse(buildRoster(MONTH));
