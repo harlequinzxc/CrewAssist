@@ -7462,16 +7462,25 @@
         // holds", whatever its kind.
         function rosterImportDiffLines(oldByMonth, parsedDays) {
             const lines = [];
+            // v1.45.4 (owner report 2026-10-20): a day is compared by its
+            // DUTY, not just its date — a standby that became a flight
+            // (same date, new duty) reads as changed, not "no changes".
+            const daySig = (d) => [d.kind || '', (d.fns || []).join('/'), d.code || '', d.loc || ''].join('|');
+            const dayLabel = (d) => {
+                if ((d.kind || '') === 'fly') return (d.fns || []).length ? d.fns.map((f) => 'SQ' + f).join('/') : 'flying duty';
+                return d.code || String(d.kind || 'duty').toUpperCase();
+            };
             Object.keys(oldByMonth || {}).sort().forEach((mk) => {
-                const oldSet = {};
-                (oldByMonth[mk] || []).forEach((d) => { if (d && d.ymd) oldSet[d.ymd] = 1; });
-                const newSet = {};
-                (parsedDays || []).forEach((d) => { if (d && d.ymd && String(d.ymd).slice(0, 7) === mk) newSet[d.ymd] = 1; });
-                const added = Object.keys(newSet).filter((y) => !oldSet[y]).sort();
-                const removed = Object.keys(oldSet).filter((y) => !newSet[y]).sort();
-                const kept = Object.keys(oldSet).filter((y) => newSet[y]).length;
+                const oldDay = {};
+                (oldByMonth[mk] || []).forEach((d) => { if (d && d.ymd) oldDay[d.ymd] = { sig: daySig(d), d: d }; });
+                const newDay = {};
+                (parsedDays || []).forEach((d) => { if (d && d.ymd && String(d.ymd).slice(0, 7) === mk) newDay[d.ymd] = { sig: daySig(d), d: d }; });
+                const added = Object.keys(newDay).filter((y) => !oldDay[y]).sort();
+                const removed = Object.keys(oldDay).filter((y) => !newDay[y]).sort();
+                const changed = Object.keys(newDay).filter((y) => oldDay[y] && oldDay[y].sig !== newDay[y].sig).sort();
+                const kept = Object.keys(oldDay).filter((y) => newDay[y] && oldDay[y].sig === newDay[y].sig).length;
                 const mname = rosterMonthName(mk);
-                if (!added.length && !removed.length) { lines.push('Versus the ' + mname + ' you had: no changes.'); return; }
+                if (!added.length && !removed.length && !changed.length) { lines.push('Versus the ' + mname + ' you had: no changes.'); return; }
                 const mon3 = (typeof CA_MONTHS !== 'undefined' ? CA_MONTHS[parseInt(mk.slice(5), 10) - 1] : mk).slice(0, 3);
                 const dates = (list) => {
                     const ds = list.map((y) => String(parseInt(y.slice(8), 10)));
@@ -7479,14 +7488,21 @@
                     if (ds.length > 4) return ds.slice(0, 4).join(', ') + tail + ' +' + (ds.length - 4) + ' more';
                     return ds.join(', ') + tail;
                 };
+                const changes = (list) => {
+                    const parts = list.slice(0, 2).map((y) => parseInt(y.slice(8), 10) + ' ' + mon3 + ': ' + dayLabel(oldDay[y].d) + ' \u2192 ' + dayLabel(newDay[y].d));
+                    if (list.length > 2) parts.push('+' + (list.length - 2) + ' more');
+                    return parts.join(', ');
+                };
                 const bits = [];
                 if (added.length) bits.push(added.length + ' new ' + (added.length === 1 ? 'duty' : 'duties') + ' (' + dates(added) + ')');
                 if (removed.length) bits.push(removed.length + ' removed (' + dates(removed) + ')');
+                if (changed.length) bits.push(changed.length + ' changed (' + changes(changed) + ')');
                 if (kept) bits.push('rest unchanged');
                 lines.push('Versus the ' + mname + ' you had: ' + bits.join(' \u00b7 ') + '.');
             });
             return lines;
         }
+
         function renderRosterConfirm(parsed, fileName, displayMonth, oldByMonth) {
             const tripsOk = parsed.trips.filter(t => t.ok);
             const flagged = parsed.trips.filter(t => !t.ok);
