@@ -219,6 +219,9 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes('id="calcui-desc" class="ca-micro text-gray-500 mt-1.5 leading-relaxed"'), 'the calculator description rides the row species (ca-micro, gray-500)');
     R.ok(src.includes('id="motion-desc" class="ca-micro text-gray-500 mt-3.5 leading-relaxed"'), 'the motion description rides the row species (ca-micro, gray-500)');
     R.ok(!src.includes('id="calcui-desc" class="text-sm') && !src.includes('id="motion-desc" class="text-sm'), 'no panel description keeps the old 14px species');
+    // v1.45.3 (owner order): a fully-saved set never shows the nudge
+    R.ok(src.includes('const savedNow = flights.map((f) => menusSavedFor(f.fn, f.ymd));') && src.includes('if (flights.length && savedNow.every(Boolean)) {'), 'the all-saved gate heads renderMenuNudge - saved means no nudge');
+    R.ok(src.includes('renderMenuNudge(); // all-saved \u2014 the gate animates the card away'), 'the sweep completion routes through the gate instead of a done form');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
