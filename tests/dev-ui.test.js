@@ -222,6 +222,11 @@ const mkUntil = (d) => async (cond, ms) => {
     // v1.45.3 (owner order): a fully-saved set never shows the nudge
     R.ok(src.includes('const savedNow = flights.map((f) => menusSavedFor(f.fn, f.ymd));') && src.includes('if (flights.length && savedNow.every(Boolean)) {'), 'the all-saved gate heads renderMenuNudge - saved means no nudge');
     R.ok(src.includes('renderMenuNudge(); // all-saved \u2014 the gate animates the card away'), 'the sweep completion routes through the gate instead of a done form');
+    // v1.45.5 (owner orders): the whole-duty nudge + the viewer's cycle button
+    R.ok(src.includes('const legs = nfDutyOf(list.slice(i)).legs;') && src.includes('if (legs.some((f) => f.ymd <= limit)) picked.push.apply(picked, legs);'), 'the nudge groups legs into duties \u2014 one leg in the window brings the whole duty');
+    R.ok(src.includes("'</b> coming up \u2014 save all menus for offline view.'"), 'the multi-flight copy says coming up, not the 2-day window');
+    R.ok(src.includes('id="btn-menu-cycle"') && src.includes('data-lucide="refresh-cw"') && src.includes('function menuCycleList()'), 'the viewer carries the cycle button over the saved-menu set');
+    R.ok(src.includes("gone.push('SQ' + f.fn + ':' + f.ymd + ':')"), 'the landed-leg sweep takes the saved menus with it');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
@@ -406,58 +411,59 @@ const mkUntil = (d) => async (cond, ms) => {
       // the 1.43.0 consolidation fold into the current release as fix
       // pointers, so a fresh install tells the crew what actually changed —
       // the feed rework, the nudge-as-fixture, and the calendar first-open fix
-      // v1.45.4 (owner report): the roster diff signs each day by its duty —
-      // a standby that became a flight reads as changed, not no-changes —
-      // takes the head. The previous rounds shift down one each.
-      R.eq(entries[0].v, '1.45.4', 'the 1.45.4 roster-diff release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.45.4 entry carries its single pointer');
+      // v1.45.5 (owner orders): the whole-duty nudge, the saved-menu cycle
+      // button, and the landed-menu cleanup — takes the head. The
+      // previous rounds shift down one each.
+      R.eq(entries[0].v, '1.45.5', 'the 1.45.5 duty-nudge release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 3, 'the 1.45.5 entry carries its three pointers');
+      R.ok(src.includes("c: 'imp', t: 'The menu nudge covers the whole duty, return legs included.' }"), 'the 1.45.5 whole-duty pointer reads as approved');
+      R.eq(entries[1].v, '1.45.4', 'the 1.45.4 roster-diff release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.45.4 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The roster diff sees same-day duty changes, standby to flight included.' }"), 'the 1.45.4 pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.45.3', 'the 1.45.3 nudge-redundancy release sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.45.3 entry carries its single pointer');
+      R.eq(entries[2].v, '1.45.3', 'the 1.45.3 nudge-redundancy release sits third, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.45.3 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'A fully-saved flight set never shows the menu nudge.' }"), 'the 1.45.3 pointer reads as approved, inside the twelve-word cap');
       // v1.44.9: the veil token itself — the two archive-overlay alpha sites ride it
       R.ok(src.includes('--ca-arch-veil: rgba(8, 11, 20, 0.80);') && src.includes('--ca-arch-veil: rgba(246, 241, 232, 0.90);') && src.includes('fill-[color:var(--ca-arch-veil)]') && src.includes('bg-[color:var(--ca-arch-veil)]'), 'v1.44.9: --ca-arch-veil exists (dark .80 / light .90) and both overlay sites ride it');
-      R.eq(entries[2].v, '1.45.2', 'the 1.45.2 description-species release sits third, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.45.2 entry carries its single pointer');
+      R.eq(entries[3].v, '1.45.2', 'the 1.45.2 description-species release sits fourth, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.45.2 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The last raw colours ride named tokens \u2014 same pixels, one spelling.' }"), 'the 1.44.8 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[3].v, '1.45.1', 'the 1.45.1 hotfix release sits fourth, newest first');
-      R.eq(entries[3].items.length, 2, 'the 1.45.1 entry carries its two hotfix pointers');
+      R.eq(entries[4].v, '1.45.1', 'the 1.45.1 hotfix release sits fifth, newest first');
+      R.eq(entries[4].items.length, 2, 'the 1.45.1 entry carries its two hotfix pointers');
       R.ok(src.includes("c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' }"), 'the 1.44.7 pointer reads as approved, inside the twelve-word cap');
       // v1.44.7 audit fix 1: the flagged-trip warning is a Lucide icon, and the
       // source carries no warning-sign glyph anywhere (icons only, never emoji).
       R.eq((src.match(/data-lucide="alert-triangle"/g) || []).length, 1, 'exactly one alert-triangle icon - the flagged-trip line');
       R.ok(!src.includes('\u26a0'), 'no U+26A0 warning-sign glyph remains in the source');
-      R.eq(entries[4].v, '1.45.0', 'the 1.45.0 motion release sits fifth, newest first');
-      R.eq(entries[4].items.length, 1, 'the 1.45.0 entry carries its single pointer');
+      R.eq(entries[5].v, '1.45.0', 'the 1.45.0 motion release sits sixth, newest first');
+      R.eq(entries[5].items.length, 1, 'the 1.45.0 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' }"), 'the 1.44.6 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[5].v, '1.44.10', 'the 1.44.10 scale-and-ink release sits sixth, newest first');
-      R.eq(entries[5].items.length, 1, 'the 1.44.10 entry carries its single pointer');
+      R.eq(entries[6].v, '1.44.10', 'the 1.44.10 scale-and-ink release sits seventh, newest first');
+      R.eq(entries[6].items.length, 1, 'the 1.44.10 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' }"), 'the 1.44.5 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[6].v, '1.44.9', 'the 1.44.9 veil-token release sits seventh, newest first');
-      R.eq(entries[6].items.length, 1, 'the 1.44.9 entry carries its single pointer');
+      R.eq(entries[7].v, '1.44.9', 'the 1.44.9 veil-token release sits eighth, newest first');
+      R.eq(entries[7].items.length, 1, 'the 1.44.9 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' }"), 'the 1.44.4 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[7].v, '1.44.8', 'the 1.44.8 colour-sweep release sits eighth, newest first');
-      R.eq(entries[7].items.length, 1, 'the 1.44.8 entry keeps its single pointer');
+      R.eq(entries[8].v, '1.44.8', 'the 1.44.8 colour-sweep release sits ninth, newest first');
+      R.eq(entries[8].items.length, 1, 'the 1.44.8 entry keeps its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[8].v, '1.44.7', 'the 1.44.7 audit-fix release sits ninth, newest first');
-      R.eq(entries[8].items.length, 1, 'the 1.44.7 entry keeps its single pointer');
+      R.eq(entries[9].v, '1.44.7', 'the 1.44.7 audit-fix release sits tenth, newest first');
+      R.eq(entries[9].items.length, 1, 'the 1.44.7 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[9].v, '1.44.6', 'the 1.44.6 one-off retirement sits tenth, newest first');
-      R.eq(entries[9].items.length, 1, 'the 1.44.6 entry keeps its single pointer');
+      R.eq(entries[10].v, '1.44.6', 'the 1.44.6 one-off retirement sits eleventh, newest first');
+      R.eq(entries[10].items.length, 1, 'the 1.44.6 entry keeps its single pointer');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
-      R.eq(entries[10].v, '1.44.5', 'the 1.44.5 reopen-resets round sits eleventh, newest first');
-      R.eq(entries[10].items.length, 1, 'the 1.44.5 entry keeps its single pointer');
-      R.eq(entries[11].v, '1.44.4', 'the 1.44.4 colour-token round sits twelfth, newest first');
-      R.eq(entries[11].items.length, 1, 'the 1.44.4 entry keeps its single pointer');
-      R.eq(entries[12].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits thirteenth, newest first');
-      R.eq(entries[12].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
-      R.eq(entries[13].v, '1.44.2', 'the 1.44.2 date-picker round sits fourteenth, newest first');
-      R.eq(entries[13].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
-      R.eq(entries[14].v, '1.44.1', 'the 1.44.1 typography round sits fifteenth, newest first');
-      R.eq(entries[14].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
-      R.eq(entries[15].v, '1.44.0', 'the 1.44.0 release sits sixteenth, newest first');
-      R.eq(entries[15].items.length, 3, 'the 1.44.0 release carries the three feature pointers (help card, roster diff, arrow-key months)');
+      R.eq(entries[11].v, '1.44.5', 'the 1.44.5 reopen-resets round sits twelfth, newest first');
+      R.eq(entries[11].items.length, 1, 'the 1.44.5 entry keeps its single pointer');
+      R.eq(entries[12].v, '1.44.4', 'the 1.44.4 colour-token round sits thirteenth, newest first');
+      R.eq(entries[12].items.length, 1, 'the 1.44.4 entry keeps its single pointer');
+      R.eq(entries[13].v, '1.44.3', 'the 1.44.3 swipe-visibility fix sits fourteenth, newest first');
+      R.eq(entries[13].items.length, 1, 'the 1.44.3 entry keeps its single pointer');
+      R.eq(entries[14].v, '1.44.2', 'the 1.44.2 date-picker round sits fifteenth, newest first');
+      R.eq(entries[14].items.length, 1, 'the 1.44.2 entry keeps its single pointer');
+      R.eq(entries[15].v, '1.44.1', 'the 1.44.1 typography round sits sixteenth, newest first');
+      R.eq(entries[15].items.length, 1, 'the 1.44.1 entry keeps its single pointer');
       const cmpV = (x, y) => { const A = x.split('.').map(Number), B = y.split('.').map(Number); return (A[0] - B[0]) || (A[1] - B[1]) || (A[2] - B[2]); };
       const badCat = [], badDate = [];
       entries.forEach((en) => {
@@ -855,13 +861,18 @@ const mkUntil = (d) => async (cond, ms) => {
 
   {
     // ---- v1.38.0: SGT landing conversions (A2) + the storage panel (B9) ----
+    // v1.45.5: the 802 seed was pinned to the authoring day (2026-10-20) —
+    // one day later the "upcoming" flight had landed and three pins rotted.
+    // Tomorrow-relative now, so the seed can never age out.
+    const __d = new Date(Date.now() + 86400000);
+    const __ty = __d.getFullYear() + '-' + String(__d.getMonth() + 1).padStart(2, '0') + '-' + String(__d.getDate()).padStart(2, '0');
     const f = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
       x.localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'S1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-01', flightType: 'Turnaround', stationDisplay: 'KUL', amount: 100 }]));
-      x.localStorage.setItem('SQ802:2026-10-20:CABINS', '{}');
+      x.localStorage.setItem('SQ802:' + __ty + ':CABINS', '{}');
       x.localStorage.setItem('SQ999:2026-10-01:CABINS', '{}');
-      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '802', ymd: '2026-10-20', std: '09:45', sta: '18:35' }] }));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ [__ty.slice(0, 7)]: [{ fn: '802', ymd: __ty, std: '09:45', sta: '18:35' }] }));
     } });
     // A2: the conversions are zone math, so DST and the :45 offsets are exact
     f.w.eval("window.__sgtOf = (ymd, hm, zone) => new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(zonedWallToUtcMs(ymd, hm, zone)));");
@@ -891,7 +902,7 @@ const mkUntil = (d) => async (cond, ms) => {
     clr.click();
     await wait(80);
     R.eq(f.w.localStorage.getItem('SQ999:2026-10-01:CABINS'), null, 'an unrelated saved menu clears');
-    R.ok(!!f.w.localStorage.getItem('SQ802:2026-10-20:CABINS'), 'an upcoming duty’s menu survives the clear');
+    R.ok(!!f.w.localStorage.getItem('SQ802:' + __ty + ':CABINS'), 'an upcoming duty’s menu survives the clear');
     R.ok(st.textContent.replace(/\s+/g, ' ').indexOf('Saved menus (flights)1') !== -1, 'counts refresh after the clear');
   }
 
