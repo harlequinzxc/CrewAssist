@@ -2138,6 +2138,9 @@
             <div class="flex items-center justify-between px-6 pb-3 shrink-0">
                 <h3 class="text-xl font-bold">Inflight Menu</h3>
                 <div class="flex items-center gap-1 shrink-0">
+                    <button type="button" id="btn-menu-cycle" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 ca-inset shrink-0 hidden" aria-label="Next saved menu">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    </button>
                     <button type="button" id="btn-menu-to-print" class="h-10 w-10 rounded-full flex items-center justify-center border border-black/10 dark:border-white/10 ca-inset shrink-0" aria-label="Print menu">
                         <i data-lucide="printer" class="w-4 h-4"></i>
                     </button>
@@ -5094,6 +5097,21 @@
             const store = loadUpcoming();
             const pruned = upcomingPrune(store);
             if (JSON.stringify(pruned) === JSON.stringify(store)) return;
+            // v1.45.5 (owner order, C1): a landed leg's saved menus leave
+            // with it. The nudge row and the card already dropped the leg
+            // the minute it landed; its menu cache now goes on the same
+            // sweep — the just-flown menu is unviewable immediately, by
+            // design. Every SQ<fn>:<ymd>: key of the ended legs goes.
+            const gone = [];
+            Object.keys(store).forEach((mk) => (store[mk] || []).forEach((f) => {
+                if (f && f.fn && f.ymd && nfFlightEnded(f, Date.now())) gone.push('SQ' + f.fn + ':' + f.ymd + ':');
+            }));
+            const drop = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && gone.some((pre) => k.indexOf(pre) === 0)) drop.push(k);
+            }
+            drop.forEach((k) => localStorage.removeItem(k));
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
             refreshNextFlightUi();
         }
@@ -7135,7 +7153,23 @@
             // round 32 (owner order): a saved flight no longer leaves the
             // list — the nudge is a fixture until the crew closes it or the
             // flight lands, so a reload keeps the tappable launcher alive
-            return upcomingList().filter((f) => f.ymd <= limit && !dismissed[f.fn + '|' + f.ymd]);
+            // v1.45.5 (owner order): the nudge covers the WHOLE duty — when
+            // any not-yet-landed leg departs inside the window, every leg of
+            // that duty joins (the return leg beyond the window too: save it
+            // while still home on wifi). Duty grouping reuses the card's
+            // chain rule — legs connect dep to previous arr, the duty ends
+            // when a leg lands at SIN. A mid-trip duty with no leg inside
+            // the window still never shows: the trigger stays a departure
+            // inside the window, not a duty underway.
+            const list = upcomingList();
+            const picked = [];
+            let i = 0;
+            while (i < list.length) {
+                const legs = nfDutyOf(list.slice(i)).legs;
+                if (legs.some((f) => f.ymd <= limit)) picked.push.apply(picked, legs);
+                i += legs.length;
+            }
+            return picked.filter((f) => !dismissed[f.fn + '|' + f.ymd]);
         }
         // round 32 (owner order): the nudge stays in the chat until the crew
         // closes it or the flight lands — and when one sector of a
@@ -7164,7 +7198,7 @@
             if (flights.length === 1) return mode === 'saved'
                 ? '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — menus saved, available offline for the flight.'
                 : '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.';
-            return 'You have <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> in the next 2 days — save all menus for offline view.';
+            return 'You have <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> coming up — save all menus for offline view.';
         }
         // the surgical path: landed lines leave, the card itself stays as-is
         function nfNudgePrune(card, flights, gone) {
@@ -14674,6 +14708,11 @@
         }
 
         function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+            // v1.45.5 (owner order): the cycle button rides the header —
+            // shown only when 2+ upcoming flights have saved menus; each
+            // tap is a fresh open of the next one (wrap at the end).
+            const cyc = document.getElementById('btn-menu-cycle');
+            if (cyc) cyc.classList.toggle('hidden', menuCycleList().length < 2);
             currentMenuSearch.selectedCabins = cabinClasses;
             currentMenuSearch.selectedSector = '';
             // v1.44.5 (owner order): a reopen always starts fresh. The state
@@ -14718,6 +14757,14 @@
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             caSheetGlideArm(sheet, backdrop);
+        }
+
+        // v1.45.5 (owner order, QOL 2): the set the viewer's cycle button
+        // flips through — every upcoming roster flight that has saved
+        // menus, chronological. Equals the live nudge set when it exists,
+        // and survives a dismissal (the saved menus are on the device).
+        function menuCycleList() {
+            try { return upcomingList().filter((f) => f && f.fn && f.ymd && menusSavedFor(f.fn, f.ymd)); } catch (e) { return []; }
         }
 
         // v1.28.2: the unified "show me this flight's menus" action. Cached →
@@ -14828,6 +14875,20 @@
         document.getElementById('btn-close-menu').addEventListener('click', closeMenuViewer);
         const menuToPrint = document.getElementById('btn-menu-to-print');
         if (menuToPrint) menuToPrint.addEventListener('click', switchViewerToPrint);
+        // v1.45.5 (owner order, QOL 2): cycle through the saved menus of
+        // upcoming roster flights — fresh open per tap, wrap at the end,
+        // pure cache reads so it works offline.
+        const menuCycleBtn = document.getElementById('btn-menu-cycle');
+        if (menuCycleBtn) menuCycleBtn.addEventListener('click', function () {
+            const list = menuCycleList();
+            if (list.length < 2) return;
+            const cur = String(currentMenuSearch.flightNumber || '') + '|' + String(currentMenuSearch.date || '');
+            let start = list.findIndex((f) => f.fn + '|' + f.ymd === cur);
+            for (let step = 1; step <= list.length; step++) {
+                const next = list[(start + step + list.length) % list.length];
+                if (openNextFlightViewer(next.fn, next.ymd)) return;
+            }
+        });
 
         function showMenuState(state) {
             const st3 = document.getElementById('menu-state-3');

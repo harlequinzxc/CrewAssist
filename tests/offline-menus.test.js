@@ -144,6 +144,56 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(w.localStorage.getItem('SQ736:' + DUTY + ':CABINS') === null && w.localStorage.getItem('SQ735:' + DUTY + ':JCL') === null, 'a flown duty still tidies away (storage stays bounded)');
   }
 
+  // --- v1.45.5 (owner order, C1): a landed leg's saved menus leave on the sweep ---
+  {
+    const PAST = '2026-01-01', FUT1 = '2026-12-24', FUT2 = '2026-12-25';
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify({
+      '2026-01': [{ fn: '111', dep: 'SIN', arr: 'NRT', ymd: PAST, std: '0900', sta: '1700' }],
+      '2026-12': [
+        { fn: '736', dep: 'SIN', arr: 'HKT', ymd: FUT1, std: '0900', sta: '1015' },
+        { fn: '735', dep: 'HKT', arr: 'SIN', ymd: FUT2, std: '1640', sta: '1955' }
+      ]
+    }));
+    w.localStorage.setItem('SQ111:' + PAST + ':CABINS', cabinPayload(1));
+    w.localStorage.setItem('SQ111:' + PAST + ':JCL', menuPayload(1));
+    w.localStorage.setItem('SQ736:' + FUT1 + ':CABINS', cabinPayload(2));
+    w.eval('nextFlightExpirySweep()');
+    R.ok(w.localStorage.getItem('SQ111:' + PAST + ':CABINS') === null, 'the landed leg loses its cabin schedule on the sweep');
+    R.ok(w.localStorage.getItem('SQ111:' + PAST + ':JCL') === null, 'and its per-cabin menu cache with it');
+    R.ok(w.localStorage.getItem('SQ736:' + FUT1 + ':CABINS') !== null, 'an upcoming leg keeps its saved menus');
+    const up = JSON.parse(w.localStorage.getItem('crewAssist.upcoming'));
+    R.ok(!up['2026-01'] && up['2026-12'].length === 2, 'the landed leg left the upcoming store, the duty stays');
+  }
+
+  // --- v1.45.5 (owner order, QOL 2): the cycle button flips through saved menus ---
+  {
+    const F1 = '2026-12-24', F2 = '2026-12-25';
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-12': [
+      { fn: '736', dep: 'SIN', arr: 'HKT', ymd: F1, std: '0900', sta: '1015' },
+      { fn: '735', dep: 'HKT', arr: 'SIN', ymd: F2, std: '1640', sta: '1955' }
+    ] }));
+    w.localStorage.setItem('SQ736:' + F1 + ':CABINS', cabinPayload(3));
+    w.localStorage.setItem('SQ736:' + F1 + ':JCL', menuPayload(3));
+    w.localStorage.setItem('SQ735:' + F2 + ':CABINS', cabinPayload(4));
+    w.localStorage.setItem('SQ735:' + F2 + ':JCL', menuPayload(4));
+    await w.eval(`openNextFlightViewer('736','${F1}')`);
+    const btn = d.getElementById('btn-menu-cycle');
+    R.ok(btn && !btn.classList.contains('hidden'), 'the cycle button shows when 2+ upcoming flights have saved menus');
+    R.ok(btn && !!btn.querySelector('[data-lucide="refresh-cw"]'), 'it carries the refresh-cw icon');
+    const printBtn = d.getElementById('btn-menu-to-print');
+    R.ok(btn && printBtn && (btn.compareDocumentPosition(printBtn) & d.defaultView.Node.DOCUMENT_POSITION_FOLLOWING) !== 0, 'it sits left of the print button');
+    d.getElementById('btn-menu-cycle').click();
+    await wait(60);
+    R.eq(w.eval('currentMenuSearch.flightNumber'), '735', 'a tap fresh-opens the next saved menu');
+    R.ok(d.getElementById('menu-hero-content').textContent.indexOf('SQ735') >= 0, 'the flight hero card names the cycled flight');
+    d.getElementById('btn-menu-cycle').click();
+    await wait(60);
+    R.eq(w.eval('currentMenuSearch.flightNumber'), '736', 'the cycle wraps back to the first');
+    w.localStorage.removeItem('SQ735:' + F2 + ':CABINS');
+    await w.eval(`openNextFlightViewer('736','${F1}')`);
+    R.ok(d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'fewer than 2 saved menus → the button hides');
+  }
+
   // --- the status dot + capability popover ---
   {
     setOnline(true);

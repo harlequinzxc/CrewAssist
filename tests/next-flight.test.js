@@ -225,7 +225,7 @@ function rosterItems(flight, sector, dateTok, opts) {
     } });
     await wait(5600);
     const nudge = d.getElementById('ca-menunudge-card');
-    R.ok(nudge && nudge.textContent.indexOf('3 flights in the next 2 days') >= 0, 'three flights in the window → consolidated copy');
+    R.ok(nudge && nudge.textContent.indexOf('3 flights coming up') >= 0, 'three turnaround days → the coming-up copy (v1.45.5: the set can span beyond the window)');
     R.ok(nudge && nudge.textContent.indexOf('Save all menus') >= 0, 'multi-flight nudge offers Save all menus');
     R.ok(nudge && nudge.querySelectorAll('.ca-menunudge-row').length === 3, 'one row per flight');
     // the sweep, against a stubbed live API
@@ -249,6 +249,39 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(!!d.getElementById('ca-nf-confirm'), 'the slim confirmation appears as the newest feed item');
     const nfcard = d.getElementById('ca-nextflight-card');
     R.ok(nfcard && /Menus saved/.test(nfcard.textContent), 'next-flight card now carries the saved badge');
+  }
+  {
+    // v1.45.5 (owner order): the nudge covers the WHOLE duty — a return leg
+    // beyond the 2-day window joins while the crew is still home on wifi
+    const { w, d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '318', dep: 'SIN', arr: 'LHR', ymd: ymd(1), std: '2335' },
+        { fn: '319', dep: 'LHR', arr: 'SIN', ymd: ymd(4), std: '1100' }
+      ])));
+    } });
+    await wait(5600);
+    const nudge = d.getElementById('ca-menunudge-card');
+    R.ok(nudge && nudge.querySelectorAll('.ca-menunudge-row').length === 2, 'the beyond-window return leg joins the duty set');
+    R.ok(nudge && nudge.textContent.indexOf('2 flights coming up') >= 0, 'the copy counts the whole duty, not just the window');
+    R.ok(nudge && nudge.textContent.indexOf('next 2 days') < 0, 'the stale window wording is gone');
+    R.ok(nudge && !!nudge.querySelector('.ca-menunudge-row[data-nf^="319|"]'), 'the return leg carries its own row');
+    d.getElementById('ca-menunudge-x').click();
+    await wait(400);
+    const dis = JSON.parse(w.localStorage.getItem('crewAssist.nudgeDismissed') || '{}');
+    R.ok(dis['318|' + ymd(1)] === 1 && dis['319|' + ymd(4)] === 1, 'one X dismisses the whole duty, return leg included');
+  }
+  {
+    // v1.45.5 (A3, owner ruling): a mid-trip duty with no leg inside the
+    // window stays silent — the trigger is a departure inside the window
+    const { d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+        { fn: '319', dep: 'LHR', arr: 'SIN', ymd: ymd(3), std: '1100' }
+      ])));
+    } });
+    await wait(5600);
+    R.ok(!d.getElementById('ca-menunudge-card'), 'no leg inside the window → no nudge, even mid-trip');
   }
   {
     // round 31 (owner spec): two-tier surfaces + canonical feed order

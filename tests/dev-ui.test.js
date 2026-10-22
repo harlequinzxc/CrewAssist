@@ -222,6 +222,11 @@ const mkUntil = (d) => async (cond, ms) => {
     // v1.45.3 (owner order): a fully-saved set never shows the nudge
     R.ok(src.includes('const savedNow = flights.map((f) => menusSavedFor(f.fn, f.ymd));') && src.includes('if (flights.length && savedNow.every(Boolean)) {'), 'the all-saved gate heads renderMenuNudge - saved means no nudge');
     R.ok(src.includes('renderMenuNudge(); // all-saved \u2014 the gate animates the card away'), 'the sweep completion routes through the gate instead of a done form');
+    // v1.45.5 (owner orders): the whole-duty nudge + the viewer's cycle button
+    R.ok(src.includes('const legs = nfDutyOf(list.slice(i)).legs;') && src.includes('if (legs.some((f) => f.ymd <= limit)) picked.push.apply(picked, legs);'), 'the nudge groups legs into duties \u2014 one leg in the window brings the whole duty');
+    R.ok(src.includes("'</b> coming up \u2014 save all menus for offline view.'"), 'the multi-flight copy says coming up, not the 2-day window');
+    R.ok(src.includes('id="btn-menu-cycle"') && src.includes('data-lucide="refresh-cw"') && src.includes('function menuCycleList()'), 'the viewer carries the cycle button over the saved-menu set');
+    R.ok(src.includes("gone.push('SQ' + f.fn + ':' + f.ymd + ':')"), 'the landed-leg sweep takes the saved menus with it');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.
@@ -855,13 +860,18 @@ const mkUntil = (d) => async (cond, ms) => {
 
   {
     // ---- v1.38.0: SGT landing conversions (A2) + the storage panel (B9) ----
+    // v1.45.5: the 802 seed was pinned to the authoring day (2026-10-20) —
+    // one day later the "upcoming" flight had landed and three pins rotted.
+    // Tomorrow-relative now, so the seed can never age out.
+    const __d = new Date(Date.now() + 86400000);
+    const __ty = __d.getFullYear() + '-' + String(__d.getMonth() + 1).padStart(2, '0') + '-' + String(__d.getDate()).padStart(2, '0');
     const f = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.wnSeen', x.eval('APP_VERSION'));
       x.localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'S1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-01', flightType: 'Turnaround', stationDisplay: 'KUL', amount: 100 }]));
-      x.localStorage.setItem('SQ802:2026-10-20:CABINS', '{}');
+      x.localStorage.setItem('SQ802:' + __ty + ':CABINS', '{}');
       x.localStorage.setItem('SQ999:2026-10-01:CABINS', '{}');
-      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '802', ymd: '2026-10-20', std: '09:45', sta: '18:35' }] }));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ [__ty.slice(0, 7)]: [{ fn: '802', ymd: __ty, std: '09:45', sta: '18:35' }] }));
     } });
     // A2: the conversions are zone math, so DST and the :45 offsets are exact
     f.w.eval("window.__sgtOf = (ymd, hm, zone) => new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Singapore',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(zonedWallToUtcMs(ymd, hm, zone)));");
@@ -891,7 +901,7 @@ const mkUntil = (d) => async (cond, ms) => {
     clr.click();
     await wait(80);
     R.eq(f.w.localStorage.getItem('SQ999:2026-10-01:CABINS'), null, 'an unrelated saved menu clears');
-    R.ok(!!f.w.localStorage.getItem('SQ802:2026-10-20:CABINS'), 'an upcoming duty’s menu survives the clear');
+    R.ok(!!f.w.localStorage.getItem('SQ802:' + __ty + ':CABINS'), 'an upcoming duty’s menu survives the clear');
     R.ok(st.textContent.replace(/\s+/g, ' ').indexOf('Saved menus (flights)1') !== -1, 'counts refresh after the clear');
   }
 
