@@ -102,25 +102,25 @@ const synthItems = [].concat(
       }
       return items;
     };
-    const octItems = await readItems('October 2026.pdf');
-    const novItems = await readItems('November 2026.pdf');
+    const octItems = await readItems('Oct 2026.pdf');
+    const novItems = await readItems('Nov 2026.pdf');
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.tourDone', '1');
       x.localStorage.setItem('crewAssist.tourOffered', '1');
     } });
     w.eval('window.__oct = rosterParse(' + JSON.stringify(octItems) + ')');
-    R.eq(w.eval('window.__oct.flights.length'), 15, 'the real October roster still parses its 15 flights');
+    R.eq(w.eval('window.__oct.flights.length'), 23, 'the real October roster parses its 23 flights (owner refresh 2026-10-24)');
     w.eval('upcomingRemember(window.__oct)');
     let days = JSON.parse(w.localStorage.getItem('crewAssist.dutyDays'));
     const dayAt = (store, ymd) => {
       const mk = String(ymd).slice(0, 7);
       return (store[mk] || []).find(x => x.ymd === ymd) || null;
     };
-    // owner report, issue 2: 12–14 Oct is one SIN-SYD-SIN duty — the 0015H
-    // landing on the 14th is a fly day of the SAME duty
+    // owner report, issue 2: 12–14 Oct is one SIN-SYD-SIN duty — the 0142H
+    // landing on the 14th is a fly day of the SAME duty (refresh: was 0015H)
     R.eq(dayAt(days, '2026-10-12').dkey, '2026-10-12', 'the SYD duty starts on the 12th');
-    R.eq([13, 14].map(dd => dayAt(days, '2026-10-' + dd).kind + ':' + dayAt(days, '2026-10-' + dd).dkey).join('|'), 'fly:2026-10-12|fly:2026-10-12', 'the 13th and the 0015H landing on the 14th belong to the same duty');
+    R.eq([13, 14].map(dd => dayAt(days, '2026-10-' + dd).kind + ':' + dayAt(days, '2026-10-' + dd).dkey).join('|'), 'fly:2026-10-12|fly:2026-10-12', 'the 13th and the 0142H landing on the 14th belong to the same duty');
     R.eq(dayAt(days, '2026-10-25').kind + ':' + dayAt(days, '2026-10-25').fns.join('/'), 'fly:218', 'the MEL duty\u2019s 0530H landing on the 25th is a fly day');
     // owner report, issue 1: 1 Oct and 2 Oct are two SEPARATE turnarounds
     R.ok(dayAt(days, '2026-10-01').dkey !== dayAt(days, '2026-10-02').dkey, 'the KUL turnaround and the HKT turnaround are different duties');
@@ -229,17 +229,31 @@ const synthItems = [].concat(
     R.eq(weekRows[0].querySelectorAll('.ca-rc-pill').length, 2, 'the week of 1–3 Oct holds exactly the two turnaround circles — the OFF day shows none');
     // owner report, issue 2: 12–14 Oct is one continuous capsule
     const syd = Array.from(weekRows[2].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(1 * 100% / 7 + 3px)') >= 0);
-    R.ok(!!syd && styleOf(syd).indexOf('calc(3 * 100% / 7 - 3px - 3px)') >= 0 && styleOf(syd).indexOf('999px 999px 999px 999px') >= 0, 'the SIN-SYD-SIN duty is ONE capsule from the 12th through its 0015H landing on the 14th');
+    R.ok(!!syd && styleOf(syd).indexOf('calc(3 * 100% / 7 - 3px - 3px)') >= 0 && styleOf(syd).indexOf('999px 999px 999px 999px') >= 0, 'the SIN-SYD-SIN duty is ONE capsule from the 12th through its 0142H landing on the 14th');
     // the MEL duty wraps the week: flush Saturday edge, flush Sunday start
     const melA = Array.from(weekRows[3].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(5 * 100% / 7 + 3px)') >= 0);
     R.ok(!!melA && styleOf(melA).indexOf('999px 0 0 999px') >= 0, 'the 23–24 Oct segment ends flush at the week edge — the duty continues');
     const melB = Array.from(weekRows[4].querySelectorAll('.ca-rc-pill')).find(p => p.className.indexOf('ca-rc-k-fly') >= 0 && styleOf(p).indexOf('calc(0 * 100% / 7)') >= 0);
     R.ok(!!melB && styleOf(melB).indexOf('0 999px 999px 0') >= 0, '…and picks up flush on Sunday the 25th, rounding off at its landing');
-    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(2.5 * 100% / 7)') >= 0) &&
-        pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0) &&
-        !pills.some(p => p.className.indexOf('ca-rc-k-sb') >= 0 && p.className.indexOf('is-capsule') >= 0), '6 and 7 Oct are two separate standby circles — SSS1 and SS80 never merge');
-    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(2.5 * 100% / 7)') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0) &&
-        pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0), '20 and 21 Oct are two separate standby circles (SN60, SN80 — owner report)');
+    R.ok(pills.some(p => p.className.indexOf('is-circle') >= 0 && p.className.indexOf('ca-rc-k-sb') >= 0 && styleOf(p).indexOf('calc(3.5 * 100% / 7)') >= 0) &&
+        !pills.some(p => p.className.indexOf('ca-rc-k-sb') >= 0 && p.className.indexOf('is-capsule') >= 0), 'the 7th\u2019s SSS3 standby renders one green circle — standbys stay circles, never capsules (refresh: October\u2019s only standby day)');
+    // roster refresh 2026-10-24: the old 6/7 (SSS1+SS80) and 20/21 (SN60+SN80)
+    // adjacent standby pairs left the real October export — the never-merge
+    // guard now runs on synthetic adjacent days, the SDLC-injection pattern
+    {
+        const sbKey = 'crewAssist.dutyDays';
+        const sbBefore = w.localStorage.getItem(sbKey);
+        const sbSt = JSON.parse(sbBefore);
+        sbSt['2026-10'] = (sbSt['2026-10'] || []).concat([
+            { ymd: '2026-10-06', kind: 'duty', code: 'SN60', loc: '', fns: [], dkey: '' },
+            { ymd: '2026-10-07', kind: 'duty', code: 'SN80', loc: '', fns: [], dkey: '' }
+        ]);
+        w.localStorage.setItem(sbKey, JSON.stringify(sbSt));
+        const sbHtml = String(w.eval('rcMonthHtml("2026-10")'));
+        const sbCircles = (sbHtml.match(/ca-rc-pill is-circle ca-rc-k-sb/g) || []).length;
+        R.ok(sbCircles >= 2 && sbHtml.indexOf('ca-rc-pill is-capsule ca-rc-k-sb') < 0, 'adjacent standby days stay separate circles — SN60 and SN80 never merge into one capsule');
+        w.localStorage.setItem(sbKey, sbBefore);
+    }
     R.eq(d.querySelectorAll('.ca-rc-pill.ca-rc-k-lo').length, 0, 'layover days never draw green pills at all (owner order)');
     // ---- the today bar ----
     const todayCell = cells.find(c => c.getAttribute('data-ymd') === TODAY);
@@ -287,7 +301,7 @@ const synthItems = [].concat(
         const mhtml = String(w.eval('rcMonthHtml("2026-10")'));
         R.ok(mhtml.indexOf('ca-rc-k-crs') >= 0, 'a course day renders its bronze circle in the month grid');
         R.ok(mhtml.indexOf('ca-rc-k-sb') >= 0 && mhtml.indexOf('ca-rc-k-fly') >= 0, 'standby green and flight blue circles render in the same month grid');
-        w.eval('rosterCalSelect("2026-10-06")');
+        w.eval('rosterCalSelect("2026-10-07")'); // refresh: the 7th is October's standby day (SSS3)
         await wait(120);
         R.ok(d.querySelector('.ca-rc-row.is-on .ca-rc-gut.k-sb'), 'a standby day\u2019s selected row carries the standby gutter tint (green)');
         w.eval('rosterCalSelect("2026-10-31")');
@@ -360,7 +374,7 @@ const synthItems = [].concat(
     await wait(300);
     let det = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
     R.ok(det.indexOf('SQ 736') >= 0 && det.indexOf('SQ 735') >= 0, 'the flown 2 Oct HKT turnaround retells both legs as flight cards');
-    R.ok(det.indexOf('1615H') >= 0 && det.indexOf('2105H') >= 0, 'past legs keep their times (never-pruned store)');
+    R.ok(det.indexOf('1607H') >= 0 && det.indexOf('2052H') >= 0, 'past legs keep their times (never-pruned store)');
     R.ok(det.indexOf('no leg times') < 0, 'a flown duty never says "no leg times for this day" again');
     // owner report, issue 2: the (+1) format
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-13').click();
@@ -371,10 +385,10 @@ const synthItems = [].concat(
     R.ok(rowN(13).classList.contains('is-on') && !rowN(12).classList.contains('is-on') && !rowN(14).classList.contains('is-on'), 'the selected day is the highlighted band \u2014 its neighbours are not');
     const t13 = rowN(13).textContent.replace(/\s+/g, ' ');
     R.ok(t13.indexOf('LO · SYD') >= 0 && t13.indexOf('SQ 242') >= 0, 'the 13th wakes in SYD and flies the leg home — layover label above the flight card');
-    R.ok(t13.indexOf('1900H') >= 0 && t13.indexOf('(+1) 0015H') >= 0, 'a leg landing past midnight wears the owner\u2019s (+1) format');
-    R.ok(t13.indexOf('8H 15M') >= 0, 'the card shows the roster\u2019s own block time — 8H 15M');
+    R.ok(t13.indexOf('2006H') >= 0 && t13.indexOf('(+1) 0142H') >= 0, 'a leg landing past midnight wears the owner\u2019s (+1) format');
+    R.ok(t13.indexOf('8H 36M') >= 0, 'the card shows the roster\u2019s own block time — 8H 36M');
     const t14 = rowN(14).textContent.replace(/\s+/g, ' ');
-    R.ok(t14.indexOf('Lands SIN') >= 0 && t14.indexOf('0015H') >= 0, 'the landing day reads Lands SIN · 0015H');
+    R.ok(t14.indexOf('Lands SIN') >= 0 && t14.indexOf('0142H') >= 0, 'the landing day reads Lands SIN · 0142H');
     const future = cells.find(c => c.getAttribute('data-ymd') === '2026-10-27');
     const visibleCards = () => Array.from(d.querySelectorAll('[data-calc-card]')).filter((c) => !c.closest('[data-rc-live-calc]'));
     const cardsBefore = visibleCards().length;
@@ -390,15 +404,27 @@ const synthItems = [].concat(
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-03').click();
     await wait(200);
     R.ok(d.getElementById('ca-rc-detail').textContent.indexOf('ATDO') >= 0 && d.getElementById('ca-rc-detail').textContent.indexOf('Enjoy your day off') >= 0, 'an off day shows its roster code and its caption');
-    // standby windows (owner-provided timings)
-    cells.find(c => c.getAttribute('data-ymd') === '2026-10-20').click();
+    // standby windows (owner-provided timings) — refresh: the 7th is the
+    // real SSS3 day; SN60's different window runs on a synthetic day so the
+    // per-code coverage survives the roster refresh
+    cells.find(c => c.getAttribute('data-ymd') === '2026-10-07').click();
     await wait(200);
     let sbDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
-    R.ok(sbDet.indexOf('Standby / SN60') >= 0 && sbDet.indexOf('Window 0600H') >= 0 && sbDet.indexOf('2159H') >= 0, 'a standby day shows its window — Standby / SN60, 0600H to 2159H');
-    cells.find(c => c.getAttribute('data-ymd') === '2026-10-04').click();
-    await wait(200);
-    sbDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
-    R.ok(sbDet.indexOf('Standby / SSS3') >= 0 && sbDet.indexOf('Window 1200H') >= 0 && sbDet.indexOf('2359H') >= 0, 'SSS3 reads its 1200H to 2359H window');
+    R.ok(sbDet.indexOf('Standby / SSS3') >= 0 && sbDet.indexOf('Window 1200H') >= 0 && sbDet.indexOf('2359H') >= 0, 'a standby day shows its window — Standby / SSS3, 1200H to 2359H');
+    {
+        const sbKey = 'crewAssist.dutyDays';
+        const sbBefore = w.localStorage.getItem(sbKey);
+        const sbSt = JSON.parse(sbBefore);
+        sbSt['2026-10'] = (sbSt['2026-10'] || []).map((dd) => dd.ymd === '2026-10-06' ? { ymd: '2026-10-06', kind: 'duty', code: 'SN60', loc: '', fns: [], dkey: '' } : dd);
+        w.localStorage.setItem(sbKey, JSON.stringify(sbSt));
+        w.eval('rosterCalTimelineInit()');
+        w.eval('rosterCalSelect("2026-10-06")');
+        await wait(200);
+        sbDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+        R.ok(sbDet.indexOf('Standby / SN60') >= 0 && sbDet.indexOf('Window 0600H') >= 0 && sbDet.indexOf('2159H') >= 0, 'SN60 reads its own 0600H to 2159H window');
+        w.localStorage.setItem(sbKey, sbBefore);
+        w.eval('rosterCalTimelineInit()');
+    }
     // a saved duty offers its earnings entry from the detail section
     w.eval("persistArchive([{ id: 'e1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-29', flightType: 'Layover', stationDisplay: 'HKT', amount: 318.55 }])");
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-29').click();

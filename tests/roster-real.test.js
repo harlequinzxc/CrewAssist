@@ -25,7 +25,7 @@ const EXPECTED_FLAGS = {
     'Sep 2025.pdf': ['starts outside Singapore (roster begins mid-trip)', 'does not return to Singapore before the roster ends'],
     'Oct 2025.pdf': ['starts outside Singapore (roster begins mid-trip)'],
     'Dec 2025.pdf': ['does not return to Singapore before the roster ends'],
-    'October 2026.pdf': ['does not return to Singapore before the roster ends'],
+    'Oct 2026.pdf': ['does not return to Singapore before the roster ends'],
     // 2026 completions: Jan/Apr/Nov begin mid-trip (completing sectors live in
     // Dec 2025 / Mar / Oct), Mar ends mid-trip (completes in Apr). Feb's
     // Christchurch return is a TVL positioning row — v1.32.1 builds it
@@ -33,7 +33,7 @@ const EXPECTED_FLAGS = {
     'Jan 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
     'Mar 2026.pdf': ['does not return to Singapore before the roster ends'],
     'Apr 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
-    'November 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
+    'Nov 2026.pdf': ['starts outside Singapore (roster begins mid-trip)'],
 };
 
 const MONTHS = { Jan: '01', Feb: '02', Mar: '03', Apr: '04', May: '05', Jun: '06', Jul: '07', Aug: '08', Sep: '09', Oct: '10', Nov: '11', Dec: '12' };
@@ -100,7 +100,7 @@ function expectedMonthLabel(f) {
     // The calendar used to cut the day at its mid-turn SIN arrival (SQ
     // 134/133 shown, 138/137 lost); the parser always chained all four.
     {
-        const r = singles['September 2026.pdf'].parsed;
+        const r = singles['Sep 2026.pdf'].parsed;
         R.eq(r.flights.filter(f => f.ymd === '2026-09-03').map(f => f.fn).join('/'), '134/133/138/137', 'September 2026: 3 Sep carries all four same-day sectors');
         const t = (r.trips || []).find(tr => (tr.sectors || []).some(s => s.fn === '134'));
         R.ok(!!t && t.ok && t.sectors.length === 4, 'the four sectors chain into ONE buildable turnaround trip');
@@ -115,7 +115,7 @@ function expectedMonthLabel(f) {
     // while the departure instant must come from the STD row's date — the
     // card showed "In the air" through the whole Melbourne layover before it.
     {
-        const r = singles['October 2026.pdf'].parsed;
+        const r = singles['Oct 2026.pdf'].parsed;
         const f218 = r.flights.find(x => x.fn === '218' && x.dep === 'MEL');
         R.ok(!!f218, 'October 2026: the SQ218 MEL-SIN leg parses');
         R.eq(f218.ymd, '2026-10-24', "SQ218 keeps the report row's date as ymd");
