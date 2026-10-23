@@ -227,6 +227,11 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(src.includes("'</b> coming up \u2014 save all menus for offline view.'"), 'the multi-flight copy says coming up, not the 2-day window');
     R.ok(src.includes('id="btn-menu-cycle"') && src.includes('data-lucide="refresh-cw"') && src.includes('function menuCycleList()'), 'the viewer carries the cycle button over the saved-menu set');
     R.ok(src.includes("gone.push('SQ' + f.fn + ':' + f.ymd + ':')"), 'the landed-leg sweep takes the saved menus with it');
+    // v1.45.6 (owner order): the printer's saved-menu flight chips
+    R.ok(src.includes('id="print-flight-row"'), 'the printer carries the flight-chip row above the layout toggle');
+    R.ok(src.includes("fnum.className = 'print-sector-num'") && src.includes('fset.forEach((f, idx) => {'), 'the flight chips mirror the sector-chip pattern, numbered, pure route');
+    R.ok(src.includes('openMenuPrinter(f.fn, f.ymd, saved.cabinClasses)'), 'a chip tap is a fresh open of that flight');
+    R.ok(src.includes("frow.classList.toggle('hidden', fset.length < 2)"), 'the row hides when fewer than 2 saved menus');
     // v1.44.1 (standing owner rule, 2026-10-14): typography discipline \u2014 one
     // fixed scale by role, documented at the head of the <style> block. These
     // pins hold the floor and the rungs.

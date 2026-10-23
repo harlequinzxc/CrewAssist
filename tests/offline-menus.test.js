@@ -194,6 +194,43 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'fewer than 2 saved menus → the button hides');
   }
 
+  // --- v1.45.6 (owner order): the printer's flight chips pick the saved menu ---
+  {
+    const G1 = '2026-12-26', G2 = '2026-12-27';
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-12': [
+      { fn: '736', dep: 'SIN', arr: 'HKT', ymd: G1, std: '0900', sta: '1015' },
+      { fn: '735', dep: 'HKT', arr: 'SIN', ymd: G2, std: '1640', sta: '1955' }
+    ] }));
+    w.localStorage.setItem('SQ736:' + G1 + ':CABINS', cabinPayload(5));
+    w.localStorage.setItem('SQ736:' + G1 + ':JCL', menuPayload(5));
+    w.localStorage.setItem('SQ736:' + G1 + ':YCL', menuPayload(6));
+    w.localStorage.setItem('SQ735:' + G2 + ':CABINS', cabinPayload(7));
+    w.localStorage.setItem('SQ735:' + G2 + ':JCL', menuPayload(7));
+    w.localStorage.setItem('SQ735:' + G2 + ':YCL', menuPayload(8));
+    await w.eval(`openMenuPrinter('736','${G1}',['JCL'])`);
+    await wait(200);
+    const frow = d.getElementById('print-flight-row');
+    R.ok(frow && !frow.classList.contains('hidden'), 'the flight chip row shows when 2+ saved menus exist');
+    const chips = frow ? frow.querySelectorAll('button') : [];
+    R.eq(chips.length, 2, 'one chip per saved menu, chronological');
+    R.ok(frow.textContent.indexOf('SIN → HKT') >= 0 && frow.textContent.indexOf('HKT → SIN') >= 0, 'chips carry the pure route, exactly like sector chips');
+    R.ok(chips.length === 2 && chips[0].querySelector('.print-sector-num') && chips[0].querySelector('.print-sector-num').textContent === '1', 'the chips mirror the sector-chip markup (numbered)');
+    R.ok(chips.length === 2 && chips[0].className.indexOf('border-sia-gold') >= 0 && chips[1].className.indexOf('border-sia-gold') < 0, 'the open flight\u2019s chip is the selected one');
+    // fresh open ruling: dirty the layout, tap the other chip, defaults return
+    w.eval("printState.layout = 'compact'");
+    const live = d.querySelectorAll('#print-flight-row button');
+    live[1].click();
+    await wait(250);
+    R.eq(w.eval('currentMenuSearch.flightNumber'), '735', 'tapping a chip opens that flight in the printer');
+    R.ok(d.getElementById('print-title').textContent.indexOf('735') >= 0, 'the printer title names the newly picked flight');
+    R.eq(w.eval('printState.layout'), 'elegant', 'a chip tap is a fresh open — the v1.44.5 defaults return');
+    // fewer than 2 saved menus → the row hides
+    w.localStorage.removeItem('SQ735:' + G2 + ':CABINS');
+    await w.eval(`openMenuPrinter('736','${G1}',['JCL'])`);
+    await wait(200);
+    R.ok(d.getElementById('print-flight-row').classList.contains('hidden'), 'fewer than 2 saved menus → the row hides');
+  }
+
   // --- the status dot + capability popover ---
   {
     setOnline(true);
