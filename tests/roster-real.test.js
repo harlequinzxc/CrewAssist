@@ -107,6 +107,22 @@ function expectedMonthLabel(f) {
         R.eq(t ? t.type : '', 'Turnaround', 'the 4-sector day is a turnaround (every ground stop under 6h)');
     }
 
+    // ---- v1.45.7 (owner report, live 2026-10-24): SQ218's report-before- ----
+    // midnight duty. The real October 2026 roster prints SQ 218 MEL-SIN with
+    // rpt 2335 + ft 07:55 on the 24th column and STD 0035 + STA 0530 on the
+    // 25th: the crew reports 23:35 on the 24th and flies after midnight. The
+    // leg keeps ymd = the report row's date (save-key, calendar report day)
+    // while the departure instant must come from the STD row's date — the
+    // card showed "In the air" through the whole Melbourne layover before it.
+    {
+        const r = singles['October 2026.pdf'].parsed;
+        const f218 = r.flights.find(x => x.fn === '218' && x.dep === 'MEL');
+        R.ok(!!f218, 'October 2026: the SQ218 MEL-SIN leg parses');
+        R.eq(f218.ymd, '2026-10-24', "SQ218 keeps the report row's date as ymd");
+        R.eq(f218.stdRowYmd, '2026-10-25', "SQ218's STD row is the 25th");
+        R.eq(f218.depDate, '2026-10-25', 'SQ218 departs on the 25th (0035 after the 2335 report)');
+    }
+
     // ---- v1.32.1: every real positioning sector builds pre-marked paxing ----
     // These four are the only PU/TVL sectors across all fixtures; before
     // v1.32.1 their whole trips were refused with 'some times could not be
