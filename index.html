@@ -2523,7 +2523,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.6'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.7'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2545,6 +2545,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.7', d: '2026-10-24', items: [
+                { c: 'fix', t: 'A report-before-midnight duty departs on its flight day — the Melbourne layover never shows "in the air".' },
+            ] },
             { v: '1.45.6', d: '2026-10-23', items: [
                 { c: 'new', t: 'Flight chips pick saved menus in the printer.' },
             ] },
