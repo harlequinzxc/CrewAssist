@@ -346,6 +346,49 @@ const fs = require('fs');
     R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Deleted 6 entries') !== -1, 'toast confirms the scoped delete');
   }
 
+  // --- v1.45.9 (owner order): the search reads each flight's frozen summary ---
+  {
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        { id: 'pax1', savedAt: '2026-02-13T10:00:00Z', monthKey: '2026-02', sectorDate: '2026-02-13', stationDisplay: 'SIN/CHC/SIN', flightType: 'Layover', amount: 561.76,
+          detail: { type: 'Layover', grandTotal: 561.76, rankRate: 28.5, stations: [], sectors: [
+            { fn: '295', dep: 'SIN', arr: 'CHC', std: '0906', sta: '2340', ftHm: '9H 34M', depYmd: '2026-02-11' },
+            { fn: '298', dep: 'CHC', arr: 'SIN', std: '1200', sta: '1735', ftHm: '', paxing: true, depYmd: '2026-02-13' }
+          ] } },
+        { id: 'old1', savedAt: '2026-02-02T10:00:00Z', monthKey: '2026-02', sectorDate: '2026-02-02', stationDisplay: 'SIN/KTM', flightType: 'Turnaround', amount: 210.5 },
+        { id: 'ktm1', savedAt: '2026-10-18T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-18', stationDisplay: 'SIN/KTM/SIN', flightType: 'Turnaround', amount: 320.4,
+          detail: { type: 'Turnaround', grandTotal: 320.4, rankRate: 28.5, stations: [], sectors: [
+            { fn: '442', dep: 'SIN', arr: 'KTM', std: '0900', sta: '1155', ftHm: '4H 55M', depYmd: '2026-10-18' },
+            { fn: '441', dep: 'KTM', arr: 'SIN', std: '1300', sta: '1830', ftHm: '4H 30M', depYmd: '2026-10-18' }
+          ] } }
+      ]));
+    } });
+    w.showArchiveOverlay();
+    await wait(200);
+    const type = async (q) => {
+      const s = d.getElementById('ca-arch-search');
+      s.value = q; s.dispatchEvent(new w.Event('input', { bubbles: true }));
+      await wait(60);
+      return Array.from(d.querySelectorAll('.ca-arch-row'));
+    };
+    let rows = await type('paxing');
+    R.eq(rows.length, 1, '"paxing" finds the flight whose summary carries the paxing note');
+    R.ok(rows[0] && rows[0].textContent.indexOf('561.76') >= 0, 'and it is the CHC layover entry');
+    rows = await type('298');
+    R.eq(rows.length, 1, 'the partner flight number SQ 298 — a word only the summary knows — finds its entry');
+    rows = await type('1200');
+    R.eq(rows.length, 1, 'a printed STD from the summary finds its entry');
+    rows = await type('kathmandu');
+    R.eq(rows.length, 1, 'a full city name from the overview sentence finds its entry');
+    R.ok(rows[0] && rows[0].textContent.indexOf('320.40') >= 0, 'and it is the entry WITH a summary — the old bare KTM one stays out');
+    rows = await type('KTM');
+    R.eq(rows.length, 2, 'route matching is unchanged: both KTM entries answer to "KTM"');
+    rows = await type('CHC');
+    R.eq(rows.length, 1, 'the CHC entry still answers to its route');
+    rows = await type('');
+    R.eq(rows.length, 3, 'clearing the search restores all three');
+  }
+
     // --- v1.27.0 backup nudge ---
   {
     // v1.39.0 hotfix 9: the seeds ride the run date (convention #5) — a
