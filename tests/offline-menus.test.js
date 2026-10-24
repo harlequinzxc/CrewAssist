@@ -194,7 +194,7 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'fewer than 2 saved menus → the button hides');
   }
 
-  // --- v1.45.9 (owner ruling): the cycle button hides for a searched flight ---
+  // --- v1.45.9 + v1.45.10 (owner rulings): the searched flight's own cycle ---
   {
     const F1 = '2026-12-24', F2 = '2026-12-25';
     w.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-12': [
@@ -210,7 +210,7 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     // the search card's open: the card sets fromSearch before the viewer opens
     w.eval('currentMenuSearch.fromSearch = true');
     await w.eval(`openMenuViewerForCabins('736','${F1}',['JCL'])`);
-    R.ok(d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'a searched flight hides the cycle button (v1.45.9 owner ruling)');
+    R.ok(d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'a searched SINGLE-sector flight hides the cycle button (v1.45.9 + v1.45.10 owner rulings)');
     await w.eval(`openNextFlightViewer('736','${F1}')`);
     R.ok(!d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'a roster open clears the searched flag — the button returns');
     // the printer swap inherits the flag: a searched print keeps the viewer's cycle hidden
@@ -219,6 +219,71 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await wait(200);
     await w.eval('switchPrinterToViewer()');
     R.ok(d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'the printer→viewer swap from a searched flight keeps the cycle hidden');
+    // leave the flag clear for the blocks that follow
+    w.eval('currentMenuSearch.fromSearch = false');
+  }
+
+  // --- v1.45.10 (owner rulings): the searched flight cycles ITS OWN sectors ---
+  // A multi-sector search shows the cycle button flipping through its own
+  // legs (never the saved menus); its print chips are its sectors only; a
+  // single-sheet search keeps one inert chip. The nudge set exists the whole
+  // time — two saved menus would have leaked in before the ruling.
+  {
+    const G1 = '2026-12-30', F1 = '2026-12-24', F2 = '2026-12-25';
+    const twoLegs = [
+      { flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'HKT', departureLocalDate: '2026-12-30 09:20:00', arrivalLocalDate: '2026-12-30 10:35:00', departureUtcDate: '2026-12-30 01:20:00', arrivalUtcDate: '2026-12-30 02:35:00', flightDuration: '2h 15m' } },
+      { flightDetails: { departureAirportCode: 'HKT', arrivalAirportCode: 'SIN', departureLocalDate: '2026-12-30 16:40:00', arrivalLocalDate: '2026-12-30 19:55:00', departureUtcDate: '2026-12-30 09:40:00', arrivalUtcDate: '2026-12-30 12:55:00', flightDuration: '2h 15m' } }
+    ];
+    const twoSectorPayload = (ts) => JSON.stringify({ timestamp: ts, data: { statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL', 'YCL'], legs: twoLegs } });
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-12': [
+      { fn: '736', dep: 'SIN', arr: 'HKT', ymd: F1, std: '0900', sta: '1015' },
+      { fn: '735', dep: 'HKT', arr: 'SIN', ymd: F2, std: '1640', sta: '1955' }
+    ] }));
+    w.localStorage.setItem('SQ736:' + F1 + ':CABINS', cabinPayload(3));
+    w.localStorage.setItem('SQ736:' + F1 + ':JCL', menuPayload(3));
+    w.localStorage.setItem('SQ735:' + F2 + ':CABINS', cabinPayload(4));
+    w.localStorage.setItem('SQ735:' + F2 + ':JCL', menuPayload(4));
+    w.localStorage.setItem('SQ999:' + G1 + ':CABINS', twoSectorPayload(20));
+    w.localStorage.setItem('SQ999:' + G1 + ':JCL', twoSectorPayload(20));
+    w.localStorage.setItem('SQ999:' + G1 + ':YCL', twoSectorPayload(21));
+    // the viewer: cycle through the searched flight's own sectors
+    w.eval(`currentMenuSearch.flightNumber='999'; currentMenuSearch.date='${G1}'; currentMenuSearch.cabins=['JCL','YCL']; currentMenuSearch.fromSearch=true;`);
+    await w.eval(`openMenuViewerForCabins('999','${G1}',['JCL'])`);
+    await wait(400);
+    R.ok(!d.getElementById('btn-menu-cycle').classList.contains('hidden'), 'a searched MULTI-sector flight shows the cycle button');
+    R.eq(w.eval('currentMenuSearch.sectorLegs.length'), 2, 'the sector cycle holds the searched flight\u2019s own two legs');
+    const first = w.eval('currentMenuSearch.selectedSector');
+    d.getElementById('btn-menu-cycle').click();
+    await wait(150);
+    R.ok(w.eval('currentMenuSearch.selectedSector') !== first, 'a tap steps to the next sector of the searched flight');
+    R.eq(w.eval('currentMenuSearch.flightNumber'), '999', 'the cycle never leaves the searched flight');
+    d.getElementById('btn-menu-cycle').click();
+    await wait(150);
+    R.eq(w.eval('currentMenuSearch.selectedSector'), first, 'the sector cycle wraps back to the first');
+    // the printer: the searched flight's sector chips only — no saved-menu chips
+    w.eval('currentMenuSearch.fromSearch = true');
+    await w.eval(`openMenuPrinter('999','${G1}',['JCL','YCL'])`);
+    await wait(300);
+    const frowA = d.getElementById('print-flight-row');
+    R.ok(frowA && !frowA.classList.contains('hidden'), 'the searched multi-sheet duty shows its chip line');
+    R.eq(frowA.querySelectorAll('button').length, 2, 'only the searched flight\u2019s sector chips render — the two saved menus never leak in');
+    frowA.querySelectorAll('button')[1].click();
+    await wait(200);
+    R.eq(w.eval('printState.sectorIdx'), 1, 'a sector chip still picks its sheet');
+    // the printer: a single-sheet search keeps ONE inert chip
+    w.localStorage.setItem('SQ998:' + G1 + ':CABINS', cabinPayload(30));
+    w.localStorage.setItem('SQ998:' + G1 + ':JCL', menuPayload(30));
+    w.eval('currentMenuSearch.fromSearch = true');
+    await w.eval(`openMenuPrinter('998','${G1}',['JCL'])`);
+    await wait(300);
+    const frowB = d.getElementById('print-flight-row');
+    R.ok(frowB && !frowB.classList.contains('hidden'), 'a single-sheet search still shows its chip line');
+    R.eq(frowB.querySelectorAll('button').length, 1, 'the single-sheet search keeps exactly ONE chip');
+    frowB.querySelectorAll('button')[0].click();
+    await wait(250);
+    R.eq(w.eval('currentMenuSearch.flightNumber') === '998' && w.eval('printState.sectorIdx') === 0 && w.eval('printState.layout') === 'elegant', true, 'tapping that chip does nothing — no fresh open, no sheet change');
+    // leave the flag clear for the blocks that follow
+    w.eval('currentMenuSearch.fromSearch = false');
   }
 
   // --- v1.45.6 (owner order): the printer's flight chips pick the saved menu ---
@@ -367,11 +432,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.9';"), 'APP_VERSION stamped 1.45.9');
+    R.ok(src.includes("var APP_VERSION = '1.45.10';"), 'APP_VERSION stamped 1.45.10');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v240"), 'service-worker cache name bumped to v240 (the v1.45.9 chip-line release)');
+    R.ok(sw.includes("crewassist-v241"), 'service-worker cache name bumped to v241 (the v1.45.10 searched-cycle release)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs

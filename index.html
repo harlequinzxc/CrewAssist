@@ -2526,7 +2526,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.9'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.10'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2548,6 +2548,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.10', d: '2026-10-24', items: [
+                { c: 'fix', t: 'A searched flight’s cycle button flips through its own sectors — never back to the saved menus — and hides for single-sector flights.' },
+                { c: 'fix', t: 'The printer shows a searched flight’s own sector chips only — a single-sheet search keeps one inert chip, and no saved-menu chips ride beside it.' }
+            ] },
             { v: '1.45.9', d: '2026-10-24', items: [
                 { c: 'fix', t: 'The printer keeps its chips on ONE line — the sector chips join the saved-menu chips behind a hairline, and a single-sheet duty shows none.' },
                 { c: 'fix', t: 'A flight opened from the search card no longer shows the viewer’s cycle button — it belongs to the roster’s saved menus.' },
@@ -11932,7 +11936,12 @@
         // Lucide icons inlined as raw SVG. These strings are interpolated into markup
         // that never gets a lucide.createIcons() pass (the menu viewer) or into
         // textContent sinks, so a real <i data-lucide> would show up as an empty tag.
-        const LUCIDE_PLANE_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>';
+        // v1.45.10: `var`, not `const` — the sector-dropdown builder and the
+        // searched-sector cycle live in a later script block; browsers share
+        // top-level const across classic scripts, but the test rig evals each
+        // block separately, where const stays eval-scoped. Same value, same
+        // pixels, global everywhere now.
+        var LUCIDE_PLANE_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>';
         const LUCIDE_X_SVG = '<svg class="ca-inline-icon" xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
 
         function lmaMealBadge(on, letter, onCls) {
@@ -14829,6 +14838,9 @@
             if (cyc) cyc.classList.toggle('hidden', !!currentMenuSearch.fromSearch || menuCycleList().length < 2);
             currentMenuSearch.selectedCabins = cabinClasses;
             currentMenuSearch.selectedSector = '';
+            // v1.45.10: the searched-sector cycle state starts empty — the
+            // render fills it with this flight's own legs
+            currentMenuSearch.sectorLegs = [];
             // v1.44.5 (owner order): a reopen always starts fresh. The state
             // reset (menuViewState, meal services) runs further down, just
             // before loadMenu; what was missing is the pane itself — zero
@@ -14994,8 +15006,24 @@
         // v1.45.5 (owner order, QOL 2): cycle through the saved menus of
         // upcoming roster flights — fresh open per tap, wrap at the end,
         // pure cache reads so it works offline.
+        // v1.45.10 (owner ruling): a SEARCHED flight cycles its OWN sectors
+        // instead — the legs the search card selected (or all of them) —
+        // and never jumps back to the roster's saved menus.
         const menuCycleBtn = document.getElementById('btn-menu-cycle');
         if (menuCycleBtn) menuCycleBtn.addEventListener('click', function () {
+            if (currentMenuSearch.fromSearch) {
+                const legs = currentMenuSearch.sectorLegs || [];
+                if (legs.length < 2) return;
+                const code = (leg) => leg.flightDetails.departureAirportCode + '-' + leg.flightDetails.arrivalAirportCode;
+                const cur = legs.findIndex((l) => code(l) === currentMenuSearch.selectedSector);
+                const next = legs[(cur + 1 + legs.length) % legs.length];
+                currentMenuSearch.selectedSector = code(next);
+                const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const lbl = document.getElementById('menu-sector-label');
+                if (lbl) lbl.innerHTML = esc(next.flightDetails.departureAirportCode) + LUCIDE_PLANE_SVG + esc(next.flightDetails.arrivalAirportCode);
+                renderSector(next);
+                return;
+            }
             const list = menuCycleList();
             if (list.length < 2) return;
             const cur = String(currentMenuSearch.flightNumber || '') + '|' + String(currentMenuSearch.date || '');
@@ -15187,6 +15215,16 @@
             } else {
                 sectorWrap.classList.add('hidden');
             }
+            // v1.45.10 (owner ruling, "only cycle through the current
+            // searched sectors"): for a SEARCHED flight the cycle button
+            // flips through this flight's own legs — the sectors the crew
+            // picked on the search card, or all of them — never back to
+            // the roster's saved menus. It shows only when there are 2+;
+            // a single-sector search keeps it hidden. Roster opens are
+            // untouched: their cycle stays on the saved menus.
+            currentMenuSearch.sectorLegs = filteredLegs.slice();
+            const cycSectorBtn = document.getElementById('btn-menu-cycle');
+            if (cycSectorBtn && currentMenuSearch.fromSearch) cycSectorBtn.classList.toggle('hidden', filteredLegs.length < 2);
 
             // Culinary Dropdown reset (will be populated in renderSector if applicable)
             document.getElementById('menu-culinary-wrap').classList.add('hidden');
@@ -17046,13 +17084,19 @@
             // 2+ sheets; a single-sheet duty shows none (its route already
             // rides the title line, so a lone sector chip would only
             // duplicate it).
+            // v1.45.10 (owner ruling): a SEARCHED flight shows only ITS OWN
+            // chips — the sector chips for a multi-sheet search, or ONE
+            // inert chip for a single-sheet search (present, but a tap does
+            // nothing). The roster's saved-menu chips never mix into a
+            // search — they kept riding beside it.
             const frow = document.getElementById('print-flight-row');
             if (frow) {
                 frow.innerHTML = '';
-                const fset = menuCycleList();
+                const searched = !!currentMenuSearch.fromSearch;
+                const fset = searched ? [] : menuCycleList();
                 const curKey = String(currentMenuSearch.flightNumber || '') + '|' + String(currentMenuSearch.date || '');
                 const multi = n >= 2;
-                frow.classList.toggle('hidden', fset.length < 2 && !multi);
+                frow.classList.toggle('hidden', searched ? n < 1 : (fset.length < 2 && !multi));
                 fset.forEach((f, idx) => {
                     const on = f.fn + '|' + f.ymd === curKey;
                     const fbtn = document.createElement('button');
@@ -17088,28 +17132,32 @@
                     sep.setAttribute('aria-hidden', 'true');
                     frow.appendChild(sep);
                 }
-                if (multi) {
-                    (model.sectors || []).forEach((sec, idx) => {
-                        const on = idx === printState.sectorIdx;
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'h-9 pl-1.5 pr-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap inline-flex items-center gap-1.5 ' + (on
-                            ? 'border-sia-gold text-sia-gold bg-transparent'
-                            : 'ca-inset text-gray-500 border-black/10 dark:border-white/10');
-                        const num = document.createElement('span');
-                        num.className = 'print-sector-num' + (on ? ' bg-sia-gold text-black border-sia-gold' : '');
-                        num.textContent = String(idx + 1);
-                        const lab = document.createElement('span');
-                        const route = (sec.dep || '') + ' → ' + (sec.arr || '');
-                        lab.textContent = route.trim() === '→' ? '' : route;
-                        btn.appendChild(num);
-                        if (lab.textContent) btn.appendChild(lab);
-                        btn.addEventListener('click', () => {
-                            printState.sectorIdx = idx;
-                            renderPrintView(true);
-                        });
-                        frow.appendChild(btn);
+                const chipInto = (sec, idx, on, inert) => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'h-9 pl-1.5 pr-3 rounded-full text-xs font-bold shrink-0 border whitespace-nowrap inline-flex items-center gap-1.5 ' + (on
+                        ? 'border-sia-gold text-sia-gold bg-transparent'
+                        : 'ca-inset text-gray-500 border-black/10 dark:border-white/10');
+                    const num = document.createElement('span');
+                    num.className = 'print-sector-num' + (on ? ' bg-sia-gold text-black border-sia-gold' : '');
+                    num.textContent = String(idx + 1);
+                    const lab = document.createElement('span');
+                    const route = (sec.dep || '') + ' → ' + (sec.arr || '');
+                    lab.textContent = route.trim() === '→' ? '' : route;
+                    btn.appendChild(num);
+                    if (lab.textContent) btn.appendChild(lab);
+                    if (!inert) btn.addEventListener('click', () => {
+                        printState.sectorIdx = idx;
+                        renderPrintView(true);
                     });
+                    frow.appendChild(btn);
+                };
+                if (multi) {
+                    (model.sectors || []).forEach((sec, idx) => chipInto(sec, idx, idx === printState.sectorIdx, false));
+                } else if (searched && n === 1) {
+                    // the searched single-sheet flight: its chip rides the
+                    // line, selected, and a tap does nothing (owner ruling)
+                    (model.sectors || []).slice(0, 1).forEach((sec, idx) => chipInto(sec, idx, true, true));
                 }
             }
             const setSeg = (onId, offId, on) => {
