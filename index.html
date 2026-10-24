@@ -2526,7 +2526,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.11'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.10'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2548,12 +2548,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
-            { v: '1.45.11', d: '2026-10-24', items: [
-                { c: 'fix', t: 'A positioning leg that lands at a different airport than the operating leg departs (Beijing Daxing to Capital) no longer orphans the return — 29 June 2025 keeps its leg times.' }
-            ] },
             { v: '1.45.10', d: '2026-10-24', items: [
                 { c: 'fix', t: 'A searched flight’s cycle button flips through its own sectors — never back to the saved menus — and hides for single-sector flights.' },
-                { c: 'fix', t: 'The printer shows a searched flight’s own sector chips only — a single-sheet search keeps one inert chip, and no saved-menu chips ride beside it.' }
+                { c: 'fix', t: 'The printer shows a searched flight’s own sector chips only — a single-sheet search keeps one inert chip, and no saved-menu chips ride beside it.' },
+                { c: 'fix', t: 'A positioning leg that lands at a different airport than the operating leg departs no longer orphans the return leg.' }
             ] },
             { v: '1.45.9', d: '2026-10-24', items: [
                 { c: 'fix', t: 'The printer keeps its chips on ONE line — the sector chips join the saved-menu chips behind a hairline, and a single-sheet duty shows none.' },
@@ -6429,11 +6427,11 @@
                     const cont = prev.arr === 'SIN' && all[k].dep === 'SIN'
                         && String(all[k].stdYmd || all[k].ymd || '') === String(prev.staYmd || prev.ymd || '')
                         && legs.length < 4;
-                    // v1.45.11 (owner report: 29 June 2025 "no leg times"): a
+                    // v1.45.10 (owner report: a day whose duty clearly had
+                    // times showed "the roster printed no leg times"): a
                     // positioning deadhead can land at a DIFFERENT airport
-                    // than the operating leg departs — SQ 810 paxing
-                    // SIN→PKX (Daxing) then SQ 805 operating PEK→SIN
-                    // (Capital). The airport-equality guard orphaned the
+                    // than the operating leg departs — the same city's other
+                    // airport. The airport-equality guard orphaned the
                     // return leg and its day fell to the no-times fallback.
                     // An airport change is now tolerated whenever either
                     // side is a positioning leg; operating-to-operating
