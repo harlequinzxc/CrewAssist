@@ -644,6 +644,68 @@ const synthItems = [].concat(
     R.ok(wrap.classList.contains('hidden'), 'Escape closes the roster calendar');
   }
 
+  // ---- owner report, 1.45.8: the paxing leg + the legend-panel page (Feb 2026) ----
+  // SQ 298 CHC-SIN on 13 Feb is a POS flight: the roster prints its Rpt/STD/STA
+  // but never a block time. Two traps: the never-pruned store dropped pos legs
+  // (the 13th showed "no leg times"), and the 2026 export squeezes the Duty
+  // Codes legend onto page 1 beside the table — the legend-page detector then
+  // killed every duty row (no LO stations, no OFF days: the 12th showed the
+  // same complaint). May 2024 shares the panel layout.
+  {
+    const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const readItems = async (file) => {
+      const data = new Uint8Array(fs.readFileSync(path.resolve(__dirname, '../docs/_reference_rosters/' + file)));
+      const doc = await pdfjs.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
+      const items = [];
+      for (let pi = 1; pi <= doc.numPages; pi++) {
+        const tc = await (await doc.getPage(pi)).getTextContent();
+        tc.items.forEach(i => items.push({ str: i.str, x: i.transform[4], y: i.transform[5], page: pi }));
+      }
+      return items;
+    };
+    const febItems = await readItems('Feb 2026.pdf');
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+    } });
+    w.eval('window.__feb = rosterParse(' + JSON.stringify(febItems) + ')');
+    const febFlights = w.eval('window.__feb.flights');
+    const p298 = febFlights.find(f => f.fn === '298');
+    R.ok(!!p298 && p298.pos === true, 'SQ 298 parses as a positioning leg');
+    R.eq(p298 && p298.std + '-' + p298.sta + '-' + (p298.ft || ''), '1200-1735-', 'the paxing leg carries its printed STD/STA and no block time');
+    const febBy = {};
+    w.eval('window.__feb.days').forEach(x => { febBy[x.ymd] = x; });
+    R.eq(Object.keys(febBy).length, 28, 'the legend-panel page still parses all 28 February days');
+    R.eq(febBy['2026-02-12'].kind + '@' + febBy['2026-02-12'].loc, 'fly@CHC', 'the CHC layover day carries its station (the 12th)');
+    R.eq(febBy['2026-02-01'].kind + '#' + febBy['2026-02-01'].code, 'al#AALV', 'annual leave days parse beside the panel');
+    R.eq(febBy['2026-02-15'].kind + '#' + febBy['2026-02-15'].code + '|' + febBy['2026-02-16'].kind + '#' + febBy['2026-02-16'].code, 'duty#SSN1|off#OFFD', 'standby and OFF days parse beside the panel');
+    // the two stores: the paxing leg rides the never-pruned store, not upcoming
+    w.eval('upcomingRemember(window.__feb)');
+    const upFeb = JSON.parse(w.localStorage.getItem('crewAssist.upcoming'))['2026-02'] || [];
+    const allFeb = JSON.parse(w.localStorage.getItem('crewAssist.allFlights'))['2026-02'] || [];
+    R.ok(!upFeb.some(f => f.fn === '298'), 'the upcoming store still excludes the paxing leg');
+    R.ok(allFeb.some(f => f.fn === '298' && f.stdYmd === '2026-02-13' && f.pos === true), 'the never-pruned store keeps the paxing leg with its true date');
+    // the calendar: the 13th borrows the SIN sibling's block time; the 12th is the LO day
+    w.eval('openRosterCalendar()');
+    await wait(500);
+    w.eval('rosterCalSelect("2026-02-13")');
+    await wait(400);
+    const rcRow = (ymd) => Array.from(d.querySelectorAll('#ca-rc-detail .ca-rc-row')).find(r => r.getAttribute('data-rc-ymd') === ymd);
+    const t13 = rcRow('2026-02-13').textContent.replace(/\s+/g, ' ');
+    R.ok(t13.indexOf('no leg times') === -1, 'the 13th no longer claims the roster printed no leg times');
+    R.ok(t13.indexOf('SQ 298') >= 0 && t13.indexOf('1200H') >= 0 && t13.indexOf('1735H') >= 0 && t13.indexOf('9H 34M') >= 0, 'the paxing leg shows its printed times and the sibling\u2019s borrowed block');
+    const t12 = rcRow('2026-02-12').textContent.replace(/\s+/g, ' ');
+    R.ok(t12.indexOf('no leg times') === -1, 'the 12th no longer claims the roster printed no leg times');
+    R.ok(t12.indexOf('LO \u00b7 CHC') >= 0 && t12.indexOf('Layover') >= 0, 'the layover day reads LO \u00b7 CHC');
+    // May 2024 shares the panel-on-page-1 layout — its duty days were lost too
+    const mayItems = await readItems('May 2024.pdf');
+    const mayBy = {};
+    w.eval('rosterParse(' + JSON.stringify(mayItems) + ').days').forEach(x => { mayBy[x.ymd] = x; });
+    R.eq(mayBy['2024-05-19'].kind + '@' + mayBy['2024-05-19'].loc, 'fly@CDG', 'May 2024 (same panel layout) keeps its layover station');
+    R.eq(mayBy['2024-05-06'].kind + '#' + mayBy['2024-05-06'].code, 'al#AALV', 'May 2024 keeps its annual leave days');
+  }
+
   // ---- synthetic: a layover run that wraps a week and crosses a month ----
   {
     const { w, d } = await boot(APP, { seed: (x) => {
