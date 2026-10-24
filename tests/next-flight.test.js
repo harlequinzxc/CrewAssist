@@ -92,6 +92,87 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(saved[mk][0].fn === '336' && !saved[mk].some((f) => f.fn === '828'), 'positioning flights are not remembered');
   }
 
+  // --- v1.45.7 (owner report, live 2026-10-24): the report-before-midnight ---
+  // duty splits across two date columns. SQ218's rows on the real October
+  // 2026 roster: the 24th column carries SQ 218 MEL-SIN + rpt 2335 + ft
+  // 07:55, the 25th column carries STD 0035 + STA 0530. The leg keeps ymd =
+  // the report row's date (it stays the save-key and the calendar's report
+  // day) but must DEPART on the STD row's date — before this the card showed
+  // "In the air" through the entire Melbourne layover.
+  {
+    const { w } = await boot(APP);
+    const rptDay = ymd(0), stdDay = ymd(1);                    // report tonight, fly after midnight
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const tok = (s) => String(Number(s.slice(8))) + MON[Number(s.slice(5, 7)) - 1] + s.slice(2, 4);   // '24Oct26' style date anchor
+    const its = [
+      // report-day column: identity + report + flight time, NO std/sta
+      { str: tok(rptDay), x: 818, y: 21, page: 1 },
+      { str: 'SQ 218', x: 840, y: 91, page: 1 }, { str: 'MEL-SIN', x: 840, y: 134, page: 1 },
+      { str: 'Rpt', x: 200, y: 331, page: 1 }, { str: '2335', x: 840, y: 331, page: 1 },
+      { str: 'STD', x: 200, y: 359, page: 1 }, { str: 'STA', x: 200, y: 390, page: 1 },
+      { str: 'Flight', x: 200, y: 422, page: 1 }, { str: 'Time', x: 260, y: 422, page: 1 },
+      { str: '07:55', x: 840, y: 422, page: 1 },
+      // flight-day column: the after-midnight times
+      { str: tok(stdDay), x: 862, y: 21, page: 1 },
+      { str: 'SQ 218', x: 862, y: 91, page: 1 }, { str: 'MEL-SIN', x: 862, y: 134, page: 1 },
+      { str: '0035', x: 862, y: 359, page: 1 }, { str: '0530', x: 862, y: 390, page: 1 }
+    ];
+    const parsed = w.eval('rosterParse(' + JSON.stringify(its) + ')');
+    R.ok(parsed.flights.length === 1 && parsed.flights[0].fn === '218', 'the split duty parses into one flight');
+    const f = parsed.flights[0];
+    R.eq(f.ymd, rptDay, 'ymd stays the report row\'s date (save-key, calendar report day)');
+    R.eq(f.stdRowYmd, stdDay, 'the STD row\'s later date is captured');
+    R.eq(f.depDate, stdDay, 'depDate is the STD row\'s date');
+    // the store: ymd keeps the key date, stdYmd carries the flight date
+    w.eval('upcomingRemember(' + JSON.stringify(parsed) + ')');
+    const leg = w.eval('(function () { const l = upcomingList().find(x => x.fn === "218"); return JSON.stringify({ ymd: l.ymd, stdYmd: l.stdYmd }); })()');
+    R.eq(leg, JSON.stringify({ ymd: rptDay, stdYmd: stdDay }), 'the store keeps ymd as the key date and stdYmd as the flight date');
+    // the departure instant: STD-row date in the departure station's zone —
+    // checked in Melbourne local time so the assert survives DST shifts
+    const dep = w.eval('(function () { const l = upcomingList().find(x => x.fn === "218"); return nfDepMs(l); })()');
+    R.ok(typeof dep === 'number' && isFinite(dep), 'nfDepMs resolves the split leg');
+    const mel = w.eval('hmHFromDate(' + dep + ', "Australia/Melbourne")');
+    const melDay = w.eval('new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Melbourne" }).format(' + dep + ')');
+    R.eq(mel, '0035H', 'the departure is 0035 in Melbourne on the flight day');
+    R.eq(melDay, stdDay, 'the departure lands on the STD row\'s date, not a day early');
+    R.ok(dep > Date.now(), 'the crew on the layover is NOT in the air yet');
+    // the arrival stays on its own row date (05:30 SIN on the flight day)
+    const arrDay = w.eval('new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(' + w.eval('(function () { const l = upcomingList().find(x => x.fn === "218"); return nfArrMsZone(l); })()') + ')');
+    R.eq(arrDay, stdDay, 'the arrival stays on the flight day in SIN time');
+    // an old persisted store (pre-v1.45.7, no stdYmd) mends on read
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '218', dep: 'MEL', arr: 'SIN', ymd: rptDay, std: '00:35', sta: '05:30', staYmd: stdDay }])));
+    const mended = w.eval('(function () { const l = upcomingList().find(x => x.fn === "218"); return JSON.stringify({ stdYmd: l.stdYmd || "", dep: nfDepMs(l) }); })()');
+    R.eq(JSON.parse(mended).stdYmd, stdDay, 'a persisted pre-fix leg mends stdYmd from its STA row');
+    R.eq(JSON.parse(mended).dep, dep, 'the mended leg departs at the same instant');
+    // a normal overnight echo (sta earlier on the clock than std) must NOT mend
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '317', dep: 'SIN', arr: 'PER', ymd: rptDay, std: '23:55', sta: '05:30', staYmd: stdDay }])));
+    const ovn = w.eval('(function () { const l = upcomingList().find(x => x.fn === "317"); return JSON.stringify({ stdYmd: l.stdYmd || "", mel: new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth" }).format(nfDepMs(l)) }); })()');
+    R.eq(JSON.parse(ovn).stdYmd, '', 'an overnight echo keeps ymd as its departure date');
+    R.eq(JSON.parse(ovn).mel, rptDay, 'the overnight still departs on its own row date');
+    // the list orders by the flight date: an 0600 leg tomorrow sorts BEFORE
+    // the split leg that reports tomorrow but flies after midnight the day
+    // after (both future, so the prune never eats them)
+    w.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([
+      { fn: '218', dep: 'MEL', arr: 'SIN', ymd: ymd(1), std: '00:35', sta: '05:30', stdYmd: ymd(2), staYmd: ymd(2) },
+      { fn: '123', dep: 'SIN', arr: 'KUL', ymd: ymd(1), std: '06:00', sta: '07:00', staYmd: ymd(1) }
+    ])));
+    R.eq(w.eval('upcomingList()[0].fn'), '123', 'upcomingList orders by the STD row date, not the report row date');
+  }
+
+  // --- v1.45.7 card: the date line follows the flight, not the report row ---
+  {
+    const { d } = await boot(APP, { seed: (x) => {
+      seedProfile(x);
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '218', dep: 'MEL', arr: 'SIN', ymd: ymd(0), std: '00:35', sta: '05:30', stdYmd: ymd(1), staYmd: ymd(1) }])));
+    } });
+    await wait(5600);
+    const card = d.getElementById('ca-nextflight-card');
+    R.ok(card, 'the split-duty card appears under the greeting');
+    R.ok(card && card.textContent.indexOf('tomorrow') >= 0, 'the relative label reads tomorrow (the flight day), not today');
+    R.ok(card && card.textContent.indexOf('Departs 0035H local') >= 0, 'the departs line shows the after-midnight STD');
+    R.ok(card && card.textContent.indexOf('In the air') < 0, 'the crew is never in the air during the layover');
+  }
+
   // --- boot: the card under the greeting ---
   {
     const { d } = await boot(APP, { seed: seedProfile });

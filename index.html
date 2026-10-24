@@ -2523,7 +2523,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.6'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.7'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2545,6 +2545,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.7', d: '2026-10-24', items: [
+                { c: 'fix', t: 'A report-before-midnight duty departs on its flight day — the Melbourne layover never shows "in the air".' },
+            ] },
             { v: '1.45.6', d: '2026-10-23', items: [
                 { c: 'new', t: 'Flight chips pick saved menus in the printer.' },
             ] },
@@ -5144,8 +5147,25 @@
         }
         function upcomingList() {
             const store = upcomingPrune(loadUpcoming());
-            return Object.keys(store).sort().reduce((acc, mk) => acc.concat(store[mk]), [])
-                .sort((a, b) => String(a.ymd + (a.std || '')).localeCompare(String(b.ymd + (b.std || ''))));
+            const legs = Object.keys(store).sort().reduce((acc, mk) => acc.concat(store[mk]), []);
+            // v1.45.7 (owner report, live 2026-10-24: "in the air" all through
+            // the Melbourne layover): the roster prints a report-before-
+            // midnight duty split across two date columns — SQ218's rpt 2335
+            // + ft 07:55 sit on the 24th, its STD 0035 + STA 0530 on the
+            // 25th. The parsed leg keeps ymd = the report row's date (it
+            // stays the save-key and the calendar's report day) while the
+            // departure lives on the STD row's date, pushed as stdYmd. Legs
+            // persisted by an older version mend here: an STA later on the
+            // clock than STD yet printed on a LATER date than ymd can only
+            // be that split — a true next-day arrival with sta >= std on
+            // the clock would need a 24h+ sector, which no roster prints.
+            legs.forEach((f) => {
+                if (!f) return;
+                if (!f.stdYmd && f.staYmd && f.sta && f.std &&
+                    String(f.staYmd) > String(f.ymd || '') &&
+                    String(f.sta).replace(':', '') >= String(f.std).replace(':', '')) f.stdYmd = f.staYmd;
+            });
+            return legs.sort((a, b) => String((a.stdYmd || a.ymd) + (a.std || '')).localeCompare(String((b.stdYmd || b.ymd) + (b.std || ''))));
         }
         function upcomingRemember(parsed) {
             const flights = (parsed && parsed.flights || []).filter((f) => f.ymd && f.fn && !f.pos);
@@ -5162,7 +5182,7 @@
                 // v1.33.1: the arrival time (and the date its STA was printed
                 // on — echo rows carry the next day) rides along so the card
                 // can retire a flight once it has landed.
-                store[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '', sta: f.staHm || '', staYmd: f.staRowYmd || '' });
+                store[String(f.ymd).slice(0, 7)].push({ fn: f.fn, dep: f.dep, arr: f.arr, ymd: f.ymd, std: f.stdHm || '', sta: f.staHm || '', stdYmd: f.stdRowYmd || f.ymd, staYmd: f.staRowYmd || '' });
             });
             const pruned = upcomingPrune(store);
             try { localStorage.setItem(UP_KEY, JSON.stringify(pruned)); } catch (e) {}
@@ -6875,15 +6895,20 @@
         // departure station's own zone (SIN included) — so countdowns and
         // conversions never depend on the device clock's timezone.
         function nfDepMs(f) {
-            if (!f || !f.std || !/^\d{4}-\d{2}-\d{2}$/.test(String(f.ymd || ''))) return null;
+            if (!f || !f.std) return null;
+            // v1.45.7: the departure wall date is the STD row's date (stdYmd),
+            // not the leg's report-row date — see upcomingList for the split
+            // pattern that separates them.
+            const ymd = /^\d{4}-\d{2}-\d{2}$/.test(String(f.stdYmd || '')) ? f.stdYmd : f.ymd;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ''))) return null;
             const m = nfHmToMin(f.std);
             if (m === null) return null;
             const zone = airportZone(f.dep) || 'Asia/Singapore';
             const hm = String(f.std).replace(':', '');
             const wall = (hm.length === 3 ? '0' + hm : hm).replace(/^(\d{2})(\d{2})$/, '$1:$2');
-            const ms = zonedWallToUtcMs(f.ymd, wall, zone);
+            const ms = zonedWallToUtcMs(ymd, wall, zone);
             if (isFinite(ms)) return ms;
-            return new Date(f.ymd + 'T00:00:00').getTime() + m * 60000;
+            return new Date(ymd + 'T00:00:00').getTime() + m * 60000;
         }
         // The true UTC instant a roster-printed arrival happens at, in the
         // arrival station's own zone (SIN arrivals are SGT by definition).
@@ -7033,7 +7058,7 @@
             const depMs = nfDepMs(first);
             const arrMsFirst = nfArrMsZone(first);
             const inAir = !!(depMs && arrMsFirst && Date.now() >= depMs && Date.now() < arrMsFirst);
-            let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(first.ymd) + ' &middot; <b>' + nextFlightRel(first.ymd) + '</b></span>';
+            let detail = '<span class="block font-bold text-gray-600 dark:text-gray-400 whitespace-nowrap">' + rosterShortDate(first.stdYmd || first.ymd) + ' &middot; <b>' + nextFlightRel(first.stdYmd || first.ymd) + '</b></span>';
             if (inAir) {
                 detail += '<span class="block mt-1 font-bold whitespace-nowrap" style="color: var(--sia-gold, #C9A227)">In the air &middot; lands ' + nfCountdown(arrMsFirst - Date.now()) + '</span>';
             } else {
