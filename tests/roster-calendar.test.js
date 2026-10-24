@@ -706,6 +706,50 @@ const synthItems = [].concat(
     R.eq(mayBy['2024-05-06'].kind + '#' + mayBy['2024-05-06'].code, 'al#AALV', 'May 2024 keeps its annual leave days');
   }
 
+  // ---- owner report, 1.45.11: the deadhead transfer (Jun 2025, 29 June) ----
+  // SQ 810 paxes the crew SIN→PKX (Beijing Daxing); the operating return
+  // SQ 805 leaves PEK (Beijing Capital) — two airports, one duty. The
+  // calendar's leg walk required matching airports and orphaned the return:
+  // the 29th fell to the "no leg times" fallback. An airport change is now
+  // tolerated when either side is a positioning leg.
+  {
+    const pdfjs2 = await import('pdfjs-dist/legacy/build/pdf.mjs');
+    const readItems2 = async (file) => {
+      const data = new Uint8Array(fs.readFileSync(path.resolve(__dirname, '../docs/_reference_rosters/' + file)));
+      const doc = await pdfjs2.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
+      const items = [];
+      for (let pi = 1; pi <= doc.numPages; pi++) {
+        const tc = await (await doc.getPage(pi)).getTextContent();
+        tc.items.forEach(i => items.push({ str: i.str, x: i.transform[4], y: i.transform[5], page: pi }));
+      }
+      return items;
+    };
+    const junItems = await readItems2('Jun 2025.pdf');
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+    } });
+    w.eval('window.__jun = rosterParse(' + JSON.stringify(junItems) + ')');
+    const p810 = w.eval('window.__jun.flights').find(f => f.fn === '810');
+    const p805 = w.eval('window.__jun.flights').find(f => f.fn === '805');
+    R.ok(!!p810 && p810.pos === true && p810.dep === 'SIN' && p810.arr === 'PKX', 'SQ 810 parses as the SIN→PKX positioning leg');
+    R.ok(!!p805 && !p805.pos && p805.dep === 'PEK' && p805.arr === 'SIN' && p805.ft === '05:54', 'SQ 805 parses as the PEK→SIN operating return with its block time');
+    w.eval('upcomingRemember(window.__jun)');
+    w.eval('openRosterCalendar()');
+    await wait(500);
+    w.eval('rosterCalSelect("2025-06-29")');
+    await wait(400);
+    const rcRowJ = (ymd) => Array.from(d.querySelectorAll('#ca-rc-detail .ca-rc-row')).find(r => r.getAttribute('data-rc-ymd') === ymd);
+    const t29 = rcRowJ('2025-06-29').textContent.replace(/\s+/g, ' ');
+    R.ok(t29.indexOf('no leg times') === -1, 'the 29th no longer claims the roster printed no leg times');
+    R.ok(t29.indexOf('SQ 805') >= 0 && t29.indexOf('PEK') >= 0 && t29.indexOf('0848H') >= 0 && t29.indexOf('1442H') >= 0 && t29.indexOf('5H 54M') >= 0, 'the 29th shows the operating return with its printed times');
+    R.ok(t29.indexOf('LO \u00b7 PEK') >= 0, 'the 29th reads LO \u00b7 PEK — the crew woke away from home');
+    const t28 = rcRowJ('2025-06-28').textContent.replace(/\s+/g, ' ');
+    R.ok(t28.indexOf('SQ 810') >= 0 && t28.indexOf('5H 54M') >= 0, 'the 28th shows the paxing leg borrowing the operating sibling\u2019s block time');
+    R.ok(t28.indexOf('no leg times') === -1, 'the 28th never claims the roster printed no leg times');
+  }
+
   // ---- synthetic: a layover run that wraps a week and crosses a month ----
   {
     const { w, d } = await boot(APP, { seed: (x) => {
