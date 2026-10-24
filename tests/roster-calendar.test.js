@@ -706,11 +706,11 @@ const synthItems = [].concat(
     R.eq(mayBy['2024-05-06'].kind + '#' + mayBy['2024-05-06'].code, 'al#AALV', 'May 2024 keeps its annual leave days');
   }
 
-  // ---- owner report, 1.45.11: the deadhead transfer (Jun 2025, 29 June) ----
-  // SQ 810 paxes the crew SIN→PKX (Beijing Daxing); the operating return
-  // SQ 805 leaves PEK (Beijing Capital) — two airports, one duty. The
+  // ---- owner report: the deadhead transfer ----
+  // A duty paxes the crew into one airport of a city and operates the
+  // return out of the city's other airport — two airports, one duty. The
   // calendar's leg walk required matching airports and orphaned the return:
-  // the 29th fell to the "no leg times" fallback. An airport change is now
+  // its day fell to the "no leg times" fallback. An airport change is now
   // tolerated when either side is a positioning leg.
   {
     const pdfjs2 = await import('pdfjs-dist/legacy/build/pdf.mjs');
