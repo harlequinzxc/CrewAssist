@@ -1245,5 +1245,56 @@ function todayYmd() {
     }
   }
 
+  // ---- v1.45.12: the gold-card and list polish ----
+  // Breathing room around the core figure, the equal-width stat grid that
+  // truncates instead of clipping, AA ink over the gold, month cards, solid
+  // status pills, and the right-aligned net/gross money column.
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    // the card: src pins (jsdom cannot compute var()-backed properties)
+    R.ok(src.includes('#ca-arch-total { padding-top: 8px; padding-bottom: 8px; }'), 'the core figure carries 8px of air above and below');
+    R.ok(src.includes('.ca-arch-metagrid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }') && src.includes('.ca-arch-metagrid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }'), 'the stat rows standardize on equal-width grids - 3 COP columns, 4 salary');
+    R.ok(src.includes('--ca-arch-seg-ink: rgba(26, 19, 0, 0.75);'), 'the inactive tab ink reads .75 dark-on-gold (was .65, 4.09:1)');
+    R.ok(src.includes('color: rgba(26,19,0,.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }'), 'meta labels: dark-on-gold ink (the old --arch-muted read 60% white on gold at night) plus truncation');
+    R.ok(src.includes('.ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }'), 'meta values truncate - no COP $12... clipping on narrow phones');
+    R.ok(src.includes('rgba(26,19,0,.8)" id="ca-arch-gross-line"'), 'the gross line ink rides at .80 over the gold');
+
+    // the DOM contract on a live boot
+    const NOW2 = '2026-10-20T12:00:00+08:00';
+    const seed2 = (x, basic) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      const mk = (id, monthKey, date, amount) => ({ id, savedAt: date + 'T10:00:00Z', monthKey, sectorDate: date, flightType: 'Turnaround', stationDisplay: 'SIN/KUL', amount, detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        mk('p1', '2026-10', '2026-10-28', 100),  // still to fly - In progress
+        mk('p2', '2026-11', '2026-11-15', 200)   // ahead - Upcoming
+      ]));
+    };
+    const { w, d } = await boot(APP, { now: NOW2, seed: (x) => seed2(x, true) });
+    w.showArchiveOverlay(); await wait(150);
+    const copRow = d.getElementById('ca-arch-meta-cop');
+    R.ok(copRow.className.indexOf('ca-arch-metagrid ca-arch-metagrid-3') !== -1, 'the COP stat row rides the 3-column grid');
+    R.eq(copRow.querySelectorAll(':scope > div').length, 3, 'three equal stat cells, no dot separators');
+    R.eq(copRow.querySelectorAll('.ca-arch-metadot').length, 0, 'the old dot separators are gone from the stat row');
+    d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+    const salRow = d.getElementById('ca-arch-meta-salary');
+    R.ok(salRow.className.indexOf('ca-arch-metagrid ca-arch-metagrid-4') !== -1, 'the salary stat row rides the 4-column grid');
+    R.eq(salRow.querySelectorAll(':scope > div').length, 4, 'four equal stat cells - Basic, Fixed, Midnights, COP');
+    // the list: month cards, solid pills, the money column
+    const groups = d.querySelectorAll('.ca-arch-group');
+    R.ok(groups.length >= 2 && src.includes('.ca-arch-group { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }'), 'every month rides its own rounded surface card');
+    const headOf2 = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(headOf2('2026-10').querySelector('.ca-arch-badge-live') && headOf2('2026-10').textContent.indexOf('In progress') !== -1, 'the live month wears the blue solid pill');
+    R.ok(headOf2('2026-11').querySelector('.ca-arch-badge-upcoming') && headOf2('2026-11').textContent.indexOf('Upcoming') !== -1, 'the future month wears the grey solid pill');
+    R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-live { background: rgba(96, 165, 250, 0.16); color: #93C5FD; }'), 'in-progress pill: blue wash, high-contrast text (dark)');
+    R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-upcoming, .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); }'), 'upcoming/completed pill: grey wash, high-contrast text (dark)');
+    const amt = headOf2('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+    R.ok(amt.className.indexOf('flex-col') !== -1 && amt.className.indexOf('items-end') !== -1, 'the money block is a right-aligned column');
+    R.ok(amt.querySelector('.ca-arch-amt-net') && amt.textContent.indexOf('net ') !== -1 && amt.textContent.indexOf('gross ') !== -1, 'net rides over gross inside the column');
+    R.ok(amt.querySelector('.ca-arch-amt-net').className.indexOf('text-[17px]') !== -1 && amt.children[1].className.indexOf('text-sm') !== -1, 'net keeps the 17px figure, gross the quieter 14px line - baselines pair with the month and count lines');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

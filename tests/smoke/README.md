@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.11), the changelog's current entry,
-  the service-worker cache name (v242).
+- Stamps: `APP_VERSION` (currently 1.45.12), the changelog's current entry,
+  the service-worker cache name (v243).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -39,6 +39,15 @@ the service-worker stamp. It checks:
   pair) with the chart's average-line label painting. A DOM-level click drives
   the lens button: renderArch re-renders the summary, and a geometry-based
   click can race the node swap mid-render.
+- v1.45.12 earnings polish, computed where the pixels live: the core figure's
+  8px paddings, the stat rows as equal 3/4-track grids with no clipping cell,
+  WCAG AA maths composited IN-PAGE (text over pill wash over the gold
+  gradient's worst-case stop, both themes — the .75 tab ink reads 5.2:1),
+  the status badges as solid pills with AA text (7.5:1 / 8.7:1 at night),
+  the month cards a shade lighter than the sheet canvas, and the salary
+  money column's net/gross edges straight to 1.5px across months. The
+  style-snapshot rig now seeds an archive so the earnings LIST is
+  style-covered (it never was before).
 
 ## Running it
 

@@ -55,6 +55,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
                 { ymd: '2026-10-12', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k2' },
                 { ymd: '2026-10-13', kind: 'sb', code: '', loc: '', fns: [], dkey: 'k4' },
             ] }));
+            // v1.45.12: an archive seed so the earnings LIST renders in the
+            // snapshot too — month cards, status badges (in-progress on the
+            // current month, upcoming on the next), and the money column.
+            // The clock is the real one, so the months ride the run date.
+            localStorage.setItem('crewAssist.archive', JSON.stringify([
+                { id: 'ss0', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', stationDisplay: 'SIN/KUL', amount: 100, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 100, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 100, sectors: [], stations: [] } },
+                { id: 'ss1', savedAt: '2026-10-08T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/BKK', amount: 88, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 88, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 88, sectors: [], stations: [] } },
+                { id: 'ss2', savedAt: '2026-11-20T10:00:00Z', monthKey: '2026-11', sectorDate: '2026-11-20', stationDisplay: 'SIN/HKT', amount: 60, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 60, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 60, sectors: [], stations: [] } }
+            ]));
             localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
                 { fn: '231', dep: 'SIN', arr: 'SYD', ymd: '2026-10-09', std: '09:00', sta: '19:05', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '08:05', ac: '359', rpt: '', pos: false },
                 { fn: '232', dep: 'SYD', arr: 'SIN', ymd: '2026-10-10', std: '07:30', sta: '13:40', stdYmd: '2026-10-10', staYmd: '2026-10-10', ft: '08:10', ac: '359', rpt: '', pos: false },

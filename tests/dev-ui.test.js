@@ -452,68 +452,70 @@ const mkUntil = (d) => async (cond, ms) => {
       // v1.45.10 (owner rulings 2026-10-24: the searched flight's own cycle
       // and chips, plus the deadhead-transfer fix): takes the head; 1.45.9
       // shifts down one. The 1.44.5 pin leaves the sixteen-entry window.
-      // v1.45.11 (CA 058/2025): Monthly Salary takes the head - the net
-      // take-home lens beside the COP allowance. 1.45.10 shifts down one;
-      // the 1.44.6 pin slides out of the pinned window.
-      R.eq(entries[0].v, '1.45.11', 'the 1.45.11 monthly-salary release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 4, 'the 1.45.11 entry carries its four pointers');
+      // v1.45.12 (owner order): the earnings card + list polish takes the
+      // head. 1.45.11 shifts down one; the 1.44.7 pin slides out of the
+      // pinned window.
+      R.eq(entries[0].v, '1.45.12', 'the 1.45.12 earnings-polish release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 4, 'the 1.45.12 entry carries its four pointers');
+      R.ok(src.includes("c: 'imp', t: 'The earnings figure gets breathing room and a tidier stat grid.' }"), 'the breathing-room pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'Gold-card text meets AA contrast in both themes.' }"), 'the contrast pointer reads as approved, inside the release it ships');
+      R.eq(entries[1].v, '1.45.11', 'the 1.45.11 monthly-salary release sits second, newest first');
+      R.eq(entries[1].items.length, 4, 'the 1.45.11 entry carries its four pointers');
       R.ok(src.includes("c: 'new', t: 'Monthly Salary \u2014 your net take-home beside the COP allowance.' }"), 'the salary pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The earnings chart gains an average line and a year-by-year view.' }"), 'the chart pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.45.10', 'the 1.45.10 searched-cycle release sits second, newest first');
-      R.eq(entries[2].items.length, 3, 'the 1.45.10 entry carries its three pointers');
+      R.eq(entries[2].v, '1.45.10', 'the 1.45.10 searched-cycle release sits third, newest first');
+      R.eq(entries[3].items.length, 3, 'the 1.45.10 entry carries its three pointers');
       R.ok(src.includes("c: 'fix', t: 'A searched flight’s cycle button flips through its own sectors — never back to the saved menus — and hides for single-sector flights.' }"), 'the 1.45.10 pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'fix', t: 'A positioning leg that lands at a different airport than the operating leg departs no longer orphans the return leg.' }"), 'the deadhead pointer reads as approved, inside the release it ships');
       // v1.45.9 (owner rulings 2026-10-24: the printer's ONE chip line, the
       // searched-flight cycle hide, the summary-word earnings search) takes
       // the head; the 1.45.8 paxing-leg pair sits second. The previous
       // rounds shift down two each; the 1.44.4/1.44.3 pair leaves the window.
-      R.eq(entries[2].v, '1.45.9', 'the 1.45.9 chip-line release sits third, newest first');
-      R.eq(entries[2].items.length, 3, 'the 1.45.9 entry carries its three pointers');
+      R.eq(entries[3].v, '1.45.9', 'the 1.45.9 chip-line release sits third, newest first');
+      R.eq(entries[3].items.length, 3, 'the 1.45.9 entry carries its three pointers');
       R.ok(src.includes("c: 'new', t: 'The earnings search reads the words of each flight\u2019s summary.' }"), 'the 1.45.9 pointer reads as approved, inside the release it ships');
-      R.eq(entries[3].v, '1.45.8', 'the 1.45.8 paxing-leg release sits third, newest first');
-      R.eq(entries[3].items.length, 2, 'the 1.45.8 entry carries its two pointers');
+      R.eq(entries[4].v, '1.45.8', 'the 1.45.8 paxing-leg release sits fifth, newest first');
+      R.eq(entries[4].items.length, 2, 'the 1.45.8 entry carries its two pointers');
       R.ok(src.includes("c: 'fix', t: 'Rosters that print the duty-code legend beside the table (Feb 2026, May 2024) parse their OFF, leave, standby and layover days again.' }"), 'the 1.45.8 pointer reads as approved, inside the release it ships');
-      R.eq(entries[4].v, '1.45.7', 'the 1.45.7 split-duty release sits fourth, newest first');
-      R.eq(entries[4].items.length, 1, 'the 1.45.7 entry carries its single pointer');
+      R.eq(entries[5].v, '1.45.7', 'the 1.45.7 split-duty release sits fourth, newest first');
+      R.eq(entries[5].items.length, 1, 'the 1.45.7 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'A report-before-midnight duty departs on its flight day \u2014 the Melbourne layover never shows \"in the air\".' }"), 'the 1.45.7 pointer reads as approved, inside the release it ships');
-      R.eq(entries[5].v, '1.45.6', 'the 1.45.6 printer-chips release sits fifth, newest first');
-      R.eq(entries[5].items.length, 1, 'the 1.45.6 entry carries its single pointer');
+      R.eq(entries[6].v, '1.45.6', 'the 1.45.6 printer-chips release sits fifth, newest first');
+      R.eq(entries[6].items.length, 1, 'the 1.45.6 entry carries its single pointer');
       R.ok(src.includes("c: 'new', t: 'Flight chips pick saved menus in the printer.' }"), 'the 1.45.6 pointer reads as approved, inside the release it ships');
-      R.eq(entries[6].v, '1.45.5', 'the 1.45.5 duty-nudge release sits sixth, newest first');
-      R.eq(entries[6].items.length, 3, 'the 1.45.5 entry carries its three pointers');
+      R.eq(entries[7].v, '1.45.5', 'the 1.45.5 duty-nudge release sits sixth, newest first');
+      R.eq(entries[7].items.length, 3, 'the 1.45.5 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'The menu nudge covers the whole duty, return legs included.' }"), 'the 1.45.5 whole-duty pointer reads as approved');
-      R.eq(entries[7].v, '1.45.4', 'the 1.45.4 roster-diff release sits seventh, newest first');
-      R.eq(entries[7].items.length, 1, 'the 1.45.4 entry carries its single pointer');
+      R.eq(entries[8].v, '1.45.4', 'the 1.45.4 roster-diff release sits seventh, newest first');
+      R.eq(entries[8].items.length, 1, 'the 1.45.4 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The roster diff sees same-day duty changes, standby to flight included.' }"), 'the 1.45.4 pointer reads as approved, inside the release it ships');
-      R.eq(entries[8].v, '1.45.3', 'the 1.45.3 nudge-redundancy release sits eighth, newest first');
-      R.eq(entries[8].items.length, 1, 'the 1.45.3 entry carries its single pointer');
+      R.eq(entries[9].v, '1.45.3', 'the 1.45.3 nudge-redundancy release sits eighth, newest first');
+      R.eq(entries[9].items.length, 1, 'the 1.45.3 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'A fully-saved flight set never shows the menu nudge.' }"), 'the 1.45.3 pointer reads as approved, inside the twelve-word cap');
       // v1.44.9: the veil token itself — the two archive-overlay alpha sites ride it
       R.ok(src.includes('--ca-arch-veil: rgba(8, 11, 20, 0.80);') && src.includes('--ca-arch-veil: rgba(246, 241, 232, 0.90);') && src.includes('fill-[color:var(--ca-arch-veil)]') && src.includes('bg-[color:var(--ca-arch-veil)]'), 'v1.44.9: --ca-arch-veil exists (dark .80 / light .90) and both overlay sites ride it');
-      R.eq(entries[9].v, '1.45.2', 'the 1.45.2 description-species release sits ninth, newest first');
-      R.eq(entries[9].items.length, 1, 'the 1.45.2 entry carries its single pointer');
+      R.eq(entries[10].v, '1.45.2', 'the 1.45.2 description-species release sits ninth, newest first');
+      R.eq(entries[10].items.length, 1, 'the 1.45.2 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The last raw colours ride named tokens \u2014 same pixels, one spelling.' }"), 'the 1.44.8 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[10].v, '1.45.1', 'the 1.45.1 hotfix release sits tenth, newest first');
-      R.eq(entries[10].items.length, 2, 'the 1.45.1 entry carries its two hotfix pointers');
+      R.eq(entries[11].v, '1.45.1', 'the 1.45.1 hotfix release sits tenth, newest first');
+      R.eq(entries[11].items.length, 2, 'the 1.45.1 entry carries its two hotfix pointers');
       R.ok(src.includes("c: 'fix', t: 'The flagged-trip warning wears the alert-triangle icon, not a text glyph.' }"), 'the 1.44.7 pointer reads as approved, inside the twelve-word cap');
       // v1.44.7 audit fix 1: the flagged-trip warning is a Lucide icon, and the
       // source carries no warning-sign glyph anywhere (icons only, never emoji).
       R.eq((src.match(/data-lucide="alert-triangle"/g) || []).length, 1, 'exactly one alert-triangle icon - the flagged-trip line');
       R.ok(!src.includes('\u26a0'), 'no U+26A0 warning-sign glyph remains in the source');
-      R.eq(entries[11].v, '1.45.0', 'the 1.45.0 motion release sits eleventh, newest first');
-      R.eq(entries[11].items.length, 1, 'the 1.45.0 entry carries its single pointer');
+      R.eq(entries[12].v, '1.45.0', 'the 1.45.0 motion release sits eleventh, newest first');
+      R.eq(entries[12].items.length, 1, 'the 1.45.0 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Every remaining colour wash rides a named token — same look.' }"), 'the 1.44.6 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[12].v, '1.44.10', 'the 1.44.10 scale-and-ink release sits twelfth, newest first');
-      R.eq(entries[12].items.length, 1, 'the 1.44.10 entry carries its single pointer');
+      R.eq(entries[13].v, '1.44.10', 'the 1.44.10 scale-and-ink release sits twelfth, newest first');
+      R.eq(entries[13].items.length, 1, 'the 1.44.10 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Reopening earnings, menus, and print always starts fresh.' }"), 'the 1.44.5 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[13].v, '1.44.9', 'the 1.44.9 veil-token release sits thirteenth, newest first');
-      R.eq(entries[13].items.length, 1, 'the 1.44.9 entry carries its single pointer');
+      R.eq(entries[14].v, '1.44.9', 'the 1.44.9 veil-token release sits thirteenth, newest first');
+      R.eq(entries[14].items.length, 1, 'the 1.44.9 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Colours now flow through named tokens, identical pixels.' }"), 'the 1.44.4 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[14].v, '1.44.8', 'the 1.44.8 colour-sweep release sits fourteenth, newest first');
-      R.eq(entries[14].items.length, 1, 'the 1.44.8 entry keeps its single pointer');
+      R.eq(entries[15].v, '1.44.8', 'the 1.44.8 colour-sweep release sits fourteenth, newest first');
+      R.eq(entries[15].items.length, 1, 'the 1.44.8 entry keeps its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Swiping the date picker shows the months gliding under your finger.' }"), 'the 1.44.3 pointer reads as approved, inside the twelve-word cap');
-      R.eq(entries[15].v, '1.44.7', 'the 1.44.7 audit-fix release sits fifteenth, newest first');
-      R.eq(entries[15].items.length, 1, 'the 1.44.7 entry keeps its single pointer');
       R.ok(src.includes("t: 'The date picker swipes and arrow-keys through months.' }"), 'the 1.44.2 pointer reads as approved, inside the twelve-word cap');
       R.ok(src.includes("t: 'Every label now shares one fixed type scale.' }"), 'the 1.44.1 pointer reads as approved, inside the twelve-word cap');
       R.ok(src.includes("t: 'Type help in chat to see every command.' }") && src.includes("t: 'Re-importing a roster month reports what changed.' }") && src.includes("t: 'Arrow keys change months on the roster calendar.' }"), 'the 1.44.0 pointers read as approved, inside the twelve-word feature cap');
