@@ -181,8 +181,8 @@ const EMDASH = '\u2014'; // —
     // black square invert opt-in; hidden proteins surface on non-mains too.
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.45.12';"), 'APP_VERSION stamped 1.45.12');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v243"), 'service-worker cache name bumped to v243 (the v1.45.12 earnings-polish release)');
+    R.ok(src.includes("var APP_VERSION = '1.45.13';"), 'APP_VERSION stamped 1.45.13');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v244"), 'service-worker cache name bumped to v244 (the v1.45.13 earnings-fresh-open release)');
   }
 
   {

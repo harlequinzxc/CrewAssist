@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.12), the changelog's current entry,
-  the service-worker cache name (v243).
+- Stamps: `APP_VERSION` (currently 1.45.13), the changelog's current entry,
+  the service-worker cache name (v244).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -48,6 +48,20 @@ the service-worker stamp. It checks:
   money column's net/gross edges straight to 1.5px across months. The
   style-snapshot rig now seeds an archive so the earnings LIST is
   style-covered (it never was before).
+- v1.45.13 earnings fresh-open + chart scope: a fresh open lands on Month +
+  COP with the IFA/LMA counting row absent, the core figure carries 16px of
+  air, the stat rows ride ONE strict 4-track grid (the COP context cell
+  spans two tracks, values never clip), the Year-by-Year legend shows in
+  salary view with swatches matching the stacked segments exactly and steps
+  aside in COP, a non-selected bar sits at 0.65 alpha (35% under the
+  selected bar's solid gold), and an empty future month renders the 16px
+  striped placeholder. Two rig lessons live in the probes: the AA maths
+  snaps running transitions to their settled state
+  (`document.getAnimations().forEach(a => a.finish())`) and parks the
+  virtual cursor at (2,2) before opening the sheet (a leftover real-mouse
+  position holds a `:hover` on a seg and skews the ink reading), and the
+  future placeholder reads its inline `height` style because the .4s bar
+  grow animation races `getBoundingClientRect()`.
 
 ## Running it
 
