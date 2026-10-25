@@ -772,6 +772,33 @@
         .ca-arch-segtrack { display: inline-flex; background: var(--ca-arch-segtrack); border-radius: 999px; padding: 3px; gap: 2px; }
         .ca-arch-seg { border: none; background: transparent; color: var(--ca-arch-seg-ink); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
         .ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }
+        /* v1.45.11: the COP refinement row (IFA + LMA / IFA) - a quiet text
+           pair under the number, never a third full pill track */
+        .ca-arch-coprow .ca-arch-coplab { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.45); }
+        .ca-arch-copseg { border: none; background: transparent; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.5); padding: 2px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color .15s ease, background .15s ease; }
+        .ca-arch-copseg.ca-arch-copon { color: var(--ca-arch-ink-on-gold); background: rgba(26,19,0,.10); }
+        /* the big number cross-fades when the lens flips (the standing
+           animation rule: nothing snaps) */
+        @keyframes caArchNumFlip { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .ca-arch-numflip { animation: caArchNumFlip .28s ease both; }
+        /* stacked salary bars: salary slice below, flying above */
+        .ca-arch-bar.ca-arch-barstack { background: transparent !important; display: flex; flex-direction: column; justify-content: flex-end; }
+        .ca-arch-barsal { width: 100%; background: rgba(146, 94, 14, 0.45); border-radius: 3px 3px 0 0; }
+        .ca-arch-barfly { width: 100%; background: var(--ca-arch-bar); }
+        .ca-arch-baron .ca-arch-barfly { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, var(--ca-gold))); }
+        .ca-arch-barsal + .ca-arch-barfly { border-radius: 0; }
+        /* bars grow in once per shape change, not per keystroke */
+        @keyframes caArchBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+        .ca-arch-bargrow .ca-arch-bar { transform-origin: bottom; animation: caArchBarGrow .4s ease both; }
+        /* the average line - complete months only */
+        .ca-arch-avgline { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(146, 94, 14, 0.55); pointer-events: none; }
+        html.dark .ca-arch-avgline { border-top-color: rgba(230, 194, 84, 0.62); }
+        .ca-arch-avglab { position: absolute; right: 0; top: -15px; font-size: 11px; font-weight: 700; letter-spacing: .04em; color: rgba(146, 94, 14, 0.8); background: var(--arch-surface); border: 1px solid var(--arch-surface-border); border-radius: 999px; padding: 1px 6px; white-space: nowrap; }
+        html.dark .ca-arch-avglab { color: rgba(230, 194, 84, 0.85); }
+        /* the year dividers in the all-time list */
+        .ca-arch-yearhead { display: flex; align-items: center; gap: 8px; margin: 14px 2px 4px; }
+        .ca-arch-yearhead span { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--arch-muted); }
+        .ca-arch-yearhead::after { content: ""; flex: 1; height: 1px; background: var(--arch-surface-border); }
         .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
         .ca-arch-metadot { opacity: .3; font-weight: 700; }
@@ -1543,6 +1570,21 @@
                                     <!-- Rendered via JS -->
                                 </div>
                             </div>
+                            <!-- v1.45.11: Monthly Salary needs the personal
+                                 basic — the CA publishes only ranges by grade
+                                 (clause 26), so the crew reads it off their
+                                 payslip once. Optional: the view prompts
+                                 until it is set, never guesses. -->
+                            <div class="mt-1">
+                                <label class="block text-sm font-bold mb-2" for="ob-basic">Monthly basic salary (optional)</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <i data-lucide="wallet" class="w-4 h-4 text-gray-600"></i>
+                                    </div>
+                                    <input type="text" id="ob-basic" inputmode="decimal" autocomplete="off" maxlength="8" placeholder="e.g. 2600" class="w-full ui-input rounded-xl py-3 pl-11 pr-4 text-sm font-semibold" aria-describedby="ob-basic-hint" />
+                                </div>
+                                <p id="ob-basic-hint" class="ca-micro text-gray-500 mt-1.5">For the Monthly Salary view \u2014 your grade\u2019s CA range: pick a rank first.</p>
+                            </div>
                         </div>
                         <div class="mt-8 shrink-0 pb-4">
                             <div class="flex items-stretch gap-3">
@@ -1894,19 +1936,47 @@
             <div id="ca-arch-scroll" class="overflow-y-auto flex-grow px-6 pb-10 pt-3 max-w-xl mx-auto w-full">
                 <!-- 1. gold summary card -->
                 <div class="ca-arch-goldcard p-5" id="ca-arch-summary">
+                    <!-- v1.45.11: the view toggle (owner-approved placement) —
+                         the "what" above the "when", both governing the number
+                         below them. Same pill language as the scope track. -->
+                    <div class="flex justify-center mb-2.5">
+                        <div class="ca-arch-segtrack" role="tablist" aria-label="Earnings view">
+                            <button type="button" class="ca-arch-seg" data-mode="cop">COP Allowance</button>
+                            <button type="button" class="ca-arch-seg" data-mode="salary">Monthly Salary</button>
+                        </div>
+                    </div>
                     <div class="flex justify-center">
                         <div class="ca-arch-segtrack" role="tablist" aria-label="Earnings scope">
                             <button type="button" class="ca-arch-seg" data-scope="month">Month</button>
-                            <button type="button" class="ca-arch-seg" data-scope="year">Year</button>
+                            <button type="button" class="ca-arch-seg" data-scope="year" id="ca-arch-seg-year">Year</button>
                             <button type="button" class="ca-arch-seg" data-scope="all">All-time</button>
                         </div>
                     </div>
                     <div class="mt-4">
-                        <div class="ca-arch-metalabel">Total earnings</div>
-                        <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight" id="ca-arch-total">$0.00</div>
+                        <div class="ca-arch-metalabel" id="ca-arch-total-label">Total earnings</div>
+                        <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
+                        <!-- salary mode: gross and CPF ride under the number -->
+                        <div class="ca-micro font-bold mt-1.5 hidden" style="color: rgba(26,19,0,.55)" id="ca-arch-gross-line"></div>
+                        <!-- the COP refinement: which flight-allowance parts
+                             count. Applies in both views (owner ruling). -->
+                        <div class="flex items-center justify-center gap-3 mt-2" id="ca-arch-coprow" aria-label="COP components">
+                            <span class="ca-arch-coplab">Counting</span>
+                            <button type="button" class="ca-arch-copseg" data-cop="all">IFA + LMA</button>
+                            <button type="button" class="ca-arch-copseg" data-cop="ifa">IFA</button>
+                        </div>
+                    </div>
+                    <!-- salary mode: no basic yet — ask, never guess (the CA
+                         publishes ranges; the exact figure is personal) -->
+                    <div class="mt-3 p-3 rounded-xl border border-black/10 hidden" style="background: rgba(26,19,0,.05)" id="ca-arch-salary-prompt">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="wallet" class="w-4 h-4 shrink-0"></i>
+                            <span class="ca-micro font-bold flex-1">Add your basic salary to see your monthly take-home.</span>
+                            <button type="button" id="ca-arch-salary-setup" class="shrink-0 h-8 px-3 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider">Set up</button>
+                        </div>
                     </div>
                     <div class="mt-4 pt-3 border-t" style="border-color: rgba(26,19,0,.1)">
-                        <div class="flex items-center justify-between gap-2">
+                        <!-- COP mode meta row -->
+                        <div class="flex items-center justify-between gap-2" id="ca-arch-meta-cop">
                             <div class="text-left">
                                 <div class="ca-arch-metalabel">Flights</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-flights">0</div>
@@ -1922,6 +1992,28 @@
                                 <div class="ca-arch-metaval flex items-center justify-end gap-1" id="ca-arch-m-ctx"></div>
                             </div>
                         </div>
+                        <!-- salary mode meta row: the payslip-checkable stack -->
+                        <div class="flex items-center justify-between gap-1.5 hidden" id="ca-arch-meta-salary">
+                            <div class="text-left">
+                                <div class="ca-arch-metalabel">Basic</div>
+                                <div class="ca-arch-metaval" id="ca-arch-m-basic">—</div>
+                            </div>
+                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
+                            <div class="text-left">
+                                <div class="ca-arch-metalabel">Fixed</div>
+                                <div class="ca-arch-metaval" id="ca-arch-m-fixed">—</div>
+                            </div>
+                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
+                            <div class="text-left">
+                                <div class="ca-arch-metalabel">Midnights</div>
+                                <div class="ca-arch-metaval" id="ca-arch-m-mid">—</div>
+                            </div>
+                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
+                            <div class="text-right min-w-0">
+                                <div class="ca-arch-metalabel">COP</div>
+                                <div class="ca-arch-metaval" id="ca-arch-m-cop">—</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <!-- 2. 12-month trend -->
@@ -1929,11 +2021,16 @@
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-1.5">
                             <i data-lucide="trending-up" class="w-3 h-3" style="color: var(--arch-muted)"></i>
-                            <span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">12-Month Trend</span>
+                            <span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)" id="ca-arch-trend-title">12-Month Trend</span>
                         </div>
                         <span class="ca-arch-num ca-micro font-bold" style="color: rgba(212,175,55,.7)" id="ca-arch-peak"></span>
                     </div>
-                    <div class="flex items-end gap-1 mt-4" id="ca-arch-chart"></div>
+                    <div class="relative mt-4">
+                        <div class="flex items-end gap-1" id="ca-arch-chart"></div>
+                        <!-- v1.45.11: the average line — complete months
+                             only, so a young month never drags it down -->
+                        <div class="ca-arch-avgline hidden" id="ca-arch-avgline" aria-hidden="true"><span class="ca-arch-avglab" id="ca-arch-avglab"></span></div>
+                    </div>
                 </div>
                 <!-- 3. search -->
                 <div class="mt-3">
@@ -2526,7 +2623,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.10'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.11'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2548,6 +2645,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.11', d: '2026-10-26', items: [
+                { c: 'new', t: 'Monthly Salary — your net take-home beside the COP allowance.' },
+                { c: 'imp', t: 'The earnings chart gains an average line and a year-by-year view.' },
+                { c: 'imp', t: 'The Year pill cycles years; the list follows the selected scope.' },
+                { c: 'imp', t: 'Salary insights: net averages, CPF paid, midnight reports and more.' }
+            ] },
             { v: '1.45.10', d: '2026-10-24', items: [
                 { c: 'fix', t: 'A searched flight’s cycle button flips through its own sectors — never back to the saved menus — and hides for single-sector flights.' },
                 { c: 'fix', t: 'The printer shows a searched flight’s own sector chips only — a single-sheet search keeps one inert chip, and no saved-menu chips ride beside it.' },
@@ -3653,6 +3756,11 @@
                 // Auto-capitalize Name
                 const nameParts = tempProfile.name.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                 tempProfile.name = nameParts.join(' ');
+                // v1.45.11: the basic is personal (payslip), optional, and
+                // never guessed — empty stays empty so the salary view
+                // prompts instead of lying.
+                const basicRaw = parseFloat(String(document.getElementById('ob-basic').value || '').replace(/[^0-9.]/g, ''));
+                tempProfile.basicSalary = (isFinite(basicRaw) && basicRaw > 0) ? Math.round(basicRaw * 100) / 100 : 0;
 
                 appProfile = { ...tempProfile };
                 localStorage.setItem('crewAssist.profile', JSON.stringify(appProfile));
@@ -3896,6 +4004,21 @@
             });
         }
 
+        // v1.45.11: clause 26 cabin-crew ranges, shown as the hint under
+        // the basic-salary field. Jr. FS/FSS is an IFA tier, not a rank —
+        // both ride CC1.
+        function salaryGradeRange(rank) {
+            const r = String(rank || '');
+            if (r === 'LS' || r === 'LSS') return '$2,000 \u2013 $3,150 (CC2)';
+            if (r === 'CS' || r === 'CSS') return '$2,500 \u2013 $3,950 (CC3)';
+            if (r === 'IFM') return '$2,800 \u2013 $4,600 (CC4)';
+            if (r === 'FS' || r === 'FSS') return '$1,550 \u2013 $2,400 (CC1)';
+            return 'pick a rank first';
+        }
+        function syncObBasicHint() {
+            const hint = document.getElementById('ob-basic-hint');
+            if (hint) hint.textContent = 'For the Monthly Salary view \u2014 your grade\u2019s CA range: ' + salaryGradeRange(tempProfile.rank);
+        }
         function renderRanks(gender) {
             const container = document.getElementById('ob-rank-container');
             const list = document.getElementById('ob-rank-list');
@@ -3917,6 +4040,7 @@
                     caGoldPillOn(btn);
 
                     tempProfile.rank = r;
+                    syncObBasicHint();
                     checkObSubmit();
                 });
 
@@ -3975,20 +4099,24 @@
                 tempProfile.rank = String(tempProfile.rank || '').replace(/^Jr\. /, '');
                 document.getElementById('ob-name').value = tempProfile.name;
                 document.getElementById('ob-solo').value = obYmdToSolo(tempProfile.firstSoloYMD);
+                document.getElementById('ob-basic').value = tempProfile.basicSalary ? String(tempProfile.basicSalary) : '';
                 if (tempProfile.gender) {
                     document.querySelector(`.ob-gender-btn[data-value="${tempProfile.gender}"]`).click();
                     // rank click simulated in renderRanks if matched, but let's re-render
                     renderRanks(tempProfile.gender);
                 }
+                syncObBasicHint();
             } else {
                 tempProfile = { name: '', gender: '', rank: '', firstSoloYMD: '' };
                 document.getElementById('ob-name').value = '';
                 document.getElementById('ob-solo').value = '';
+                document.getElementById('ob-basic').value = '';
                 document.querySelectorAll('.ob-gender-btn').forEach(b => caGoldPillOff(b));
                 const rc = document.getElementById('ob-rank-container');
                 rc.classList.add('opacity-0', 'max-h-0', 'pointer-events-none');
                 rc.classList.remove('opacity-100', 'max-h-[200px]', 'pointer-events-auto');
                 document.getElementById('ob-rank-list').innerHTML = '';
+                syncObBasicHint();
                 checkObSubmit();
             }
         }
@@ -8686,6 +8814,19 @@
             ]
         };
 
+        // v1.45.11: the Monthly Salary stack (CA 058/2025) — clause 38(2)(a)
+        // laundry $125, clause 37(2) transport $340, and the owner-ruled
+        // midnight transport $32 per duty reporting 0000–0700. CPF reads the
+        // employee share (20% below 55); only basic, IFA (turnaround bonus
+        // included), and midnight transport attract it — laundry, transport
+        // and LMA stay out (clause 41(1): only clause-26 pay ranks as basic).
+        const SALARY_CONFIG = {
+            laundry: 125,
+            transport: 340,
+            midnight: 32,
+            cpfPct: 20
+        };
+
         const airports = [
             // v1.43.0 hotfix round 12 (owner data): the curated SQ + Scoot network
             // from the current "Where We Fly" map, replacing the 574-airport generic
@@ -9433,6 +9574,12 @@
             lma: {
                 windows: JSON.parse(JSON.stringify(LMA_WINDOWS)),
                 regions: JSON.parse(JSON.stringify(REGION_RATES))
+            },
+            salary: {
+                laundry: SALARY_CONFIG.laundry,
+                transport: SALARY_CONFIG.transport,
+                midnight: SALARY_CONFIG.midnight,
+                cpfPct: SALARY_CONFIG.cpfPct
             }
         };
         let shippedRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
@@ -9478,6 +9625,12 @@
                 lma: {
                     windows: cloneRates(base.lma.windows || LMA_WINDOWS),
                     regions: cloneRates(base.lma.regions)
+                },
+                salary: {
+                    laundry: numOr(src.salary && src.salary.laundry, base.salary.laundry),
+                    transport: numOr(src.salary && src.salary.transport, base.salary.transport),
+                    midnight: numOr(src.salary && src.salary.midnight, base.salary.midnight),
+                    cpfPct: numOr(src.salary && src.salary.cpfPct, base.salary.cpfPct)
                 }
             };
             const incomingWindows = (src.lma && src.lma.windows) || raw.windows || {};
@@ -9523,6 +9676,12 @@
             ['b', 'l', 'd'].forEach((k) => {
                 LMA_WINDOWS[k] = Object.assign({}, LMA_WINDOWS[k], win[k] || {});
             });
+            if (parsed.salary) {
+                SALARY_CONFIG.laundry = numOr(parsed.salary.laundry, SALARY_CONFIG.laundry);
+                SALARY_CONFIG.transport = numOr(parsed.salary.transport, SALARY_CONFIG.transport);
+                SALARY_CONFIG.midnight = numOr(parsed.salary.midnight, SALARY_CONFIG.midnight);
+                SALARY_CONFIG.cpfPct = numOr(parsed.salary.cpfPct, SALARY_CONFIG.cpfPct);
+            }
         }
 
         function applyRatesFromStorage() {
@@ -9592,6 +9751,7 @@
                 html += '<p class="ca-micro font-bold text-sia-gold">This device has saved overrides.</p>';
             }
             let rankBody = '<table class="dev-rate-table"><thead><tr><th>Rank</th><th>Rate</th></tr></thead><tbody>';
+            const sal = (r && r.salary) || DEFAULT_RATES.salary;
             IFA_RATE_GROUPS.forEach((g) => {
                 const val = g.keys.map((k) => ifa.baseRates[k]).find((n) => n != null);
                 rankBody += '<tr><td>' + ratesEsc(g.label) + '</td><td>' + ratesInput(val, 'data-ifa-rates="' + ratesEsc(g.keys.join('|')) + '"') + '</td></tr>';
@@ -9605,6 +9765,13 @@
                 '<tr><td>Out of Station</td><td>' + ratesInput(ifa.stationBuffer, 'data-ifa-field="stationBuffer"') + '</td></tr>' +
                 '</tbody></table>');
 
+            html += section('salary', 'Monthly salary (CA 058/2025)', 
+                '<table class="dev-rate-table"><tbody>' +
+                '<tr><td>Uniform laundry allowance ($/mth)</td><td>' + ratesInput(sal.laundry, 'data-salary-field="laundry"') + '</td></tr>' +
+                '<tr><td>Transport allowance ($/mth)</td><td>' + ratesInput(sal.transport, 'data-salary-field="transport"') + '</td></tr>' +
+                '<tr><td>Midnight transport ($/duty, rpt 0000\u20130700)</td><td>' + ratesInput(sal.midnight, 'data-salary-field="midnight"') + '</td></tr>' +
+                '<tr><td>CPF employee share (%)</td><td>' + ratesInput(sal.cpfPct, 'data-salary-field="cpfPct"') + '</td></tr>' +
+                '</tbody></table>');
             html += section('overrides', 'Overrides &amp; bonus',
                 '<table class="dev-rate-table"><tbody>' +
                 '<tr><td>Paxing Multiplier</td><td>' + ratesInput(ifa.paxingMultiplier, 'data-ifa-field="paxingMultiplier"') + '</td></tr>' +
@@ -9721,6 +9888,10 @@
             const turn = collect('turnaroundBrackets');
             if (lay.length) base.ifa.layoverBrackets = lay;
             if (turn.length) base.ifa.turnaroundBrackets = turn;
+            root.querySelectorAll('[data-salary-field]').forEach((el) => {
+                const k = el.getAttribute('data-salary-field');
+                if (k) base.salary[k] = numOr(el.value, base.salary[k]);
+            });
             root.querySelectorAll('[data-lma-region]').forEach((el) => {
                 const k = el.getAttribute('data-lma-region');
                 const col = el.getAttribute('data-col');
@@ -12966,7 +13137,17 @@
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
-        const archState = { scope: 'all', search: '', collapsed: {}, projOpen: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '' };
+        const archState = { scope: 'all', search: '', collapsed: {}, projOpen: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '',
+            // v1.45.11: COP Allowance vs Monthly Salary, the IFA/LMA
+            // refinement, and the cycled year (tap the Year pill again).
+            mode: 'cop', copScope: 'all', yearSel: null };
+        // A view preference, like the theme: remembered per device.
+        (function archLoadPrefs() {
+            try {
+                if (localStorage.getItem('crewAssist.archMode') === 'salary') archState.mode = 'salary';
+                if (localStorage.getItem('crewAssist.archCopMode') === 'ifa') archState.copScope = 'ifa';
+            } catch (e) {}
+        })();
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
@@ -12992,6 +13173,93 @@
             const nowMk = todayLocalYMD().slice(0, 7);
             return mks.indexOf(nowMk) !== -1 ? nowMk : (mks[0] || '');
         }
+        // ---- v1.45.11: Monthly Salary (CA 058/2025) ----
+        // One $32 per duty whose report at Changi falls 0000-0700 inclusive
+        // (owner ruling; both ends count, one per duty never per sector).
+        // The roster prints Rpt on the leg that reports: SIN departures
+        // carry the home-base report, outstation returns their own (not a
+        // Changi trip), and a turnaround's later sectors print none - so the
+        // count is simply legs departing SIN with rpt inside the window.
+        function archMidnightCount(mk) {
+            let store = {};
+            try { store = loadAllFlights() || {}; } catch (e) {}
+            const legs = store[String(mk || '')] || [];
+            let n = 0;
+            legs.forEach((f) => {
+                const rpt = String((f && f.rpt) || '');
+                if (f && f.dep === 'SIN' && rpt >= '0000' && rpt <= '0700') n++;
+            });
+            return n;
+        }
+        // The basic is personal (payslip): clause 26 publishes ranges only.
+        // Zero means "not set" - the salary view prompts, it never guesses.
+        function salaryBasic() {
+            const n = Number(appProfile && appProfile.basicSalary);
+            return (isFinite(n) && n > 0) ? n : 0;
+        }
+        // IFA (turnaround bonus included at save time) is CPF-able; LMA is
+        // not, and pre-detail saves count whole as IFA - over-deducting CPF
+        // beats under-deducting it.
+        function archCopParts(entries) {
+            let ifa = 0, lma = 0;
+            (entries || []).forEach((e) => {
+                const d = e && e.detail;
+                if (d && typeof d === 'object' && ((Number(d.ifaTotal) || 0) !== 0 || (Number(d.lmaTotal) || 0) !== 0)) {
+                    ifa += Number(d.ifaTotal) || 0;
+                    lma += Number(d.lmaTotal) || 0;
+                } else ifa += Number(e.amount) || 0;
+            });
+            return { ifa: Math.round(ifa * 100) / 100, lma: Math.round(lma * 100) / 100 };
+        }
+        // One month of the stack. cop follows the IFA + LMA / IFA choice;
+        // CPF never counts LMA, laundry or transport.
+        function archSalaryMonth(mk, entries) {
+            const basic = salaryBasic();
+            const parts = archCopParts(entries);
+            const mid = archMidnightCount(mk);
+            const midAmt = Math.round(mid * SALARY_CONFIG.midnight * 100) / 100;
+            const fixed = Math.round((SALARY_CONFIG.laundry + SALARY_CONFIG.transport) * 100) / 100;
+            const cop = (archState.copScope === 'ifa') ? parts.ifa : Math.round((parts.ifa + parts.lma) * 100) / 100;
+            const gross = Math.round((basic + fixed + midAmt + cop) * 100) / 100;
+            const cpf = Math.round((SALARY_CONFIG.cpfPct / 100) * (basic + parts.ifa + midAmt) * 100) / 100;
+            return { basic: basic, fixed: fixed, mid: mid, midAmt: midAmt, ifa: parts.ifa, lma: parts.lma, cop: cop,
+                gross: gross, cpf: cpf, net: Math.round((gross - cpf) * 100) / 100 };
+        }
+        // Aggregate a set of month keys (each must have entries; the basic
+        // rides every tracked month - Option A, today's figure across
+        // history, as the owner approved).
+        function archSalaryAgg(mks, all) {
+            const byMk = {};
+            (all || []).forEach((e) => { const k = String(e.monthKey || ''); if (k) (byMk[k] = byMk[k] || []).push(e); });
+            const out = { basic: 0, fixed: 0, mid: 0, midAmt: 0, ifa: 0, lma: 0, cop: 0, gross: 0, cpf: 0, net: 0, months: 0 };
+            (mks || []).forEach((mk) => {
+                const m = archSalaryMonth(mk, byMk[mk] || []);
+                Object.keys(out).forEach((k) => { if (k !== 'months' && typeof m[k] === 'number') out[k] += m[k]; });
+                out.months++;
+            });
+            Object.keys(out).forEach((k) => { if (k !== 'months') out[k] = Math.round(out[k] * 100) / 100; });
+            return out;
+        }
+        // Month and Year selections: a chart tap moves the month in Month
+        // scope; the cycled year rides archState.yearSel in Year scope.
+        function archSelMk() {
+            const info = archScopeInfo();
+            return (archState.scope === 'month' && archState.chartSel) ? String(archState.chartSel) : info.mk;
+        }
+        function archSelYr() {
+            if (archState.scope === 'year' && archState.yearSel) return String(archState.yearSel);
+            return archScopeInfo().yr;
+        }
+        // the years the archive actually holds, oldest first
+        function archArchiveYears() {
+            const yrs = [];
+            loadArchive().forEach((e) => {
+                const y = String(e.monthKey || '').slice(0, 4);
+                if (/^\d{4}$/.test(y) && yrs.indexOf(y) === -1) yrs.push(y);
+            });
+            return yrs.sort();
+        }
+
         // ---- earnings-page stats (v1.24.0): months, projection, YoY ----
         function archMonthsMap(all) {
             const map = {};
@@ -13062,21 +13330,6 @@
         }
         function archKFmt(v) { return v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : formatMoney(v); }
         function archPeakFmt(v) { return 'Peak: ' + archKFmt(v); }
-        // Twelve months, oldest on the left, ending at the newest entry month
-        // (or the current real month when it is later).
-        function archChartData(all) {
-            const map = archMonthsMap(all);
-            const currentMk = archCurrentMk();
-            const mksAll = Object.keys(map).sort();
-            const endMk = (mksAll.length && mksAll[mksAll.length - 1] > currentMk) ? mksAll[mksAll.length - 1] : currentMk;
-            const out = [];
-            for (let i = 11; i >= 0; i--) {
-                const mk = archMonthAdd(endMk, -i);
-                const m = map[mk] || { total: 0, count: 0 };
-                out.push({ mk: mk, total: m.total, count: m.count, isCurrent: mk === currentMk });
-            }
-            return out;
-        }
         // Everything the twelve insight cards show, computed from real entries.
         function archInsights(all) {
             const map = archMonthsMap(all);
@@ -13190,11 +13443,11 @@
             return hay.indexOf(q) !== -1;
         }
         function archFiltered() {
-            const info = archScopeInfo();
             const q = archState.search.trim().toLowerCase();
+            const yr = archSelYr(), mk = archSelMk();
             return loadArchive().filter((e) => {
-                if (archState.scope === 'year' && String(e.monthKey || '').slice(0, 4) !== info.yr) return false;
-                if (archState.scope === 'month' && String(e.monthKey || '') !== info.mk) return false;
+                if (archState.scope === 'year' && String(e.monthKey || '').slice(0, 4) !== yr) return false;
+                if (archState.scope === 'month' && String(e.monthKey || '') !== mk) return false;
                 if (q && !archEntryMatches(e, q)) return false;
                 return true;
             });
@@ -13479,9 +13732,11 @@
             archState.landedSig = archLandedSig();
             const keep = scroll ? scroll.scrollTop : 0;
             const q = archState.search.trim().toLowerCase();
-            // Search narrows the list (route, month/date, type, amount);
-            // the summary, chart and insights always read the whole archive.
-            const vis = q ? all.filter((e) => archEntryMatches(e, q)) : all.slice();
+            // v1.45.11 (owner ruling): the list follows the pill - Month
+            // shows only the selected month (expanded), Year only the cycled
+            // year (collapsed), All-time everything under year headers.
+            // Search still narrows within; trash deletes exactly this set.
+            const vis = archFiltered();
             const clearBtn = archEl('ca-arch-clear');
             if (clearBtn) {
                 clearBtn.classList.toggle('opacity-0', !archState.search);
@@ -13528,12 +13783,22 @@
                     + '<button type="button" id="ca-arch-nudge-snooze" aria-label="Snooze backup reminder" class="shrink-0 text-amber-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>'
                     + '</div>';
             }
+            let lastYrShown = '';
             mks.forEach((mk) => {
+                if (archState.scope === 'all' && String(mk).slice(0, 4) !== lastYrShown) {
+                    lastYrShown = String(mk).slice(0, 4);
+                    html += '<div class="ca-arch-yearhead" aria-hidden="true"><span>' + lastYrShown + '</span></div>';
+                }
                 const rows = groups[mk].slice().sort((a, b) => (String(b.sectorDate || '').localeCompare(String(a.sectorDate || ''))) || ((idx[b.id] || 0) - (idx[a.id] || 0)));
                 const sub = rows.reduce((s, e) => s + (Number(e.amount) || 0), 0);
                 const full = (statsAll[mk] || { total: 0 }).total;
                 const filtered = Math.abs(full - sub) > 0.004;
-                const col = Object.prototype.hasOwnProperty.call(archState.collapsed, mk) ? !!archState.collapsed[mk] : (mk !== newestMk);
+                // Month scope defaults the selected month OPEN (the pill's
+                // promise); the other scopes keep the current real month open
+                // and the rest folded. A manual tap always wins either way.
+                const col = Object.prototype.hasOwnProperty.call(archState.collapsed, mk)
+                    ? !!archState.collapsed[mk]
+                    : (archState.scope === 'month' ? false : mk !== currentMk);
                 const ms = archMonthState(mk, all);
                 const inProgress = ms.inProgress;
                 const yoy = inProgress ? null : archYoyPct(full, statsAll[archMonthAdd(mk, -12)] ? statsAll[archMonthAdd(mk, -12)].total : 0);
@@ -13547,7 +13812,18 @@
                 // months keep a plain amount. (Hotfix: no chevron — it
                 // shifted the amount text; the tap still works.)
                 const hasUnflown = ms.unflownCount > 0;
-                const amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
+                let amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
+                // v1.45.11: salary mode leads with the month's net (gross
+                // beside it) - the payslip-checkable figure. Search-filtered
+                // months keep the filtered COP view, like today.
+                const byMkFull = archEntriesByMk(all);
+                const isSalList = archState.mode === 'salary' && salaryBasic() > 0;
+                const monthSal = isSalList ? archSalaryMonth(mk, byMkFull[mk] || []) : null;
+                if (monthSal && !filtered) {
+                    amtHtml = '<span class="ca-arch-amt-net">net ' + formatMoney(monthSal.net) + '</span> <span class="text-xs font-normal" style="color: var(--arch-muted)">gross ' + formatMoney(monthSal.gross) + '</span>';
+                } else if (monthSal && filtered) {
+                    amtHtml = formatMoney(sub) + ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of net ' + formatMoney(monthSal.net) + '</span>';
+                }
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2">'
                     + '<div class="flex items-center gap-2.5 py-3 px-1">'
                     + '<button type="button" class="ca-arch-group-head flex-1 min-w-0 flex items-center gap-2.5 text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
@@ -13646,32 +13922,73 @@
             }));
         }
 
-        // The gold card: totals per scope plus the contextual line.
+        // The COP figure the page counts, respecting the IFA + LMA / IFA
+        // refinement (v1.45.11).
+        function archCopTotal(entries) {
+            const p = archCopParts(entries);
+            return (archState.copScope === 'ifa') ? p.ifa : Math.round((p.ifa + p.lma) * 100) / 100;
+        }
+        function archEntriesByMk(all) {
+            const by = {};
+            (all || []).forEach((e) => { const k = String(e.monthKey || ''); if (k) (by[k] = by[k] || []).push(e); });
+            return by;
+        }
+        // The gold card: totals per scope plus the contextual line. v1.45.11:
+        // the card answers whichever lens is active - COP Allowance exactly
+        // as before, or the Monthly Salary stack (net big, gross and CPF
+        // beneath, the payslip-checkable breakdown in the meta row).
         function renderArchSummary(all) {
-            const info = archScopeInfo();
             const map = archMonthsMap(all);
             const currentMk = archCurrentMk();
-            document.querySelectorAll('#ca-arch-summary .ca-arch-seg').forEach((b) => {
+            const isSalary = archState.mode === 'salary';
+            const hasBasic = salaryBasic() > 0;
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-mode]').forEach((b) => {
+                b.classList.toggle('ca-arch-segon', b.getAttribute('data-mode') === archState.mode);
+            });
+            document.querySelectorAll('#ca-arch-summary .ca-arch-copseg').forEach((b) => {
+                b.classList.toggle('ca-arch-copon', b.getAttribute('data-cop') === archState.copScope);
+            });
+            const yrBtn = archEl('ca-arch-seg-year');
+            if (yrBtn) yrBtn.textContent = (archState.scope === 'year') ? archSelYr() : 'Year';
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').forEach((b) => {
                 b.classList.toggle('ca-arch-segon', b.getAttribute('data-scope') === archState.scope);
             });
+            archEl('ca-arch-meta-cop').classList.toggle('hidden', isSalary);
+            archEl('ca-arch-meta-salary').classList.toggle('hidden', !isSalary || !hasBasic);
+            archEl('ca-arch-salary-prompt').classList.toggle('hidden', !(isSalary && !hasBasic));
+            archEl('ca-arch-coprow').classList.toggle('hidden', false);
+
             let total = 0, count = 0, ctxLabel = '\u00a0', ctxHtml = '<span style="opacity:.4">\u2014</span>';
+            let sal = null, salCtx = '';
             if (archState.scope === 'month') {
-                const mk = info.mk || currentMk;
+                const mk = archSelMk();
                 const m = map[mk] || { total: 0, count: 0 };
-                total = m.total; count = m.count;
+                const by = archEntriesByMk(all);
+                sal = archSalaryMonth(mk, by[mk] || []);
+                total = archCopTotal(by[mk] || []);
+                count = m.count;
                 if (mk === currentMk) {
                     const ms = archMonthState(mk, all);
                     if (ms.inProgress && ms.unflownCount > 0) {
-                        ctxLabel = 'On track';
-                        ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(ms.total) + ' \u00b7 ' + formatMoney(ms.unflown) + ' left</span>';
-                    } else {
+                        if (isSalary && hasBasic) {
+                            const share = (sal.cop > 0.004) ? (sal.ifa / ((sal.ifa + sal.lma) || 1)) : 1;
+                            const projCop = ms.total || 0;
+                            const projIfa = projCop * share;
+                            const g = sal.basic + sal.fixed + sal.midAmt + projCop;
+                            const c = (SALARY_CONFIG.cpfPct / 100) * (sal.basic + sal.midAmt + projIfa);
+                            salCtx = 'On track for ' + formatMoney(Math.round((g - c) * 100) / 100);
+                        } else {
+                            ctxLabel = 'On track';
+                            ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(ms.total) + ' \u00b7 ' + formatMoney(ms.unflown) + ' left</span>';
+                        }
+                    } else if (!isSalary) {
                         ctxLabel = 'Month total';
                         ctxHtml = '<i data-lucide="check" class="w-3.5 h-3.5 shrink-0"></i><span>Month complete</span>';
                     }
-                } else {
+                } else if (!isSalary) {
                     const yoy = archYoyPct(total, statsLiFor(map, mk));
                     // v1.33.0 (owner-approved): the month's delta against the
-                    // month before, in dollars — YoY keeps its place beside it.
+                    // month before, in dollars - YoY keeps its place beside it.
                     const prevMk = archMonthAdd(mk, -1);
                     const prevM = map[prevMk];
                     const parts = [];
@@ -13679,14 +13996,25 @@
                         const d = total - prevM.total;
                         parts.push('<i data-lucide="' + (d >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (d >= 0 ? '+' : '\u2212') + formatMoney(Math.abs(d)) + ' vs ' + archiveMonthLabel(prevMk) + '</span>');
                     }
-                    if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>');
+                    if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy) + '% YoY</span>');
                     ctxLabel = 'Context';
                     ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">No ' + archiveMonthLabel(prevMk) + ' on record</span>';
+                } else if (hasBasic) {
+                    const prevMk = archMonthAdd(mk, -1);
+                    const by = archEntriesByMk(all);
+                    const prevSal = (map[prevMk] && by[prevMk]) ? archSalaryMonth(prevMk, by[prevMk]) : null;
+                    if (prevSal) {
+                        const d = sal.net - prevSal.net;
+                        salCtx = (d >= 0 ? '+' : '\u2212') + formatMoney(Math.abs(d)) + ' vs ' + archiveMonthLabel(prevMk);
+                    }
                 }
             } else if (archState.scope === 'year') {
-                const yr = info.yr || currentMk.slice(0, 4);
+                const yr = archSelYr();
                 const ytd = all.filter((e) => String(e.monthKey || '').slice(0, 4) === yr);
-                total = ytd.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+                const by = archEntriesByMk(all);
+                const yMks = Object.keys(map).filter((k) => k.slice(0, 4) === yr).sort();
+                sal = archSalaryAgg(yMks, all);
+                total = archCopTotal(ytd);
                 count = ytd.length;
                 const curYr = currentMk.slice(0, 4);
                 const capMk = (yr === curYr) ? currentMk : (yr + '-12');
@@ -13696,90 +14024,243 @@
                     if (mk.slice(0, 4) !== yearStr) return false;
                     if (yearStr === curYr && parseInt(mk.slice(5, 7), 10) > capMonth) return false;
                     return true;
-                }).reduce((s, e) => s + (Number(e.amount) || 0), 0);
-                const ly = sumTo(String(parseInt(yr, 10) - 1));
-                const yoy = archYoyPct(total, ly);
-                ctxLabel = yr + (yr === curYr ? ' YTD' : '');
-                ctxHtml = yoy === null ? '<span style="opacity:.4">' + (parseInt(yr, 10) - 1) + ' not on record</span>'
-                    : '<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>';
-            } else {
-                total = all.reduce((s, e) => s + (Number(e.amount) || 0), 0);
-                count = all.length;
-                const parts = [];
-                const curM = map[currentMk];
-                if (curM) {
-                    const ms = archMonthState(currentMk, all);
-                    const yoy = archYoyPct(curM.total, statsLiFor(map, currentMk));
-                    if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy).toFixed(1) + '% vs LY</span>');
-                    if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004) parts.push('<span>proj. ' + formatMoney(ms.total) + '</span>');
+                });
+                const lyEntries = sumTo(String(parseInt(yr, 10) - 1));
+                if (!isSalary) {
+                    const ly = lyEntries.reduce((s2, e) => s2 + (Number(e.amount) || 0), 0);
+                    const yoy = archYoyPct(total, ly);
+                    ctxLabel = yr + (yr === curYr ? ' YTD' : '');
+                    ctxHtml = yoy === null ? '<span style="opacity:.4">' + (parseInt(yr, 10) - 1) + ' not on record</span>'
+                        : '<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy) + '% vs LY</span>';
+                } else if (hasBasic) {
+                    const lyMks = Object.keys(map).filter((k) => k.slice(0, 4) === String(parseInt(yr, 10) - 1) && parseInt(k.slice(5, 7), 10) <= capMonth).sort();
+                    const lySal = lyMks.length ? archSalaryAgg(lyMks, all) : null;
+                    salCtx = yr + (yr === curYr ? ' YTD' : '') + (lySal ? ' \u00b7 ' + (sal.net >= lySal.net ? '+' : '\u2212') + formatMoney(Math.abs(sal.net - lySal.net)) + ' vs LY' : '');
                 }
-                ctxLabel = 'Context';
-                ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">\u2014</span>';
+            } else {
+                sal = archSalaryAgg(Object.keys(map).sort(), all);
+                total = archCopTotal(all);
+                count = all.length;
+                if (!isSalary) {
+                    const parts = [];
+                    const curM = map[currentMk];
+                    if (curM) {
+                        const ms = archMonthState(currentMk, all);
+                        const yoy = archYoyPct(curM.total, statsLiFor(map, currentMk));
+                        if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy) + '% vs LY</span>');
+                        if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004) parts.push('<span>proj. ' + formatMoney(ms.total) + '</span>');
+                    }
+                    ctxLabel = 'Context';
+                    ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">\u2014</span>';
+                }
             }
-            archEl('ca-arch-total').textContent = formatMoney(total);
-            archEl('ca-arch-m-flights').textContent = String(count);
-            archEl('ca-arch-m-avg').textContent = count ? formatMoney(total / count) : '\u2014';
-            archEl('ca-arch-m-ctx-label').textContent = ctxLabel;
-            archEl('ca-arch-m-ctx').innerHTML = ctxHtml;
+
+            const numEl = archEl('ca-arch-total');
+            const flipKey = archState.mode + '|' + archState.scope + '|' + archSelYr() + '|' + archSelMk() + '|' + archState.copScope;
+            if (renderArchSummary._fk !== flipKey) {
+                renderArchSummary._fk = flipKey;
+                numEl.classList.remove('ca-arch-numflip');
+                void numEl.offsetWidth;
+                numEl.classList.add('ca-arch-numflip');
+            }
+            const grossEl = archEl('ca-arch-gross-line');
+            if (isSalary && hasBasic && sal) {
+                archEl('ca-arch-total-label').textContent = 'Net take-home';
+                numEl.textContent = formatMoney(sal.net);
+                grossEl.textContent = 'Gross ' + formatMoney(sal.gross) + ' \u00b7 CPF \u2212' + formatMoney(sal.cpf) + (salCtx ? ' \u00b7 ' + salCtx : '');
+                grossEl.classList.remove('hidden');
+                archEl('ca-arch-m-basic').textContent = formatMoney(sal.basic);
+                archEl('ca-arch-m-fixed').textContent = formatMoney(sal.fixed);
+                archEl('ca-arch-m-mid').textContent = sal.mid ? (sal.mid + ' \u00b7 ' + formatMoney(sal.midAmt)) : '0';
+                archEl('ca-arch-m-cop').textContent = formatMoney(sal.cop);
+            } else if (isSalary) {
+                archEl('ca-arch-total-label').textContent = 'Net take-home';
+                numEl.textContent = '\u2014';
+                grossEl.classList.add('hidden');
+            } else {
+                archEl('ca-arch-total-label').textContent = 'Total earnings';
+                numEl.textContent = formatMoney(total);
+                grossEl.classList.add('hidden');
+                archEl('ca-arch-m-flights').textContent = String(count);
+                archEl('ca-arch-m-avg').textContent = count ? formatMoney(total / count) : '\u2014';
+                archEl('ca-arch-m-ctx-label').textContent = ctxLabel;
+                archEl('ca-arch-m-ctx').innerHTML = ctxHtml;
+            }
             refreshIcons();
         }
-        function statsLiFor(map, mk) {
+                function statsLiFor(map, mk) {
             const li = map[archMonthAdd(mk, -12)];
             return li ? li.total : 0;
         }
 
-        // Twelve gold bars, oldest left; the partial month stacks its
-        // projection on top of the actual.
+        // v1.45.11: the chart draws what the active lens counts - COP or the
+        // salary stack - in three shapes: the rolling 12-month window (Month
+        // scope), the selected year's Jan-Dec (Year scope, the pill cycles
+        // years), and one bar per year (All-time). Salary mode stacks each
+        // bar: the salary slice (basic + fixed + midnights) below, flying on
+        // top, the hatched projection always growing out of the flying part.
+        function archChartUnits(all) {
+            const map = archMonthsMap(all);
+            const by = archEntriesByMk(all);
+            const currentMk = archCurrentMk();
+            const isSalary = archState.mode === 'salary' && salaryBasic() > 0;
+            const unit = (mk) => {
+                const m = map[mk] || { total: 0, count: 0 };
+                const cop = archCopTotal(by[mk] || []);
+                const sal = isSalary ? archSalaryMonth(mk, by[mk] || []) : null;
+                return { mk: mk, total: (isSalary && sal) ? sal.gross : cop, cop: cop, sal: sal, count: m.count };
+            };
+            if (archState.scope === 'year') {
+                const yr = archSelYr();
+                const items = [];
+                for (let mo = 1; mo <= 12; mo++) items.push(unit(yr + '-' + String(mo).padStart(2, '0')));
+                return { kind: 'months', items: items };
+            }
+            if (archState.scope === 'all') {
+                const yrs = [];
+                Object.keys(map).forEach((k) => { const y = k.slice(0, 4); if (yrs.indexOf(y) === -1) yrs.push(y); });
+                yrs.sort();
+                const items = yrs.map((yr) => {
+                    const mks = Object.keys(map).filter((k) => k.slice(0, 4) === yr).sort();
+                    const ytd = all.filter((e) => String(e.monthKey || '').slice(0, 4) === yr);
+                    const cop = archCopTotal(ytd);
+                    if (!isSalary) return { yr: yr, total: cop, cop: cop, sal: null, mks: mks };
+                    const agg = archSalaryAgg(mks, all);
+                    return { yr: yr, total: agg.gross, cop: agg.cop, sal: agg, mks: mks };
+                });
+                return { kind: 'years', items: items };
+            }
+            const mksAll = Object.keys(map).sort();
+            const endMk = (mksAll.length && mksAll[mksAll.length - 1] > currentMk) ? mksAll[mksAll.length - 1] : currentMk;
+            const items = [];
+            for (let i = 11; i >= 0; i--) items.push(unit(archMonthAdd(endMk, -i)));
+            return { kind: 'months', items: items };
+        }
         function renderArchChart(all) {
             const chart = archEl('ca-arch-chart');
-            const months = archChartData(all);
+            // bars grow in once per shape change - not on every keystroke
+            const shapeKey = archState.mode + '|' + archState.scope + '|' + archSelYr() + '|' + archState.copScope;
+            if (renderArchChart._sk !== shapeKey) { renderArchChart._sk = shapeKey; chart.classList.add('ca-arch-bargrow'); }
+            else chart.classList.remove('ca-arch-bargrow');
+            const units = archChartUnits(all);
             const currentMk = archCurrentMk();
+            const curYr = currentMk.slice(0, 4);
+            const isSalary = archState.mode === 'salary' && salaryBasic() > 0;
             const info = archScopeInfo();
             const selMk = archState.chartSel || (archState.scope === 'month' ? (info.mk || currentMk) : '');
+            const title = archEl('ca-arch-trend-title');
+            if (title) title.textContent = (archState.scope === 'year') ? (archSelYr() + ' by Month') : (archState.scope === 'all' ? 'Year by Year' : '12-Month Trend');
             let maxTotal = 0;
-            months.forEach((m) => { maxTotal = Math.max(maxTotal, m.total); });
+            units.items.forEach((u) => { maxTotal = Math.max(maxTotal, u.total); });
             archEl('ca-arch-peak').textContent = maxTotal > 0 ? archPeakFmt(maxTotal) : '';
             const MON3 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             let html = '';
-            months.forEach((m) => {
-                const on = m.mk === selMk;
-                let projPx = 0, projTotal = 0, tipNow = m.total;
-                const ms = archMonthState(m.mk, all);
-                let barPx;
-                if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004) {
-                    projTotal = ms.total;
-                    barPx = Math.round(120 * (ms.flown / (maxTotal || 1)));
-                    const fullPx = Math.round(120 * (ms.total / (maxTotal || 1)));
-                    projPx = Math.max(0, Math.min(fullPx - barPx, 120 - barPx));
-                    tipNow = ms.flown;
-                } else {
-                    barPx = Math.round(120 * (m.total / (maxTotal || 1)));
+            let completeTotals = [];
+            units.items.forEach((u) => {
+                const key = units.kind === 'years' ? u.yr : u.mk;
+                const on = (units.kind === 'years') ? (archState.scope === 'all' && false) : (u.mk === selMk);
+                let projTotal = 0, tipNow = u.total;
+                let barPx = Math.round(120 * (Math.max(u.total, 0) / (maxTotal || 1)));
+                let projPx = 0;
+                if (units.kind === 'months') {
+                    const ms = archMonthState(u.mk, all);
+                    if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004 && u.count) {
+                        if (isSalary) {
+                            // the salary stack is already whole (basic and
+                            // fixed are monthly); the hatch is the projected
+                            // flying on top
+                            projTotal = Math.round(((u.sal ? (u.sal.basic + u.sal.fixed + u.sal.midAmt) : 0) + ms.total) * 100) / 100;
+                            tipNow = u.total;
+                        } else {
+                            // COP: solid = flown only, hatch = still to fly
+                            projTotal = ms.total;
+                            barPx = Math.round(120 * (ms.flown / (maxTotal || 1)));
+                            tipNow = ms.flown;
+                            projPx = Math.max(0, Math.min(Math.round(120 * (projTotal / (maxTotal || 1))) - barPx, 120 - barPx));
+                        }
+                    }
+                } else if (units.kind === 'years' && u.yr === curYr && u.cop > 0.004) {
+                    // the current year projects to a full-year figure
+                    const doy = Math.max(1, Math.round((new Date(currentMk + '-28T00:00:00') - new Date(curYr + '-01-01T00:00:00')) / 86400000) + 28);
+                    const yearLen = ((parseInt(curYr, 10) % 4 === 0 && (parseInt(curYr, 10) % 100 !== 0 || parseInt(curYr, 10) % 400 === 0)) ? 366 : 365);
+                    if (doy < yearLen) {
+                        const copProj = u.cop / doy * yearLen;
+                        if (!isSalary) projTotal = Math.round(copProj * 100) / 100;
+                        else {
+                            const monthsLeft = 12 - parseInt(currentMk.slice(5, 7), 10);
+                            const extra = (salaryBasic() + SALARY_CONFIG.laundry + SALARY_CONFIG.transport) * monthsLeft;
+                            projTotal = Math.round((u.sal.gross + (copProj - u.cop) + extra) * 100) / 100;
+                        }
+                        if (projTotal > u.total) projPx = Math.max(0, Math.min(Math.round(120 * (projTotal / (maxTotal || 1))) - barPx, 120 - barPx));
+                    }
                 }
-                const stub = (m.total <= 0 && projPx <= 0);
-                const label = MON3[parseInt(m.mk.slice(5, 7), 10) - 1] || '';
-                html += '<button type="button" class="ca-arch-barcol' + (on ? ' ca-arch-baron' : '') + '" data-mk="' + m.mk + '" aria-label="' + archiveMonthLabel(m.mk) + '">'
+                if ((units.kind === 'years' && parseInt(u.yr, 10) < parseInt(curYr, 10)) ||
+                    (units.kind === 'months' && u.mk < currentMk && u.total > 0.004)) completeTotals.push(u.total);
+                const stub = (u.total <= 0 && projPx <= 0);
+                const label = units.kind === 'years' ? u.yr : (MON3[parseInt(u.mk.slice(5, 7), 10) - 1] || '');
+                const tipLabel = units.kind === 'years' ? u.yr : archiveMonthLabel(u.mk);
+                let inner = '';
+                if (isSalary && u.sal) {
+                    // the salary slice below, flying above; the hatch grows
+                    // out of the flying part (the projection is flying)
+                    const salPart = Math.min(u.sal.basic + u.sal.fixed + u.sal.midAmt, u.total);
+                    const salPx = Math.round(120 * (salPart / (maxTotal || 1)));
+                    const flyPx = Math.max(0, barPx - salPx);
+                    inner = '<div class="ca-arch-barsal" style="height:' + Math.max(0, salPx) + 'px"></div>'
+                        + '<div class="ca-arch-barfly" style="height:' + flyPx + 'px"></div>';
+                }
+                html += '<button type="button" class="ca-arch-barcol' + (on ? ' ca-arch-baron' : '') + '" data-' + (units.kind === 'years' ? 'yr' : 'mk') + '="' + key + '" aria-label="' + tipLabel + ' \u00b7 ' + formatMoney(tipNow) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '">'
                     + '<div class="ca-arch-bararea">'
-                    + '<span class="ca-arch-bartip">' + archiveMonthLabel(m.mk) + ' \u00b7 ' + formatMoney(tipNow) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '</span>'
+                    + '<span class="ca-arch-bartip">' + tipLabel + ' \u00b7 ' + formatMoney(tipNow) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '</span>'
                     + (projPx > 0 ? '<div class="ca-arch-barproj" style="height:' + projPx + 'px"></div>' : '')
-                    + '<div class="ca-arch-bar' + (on ? ' ca-arch-baron' : '') + '" style="height:' + (stub ? 2 : Math.max(2, barPx)) + 'px"></div>'
+                    + '<div class="ca-arch-bar' + (on ? ' ca-arch-baron' : '') + (isSalary ? ' ca-arch-barstack' : '') + '" style="height:' + (stub ? 2 : Math.max(2, barPx)) + 'px">' + (stub ? '' : inner) + '</div>'
                     + '</div>'
                     + '<span class="ca-arch-barlab' + (on ? ' ca-arch-baron' : '') + '">' + label + '</span>'
                     + '</button>';
             });
             chart.innerHTML = html;
+            // the average line: complete months only (a young month would
+            // drag it down and lie), positioned over the 120px bar band
+            const line = archEl('ca-arch-avgline');
+            if (completeTotals.length && maxTotal > 0) {
+                const avg = completeTotals.reduce((a, b) => a + b, 0) / completeTotals.length;
+                const avgPx = Math.round(120 * (avg / maxTotal));
+                const area = chart.querySelector('.ca-arch-bararea');
+                let bottomPx = avgPx;
+                if (area && chart.offsetParent !== null) {
+                    const ar = area.getBoundingClientRect(), cr = chart.getBoundingClientRect();
+                    bottomPx = Math.round((cr.bottom - ar.bottom) + avgPx);
+                }
+                line.style.bottom = bottomPx + 'px';
+                line.classList.remove('hidden');
+                archEl('ca-arch-avglab').textContent = 'Avg ' + archKFmt(avg);
+            } else {
+                line.classList.add('hidden');
+            }
             refreshIcons();
-            chart.querySelectorAll('.ca-arch-barcol').forEach((b) => b.addEventListener('click', () => {
+            chart.querySelectorAll('.ca-arch-barcol[data-mk]').forEach((b) => b.addEventListener('click', () => {
                 const mk = b.getAttribute('data-mk');
                 archState.chartSel = mk;
                 archState.collapsed[mk] = false;
+                // a month tap from Year or All-time jumps into that month's
+                // view - the same move the year bars make (owner spec)
+                archState.scope = 'month';
                 renderArch();
                 const g = archEl('ca-arch-list').querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
                 const grp = g ? g.closest('.ca-arch-group') : null;
                 if (grp && grp.scrollIntoView) { try { grp.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
             }));
+            // a year bar jumps straight into that year's view (owner spec)
+            chart.querySelectorAll('.ca-arch-barcol[data-yr]').forEach((b) => b.addEventListener('click', () => {
+                archState.scope = 'year';
+                archState.yearSel = b.getAttribute('data-yr');
+                archState.chartSel = null;
+                renderArch();
+                try { archEl('ca-arch-scroll').scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
+            }));
         }
 
-        // Twelve insight cards in four rows — no annual goal, no YTD
+                // Twelve insight cards in four rows — no annual goal, no YTD
         // allowances, no long-haul card.
         function renderArchInsights(all) {
             const box = archEl('ca-arch-insights');
@@ -13798,23 +14279,74 @@
             // matters to the selected scope — this month's rhythm, or the
             // records — and the remaining eight unfold on demand. All twelve
             // always render (tests and honesty depend on that).
+            // v1.45.11: in Monthly Salary mode the money cards go net - the
+            // pattern cards (busiest, nights, flying days, weekday) keep
+            // telling their flying stories, and CPF / flying share /
+            // midnight reports / net-vs-LY join the grid (owner set).
+            const isSal = archState.mode === 'salary' && salaryBasic() > 0;
+            let S = null;
+            if (isSal) {
+                const by = archEntriesByMk(all);
+                const mksAll = Object.keys(by).sort();
+                const currentMk2 = archCurrentMk();
+                const curYr2 = currentMk2.slice(0, 4);
+                const netBy = {}; const completeMks = [];
+                let cpfYtd = 0, midYtd = 0, copYtd = 0, grossYtd = 0, netAll = 0;
+                mksAll.forEach((mk) => {
+                    const m = archSalaryMonth(mk, by[mk]);
+                    netBy[mk] = m.net; netAll += m.net;
+                    if (mk < currentMk2) completeMks.push(mk);
+                    if (mk.slice(0, 4) === curYr2) { cpfYtd += m.cpf; midYtd += m.mid; copYtd += m.cop; grossYtd += m.gross; }
+                });
+                const capMo = parseInt(currentMk2.slice(5, 7), 10);
+                const ytdMks = mksAll.filter((k) => k.slice(0, 4) === curYr2 && parseInt(k.slice(5, 7), 10) <= capMo);
+                const lyMks = mksAll.filter((k) => k.slice(0, 4) === String(parseInt(curYr2, 10) - 1) && parseInt(k.slice(5, 7), 10) <= capMo);
+                const ytdNet = archSalaryAgg(ytdMks, all).net;
+                const lyNet = lyMks.length ? archSalaryAgg(lyMks, all).net : 0;
+                let bestMk2 = '', bestNet = -1, lowMk2 = '', lowNet = Infinity;
+                completeMks.forEach((mk) => {
+                    if (netBy[mk] > bestNet) { bestNet = netBy[mk]; bestMk2 = mk; }
+                    if (netBy[mk] < lowNet) { lowNet = netBy[mk]; lowMk2 = mk; }
+                });
+                S = {
+                    avgNet: completeMks.length ? completeMks.reduce((a, mk) => a + netBy[mk], 0) / completeMks.length : 0,
+                    monthCount: completeMks.length, bestMk: bestMk2, bestNet: bestNet, lowMk: lowMk2, lowNet: lowNet,
+                    cpfYtd: cpfYtd, midYtd: midYtd,
+                    shareYtd: grossYtd > 0.004 ? copYtd / grossYtd : 0,
+                    netPerFlyDay: s.flyDays ? netAll / s.flyDays : 0,
+                    netYoy: lyNet > 0.004 ? (ytdNet - lyNet) / lyNet * 100 : null
+                };
+            }
             const cards = {
-                top: card('trophy', 'Top earning month', s.bestMk ? archiveMonthLabel(s.bestMk) : '\u2014', s.bestMk ? formatMoney(s.bestTotal) : 'No records yet'),
-                low: card('trending-down', 'Lowest earning month', s.lowMk ? archiveMonthLabel(s.lowMk) : '\u2014', s.lowMk ? formatMoney(s.lowTotal) : 'No records yet', RED),
-                avg: card('calendar', 'Monthly average', s.monthCount ? formatMoney(s.avgMonth) : '\u2014', s.monthCount ? 'across ' + s.monthCount + ' month' + (s.monthCount === 1 ? '' : 's') : 'No complete months yet'),
+                top: isSal && S ? card('trophy', 'Best month (net)', S.bestMk ? archiveMonthLabel(S.bestMk) : '\u2014', S.bestMk ? formatMoney(S.bestNet) : 'No records yet')
+                    : card('trophy', 'Top earning month', s.bestMk ? archiveMonthLabel(s.bestMk) : '\u2014', s.bestMk ? formatMoney(s.bestTotal) : 'No records yet'),
+                low: isSal && S ? card('trending-down', 'Lowest month (net)', S.lowMk ? archiveMonthLabel(S.lowMk) : '\u2014', S.lowMk ? formatMoney(S.lowNet) : 'No records yet', RED)
+                    : card('trending-down', 'Lowest earning month', s.lowMk ? archiveMonthLabel(s.lowMk) : '\u2014', s.lowMk ? formatMoney(s.lowTotal) : 'No records yet', RED),
+                avg: isSal && S ? card('calendar', 'Average monthly net', S.monthCount ? formatMoney(S.avgNet) : '\u2014', S.monthCount ? 'across ' + S.monthCount + ' complete month' + (S.monthCount === 1 ? '' : 's') : 'No complete months yet')
+                    : card('calendar', 'Monthly average', s.monthCount ? formatMoney(s.avgMonth) : '\u2014', s.monthCount ? 'across ' + s.monthCount + ' month' + (s.monthCount === 1 ? '' : 's') : 'No complete months yet'),
                 busiest: card('plane', 'Busiest month', s.busiestMk ? archiveMonthLabel(s.busiestMk) : '\u2014', s.busiestMk ? s.busiestCount + ' flight' + (s.busiestCount === 1 ? '' : 's') : 'No records yet'),
                 streak: card('flame', 'Current streak', s.streak ? s.streak + ' month' + (s.streak === 1 ? '' : 's') : '\u2014', s.streak ? 'above ' + s.avgMonthLabel : 'Clear ' + s.avgMonthLabel + ' to start'),
                 flyrun: card('timer', 'Longest flight streak', s.flyRun.len ? s.flyRun.len + ' day' + (s.flyRun.len === 1 ? '' : 's') : '\u2014', s.flyRun.len ? 'since ' + dayLbl(s.flyRun.start) : 'No back-to-back days yet'),
                 offrun: card('umbrella', 'Longest break', s.offRun.len ? s.offRun.len + ' day' + (s.offRun.len === 1 ? '' : 's') + ' off' : '\u2014', s.offRun.len ? '\u00b7 ' + offFrom + '\u2013' + offTo : 'No break between flying days'),
                 topflight: card('briefcase', 'Highest single flight', s.topEntry ? formatMoney(s.topEntry.amount) : '\u2014', s.topEntry ? '\u00b7 ' + archRoute(s.topEntry.e) + ' ' + dayLbl(String(s.topEntry.e.sectorDate || '').slice(0, 10)) : 'No records yet'),
-                perday: card('dollar-sign', 'Per flying day', s.flyDays ? formatMoney(s.allTotal / s.flyDays) : '\u2014', s.flyDays ? 'across ' + s.flyDays + ' flying day' + (s.flyDays === 1 ? '' : 's') : 'No flying days yet'),
+                perday: isSal && S
+                    ? card('dollar-sign', 'Net per flying day', s.flyDays ? formatMoney(S.netPerFlyDay) : '\u2014', s.flyDays ? 'across ' + s.flyDays + ' flying day' + (s.flyDays === 1 ? '' : 's') : 'No flying days yet')
+                    : card('dollar-sign', 'Per flying day', s.flyDays ? formatMoney(s.allTotal / s.flyDays) : '\u2014', s.flyDays ? 'across ' + s.flyDays + ' flying day' + (s.flyDays === 1 ? '' : 's') : 'No flying days yet'),
                 nights: card('hotel', 'Nights away YTD', s.nightsYtd ? String(s.nightsYtd) : '\u2014', s.nightsYtd ? 'avg ' + (Math.round((s.nightsYtd / s.ytdMonths) * 10) / 10) + ' / month' : 'No layovers this year yet'),
                 flydays: card('calendar-days', 'Flying days this year', s.flyDaysYtd ? s.flyDaysYtd + ' / ' + s.yearLen : '\u2014', s.flyDaysYtd ? Math.round(100 * (1 - s.flyDaysYtd / s.yearLen)) + '% of days off' : 'None yet this year', GOLD, GREEN),
-                weekday: card('bar-chart-3', 'Busiest weekday', s.wdPct ? s.wdName : '\u2014', s.wdPct ? Math.round(s.wdPct) + '% of all flights' : 'No records yet')
+                weekday: card('bar-chart-3', 'Busiest weekday', s.wdPct ? s.wdName : '\u2014', s.wdPct ? Math.round(s.wdPct) + '% of all flights' : 'No records yet'),
+                cpf: card('piggy-bank', 'CPF this year', (isSal && S) ? formatMoney(S.cpfYtd) : '\u2014', (isSal && S) ? 'contributed YTD' : 'No records yet'),
+                share: card('plane', 'Flying share', (isSal && S && S.shareYtd) ? Math.round(S.shareYtd * 100) + '%' : '\u2014', (isSal && S && S.shareYtd) ? 'of this year\u2019s gross' : 'No records yet'),
+                midnight: card('moon', 'Midnight reports', (isSal && S) ? String(S.midYtd) : '\u2014', (isSal && S) ? '\u00b7 ' + formatMoney(S.midYtd * SALARY_CONFIG.midnight) + ' in transport' : 'No records yet'),
+                yoy: card('trending-up', 'Net vs LY', (isSal && S && S.netYoy !== null) ? (S.netYoy >= 0 ? '+' : '\u2212') + Math.abs(Math.round(S.netYoy)) + '%' : '\u2014', (isSal && S && S.netYoy !== null) ? 'same period last year' : 'No records yet', (isSal && S && S.netYoy !== null) ? (S.netYoy >= 0 ? GREEN : RED) : MUTED)
             };
-            const order = (archState.scope === 'month')
-                ? ['streak', 'perday', 'weekday', 'avg', 'top', 'topflight', 'busiest', 'nights', 'flydays', 'flyrun', 'offrun', 'low']
-                : ['top', 'avg', 'streak', 'topflight', 'perday', 'busiest', 'offrun', 'nights', 'flydays', 'flyrun', 'weekday', 'low'];
+            const order = (isSal && S)
+                ? ((archState.scope === 'month')
+                    ? ['share', 'perday', 'midnight', 'avg', 'top', 'cpf', 'yoy', 'weekday', 'busiest', 'nights', 'flydays', 'low']
+                    : ['top', 'avg', 'share', 'perday', 'cpf', 'yoy', 'midnight', 'busiest', 'nights', 'flydays', 'weekday', 'low'])
+                : ((archState.scope === 'month')
+                    ? ['streak', 'perday', 'weekday', 'avg', 'top', 'topflight', 'busiest', 'nights', 'flydays', 'flyrun', 'offrun', 'low']
+                    : ['top', 'avg', 'streak', 'topflight', 'perday', 'busiest', 'offrun', 'nights', 'flydays', 'flyrun', 'weekday', 'low']);
             let html = order.slice(0, 4).map((k) => cards[k]).join('');
             html += '<div class="ca-arch-insmore grid grid-cols-2 gap-2 col-span-2' + (archState.insightsAll ? '' : ' ca-arch-insmore-hide') + '">' + order.slice(4).map((k) => cards[k]).join('') + '</div>';
             html += '<button type="button" id="ca-arch-ins-mtoggle" class="col-span-2 w-full h-9 mt-1 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wider" style="color: var(--arch-muted)"><i data-lucide="' + (archState.insightsAll ? 'chevron-up' : 'chevron-down') + '" class="w-3.5 h-3.5"></i><span id="ca-arch-ins-mtoggle-label">' + (archState.insightsAll ? 'Show less' : 'Show all 12') + '</span></button>';
@@ -13893,7 +14425,7 @@
         // Everything worth keeping on this device, as one file. Menu caches and
         // one-time flags are deliberately absent — caches re-fetch, flags are
         // this device's own business.
-        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards'];
+        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards', 'crewAssist.archMode', 'crewAssist.archCopMode'];
         function buildFullBackup() {
             const data = {};
             BACKUP_KEYS.forEach((k) => {
@@ -14050,15 +14582,14 @@
             archEl('ca-sub-csv').onclick = () => archDoExport('csv');
         }
         function archTrash() {
-            // The list is no longer scope-narrowed: trash deletes what the
-            // search leaves visible.
+            // v1.45.11 (owner ruling): the list follows the pill, so trash
+            // deletes exactly what is visible — the scope's months, narrowed
+            // by the search. The v1.32.0 promise holds: a number and a
+            // scope, never an abstraction.
             const q = archState.search.trim().toLowerCase();
-            const vis = q ? loadArchive().filter((e) => String(e.stationDisplay || '').toLowerCase().indexOf(q) !== -1) : loadArchive();
+            const vis = archFiltered();
             if (!vis.length) { archToast('Nothing to delete', null); return; }
-            // v1.32.0 (E2): the crew approves a number and a scope, never an
-            // abstraction — "shown" when a search filters the list, "all" when
-            // the trash would take everything.
-            appConfirm('Delete ' + (q ? vis.length + ' shown entr' : 'all ' + vis.length + ' entr') + (vis.length === 1 ? 'y' : 'ies') + '? This can be undone.').then((ok) => {
+            appConfirm('Delete ' + ((q || archState.scope !== 'all') ? vis.length + ' shown entr' : 'all ' + vis.length + ' entr') + (vis.length === 1 ? 'y' : 'ies') + '? This can be undone.').then((ok) => {
                 if (!ok) return;
                 const ids = {}; vis.forEach((e) => { ids[e.id] = 1; });
                 const removed = loadArchive().filter((x) => ids[x.id]);
@@ -14098,11 +14629,43 @@
             archEl('ca-arch-export').addEventListener('click', archExport); // v1.41.0: import moved to Settings → Restore backup
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
-            document.querySelectorAll('#ca-arch-summary .ca-arch-seg').forEach((b) => b.addEventListener('click', () => {
-                archState.scope = b.getAttribute('data-scope') || 'all';
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').forEach((b) => b.addEventListener('click', () => {
+                const sc = b.getAttribute('data-scope') || 'all';
+                if (sc === 'year' && archState.scope === 'year') {
+                    // v1.45.11 (owner spec): tapping Year again cycles — the
+                    // current year first, then the earliest on record, then
+                    // +1 each tap, wrapping back to the earliest.
+                    const yrs = archArchiveYears();
+                    const cur = String(archScopeInfo().yr || '');
+                    if (yrs.length) {
+                        const sel = archState.yearSel || cur;
+                        let next;
+                        if (sel === cur) next = yrs[0];
+                        else { const i = yrs.indexOf(sel); next = (i >= 0 && i < yrs.length - 1) ? yrs[i + 1] : yrs[0]; }
+                        if (next !== sel) { archState.yearSel = next; renderArch(); return; }
+                    }
+                }
+                archState.scope = sc;
+                if (sc === 'year') archState.yearSel = null;
                 archState.chartSel = null;
                 renderArch();
             }));
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-mode]').forEach((b) => b.addEventListener('click', () => {
+                const m = b.getAttribute('data-mode') || 'cop';
+                if (archState.mode === m) return;
+                archState.mode = m;
+                try { localStorage.setItem('crewAssist.archMode', m); } catch (e) {}
+                renderArch();
+            }));
+            document.querySelectorAll('#ca-arch-summary .ca-arch-copseg').forEach((b) => b.addEventListener('click', () => {
+                const c = b.getAttribute('data-cop') === 'ifa' ? 'ifa' : 'all';
+                if (archState.copScope === c) return;
+                archState.copScope = c;
+                try { localStorage.setItem('crewAssist.archCopMode', c); } catch (e) {}
+                renderArch();
+            }));
+            const salarySetup = archEl('ca-arch-salary-setup');
+            if (salarySetup) salarySetup.addEventListener('click', () => { closeArchOverlay(); showOnboarding(); });
             archEl('ca-arch-ins-toggle').addEventListener('click', () => {
                 archState.insightsOpen = !archState.insightsOpen;
                 archEl('ca-arch-insights').classList.toggle('ca-arch-insopen', archState.insightsOpen);

@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.40.0, frozen by the owner's no-bump order),
-  the changelog's current entry, the service-worker cache name (v195).
+- Stamps: `APP_VERSION` (currently 1.45.11), the changelog's current entry,
+  the service-worker cache name (v242).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -32,6 +32,13 @@ the service-worker stamp. It checks:
   warm charcoal rgba(4, 7, 15, 0.92) by night (the navy override is gone).
 - v1.44.1 typography discipline: the calendar's day numbers compute at 14px and
   its tags/badges at the 11px MICRO floor, against the live stylesheet.
+- v1.45.11 Monthly Salary: the earnings sheet opens in COP mode, the lens flip
+  to Monthly Salary asks (never guesses) while the profile carries no basic —
+  em dash total, visible prompt — and once a basic is set through the app's
+  own reload path the net computes (gross 6330 − CPF 1080 = 5250 on the seeded
+  pair) with the chart's average-line label painting. A DOM-level click drives
+  the lens button: renderArch re-renders the summary, and a geometry-based
+  click can race the node swap mid-render.
 
 ## Running it
 

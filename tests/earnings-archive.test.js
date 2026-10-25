@@ -187,7 +187,8 @@ const fs = require('fs');
     R.ok(d.querySelector('#ca-arch-sheet > div.max-w-xl.mx-auto.w-full.flex.items-center.justify-between'), 'v1.36.1: the earnings header joins the centered reading column (owner tier ruling)');
     R.ok(d.querySelector('#ca-arch-scroll.max-w-xl.mx-auto.w-full'), 'v1.36.1: the earnings content scrolls inside the reading column, so flight taps open a same-width summary');
     R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 3, 'three header icon buttons (v1.41.0: export, trash, close — the import arrow moved to Settings → Restore backup)');
-    R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg').length, 3, 'three segmented scope buttons');
+    R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').length, 3, 'three segmented scope buttons');
+    R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-mode]').length, 2, 'v1.45.11: two view pills - COP Allowance / Monthly Salary');
     const segOf = (scope) => d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="' + scope + '"]');
     R.ok(['month', 'year', 'all'].every((s) => !!segOf(s)), 'segmented buttons: month / year / all');
     R.ok(segOf('all').classList.contains('ca-arch-segon'), 'All-time is the default scope');
@@ -203,6 +204,10 @@ const fs = require('fs');
     R.ok(ctxAll.innerHTML.indexOf('trending-down') !== -1, 'down trend icon on the context line');
 
     // -- 12-month chart: oldest left, stub month, projection segment, peak
+    // (v1.45.11: the 12-month window is the Month-scope shape; All-time
+    // draws the year-by-year comparison now)
+    segOf('month').click();
+    await wait(50);
     const cols = d.querySelectorAll('#ca-arch-chart .ca-arch-barcol');
     R.eq(cols.length, 12, 'twelve chart columns');
     R.eq(cols[0].getAttribute('data-mk'), '2025-10', 'oldest column is 12 months back');
@@ -220,6 +225,10 @@ const fs = require('fs');
     const onCols = d.querySelectorAll('#ca-arch-chart .ca-arch-barcol.ca-arch-baron');
     R.eq(onCols.length, 1, 'one selected column after a tap');
     R.ok(onCols[0].getAttribute('data-mk') === '2026-05', 'the tapped column is selected');
+    // back to All-time for the whole-archive list (the list follows the
+    // pill now; the May tap's expansion sticks)
+    segOf('all').click();
+    await wait(50);
     const grp = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]').closest('.ca-arch-group');
     R.ok(grp('2026-05') && !grp('2026-05').classList.contains('ca-arch-collapsed'), 'tapping a bar expands that month group');
     R.ok(grp('2026-04').classList.contains('ca-arch-collapsed'), 'other months stay collapsed');
@@ -308,8 +317,8 @@ const fs = require('fs');
     const ctxM = d.getElementById('ca-arch-m-ctx');
     R.ok(ctxM.textContent.indexOf('On track for ' + fm(projTotal) + ' \u00b7 ' + fm(projLeft) + ' left') !== -1, 'on-track projection with what is left to earn');
     R.ok(ctxM.innerHTML.indexOf('target') !== -1, 'on-track context uses the target icon');
-    R.eq(d.querySelectorAll('.ca-arch-group').length, 13, 'month scope never narrows the month list');
-    R.eq(d.querySelectorAll('.ca-arch-row').length, 19, 'month scope keeps every row visible');
+    R.eq(d.querySelectorAll('.ca-arch-group').length, 1, 'v1.45.11: the list follows the scope - month shows the selected month');
+    R.eq(d.querySelectorAll('.ca-arch-row').length, 2, 'v1.45.11: month scope lists just the selected month\u2019s rows (Sep = 2)');
     segOf('year').click();
     await wait(50);
     R.eq(d.getElementById('ca-arch-total').textContent, '$5,123.23', 'year scope totals 2026');
@@ -793,6 +802,9 @@ const fs = require('fs');
     R.ok(!!octToggle && !!octWrap, 'v1.38.0: an upcoming month carries the still-to-fly toggle');
     octToggle.click();
     R.ok(octWrap.classList.contains('open') && octWrap.textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && octWrap.textContent.indexOf('$400.00') !== -1, 'the upcoming month unfolds its projection on tap');
+    // v1.45.11: month columns live in Month scope (All-time is year bars)
+    d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="month"]').click();
+    await wait(50);
     const sepCol = d.querySelector('.ca-arch-barcol[data-mk="2026-09"]');
     const octCol = d.querySelector('.ca-arch-barcol[data-mk="2026-10"]');
     R.ok(sepCol && !sepCol.querySelector('.ca-arch-barproj') && sepCol.querySelector('.ca-arch-bar').style.height === '120px', 'completed month is a full solid bar');
@@ -1089,6 +1101,148 @@ function todayYmd() {
     R.ok(d.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon'), 'v1.44.5: the scope seg returns to All-time');
     R.eq(d.getElementById('ca-arch-scroll').scrollTop, 0, 'v1.44.5: the list reopens scrolled to the top');
     w.closeArchOverlay();
+  }
+
+  // ---- v1.45.11: Monthly Salary (CA 058/2025 clauses 26/35/37/38) ----
+  // The stack: basic + laundry 125 + transport 340 + 32 per duty reporting
+  // 0000-0700 at Changi + COP; CPF 20% of basic + IFA + midnights (LMA,
+  // laundry and transport stay out). Figures below are hand-computed.
+  {
+    const NOW = '2026-10-20T12:00:00+08:00';
+    const seedAll = (x, basic) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      const mk = (id, monthKey, date, route, amount, ifa, lma, savedAt) => ({ id, savedAt, monthKey, sectorDate: date, flightType: 'Layover', stationDisplay: route, amount, detail: { v: 1, type: 'both', ifaTotal: ifa, lmaTotal: lma, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        mk('a1', '2025-06', '2025-06-28', 'SIN-PKX-SIN', 600, 500, 100, '2025-06-30T10:00:00Z'),
+        mk('a2', '2025-07', '2025-07-05', 'SIN-SYD-SIN', 900, 700, 200, '2025-07-10T10:00:00Z'),
+        mk('a3', '2025-07', '2025-07-20', 'SIN-KUL-SIN', 300, 300, 0, '2025-07-25T10:00:00Z'),
+        mk('a4', '2026-02', '2026-02-13', 'SIN-CHC-SIN', 1200, 1000, 200, '2026-02-20T10:00:00Z')
+      ]));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2025-06': [
+          { fn: '265', dep: 'SIN', arr: 'BNE', ymd: '2025-06-16', std: '07:13', sta: '15:30', stdYmd: '2025-06-16', staYmd: '2025-06-17', ft: '08:02', rpt: '0510', pos: false },
+          { fn: '266', dep: 'BNE', arr: 'SIN', ymd: '2025-06-17', std: '18:15', sta: '00:10', stdYmd: '2025-06-17', staYmd: '2025-06-18', ft: '07:55', rpt: '1710', pos: false },
+          { fn: '336', dep: 'SIN', arr: 'CDG', ymd: '2025-06-02', std: '00:17', sta: '06:20', stdYmd: '2025-06-02', staYmd: '2025-06-02', ft: '13:03', rpt: '2215', pos: false },
+          { fn: '800', dep: 'SIN', arr: 'PEK', ymd: '2025-06-05', std: '01:30', sta: '07:30', stdYmd: '2025-06-05', staYmd: '2025-06-05', ft: '06:00', rpt: '0000', pos: false },
+          { fn: '801', dep: 'PEK', arr: 'SIN', ymd: '2025-06-06', std: '09:00', sta: '15:00', stdYmd: '2025-06-06', staYmd: '2025-06-06', ft: '06:00', rpt: '0700', pos: false },
+          { fn: '802', dep: 'SIN', arr: 'HKT', ymd: '2025-06-09', std: '02:00', sta: '05:00', stdYmd: '2025-06-09', staYmd: '2025-06-09', ft: '03:00', rpt: '0701', pos: false },
+          { fn: '803', dep: 'HKT', arr: 'SIN', ymd: '2025-06-09', std: '06:00', sta: '09:00', stdYmd: '2025-06-09', staYmd: '2025-06-09', ft: '03:00', rpt: '0500', pos: false }
+        ],
+        '2026-02': [
+          { fn: '298', dep: 'CHC', arr: 'SIN', ymd: '2026-02-13', std: '12:00', sta: '17:35', stdYmd: '2026-02-13', staYmd: '2026-02-13', ft: '09:35', rpt: '1015', pos: false }
+        ]
+      }));
+    };
+
+    // A) the midnight rule, edge by edge: 0000 and 0700 count (inclusive),
+    //    0701 does not, outstation reports do not, blank rpt does not
+    {
+      const { w } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
+      R.eq(w.eval('archMidnightCount("2025-06")'), 2, 'midnight window: 0510 and 0000 count; 0701, blank and outstation reports do not');
+      R.eq(w.eval('archMidnightCount("2026-02")'), 0, 'an outstation report (CHC 1015) never counts');
+      R.eq(w.eval('archMidnightCount("2025-99")'), 0, 'a month with no roster counts zero');
+    }
+
+    // B) the card: COP default, then Monthly Salary with hand-checked math
+    {
+      const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
+      w.showArchiveOverlay(); await wait(150);
+      R.eq(d.getElementById('ca-arch-total-label').textContent, 'Total earnings', 'the card opens in COP Allowance as before');
+      R.eq(d.getElementById('ca-arch-total').textContent, '$3,000.00', 'the COP total is untouched in COP mode');
+      R.ok(!d.getElementById('ca-arch-salary-prompt') || d.getElementById('ca-arch-salary-prompt').classList.contains('hidden'), 'no salary prompt while COP mode is on');
+      d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-total-label').textContent, 'Net take-home', 'the label flips with the lens');
+      // all-time: 3 tracked months. gross = 3x(2600+465) + 2x32 + 3000 = 12259;
+      // cpf = .2x(3x2600 + 2500 + 64) = 2072.80; net = 10186.20
+      R.eq(d.getElementById('ca-arch-total').textContent, '$10,186.20', 'all-time net = gross 12259 - CPF 2072.80');
+      R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross $12,259.00') !== -1 && d.getElementById('ca-arch-gross-line').textContent.indexOf('CPF \u2212$2,072.80') !== -1, 'gross and CPF ride under the number');
+      R.eq(d.getElementById('ca-arch-m-basic').textContent, '$7,800.00', 'basic meta = 3 tracked months x 2600');
+      R.eq(d.getElementById('ca-arch-m-fixed').textContent, '$1,395.00', 'fixed meta = 3 x (125 + 340)');
+      R.ok(d.getElementById('ca-arch-m-mid').textContent.indexOf('2') === 0 && d.getElementById('ca-arch-m-mid').textContent.indexOf('$64.00') !== -1, 'midnight meta shows 2 duties = $64');
+      R.eq(d.getElementById('ca-arch-m-cop').textContent, '$3,000.00', 'COP meta carries the flight allowance');
+      R.eq(w.localStorage.getItem('crewAssist.archMode'), 'salary', 'the lens choice persists');
+      // month figures via Year 2025 -> tap the Jun bar -> Month pill (the
+      // tap moves the selection, the owner's spec)
+      d.querySelector('.ca-arch-seg[data-scope="year"]').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-seg-year').textContent, '2026', 'Year pill opens on the current year');
+      d.getElementById('ca-arch-seg-year').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-seg-year').textContent, '2025', 'second tap cycles to the earliest year on record');
+      d.getElementById('ca-arch-seg-year').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-seg-year').textContent, '2026', 'third tap is +1 - back to the current year');
+      d.getElementById('ca-arch-seg-year').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-seg-year').textContent, '2025', 'the cycle wraps to the earliest again');
+      const junBar = d.querySelector('.ca-arch-barcol[data-mk="2025-06"]');
+      R.ok(!!junBar, 'the year view shows the selected year\u2019s months as bars');
+      junBar.click(); await wait(150);
+      R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon'), 'tapping a month bar jumps into Month scope');
+      R.eq(d.getElementById('ca-arch-total').textContent, '$3,096.20', 'June net = 2600+465+64+600 gross 3729 - CPF 632.80');
+      R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross $3,729.00') !== -1, 'June gross 3729 (basic + fixed + 2 midnights + COP)');
+      R.ok(d.getElementById('ca-arch-m-mid').textContent.indexOf('2') === 0, 'June counts its two midnight duties');
+      const groups = d.querySelectorAll('.ca-arch-group');
+      R.eq(groups.length, 1, 'Month scope lists only the selected month');
+      R.ok(!groups[0].classList.contains('ca-arch-collapsed'), 'the selected month opens expanded');
+      R.ok(groups[0].textContent.indexOf('net $3,096.20') !== -1, 'the month row leads with net, gross beside it');
+    }
+
+    // C) the chart shapes + the average line (complete months only)
+    {
+      const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
+      w.showArchiveOverlay(); await wait(150);
+      const yrBars = d.querySelectorAll('.ca-arch-barcol[data-yr]');
+      R.eq(Array.from(yrBars).map((b) => b.getAttribute('data-yr')).join(','), '2025,2026', 'All-time draws one bar per year');
+      R.eq(d.getElementById('ca-arch-trend-title').textContent, 'Year by Year', 'the trend title names the all-time shape');
+      R.ok(d.getElementById('ca-arch-avglab').textContent.indexOf('Avg $1.8k') === 0, 'the average line averages complete years only (2025 = 1800)');
+      yrBars[0].click(); await wait(150);
+      R.ok(d.querySelector('.ca-arch-seg[data-scope="year"]').classList.contains('ca-arch-segon'), 'tapping a year bar jumps into Year scope');
+      R.eq(d.getElementById('ca-arch-seg-year').textContent, '2025', 'the jump carries the tapped year');
+      R.eq(d.querySelectorAll('#ca-arch-list .ca-arch-group').length, 2, 'Year scope lists only that year\u2019s months');
+      R.ok(Array.from(d.querySelectorAll('#ca-arch-list .ca-arch-group')).every((g) => g.classList.contains('ca-arch-collapsed')), 'year-scope months start collapsed');
+      d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
+      R.ok(d.querySelectorAll('#ca-arch-list .ca-arch-yearhead').length === 2, 'All-time groups the months under year headers');
+      d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+      R.ok(d.querySelectorAll('#ca-arch-chart .ca-arch-barsal').length >= 2, 'salary mode stacks a salary slice into each bar');
+      R.ok(d.querySelectorAll('#ca-arch-chart .ca-arch-barfly').length >= 2, 'the flying slice rides on top');
+    }
+
+    // D) IFA-only counting and the trash narrowing
+    {
+      const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
+      w.showArchiveOverlay(); await wait(150);
+      d.querySelector('.ca-arch-copseg[data-cop="ifa"]').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-total').textContent, '$2,500.00', 'IFA-only counts the IFA portions: 500+1000+300+700');
+      R.eq(w.localStorage.getItem('crewAssist.archCopMode'), 'ifa', 'the refinement persists');
+      d.querySelector('.ca-arch-copseg[data-cop="all"]').click(); await wait(150);
+      d.querySelector('.ca-arch-seg[data-scope="month"]').click(); await wait(150);
+      d.getElementById('ca-arch-trash').click(); await wait(100);
+      R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Delete 1 shown entry') !== -1, 'trash names the shown entries when a scope narrows the list');
+      d.getElementById('app-dialog-cancel').click(); await wait(100);
+      R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 4, 'cancel keeps every entry');
+    }
+
+    // E) no basic yet: the prompt asks, the card never guesses
+    {
+      const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, false) });
+      w.showArchiveOverlay(); await wait(150);
+      d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+      R.ok(!d.getElementById('ca-arch-salary-prompt').classList.contains('hidden'), 'the setup prompt appears when no basic is set');
+      R.eq(d.getElementById('ca-arch-total').textContent, '\u2014', 'the net number refuses to guess');
+      R.ok(!!d.getElementById('ca-arch-salary-setup'), 'the prompt carries a Set up button');
+    }
+
+    // F) the salary insights (owner set)
+    {
+      const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
+      w.showArchiveOverlay(); await wait(150);
+      d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+      d.getElementById('ca-arch-ins-toggle').click(); await wait(150);
+      const labels = d.getElementById('ca-arch-insights').textContent;
+      ['Average monthly net', 'Best month (net)', 'CPF this year', 'Flying share', 'Midnight reports', 'Net per flying day', 'Net vs LY'].forEach((t) => {
+        R.ok(labels.indexOf(t) !== -1, 'insight card present: ' + t);
+      });
+      R.ok(labels.indexOf('Top earning month') === -1, 'the COP-only money cards step aside in salary mode');
+    }
   }
 
   process.exit(R.done() ? 1 : 0);
