@@ -80,5 +80,43 @@ const { R, boot, wait, APP } = H;
     R.ok(stamp && !/NaN|Invalid/.test(stamp.textContent), 'the stamp formats as a real timestamp');
   }
 
+  // ---- v1.45.11: the Monthly salary section rides the rates editor ----
+  // CA 058/2025 clauses 35/37: laundry 125, transport 340, midnight 32, CPF 20%
+  // are editor-editable modifiers like any other, and parseRates carries them
+  // through storage so a legacy rates blob without the block still boots.
+  {
+    const salField = (k) => d.querySelector('[data-salary-field="' + k + '"]');
+    const { w, d } = await boot(APP);
+    w.renderDevRatesEditor();
+    await wait(50);
+    R.ok(!!salField('laundry') && !!salField('transport') && !!salField('midnight') && !!salField('cpfPct'), 'the salary section renders its four modifiers');
+    R.eq(salField('laundry').value, '125', 'laundry default 125');
+    R.eq(salField('transport').value, '340', 'transport default 340');
+    R.eq(salField('midnight').value, '32', 'midnight default 32');
+    R.eq(salField('cpfPct').value, '20', 'CPF default 20%');
+    const save2 = d.getElementById('btn-dev-save');
+    R.ok(save2.disabled, 'clean: save disabled before a salary edit');
+    salField('cpfPct').value = '18';
+    salField('cpfPct').dispatchEvent(new w.Event('input', { bubbles: true }));
+    await wait(50);
+    R.ok(!save2.disabled, 'a salary edit dirties the editor like any section');
+    await w.saveDevRates();
+    await wait(100);
+    const stored = JSON.parse(w.localStorage.getItem('crewAssist.rates'));
+    R.ok(stored && stored.salary && stored.salary.cpfPct === 18 && stored.salary.laundry === 125, 'save persists the salary block with the edit');
+    w.close();
+  }
+  {
+    // a legacy rates blob (pre-1.45.11, no salary key) parses with defaults
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.rates', JSON.stringify({ version: 1, ifa: { sgBuffer: 3 }, lma: { regions: {}, windows: {} } }));
+    }});
+    w.renderDevRatesEditor();
+    await wait(50);
+    R.eq(d.querySelector('[data-salary-field="cpfPct"]').value, '20', 'a legacy blob without the salary key parses back to CPF 20');
+    R.eq(d.querySelector('[data-ifa-field="sgBuffer"]').value, '3', 'the legacy IFA edit survives the same parse');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

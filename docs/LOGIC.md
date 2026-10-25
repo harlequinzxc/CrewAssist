@@ -174,6 +174,42 @@ HH:MM → decimal hours:  hours = floor(HH) + (MM / 60)      e.g. 07:30 → 7.5
 decimal → HH:MM:        total_minutes = round(h × 60); HH = floor(m/60); MM = m mod 60
 ```
 
+### 1.14 Monthly Salary — the Earnings lens (v1.45.11, CA 058/2025 clauses 26/35/37/38)
+
+The Earnings page's Monthly Salary view is a **read-only projection over saved
+archive entries** — it never changes what Calculate does. Per tracked month
+(a month with at least one saved entry):
+
+```text
+midnight_duties  = count of duties that month whose DEPARTURE is SIN and
+                   whose report time is 0000 ≤ rpt ≤ 0700            (clause 26)
+                   — all duties that month count, flown and upcoming;
+                   outstation reports and blank rpt never count
+fixed_monthly    = laundry_allowance + transport_allowance            (clause 37)
+cop_monthly      = Σ ifaTotal + midnight_duties × midnight_rate        (clause 35)
+                   — ifaTotal includes the turnaround bonus; LMA, laundry
+                   and transport never enter COP
+gross_monthly    = basic_salary + fixed_monthly + cop_monthly
+cpf_monthly      = cpf_pct × (basic_salary + Σ ifaTotal + midnight_pay) (clause 38)
+                   — CPF counts basic, IFA and midnight pay only; LMA,
+                   laundry and transport stay out
+net_monthly      = gross_monthly − cpf_monthly
+```
+
+Aggregation rules:
+
+- **Month scope** shows one month; **Year/All-time** sums the per-month nets,
+  and Year stops at the current month when the year is current (YTD).
+- **All-time** uses today's `basic_salary` for every tracked month (owner
+  ruling 2026-10-25, Option A — the app keeps no salary history).
+- An entry without a detail snapshot counts its whole amount as IFA.
+- No `basic_salary` on file ⇒ the card shows the setup prompt and an em dash,
+  never a guess. Basic is captured once at onboarding (optional field with the
+  grade's CA range as the hint) and lives in `crewAssist.profile`.
+- The modifiers (laundry 125, transport 340, midnight 32, CPF 20 %) are
+  editable in Developer Mode's rates editor like every other rate, and ride
+  `crewAssist.rates` under the `salary` key.
+
 ---
 
 ## 2. INPUTS & VARIABLES

@@ -82,13 +82,14 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.10', 'APP_VERSION is 1.45.10');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.10' && e.d === '2026-10-24' && e.items.length === 3 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.10 entry with its three fixes');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v241'), 'the service-worker cache name is bumped to v241 (the v1.45.10 searched-cycle release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.11', 'APP_VERSION is 1.45.11');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.11' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.11 entry with its four pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v242'), 'the service-worker cache name is bumped to v242 (the v1.45.11 monthly-salary release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.10'; }), 'the What\'s New sheet carries the v1.45.10 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.11'; }), 'the What\'s New sheet carries the v1.45.11 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Monthly Salary — your net take-home beside the COP allowance.') !== -1), 'the What\'s New sheet carries the Monthly Salary pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
@@ -632,6 +633,43 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok((await pickerMonth()) === beforeMonth, 'ArrowLeft walks the picker back a month');
         await page.evaluate(() => document.getElementById('cadate-cancel').click());
         await sleep(400);
+
+        console.log('— v1.45.11: Monthly Salary in the real browser —');
+        // Seed a small archive, open the earnings sheet through its real
+        // entry point, flip the lens to Monthly Salary. The smoke profile
+        // carries no basic salary, so the card must ask - never guess.
+        await page.evaluate(() => {
+            localStorage.setItem('crewAssist.archive', JSON.stringify([
+                { id: 'sal0', savedAt: '2025-09-15T10:00:00Z', monthKey: '2025-09', sectorDate: '2025-09-15', stationDisplay: 'SIN/BKK', amount: 100, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 100, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 100, sectors: [], stations: [] } },
+                { id: 'sal1', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', stationDisplay: 'SIN/KUL', amount: 100, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 100, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 100, sectors: [], stations: [] } }
+            ]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total-label').textContent === 'Total earnings'), 'the earnings sheet opens in COP mode');
+        // a DOM-level click: renderArch re-renders the summary, and a
+        // geometry-based click can race the node swap mid-render
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        await sleep(300);
+        ok(await page.evaluate(() => !document.getElementById('ca-arch-salary-prompt').classList.contains('hidden')), 'without a basic salary the card asks, it never guesses');
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total').textContent === '\u2014'), 'the net number stays an em dash until the basic is set');
+        // give the profile a basic and re-enter through the app's own reload
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('crewAssist.profile'));
+            p.basicSalary = 2600;
+            localStorage.setItem('crewAssist.profile', JSON.stringify(p));
+            closeArchOverlay(); initData();
+        });
+        await sleep(300);
+        await page.evaluate(() => showArchiveOverlay());
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        await sleep(400);
+        // two tracked months: gross = 2x(2600+125+340) + 200 = 6330;
+        // cpf = .2x(2x2600 + 200) = 1080; net = 5250
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'with a basic set the net computes: gross 6330 - CPF 1080 = 5250');
+        ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
+        await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));
