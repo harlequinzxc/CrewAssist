@@ -194,7 +194,7 @@
             --ca-arch-best-wash: rgba(230, 194, 84, 0.45);
             --ca-arch-proj-ink: rgba(230, 194, 84, 0.75);
             --ca-arch-segtrack: rgba(26, 19, 0, 0.10);
-            --ca-arch-seg-ink: rgba(26, 19, 0, 0.65);
+            --ca-arch-seg-ink: rgba(26, 19, 0, 0.75); /* v1.45.12: AA on gold - .65 computed 4.09:1 */
             --ca-arch-card-hi: #dcc163;
             --ca-arch-card-mid: #c9a23e;
             --ca-arch-card-lo: #b8942f;
@@ -750,6 +750,10 @@
         .dark .ca-arch-toast { background: var(--ca-toast-bg); color: var(--ca-toast-ink); }
         .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); font-weight: 700; }
         .dark .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); }
+        /* v1.45.12: every month sits in its own rounded card, mirroring the
+           trend/insights surfaces above - a shade lighter than the sheet
+           canvas in both themes */
+        .ca-arch-group { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
@@ -774,8 +778,8 @@
         .ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }
         /* v1.45.11: the COP refinement row (IFA + LMA / IFA) - a quiet text
            pair under the number, never a third full pill track */
-        .ca-arch-coprow .ca-arch-coplab { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.45); }
-        .ca-arch-copseg { border: none; background: transparent; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.5); padding: 2px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color .15s ease, background .15s ease; }
+        .ca-arch-coprow .ca-arch-coplab { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.75); }
+        .ca-arch-copseg { border: none; background: transparent; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.75); padding: 2px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color .15s ease, background .15s ease; }
         .ca-arch-copseg.ca-arch-copon { color: var(--ca-arch-ink-on-gold); background: rgba(26,19,0,.10); }
         /* the big number cross-fades when the lens flips (the standing
            animation rule: nothing snaps) */
@@ -799,9 +803,23 @@
         .ca-arch-yearhead { display: flex; align-items: center; gap: 8px; margin: 14px 2px 4px; }
         .ca-arch-yearhead span { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--arch-muted); }
         .ca-arch-yearhead::after { content: ""; flex: 1; height: 1px; background: var(--arch-surface-border); }
-        .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
-        .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
-        .ca-arch-metadot { opacity: .3; font-weight: 700; }
+        /* v1.45.12: the meta labels live on the GOLD card - dark ink at .85
+           (the old --arch-muted read 60% WHITE on gold in the dark theme),
+           and every cell truncates instead of clipping ('COP $12...') */
+        .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #ca-arch-m-ctx span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ca-arch-metadot { color: rgba(26,19,0,.55); font-weight: 700; }
+        /* v1.45.12: the secondary stat rows standardize on an equal-width
+           grid - 3 columns in COP view, 4 in salary - so the figures line up
+           and share space fairly on narrow phones */
+        .ca-arch-metagrid { display: grid; column-gap: 10px; }
+        .ca-arch-metagrid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .ca-arch-metagrid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .ca-arch-metagrid > div { min-width: 0; }
+        /* v1.45.12: breathing room around the core figure - 8px above and
+           below, separating it from the label and the gross line */
+        #ca-arch-total { padding-top: 8px; padding-bottom: 8px; }
         .ca-arch-surface { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-barcol { border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex: 1 1 0; min-width: 0; }
         .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
@@ -815,7 +833,13 @@
         .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
         .ca-arch-badge-best { color: var(--ca-arch-ink-gold); border: 1px solid var(--ca-arch-best-wash); background: var(--ca-arch-best-line); }
         .ca-arch-badge-low { color: var(--ca-danger-bright); border: 1px solid var(--ca-danger-soft-45); background: var(--ca-danger-soft-10); }
-        .ca-arch-badge-prog { color: var(--arch-muted); border: 1px solid var(--arch-badge-border); }
+        /* v1.45.12: the status badges read as solid pills - a low-opacity
+           wash with high-contrast text (blue for in-progress, grey for
+           upcoming/completed), never an outline-only ghost */
+        .ca-arch-badge-prog.ca-arch-badge-live { background: rgba(96, 165, 250, 0.16); color: #93C5FD; }
+        html:not(.dark) .ca-arch-badge-prog.ca-arch-badge-live { background: rgba(37, 99, 235, 0.10); color: #1D4ED8; }
+        .ca-arch-badge-prog.ca-arch-badge-upcoming, .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); }
+        html:not(.dark) .ca-arch-badge-prog.ca-arch-badge-upcoming, html:not(.dark) .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(0, 0, 0, 0.06); color: rgba(17, 24, 39, 0.72); }
         .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-inslabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-insval { font-size: 14px; font-weight: 700; color: var(--arch-fg); }
@@ -1956,7 +1980,7 @@
                         <div class="ca-arch-metalabel" id="ca-arch-total-label">Total earnings</div>
                         <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
                         <!-- salary mode: gross and CPF ride under the number -->
-                        <div class="ca-micro font-bold mt-1.5 hidden" style="color: rgba(26,19,0,.55)" id="ca-arch-gross-line"></div>
+                        <div class="ca-micro font-bold mt-1.5 hidden" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
                         <!-- the COP refinement: which flight-allowance parts
                              count. Applies in both views (owner ruling). -->
                         <div class="flex items-center justify-center gap-3 mt-2" id="ca-arch-coprow" aria-label="COP components">
@@ -1975,41 +1999,36 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-3 border-t" style="border-color: rgba(26,19,0,.1)">
-                        <!-- COP mode meta row -->
-                        <div class="flex items-center justify-between gap-2" id="ca-arch-meta-cop">
-                            <div class="text-left">
+                        <!-- COP mode meta row: an equal 3-column grid (v1.45.12) -->
+                        <div class="ca-arch-metagrid ca-arch-metagrid-3" id="ca-arch-meta-cop">
+                            <div>
                                 <div class="ca-arch-metalabel">Flights</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-flights">0</div>
                             </div>
-                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
-                            <div class="text-left">
+                            <div>
                                 <div class="ca-arch-metalabel">Avg / flight</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-avg">—</div>
                             </div>
-                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
-                            <div class="text-right min-w-0">
+                            <div>
                                 <div class="ca-arch-metalabel" id="ca-arch-m-ctx-label">&nbsp;</div>
-                                <div class="ca-arch-metaval flex items-center justify-end gap-1" id="ca-arch-m-ctx"></div>
+                                <div class="ca-arch-metaval flex items-center gap-1" id="ca-arch-m-ctx"></div>
                             </div>
                         </div>
-                        <!-- salary mode meta row: the payslip-checkable stack -->
-                        <div class="flex items-center justify-between gap-1.5 hidden" id="ca-arch-meta-salary">
-                            <div class="text-left">
+                        <!-- salary mode meta row: an equal 4-column grid (v1.45.12) -->
+                        <div class="ca-arch-metagrid ca-arch-metagrid-4 hidden" id="ca-arch-meta-salary">
+                            <div>
                                 <div class="ca-arch-metalabel">Basic</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-basic">—</div>
                             </div>
-                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
-                            <div class="text-left">
+                            <div>
                                 <div class="ca-arch-metalabel">Fixed</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-fixed">—</div>
                             </div>
-                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
-                            <div class="text-left">
+                            <div>
                                 <div class="ca-arch-metalabel">Midnights</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-mid">—</div>
                             </div>
-                            <span class="ca-arch-metadot" aria-hidden="true">·</span>
-                            <div class="text-right min-w-0">
+                            <div>
                                 <div class="ca-arch-metalabel">COP</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-cop">—</div>
                             </div>
@@ -2623,7 +2642,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.11'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.12'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2645,6 +2664,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.12', d: '2026-10-26', items: [
+                { c: 'imp', t: 'The earnings figure gets breathing room and a tidier stat grid.' },
+                { c: 'imp', t: 'Months sit in their own cards with solid status pills.' },
+                { c: 'imp', t: 'Net and gross stack right-aligned for easy scanning.' },
+                { c: 'imp', t: 'Gold-card text meets AA contrast in both themes.' }
+            ] },
             { v: '1.45.11', d: '2026-10-26', items: [
                 { c: 'new', t: 'Monthly Salary — your net take-home beside the COP allowance.' },
                 { c: 'imp', t: 'The earnings chart gains an average line and a year-by-year view.' },
@@ -13805,27 +13830,38 @@
                 let badges = '';
                 if (mk === ins.bestMk && ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-best"><i data-lucide="trophy" class="w-2.5 h-2.5"></i>Best</span>';
                 if (mk === ins.lowMk && ins.lowMk && ins.lowMk !== ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-low"><i data-lucide="trending-down" class="w-2.5 h-2.5"></i>Low</span>';
-                if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog">' + (mk > currentMk ? 'Upcoming' : 'In progress') + '</span>';
-                else if (mk === currentMk) badges += '<span class="ca-arch-badge ca-arch-badge-prog">Completed</span>';
+                // v1.45.12: solid pills - blue wash for live months, grey
+                // wash for the ones still ahead or already complete
+                if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog ' + (mk > currentMk ? 'ca-arch-badge-upcoming' : 'ca-arch-badge-live') + '">' + (mk > currentMk ? 'Upcoming' : 'In progress') + '</span>';
+                else if (mk === currentMk) badges += '<span class="ca-arch-badge ca-arch-badge-prog ca-arch-badge-done">Completed</span>';
                 // v1.38.0 (A1): the $ total is a toggle when the month has
                 // unflown duties — tap to unfold "still to fly". Completed
                 // months keep a plain amount. (Hotfix: no chevron — it
                 // shifted the amount text; the tap still works.)
                 const hasUnflown = ms.unflownCount > 0;
-                let amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
-                // v1.45.11: salary mode leads with the month's net (gross
-                // beside it) - the payslip-checkable figure. Search-filtered
-                // months keep the filtered COP view, like today.
+                // v1.45.11: salary mode leads with the month's net - the
+                // payslip-checkable figure. v1.45.12: net rides over gross in
+                // a right-aligned column, so both figures stack into a
+                // scannable money column down the list (net shares its
+                // baseline with the month line, gross with the count line).
+                // Search-filtered months keep the filtered COP view, like today.
                 const byMkFull = archEntriesByMk(all);
                 const isSalList = archState.mode === 'salary' && salaryBasic() > 0;
                 const monthSal = isSalList ? archSalaryMonth(mk, byMkFull[mk] || []) : null;
+                let amtHtml, amtCls;
                 if (monthSal && !filtered) {
-                    amtHtml = '<span class="ca-arch-amt-net">net ' + formatMoney(monthSal.net) + '</span> <span class="text-xs font-normal" style="color: var(--arch-muted)">gross ' + formatMoney(monthSal.gross) + '</span>';
+                    amtHtml = '<span class="ca-arch-amt-net text-[17px] font-bold leading-tight">net ' + formatMoney(monthSal.net) + '</span>'
+                        + '<span class="text-sm font-normal leading-tight" style="color: var(--arch-muted)">gross ' + formatMoney(monthSal.gross) + '</span>';
+                    amtCls = 'ca-arch-amt flex flex-col items-end text-right';
                 } else if (monthSal && filtered) {
                     amtHtml = formatMoney(sub) + ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of net ' + formatMoney(monthSal.net) + '</span>';
+                    amtCls = 'ca-arch-amt text-[17px] font-bold';
+                } else {
+                    amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
+                    amtCls = 'ca-arch-amt text-[17px] font-bold';
                 }
-                html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2">'
-                    + '<div class="flex items-center gap-2.5 py-3 px-1">'
+                html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2.5">'
+                    + '<div class="flex items-center gap-2.5 py-3 px-3">'
                     + '<button type="button" class="ca-arch-group-head flex-1 min-w-0 flex items-center gap-2.5 text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
                     + '<i data-lucide="chevron-right" class="ca-arch-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
                     + '<span class="flex-1 min-w-0">'
@@ -13835,12 +13871,12 @@
                     + '</span></span>'
                     + '</button>'
                     + (hasUnflown
-                        ? '<button type="button" class="ca-arch-proj-btn flex items-center shrink-0 rounded-xl px-1.5 py-1" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
-                        + '<span class="ca-arch-amt text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>'
+                        ? '<button type="button" class="ca-arch-proj-btn flex items-center shrink-0 rounded-xl pl-2 pr-0 py-1" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
+                        + '<span class="' + amtCls + '" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>'
                         + '</button>'
-                        : '<span class="ca-arch-amt text-[17px] font-bold shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>')
+                        : '<span class="' + amtCls + ' shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>')
                     + '</div>'
-                    + '<div class="ca-arch-group-body pl-4">';
+                    + '<div class="ca-arch-group-body px-3 pb-1">';
                 if (hasUnflown && ms.total > 0.004) {
                     html += '<div class="ca-arch-proj-wrap' + (archState.projOpen[mk] ? ' open' : '') + '" data-mk="' + mk + '">'
                         + '<div class="mb-2 p-3 rounded-xl border border-sia-gold/30 bg-sia-gold/5" role="status">'

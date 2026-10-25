@@ -82,14 +82,14 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.11', 'APP_VERSION is 1.45.11');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.11' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.11 entry with its four pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v242'), 'the service-worker cache name is bumped to v242 (the v1.45.11 monthly-salary release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.12', 'APP_VERSION is 1.45.12');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.12' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.12 entry with its four pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v243'), 'the service-worker cache name is bumped to v243 (the v1.45.12 earnings-polish release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.11'; }), 'the What\'s New sheet carries the v1.45.11 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Monthly Salary — your net take-home beside the COP allowance.') !== -1), 'the What\'s New sheet carries the Monthly Salary pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.12'; }), 'the What\'s New sheet carries the v1.45.12 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
@@ -670,6 +670,120 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'with a basic set the net computes: gross 6330 - CPF 1080 = 5250');
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
+
+        console.log('— v1.45.12: the earnings card + list polish —');
+        // The contrast maths runs where the pixels live: composited inks over
+        // the gold gradient's worst-case stops, both themes.
+        // seed: a basic + three months (past, live with a future-dated duty,
+        // upcoming) so the card, the pills and the money column all render
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+            const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), ent('r1', cur, 88), ent('r2', nxt, 60)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        ok(await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('ca-arch-total')); return cs.paddingTop === '8px' && cs.paddingBottom === '8px'; }), 'the core figure carries 8px of air above and below');
+        const grid3 = await page.evaluate(() => {
+            const el = document.getElementById('ca-arch-meta-cop');
+            const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
+            const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
+            return { tracks, clips };
+        });
+        ok(grid3.tracks.length === 3 && Math.max(...grid3.tracks) - Math.min(...grid3.tracks) <= 1 && !grid3.clips.some(Boolean), 'the COP stat row is an equal 3-column grid and nothing clips');
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        await sleep(300);
+        const grid4 = await page.evaluate(() => {
+            const el = document.getElementById('ca-arch-meta-salary');
+            const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
+            const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
+            return { tracks, clips };
+        });
+        ok(grid4.tracks.length === 4 && Math.max(...grid4.tracks) - Math.min(...grid4.tracks) <= 1 && !grid4.clips.some(Boolean), 'the salary stat row is an equal 4-column grid and nothing clips');
+        // AA: every readable text on the gold card - inactive tabs (over the
+        // pill wash over the gradient's LIGHTEST stop, the worst case for
+        // dark ink) and the meta labels (over the DARKEST stop, where the
+        // stat grid sits)
+        const aaSeg = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
+            const card = document.getElementById('ca-arch-summary');
+            const stops = [...getComputedStyle(card).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0]));
+            const hi = stops[0], lo = stops[stops.length - 1];
+            const wash = parse(getComputedStyle(document.querySelector('.ca-arch-segtrack')).backgroundColor);
+            const pillBg = comp(wash, hi);
+            const out = { seg: [], label: 0 };
+            document.querySelectorAll('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)').forEach((seg) => {
+                out.seg.push(ratio(comp(parse(getComputedStyle(seg).color), pillBg), pillBg));
+            });
+            const lab = document.querySelector('#ca-arch-meta-salary .ca-arch-metalabel') || document.querySelector('#ca-arch-meta-cop .ca-arch-metalabel');
+            out.label = ratio(comp(parse(getComputedStyle(lab).color), lo), lo);
+            return out;
+        });
+        ok(aaSeg.seg.length >= 3 && aaSeg.seg.every((r) => r >= 4.5), 'every inactive tab reads at AA (>=4.5:1) against the gold (worst-case stop, got ' + aaSeg.seg.map((r) => r.toFixed(2)).join('/') + ')');
+        ok(aaSeg.label >= 4.5, 'the stat labels read at AA over the darkest gold stop (got ' + aaSeg.label.toFixed(2) + ')');
+        // the money column: net and gross right-aligned to the same edge
+        const money = await page.evaluate(() => {
+            const cols = [...document.querySelectorAll('#ca-arch-list .ca-arch-amt.flex-col')];
+            if (!cols.length) return { none: true };
+            const edges = cols.map((c) => {
+                const net = c.querySelector('.ca-arch-amt-net'), gross = c.children[1];
+                return { pair: Math.abs(net.getBoundingClientRect().right - gross.getBoundingClientRect().right), col: c.getBoundingClientRect().right };
+            });
+            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)) };
+        });
+        ok(!money.none && money.pair <= 1.5 && money.across <= 1.5, 'net and gross stack right-aligned, column-edge straight across months (pair ' + (money.pair || 0).toFixed(1) + 'px, across ' + (money.across || 0).toFixed(1) + 'px)');
+        // the pills and the month cards, in the dark theme
+        const pillsDark = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
+            const cardBg = parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor);
+            const live = document.querySelector('.ca-arch-badge-live');
+            const up = document.querySelector('.ca-arch-badge-upcoming');
+            const solid = (b) => b && parse(getComputedStyle(b).backgroundColor).a > 0.05;
+            const r = (b) => ratio(comp(parse(getComputedStyle(b).color), comp(parse(getComputedStyle(b).backgroundColor), cardBg)), comp(parse(getComputedStyle(b).backgroundColor), cardBg));
+            return { liveSolid: solid(live), upSolid: solid(up), liveR: r(live), upR: r(up) };
+        });
+        ok(pillsDark.liveSolid && pillsDark.upSolid, 'the status badges are solid pills, not outlines (dark)');
+        ok(pillsDark.liveR >= 4.5 && pillsDark.upR >= 4.5, 'badge text reads at AA on its wash (dark: in-progress ' + pillsDark.liveR.toFixed(2) + ', upcoming ' + pillsDark.upR.toFixed(2) + ')');
+        const cardLum = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2] }; };
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            return { group: lum(parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor)), sheet: lum(parse(getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor)) };
+        });
+        ok(cardLum.group > cardLum.sheet, 'the month cards sit a shade lighter than the sheet canvas (dark: ' + cardLum.group.toFixed(3) + ' vs ' + cardLum.sheet.toFixed(3) + ')');
+        // the light theme: badges and the tab ink hold their contrast too
+        await page.evaluate(() => { document.documentElement.classList.remove('dark'); });
+        await sleep(300);
+        const pillsLight = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
+            const cardBg = parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor);
+            const r = (b) => ratio(comp(parse(getComputedStyle(b).color), comp(parse(getComputedStyle(b).backgroundColor), cardBg)), comp(parse(getComputedStyle(b).backgroundColor), cardBg));
+            const parse2 = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const comp2 = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+            const lum2 = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const stops = [...getComputedStyle(document.getElementById('ca-arch-summary')).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse2(m[0]));
+            const wash = parse2(getComputedStyle(document.querySelector('.ca-arch-segtrack')).backgroundColor);
+            const pillBg = comp2(wash, stops[0]);
+            const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+            return { liveR: r(document.querySelector('.ca-arch-badge-live')), upR: r(document.querySelector('.ca-arch-badge-upcoming')), segR: ratio(comp2(parse2(getComputedStyle(seg).color), pillBg), pillBg) };
+        });
+        ok(pillsLight.liveR >= 4.5 && pillsLight.upR >= 4.5, 'badge text reads at AA in daylight too (in-progress ' + pillsLight.liveR.toFixed(2) + ', upcoming ' + pillsLight.upR.toFixed(2) + ')');
+        ok(pillsLight.segR >= 4.5, 'the inactive tabs read at AA in daylight too (got ' + pillsLight.segR.toFixed(2) + ')');
+        await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));

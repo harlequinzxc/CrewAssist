@@ -206,6 +206,14 @@ element must work in both — never optimize only for dark.
 | text-inverse  | High contrast against gold fill  | Always dark text on gold; never light text on gold |
 | Badges        | Readable on pill in both themes  | MICRO digits must not blend with pill background|
 
+**Ink over gold composites.** Text sitting on a translucent pill or wash over
+the gold card must be checked against the *composited* background — the wash
+blended over the gradient stop beneath it — never the raw token. The earnings
+card's inactive tabs ride .75 dark-on-gold for exactly this reason: at .65 the
+composite read 4.09:1, below AA; at .75 it reads 5.2:1 (v1.45.12). Status
+badges follow the same maths on their own washes — solid low-opacity pills
+with high-contrast text, never outline-only ghosts.
+
 ### Two kinds of token
 
 This distinction matters more than any other rule in this section.
