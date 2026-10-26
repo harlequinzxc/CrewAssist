@@ -2704,7 +2704,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.17'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.18'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2726,6 +2726,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.18', d: '2026-10-26', items: [
+                { c: 'imp', t: 'The still-to-fly panel reads Remaining flights.' },
+                { c: 'imp', t: 'Its line counts completed flights and legs left.' },
+                { c: 'imp', t: 'All-time COP gains an annual average figure.' }
+            ] },
             { v: '1.45.17', d: '2026-10-26', items: [
                 { c: 'fix', t: 'Daylight search placeholders read dark slate gray.' },
                 { c: 'imp', t: 'The milestone line names what remains to earn.' }
@@ -13429,14 +13434,14 @@
             const today = todayLocalYMD();
             const nowMs = Date.now();
             const es = (entries || []).filter((e) => String(e.monthKey || '').slice(0, 7) === String(mk).slice(0, 7));
-            let flown = 0, unflown = 0, unflownCount = 0, last = '', hasDates = false, totalAll = 0;
+            let flown = 0, unflown = 0, unflownCount = 0, flownCount = 0, last = '', hasDates = false, totalAll = 0;
             es.forEach((e) => {
                 totalAll += Number(e.amount) || 0;
                 const sd = String(e.sectorDate || '');
                 if (!/^\d{4}-\d{2}-\d{2}$/.test(sd)) return;
                 hasDates = true;
                 if (sd > last) last = sd;
-                if (archEntryLanded(e, nowMs, today)) flown += Number(e.amount) || 0;
+                if (archEntryLanded(e, nowMs, today)) { flown += Number(e.amount) || 0; flownCount++; }
                 else { unflown += Number(e.amount) || 0; unflownCount++; }
             });
             let upcomingLeft = 0;
@@ -13449,7 +13454,7 @@
                 }
             } catch (err) {}
             const inProgress = unflownCount > 0 || upcomingLeft > 0 || (String(mk) === archCurrentMk() && !hasDates);
-            return { inProgress: inProgress, flown: flown, unflown: unflown, unflownCount: unflownCount, upcomingLeft: upcomingLeft, lastYmd: last, count: es.length, total: totalAll };
+            return { inProgress: inProgress, flown: flown, flownCount: flownCount, unflown: unflown, unflownCount: unflownCount, upcomingLeft: upcomingLeft, lastYmd: last, count: es.length, total: totalAll };
         }
         function archYoyPct(cur, prev) {
             if (!(prev > 0) || !(cur > 0)) return null;
@@ -14001,19 +14006,22 @@
                     + '</div>'
                     + '<div class="ca-arch-group-body px-3 pb-1">';
                 if (hasUnflown && (ms.total > 0.004 || rosterLeft > 0)) {
-                    // v1.45.15: saved trips tell the $ story; roster-only
-                    // flights tell the count and say plainly they are not
-                    // saved yet (no dollar is ever guessed for a flight the
-                    // calculator has not priced)
-                    const savedLeft = ms.unflownCount > 0;
-                    const nLeft = savedLeft ? ms.unflownCount : rosterLeft;
+                    // v1.45.18 (owner order): the panel microcopy - the
+                    // header reads REMAINING FLIGHTS (the count moves into
+                    // the line below) and the line counts what history and
+                    // the schedule actually hold: landed list objects
+                    // completed, the remainder left. No dollar is ever
+                    // guessed for a flight the calculator has not priced -
+                    // the right-aligned gold figure only appears when a
+                    // saved, priced trip backs it (v1.45.15 rule, kept)
+                    const nLeft = ms.unflownCount > 0 ? ms.unflownCount : rosterLeft;
                     html += '<div class="ca-arch-proj-wrap' + (archState.projOpen[mk] ? ' open' : '') + '" data-mk="' + mk + '">'
                         + '<div class="mb-2 p-3 rounded-xl border border-sia-gold/30 bg-sia-gold/5" role="status">'
                         + '<div class="flex items-center justify-between gap-2">'
-                        + '<span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">Still to fly \u00b7 ' + nLeft + ' flight' + (nLeft === 1 ? '' : 's') + '</span>'
+                        + '<span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">Remaining flights</span>'
                         + (ms.unflown > 0.004 ? '<span class="text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(ms.unflown) + '</span>' : '')
                         + '</div>'
-                        + '<div class="text-xs mt-1" style="color: var(--arch-muted)">Landed ' + formatMoney(ms.flown) + ' \u00b7 ' + (savedLeft ? 'on track for ' + formatMoney(ms.total) : rosterLeft + ' roster flight' + (rosterLeft === 1 ? '' : 's') + ' not saved yet') + '</div>'
+                        + '<div class="text-xs mt-1" style="color: var(--arch-muted)">' + ms.flownCount + ' flight' + (ms.flownCount === 1 ? '' : 's') + ' completed \u00b7 ' + nLeft + ' left</div>'
                         + '</div></div>';
                 }
                 rows.forEach((e) => {
@@ -14227,16 +14235,18 @@
                 total = archCopTotal(all);
                 count = all.length;
                 if (!isSalary) {
-                    const parts = [];
-                    const curM = map[currentMk];
-                    if (curM) {
-                        const ms = archMonthState(currentMk, all);
-                        const yoy = archYoyPct(curM.total, statsLiFor(map, currentMk));
-                        if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy) + '% vs LY</span>');
-                        if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004) parts.push('<span>proj. ' + formatMoney(ms.total) + '</span>');
-                    }
-                    ctxLabel = 'Context';
-                    ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">\u2014</span>';
+                    // v1.45.18 (owner order): COP + ALL-TIME is the career
+                    // lens - the truncating Context line ('+0% vs LY · proj.
+                    // $…') is unmounted and the cell becomes ANNUAL AVG, the
+                    // career COP total over the years on record. The value
+                    // rides the same metaval typography as FLIGHTS and
+                    // AVG / FLIGHT (no span, so the ctx ellipsis rule can
+                    // never clip it; the 420/360px tiers keep it whole)
+                    const yrSet = {};
+                    all.forEach((e) => { const y = String(e.monthKey || '').slice(0, 4); if (/^\d{4}$/.test(y)) yrSet[y] = 1; });
+                    const nYears = Object.keys(yrSet).length;
+                    ctxLabel = 'Annual avg';
+                    ctxHtml = nYears ? formatMoney(total / nYears) : '<span style="opacity:.4">\u2014</span>';
                 }
             }
 

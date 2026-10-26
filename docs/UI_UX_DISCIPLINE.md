@@ -243,6 +243,19 @@ not a style. Daylight placeholders read a distinct dark slate
 (`#6B7280`, opacity pinned to 1 so no engine dims it); the night theme
 keeps its default only where that default already reads (v1.45.17).
 
+**Count lines pair history with the horizon.** A summary panel's count
+line reads 'N flights completed · M left' — landed records on the left of
+the separator, the remainder (saved or roster) on the right — with the
+dollar story carried by the right-aligned figure alone, never woven into
+the sentence (v1.45.18).
+
+**Career lenses earn career metrics.** When a view spans everything
+(all-time), its context cell carries a macro figure (the annual average
+over the years on record) instead of a comparison chip string that
+truncates; the value rides the same value typography as its sibling
+columns and bare text where a clipping rule targets spans. Narrower
+lenses (year, month) keep their contextual comparisons (v1.45.18).
+
 **Milestone lines name what remains.** A progress milestone under a
 headline figure leads with the REMAINING value and its horizon —
 '◎ $696.91 before end of month' — not with the projected total; the

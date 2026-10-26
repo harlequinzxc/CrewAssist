@@ -209,11 +209,11 @@ const fs = require('fs');
     R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'all-time total');
     R.eq(d.getElementById('ca-arch-m-flights').textContent, '19', 'all-time flight count');
     R.eq(d.getElementById('ca-arch-m-avg').textContent, '$390.70', 'all-time average per flight');
-    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Context', 'all-time context label');
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Annual avg', 'v1.45.18: COP + ALL-TIME carries the ANNUAL AVG career column (the Context line is unmounted)');
     const ctxAll = d.getElementById('ca-arch-m-ctx');
-    R.ok(ctxAll.textContent.indexOf('\u221228.6% vs LY') !== -1, 'current month down vs last year (real minus sign)');
-    R.ok(ctxAll.textContent.indexOf('proj. ' + fm(projTotal)) !== -1, 'all-time context carries the month projection');
-    R.ok(ctxAll.innerHTML.indexOf('trending-down') !== -1, 'down trend icon on the context line');
+    const avgAll = w.eval("formatMoney(archCopTotal(JSON.parse(localStorage.getItem('crewAssist.archive') || '[]')) / 2)");
+    R.eq(ctxAll.textContent, avgAll, 'the annual average = career COP over the two years on record (' + avgAll + ')');
+    R.ok(ctxAll.innerHTML.indexOf('<span') === -1 && ctxAll.innerHTML.indexOf('vs LY') === -1, 'v1.45.18: no truncating context parts, and the value rides bare text - the ctx ellipsis rule can never clip it');
 
     // -- 12-month chart: oldest left, stub month, projection segment, peak
     // (v1.45.11: the 12-month window is the Month-scope shape; All-time
@@ -263,7 +263,7 @@ const fs = require('fs');
     const sepWrap = sepBody.querySelector('.ca-arch-proj-wrap');
     R.ok(!!sepToggle && !!sepWrap && !sepWrap.classList.contains('open') && sepToggle.getAttribute('aria-expanded') === 'false', 'v1.38.0: an in-progress month carries a closed still-to-fly toggle on its total');
     sepToggle.click();
-    R.ok(sepWrap.classList.contains('open') && sepWrap.textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && sepWrap.textContent.indexOf(fm(projLeft)) !== -1 && sepWrap.textContent.indexOf('on track for ' + fm(projTotal)) !== -1, 'v1.38.0: tapping the month total unfolds the still-to-fly projection');
+    R.ok(sepWrap.classList.contains('open') && sepWrap.textContent.indexOf('Remaining flights') !== -1 && sepWrap.textContent.indexOf(fm(projLeft)) !== -1 && sepWrap.textContent.indexOf('1 flight completed \u00b7 1 left') !== -1, 'v1.38.0/18: tapping the month total unfolds the remaining-flights panel');
     R.eq(sepToggle.getAttribute('aria-expanded'), 'true', 'the toggle announces its open state');
     sepToggle.click();
     R.ok(!sepWrap.classList.contains('open') && sepToggle.getAttribute('aria-expanded') === 'false', 'a second tap folds the projection away');
@@ -818,7 +818,7 @@ const fs = require('fs');
     const octWrap = bodyOf('2026-10').querySelector('.ca-arch-proj-wrap');
     R.ok(!!octToggle && !!octWrap, 'v1.38.0: an upcoming month carries the still-to-fly toggle');
     octToggle.click();
-    R.ok(octWrap.classList.contains('open') && octWrap.textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && octWrap.textContent.indexOf('$400.00') !== -1, 'the upcoming month unfolds its projection on tap');
+    R.ok(octWrap.classList.contains('open') && octWrap.textContent.indexOf('Remaining flights') !== -1 && octWrap.textContent.indexOf('$400.00') !== -1 && octWrap.textContent.indexOf('0 flights completed \u00b7 1 left') !== -1, 'the upcoming month unfolds its remaining-flights panel on tap');
     // v1.45.11: month columns live in Month scope (All-time is year bars)
     d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="month"]').click();
     await wait(50);
@@ -970,7 +970,7 @@ function todayYmd() {
     const ipWrap = body.querySelector('.ca-arch-proj-wrap');
     R.ok(!!ipToggle && !!ipWrap, 'v1.38.0: the un-landed duty still carries a projection toggle');
     ipToggle.click();
-    R.ok(ipWrap.classList.contains('open') && ipWrap.textContent.indexOf('Still to fly') !== -1 && ipWrap.textContent.indexOf('$200.00') !== -1, 'tapping it shows the airborne duty as still to fly');
+    R.ok(ipWrap.classList.contains('open') && ipWrap.textContent.indexOf('Remaining flights') !== -1 && ipWrap.textContent.indexOf('$200.00') !== -1 && ipWrap.textContent.indexOf('1 flight completed \u00b7 1 left') !== -1, 'tapping it shows the airborne duty among the remaining flights');
   }
   {
     // every duty today has landed → Completed on the day itself (the date
@@ -1086,7 +1086,7 @@ function todayYmd() {
     tgl.click();
     const wrap = grp.querySelector('.ca-arch-proj-wrap');
     R.ok(wrap.classList.contains('open') && !grp.classList.contains('ca-arch-collapsed'), 'v1.38.0: opening the projection expands a collapsed month too');
-    R.ok(wrap.textContent.indexOf('Landed $300.00') !== -1 && wrap.textContent.indexOf('on track for $800.00') !== -1, 'the panel splits landed vs on-track');
+    R.ok(wrap.textContent.indexOf('1 flight completed \u00b7 1 left') !== -1 && wrap.textContent.indexOf('$500.00') !== -1, 'v1.45.18: the panel counts completed vs left, the gold figure carries the priced remainder');
     // a fully-flown past month gets no toggle at all
     R.ok(!e.d.querySelector('.ca-arch-group-head[data-mk="2026-07"]').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn'), 'completed past months keep a plain total');
     e.d.getElementById('ca-arch-backdrop').click();
@@ -1440,9 +1440,8 @@ function todayYmd() {
     R.ok(d.getElementById('ca-arch-m-ctx').textContent.indexOf('2 roster flights still to fly') !== -1, 'the context names the roster flights still to fly');
     head4('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn').click(); await wait(150);
     const octWrap = head4('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-proj-wrap');
-    R.ok(octWrap.textContent.indexOf('Still to fly \u00b7 2 flights') !== -1, 'the panel counts the roster flights');
-    R.ok(octWrap.textContent.indexOf('Landed $300.00 \u00b7 2 roster flights not saved yet') !== -1, 'roster-only flights say so plainly - and no dollar is guessed');
-    R.ok(octWrap.textContent.indexOf('$0.00') === -1, 'no fake $0.00 still-to-fly figure');
+    R.ok(octWrap.textContent.indexOf('Remaining flights') !== -1 && octWrap.textContent.indexOf('1 flight completed \u00b7 2 left') !== -1, 'v1.45.18: the panel counts history (1 landed entry) vs the schedule (2 roster legs)');
+    R.ok(octWrap.textContent.indexOf('$0.00') === -1 && octWrap.textContent.indexOf('$') === -1, 'roster-only legs carry no dollar - none is ever guessed');
     // every scope shows the current month's notice
     for (const sc of ['all', 'year']) {
       d.querySelector('.ca-arch-seg[data-scope="' + sc + '"]').click(); await wait(150);
@@ -1452,7 +1451,7 @@ function todayYmd() {
     // the upcoming month's saved story is unchanged
     const novG = head4('2026-11').closest('.ca-arch-group');
     novG.querySelector('.ca-arch-proj-btn').click(); await wait(150);
-    R.ok(novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('$500.00') !== -1, 'the pre-saved upcoming month keeps its dollar story');
+    R.ok(novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('Remaining flights') !== -1 && novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('0 flights completed \u00b7 1 left') !== -1 && novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('$500.00') !== -1, 'the pre-saved upcoming month keeps its dollar story');
     // a past month is untouched by the roster (ymd >= today excludes it)
     R.ok(!head4('2026-09'), 'no phantom past group');
     void w;
