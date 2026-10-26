@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.22', 'APP_VERSION is 1.45.22');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.22' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.22 entry with its three pointers (the expense pointer is the new one)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v253'), 'the service-worker cache name is bumped to v253 (the v1.45.22 overseas-expense release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.23', 'APP_VERSION is 1.45.23');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.23' && e.d === '2026-10-26' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.23 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v254'), 'the service-worker cache name is bumped to v254 (the v1.45.23 tabular-grid release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.22'; }), 'the What\'s New sheet carries the v1.45.22 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.23'; }), 'the What\'s New sheet carries the v1.45.23 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -762,21 +762,24 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }
         ok(aaSeg.seg.length >= 3 && aaSeg.seg.every((r) => r >= 4.5), 'every inactive tab reads at AA (>=4.5:1) against the gold (worst-case stop, got ' + aaSeg.seg.map((r) => r.toFixed(2)).join('/') + ')');
         ok(aaSeg.label >= 4.5, 'the stat labels read at AA over the darkest gold stop (got ' + aaSeg.label.toFixed(2) + ')');
-        // the money column: net and gross right-aligned to the same edge
+        // the money column: the rigid two-column tabular grid (v1.45.23)
         const money = await page.evaluate(() => {
-            const cols = [...document.querySelectorAll('#ca-arch-list .ca-arch-amt.flex-col')];
+            const cols = [...document.querySelectorAll('#ca-arch-list .ca-arch-amt.ca-arch-moneygrid')];
             if (!cols.length) return { none: true };
             const edges = cols.map((c) => {
                 const net = c.querySelector('.ca-arch-amt-net'), gross = c.querySelector('.ca-arch-amt-gross');
-                const row = net ? net.parentElement : null;
+                const cs = getComputedStyle(c);
+                const cells = [...c.children];
                 return { pair: Math.abs(net.getBoundingClientRect().right - gross.getBoundingClientRect().right), col: c.getBoundingClientRect().right,
-                    jc: getComputedStyle(c).justifyContent, wrap: row ? getComputedStyle(row).whiteSpace : '', disp: row ? getComputedStyle(row).display : '', gap: row ? parseFloat(getComputedStyle(row).columnGap) : 0, lbl: row ? row.children[0].textContent : '' };
+                    disp: cs.display, tracks: cs.gridTemplateColumns.split(' ').length, cgap: parseFloat(cs.columnGap), ac: cs.alignContent, ai: cs.alignItems, jc: cs.justifyContent,
+                    wrap: cells.every((x) => getComputedStyle(x).whiteSpace === 'nowrap'), lbl: cells[0].textContent, lblL: cells[0].getBoundingClientRect().left, lbl2L: cells[2].getBoundingClientRect().left, netBold: getComputedStyle(net).fontWeight, netGold: getComputedStyle(net).color, secMut: getComputedStyle(gross).color };
             });
-            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)), jc: edges.every((e) => e.jc === 'center'), wrap: edges.every((e) => e.wrap === 'nowrap'), disp: edges.every((e) => e.disp === 'flex'), gap: edges.every((e) => Math.abs(e.gap - 6) <= 0.5), lbl: edges.every((e) => e.lbl === 'net') };
+            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)), disp: edges.every((e) => e.disp === 'grid'), tracks: edges.every((e) => e.tracks === 2), cgap: edges.every((e) => Math.abs(e.cgap - 8) <= 0.5), ac: edges.every((e) => e.ac === 'center'), ai: edges.every((e) => e.ai === 'baseline'), jc: edges.every((e) => e.jc === 'end'), wrap: edges.every((e) => e.wrap), lbl: edges.every((e) => e.lbl === 'NET'), rail: edges.every((e) => Math.abs(e.lblL - e.lbl2L) <= 1), bold: edges.every((e) => e.netBold === '700') };
         });
-        ok(!money.none && money.pair <= 1.5 && money.across <= 1.5, 'net and gross stack right-aligned, column-edge straight across months (pair ' + (money.pair || 0).toFixed(1) + 'px, across ' + (money.across || 0).toFixed(1) + 'px)');
-        ok(money.jc && money.disp && money.wrap, 'v1.45.22: the column centres vertically (justify-center) and every figure rides its own nowrap flex row');
-        ok(money.gap && money.lbl, 'each row is a lowercase net/gross label held 6px off its value');
+        ok(!money.none && money.pair <= 1.5 && money.across <= 1.5, 'net and gross ride the grid right-aligned, value edge straight across months (pair ' + (money.pair || 0).toFixed(1) + 'px, across ' + (money.across || 0).toFixed(1) + 'px)');
+        ok(money.disp && money.tracks && money.cgap && money.ac && money.ai && money.jc, 'v1.45.23: the money block is the rigid two-column grid - 8px between the rails, baselines paired, rows centred, columns pushed right');
+        ok(money.wrap && money.lbl && money.rail, 'every cell never wraps and the UPPERCASE labels sit on one left rail (NET leading)');
+        ok(money.bold, 'the NET figure carries the strongest weight (700)');
         // v1.45.16 (owner order): the status badges are gone - the state
         // rides Lucide icons (the rig blocks the CDN, so the icons stay <i>
         // stubs; name + class + computed animation are the proof) and the
@@ -1423,11 +1426,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return { mk, expSeg: gl.textContent.indexOf('Exp \u2212$120.00') !== -1, afterHidden: al.classList.contains('hidden'), afterTxt: al.textContent, afterWant: 'After expenses ' + fm(sal.net - 120),
                 rows: head.children.length, afterVal: afterV ? afterV.textContent : '', afterWantVal: fm(sal.net - 120),
                 edgeN: netV.getBoundingClientRect().right, edgeG: grossV.getBoundingClientRect().right, edgeA: afterV ? afterV.getBoundingClientRect().right : 0,
-                rowLbl: afterV ? afterV.parentElement.children[0].textContent : '', rowMuted: afterV ? getComputedStyle(afterV.parentElement).color === getComputedStyle(grossV.parentElement).color : false };
+                rowLbl: afterV ? afterV.previousElementSibling.textContent : '', rowMuted: afterV ? getComputedStyle(afterV).color === getComputedStyle(grossV).color && getComputedStyle(afterV.previousElementSibling).color === getComputedStyle(grossV.previousElementSibling).color : false };
         });
         ok(exp22.expSeg, 'v1.45.22: the subtext gains the Exp segment beside Gross|CPF');
         ok(!exp22.afterHidden && exp22.afterTxt === exp22.afterWant, 'the quiet after-expenses line reads net minus the month\u2019s expenses (' + exp22.afterTxt + ')');
-        ok(exp22.rows === 3 && exp22.afterVal === exp22.afterWantVal && exp22.rowLbl === 'after exp', 'the month head grows the third quiet after-exp row');
+        ok(exp22.rows === 6 && exp22.afterVal === exp22.afterWantVal && exp22.rowLbl === 'AFTER EXPENSES', 'the month head grows the third row - six grid cells, the UPPERCASE AFTER EXPENSES label leading its figure');
         ok(Math.abs(exp22.edgeN - exp22.edgeG) <= 1.5 && Math.abs(exp22.edgeN - exp22.edgeA) <= 1.5, 'all three figures right-align to the same edge - the decimals track one vertical line');
         ok(exp22.rowMuted, 'the third row rides the same muted ink as the gross row');
         // the no-expense month keeps two rows (all-time shows both months)
@@ -1440,7 +1443,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const amt = h.closest('.ca-arch-group').querySelector('.ca-arch-amt');
             return { none: false, rows: amt.children.length };
         });
-        ok(!head22b.none && head22b.rows === 2, 'a month without expenses keeps exactly two rows');
+        ok(!head22b.none && head22b.rows === 4, 'a month without expenses keeps exactly two grid rows (four cells) - the AFTER EXPENSES row unmounts entirely');
         // the sheet flow: receipt row -> edit -> commit -> live card -> undo -> zero removes
         await page.evaluate(() => document.querySelector('.ca-arch-group-head').click());
         await sleep(200);
@@ -1484,6 +1487,98 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => { closeArchSub(); document.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); });
         await sleep(400);
         ok(await page.evaluate(() => document.getElementById('ca-arch-after-line').classList.contains('hidden') && document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1), 'the COP lens shows no expense context');
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.23: the rigid money grid at iPhone width —');
+        // The order's headline contract, measured where it lives: nothing
+        // wraps and nothing clashes at 375px. A three-row month (expenses
+        // present) drops the grid to its own right-aligned line under the
+        // month text; a two-row month keeps the side-by-side form; wide
+        // screens keep the side-by-side form for both.
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const cur = new Date(now.getFullYear(), now.getMonth(), 15);
+            const det = (amount, exp) => { const d = { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] }; if (exp) d.expense = exp; return d; };
+            const lay = (id, d, amount, exp) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/ICN', amount, flightType: 'Layover', detail: det(amount, exp) });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([lay('g1', cur, 400, 120), lay('g2', cur, 350), lay('g3', cur, 380)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click());
+        await sleep(400);
+        await page.setViewport({ width: 375, height: 812, hasTouch: true });
+        await sleep(400);
+        const grid375 = await page.evaluate(() => {
+            const grp = document.querySelector('.ca-arch-group');
+            const head = grp.querySelector('.ca-arch-group-head');
+            const amt = grp.querySelector('.ca-arch-amt');
+            const monthLbl = head.querySelector('span.text-\\[17px\\]');
+            const countLine = head.querySelector('span.block');
+            const hb = head.getBoundingClientRect(), ab = amt.getBoundingClientRect();
+            const cells = [...amt.children];
+            const net = amt.querySelector('.ca-arch-amt-net'), gross = amt.querySelector('.ca-arch-amt-gross'), after = amt.querySelector('.ca-arch-amt-after');
+            const lblL = cells.filter((c) => c.classList.contains('ca-arch-mglbl')).map((c) => c.getBoundingClientRect().left);
+            const valR = [net, gross, after].map((c) => c.getBoundingClientRect().right);
+            return { cells: cells.length, stacked: ab.top > hb.bottom - 2,
+                month1: monthLbl.getBoundingClientRect().height <= 22, count1: countLine.getBoundingClientRect().height <= 21,
+                noClip: cells.every((c) => c.scrollWidth <= c.clientWidth + 1),
+                rail: Math.max(...lblL) - Math.min(...lblL) <= 1, edge: Math.max(...valR) - Math.min(...valR) <= 1.5,
+                right: Math.abs(ab.right - (amt.closest('div.flex').getBoundingClientRect().right - 12)) <= 1,
+                listOk: document.getElementById('ca-arch-list').scrollWidth <= document.getElementById('ca-arch-list').clientWidth + 1,
+                netGold: getComputedStyle(net).color, netLblGold: getComputedStyle(cells[0]).color, secMut: getComputedStyle(gross).color };
+        });
+        ok(grid375.cells === 6 && grid375.stacked, 'v1.45.23 at 375px: the three-row grid rides its own line under the month text (six cells, no squeeze)');
+        ok(grid375.month1 && grid375.count1, 'the month label and the count line each stay one line - no wrapping, no clashing');
+        ok(grid375.noClip && grid375.listOk, 'no cell clips and the list never scrolls sideways');
+        ok(grid375.rail && grid375.edge && grid375.right, 'the label rail is one vertical line, the decimals track one right edge, the block hugs the row edge (12px inset)');
+        ok(grid375.netGold === 'rgb(201, 162, 39)' && grid375.netLblGold === 'rgb(201, 162, 39)', 'the NET row wears the gold accent by night (label + figure: ' + grid375.netGold + ')');
+        ok(grid375.secMut === 'rgba(255, 255, 255, 0.6)', 'the secondary rows ride the desaturated muted ink by night (' + grid375.secMut + ')');
+        // the same grid by day: the gold ink token flips, the muted ink flips
+        const gridDay = await page.evaluate(() => {
+            const h = document.documentElement;
+            h.classList.remove('dark'); void document.getElementById('ca-arch-list').offsetWidth;
+            const net = document.querySelector('.ca-arch-group .ca-arch-amt-net');
+            const gross = document.querySelector('.ca-arch-group .ca-arch-amt-gross');
+            const out = { net: getComputedStyle(net).color, sec: getComputedStyle(gross).color };
+            h.classList.add('dark'); void document.getElementById('ca-arch-list').offsetWidth;
+            return out;
+        });
+        ok(gridDay.net === 'rgb(125, 101, 15)' && gridDay.sec === 'rgba(17, 24, 39, 0.62)', 'by day the NET gold ink reads #7d650f and the secondary rows the light muted token (' + gridDay.net + ' / ' + gridDay.sec + ')');
+        // a two-row month keeps the side-by-side form even at 375px
+        const two375 = await page.evaluate(() => {
+            const arr = JSON.parse(localStorage.getItem('crewAssist.archive'));
+            arr.forEach((e) => { if (e.detail) delete e.detail.expense; });
+            localStorage.setItem('crewAssist.archive', JSON.stringify(arr));
+            renderArch();
+            const grp = document.querySelector('.ca-arch-group');
+            const head = grp.querySelector('.ca-arch-group-head');
+            const amt = grp.querySelector('.ca-arch-amt');
+            return { cells: amt.children.length, side: amt.getBoundingClientRect().top < head.getBoundingClientRect().bottom - 2, noClip: [...amt.children].every((c) => c.scrollWidth <= c.clientWidth + 1) };
+        });
+        ok(two375.cells === 4 && two375.side && two375.noClip, 'the AFTER EXPENSES row unmounts entirely - four cells, and the tight grid shares the row again at 375px');
+        // wide screens keep the side-by-side form for the three-row grid too
+        await page.evaluate(() => {
+            const arr = JSON.parse(localStorage.getItem('crewAssist.archive'));
+            arr[0].detail.expense = 120;
+            localStorage.setItem('crewAssist.archive', JSON.stringify(arr));
+            renderArch();
+        });
+        await page.setViewport({ width: 430, height: 812, hasTouch: true });
+        await sleep(400);
+        const wide23 = await page.evaluate(() => {
+            const grp = document.querySelector('.ca-arch-group');
+            const head = grp.querySelector('.ca-arch-group-head');
+            const amt = grp.querySelector('.ca-arch-amt');
+            const hb = head.getBoundingClientRect(), ab = amt.getBoundingClientRect();
+            return { side: ab.top < hb.bottom - 2, cells: amt.children.length, noClip: [...amt.children].every((c) => c.scrollWidth <= c.clientWidth + 1) };
+        });
+        ok(wide23.side && wide23.cells === 6 && wide23.noClip, 'at 430px the three-row grid shares the row again - the stacked form is the narrow-screen grace, not a redesign');
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(300);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 

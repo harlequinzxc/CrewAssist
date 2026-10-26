@@ -1412,10 +1412,17 @@ function todayYmd() {
     R.eq(aRow.children.length, 3, 'v1.45.14: a ledger row is three structural parts - route block, value, \u2715 slot');
     R.ok(aRow.children[0].classList.contains('ca-arch-rowmain') && aRow.children[2].classList.contains('ca-arch-del'), 'the route block leads, the delete \u2715 closes the row');
     const amt = headOf2('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-amt');
-    R.ok(amt.className.indexOf('flex-col') !== -1 && amt.className.indexOf('items-end') !== -1 && amt.className.indexOf('justify-center') !== -1, 'the money block is a right-aligned column, vertically centred (v1.45.22)');
-    R.ok(amt.children.length === 2 && amt.querySelectorAll('.ca-arch-amt-net, .ca-arch-amt-gross, .ca-arch-amt-after').length === 2, 'a no-expense month keeps exactly two rows - net over gross, no after-expenses line');
-    R.ok(amt.children[0].textContent === 'net' + amt.querySelector('.ca-arch-amt-net').textContent && amt.children[1].textContent === 'gross' + amt.querySelector('.ca-arch-amt-gross').textContent, 'each figure is its own label+value pair on one line');
-    R.ok(amt.children[0].className.indexOf('gap-1.5') !== -1 && amt.children[0].className.indexOf('whitespace-nowrap') !== -1 && amt.children[1].className.indexOf('whitespace-nowrap') !== -1, 'the pair rows never wrap, label held 6px off its value');
+    R.ok(amt.className.indexOf('ca-arch-moneygrid') !== -1, 'v1.45.23: the money block rides the rigid two-column tabular grid');
+    R.ok(src.includes('.ca-arch-moneygrid { display: grid; grid-template-columns: auto auto; column-gap: 8px; row-gap: 0; align-items: baseline; align-content: center; justify-content: end; text-align: right; margin-left: auto; }'), 'the grid rule: two rigid columns, labels left rail via the cell rule, values right, baselines paired, centred, the block hugging the right edge');
+    R.ok(src.includes('.ca-arch-group .ca-arch-group-head { min-width: 120px; }') && src.includes('flex flex-wrap items-center gap-2.5 py-3 px-3'), 'the 375px no-clash contract: the head row wraps and the month block keeps its 120px floor - the grid drops to its own right-aligned line instead of crushing the text (two-class selector on purpose: Tailwind min-w-0 would win a single-class tie)');
+    R.ok(src.includes('ca-arch-proj-btn flex items-center shrink-0 rounded-xl pl-2 pr-0 py-1 ml-auto'), 'the projection-tap variant carries the same right-edge auto margin for its wrapped line');
+    R.ok(src.includes('.ca-arch-moneygrid > span { white-space: nowrap; line-height: 1.25; }') && src.includes('.ca-arch-mglbl { font-size: 11px; letter-spacing: .03em; text-align: left; }'), 'every cell never wraps; the labels ride the 11px MICRO rung with metalabel tracking, left-aligned in their column');
+    R.ok(amt.children.length === 4 && amt.querySelectorAll('.ca-arch-amt-net, .ca-arch-amt-gross, .ca-arch-amt-after').length === 2, 'a no-expense month keeps exactly two grid rows (four cells) - the after-expenses row unmounts entirely');
+    R.ok(amt.children[0].textContent === 'NET' && amt.children[2].textContent === 'GROSS', 'Column 1 carries the UPPERCASE labels in the strict row order');
+    R.ok(amt.children[1] === amt.querySelector('.ca-arch-amt-net') && amt.children[3] === amt.querySelector('.ca-arch-amt-gross'), 'Column 2 carries the currency values, one cell per row');
+    R.ok(amt.children[0].className.indexOf('ca-arch-mgmut') === -1 && amt.children[1].className.indexOf('ca-arch-mgmut') === -1, 'the NET row keeps the accent exclusively - no muted opt-out on its cells');
+    R.ok(amt.children[2].className.indexOf('ca-arch-mgmut') !== -1 && amt.children[3].className.indexOf('ca-arch-mgmut') !== -1, 'the secondary rows ride the desaturated muted ink on label and figure');
+    R.ok(amt.getAttribute('style') === 'color: var(--sia-gold-ink, #7d650f)', 'the block itself carries the gold accent ink - the NET row inherits it');
     R.ok(amt.querySelector('.ca-arch-amt-net').className.indexOf('text-[17px]') !== -1 && amt.querySelector('.ca-arch-amt-gross').className.indexOf('text-sm') !== -1, 'net keeps the 17px figure, gross the quieter 14px line - baselines pair with the month and count lines');
     d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
     R.ok(d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the legend steps aside in COP view');
@@ -1456,9 +1463,10 @@ function todayYmd() {
     R.ok(!afterLine.classList.contains('hidden') && afterLine.textContent === 'After expenses ' + w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 120)"), 'the quiet after-expenses line carries net minus the month expenses');
     // the group head: the third quiet row, only because October has expenses
     const headE = d.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
-    R.eq(headE.children.length, 3, 'the month head grows the third after-exp row');
+    R.eq(headE.children.length, 6, 'the month head grows the third after-expenses row (six cells)');
     R.ok(headE.querySelector('.ca-arch-amt-after') && headE.querySelector('.ca-arch-amt-after').textContent === w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 120)"), 'the head after-exp figure = month net minus month expenses');
-    R.ok(headE.children[2].className.indexOf('whitespace-nowrap') !== -1 && headE.children[2].textContent.indexOf('after exp') !== -1, 'the third row is a quiet label+value pair that never wraps');
+    R.ok(headE.children[4].textContent === 'AFTER EXPENSES' && headE.children[4].className.indexOf('ca-arch-mglbl') !== -1 && headE.children[5] === headE.querySelector('.ca-arch-amt-after'), 'the third row is the UPPERCASE AFTER EXPENSES label + its figure, riding the same grid');
+    R.ok(headE.children[4].className.indexOf('ca-arch-mgmut') !== -1 && headE.children[5].className.indexOf('ca-arch-mgmut') !== -1, 'the after-expenses row rides the muted ink like the gross row');
     // COP lens: expenses are a salary-lens privilege - nothing shows
     d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
     R.ok(afterLine.classList.contains('hidden') && d.getElementById('ca-arch-gross-line').classList.contains('hidden'), 'the COP lens shows no expense context - both salary lines step aside entirely');

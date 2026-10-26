@@ -8,15 +8,15 @@ about a minute.
 
 ## What it is
 
-The jsdom suite (`tests/`, 12 suites) is the behavioural contract; this rig is
+The jsdom suite (`tests/`, 14 suites) is the behavioural contract; this rig is
 the **real-browser layer**: it boots the actual app in actual Chromium and holds
 it to things jsdom cannot see — rendering, computed styles, console/page errors,
 the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.21), the changelog's current entry,
-  the service-worker cache name (v252).
+- Stamps: `APP_VERSION` (currently 1.45.23), the changelog's current entry,
+  the service-worker cache name (v254).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -157,6 +157,25 @@ the service-worker stamp. It checks:
   committing to detail.expense with the card updating live behind the
   sheet, the toast, Undo restoring, a zero commit removing the field,
   and the COP lens showing no expense context anywhere.
+- v1.45.23 the rigid money grid: the money probe re-points to
+  `.ca-arch-amt.ca-arch-moneygrid` (display grid, exactly 2 tracks, the
+  8px column gap, baselines paired, rows centred, the block pushed right,
+  per-cell nowrap, the 'NET' label, the label rail one vertical line, the
+  value right edges straight across months); the 1.45.22 layer's head pins
+  re-point to the grid DOM (six cells / four without expenses, the
+  UPPERCASE 'AFTER EXPENSES' label at the value cell's
+  previousElementSibling, the muted ink compared on the value CELLS — the
+  old pair rows are gone); and a NEW 375px layer holds the order's
+  headline contract in the real browser — a three-row month at 375px
+  drops the grid to its own right-aligned line under the month text
+  (month label and count line each ONE line, no cell clip, no sideways
+  scroll, the label rail + decimal edge + 12px row inset), the NET gold
+  and the secondary muted ink verified by night AND day (theme flip via
+  the `.dark` class + offsetWidth reflow), the four-cell no-expense month
+  sharing the row again at 375px, and the three-row grid back beside the
+  text at 430px. Rig lesson: the month-label selector `span.text-\[17px\]`
+  needs the two-backslash CSS escape IN SOURCE — a single backslash is an
+  unknown JS escape that arrives bracket-naked and throws.
 
 ## Running it
 
