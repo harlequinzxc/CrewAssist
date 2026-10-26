@@ -830,6 +830,9 @@
            responsive tiers below keep every track wide enough */
         .ca-arch-metalabel { font-size: 11px; letter-spacing: .03em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.85); overflow: hidden; text-overflow: ellipsis; }
         .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        /* v1.45.19: the gross/CPF pipe - slightly more muted than its
+           neighbours, with clean breathing room either side */
+        .ca-arch-gross-sep { opacity: .45; padding: 0 4px; }
         #ca-arch-m-ctx span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ca-arch-metadot { color: rgba(26,19,0,.55); font-weight: 700; }
         /* v1.45.13: a STRICT four-track grid for both views - the COP row's
@@ -843,6 +846,29 @@
         @media (max-width: 359px) {
             .ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .ca-arch-metagrid .ca-arch-metaval { font-size: 14px; }
+        }
+        /* v1.45.19 (owner order): the SALARY meta row rides a weighted
+           12-track ladder - Basic span 3, Fixed span 2, Midnights span 3
+           (with a strict 8px right buffer on its value, so multi-digit
+           pairs like '64 · $2,048.00' never bleed into the COP label),
+           COP span 4 (career aggregates up to seven digits keep layout
+           freedom) - on a 4px column gap. The row folds to two tracks
+           under 520px, EARLIER than the COP grid's 360px, because its four
+           values are the longest the card renders; and under 360px the
+           values scale down 1.5px (14 -> 12.5px, the owner's smooth step)
+           instead of stepping back up, so high currency figures never
+           break the frame at any width */
+        #ca-arch-meta-salary { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 4px; }
+        #ca-arch-meta-salary .ca-arch-msp3 { grid-column: span 3; }
+        #ca-arch-meta-salary .ca-arch-msp2 { grid-column: span 2; }
+        #ca-arch-meta-salary .ca-arch-msp4 { grid-column: span 4; }
+        #ca-arch-meta-salary #ca-arch-m-mid { padding-right: 8px; }
+        @media (max-width: 519px) {
+            #ca-arch-meta-salary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            #ca-arch-meta-salary .ca-arch-msp3, #ca-arch-meta-salary .ca-arch-msp2, #ca-arch-meta-salary .ca-arch-msp4 { grid-column: auto; }
+        }
+        @media (max-width: 359px) {
+            #ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }
         }
         /* v1.45.14 (owner order): in COP + MONTH the meta tells a two-row
            story - Flights and Avg / flight pair up in two equal columns,
@@ -2042,7 +2068,7 @@
                         <div class="ca-arch-metalabel" id="ca-arch-total-label">Total earnings</div>
                         <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
                         <!-- salary mode: gross and CPF ride under the number -->
-                        <div class="ca-micro font-bold mt-1.5 hidden" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
+                        <div class="ca-micro font-bold mt-1.5 hidden flex-row justify-between items-center w-full gap-2 flex" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
                     </div>
                     <!-- salary mode: no basic yet — ask, never guess (the CA
                          publishes ranges; the exact figure is personal) -->
@@ -2070,21 +2096,26 @@
                                 <div class="ca-arch-metaval flex items-center gap-2" id="ca-arch-m-ctx"></div>
                             </div>
                         </div>
-                        <!-- salary mode meta row: the strict 4-track grid (v1.45.13) -->
+                        <!-- salary mode meta row: v1.45.13's strict 4-track
+                             grid; v1.45.19 (owner order) re-weights it onto a
+                             12-track ladder - Basic 3, Fixed 2, Midnights 3,
+                             COP 4 - with the two-track fold pulled up to
+                             520px, so midnight pairs and seven-digit career
+                             aggregates never collide -->
                         <div class="ca-arch-metagrid hidden" id="ca-arch-meta-salary">
-                            <div>
+                            <div class="ca-arch-msp3">
                                 <div class="ca-arch-metalabel">Basic</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-basic">—</div>
                             </div>
-                            <div>
+                            <div class="ca-arch-msp2">
                                 <div class="ca-arch-metalabel">Fixed</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-fixed">—</div>
                             </div>
-                            <div>
+                            <div class="ca-arch-msp3">
                                 <div class="ca-arch-metalabel">Midnights</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-mid">—</div>
                             </div>
-                            <div>
+                            <div class="ca-arch-msp4">
                                 <div class="ca-arch-metalabel">COP</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-cop">—</div>
                             </div>
@@ -2704,7 +2735,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.18'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.19'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2726,6 +2757,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.19', d: '2026-10-26', items: [
+                { c: 'imp', t: 'Salary stats ride a weighted grid that never collides.' },
+                { c: 'imp', t: 'Gross and CPF group left; milestones ride right.' }
+            ] },
             { v: '1.45.18', d: '2026-10-26', items: [
                 { c: 'imp', t: 'The still-to-fly panel reads Remaining flights.' },
                 { c: 'imp', t: 'Its line counts completed flights and legs left.' },
@@ -14262,7 +14297,14 @@
             if (isSalary && hasBasic && sal) {
                 archEl('ca-arch-total-label').textContent = 'Net take-home';
                 numEl.textContent = formatMoney(sal.net);
-                grossEl.textContent = 'Gross ' + formatMoney(sal.gross) + ' \u00b7 CPF \u2212' + formatMoney(sal.cpf) + (salCtx ? ' \u00b7 ' + salCtx : '');
+                // v1.45.19 (owner order): the subtext row is a structured
+                // flex row, never one continuous mid-dot string - Gross and
+                // CPF group seamlessly on the left (a muted pipe between
+                // them), the temporal milestone (On track for / vs LY / YTD)
+                // rides its own bounding area on the right, so high salary
+                // distributions never clip at the boundary
+                grossEl.innerHTML = '<span class="min-w-0">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf) + '</span>'
+                    + (salCtx ? '<span class="shrink-0 text-right">' + salCtx + '</span>' : '');
                 grossEl.classList.remove('hidden');
                 archEl('ca-arch-m-basic').textContent = formatMoney(sal.basic);
                 archEl('ca-arch-m-fixed').textContent = formatMoney(sal.fixed);
