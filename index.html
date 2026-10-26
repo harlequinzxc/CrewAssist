@@ -837,7 +837,6 @@
            its own row under the Gross|CPF string, flush right, a step
            quieter (normal weight at the 11px MICRO rung - already the
            smallest legible size - over a muted ink) */
-        .ca-arch-gross-ly { font-weight: 400; opacity: .7; padding-top: 2px; }
         #ca-arch-m-ctx span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ca-arch-metadot { color: rgba(26,19,0,.55); font-weight: 700; }
         /* v1.45.13: a STRICT four-track grid for both views - the COP row's
@@ -852,36 +851,41 @@
             .ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .ca-arch-metagrid .ca-arch-metaval { font-size: 14px; }
         }
-        /* v1.45.20 (owner order): the SALARY meta row is a strict 2x2
-           quadrant grid bounded by interior 1px hairlines - a vertical line
-           down the exact centre axis (BASIC + AFTER-HOURS left, FIXED + COP
-           right) and a horizontal line across it (BASIC + FIXED top,
-           AFTER-HOURS + COP bottom). The equal halves carry the v1.45.19
-           weights in aggregate (3+3 vs 2+4), so '64 · $2,048.00' and
-           seven-digit aggregates each own half the width and can never
-           wrap, overlap or clip - at any viewport. Quadrants pad a uniform
-           12px off the hairline tracks; the 14px label icons ride the
-           low-opacity espresso token; the under-360px 1.5px value step
-           (v1.45.19) survives. The hairlines are theme tokens: a low-alpha
-           white tint by night, a quiet charcoal tint by day */
-        #ca-arch-meta-salary { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0; row-gap: 0; }
-        #ca-arch-meta-salary > div { padding: 12px; border-color: rgba(255, 255, 255, 0.08); }
-        html:not(.dark) #ca-arch-meta-salary > div { border-color: rgba(0, 0, 0, 0.06); }
-        #ca-arch-meta-salary .ca-arch-msq-r { border-right-width: 1px; border-right-style: solid; }
-        #ca-arch-meta-salary .ca-arch-msq-b { border-bottom-width: 1px; border-bottom-style: solid; }
+        /* v1.45.20 (owner order), unified v1.45.21: BOTH meta rows - the
+           salary quadrants and the COP stat row - ride the strict 2x2
+           quadrant grid bounded by interior 1px hairlines: a vertical line
+           down the exact centre axis (left column carries border-right) and
+           a horizontal line across the centre boundary (top row carries
+           border-bottom). The salary halves carry the v1.45.19 weights in
+           aggregate (3+3 vs 2+4), so '64 · $2,048.00' and seven-digit
+           aggregates each own half the width and can never wrap, overlap or
+           clip - at any viewport. The COP row's third cell spans the full
+           bottom row (metaspan2), so only its top row carries the vertical
+           axis. Quadrants pad a uniform 12px off the hairline tracks; the
+           14px label icons ride the low-opacity espresso token; the
+           under-360px 1.5px salary value step (v1.45.19) survives. The
+           hairlines are theme tokens: a low-alpha white tint by night, a
+           quiet charcoal tint by day. The axis rules stay LONGHAND - a
+           border shorthand would out-rank the colour rules and smuggle
+           currentcolor past the tokens */
+        #ca-arch-meta-salary, #ca-arch-meta-cop { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0; row-gap: 0; }
+        #ca-arch-meta-salary > div, #ca-arch-meta-cop > div { padding: 12px; border-color: rgba(255, 255, 255, 0.08); }
+        html:not(.dark) #ca-arch-meta-salary > div, html:not(.dark) #ca-arch-meta-cop > div { border-color: rgba(0, 0, 0, 0.06); }
+        #ca-arch-meta-salary .ca-arch-msq-r, #ca-arch-meta-cop .ca-arch-msq-r { border-right-width: 1px; border-right-style: solid; }
+        #ca-arch-meta-salary .ca-arch-msq-b, #ca-arch-meta-cop .ca-arch-msq-b { border-bottom-width: 1px; border-bottom-style: solid; }
         .ca-arch-metico { color: rgba(26, 19, 0, 0.55); }
         .ca-arch-metipair { gap: 2px; }
         @media (max-width: 359px) {
             #ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }
         }
-        /* v1.45.14 (owner order): in COP + MONTH the meta tells a two-row
-           story - Flights and Avg / flight pair up in two equal columns,
-           and the On-track milestone takes the whole width of the card on
-           its own line underneath, free to render without truncation on
-           every mobile viewport */
-        .ca-arch-metagrid.ca-arch-metarows { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }
-        .ca-arch-metarows .ca-arch-metaspan2 { grid-column: 1 / -1; }
-        .ca-arch-metarows #ca-arch-m-ctx { font-size: 12px; }
+        /* v1.45.21 (owner order): the YEAR-view net comparison rides beside
+           the headline figure - a compact triangle percentage, baseline-
+           aligned, 12px off the number. Deep green for growth, deep brick
+           for decline, both AA over the gold card's mid stop; hidden
+           entirely when no prior year is on record */
+        .ca-arch-netyoy { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .ca-arch-netyoy-up { color: #123f22; }
+        .ca-arch-netyoy-dn { color: #6e1f1f; }
         /* v1.45.14 (owner order): the ledger row is a strict column grid -
            [route + date] on the elastic first track, the value right-
            aligned in its own column, the delete ✕ locked into a fixed-
@@ -2070,9 +2074,19 @@
                     </div>
                     <div class="mt-4">
                         <div class="ca-arch-metalabel" id="ca-arch-total-label">Total earnings</div>
-                        <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
-                        <!-- salary mode: gross and CPF ride under the number -->
-                        <div class="ca-micro font-bold mt-1.5 hidden flex flex-col w-full" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
+                        <!-- v1.45.21 (owner order): the YEAR-view net
+                             comparison rides BESIDE the headline figure - a
+                             compact triangle percentage on the shared text
+                             baseline, hidden in Month/All-time and whenever
+                             no prior year is on record -->
+                        <div class="flex items-baseline flex-wrap">
+                            <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
+                            <span class="ca-arch-netyoy ml-3 hidden" id="ca-arch-netyoy"></span>
+                        </div>
+                        <!-- salary mode: gross and CPF ride under the number
+                             (v1.45.21: a single never-wrapping string - the
+                             year comparison moved up beside the figure) -->
+                        <div class="ca-micro font-bold mt-1.5 hidden w-full" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
                     </div>
                     <!-- salary mode: no basic yet — ask, never guess (the CA
                          publishes ranges; the exact figure is personal) -->
@@ -2084,14 +2098,21 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-3 border-t" style="border-color: rgba(26,19,0,.1)">
-                        <!-- COP mode meta row: the strict 4-track grid, the
-                             context cell spanning the last two (v1.45.13) -->
+                        <!-- COP mode meta row: v1.45.21 (owner order) -
+                             the same hairline quadrant architecture as the
+                             salary row. FLIGHTS top-left, AVG / FLIGHT
+                             top-right (the vertical axis hairline runs
+                             between them), and the context cell spanning the
+                             full bottom row under the horizontal hairline:
+                             the current month's REMAINING TO EARN milestone,
+                             the year's YTD comparison, or ALL-TIME's ANNUAL
+                             AVG -->
                         <div class="ca-arch-metagrid" id="ca-arch-meta-cop">
-                            <div>
+                            <div class="ca-arch-msq-r ca-arch-msq-b">
                                 <div class="ca-arch-metalabel">Flights</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-flights">0</div>
                             </div>
-                            <div>
+                            <div class="ca-arch-msq-b">
                                 <div class="ca-arch-metalabel">Avg / flight</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-avg">—</div>
                             </div>
@@ -2742,7 +2763,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.20'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.21'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2764,6 +2785,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.21', d: '2026-10-26', items: [
+                { c: 'imp', t: 'COP stats ride the hairline quadrant architecture.' },
+                { c: 'imp', t: 'Yearly net comparisons badge the headline figure.' },
+                { c: 'imp', t: 'The earliest year reads a quiet em dash.' }
+            ] },
             { v: '1.45.20', d: '2026-10-26', items: [
                 { c: 'imp', t: 'After-hours rides a strict 2x2 grid with hairlines.' },
                 { c: 'imp', t: 'Every salary metric leads with its Lucide icon.' },
@@ -14181,12 +14207,11 @@
             archEl('ca-arch-meta-cop').classList.toggle('hidden', isSalary);
             // v1.45.14 (owner order): COP + MONTH swaps the 4-track grid for
             // the two-row summary - counts paired, on-track line freed
-            archEl('ca-arch-meta-cop').classList.toggle('ca-arch-metarows', archState.scope === 'month');
             archEl('ca-arch-meta-salary').classList.toggle('hidden', !isSalary || !hasBasic);
             archEl('ca-arch-salary-prompt').classList.toggle('hidden', !(isSalary && !hasBasic));
 
             let total = 0, count = 0, ctxLabel = '\u00a0', ctxHtml = '<span style="opacity:.4">\u2014</span>';
-            let sal = null, salCtx = '';
+            let sal = null, netYoy = null;
             if (archState.scope === 'month') {
                 const mk = archSelMk();
                 const m = map[mk] || { total: 0, count: 0 };
@@ -14197,14 +14222,7 @@
                 if (mk === currentMk) {
                     const ms = archMonthState(mk, all);
                     if (ms.inProgress && ms.unflownCount > 0) {
-                        if (isSalary && hasBasic) {
-                            const share = (sal.cop > 0.004) ? (sal.ifa / ((sal.ifa + sal.lma) || 1)) : 1;
-                            const projCop = ms.total || 0;
-                            const projIfa = projCop * share;
-                            const g = sal.basic + sal.fixed + sal.midAmt + projCop;
-                            const c = (SALARY_CONFIG.cpfPct / 100) * (sal.basic + sal.midAmt + projIfa);
-                            salCtx = 'On track for ' + formatMoney(Math.round((g - c) * 100) / 100);
-                        } else {
+                        if (!isSalary) {
                             // v1.45.17 (owner order): the milestone block
                             // names what is REMAINING TO EARN - the label
                             // reads 'REMAINING TO EARN' and the line carries
@@ -14239,14 +14257,6 @@
                     if (yoy !== null) parts.push('<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy) + '% YoY</span>');
                     ctxLabel = 'Context';
                     ctxHtml = parts.length ? parts.join('<span class="ca-arch-metadot">\u00b7</span>') : '<span style="opacity:.4">No ' + archiveMonthLabel(prevMk) + ' on record</span>';
-                } else if (hasBasic) {
-                    const prevMk = archMonthAdd(mk, -1);
-                    const by = archEntriesByMk(all);
-                    const prevSal = (map[prevMk] && by[prevMk]) ? archSalaryMonth(prevMk, by[prevMk]) : null;
-                    if (prevSal) {
-                        const d = sal.net - prevSal.net;
-                        salCtx = (d >= 0 ? '+' : '\u2212') + formatMoney(Math.abs(d)) + ' vs ' + archiveMonthLabel(prevMk);
-                    }
                 }
             } else if (archState.scope === 'year') {
                 const yr = archSelYr();
@@ -14270,12 +14280,17 @@
                     const ly = lyEntries.reduce((s2, e) => s2 + (Number(e.amount) || 0), 0);
                     const yoy = archYoyPct(total, ly);
                     ctxLabel = yr + (yr === curYr ? ' YTD' : '');
-                    ctxHtml = yoy === null ? '<span style="opacity:.4">' + (parseInt(yr, 10) - 1) + ' not on record</span>'
+                    // v1.45.21 (owner order): no prior year on record -
+                    // the clean quiet em dash, never a text placeholder
+                    ctxHtml = yoy === null ? '<span style="opacity:.4">\u2014</span>'
                         : '<i data-lucide="' + (yoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i><span>' + (yoy >= 0 ? '+' : '\u2212') + Math.abs(yoy) + '% vs LY</span>';
                 } else if (hasBasic) {
                     const lyMks = Object.keys(map).filter((k) => k.slice(0, 4) === String(parseInt(yr, 10) - 1) && parseInt(k.slice(5, 7), 10) <= capMonth).sort();
                     const lySal = lyMks.length ? archSalaryAgg(lyMks, all) : null;
-                    salCtx = yr + (yr === curYr ? ' YTD' : '') + (lySal ? ' \u00b7 ' + (sal.net >= lySal.net ? '+' : '\u2212') + formatMoney(Math.abs(sal.net - lySal.net)) + ' vs LY' : '');
+                    // v1.45.21 (owner order): the yearly net comparison rides
+                    // beside the headline figure as the triangle badge - one
+                    // decimal, the app's own YoY precision
+                    netYoy = lySal ? archYoyPct(sal.net, lySal.net) : null;
                 }
             } else {
                 sal = archSalaryAgg(Object.keys(map).sort(), all);
@@ -14306,20 +14321,26 @@
                 numEl.classList.add('ca-arch-numflip');
             }
             const grossEl = archEl('ca-arch-gross-line');
+            const yoyEl = archEl('ca-arch-netyoy');
             if (isSalary && hasBasic && sal) {
                 archEl('ca-arch-total-label').textContent = 'Net take-home';
                 numEl.textContent = formatMoney(sal.net);
-                // v1.45.20 (owner order): the subtext is Gross|CPF alone on
-                // its row (MONTH keeps the right side completely empty -
-                // maximum breathing room, the on-track milestone is deleted
-                // from the salary card); the string never wraps. Only the
-                // YEAR view carries a second row - the last-year comparison
-                // breaking cleanly underneath, flush right, quieter and
-                // lighter than the figures above it
-                const lyCtx = (archState.scope === 'year' && salCtx) ? salCtx : '';
-                grossEl.innerHTML = '<span class="flex-row justify-between items-center w-full flex"><span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf) + '</span></span>'
-                    + (lyCtx ? '<span class="ca-arch-gross-ly text-right">' + lyCtx + '</span>' : '');
+                // v1.45.21 (owner order): the subtext is the single
+                // never-wrapping Gross|CPF string in EVERY scope (the month
+                // right side stays completely empty, and the year comparison
+                // moved up beside the figure as the triangle badge)
+                grossEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf) + '</span>';
                 grossEl.classList.remove('hidden');
+                // the badge: YEAR view only, and only when a prior year is
+                // on record - otherwise it stays hidden entirely
+                if (archState.scope === 'year' && netYoy !== null) {
+                    yoyEl.textContent = (netYoy >= 0 ? '\u25b2 ' : '\u25bc ') + Math.abs(netYoy).toFixed(1) + '%';
+                    yoyEl.classList.toggle('ca-arch-netyoy-up', netYoy >= 0);
+                    yoyEl.classList.toggle('ca-arch-netyoy-dn', netYoy < 0);
+                    yoyEl.classList.remove('hidden');
+                } else {
+                    yoyEl.classList.add('hidden');
+                }
                 archEl('ca-arch-m-basic').textContent = formatMoney(sal.basic);
                 archEl('ca-arch-m-fixed').textContent = formatMoney(sal.fixed);
                 archEl('ca-arch-m-mid').textContent = sal.mid ? (sal.mid + ' \u00b7 ' + formatMoney(sal.midAmt)) : '0';
@@ -14328,10 +14349,12 @@
                 archEl('ca-arch-total-label').textContent = 'Net take-home';
                 numEl.textContent = '\u2014';
                 grossEl.classList.add('hidden');
+                yoyEl.classList.add('hidden');
             } else {
                 archEl('ca-arch-total-label').textContent = 'Total earnings';
                 numEl.textContent = formatMoney(total);
                 grossEl.classList.add('hidden');
+                yoyEl.classList.add('hidden');
                 archEl('ca-arch-m-flights').textContent = String(count);
                 archEl('ca-arch-m-avg').textContent = count ? formatMoney(total / count) : '\u2014';
                 archEl('ca-arch-m-ctx-label').textContent = ctxLabel;

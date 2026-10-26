@@ -287,27 +287,39 @@ career aggregates), the strict 2×2 supersedes the weighted ladder:
 equal halves carry the weights in aggregate, the 1px hairlines ride the
 centre axes only (never the outer edge), every quadrant pads uniformly
 off the hairlines, and the hairline tint follows the theme — a
-low-alpha white by night, a quiet charcoal by day. The axis rules ride
-longhand width/style declarations with the colour living only in the
-`border-color` rules: a `border-right: 1px solid` shorthand out-ranks
-the colour declarations and smuggles `currentcolor` past the theme
-tokens (v1.45.19's weighted ladder, superseded v1.45.20; the
-under-narrowest-tier value step DOWN — 14 → 12.5px, the one
-owner-ordered off-rung size — survives the supersession).
+low-alpha white by night, a quiet charcoal by day. A row whose third
+metric is a milestone or comparison spans the full bottom row under the
+horizontal hairline (only its top row carries the vertical axis). The
+axis rules ride longhand width/style declarations with the colour
+living only in the `border-color` rules: a `border-right: 1px solid`
+shorthand out-ranks the colour declarations and smuggles `currentcolor`
+past the theme tokens (v1.45.19's weighted ladder, superseded v1.45.20,
+unified across both meta rows v1.45.21; the under-narrowest-tier value
+step DOWN — 14 → 12.5px, the one owner-ordered off-rung size — survives
+the supersession).
 
 **Labels lead with their icon.** Every label on an icon-bearing stat row
 leads with a 14px Lucide glyph at the low-opacity ink token, on the
 strict horizontal centre baseline; a two-part concept wears its glyph
 pair tight (a 2px flex) rather than collapsing to one glyph (v1.45.20).
 
-**Static figures alone; comparisons break below.** A subtext row under a
-headline number keeps the static deductions (Gross, CPF) grouped behind
-a muted pipe under a strict no-wrap — and in the default view the right
-side stays completely empty: breathing room is the layout invariant,
-not a slot awaiting content. Only the year-over-year comparison grows
-a second row, flush right, quieter through weight and opacity — never
-through a size below the MICRO floor (v1.45.20; the v1.45.19
-left/right split superseded).
+**Static figures alone; comparisons ride beside the number.** A subtext
+row under a headline number keeps the static deductions (Gross, CPF)
+grouped behind a muted pipe under a strict no-wrap — and in the default
+view the right side stays completely empty: breathing room is the
+layout invariant, not a slot awaiting content. The year-over-year
+comparison does not grow a second row: it rides beside the headline
+figure as a compact percentage on the shared text baseline, a fixed
+margin off the number, coloured by direction — deep green up, deep
+brick down, both AA over the card — and hidden entirely when no prior
+year exists to measure against (v1.45.21; the v1.45.20 second row and
+the v1.45.19 left/right split superseded).
+
+**Missing baselines read the quiet em dash.** When a comparison has no
+prior period on record, the cell renders a single low-opacity em dash —
+never a placeholder sentence explaining the absence. The dash is a
+value, not an error state; the label above it still names the period
+(v1.45.21).
 
 **Labels wrap before they clip; values never truncate.** When a dense stat
 grid meets a narrow viewport, the labels may wrap (their tracking relaxes
