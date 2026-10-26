@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.14', 'APP_VERSION is 1.45.14');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.14' && e.d === '2026-10-26' && e.items.length === 5 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.14 entry with its five pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v245'), 'the service-worker cache name is bumped to v245 (the v1.45.14 earnings-depth release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.15', 'APP_VERSION is 1.45.15');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.15' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.15 entry with its four pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v246'), 'the service-worker cache name is bumped to v246 (the v1.45.15 roster-notice release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.14'; }), 'the What\'s New sheet carries the v1.45.14 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.15'; }), 'the What\'s New sheet carries the v1.45.15 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -940,7 +940,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(lightDepth.groupShadow.indexOf('rgba(0, 0, 0, 0.03)') !== -1, 'month cards carry the soft low-blur shadow by day');
         eq(lightDepth.trendBg, 'rgb(255, 255, 255)', 'the trend card stays crisp white by day');
         ok(lightDepth.trendShadow.indexOf('rgba(0, 0, 0, 0.03)') !== -1, 'the trend card carries the shadow too');
-        eq(lightDepth.segColor, 'rgb(61, 45, 27)', 'inactive pills read dark walnut #3D2D1B by day');
+        eq(lightDepth.segColor, 'rgb(45, 30, 15)', 'inactive pills read strict walnut #2D1E0F by day (owner-tightened in 1.45.15)');
         // the walnut ink holds AA over the gold wash
         const walnutAA = await page.evaluate(() => {
             const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
@@ -955,6 +955,96 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         ok(walnutAA >= 4.5, 'the walnut ink reads at AA over the gold by day (got ' + walnutAA.toFixed(2) + ':1)');
         await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.15: the roster-aware still-to-fly notice, centred ✕, heavier inks —');
+        // the owner's case: the current month's saved entries have all
+        // landed, but the ROSTER still has legs ahead; the next month is
+        // pre-saved (upcoming)
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const past = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 5, 1));
+            const past2 = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 9, 1));
+            const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+            const late = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 3, 27));
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('e0', past, 88), ent('e1', past2, 60), ent('e2', nxt, 40)]));
+            localStorage.setItem('crewAssist.upcoming', JSON.stringify({
+                [ym(now)]: [
+                    { fn: '322', dep: 'SIN', arr: 'AMD', ymd: ymd(late), std: '07:00', sta: '10:00', stdYmd: ymd(late), staYmd: ymd(late) },
+                    { fn: '323', dep: 'AMD', arr: 'SIN', ymd: ymd(late), std: '12:00', sta: '18:00', stdYmd: ymd(late), staYmd: ymd(late) }
+                ]
+            }));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.mouse.move(2, 2);
+        await sleep(300);
+        const rosterNotice = await page.evaluate(() => {
+            const now = new Date();
+            const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            const g = document.querySelector('.ca-arch-group-head[data-mk="' + ym + '"]');
+            return { ym, btn: !!(g && g.closest('.ca-arch-group').querySelector('.ca-arch-proj-btn')), ctx: document.getElementById('ca-arch-m-ctx').textContent };
+        });
+        ok(rosterNotice.btn, 'v1.45.15: the current month carries the still-to-fly notice while its roster has legs ahead');
+        ok(rosterNotice.ctx.indexOf('2 roster flights still to fly') !== -1, 'the gold card names the roster flights (not Month complete): ' + rosterNotice.ctx);
+        await page.evaluate(() => document.querySelector('.ca-arch-proj-btn').click());
+        await sleep(300);
+        const rosterPanel = await page.evaluate(() => {
+            const w = document.querySelector('.ca-arch-proj-wrap');
+            return w ? w.textContent.replace(/\s+/g, ' ').trim() : '';
+        });
+        ok(rosterPanel.indexOf('Still to fly \u00b7 2 flights') !== -1 && rosterPanel.indexOf('not saved yet') !== -1, 'the panel counts the roster flights and says plainly they are not saved: ' + rosterPanel);
+        ok(rosterPanel.indexOf('$0.00') === -1, 'no fake $0.00 still-to-fly figure');
+        // the centred ✕: its visual centre lines up with the text block
+        const xAlign = await page.evaluate(() => {
+            const rows = [...document.querySelectorAll('#ca-arch-list .ca-arch-row')];
+            if (!rows.length) return { none: true };
+            const ds = rows.map((r) => {
+                const del = r.querySelector('.ca-arch-del').getBoundingClientRect();
+                const main = r.querySelector('.ca-arch-rowmain').getBoundingClientRect();
+                const amt = r.querySelector('.ca-arch-amt').getBoundingClientRect();
+                return { delC: del.top + del.height / 2, mainC: main.top + main.height / 2, mainBot: main.bottom, amtBot: amt.bottom, delFlex: getComputedStyle(r.querySelector('.ca-arch-del')).display };
+            });
+            return { none: false, n: rows.length, sag: Math.max(...ds.map((d) => Math.abs(d.delC - d.mainC))), base: Math.max(...ds.map((d) => Math.abs(d.mainBot - d.amtBot))), flex: ds.every((d) => d.delFlex === 'flex') };
+        });
+        ok(!xAlign.none && xAlign.sag <= 2, 'v1.45.15: the ✕ centres on the text block - the sag is gone (max ' + (xAlign.sag || 0).toFixed(1) + 'px over ' + (xAlign.n || 0) + ' rows)');
+        ok(xAlign.base <= 1.5, 'the route block and the value share one baseline (max ' + (xAlign.base || 0).toFixed(1) + 'px)');
+        ok(xAlign.flex, 'the ✕ rides its flex items-center justify-center wrapper');
+        // the heavier inactive inks (dark first)
+        const inkDark = await page.evaluate(() => {
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
+            const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+            const cs = getComputedStyle(seg);
+            return { color: cs.color, weight: cs.fontWeight };
+        });
+        eq(inkDark.color, 'rgb(26, 19, 0)', 'v1.45.15: espresso solid #1A1300 inactive ink by night');
+        eq(inkDark.weight, '800', 'the inactive pills carry font-weight 800');
+        await page.evaluate(() => { document.documentElement.classList.remove('dark'); });
+        await sleep(300);
+        const inkLight = await page.evaluate(() => {
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
+            const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+            return { color: getComputedStyle(seg).color, weight: getComputedStyle(seg).fontWeight };
+        });
+        eq(inkLight.color, 'rgb(45, 30, 15)', 'v1.45.15: strict walnut #2D1E0F inactive ink by day');
+        eq(inkLight.weight, '800', 'the weight holds in daylight');
+        const walnutAA2 = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
+            const stops = [...getComputedStyle(document.getElementById('ca-arch-summary')).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0]));
+            const wash = parse(getComputedStyle(document.querySelector('.ca-arch-segtrack')).backgroundColor);
+            const pillBg = comp(wash, stops[0]);
+            const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+            return ratio(comp(parse(getComputedStyle(seg).color), pillBg), pillBg);
+        });
+        ok(walnutAA2 >= 4.5, 'the walnut ink reads at AA over the gold by day (got ' + walnutAA2.toFixed(2) + ':1)');
+        await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.upcoming'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
         console.log('— health —');

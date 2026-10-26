@@ -221,9 +221,28 @@ canvas deepens to the warm gray `#F4F4F0` and every card container on it
 canvas/card step plus the shadow, never from translucent washes stacked
 on washes (the 0.55 white wash read muddy over the warm canvas; v1.45.14).
 The dark theme keeps its tint-layer language: 2% white cards on the deep
-canvas, hairlines, no shadows. Inactive pills on the gold card read dark
-walnut `#3D2D1B` by day — bright-light readability — while the dark theme
-keeps its `.75` ink.
+canvas, hairlines, no shadows. Inactive pills on the gold card read strict
+walnut `#2D1E0F` by day and solid espresso `#1A1300` by night, at
+font-weight 800 in both themes — bright-light and small-screen readability;
+the active pill alone keeps its 700 gold-on-ink (v1.45.14, tightened
+v1.45.15 — never a tinted ink on the gold).
+
+**Time-aware notices read the roster, not just saved entries.** A
+"still to fly" notice for the in-progress month must appear while the
+*roster* still has legs ahead — even before any of those trips is saved —
+or the month claims to be complete while flights remain. Roster-only
+flights say so plainly ("N roster flights not saved yet") and **no dollar
+is ever guessed for a flight the calculator has not priced**: the $ span
+appears only when a saved, priced trip backs it (v1.45.15).
+
+**A row's controls centre against its text.** In a mixed row (text columns
+plus a fixed-size control slot), the grid centres its columns — equal
+text-size columns share one line box, so their baselines coincide without
+`align-items: baseline`, while a baseline row would top-anchor the text
+inside a tall control track and make the control hang low. Icon-only
+buttons ride a flex `items-center justify-center` wrapper in their fixed
+slot, and fine-tune translations are added only when a measured gap
+survives the centring (v1.45.15 measured 0.0px — none needed).
 
 **Labels wrap before they clip; values never truncate.** When a dense stat
 grid meets a narrow viewport, the labels may wrap (their tracking relaxes
