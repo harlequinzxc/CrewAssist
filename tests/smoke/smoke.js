@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.15', 'APP_VERSION is 1.45.15');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.15' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.15 entry with its four pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v246'), 'the service-worker cache name is bumped to v246 (the v1.45.15 roster-notice release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.16', 'APP_VERSION is 1.45.16');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.16' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.16 entry with its four pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v247'), 'the service-worker cache name is bumped to v247 (the v1.45.16 state-icons release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.15'; }), 'the What\'s New sheet carries the v1.45.15 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.16'; }), 'the What\'s New sheet carries the v1.45.16 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -770,49 +770,53 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)) };
         });
         ok(!money.none && money.pair <= 1.5 && money.across <= 1.5, 'net and gross stack right-aligned, column-edge straight across months (pair ' + (money.pair || 0).toFixed(1) + 'px, across ' + (money.across || 0).toFixed(1) + 'px)');
-        // the pills and the month cards, in the dark theme
-        const pillsDark = await page.evaluate(() => {
-            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
-            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
-            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
-            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
-            // v1.45.13: the month card is a translucent tint over the sheet
-            // canvas - composite the stack first, then measure against it
-            const cardBg = comp(parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor), parse(getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor));
-            const live = document.querySelector('.ca-arch-badge-live');
-            const up = document.querySelector('.ca-arch-badge-upcoming');
-            const solid = (b) => b && parse(getComputedStyle(b).backgroundColor).a > 0.05;
-            const r = (b) => ratio(comp(parse(getComputedStyle(b).color), comp(parse(getComputedStyle(b).backgroundColor), cardBg)), comp(parse(getComputedStyle(b).backgroundColor), cardBg));
-            return { liveSolid: solid(live), upSolid: solid(up), liveR: r(live), upR: r(up) };
+        // v1.45.16 (owner order): the status badges are gone - the state
+        // rides Lucide icons (the rig blocks the CDN, so the icons stay <i>
+        // stubs; name + class + computed animation are the proof) and the
+        // words ride the count line. The active pill gets its colours
+        // measured in BOTH themes here - the daylight walnut-on-espresso
+        // invisibility was this release's bug
+        const stateDark = await page.evaluate(() => {
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
+            const live = document.querySelector('.ca-arch-group-head i[data-lucide="refresh-cw"]');
+            const up = document.querySelector('.ca-arch-group-head i[data-lucide="clock-arrow-up"]');
+            const on = document.querySelector('#ca-arch-summary .ca-arch-seg.ca-arch-segon');
+            const cs = live ? getComputedStyle(live) : null;
+            return {
+                live: !!live, up: !!up,
+                spinName: cs ? cs.animationName : '', spinDur: cs ? cs.animationDuration : '', spinCount: cs ? cs.animationIterationCount : '',
+                onBg: on ? getComputedStyle(on).backgroundColor : '', onInk: on ? getComputedStyle(on).color : ''
+            };
         });
-        ok(pillsDark.liveSolid && pillsDark.upSolid, 'the status badges are solid pills, not outlines (dark)');
-        ok(pillsDark.liveR >= 4.5 && pillsDark.upR >= 4.5, 'badge text reads at AA on its wash (dark: in-progress ' + pillsDark.liveR.toFixed(2) + ', upcoming ' + pillsDark.upR.toFixed(2) + ')');
+        ok(stateDark.live && stateDark.up, 'v1.45.16: the live month wears refresh-cw, the future month clock-arrow-up (dark)');
+        ok(stateDark.spinName === 'caArchLive' && stateDark.spinDur === '6s' && stateDark.spinCount === 'infinite', 'the live icon spins the slowed 6s ambient loop (' + stateDark.spinName + ' ' + stateDark.spinDur + ' ' + stateDark.spinCount + ')');
+        ok(stateDark.onBg === 'rgb(26, 19, 0)' && stateDark.onInk === 'rgb(230, 194, 84)', 'the night active pill keeps its espresso fill and clean gold ink (' + stateDark.onBg + ' / ' + stateDark.onInk + ')');
         const cardLum = await page.evaluate(() => {
             const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2] }; };
             const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
             return { group: lum(parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor)), sheet: lum(parse(getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor)) };
         });
         ok(cardLum.group > cardLum.sheet, 'the month cards sit a shade lighter than the sheet canvas (dark: ' + cardLum.group.toFixed(3) + ' vs ' + cardLum.sheet.toFixed(3) + ')');
-        // the light theme: badges and the tab ink hold their contrast too
+        // the light theme: the ACTIVE pill turns white with walnut ink (the
+        // 1.45.16 fix) and the tab ink holds its contrast
         await page.evaluate(() => { document.documentElement.classList.remove('dark'); });
         await sleep(300);
         const pillsLight = await page.evaluate(() => {
-            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
-            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
-            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
-            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
-            const cardBg = comp(parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor), parse(getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor));
-            const r = (b) => ratio(comp(parse(getComputedStyle(b).color), comp(parse(getComputedStyle(b).backgroundColor), cardBg)), comp(parse(getComputedStyle(b).backgroundColor), cardBg));
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
             const parse2 = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
             const comp2 = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
             const lum2 = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const ratio2 = (a, b) => { const l1 = Math.max(lum2(a), lum2(b)), l2 = Math.min(lum2(a), lum2(b)); return (l1 + 0.05) / (l2 + 0.05); };
             const stops = [...getComputedStyle(document.getElementById('ca-arch-summary')).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse2(m[0]));
             const wash = parse2(getComputedStyle(document.querySelector('.ca-arch-segtrack')).backgroundColor);
             const pillBg = comp2(wash, stops[0]);
             const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
-            return { liveR: r(document.querySelector('.ca-arch-badge-live')), upR: r(document.querySelector('.ca-arch-badge-upcoming')), segR: ratio(comp2(parse2(getComputedStyle(seg).color), pillBg), pillBg) };
+            const on = document.querySelector('#ca-arch-summary .ca-arch-seg.ca-arch-segon');
+            const onBg = parse2(getComputedStyle(on).backgroundColor), onInk = parse2(getComputedStyle(on).color);
+            return { onBg: getComputedStyle(on).backgroundColor, onInk: getComputedStyle(on).color, onR: ratio2(comp2(onInk, onBg), onBg), segR: ratio2(comp2(parse2(getComputedStyle(seg).color), pillBg), pillBg) };
         });
-        ok(pillsLight.liveR >= 4.5 && pillsLight.upR >= 4.5, 'badge text reads at AA in daylight too (in-progress ' + pillsLight.liveR.toFixed(2) + ', upcoming ' + pillsLight.upR.toFixed(2) + ')');
+        ok(pillsLight.onBg === 'rgb(255, 255, 255)' && pillsLight.onInk === 'rgb(45, 30, 15)', 'v1.45.16: the daylight active pill is crisp white with walnut ink (' + pillsLight.onBg + ' / ' + pillsLight.onInk + ')');
+        ok(pillsLight.onR >= 4.5, 'the daylight active pill reads at AA (walnut on white: ' + pillsLight.onR.toFixed(2) + ':1)');
         let segLight = pillsLight.segR;
         for (let t = 0; t < 10 && segLight < 4.5; t++) {
             await sleep(200);
@@ -1045,6 +1049,78 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         ok(walnutAA2 >= 4.5, 'the walnut ink reads at AA over the gold by day (got ' + walnutAA2.toFixed(2) + ':1)');
         await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.upcoming'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.16: the state icons ride the title, the words ride the count line —');
+        // history + a live current month + a pre-saved future month: every
+        // state in one view
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const past = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+            const flown = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 5, 1));
+            const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), ent('i2', ahead, 70), ent('i3', nxt, 60)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.mouse.move(2, 2);
+        await sleep(300);
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
+        const state16 = await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const cur = ym(now), prev = ym(new Date(now.getFullYear(), now.getMonth() - 1, 1)), nxt = ym(new Date(now.getFullYear(), now.getMonth() + 1, 1));
+            const head = (mk) => document.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+            const sub = (mk) => head(mk).querySelector('.block.text-sm').textContent.replace(/\s+/g, ' ').trim();
+            const title = (mk) => head(mk).querySelector('.text-\\[17px\\]');
+            const stateIco = (mk) => head(mk).querySelector('i[data-lucide="refresh-cw"], i[data-lucide="clock-arrow-up"]');
+            return {
+                cur, prev, nxt,
+                pastSub: sub(prev), pastIco: !!stateIco(prev),
+                curSub: sub(cur), curNext: title(cur).nextElementSibling ? title(cur).nextElementSibling.getAttribute('data-lucide') : null,
+                nxtSub: sub(nxt), nxtNext: title(nxt).nextElementSibling ? title(nxt).nextElementSibling.getAttribute('data-lucide') : null
+            };
+        });
+        ok(state16.pastSub.indexOf('\u2022') === -1 && !state16.pastIco, 'v1.45.16: a past month carries no state asset and no status suffix (got ' + JSON.stringify(state16.pastSub) + ')');
+        ok(state16.curSub.indexOf('\u2022 In progress') !== -1 && state16.curNext === 'refresh-cw', 'the live month counts then names its state, refresh-cw beside the title (' + state16.curSub + ')');
+        ok(state16.nxtSub.indexOf('\u2022 Upcoming') !== -1 && state16.nxtNext === 'clock-arrow-up', 'the future month rides the owner format with clock-arrow-up (' + state16.nxtSub + ')');
+        // the ambient loop stops behind the ca-reduced gate
+        const reducedSpin = await page.evaluate(() => {
+            const h = document.documentElement;
+            const ico = document.querySelector('.ca-arch-group-head i[data-lucide="refresh-cw"]');
+            h.classList.add('ca-reduced');
+            const name = getComputedStyle(ico).animationName;
+            h.classList.remove('ca-reduced');
+            return { stopped: name, back: getComputedStyle(ico).animationName };
+        });
+        eq(reducedSpin.stopped, 'none', 'the spin stops behind the ca-reduced gate');
+        eq(reducedSpin.back, 'caArchLive', 'and resumes when the gate lifts');
+        // an all-flown current month reads Completed, icon-free
+        const doneWord = await page.evaluate(() => {
+            const keep = localStorage.getItem('crewAssist.archive');
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const past = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('j0', past, 90), ent('j1', new Date(now.getFullYear(), now.getMonth(), 2), 80)]));
+            closeArchOverlay();
+            showArchiveOverlay();
+            const cur = ym(now);
+            const head = document.querySelector('.ca-arch-group-head[data-mk="' + cur + '"]');
+            const sub = head ? head.querySelector('.block.text-sm').textContent.replace(/\s+/g, ' ').trim() : '';
+            const ico = head ? head.querySelector('i[data-lucide="refresh-cw"], i[data-lucide="clock-arrow-up"]') : null;
+            localStorage.setItem('crewAssist.archive', keep);
+            return { sub, ico: !!ico };
+        });
+        ok(doneWord.sub.indexOf('\u2022 Completed') !== -1 && !doneWord.ico, 'an all-flown current month reads Completed in the count line, icon-free (' + doneWord.sub + ')');
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
         console.log('— health —');

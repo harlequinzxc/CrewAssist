@@ -766,9 +766,14 @@
            gold card read dark walnut - crisp under bright light, never
            washed out. v1.45.15 (owner order): strict walnut #2D1E0F under
            harsh glare, and the inactive pills carry font-weight 800 in
-           BOTH themes (the active pill keeps its 700 gold-on-ink) */
-        html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #2D1E0F; }
+           BOTH themes. v1.45.16 (owner report): the walnut rule used to
+           recolor the ACTIVE pill too - walnut text on its espresso fill
+           read invisible by day. The active pill now turns crisp white
+           with walnut ink in daylight (weight stays 700); by night it
+           keeps the espresso fill with the clean gold ink */
+        html:not(.dark) #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { color: #2D1E0F; }
         #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { font-weight: 800; }
+        html:not(.dark) #ca-arch-summary .ca-arch-seg.ca-arch-segon { background: #FFFFFF; color: #2D1E0F; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
@@ -881,13 +886,17 @@
         .ca-arch-badge { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
         .ca-arch-badge-best { color: var(--ca-arch-ink-gold); border: 1px solid var(--ca-arch-best-wash); background: var(--ca-arch-best-line); }
         .ca-arch-badge-low { color: var(--ca-danger-bright); border: 1px solid var(--ca-danger-soft-45); background: var(--ca-danger-soft-10); }
-        /* v1.45.12: the status badges read as solid pills - a low-opacity
-           wash with high-contrast text (blue for in-progress, grey for
-           upcoming/completed), never an outline-only ghost */
-        .ca-arch-badge-prog.ca-arch-badge-live { background: rgba(96, 165, 250, 0.16); color: #93C5FD; }
-        html:not(.dark) .ca-arch-badge-prog.ca-arch-badge-live { background: rgba(37, 99, 235, 0.10); color: #1D4ED8; }
-        .ca-arch-badge-prog.ca-arch-badge-upcoming, .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); }
-        html:not(.dark) .ca-arch-badge-prog.ca-arch-badge-upcoming, html:not(.dark) .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(0, 0, 0, 0.06); color: rgba(17, 24, 39, 0.72); }
+        /* v1.45.16 (owner order): the text status badges are gone - they
+           wrapped the month header into extra rows on narrow phones. The
+           state rides a single Lucide icon beside the title now (see
+           renderArchList): a muted clock-arrow-up for the months ahead, a
+           slowly spinning refresh-cw in the signature gold for the live
+           month, no asset at all for history; the status word moved into
+           the count line ('11 flights \u2022 In progress'). The loop is
+           ambient, not a progress spinner - it stops behind the ca-reduced
+           gate like every other loop */
+        @keyframes caArchLive { to { transform: rotate(1turn); } }
+        .ca-arch-liveico { animation: caArchLive 6s linear infinite; }
         .ca-arch-inscard { border-radius: 12px; padding: 12px; background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-inslabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: var(--arch-muted); }
         .ca-arch-insval { font-size: 14px; font-weight: 700; color: var(--arch-fg); }
@@ -1485,7 +1494,7 @@
         html.ca-reduced .ca-rc-flash, html.ca-reduced .ca-cl-badge-new,
         html.ca-reduced .ca-tour-glow, html.ca-reduced .animate-float,
         html.ca-reduced .animate-jump, html.ca-reduced .animate-pulse,
-        html.ca-reduced .animate-bounce {
+        html.ca-reduced .animate-bounce, html.ca-reduced .ca-arch-liveico {
             animation: none;
         }
         html.ca-reduced .ca-arch-chev, html.ca-reduced .ca-trip-chev,
@@ -2690,7 +2699,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.15'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.16'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2712,6 +2721,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.16', d: '2026-10-26', items: [
+                { c: 'fix', t: 'Daylight active pills turn white with walnut ink.' },
+                { c: 'imp', t: 'Month states ride Lucide icons beside the title.' },
+                { c: 'imp', t: 'The live month spins a slow gold refresh-cw.' },
+                { c: 'imp', t: 'Status words join the flight count line.' }
+            ] },
             { v: '1.45.15', d: '2026-10-26', items: [
                 { c: 'fix', t: 'The current month shows its still-to-fly notice from the roster.' },
                 { c: 'imp', t: 'Roster-only flights say so plainly; no dollar is guessed.' },
@@ -13908,10 +13923,25 @@
                 let badges = '';
                 if (mk === ins.bestMk && ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-best"><i data-lucide="trophy" class="w-2.5 h-2.5"></i>Best</span>';
                 if (mk === ins.lowMk && ins.lowMk && ins.lowMk !== ins.bestMk) badges += '<span class="ca-arch-badge ca-arch-badge-low"><i data-lucide="trending-down" class="w-2.5 h-2.5"></i>Low</span>';
-                // v1.45.12: solid pills - blue wash for live months, grey
-                // wash for the ones still ahead or already complete
-                if (inProgress) badges += '<span class="ca-arch-badge ca-arch-badge-prog ' + (mk > currentMk ? 'ca-arch-badge-upcoming' : 'ca-arch-badge-live') + '">' + (mk > currentMk ? 'Upcoming' : 'In progress') + '</span>';
-                else if (mk === currentMk) badges += '<span class="ca-arch-badge ca-arch-badge-prog ca-arch-badge-done">Completed</span>';
+                // v1.45.16 (owner order): the state rides a single Lucide
+                // icon immediately right of the month title - clock-arrow-up
+                // (muted) for the months ahead, a slowly spinning refresh-cw
+                // in the signature gold for the live month, no asset at all
+                // for history - and the status word moves into the count
+                // line below ('11 flights \u2022 In progress'), so nothing
+                // wraps and nothing shifts
+                let stateIco = '', stateWord = '';
+                if (inProgress) {
+                    if (mk > currentMk) {
+                        stateIco = '<i data-lucide="clock-arrow-up" class="w-4 h-4 shrink-0" style="color: var(--arch-muted)"></i>';
+                        stateWord = ' \u2022 Upcoming';
+                    } else {
+                        stateIco = '<i data-lucide="refresh-cw" class="ca-arch-liveico w-4 h-4 shrink-0" style="color: var(--ca-gold, #C9A227)"></i>';
+                        stateWord = ' \u2022 In progress';
+                    }
+                } else if (mk === currentMk) {
+                    stateWord = ' \u2022 Completed';
+                }
                 // v1.38.0 (A1): the $ total is a toggle when the month has
                 // unflown duties — tap to unfold "still to fly". Completed
                 // months keep a plain amount. (Hotfix: no chevron — it
@@ -13949,8 +13979,8 @@
                     + '<button type="button" class="ca-arch-group-head flex-1 min-w-0 flex items-center gap-2.5 text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
                     + '<i data-lucide="chevron-right" class="ca-arch-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
                     + '<span class="flex-1 min-w-0">'
-                    + '<span class="flex items-center gap-1.5 flex-wrap"><span class="text-[17px] font-semibold leading-tight" style="color: var(--arch-fg)">' + archiveMonthLabel(mk) + '</span>' + badges + '</span>'
-                    + '<span class="block text-sm mt-0.5" style="color: var(--arch-muted)">' + rows.length + ' flight' + (rows.length === 1 ? '' : 's')
+                    + '<span class="flex items-center gap-1.5 flex-wrap"><span class="text-[17px] font-semibold leading-tight" style="color: var(--arch-fg)">' + archiveMonthLabel(mk) + '</span>' + stateIco + badges + '</span>'
+                    + '<span class="block text-sm mt-0.5" style="color: var(--arch-muted)">' + rows.length + ' flight' + (rows.length === 1 ? '' : 's') + stateWord
                     + (yoy !== null ? ' <span class="ca-arch-yoy-' + (yoy >= 0 ? 'up' : 'down') + ' text-xs whitespace-nowrap"><i data-lucide="' + (yoy >= 0 ? 'arrow-up' : 'arrow-down') + '" class="w-3 h-3 inline"></i> ' + Math.abs(yoy).toFixed(1) + '%</span>' : '')
                     + '</span></span>'
                     + '</button>'

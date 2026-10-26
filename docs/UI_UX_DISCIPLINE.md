@@ -223,9 +223,11 @@ on washes (the 0.55 white wash read muddy over the warm canvas; v1.45.14).
 The dark theme keeps its tint-layer language: 2% white cards on the deep
 canvas, hairlines, no shadows. Inactive pills on the gold card read strict
 walnut `#2D1E0F` by day and solid espresso `#1A1300` by night, at
-font-weight 800 in both themes — bright-light and small-screen readability;
-the active pill alone keeps its 700 gold-on-ink (v1.45.14, tightened
-v1.45.15 — never a tinted ink on the gold).
+font-weight 800 in both themes — bright-light and small-screen readability.
+The ACTIVE pill inverts per theme: crisp white `#FFFFFF` with walnut ink
+by day, espresso with clean gold ink by night (v1.45.14–16 — never a tinted
+ink on the gold, and never a daylight rule that forgets the active state:
+the 1.45.14 walnut rule matched it too and the text went invisible).
 
 **Time-aware notices read the roster, not just saved entries.** A
 "still to fly" notice for the in-progress month must appear while the
@@ -234,6 +236,15 @@ or the month claims to be complete while flights remain. Roster-only
 flights say so plainly ("N roster flights not saved yet") and **no dollar
 is ever guessed for a flight the calculator has not priced**: the $ span
 appears only when a saved, priced trip backs it (v1.45.15).
+
+**Row states ride icons; words ride the sub-text.** A repeating row's
+status (upcoming, in-progress) is a single small icon beside the title —
+never a text badge, which wraps the row on narrow screens — with the status
+word appended to the existing secondary line ('11 flights • In progress')
+so context survives without layout cost. History renders no state asset at
+all. Ambient motion on such an icon (a slow spin marking the live period)
+stops behind the reduced-motion gate; it is decoration, not a progress
+indicator (v1.45.16).
 
 **A row's controls centre against its text.** In a mixed row (text columns
 plus a fixed-size control slot), the grid centres its columns — equal
