@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.16', 'APP_VERSION is 1.45.16');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.16' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.16 entry with its four pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v247'), 'the service-worker cache name is bumped to v247 (the v1.45.16 state-icons release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.17', 'APP_VERSION is 1.45.17');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.17' && e.d === '2026-10-26' && e.items.length === 2 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.17 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v248'), 'the service-worker cache name is bumped to v248 (the v1.45.17 milestone release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.16'; }), 'the What\'s New sheet carries the v1.45.16 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.17'; }), 'the What\'s New sheet carries the v1.45.17 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1121,6 +1121,50 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         ok(doneWord.sub.indexOf('\u2022 Completed') !== -1 && !doneWord.ico, 'an all-flown current month reads Completed in the count line, icon-free (' + doneWord.sub + ')');
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.17: the milestone line + the daylight placeholder —');
+        // a landed entry + a saved future one: the milestone branch fires
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const past = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 5, 1));
+            const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), ent('k1', ahead, 696.91)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.mouse.move(2, 2);
+        await sleep(300);
+        const milestone17 = await page.evaluate(() => {
+            const label = document.getElementById('ca-arch-m-ctx-label');
+            const ctx = document.getElementById('ca-arch-m-ctx');
+            const cs = label ? getComputedStyle(label) : null;
+            return {
+                label: label ? label.textContent : '',
+                upper: cs ? cs.textTransform : '', track: cs ? cs.letterSpacing : '', size: cs ? cs.fontSize : '',
+                html: ctx ? ctx.innerHTML : '', text: ctx ? ctx.textContent.trim() : '',
+                cls: ctx ? ctx.className : ''
+            };
+        });
+        eq(milestone17.label, 'Remaining to earn', 'v1.45.17: the milestone label reads Remaining to earn');
+        eq(milestone17.upper, 'uppercase', 'the label keeps its uppercase transform');
+        ok(milestone17.track !== '0px' && milestone17.size === '11px', 'the label keeps its tracking and the 11px MICRO rung (letter-spacing ' + milestone17.track + ')');
+        ok(milestone17.html.indexOf('data-lucide="target"') !== -1 && milestone17.html.indexOf('w-3.5 h-3.5 shrink-0') !== -1, 'the bullseye icon and its size survive');
+        ok(milestone17.text.indexOf('$696.91 before end of month') !== -1, 'the owner format verbatim: ' + milestone17.text);
+        ok(milestone17.cls.indexOf('flex items-center gap-2') !== -1, 'the inline centre baseline with the icon stays');
+        // the daylight placeholder ink (dark first: the UA default holds)
+        const phDark = await page.evaluate(() => getComputedStyle(document.getElementById('ca-arch-search'), '::placeholder').color);
+        await page.evaluate(() => { document.documentElement.classList.remove('dark'); });
+        await sleep(300);
+        const phLight = await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('ca-arch-search'), '::placeholder'); return { color: cs.color, opacity: cs.opacity }; });
+        eq(phLight.color, 'rgb(107, 114, 128)', 'v1.45.17: the daylight placeholder computes dark slate #6B7280');
+        eq(phLight.opacity, '1', 'the tone is pinned at full opacity across engines');
+        ok(phDark !== 'rgb(107, 114, 128)', 'the night placeholder keeps its own (default) ink, untouched by the daylight rule');
+        await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
         console.log('— health —');

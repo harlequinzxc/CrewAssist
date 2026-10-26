@@ -237,6 +237,19 @@ flights say so plainly ("N roster flights not saved yet") and **no dollar
 is ever guessed for a flight the calculator has not priced**: the $ span
 appears only when a saved, priced trip backs it (v1.45.15).
 
+**Placeholders are readable ink, not ghosts.** A field's placeholder must
+carry real contrast in the theme that renders it — the browser default is
+not a style. Daylight placeholders read a distinct dark slate
+(`#6B7280`, opacity pinned to 1 so no engine dims it); the night theme
+keeps its default only where that default already reads (v1.45.17).
+
+**Milestone lines name what remains.** A progress milestone under a
+headline figure leads with the REMAINING value and its horizon —
+'◎ $696.91 before end of month' — not with the projected total; the
+remainder is the number the reader acts on. When no dollar is known
+(roster-only flights), the line says what is known instead of guessing
+(v1.45.17; the roster wording rule above).
+
 **Row states ride icons; words ride the sub-text.** A repeating row's
 status (upcoming, in-progress) is a single small icon beside the title —
 never a text badge, which wraps the row on narrow screens — with the status

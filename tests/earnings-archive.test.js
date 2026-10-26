@@ -325,9 +325,9 @@ const fs = require('fs');
     R.eq(d.getElementById('ca-arch-total').textContent, '$500.00', 'month scope totals the current month');
     R.eq(d.getElementById('ca-arch-m-flights').textContent, '2', 'month scope flight count');
     R.eq(d.getElementById('ca-arch-m-avg').textContent, '$250.00', 'month scope average');
-    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'On track', 'partial month context label');
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Remaining to earn', 'v1.45.17: the milestone label reads Remaining to earn (uppercased by the metalabel class)');
     const ctxM = d.getElementById('ca-arch-m-ctx');
-    R.ok(ctxM.textContent.indexOf('On track for ' + fm(projTotal) + ' \u00b7 ' + fm(projLeft) + ' left') !== -1, 'on-track projection with what is left to earn');
+    R.ok(ctxM.textContent.indexOf(fm(projLeft) + ' before end of month') !== -1 && ctxM.textContent.indexOf('On track for') === -1, 'v1.45.17: the milestone line carries the remainder before end of month, old layout gone');
     R.ok(ctxM.innerHTML.indexOf('target') !== -1, 'on-track context uses the target icon');
     R.eq(d.querySelectorAll('.ca-arch-group').length, 1, 'v1.45.11: the list follows the scope - month shows the selected month');
     R.eq(d.querySelectorAll('.ca-arch-row').length, 2, 'v1.45.11: month scope lists just the selected month\u2019s rows (Sep = 2)');
@@ -964,7 +964,7 @@ function todayYmd() {
     d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="month"]').click();
     await wait(60);
     const ctxM = d.getElementById('ca-arch-m-ctx');
-    R.ok(ctxM.textContent.indexOf('On track for $500.00') !== -1 && ctxM.textContent.indexOf('$200.00 left') !== -1, 'the landed duty counts as earned, the airborne one as left');
+    R.ok(ctxM.textContent.indexOf('$200.00 before end of month') !== -1, 'v1.45.17: the landed duty counts as earned, the airborne remainder rides the milestone line');
     const body = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-group-body');
     const ipToggle = headOf('2026-09').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn');
     const ipWrap = body.querySelector('.ca-arch-proj-wrap');
@@ -1499,6 +1499,33 @@ function todayYmd() {
     R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { color: #2D1E0F; }'), 'v1.45.16: the daylight walnut rule EXCLUDES the active pill (the invisibility root cause)');
     R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg.ca-arch-segon { background: #FFFFFF; color: #2D1E0F; }'), 'the daylight active pill is crisp white with walnut ink');
     R.ok(src.includes('.ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }'), 'the night active pill keeps its espresso fill and clean gold ink');
+  }
+
+  // ---- v1.45.17: the milestone block + the daylight search placeholder ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-10-26T12:00:00+08:00' });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 'm1', savedAt: '2026-10-05T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-05', stationDisplay: 'SIN/KUL', amount: 300 },
+      { id: 'm2', savedAt: '2026-10-20T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-31', stationDisplay: 'SIN/NRT', amount: 696.91 }
+    ]));
+    w.showArchiveOverlay(); await wait(150);
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Remaining to earn', 'the label element carries the new professional string (source title-case, CSS uppercases)');
+    const ctx = d.getElementById('ca-arch-m-ctx');
+    R.ok(ctx.innerHTML.indexOf('data-lucide="target"') !== -1 && ctx.innerHTML.indexOf('w-3.5 h-3.5 shrink-0') !== -1, 'the bullseye icon and its size classes survive untouched');
+    R.ok(ctx.textContent.indexOf('$696.91 before end of month') !== -1, 'the owner format verbatim: remainder before end of month');
+    R.ok(ctx.textContent.indexOf('left') === -1 && ctx.textContent.indexOf('On track for') === -1, 'the old two-part layout is gone completely');
+    R.ok(ctx.className.indexOf('flex items-center gap-2') !== -1, 'the inline centre baseline with the icon stays (flex items-center gap-2)');
+    // the neighbouring states are untouched (roster-only needs the saved
+    // future entry gone, or the milestone branch wins)
+    w.eval("localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'm1', savedAt: '2026-10-05T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-05', stationDisplay: 'SIN/KUL', amount: 300 }])); localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '322', dep: 'SIN', arr: 'AMD', ymd: '2026-10-31', std: '07:00', sta: '10:00' }] }))");
+    w.closeArchOverlay(); w.showArchiveOverlay(); await wait(150);
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'On track', 'the roster-only case keeps its On track label (the salary branch and Month complete untouched)');
+    R.ok(d.getElementById('ca-arch-m-ctx').textContent.indexOf('roster flight') !== -1, 'the roster-only milestone keeps its plane line');
+    // the daylight placeholder ink
+    const src = fs.readFileSync(APP, 'utf8');
+    R.ok(src.includes('html:not(.dark) .ca-arch-search::placeholder { color: #6B7280; opacity: 1; }'), 'v1.45.17: the daylight placeholder reads dark slate #6B7280 (opacity pinned across engines)');
+    R.ok(src.indexOf('html:not(.dark) .ca-arch-search::placeholder') < src.indexOf('/* v1.29.0: two-tap armed state'), 'the placeholder rule rides the earnings CSS block');
+    void w;
   }
 
   process.exit(R.done() ? 1 : 0);

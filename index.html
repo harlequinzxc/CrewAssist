@@ -737,6 +737,11 @@
            only look. */
         /* Earnings archive redesign (v1.19.13) */
         .ca-arch-search:focus { border-color: var(--sia-gold, #C9A227); }
+        /* v1.45.17 (owner order): the 'Search flights…' placeholder reads a
+           distinct dark slate gray by DAY - the UA default washed out under
+           bright light on the black/5 wash. The night theme keeps its
+           default; opacity pins the exact tone across engines */
+        html:not(.dark) .ca-arch-search::placeholder { color: #6B7280; opacity: 1; }
         /* v1.29.0: two-tap armed state (owner design) — the same red family as
         the clear-data pill, so day and night both read it as danger. */
         .ca-twotap-armed { color: #dc2626 !important; border-color: var(--ca-twotap-line) !important; background: var(--ca-twotap-wash) !important; }
@@ -2699,7 +2704,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.16'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.17'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2721,6 +2726,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.17', d: '2026-10-26', items: [
+                { c: 'fix', t: 'Daylight search placeholders read dark slate gray.' },
+                { c: 'imp', t: 'The milestone line names what remains to earn.' }
+            ] },
             { v: '1.45.16', d: '2026-10-26', items: [
                 { c: 'fix', t: 'Daylight active pills turn white with walnut ink.' },
                 { c: 'imp', t: 'Month states ride Lucide icons beside the title.' },
@@ -14141,8 +14150,15 @@
                             const c = (SALARY_CONFIG.cpfPct / 100) * (sal.basic + sal.midAmt + projIfa);
                             salCtx = 'On track for ' + formatMoney(Math.round((g - c) * 100) / 100);
                         } else {
-                            ctxLabel = 'On track';
-                            ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(ms.total) + ' \u00b7 ' + formatMoney(ms.unflown) + ' left</span>';
+                            // v1.45.17 (owner order): the milestone block
+                            // names what is REMAINING TO EARN - the label
+                            // reads 'REMAINING TO EARN' and the line carries
+                            // the bullseye + the remainder before the month
+                            // ends (icon, tracking, uppercase transform,
+                            // muted label ink and the inline centre baseline
+                            // all unchanged)
+                            ctxLabel = 'Remaining to earn';
+                            ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>' + formatMoney(ms.unflown) + ' before end of month</span>';
                         }
                     } else if (!isSalary && ms.inProgress && ms.upcomingLeft > 0) {
                         // v1.45.15: flights still on the roster - the month
