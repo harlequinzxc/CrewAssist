@@ -101,7 +101,13 @@ function rosterItems(flight, sector, dateTok, opts) {
   // "In the air" through the entire Melbourne layover.
   {
     const { w } = await boot(APP);
-    const rptDay = ymd(0), stdDay = ymd(1);                    // report tonight, fly after midnight
+    const rptDay = ymd(1), stdDay = ymd(2);                    // report tomorrow night, fly after midnight
+    // (v1.45.22 rig fix: the seed used to sit at today+1, whose 0035-MEL
+    // departure lands 21:35 SGT TONIGHT — any battery run after that hour
+    // saw the crew already airborne and the block failed. Tomorrow+1 keeps
+    // the report->fly date split AND puts the departure safely in the
+    // future for every run hour — the fixed-walls precedent from the
+    // landed-yesterday block below, applied here.)
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const tok = (s) => String(Number(s.slice(8))) + MON[Number(s.slice(5, 7)) - 1] + s.slice(2, 4);   // '24Oct26' style date anchor
     const its = [
@@ -161,14 +167,20 @@ function rosterItems(flight, sector, dateTok, opts) {
 
   // --- v1.45.7 card: the date line follows the flight, not the report row ---
   {
+    // (v1.45.22 rig fix, same as the parser block above: the seed used to
+    // sit at today/tomorrow, whose 0035-MEL departure lands 21:35 SGT
+    // TONIGHT — evening battery runs saw the crew airborne. Tomorrow/+2
+    // keeps the report->fly date split and stays future at every hour;
+    // the label pin discriminates the same way — the flight day reads
+    // 'in 2 days', the report day would read 'tomorrow'.)
     const { d } = await boot(APP, { seed: (x) => {
       seedProfile(x);
-      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '218', dep: 'MEL', arr: 'SIN', ymd: ymd(0), std: '00:35', sta: '05:30', stdYmd: ymd(1), staYmd: ymd(1) }])));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify(mkStore([{ fn: '218', dep: 'MEL', arr: 'SIN', ymd: ymd(1), std: '00:35', sta: '05:30', stdYmd: ymd(2), staYmd: ymd(2) }])));
     } });
     await wait(5600);
     const card = d.getElementById('ca-nextflight-card');
     R.ok(card, 'the split-duty card appears under the greeting');
-    R.ok(card && card.textContent.indexOf('tomorrow') >= 0, 'the relative label reads tomorrow (the flight day), not today');
+    R.ok(card && card.textContent.indexOf('in 2 days') >= 0 && card.textContent.indexOf('tomorrow') < 0, 'the relative label reads the flight day (in 2 days), never the report row (tomorrow)');
     R.ok(card && card.textContent.indexOf('Departs 0035H local') >= 0, 'the departs line shows the after-midnight STD');
     R.ok(card && card.textContent.indexOf('In the air') < 0, 'the crew is never in the air during the layover');
   }

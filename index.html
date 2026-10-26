@@ -879,11 +879,12 @@
             #ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }
         }
         /* v1.45.21 (owner order): the YEAR-view net comparison rides beside
-           the headline figure - a compact triangle percentage, baseline-
-           aligned, 12px off the number. Deep green for growth, deep brick
-           for decline, both AA over the gold card's mid stop; hidden
-           entirely when no prior year is on record */
-        .ca-arch-netyoy { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+           the headline figure, baseline-aligned, 12px off the number. Deep
+           green for growth, deep brick for decline, both AA over the gold
+           card's mid stop; hidden entirely when no prior year is on record.
+           v1.45.22 (owner order): it wears the Lucide trending icon + signed
+           percentage as an inline-flex pair (4px between icon and figure) */
+        .ca-arch-netyoy { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
         .ca-arch-netyoy-up { color: #123f22; }
         .ca-arch-netyoy-dn { color: #6e1f1f; }
         /* v1.45.14 (owner order): the ledger row is a strict column grid -
@@ -2075,10 +2076,10 @@
                     <div class="mt-4">
                         <div class="ca-arch-metalabel" id="ca-arch-total-label">Total earnings</div>
                         <!-- v1.45.21 (owner order): the YEAR-view net
-                             comparison rides BESIDE the headline figure - a
-                             compact triangle percentage on the shared text
-                             baseline, hidden in Month/All-time and whenever
-                             no prior year is on record -->
+                             comparison rides BESIDE the headline figure -
+                             a compact trending-icon percentage on the shared
+                             text baseline, hidden in Month/All-time and
+                             whenever no prior year is on record -->
                         <div class="flex items-baseline flex-wrap">
                             <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
                             <span class="ca-arch-netyoy ml-3 hidden" id="ca-arch-netyoy"></span>
@@ -2087,6 +2088,12 @@
                              (v1.45.21: a single never-wrapping string - the
                              year comparison moved up beside the figure) -->
                         <div class="ca-micro font-bold mt-1.5 hidden w-full" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
+                        <!-- v1.45.22 (owner order, C): when the scope holds
+                             overseas expenses, the quiet after-expenses line
+                             rides under the Gross|CPF string - the net figure
+                             the crew actually clears once layover spending
+                             is paid for. Absent when nothing was spent -->
+                        <div class="ca-micro font-normal mt-0.5 hidden w-full" style="color: rgba(26,19,0,.8); opacity: .7" id="ca-arch-after-line"></div>
                     </div>
                     <!-- salary mode: no basic yet — ask, never guess (the CA
                          publishes ranges; the exact figure is personal) -->
@@ -2763,7 +2770,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.21'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.22'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2785,6 +2792,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.22', d: '2026-10-26', items: [
+                { c: 'new', t: 'Layover trips track overseas expenses against take-home.' },
+                { c: 'imp', t: 'Year badges wear the trending icon, not a glyph.' },
+                { c: 'imp', t: 'Month money columns stack net, gross, after-expenses.' }
+            ] },
             { v: '1.45.21', d: '2026-10-26', items: [
                 { c: 'imp', t: 'COP stats ride the hairline quadrant architecture.' },
                 { c: 'imp', t: 'Yearly net comparisons badge the headline figure.' },
@@ -14046,14 +14058,27 @@
                 // scannable money column down the list (net shares its
                 // baseline with the month line, gross with the count line).
                 // Search-filtered months keep the filtered COP view, like today.
+                // v1.45.22 (owner order): each figure is its own label+value
+                // pair on one line, the column vertically centred against
+                // the two left lines, and a month with overseas expenses
+                // gains a quiet third 'after exp' row.
                 const byMkFull = archEntriesByMk(all);
                 const isSalList = archState.mode === 'salary' && salaryBasic() > 0;
                 const monthSal = isSalList ? archSalaryMonth(mk, byMkFull[mk] || []) : null;
                 let amtHtml, amtCls;
                 if (monthSal && !filtered) {
-                    amtHtml = '<span class="ca-arch-amt-net text-[17px] font-bold leading-tight">net ' + formatMoney(monthSal.net) + '</span>'
-                        + '<span class="text-sm font-normal leading-tight" style="color: var(--arch-muted)">gross ' + formatMoney(monthSal.gross) + '</span>';
-                    amtCls = 'ca-arch-amt flex flex-col items-end text-right';
+                    const mExp = archExpTotal(byMkFull[mk] || []);
+                    // each figure = its own lowercase label + value pair on one
+                    // never-wrapping line; the value span carries the size so
+                    // the decimals can track one vertical edge (tabular via
+                    // .ca-arch-amt above)
+                    const pairRow = (label, hook, val, big, muted) => '<span class="flex items-baseline justify-end gap-1.5 whitespace-nowrap leading-tight' + (muted ? '" style="color: var(--arch-muted)' : '') + '">'
+                        + '<span class="' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + '">' + label + '</span>'
+                        + '<span class="' + hook + ' ' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + '">' + val + '</span></span>';
+                    amtHtml = pairRow('net', 'ca-arch-amt-net', formatMoney(monthSal.net), true, false)
+                        + pairRow('gross', 'ca-arch-amt-gross', formatMoney(monthSal.gross), false, true)
+                        + (mExp > 0.004 ? pairRow('after exp', 'ca-arch-amt-after', formatMoney(monthSal.net - mExp), false, true) : '');
+                    amtCls = 'ca-arch-amt flex flex-col items-end justify-center text-right';
                 } else if (monthSal && filtered) {
                     amtHtml = formatMoney(sub) + ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of net ' + formatMoney(monthSal.net) + '</span>';
                     amtCls = 'ca-arch-amt text-[17px] font-bold';
@@ -14182,6 +14207,18 @@
             const p = archCopParts(entries);
             return (archState.copScope === 'ifa') ? p.ifa : Math.round((p.ifa + p.lma) * 100) / 100;
         }
+        // v1.45.22 (owner order, 🅲): layover trips can carry the overseas
+        // expenses the crew actually spent on a stop (meals the company did
+        // not cover, transport, laundry - one SGD lump sum per trip, filed
+        // on the saved entry via its summary sheet). The figure is post-CPF
+        // money: it never touches the net headline, the chart or the
+        // insights - it only rides the salary surfaces as context.
+        function archEntryExp(e) {
+            return Math.round((Number(e && e.detail && e.detail.expense) || 0) * 100) / 100;
+        }
+        function archExpTotal(entries) {
+            return Math.round((entries || []).reduce((s, e) => s + archEntryExp(e), 0) * 100) / 100;
+        }
         function archEntriesByMk(all) {
             const by = {};
             (all || []).forEach((e) => { const k = String(e.monthKey || ''); if (k) (by[k] = by[k] || []).push(e); });
@@ -14212,12 +14249,16 @@
 
             let total = 0, count = 0, ctxLabel = '\u00a0', ctxHtml = '<span style="opacity:.4">\u2014</span>';
             let sal = null, netYoy = null;
+            // v1.45.22 (C): the scope's overseas expense total - context for
+            // the salary surfaces only, never a headline of its own
+            let expTotal = 0;
             if (archState.scope === 'month') {
                 const mk = archSelMk();
                 const m = map[mk] || { total: 0, count: 0 };
                 const by = archEntriesByMk(all);
                 sal = archSalaryMonth(mk, by[mk] || []);
                 total = archCopTotal(by[mk] || []);
+                expTotal = archExpTotal(by[mk] || []);
                 count = m.count;
                 if (mk === currentMk) {
                     const ms = archMonthState(mk, all);
@@ -14265,6 +14306,7 @@
                 const yMks = Object.keys(map).filter((k) => k.slice(0, 4) === yr).sort();
                 sal = archSalaryAgg(yMks, all);
                 total = archCopTotal(ytd);
+                expTotal = archExpTotal(ytd);
                 count = ytd.length;
                 const curYr = currentMk.slice(0, 4);
                 const capMk = (yr === curYr) ? currentMk : (yr + '-12');
@@ -14288,14 +14330,15 @@
                     const lyMks = Object.keys(map).filter((k) => k.slice(0, 4) === String(parseInt(yr, 10) - 1) && parseInt(k.slice(5, 7), 10) <= capMonth).sort();
                     const lySal = lyMks.length ? archSalaryAgg(lyMks, all) : null;
                     // v1.45.21 (owner order): the yearly net comparison rides
-                    // beside the headline figure as the triangle badge - one
-                    // decimal, the app's own YoY precision
+                    // beside the headline figure as the badge - one decimal,
+                    // the app's own YoY precision
                     netYoy = lySal ? archYoyPct(sal.net, lySal.net) : null;
                 }
             } else {
                 sal = archSalaryAgg(Object.keys(map).sort(), all);
                 total = archCopTotal(all);
                 count = all.length;
+                expTotal = archExpTotal(all);
                 if (!isSalary) {
                     // v1.45.18 (owner order): COP + ALL-TIME is the career
                     // lens - the truncating Context line ('+0% vs LY · proj.
@@ -14321,6 +14364,7 @@
                 numEl.classList.add('ca-arch-numflip');
             }
             const grossEl = archEl('ca-arch-gross-line');
+            const afterEl = archEl('ca-arch-after-line');
             const yoyEl = archEl('ca-arch-netyoy');
             if (isSalary && hasBasic && sal) {
                 archEl('ca-arch-total-label').textContent = 'Net take-home';
@@ -14328,13 +14372,26 @@
                 // v1.45.21 (owner order): the subtext is the single
                 // never-wrapping Gross|CPF string in EVERY scope (the month
                 // right side stays completely empty, and the year comparison
-                // moved up beside the figure as the triangle badge)
-                grossEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf) + '</span>';
+                // moved up beside the figure as the badge).
+                // v1.45.22 (C): a scope with overseas expenses extends the
+                // same string with a third Exp segment, and the quiet line
+                // under it carries the after-expenses net.
+                grossEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf)
+                    + (expTotal > 0.004 ? ' <span class="ca-arch-gross-sep">|</span> Exp \u2212' + formatMoney(expTotal) : '') + '</span>';
                 grossEl.classList.remove('hidden');
+                if (expTotal > 0.004) {
+                    afterEl.textContent = 'After expenses ' + formatMoney(sal.net - expTotal);
+                    afterEl.classList.remove('hidden');
+                } else afterEl.classList.add('hidden');
                 // the badge: YEAR view only, and only when a prior year is
                 // on record - otherwise it stays hidden entirely
                 if (archState.scope === 'year' && netYoy !== null) {
-                    yoyEl.textContent = (netYoy >= 0 ? '\u25b2 ' : '\u25bc ') + Math.abs(netYoy).toFixed(1) + '%';
+                    // v1.45.22 (owner order): the glyph pair is retired - the
+                    // badge wears the Lucide trending icon (up/down by sign)
+                    // with the signed percentage beside it. Same colors, same
+                    // 14px rung, same 12px offset as v1.45.21.
+                    yoyEl.innerHTML = '<i data-lucide="' + (netYoy >= 0 ? 'trending-up' : 'trending-down') + '" class="w-3.5 h-3.5 shrink-0"></i>'
+                        + '<span>' + (netYoy >= 0 ? '+' : '\u2212') + Math.abs(netYoy).toFixed(1) + '%</span>';
                     yoyEl.classList.toggle('ca-arch-netyoy-up', netYoy >= 0);
                     yoyEl.classList.toggle('ca-arch-netyoy-dn', netYoy < 0);
                     yoyEl.classList.remove('hidden');
@@ -14349,11 +14406,13 @@
                 archEl('ca-arch-total-label').textContent = 'Net take-home';
                 numEl.textContent = '\u2014';
                 grossEl.classList.add('hidden');
+                afterEl.classList.add('hidden');
                 yoyEl.classList.add('hidden');
             } else {
                 archEl('ca-arch-total-label').textContent = 'Total earnings';
                 numEl.textContent = formatMoney(total);
                 grossEl.classList.add('hidden');
+                afterEl.classList.add('hidden');
                 yoyEl.classList.add('hidden');
                 archEl('ca-arch-m-flights').textContent = String(count);
                 archEl('ca-arch-m-avg').textContent = count ? formatMoney(total / count) : '\u2014';
@@ -14691,9 +14750,88 @@
                     + '<p class="text-4xl font-bold ca-amt">' + formatMoney(e.amount) + '</p></div>'
                     + "<p class=\"text-xs text-gray-500 text-center\">Saved before detailed summaries — the numbers are here, the story isn't.</p>";
             }
+            // v1.45.22 (owner order, C): layovers carry an overseas expense
+            // row - the SGD lump sum the crew actually spent on the stop.
+            // Tap to edit (the amount-correction pattern: Enter or blur
+            // commits, Escape cancels); 0 or clearing the field removes it.
+            // Turnarounds never see the row - a Singapore turnaround spends
+            // nothing overseas.
+            if (String(e.flightType || '') === 'Layover') {
+                const hasExp = archEntryExp(e) > 0.004;
+                html += '<div class="mt-6 border-t ca-hairline pt-4">'
+                    + '<button type="button" id="ca-arch-exp-btn" class="w-full flex items-center justify-between gap-2 p-3 rounded-xl ca-inset border ca-hairline text-left">'
+                    + '<span class="flex items-center gap-2 min-w-0">'
+                    + '<i data-lucide="receipt" class="w-4 h-4 shrink-0 text-sia-gold"></i>'
+                    + '<span class="text-sm font-bold">Overseas expense</span>'
+                    + '</span>'
+                    + '<span id="ca-arch-exp-val" class="ca-amt shrink-0 ' + (hasExp ? 'font-bold text-sm' : 'text-sm font-normal') + '"' + (hasExp ? '' : ' style="color: var(--arch-muted)"') + '>'
+                    + (hasExp ? formatMoney(archEntryExp(e)) : 'Add expense')
+                    + '</span>'
+                    + '</button></div>';
+            }
             const saved = String(e.savedAt || '').slice(0, 10);
             if (saved) html += '<p class="ca-micro text-gray-400 text-center pt-3">Saved ' + ovDay(saved) + '</p>';
             openArchSub(html, (head && head !== '—') ? head : 'Flight details', subLine);
+            const expBtn = archEl('ca-arch-exp-btn');
+            if (expBtn) expBtn.addEventListener('click', () => archEditExpense(e.id));
+        }
+        // v1.45.22 (C): the overseas expense editor - the tap-an-amount-to-
+        // correct pattern, pointed at detail.expense. The value paints back
+        // into the row and the archive re-renders behind the sheet, so the
+        // card's Exp segment, the after-expenses line and any group head
+        // pick the new figure up live.
+        function archEditExpense(id) {
+            const btn = archEl('ca-arch-exp-btn');
+            const val = archEl('ca-arch-exp-val');
+            if (!btn || !val || btn.dataset.editing === '1') return;
+            const es = loadArchive();
+            const e = es.find((x) => String(x.id) === String(id));
+            if (!e) return;
+            btn.dataset.editing = '1';
+            const cur = archEntryExp(e);
+            const restore = val.innerHTML;
+            val.innerHTML = '<input type="text" inputmode="decimal" class="ca-arch-amt-input w-24 text-right bg-transparent outline-none border-b-2 border-sia-gold/70" style="color: var(--arch-fg)" value="' + (cur > 0 ? cur : '') + '" aria-label="Overseas expense">';
+            const inp = val.querySelector('input');
+            inp.focus(); try { inp.select(); } catch (err) {}
+            const paint = () => {
+                const now = archEntryExp(e);
+                val.innerHTML = now > 0.004 ? formatMoney(now) : 'Add expense';
+                if (now > 0.004) { val.className = 'ca-amt shrink-0 font-bold text-sm'; val.removeAttribute('style'); }
+                else { val.className = 'ca-amt shrink-0 text-sm font-normal'; val.setAttribute('style', 'color: var(--arch-muted)'); }
+            };
+            let done = false;
+            const close = (commit) => {
+                if (done) return;
+                done = true;
+                const v = parseFloat(String((inp && inp.value) || '').replace(/[^0-9.]/g, ''));
+                delete btn.dataset.editing;
+                val.innerHTML = restore;
+                val.className = 'ca-amt shrink-0 ' + (cur > 0.004 ? 'font-bold text-sm' : 'text-sm font-normal');
+                if (cur > 0.004) val.removeAttribute('style'); else val.setAttribute('style', 'color: var(--arch-muted)');
+                if (!commit || !isFinite(v) || Math.abs(v - cur) < 0.005) return;
+                const prev = cur;
+                if (v > 0) { e.detail = e.detail || {}; e.detail.expense = Math.round(v * 100) / 100; }
+                else if (e.detail) { delete e.detail.expense; }
+                if (persistArchive(es)) {
+                    paint();
+                    if (!archEl('ca-arch-backdrop').classList.contains('hidden')) renderArch();
+                    archToast('Expense saved', () => {
+                        if (prev > 0) { e.detail = e.detail || {}; e.detail.expense = prev; }
+                        else if (e.detail) { delete e.detail.expense; }
+                        persistArchive(es);
+                        paint();
+                        if (!archEl('ca-arch-backdrop').classList.contains('hidden')) renderArch();
+                    });
+                } else {
+                    if (prev > 0) { e.detail = e.detail || {}; e.detail.expense = prev; }
+                    else if (e.detail) { delete e.detail.expense; }
+                }
+            };
+            inp.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') { ev.preventDefault(); close(true); }
+                else if (ev.key === 'Escape') { ev.preventDefault(); close(false); }
+            });
+            inp.addEventListener('blur', () => close(true));
         }
 
         function archNormalize(raw) {
@@ -14838,8 +14976,11 @@
                 // full backup (Settings → Data Management) does.
                 archShareOrDownload(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), 'crewassist-earnings-' + suf + '.json');
             } else {
-                let csv = 'route,date,type,amount\n';
-                data.forEach((e) => { csv += csvCell(e.stationDisplay) + ',' + (e.sectorDate || '') + ',' + csvCell(e.flightType || '') + ',' + (Number(e.amount) || 0).toFixed(2) + '\n'; });
+                // v1.45.22 (C): the CSV carries the overseas expense as a
+                // fifth column - 0.00 for every trip without one, so a
+                // spreadsheet import never sees a ragged column
+                let csv = 'route,date,type,amount,expense\n';
+                data.forEach((e) => { csv += csvCell(e.stationDisplay) + ',' + (e.sectorDate || '') + ',' + csvCell(e.flightType || '') + ',' + (Number(e.amount) || 0).toFixed(2) + ',' + archEntryExp(e).toFixed(2) + '\n'; });
                 archShareOrDownload(new Blob([csv], { type: 'text/csv' }), 'crewassist-earnings-' + suf + '.csv');
             }
             closeArchSub();

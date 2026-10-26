@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.21', 'APP_VERSION is 1.45.21');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.21' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.21 entry with its three pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v252'), 'the service-worker cache name is bumped to v252 (the v1.45.21 quadrant-unification release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.22', 'APP_VERSION is 1.45.22');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.22' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.22 entry with its three pointers (the expense pointer is the new one)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v253'), 'the service-worker cache name is bumped to v253 (the v1.45.22 overseas-expense release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.21'; }), 'the What\'s New sheet carries the v1.45.21 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.22'; }), 'the What\'s New sheet carries the v1.45.22 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -767,12 +767,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cols = [...document.querySelectorAll('#ca-arch-list .ca-arch-amt.flex-col')];
             if (!cols.length) return { none: true };
             const edges = cols.map((c) => {
-                const net = c.querySelector('.ca-arch-amt-net'), gross = c.children[1];
-                return { pair: Math.abs(net.getBoundingClientRect().right - gross.getBoundingClientRect().right), col: c.getBoundingClientRect().right };
+                const net = c.querySelector('.ca-arch-amt-net'), gross = c.querySelector('.ca-arch-amt-gross');
+                const row = net ? net.parentElement : null;
+                return { pair: Math.abs(net.getBoundingClientRect().right - gross.getBoundingClientRect().right), col: c.getBoundingClientRect().right,
+                    jc: getComputedStyle(c).justifyContent, wrap: row ? getComputedStyle(row).whiteSpace : '', disp: row ? getComputedStyle(row).display : '', gap: row ? parseFloat(getComputedStyle(row).columnGap) : 0, lbl: row ? row.children[0].textContent : '' };
             });
-            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)) };
+            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)), jc: edges.every((e) => e.jc === 'center'), wrap: edges.every((e) => e.wrap === 'nowrap'), disp: edges.every((e) => e.disp === 'flex'), gap: edges.every((e) => Math.abs(e.gap - 6) <= 0.5), lbl: edges.every((e) => e.lbl === 'net') };
         });
         ok(!money.none && money.pair <= 1.5 && money.across <= 1.5, 'net and gross stack right-aligned, column-edge straight across months (pair ' + (money.pair || 0).toFixed(1) + 'px, across ' + (money.across || 0).toFixed(1) + 'px)');
+        ok(money.jc && money.disp && money.wrap, 'v1.45.22: the column centres vertically (justify-center) and every figure rides its own nowrap flex row');
+        ok(money.gap && money.lbl, 'each row is a lowercase net/gross label held 6px off its value');
         // v1.45.16 (owner order): the status badges are gone - the state
         // rides Lucide icons (the rig blocks the CDN, so the icons stay <i>
         // stubs; name + class + computed animation are the proof) and the
@@ -1293,9 +1297,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const b = document.getElementById('ca-arch-netyoy');
             const cs = getComputedStyle(b);
             const num = document.getElementById('ca-arch-total');
-            return { hidden: b.classList.contains('hidden'), txt: b.textContent, cls: b.className, ml: cs.marginLeft, fs: cs.fontSize, fw: cs.fontWeight, wrap: cs.whiteSpace, color: cs.color, sameRow: b.parentElement === num.parentElement, align: getComputedStyle(b.parentElement).alignItems, gap: b.getBoundingClientRect().left - num.getBoundingClientRect().right, glKids: document.getElementById('ca-arch-gross-line').children.length };
+            const ico = b.querySelector('i[data-lucide]');
+            return { hidden: b.classList.contains('hidden'), txt: b.textContent, cls: b.className, ml: cs.marginLeft, fs: cs.fontSize, fw: cs.fontWeight, wrap: cs.whiteSpace, color: cs.color, sameRow: b.parentElement === num.parentElement, align: getComputedStyle(b.parentElement).alignItems, gap: b.getBoundingClientRect().left - num.getBoundingClientRect().right, glKids: document.getElementById('ca-arch-gross-line').children.length,
+                ico: ico ? ico.getAttribute('data-lucide') : '', icoCls: ico ? ico.className : '', icoW: ico ? ico.getBoundingClientRect().width : 0, disp: cs.display, igap: cs.gap, ialign: cs.alignItems, spanTxt: b.querySelector('span') ? b.querySelector('span').textContent : '', tri: b.textContent.indexOf('\u25b2') !== -1 || b.textContent.indexOf('\u25bc') !== -1 };
         });
-        ok(!year21.hidden && /^[\u25b2\u25bc] \d+\.\d%$/.test(year21.txt), 'v1.45.21: the YEAR badge rides beside the figure (' + year21.txt + ')');
+        ok(!year21.hidden && /^trending-(up|down)$/.test(year21.ico) && /^[+\u2212]\d+\.\d%$/.test(year21.spanTxt) && !year21.tri, 'v1.45.22: the YEAR badge wears the trending icon with the signed percentage - triangles retired (' + year21.ico + ' ' + year21.spanTxt + ')');
+        ok(year21.icoCls.indexOf('w-3.5') !== -1 && year21.icoCls.indexOf('h-3.5') !== -1 && Math.abs(year21.icoW - 14) <= 0.5, 'the badge icon rides the 14px box (w-3.5 h-3.5, measured ' + year21.icoW.toFixed(1) + 'px)');
+        ok((year21.disp === 'inline-flex' || year21.disp === 'flex') && year21.ialign === 'center' && year21.igap === '4px', 'the badge is a flex pair - icon and figure centred, 4px apart (inline-flex blockifies inside the baseline row: ' + year21.disp + ')');
         ok(year21.sameRow && year21.align === 'baseline' && year21.ml === '12px' && year21.gap >= 11, 'the badge shares the figure row on the strict text baseline, 12px off the number');
         ok(year21.fs === '14px' && year21.fw === '700' && year21.wrap === 'nowrap', 'the badge rides the 14px value rung, bold, never wrapping');
         ok(year21.color === 'rgb(18, 63, 34)' || year21.color === 'rgb(110, 31, 31)', 'deep green for growth, deep brick for decline (' + year21.color + ')');
@@ -1380,6 +1388,102 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(tiny20.tracks === 2 && !tiny20.clips, 'the 2x2 quadrant grid holds under 360px and nothing breaks');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.22: overseas expenses + the three-row money column —');
+        // The expense feature in the real browser: a layover carries an SGD
+        // lump sum; the salary card gains the Exp segment + the quiet after
+        // line, the month head gains its third quiet row, and the summary
+        // sheet's receipt row edits the stored figure end to end.
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const prev = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+            const det = (amount, exp) => { const d = { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] }; if (exp) d.expense = exp; return d; };
+            const lay = (id, d, amount, exp) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/ICN', amount, flightType: 'Layover', detail: det(amount, exp) });
+            const tur = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: det(amount, 0) });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([lay('x1', cur, 400, 120), lay('x2', prev, 300), tur('x3', cur, 90)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click());
+        await sleep(400);
+        const exp22 = await page.evaluate(() => {
+            const mk = document.querySelector('.ca-arch-group-head').getAttribute('data-mk');
+            const sal = archSalaryMonth(mk, loadArchive().filter((e) => e.monthKey === mk));
+            const fm = (v) => formatMoney(v);
+            const gl = document.getElementById('ca-arch-gross-line');
+            const al = document.getElementById('ca-arch-after-line');
+            const head = document.querySelector('.ca-arch-group-head').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+            const netV = head.querySelector('.ca-arch-amt-net'), grossV = head.querySelector('.ca-arch-amt-gross'), afterV = head.querySelector('.ca-arch-amt-after');
+            return { mk, expSeg: gl.textContent.indexOf('Exp \u2212$120.00') !== -1, afterHidden: al.classList.contains('hidden'), afterTxt: al.textContent, afterWant: 'After expenses ' + fm(sal.net - 120),
+                rows: head.children.length, afterVal: afterV ? afterV.textContent : '', afterWantVal: fm(sal.net - 120),
+                edgeN: netV.getBoundingClientRect().right, edgeG: grossV.getBoundingClientRect().right, edgeA: afterV ? afterV.getBoundingClientRect().right : 0,
+                rowLbl: afterV ? afterV.parentElement.children[0].textContent : '', rowMuted: afterV ? getComputedStyle(afterV.parentElement).color === getComputedStyle(grossV.parentElement).color : false };
+        });
+        ok(exp22.expSeg, 'v1.45.22: the subtext gains the Exp segment beside Gross|CPF');
+        ok(!exp22.afterHidden && exp22.afterTxt === exp22.afterWant, 'the quiet after-expenses line reads net minus the month\u2019s expenses (' + exp22.afterTxt + ')');
+        ok(exp22.rows === 3 && exp22.afterVal === exp22.afterWantVal && exp22.rowLbl === 'after exp', 'the month head grows the third quiet after-exp row');
+        ok(Math.abs(exp22.edgeN - exp22.edgeG) <= 1.5 && Math.abs(exp22.edgeN - exp22.edgeA) <= 1.5, 'all three figures right-align to the same edge - the decimals track one vertical line');
+        ok(exp22.rowMuted, 'the third row rides the same muted ink as the gross row');
+        // the no-expense month keeps two rows (all-time shows both months)
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(400);
+        const head22b = await page.evaluate(() => {
+            const heads = [...document.querySelectorAll('.ca-arch-group-head')];
+            const h = heads.find((x) => x.closest('.ca-arch-group').querySelector('.ca-arch-amt-after') === null);
+            if (!h) return { none: true };
+            const amt = h.closest('.ca-arch-group').querySelector('.ca-arch-amt');
+            return { none: false, rows: amt.children.length };
+        });
+        ok(!head22b.none && head22b.rows === 2, 'a month without expenses keeps exactly two rows');
+        // the sheet flow: receipt row -> edit -> commit -> live card -> undo -> zero removes
+        await page.evaluate(() => document.querySelector('.ca-arch-group-head').click());
+        await sleep(200);
+        await page.evaluate(() => document.querySelector('.ca-arch-row[data-id=\"x1\"]').click());
+        await sleep(400);
+        ok(await page.evaluate(() => { const b = document.getElementById('ca-arch-exp-btn'); return b && b.textContent.indexOf('Overseas expense') !== -1 && document.getElementById('ca-arch-exp-val').textContent === '$120.00'; }), 'the layover summary carries the receipt row with the stored figure');
+        await page.evaluate(() => document.getElementById('ca-arch-exp-btn').click());
+        await sleep(200);
+        await page.evaluate(() => { const i = document.querySelector('#ca-arch-exp-val input'); i.focus(); i.select(); });
+        await page.keyboard.type('88.5');
+        await page.keyboard.press('Enter');
+        await sleep(500);
+        const edit22 = await page.evaluate(() => ({
+            val: document.getElementById('ca-arch-exp-val').textContent,
+            stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'x1').detail.expense,
+            seg: document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$88.50') !== -1,
+            toast: document.getElementById('ca-arch-toast').textContent.indexOf('Expense saved') !== -1
+        }));
+        ok(edit22.stored === 88.5 && edit22.val === '$88.50', 'typing a new expense commits to the stored figure and paints the row');
+        ok(edit22.seg && edit22.toast, 'the card behind the sheet and the toast pick the new figure up');
+        await page.evaluate(() => document.getElementById('ca-arch-toast').querySelector('button').click());
+        await sleep(400);
+        const undo22 = await page.evaluate(() => ({
+            stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'x1').detail.expense,
+            val: document.getElementById('ca-arch-exp-val').textContent
+        }));
+        ok(undo22.stored === 120 && undo22.val === '$120.00', 'undo restores the previous expense everywhere');
+        await page.evaluate(() => document.getElementById('ca-arch-exp-btn').click());
+        await sleep(200);
+        await page.evaluate(() => { const i = document.querySelector('#ca-arch-exp-val input'); i.focus(); i.select(); });
+        await page.keyboard.type('0');
+        await page.keyboard.press('Enter');
+        await sleep(500);
+        const zero22 = await page.evaluate(() => ({
+            has: 'expense' in JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'x1').detail,
+            val: document.getElementById('ca-arch-exp-val').textContent,
+            afterHidden: document.getElementById('ca-arch-after-line').classList.contains('hidden')
+        }));
+        ok(!zero22.has && zero22.val === 'Add expense' && zero22.afterHidden, 'a zero commit removes the expense - the affordance returns, the after line hides');
+        // COP lens: expenses are a salary-lens privilege
+        await page.evaluate(() => { closeArchSub(); document.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); });
+        await sleep(400);
+        ok(await page.evaluate(() => document.getElementById('ca-arch-after-line').classList.contains('hidden') && document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1), 'the COP lens shows no expense context');
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
