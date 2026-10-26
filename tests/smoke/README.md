@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.17), the changelog's current entry,
-  the service-worker cache name (v248).
+- Stamps: `APP_VERSION` (currently 1.45.18), the changelog's current entry,
+  the service-worker cache name (v249).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -101,6 +101,13 @@ the service-worker stamp. It checks:
   and the daylight 'Search flights…' placeholder computes dark slate
   rgb(107, 114, 128) at opacity 1 while the night ink stays its own
   (default) value — read through getComputedStyle(el, '::placeholder').
+- v1.45.18 remaining-flights + annual avg: the panel header reads
+  'Remaining flights' in its uppercase micro style with the line counting
+  'N flights completed · M left', the $696.91 gold figure preserved on its
+  justify-between row; and COP + ALL-TIME carries 'Annual avg' at the 11px
+  label rung with the $750.00 value as BARE text (zero spans — the ctx
+  ellipsis rule can never clip it), matching the FLIGHTS / AVG-per-flight
+  typography, while YEAR keeps its YTD context.
 
 ## Running it
 

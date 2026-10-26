@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.17', 'APP_VERSION is 1.45.17');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.17' && e.d === '2026-10-26' && e.items.length === 2 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.17 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v248'), 'the service-worker cache name is bumped to v248 (the v1.45.17 milestone release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.18', 'APP_VERSION is 1.45.18');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.18' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.18 entry with its three pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v249'), 'the service-worker cache name is bumped to v249 (the v1.45.18 remaining-flights release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.17'; }), 'the What\'s New sheet carries the v1.45.17 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.18'; }), 'the What\'s New sheet carries the v1.45.18 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1001,8 +1001,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const w = document.querySelector('.ca-arch-proj-wrap');
             return w ? w.textContent.replace(/\s+/g, ' ').trim() : '';
         });
-        ok(rosterPanel.indexOf('Still to fly \u00b7 2 flights') !== -1 && rosterPanel.indexOf('not saved yet') !== -1, 'the panel counts the roster flights and says plainly they are not saved: ' + rosterPanel);
-        ok(rosterPanel.indexOf('$0.00') === -1, 'no fake $0.00 still-to-fly figure');
+        ok(rosterPanel.indexOf('Remaining flights') !== -1 && rosterPanel.indexOf('2 flights completed \u00b7 2 left') !== -1, 'v1.45.18: the panel counts history vs the schedule (2 landed entries, 2 roster legs): ' + rosterPanel);
+        ok(rosterPanel.indexOf('$') === -1, 'roster-only legs carry no dollar figure at all');
         // the centred ✕: its visual centre lines up with the text block
         const xAlign = await page.evaluate(() => {
             const rows = [...document.querySelectorAll('#ca-arch-list .ca-arch-row')];
@@ -1165,6 +1165,77 @@ async function calcCard(page, { type, t1, t2, lma }) {
         eq(phLight.opacity, '1', 'the tone is pinned at full opacity across engines');
         ok(phDark !== 'rgb(107, 114, 128)', 'the night placeholder keeps its own (default) ink, untouched by the daylight rule');
         await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.18: the remaining-flights panel + the all-time annual average —');
+        // saved case: two landed entries, one priced future duty
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const p1 = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 9, 1));
+            const p2 = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 5, 1));
+            const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), ent('r2', ahead, 696.91)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.mouse.move(2, 2);
+        await sleep(300);
+        await page.evaluate(() => document.querySelector('.ca-arch-proj-btn').click());
+        await sleep(300);
+        const panel18 = await page.evaluate(() => {
+            const w = document.querySelector('.ca-arch-proj-wrap');
+            const micro = w.querySelector('.ca-micro');
+            const gold = w.querySelector('.text-\\[17px\\]');
+            return { text: w.textContent.replace(/\s+/g, ' ').trim(), header: micro ? micro.textContent : '', headerUpper: micro ? getComputedStyle(micro).textTransform : '', gold: gold ? gold.textContent : '', goldRight: gold ? getComputedStyle(gold.parentElement).justifyContent : '' };
+        });
+        eq(panel18.header, 'Remaining flights', 'v1.45.18: the panel header reads Remaining flights');
+        eq(panel18.headerUpper, 'uppercase', 'the header keeps its uppercase micro style');
+        ok(panel18.text.indexOf('2 flights completed \u00b7 1 left') !== -1, 'the line counts completed vs left (owner format): ' + panel18.text);
+        eq(panel18.gold, '$696.91', 'the right-aligned gold figure is preserved exactly');
+        eq(panel18.goldRight, 'space-between', 'the header row keeps its flex justify-between layout');
+        // the all-time annual average: 2025 $1,000 + 2026 $500 -> $750.00
+        await page.evaluate(() => {
+            const now = new Date();
+            const ent = (id, mk, d, amount) => ({ id, savedAt: d + 'T10:00:00Z', monthKey: mk, sectorDate: d, stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.archive', JSON.stringify([
+                ent('y0', '2025-06', '2025-06-05', 600),
+                ent('y1', '2025-07', '2025-07-05', 400),
+                ent('y2', String(now.getFullYear()) + '-03', String(now.getFullYear()) + '-03-05', 500)
+            ]));
+            closeArchOverlay();
+            showArchiveOverlay();
+        });
+        await sleep(300);
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
+        const avg18 = await page.evaluate(() => {
+            const label = document.getElementById('ca-arch-m-ctx-label');
+            const ctx = document.getElementById('ca-arch-m-ctx');
+            const avgCell = document.getElementById('ca-arch-m-avg');
+            const lcs = getComputedStyle(label), vcs = getComputedStyle(ctx), acs = getComputedStyle(avgCell);
+            return {
+                label: label.textContent, upper: lcs.textTransform, size: lcs.fontSize, track: lcs.letterSpacing,
+                val: ctx.textContent, spans: ctx.querySelectorAll('span').length, html: ctx.innerHTML,
+                vSize: vcs.fontSize, vWeight: vcs.fontWeight, vNowrap: vcs.whiteSpace, aSize: acs.fontSize, aWeight: acs.fontWeight
+            };
+        });
+        eq(avg18.label, 'Annual avg', 'v1.45.18: COP + ALL-TIME carries the ANNUAL AVG column (Context unmounted)');
+        eq(avg18.upper, 'uppercase', 'the new header keeps the small muted uppercase label style');
+        ok(avg18.size === '11px' && avg18.track !== '0px', 'the label rides the 11px MICRO rung with tracking (letter-spacing ' + avg18.track + ')');
+        eq(avg18.val, '$750.00', 'the annual average = career COP over the years on record');
+        eq(avg18.spans, 0, 'the value rides bare text - the ctx ellipsis rule can never clip it');
+        ok(avg18.html.indexOf('vs LY') === -1 && avg18.html.indexOf('proj.') === -1, 'the truncating context parts are gone');
+        ok(avg18.vSize === avg18.aSize && avg18.vWeight === avg18.aWeight && avg18.vNowrap === 'nowrap', 'the value matches the FLIGHTS / AVG-per-flight typography (14px/700/nowrap) and can never wrap out');
+        // YEAR scope keeps its YTD context
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="year"]').click());
+        await sleep(300);
+        const year18 = await page.evaluate(() => document.getElementById('ca-arch-m-ctx-label').textContent);
+        ok(/YTD$/.test(year18), 'the YEAR scope keeps its YTD context (only ALL-TIME carries Annual avg): ' + year18);
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
         console.log('— health —');
