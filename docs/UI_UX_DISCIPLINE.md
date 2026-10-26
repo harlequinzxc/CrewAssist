@@ -312,14 +312,37 @@ comparison does not grow a second row: it rides beside the headline
 figure as a compact percentage on the shared text baseline, a fixed
 margin off the number, coloured by direction — deep green up, deep
 brick down, both AA over the card — and hidden entirely when no prior
-year exists to measure against (v1.45.21; the v1.45.20 second row and
-the v1.45.19 left/right split superseded).
+year exists to measure against. The comparison wears the Lucide trending
+icon (up/down by the sign) with a SIGNED percentage in an inline-flex
+pair on the shared baseline — text arrows and triangles are retired
+with no exception on record (v1.45.21; the v1.45.20 second row and the
+v1.45.19 left/right split superseded; the glyph pair retired v1.45.22).
 
 **Missing baselines read the quiet em dash.** When a comparison has no
 prior period on record, the cell renders a single low-opacity em dash —
 never a placeholder sentence explaining the absence. The dash is a
 value, not an error state; the label above it still names the period
 (v1.45.21).
+
+**A money column is labelled pairs on one edge.** A stack of money
+figures beside a row's text renders each figure as its own lowercase
+label + value pair on one never-wrapping, right-aligned line (label held
+a tight 6px off its value), the column vertically centred against the
+row's text lines, tabular digits keeping every decimal on the same
+vertical edge. A conditional third quiet row (an after-expenses figure)
+rides the identical contract — same hooks, same mute, same edge — and
+absent figures simply omit their row rather than printing a zero
+(v1.45.22).
+
+**Context money never moves the headline.** A post-headline deduction
+the crew files themselves (an overseas layover expense) rides as
+context only: a segment in the existing subtext string, a quiet line
+under it, and a third column row when the month carries one — never a
+change to the headline figure, the chart, the insights or the
+milestones. The entry affordance lives on the saved trip's summary (a
+receipt row with the tap-to-correct editor), on the lens that can use
+the figure; the other lenses show nothing rather than a dead number
+(v1.45.22).
 
 **Labels wrap before they clip; values never truncate.** When a dense stat
 grid meets a narrow viewport, the labels may wrap (their tracking relaxes

@@ -1205,11 +1205,18 @@ function todayYmd() {
       d.querySelector('.ca-arch-seg[data-scope="year"]').click(); await wait(150);
       R.eq(d.getElementById('ca-arch-seg-year').textContent, '2026', 'Year pill opens on the current year');
       // v1.45.21 (owner order): the yearly net comparison rides beside the
-      // headline figure as the triangle badge - one decimal, the app's own
-      // YoY precision, computed through the app's own aggregators
+      // headline figure as the badge - one decimal, the app's own YoY
+      // precision, computed through the app's own aggregators.
+      // v1.45.22 (owner order): the text triangles are retired - the badge
+      // wears the Lucide trending icon (up/down by sign) with the SIGNED
+      // percentage beside it (jsdom leaves the icon a stub; the name and
+      // the span are the proof)
       const badge21 = d.getElementById('ca-arch-netyoy');
-      const expBadge21 = w.eval("(function () { const all = JSON.parse(localStorage.getItem('crewAssist.archive')); const mkSet = {}; all.forEach((e) => { mkSet[e.monthKey] = 1; }); const yMks = Object.keys(mkSet).filter((k) => k.slice(0, 4) === '2026').sort(); const lyMks = Object.keys(mkSet).filter((k) => k.slice(0, 4) === '2025').sort(); const sal = archSalaryAgg(yMks, all), lySal = archSalaryAgg(lyMks, all); const y = archYoyPct(sal.net, lySal.net); return (y >= 0 ? '▲ ' : '▼ ') + Math.abs(y).toFixed(1) + '%'; })()");
-      R.ok(!badge21.classList.contains('hidden') && badge21.textContent === expBadge21, 'v1.45.21: the YEAR badge rides beside the figure with the app-computed net YoY (' + badge21.textContent + ')');
+      const expBadge21 = w.eval("(function () { const all = JSON.parse(localStorage.getItem('crewAssist.archive')); const mkSet = {}; all.forEach((e) => { mkSet[e.monthKey] = 1; }); const yMks = Object.keys(mkSet).filter((k) => k.slice(0, 4) === '2026').sort(); const lyMks = Object.keys(mkSet).filter((k) => k.slice(0, 4) === '2025').sort(); const sal = archSalaryAgg(yMks, all), lySal = archSalaryAgg(lyMks, all); const y = archYoyPct(sal.net, lySal.net); return { ico: y >= 0 ? 'trending-up' : 'trending-down', txt: (y >= 0 ? '+' : '\u2212') + Math.abs(y).toFixed(1) + '%' }; })()");
+      const badgeIco = badge21.querySelector('i[data-lucide]');
+      R.ok(!badge21.classList.contains('hidden') && badgeIco && badgeIco.getAttribute('data-lucide') === expBadge21.ico && badge21.querySelector('span').textContent === expBadge21.txt, 'v1.45.22: the YEAR badge wears the trending icon with the signed net YoY (' + badgeIco.getAttribute('data-lucide') + ' ' + badge21.querySelector('span').textContent + ')');
+      R.ok(badge21.textContent.indexOf('\u25b2') === -1 && badge21.textContent.indexOf('\u25bc') === -1, 'the text triangles are gone from the badge');
+      R.ok(badgeIco.className.indexOf('w-3.5') !== -1 && badgeIco.className.indexOf('h-3.5') !== -1 && badgeIco.className.indexOf('shrink-0') !== -1, 'the badge icon rides the 14px box (w-3.5 h-3.5 shrink-0)');
       R.ok(badge21.className.indexOf('ml-3') !== -1 && (badge21.classList.contains('ca-arch-netyoy-up') || badge21.classList.contains('ca-arch-netyoy-dn')), 'the badge carries its 12px margin and its direction class');
       R.ok(d.getElementById('ca-arch-total').parentElement.className.indexOf('items-baseline') !== -1, 'the badge shares the figure row on the strict text baseline');
       d.getElementById('ca-arch-seg-year').click(); await wait(150);
@@ -1229,7 +1236,7 @@ function todayYmd() {
       const groups = d.querySelectorAll('.ca-arch-group');
       R.eq(groups.length, 1, 'Month scope lists only the selected month');
       R.ok(!groups[0].classList.contains('ca-arch-collapsed'), 'the selected month opens expanded');
-      R.ok(groups[0].textContent.indexOf('net $3,096.20') !== -1, 'the month row leads with net, gross beside it');
+      R.ok(groups[0].querySelector('.ca-arch-amt-net').textContent === '$3,096.20' && groups[0].querySelector('.ca-arch-amt-gross').textContent === '$3,729.00', 'the month row leads with net, gross under it');
     }
 
     // C) the chart shapes + the average line (complete months only)
@@ -1331,7 +1338,7 @@ function todayYmd() {
     R.ok(src.includes('.ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: center; }'), 'v1.45.15: the ledger row CENTRES its columns (the text line boxes coincide; the \u2715 no longer sags)');
     R.ok(src.includes('.ca-arch-row .ca-arch-del { justify-self: end; display: flex; align-items: center; justify-content: center; }'), 'v1.45.15: the \u2715 rides a flex-centred wrapper in its fixed end slot');
     R.ok(src.includes('.ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }'), 'v1.45.14: row values right-align inside their own column, independent of the \u2715 slot');
-    R.ok(src.includes('.ca-arch-netyoy { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }'), 'v1.45.21: the badge rides the 14px value rung, bold, tabular, never wrapping');
+    R.ok(src.includes('.ca-arch-netyoy { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }'), 'v1.45.22: the badge rides the 14px value rung, bold, tabular, never wrapping - icon and figure flex-paired with a 4px gap');
     R.ok(src.includes('.ca-arch-netyoy-up { color: #123f22; }') && src.includes('.ca-arch-netyoy-dn { color: #6e1f1f; }'), 'deep green for growth, deep brick for decline - both AA over the gold card');
     R.ok(src.includes('ca-arch-netyoy ml-3 hidden" id="ca-arch-netyoy"'), 'the badge markup: 12px off the figure, hidden by default');
     R.ok(src.includes('ca-arch-metaval flex items-center gap-2'), 'v1.45.14: the bullseye icon keeps gap-x-2 from the milestone text');
@@ -1405,11 +1412,111 @@ function todayYmd() {
     R.eq(aRow.children.length, 3, 'v1.45.14: a ledger row is three structural parts - route block, value, \u2715 slot');
     R.ok(aRow.children[0].classList.contains('ca-arch-rowmain') && aRow.children[2].classList.contains('ca-arch-del'), 'the route block leads, the delete \u2715 closes the row');
     const amt = headOf2('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-amt');
-    R.ok(amt.className.indexOf('flex-col') !== -1 && amt.className.indexOf('items-end') !== -1, 'the money block is a right-aligned column');
-    R.ok(amt.querySelector('.ca-arch-amt-net') && amt.textContent.indexOf('net ') !== -1 && amt.textContent.indexOf('gross ') !== -1, 'net rides over gross inside the column');
-    R.ok(amt.querySelector('.ca-arch-amt-net').className.indexOf('text-[17px]') !== -1 && amt.children[1].className.indexOf('text-sm') !== -1, 'net keeps the 17px figure, gross the quieter 14px line - baselines pair with the month and count lines');
+    R.ok(amt.className.indexOf('flex-col') !== -1 && amt.className.indexOf('items-end') !== -1 && amt.className.indexOf('justify-center') !== -1, 'the money block is a right-aligned column, vertically centred (v1.45.22)');
+    R.ok(amt.children.length === 2 && amt.querySelectorAll('.ca-arch-amt-net, .ca-arch-amt-gross, .ca-arch-amt-after').length === 2, 'a no-expense month keeps exactly two rows - net over gross, no after-expenses line');
+    R.ok(amt.children[0].textContent === 'net' + amt.querySelector('.ca-arch-amt-net').textContent && amt.children[1].textContent === 'gross' + amt.querySelector('.ca-arch-amt-gross').textContent, 'each figure is its own label+value pair on one line');
+    R.ok(amt.children[0].className.indexOf('gap-1.5') !== -1 && amt.children[0].className.indexOf('whitespace-nowrap') !== -1 && amt.children[1].className.indexOf('whitespace-nowrap') !== -1, 'the pair rows never wrap, label held 6px off its value');
+    R.ok(amt.querySelector('.ca-arch-amt-net').className.indexOf('text-[17px]') !== -1 && amt.querySelector('.ca-arch-amt-gross').className.indexOf('text-sm') !== -1, 'net keeps the 17px figure, gross the quieter 14px line - baselines pair with the month and count lines');
     d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
     R.ok(d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the legend steps aside in COP view');
+    void w; void d;
+  }
+
+  // ---- v1.45.22 (owner order, C): overseas layover expenses ----
+  // A layover trip can carry the SGD lump sum spent on the stop. Entry rides
+  // the saved entry's summary sheet (tap the receipt row, edit, commit); the
+  // figure is post-CPF context - net headline, chart, insights and the
+  // calculator never move. Old entries and turnarounds read as no expense.
+  {
+    const NOWE = '2026-10-20T12:00:00+08:00';
+    const seedE = (x, basic) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      const mk = (id, date, route, amount, type, exp) => {
+        const det = { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] };
+        if (exp) det.expense = exp;
+        return { id, savedAt: date + 'T10:00:00Z', monthKey: '2026-10', sectorDate: date, flightType: type, stationDisplay: route, amount, detail: det };
+      };
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        mk('q1', '2026-10-05', 'SIN/ICN', 400, 'Layover', 120),
+        mk('q2', '2026-10-12', 'SIN/MLE', 300, 'Layover', 0),
+        mk('q3', '2026-10-18', 'SIN/KUL', 90, 'Turnaround', 0)
+      ]));
+    };
+    const { w, d } = await boot(APP, { now: NOWE, seed: (x) => seedE(x, true) });
+    const netE = () => w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net)");
+    w.showArchiveOverlay(); await wait(150);
+    d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
+    // the card: the net headline itself never moves - the expense rides as
+    // context (subtext Exp segment + the quiet after-expenses line)
+    R.eq(d.getElementById('ca-arch-total').textContent, netE(), 'the net headline stays untouched by expenses');
+    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$120.00') !== -1, 'the subtext gains the Exp segment beside Gross|CPF');
+    const afterLine = d.getElementById('ca-arch-after-line');
+    R.ok(!afterLine.classList.contains('hidden') && afterLine.textContent === 'After expenses ' + w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 120)"), 'the quiet after-expenses line carries net minus the month expenses');
+    // the group head: the third quiet row, only because October has expenses
+    const headE = d.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+    R.eq(headE.children.length, 3, 'the month head grows the third after-exp row');
+    R.ok(headE.querySelector('.ca-arch-amt-after') && headE.querySelector('.ca-arch-amt-after').textContent === w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 120)"), 'the head after-exp figure = month net minus month expenses');
+    R.ok(headE.children[2].className.indexOf('whitespace-nowrap') !== -1 && headE.children[2].textContent.indexOf('after exp') !== -1, 'the third row is a quiet label+value pair that never wraps');
+    // COP lens: expenses are a salary-lens privilege - nothing shows
+    d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
+    R.ok(afterLine.classList.contains('hidden') && d.getElementById('ca-arch-gross-line').classList.contains('hidden'), 'the COP lens shows no expense context - both salary lines step aside entirely');
+    d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
+    // the summary sheet: layovers carry the receipt row, turnarounds never
+    d.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').click(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=\"q1\"]').click(); await wait(100);
+    R.ok(d.getElementById('ca-arch-exp-btn') && d.getElementById('ca-arch-exp-btn').textContent.indexOf('Overseas expense') !== -1, 'the layover summary carries the Overseas expense row');
+    R.ok(d.querySelector('#ca-arch-exp-btn i[data-lucide=\"receipt\"]'), 'the row wears the receipt icon (a stub in jsdom - the name is the proof)');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, '$120.00', 'the seeded expense shows as the row figure');
+    // edit: 250 commits, the card + head pick it up live behind the sheet
+    d.getElementById('ca-arch-exp-btn').click(); await wait(50);
+    const ein = d.querySelector('#ca-arch-exp-val input');
+    R.ok(ein && ein.value === '120', 'tap turns the expense into a pre-filled input');
+    ein.value = '250';
+    ein.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await wait(100);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 250, 'Enter commits the expense to detail.expense');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, '$250.00', 'the row paints the new figure');
+    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$250.00') !== -1 && d.getElementById('ca-arch-after-line').textContent === 'After expenses ' + w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 250)"), 'the card behind the sheet picks the new figure up live');
+    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Expense saved') !== -1, 'the commit toasts');
+    // undo restores 120 everywhere
+    d.getElementById('ca-arch-toast').querySelector('button').click(); await wait(100);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 120, 'undo restores the previous expense');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, '$120.00', 'the row shows the restored figure');
+    // Escape cancels; 0 removes the field entirely
+    d.getElementById('ca-arch-exp-btn').click(); await wait(50);
+    const ein2 = d.querySelector('#ca-arch-exp-val input');
+    ein2.value = '999';
+    ein2.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await wait(50);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 120, 'Escape cancels the expense edit');
+    d.getElementById('ca-arch-exp-btn').click(); await wait(50);
+    const ein3 = d.querySelector('#ca-arch-exp-val input');
+    ein3.value = '0';
+    ein3.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await wait(100);
+    R.ok(!('expense' in JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail), 'a zero commit removes the expense field - absent means none');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add expense', 'the row falls back to the Add expense affordance');
+    R.ok(d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'with no expenses left the after-expenses line hides again');
+    // a turnaround summary never carries the row
+    w.closeArchSub(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=\"q3\"]').click(); await wait(100);
+    R.ok(!d.getElementById('ca-arch-exp-btn'), 'the turnaround summary carries no expense row');
+    // the unspent layover shows the affordance, not a figure
+    w.closeArchSub(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=\"q2\"]').click(); await wait(100);
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add expense', 'a layover without expenses shows the Add expense affordance');
+    w.closeArchSub();
+    // no basic set: the salary card stays keyable and silent, but the
+    // expense row still works on the sheet (the entry door is the sheet)
+    const { w: w2, d: d2 } = await boot(APP, { now: NOWE, seed: (x) => seedE(x, false) });
+    w2.showArchiveOverlay(); await wait(150);
+    d2.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
+    R.ok(d2.getElementById('ca-arch-after-line').classList.contains('hidden') && d2.getElementById('ca-arch-total').textContent === '\u2014', 'without a basic the salary card still refuses to guess - no expense figure either');
+    d2.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').click(); await wait(50);
+    d2.querySelector('.ca-arch-row[data-id=\"q2\"]').click(); await wait(100);
+    R.ok(d2.getElementById('ca-arch-exp-btn'), 'the expense row still rides the summary sheet without a basic set');
     void w; void d;
   }
 

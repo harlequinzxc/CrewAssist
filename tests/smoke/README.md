@@ -127,14 +127,36 @@ the service-worker stamp. It checks:
   the bottom, uniform 12px padding, the milestone/context cell spanning
   the full bottom row, the same theme tokens verified for both grids);
   the YEAR-view net comparison rides BESIDE the headline figure as the
-  triangle badge (regex '▲/▼ N.N%', the 14px rung bold nowrap, 12px off
-  the number on the shared text baseline, deep green rgb(18,63,34) /
-  deep brick rgb(110,31,31), an AA probe compositing the badge ink over
-  the gold card's MID gradient stop at ≥ 4.5); the earliest year hides
-  the badge entirely and the earliest COP year reads the clean quiet em
-  dash (never a 'not on record' string); and the gross row stays the
-  single string in every scope. The layers swap viewports
+  badge (the 14px rung bold nowrap, 12px off the number on the shared
+  text baseline, deep green rgb(18,63,34) / deep brick rgb(110,31,31),
+  an AA probe compositing the badge ink over the gold card's MID
+  gradient stop at ≥ 4.5); the earliest year hides the badge entirely
+  and the earliest COP year reads the clean quiet em dash (never a 'not
+  on record' string); and the gross row stays the single string in
+  every scope. The layers swap viewports
   (390 → 800 → 340 → 390) and restore before health.
+- v1.45.22 overseas expenses: the badge probe re-points to the
+  trending-icon contract — the `i[data-lucide]` stub name by sign
+  (trending-up/down — the CDN stays blocked in the rig, so the name and
+  the class are the proof), the SIGNED one-decimal span, the 14px
+  w-3.5/h-3.5 box measured on the stub, the flex pair (align-items
+  center, gap 4px; NOTE: `display: inline-flex` BLOCKIFIES to `flex`
+  in getComputedStyle because the badge is a flex item of the baseline
+  row — pin either), zero triangles left in the text; the money-column
+  probe re-points to the value-span hooks (.ca-arch-amt-net/-gross)
+  plus the pair-row contract (justify-center on the column, nowrap
+  flex rows, the 6px label gap, lowercase labels); and a new layer
+  drives the whole expense flow in the real browser — seeded layover
+  expense → the card's Exp segment + the quiet After-expenses line
+  (expected through the app's own formatMoney), the three-row month
+  head with ALL THREE value right edges on one vertical line and the
+  third row on the same muted ink as gross, the no-expense month
+  exactly two rows (read from the GROUP — the money column rides
+  beside the head button, not inside it), the summary sheet's receipt
+  row, a typed edit (focus + select, then keyboard.type + Enter)
+  committing to detail.expense with the card updating live behind the
+  sheet, the toast, Undo restoring, a zero commit removing the field,
+  and the COP lens showing no expense context anywhere.
 
 ## Running it
 
