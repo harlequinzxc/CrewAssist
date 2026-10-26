@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.20', 'APP_VERSION is 1.45.20');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.20' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.20 entry with its three pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v251'), 'the service-worker cache name is bumped to v251 (the v1.45.20 after-hours release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.21', 'APP_VERSION is 1.45.21');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.21' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.21 entry with its three pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v252'), 'the service-worker cache name is bumped to v252 (the v1.45.21 quadrant-unification release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.20'; }), 'the What\'s New sheet carries the v1.45.20 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.21'; }), 'the What\'s New sheet carries the v1.45.21 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -711,8 +711,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const gs = getComputedStyle(span);
             return { tracks, clips, vals, span: gs.gridColumnStart === 'span 2' || gs.gridColumnEnd === 'span 2', spanDbg: gs.gridColumnStart + '/' + gs.gridColumnEnd + ' cls=' + span.className };
         });
-        ok(grid3.tracks.length === 4 && Math.max(...grid3.tracks) - Math.min(...grid3.tracks) <= 1 && !grid3.clips.some(Boolean), 'v1.45.13: the COP stat row rides the strict 4-track grid and nothing clips');
-        ok(grid3.span === true, 'the COP context cell spans the last two tracks (' + grid3.spanDbg + ')');
+        ok(grid3.tracks.length === 2 && Math.abs(grid3.tracks[0] - grid3.tracks[1]) <= 1 && !grid3.clips.some(Boolean), 'v1.45.21: the COP stat row rides the unified 2x2 quadrant grid and nothing clips');
+        ok(grid3.span === true, 'the COP context cell spans the full bottom row (' + grid3.spanDbg + ')');
         ok(!grid3.vals.some(Boolean), 'stat values never truncate (nowrap, no clip)');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
         await sleep(300);
@@ -897,18 +897,21 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return { ym, heads };
         });
         ok(landMk.heads.length === 1 && landMk.heads[0] === landMk.ym, 'v1.45.14: the fresh open lands on the current month (' + landMk.heads.join(',') + ' vs ' + landMk.ym + ')');
-        // COP + MONTH: the two-row meta - two equal tracks, the on-track cell full width
+        // COP + MONTH: the quadrant architecture - equal halves, hairlines, the milestone full width
         const metaRows = await page.evaluate(() => {
             document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
             const el = document.getElementById('ca-arch-meta-cop');
             const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
             const ctx = el.children[2];
             const gs = getComputedStyle(ctx);
-            return { tracks, cls: el.classList.contains('ca-arch-metarows'), start: gs.gridColumnStart, end: gs.gridColumnEnd, gap: getComputedStyle(document.getElementById('ca-arch-m-ctx')).columnGap, ctxFont: getComputedStyle(document.getElementById('ca-arch-m-ctx')).fontSize };
+            const c0 = getComputedStyle(el.children[0]);
+            const c1 = getComputedStyle(el.children[1]);
+            return { tracks, start: gs.gridColumnStart, end: gs.gridColumnEnd, gap: getComputedStyle(document.getElementById('ca-arch-m-ctx')).columnGap, pad: c0.padding, brw: c0.borderRightWidth, bbw: c0.borderBottomWidth, b1r: c1.borderRightWidth, b1b: c1.borderBottomWidth, w: ctx.getBoundingClientRect().width, elw: el.getBoundingClientRect().width };
         });
-        ok(metaRows.cls && metaRows.tracks.length === 2 && Math.abs(metaRows.tracks[0] - metaRows.tracks[1]) <= 1, 'v1.45.14: COP + Month pairs the counts in two equal columns');
-        ok(metaRows.start === '1' && metaRows.end === '-1', 'the on-track milestone spans the full card width on its own row');
+        ok(metaRows.tracks.length === 2 && Math.abs(metaRows.tracks[0] - metaRows.tracks[1]) <= 1, 'v1.45.21: COP + Month rides the quadrant 2x2 - the counts pair in equal halves');
+        ok((metaRows.start === 'span 2' || metaRows.end === 'span 2') && metaRows.w >= metaRows.elw - 1, 'the milestone spans the full card width on its own bottom row (w ' + metaRows.w.toFixed(0) + ' of ' + metaRows.elw.toFixed(0) + ')');
         ok(metaRows.gap === '8px', 'the bullseye icon keeps gap-x-2 from the milestone text (got ' + metaRows.gap + ')');
+        ok(metaRows.pad === '12px' && metaRows.brw === '1px' && metaRows.bbw === '1px' && metaRows.b1r === '0px' && metaRows.b1b === '1px', 'the quadrant padding + axes: Flights pads 12px carrying both hairlines, Avg only the bottom (pad ' + metaRows.pad + ', r ' + metaRows.brw + '/' + metaRows.b1r + ', b ' + metaRows.bbw + '/' + metaRows.b1b + ')');
         // the ledger row grid: value column right-aligned and independent of the ✕ slot
         const rowGrid = await page.evaluate(() => {
             const rows = [...document.querySelectorAll('#ca-arch-list .ca-arch-row')];
@@ -922,14 +925,14 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(!rowGrid.none && rowGrid.n >= 2 && rowGrid.spread <= 1, 'v1.45.14: ledger values align down one strict column (spread ' + (rowGrid.spread || 0).toFixed(1) + 'px over ' + (rowGrid.n || 0) + ' rows)');
         ok(rowGrid.kids && rowGrid.amtRight < rowGrid.delLeft - 4, 'the value column ends clear of the fixed ✕ slot - independent of its touch target');
         ok(rowGrid.track.split(' ').length === 3 && /40px/.test(rowGrid.track), 'the row is a three-track grid with the fixed 40px ✕ slot (got ' + rowGrid.track + ')');
-        // All-time returns to the flat 4-track meta
+        // All-time keeps the same quadrant architecture - no scope ever swaps the grid
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
         await sleep(300);
         const metaFlat = await page.evaluate(() => {
             const el = document.getElementById('ca-arch-meta-cop');
-            return { cls: el.classList.contains('ca-arch-metarows'), tracks: getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat) };
+            return { cls0: el.children[0].className, tracks: getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat) };
         });
-        ok(!metaFlat.cls && metaFlat.tracks.length === 4, 'All-time returns to the flat 4-track meta grid');
+        ok(metaFlat.tracks.length === 2 && metaFlat.cls0.indexOf('ca-arch-msq-r') !== -1, 'All-time keeps the quadrant architecture - the grid never changes with the scope');
         // daylight depth: warm canvas, solid white cards, walnut ink
         await page.evaluate(() => { document.documentElement.classList.remove('dark'); });
         await sleep(300);
@@ -1265,12 +1268,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const gl = document.getElementById('ca-arch-gross-line');
             const cs = getComputedStyle(gl);
             const row1 = gl.children[0];
-            const r1 = row1 ? getComputedStyle(row1) : null;
-            return { text: gl.textContent.trim(), kids: gl.children.length, row1: row1 ? row1.textContent : '', row1Cls: row1 ? row1.className : '', dir: cs.flexDirection, display: cs.display, justify: r1 ? r1.justifyContent : '', align: r1 ? r1.alignItems : '', nowrap: row1 && row1.children[0] ? (row1.children[0].getAttribute('style') || '') : '', right: gl.children[1] ? gl.children[1].textContent : '', pipe: !!gl.querySelector('.ca-arch-gross-sep'), pipeOp: gl.querySelector('.ca-arch-gross-sep') ? getComputedStyle(gl.querySelector('.ca-arch-gross-sep')).opacity : '' };
+            return { text: gl.textContent.trim(), kids: gl.children.length, row1: row1 ? row1.textContent : '', display: cs.display, nowrap: row1 ? (row1.getAttribute('style') || '') : '', right: gl.children[1] ? gl.children[1].textContent : '', pipe: !!gl.querySelector('.ca-arch-gross-sep'), pipeOp: gl.querySelector('.ca-arch-gross-sep') ? getComputedStyle(gl.querySelector('.ca-arch-gross-sep')).opacity : '' };
         });
-        ok(gross20.display === 'flex' && gross20.dir === 'column', 'v1.45.20: the subtext block is the flex column (display ' + gross20.display + '/' + gross20.dir + ')');
-        ok(gross20.kids === 1 && gross20.row1.indexOf('Gross ') === 0 && gross20.row1.indexOf('CPF ') !== -1, 'the MONTH view carries a single row: ' + gross20.row1);
-        ok(gross20.justify === 'space-between' && gross20.align === 'center' && gross20.nowrap.indexOf('nowrap') !== -1, 'row one keeps the justify-between items-center w-full structure with the strict no-wrap security on the figures');
+        ok(gross20.display === 'block' && gross20.kids === 1 && gross20.row1.indexOf('Gross ') === 0 && gross20.row1.indexOf('CPF ') !== -1, 'v1.45.21: the subtext is the single never-wrapping row, in every scope: ' + gross20.row1);
+        ok(gross20.nowrap.indexOf('nowrap') !== -1, 'the figures carry the strict no-wrap security');
         ok(!gross20.right && gross20.text.indexOf('On track for') === -1 && gross20.text.indexOf('vs ') === -1, 'the right side is completely empty - the on-track milestone and the month comparison are deleted (breathing room)');
         ok(gross20.pipe && gross20.pipeOp === '0.45', 'the muted pipe separates Gross from CPF (opacity ' + gross20.pipeOp + ')');
         // the quadrant labels + icons at the rig viewport
@@ -1285,23 +1286,48 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(icons20.icos.map((i) => i.n).join(',') === 'circle-dollar-sign,shirt,car-front,car-taxi-front,plane', 'the icon map: Basic circle-dollar-sign, Fixed shirt+car-front, After-hours car-taxi-front, COP plane');
         ok(icons20.icos.every((i) => Math.abs(i.w - 14) <= 0.5 && Math.abs(i.h - 14) <= 0.5), 'every icon renders at the uniform 14px (w-3.5 h-3.5)');
         ok(icons20.icos.every((i) => i.c === 'rgba(26, 19, 0, 0.55)') && icons20.pairGap === '2px', 'the icons ride the low-opacity espresso token and the Fixed pair sits tight (' + icons20.icos[0].c + ', gap ' + icons20.pairGap + ')');
-        // the YEAR view breaks the comparison onto its own second row
+        // the YEAR view: the comparison rides beside the figure as the badge
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="year"]').click());
         await sleep(300);
-        const year20 = await page.evaluate(() => {
-            const gl = document.getElementById('ca-arch-gross-line');
-            const ly = gl.querySelector('.ca-arch-gross-ly');
-            const cs = ly ? getComputedStyle(ly) : null;
-            return { kids: gl.children.length, txt: ly ? ly.textContent : '', cls: ly ? ly.className : '', fw: cs ? cs.fontWeight : '', op: cs ? cs.opacity : '', pt: cs ? cs.paddingTop : '', ta: cs ? cs.textAlign : '' };
+        const year21 = await page.evaluate(() => {
+            const b = document.getElementById('ca-arch-netyoy');
+            const cs = getComputedStyle(b);
+            const num = document.getElementById('ca-arch-total');
+            return { hidden: b.classList.contains('hidden'), txt: b.textContent, cls: b.className, ml: cs.marginLeft, fs: cs.fontSize, fw: cs.fontWeight, wrap: cs.whiteSpace, color: cs.color, sameRow: b.parentElement === num.parentElement, align: getComputedStyle(b.parentElement).alignItems, gap: b.getBoundingClientRect().left - num.getBoundingClientRect().right, glKids: document.getElementById('ca-arch-gross-line').children.length };
         });
-        ok(year20.kids === 2 && year20.txt.indexOf(' YTD') !== -1 && year20.txt.indexOf(' vs LY') !== -1, 'the YEAR view carries the comparison on its own second row: ' + year20.txt);
-        ok(year20.cls.indexOf('text-right') !== -1 && year20.ta === 'right', 'the comparison row rides flush right underneath the figures');
-        ok(year20.fw === '400' && year20.op === '0.7' && year20.pt === '2px', 'quieter than the figures above: normal weight, muted .7, 2px off the row (fw ' + year20.fw + '/' + year20.op + '/' + year20.pt + ')');
-        // ALL-TIME drops back to the single row
+        ok(!year21.hidden && /^[\u25b2\u25bc] \d+\.\d%$/.test(year21.txt), 'v1.45.21: the YEAR badge rides beside the figure (' + year21.txt + ')');
+        ok(year21.sameRow && year21.align === 'baseline' && year21.ml === '12px' && year21.gap >= 11, 'the badge shares the figure row on the strict text baseline, 12px off the number');
+        ok(year21.fs === '14px' && year21.fw === '700' && year21.wrap === 'nowrap', 'the badge rides the 14px value rung, bold, never wrapping');
+        ok(year21.color === 'rgb(18, 63, 34)' || year21.color === 'rgb(110, 31, 31)', 'deep green for growth, deep brick for decline (' + year21.color + ')');
+        ok(year21.glKids === 1, 'the gross row stays the single string - no second row anywhere');
+        // the badge ink passes AA over the gold card's mid stop (its zone of the gradient)
+        const badgeAA = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const fg = parse(getComputedStyle(document.getElementById('ca-arch-netyoy')).color);
+            const stops = [...getComputedStyle(document.getElementById('ca-arch-summary')).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0]));
+            const mid = stops[1];
+            return { ratio: (Math.max(lum(fg), lum(mid)) + 0.05) / (Math.min(lum(fg), lum(mid)) + 0.05) };
+        });
+        ok(badgeAA.ratio >= 4.5, 'the badge ink passes AA over the gold mid stop (ratio ' + badgeAA.ratio.toFixed(2) + ')');
+        // the earliest year hides the badge entirely
+        await page.evaluate(() => document.getElementById('ca-arch-seg-year').click());
+        await sleep(300);
+        const early21 = await page.evaluate(() => ({ hidden: document.getElementById('ca-arch-netyoy').classList.contains('hidden'), yr: document.getElementById('ca-arch-seg-year').textContent }));
+        ok(early21.hidden, 'the earliest year hides the badge entirely - no prior year to cite (' + early21.yr + ')');
+        // the earliest COP year reads the clean quiet em dash
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="cop"]').click());
+        await sleep(300);
+        const dash21 = await page.evaluate(() => ({ txt: document.getElementById('ca-arch-m-ctx').textContent, label: document.getElementById('ca-arch-m-ctx-label').textContent }));
+        ok(dash21.txt === '\u2014', 'v1.45.21: the earliest COP year reads the clean quiet em dash (' + JSON.stringify(dash21.txt) + ')');
+        ok(dash21.label.indexOf('not on record') === -1 && dash21.txt.indexOf('not on record') === -1, 'no text placeholder remains');
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        await sleep(300);
+        // ALL-TIME keeps the single row and hides the badge
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
         await sleep(300);
-        const all20 = await page.evaluate(() => ({ kids: document.getElementById('ca-arch-gross-line').children.length, ly: !!document.getElementById('ca-arch-gross-line').querySelector('.ca-arch-gross-ly') }));
-        ok(all20.kids === 1 && !all20.ly, 'the ALL-TIME view drops back to the single row - the comparison is a YEAR-only privilege');
+        const all20 = await page.evaluate(() => ({ kids: document.getElementById('ca-arch-gross-line').children.length, badgeHidden: document.getElementById('ca-arch-netyoy').classList.contains('hidden') }));
+        ok(all20.kids === 1 && all20.badgeHidden, 'the ALL-TIME view keeps the single row and hides the badge - the comparison is a YEAR-only privilege');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="month"]').click());
         await sleep(300);
         // the strict 2x2 at a wide viewport
@@ -1327,14 +1353,18 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const h = document.documentElement;
             const wasDark = h.classList.contains('dark');
             const el = document.getElementById('ca-arch-meta-salary').children[0];
+            const cop = document.getElementById('ca-arch-meta-cop').children[0];
             h.classList.add('dark'); void el.offsetWidth;
             const dk = getComputedStyle(el).borderRightColor;
+            const copDk = getComputedStyle(cop).borderRightColor;
             h.classList.remove('dark'); void el.offsetWidth;
             const lt = getComputedStyle(el).borderRightColor;
+            const copLt = getComputedStyle(cop).borderRightColor;
             if (wasDark) h.classList.add('dark');
-            return { dk, lt };
+            return { dk, lt, copDk, copLt };
         });
-        ok(hair20.dk === 'rgba(255, 255, 255, 0.08)' && hair20.lt === 'rgba(0, 0, 0, 0.06)', 'the hairlines ride the theme tokens (night ' + hair20.dk + ' / day ' + hair20.lt + ')');
+        ok(hair20.dk === 'rgba(255, 255, 255, 0.08)' && hair20.lt === 'rgba(0, 0, 0, 0.06)', 'the salary hairlines ride the theme tokens (night ' + hair20.dk + ' / day ' + hair20.lt + ')');
+        ok(hair20.copDk === 'rgba(255, 255, 255, 0.08)' && hair20.copLt === 'rgba(0, 0, 0, 0.06)', 'v1.45.21: the COP hairlines ride the same theme tokens (night ' + hair20.copDk + ' / day ' + hair20.copLt + ')');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(400);
         // under 360px the values scale down 1.5px

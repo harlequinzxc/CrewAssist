@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.20), the changelog's current entry,
-  the service-worker cache name (v251).
+- Stamps: `APP_VERSION` (currently 1.45.21), the changelog's current entry,
+  the service-worker cache name (v252).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -112,18 +112,29 @@ the service-worker stamp. It checks:
   2×2 at every viewport (nothing clips), the labels read Basic / Fixed /
   After-hours / COP leading with their Lucide icons at a uniform 14px on
   the low-opacity espresso token (the Fixed pair shirt+car-front tight
-  at a 2px gap), and the gross/CPF subtext computes as the flex column —
-  a single no-wrap figures row with the muted pipe at opacity .45 and a
-  COMPLETELY EMPTY right side in month view (the milestone is deleted);
-  the YEAR view grows the flush-right comparison second row (weight 400,
-  opacity .7, 2px off the row above) and ALL-TIME drops back to one row;
-  at an 800px viewport the quadrants measure equal halves with uniform
-  12px padding, both hairline axes on the right classes, and the theme
-  tokens verified by flipping dark/light (night rgba(255,255,255,0.08),
-  day rgba(0,0,0,0.06)) — the axis rules must stay longhand or
-  currentcolor beats the tokens; and at 340px the values compute at the
-  owner-ordered 12.5px scale-down inside the intact 2×2. The layer swaps
-  viewports (390 → 800 → 340 → 390) and restores before health.
+  at a 2px gap), and the gross/CPF subtext computes as the single
+  no-wrap figures row with the muted pipe at opacity .45 and a COMPLETELY
+  EMPTY right side in every scope; at an 800px viewport the quadrants
+  measure equal halves with uniform 12px padding, both hairline axes on
+  the right classes, and the theme tokens verified by flipping dark/light
+  (night rgba(255,255,255,0.08), day rgba(0,0,0,0.06)) — the axis rules
+  must stay longhand or currentcolor beats the tokens; and at 340px the
+  values compute at the owner-ordered 12.5px scale-down inside the
+  intact 2×2.
+- v1.45.21 quadrant unification: the COP stat row rides the same 2×2
+  hairline architecture (grid3 + the month layer: equal halves, the
+  Flights quadrant carrying both axis hairlines while Avg carries only
+  the bottom, uniform 12px padding, the milestone/context cell spanning
+  the full bottom row, the same theme tokens verified for both grids);
+  the YEAR-view net comparison rides BESIDE the headline figure as the
+  triangle badge (regex '▲/▼ N.N%', the 14px rung bold nowrap, 12px off
+  the number on the shared text baseline, deep green rgb(18,63,34) /
+  deep brick rgb(110,31,31), an AA probe compositing the badge ink over
+  the gold card's MID gradient stop at ≥ 4.5); the earliest year hides
+  the badge entirely and the earliest COP year reads the clean quiet em
+  dash (never a 'not on record' string); and the gross row stays the
+  single string in every scope. The layers swap viewports
+  (390 → 800 → 340 → 390) and restore before health.
 
 ## Running it
 

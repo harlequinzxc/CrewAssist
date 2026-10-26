@@ -340,6 +340,11 @@ const fs = require('fs');
     const ctxY = d.getElementById('ca-arch-m-ctx');
     R.ok(ctxY.textContent.indexOf('+122.7% vs LY') !== -1, 'year YoY vs the whole of 2025');
     R.ok(ctxY.innerHTML.indexOf('trending-up') !== -1, 'year context uses the up icon');
+    d.getElementById('ca-arch-seg-year').click();
+    await wait(50);
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, '2025', 'second tap cycles to the earliest year');
+    R.eq(d.getElementById('ca-arch-m-ctx').textContent, '—', 'v1.45.21: no prior year on record - the clean quiet em dash, never a text placeholder');
+    R.ok(d.getElementById('ca-arch-m-ctx').innerHTML.indexOf('not on record') === -1, 'the old placeholder string is gone from the card');
     segOf('all').click();
     await wait(50);
     R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'all-time scope restores the full total');
@@ -1185,13 +1190,12 @@ function todayYmd() {
       R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross $12,259.00') !== -1 && d.getElementById('ca-arch-gross-line').textContent.indexOf('CPF \u2212$2,072.80') !== -1, 'gross and CPF ride under the number');
       const src19 = fs.readFileSync(APP, 'utf8');
       const gl20 = d.getElementById('ca-arch-gross-line');
-      R.ok(gl20.className.indexOf('flex flex-col w-full') !== -1, 'v1.45.20: the subtext block is the flex column - one row, plus the year-only trailing row');
-      R.ok(gl20.children[0] && gl20.children[0].className.indexOf('flex-row justify-between items-center w-full') !== -1, 'row one keeps the structured flex-row justify-between container');
-      R.ok(gl20.children[0].children[0].getAttribute('style').indexOf('white-space: nowrap') !== -1, 'v1.45.20: the Gross|CPF string carries the strict no-wrap security');
-      R.ok(gl20.children.length === 1 && gl20.textContent.indexOf('On track for') === -1 && gl20.textContent.indexOf('vs ') === -1, 'v1.45.20: the MONTH view right side is completely empty - the milestone and the month comparison are deleted');
+      R.ok(gl20.className.indexOf('mt-1.5') !== -1 && gl20.className.indexOf('w-full') !== -1 && gl20.className.indexOf('flex') === -1, 'v1.45.21: the subtext is the single never-wrapping Gross|CPF string - no column, no trailing row, in every scope');
+      R.ok(gl20.children.length === 1 && gl20.children[0].getAttribute('style').indexOf('white-space: nowrap') !== -1, 'the string carries the strict no-wrap security');
+      R.ok(gl20.textContent.indexOf('On track for') === -1 && gl20.textContent.indexOf('vs') === -1, 'no milestone, no comparison below the figures - the right side stays empty');
       R.ok(gl20.innerHTML.indexOf('ca-arch-gross-sep">|</span>') !== -1, 'Gross and CPF group left behind the muted pipe');
       R.ok(src19.includes('.ca-arch-gross-sep { opacity: .45; padding: 0 4px; }'), 'the pipe rides slightly more muted with breathing room');
-      R.ok(src19.includes('.ca-arch-gross-ly { font-weight: 400; opacity: .7; padding-top: 2px; }'), 'the year comparison row rides quieter: normal weight, muted, under the figures');
+      R.ok(!src19.includes('.ca-arch-gross-ly') && !src19.includes('ca-arch-metarows'), 'v1.45.21: the year second row and the metarows class are gone from the source');
       R.eq(d.getElementById('ca-arch-m-basic').textContent, '$7,800.00', 'basic meta = 3 tracked months x 2600');
       R.eq(d.getElementById('ca-arch-m-fixed').textContent, '$1,395.00', 'fixed meta = 3 x (125 + 340)');
       R.ok(d.getElementById('ca-arch-m-mid').textContent.indexOf('2') === 0 && d.getElementById('ca-arch-m-mid').textContent.indexOf('$64.00') !== -1, 'midnight meta shows 2 duties = $64');
@@ -1200,8 +1204,17 @@ function todayYmd() {
       // tap moves the selection, the owner's spec)
       d.querySelector('.ca-arch-seg[data-scope="year"]').click(); await wait(150);
       R.eq(d.getElementById('ca-arch-seg-year').textContent, '2026', 'Year pill opens on the current year');
+      // v1.45.21 (owner order): the yearly net comparison rides beside the
+      // headline figure as the triangle badge - one decimal, the app's own
+      // YoY precision, computed through the app's own aggregators
+      const badge21 = d.getElementById('ca-arch-netyoy');
+      const expBadge21 = w.eval("(function () { const all = JSON.parse(localStorage.getItem('crewAssist.archive')); const mkSet = {}; all.forEach((e) => { mkSet[e.monthKey] = 1; }); const yMks = Object.keys(mkSet).filter((k) => k.slice(0, 4) === '2026').sort(); const lyMks = Object.keys(mkSet).filter((k) => k.slice(0, 4) === '2025').sort(); const sal = archSalaryAgg(yMks, all), lySal = archSalaryAgg(lyMks, all); const y = archYoyPct(sal.net, lySal.net); return (y >= 0 ? '▲ ' : '▼ ') + Math.abs(y).toFixed(1) + '%'; })()");
+      R.ok(!badge21.classList.contains('hidden') && badge21.textContent === expBadge21, 'v1.45.21: the YEAR badge rides beside the figure with the app-computed net YoY (' + badge21.textContent + ')');
+      R.ok(badge21.className.indexOf('ml-3') !== -1 && (badge21.classList.contains('ca-arch-netyoy-up') || badge21.classList.contains('ca-arch-netyoy-dn')), 'the badge carries its 12px margin and its direction class');
+      R.ok(d.getElementById('ca-arch-total').parentElement.className.indexOf('items-baseline') !== -1, 'the badge shares the figure row on the strict text baseline');
       d.getElementById('ca-arch-seg-year').click(); await wait(150);
       R.eq(d.getElementById('ca-arch-seg-year').textContent, '2025', 'second tap cycles to the earliest year on record');
+      R.ok(badge21.classList.contains('hidden'), 'the earliest year hides the badge entirely - no prior year to cite');
       d.getElementById('ca-arch-seg-year').click(); await wait(150);
       R.eq(d.getElementById('ca-arch-seg-year').textContent, '2026', 'third tap is +1 - back to the current year');
       d.getElementById('ca-arch-seg-year').click(); await wait(150);
@@ -1293,10 +1306,10 @@ function todayYmd() {
     const src = fs.readFileSync(APP, 'utf8');
     // the card: src pins (jsdom cannot compute var()-backed properties)
     R.ok(src.includes('#ca-arch-total { padding-top: 16px; padding-bottom: 16px; }'), 'v1.45.13: the core figure carries 16px of air above and below (the 8 from v1.45.12 + 8 more)');
-    R.ok(src.includes('.ca-arch-metagrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 8px; }'), 'v1.45.13: a strict four-track stat grid for both views');
-    R.ok(src.includes('.ca-arch-metaspan2 { grid-column: span 2; }'), 'the COP context cell spans the last two tracks');
+    R.ok(src.includes('.ca-arch-metagrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 8px; }'), 'the metagrid family base (v1.45.13 four-track) - both named grids override it with the quadrant 2x2');
+    R.ok(src.includes('.ca-arch-metaspan2 { grid-column: span 2; }'), 'the COP context cell spans the full bottom row of the quadrant grid');
     R.ok(src.includes('@media (max-width: 419px) { .ca-arch-metagrid .ca-arch-metaval { font-size: 12px; } }'), 'values step to 12px under 420px before anything can clip');
-    R.ok(src.includes('@media (max-width: 359px) {') && src.includes('.ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }'), 'the grid folds to two tracks under 360px');
+    R.ok(src.includes('@media (max-width: 359px) {') && src.includes('.ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }'), 'the family fold under 360px (the named grids are already the 2x2 at every width)');
     R.ok(src.includes('.ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }'), 'v1.45.13: values never truncate - nowrap with no clip, the tiers carry the width');
     R.ok(src.includes('.ca-arch-metalabel { font-size: 11px; letter-spacing: .03em;'), 'labels keep the 11px floor with roomier tracking (wrap before ellipsis)');
     R.ok(src.includes('--ca-arch-seg-ink: #1A1300;'), 'v1.45.15: the inactive tab ink is espresso solid by night (the .75 tint read thin)');
@@ -1318,7 +1331,9 @@ function todayYmd() {
     R.ok(src.includes('.ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: center; }'), 'v1.45.15: the ledger row CENTRES its columns (the text line boxes coincide; the \u2715 no longer sags)');
     R.ok(src.includes('.ca-arch-row .ca-arch-del { justify-self: end; display: flex; align-items: center; justify-content: center; }'), 'v1.45.15: the \u2715 rides a flex-centred wrapper in its fixed end slot');
     R.ok(src.includes('.ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }'), 'v1.45.14: row values right-align inside their own column, independent of the \u2715 slot');
-    R.ok(src.includes('.ca-arch-metagrid.ca-arch-metarows { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }') && src.includes('.ca-arch-metarows .ca-arch-metaspan2 { grid-column: 1 / -1; }'), 'v1.45.14: COP + Month swaps to the two-row meta - counts paired, on-track full width');
+    R.ok(src.includes('.ca-arch-netyoy { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }'), 'v1.45.21: the badge rides the 14px value rung, bold, tabular, never wrapping');
+    R.ok(src.includes('.ca-arch-netyoy-up { color: #123f22; }') && src.includes('.ca-arch-netyoy-dn { color: #6e1f1f; }'), 'deep green for growth, deep brick for decline - both AA over the gold card');
+    R.ok(src.includes('ca-arch-netyoy ml-3 hidden" id="ca-arch-netyoy"'), 'the badge markup: 12px off the figure, hidden by default');
     R.ok(src.includes('ca-arch-metaval flex items-center gap-2'), 'v1.45.14: the bullseye icon keeps gap-x-2 from the milestone text');
 
     // the DOM contract on a live boot
@@ -1339,10 +1354,10 @@ function todayYmd() {
     R.ok(d.querySelector('.ca-arch-seg[data-scope=\"month\"]').classList.contains('ca-arch-segon'), 'a fresh open lands on Month');
     R.ok(!d.getElementById('ca-arch-coprow'), 'the counting row is absent from the DOM');
     const copRow = d.getElementById('ca-arch-meta-cop');
-    R.ok(copRow.className.indexOf('ca-arch-metagrid') !== -1 && copRow.className.indexOf('metagrid-3') === -1, 'the COP stat row rides the strict 4-track grid');
-    R.ok(copRow.classList.contains('ca-arch-metarows'), 'v1.45.14: the fresh Month open tells the two-row story (metarows on)');
-    R.eq(copRow.querySelectorAll(':scope > div').length, 3, 'three stat cells - the context cell spans the fourth track');
-    R.ok(copRow.querySelector('.ca-arch-metaspan2') === copRow.children[2], 'the context cell is the two-track spanner');
+    R.ok(copRow.className.indexOf('ca-arch-metagrid') !== -1 && copRow.className.indexOf('metagrid-3') === -1, 'the COP stat row rides the metagrid family');
+    R.ok([copRow.children[0].className, copRow.children[1].className, copRow.children[2].className].join('|') === 'ca-arch-msq-r ca-arch-msq-b|ca-arch-msq-b|ca-arch-metaspan2', 'v1.45.21: the COP quadrants - Flights r+b, Avg b, the context cell spanning the bottom row');
+    R.eq(copRow.querySelectorAll(':scope > div').length, 3, 'three stat cells - the context cell spans both bottom tracks');
+    R.ok(copRow.querySelector('.ca-arch-metaspan2') === copRow.children[2], 'the context cell is the full-width spanner');
     R.eq(copRow.querySelectorAll('.ca-arch-metadot').length, 0, 'the old dot separators are gone from the stat row');
     // the year window: empty future months take the 16px striped placeholder
     d.querySelector('.ca-arch-seg[data-scope=\"year\"]').click(); await wait(150);
@@ -1352,15 +1367,15 @@ function todayYmd() {
     R.ok(decBar.classList.contains('ca-arch-barfuture') && decBar.getAttribute('style').indexOf('height:16px') !== -1, 'v1.45.13: an EMPTY future month takes the 16px striped placeholder (Dec has nothing saved)');
     R.ok(!d.querySelector('.ca-arch-barcol[data-mk=\"2026-12\"] .ca-arch-barproj'), 'the placeholder needs no projection div of its own');
     d.querySelector('.ca-arch-seg[data-scope=\"all\"]').click(); await wait(150);
-    R.ok(!d.getElementById('ca-arch-meta-cop').classList.contains('ca-arch-metarows'), 'v1.45.14: All-time returns to the flat 4-track grid (metarows off)');
+    R.ok(d.getElementById('ca-arch-meta-cop').children[0].className.indexOf('ca-arch-msq-r') !== -1, 'All-time keeps the same quadrant architecture - no scope ever swaps the grid');
     d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     const salRow = d.getElementById('ca-arch-meta-salary');
     R.ok(salRow.className.indexOf('ca-arch-metagrid') !== -1 && salRow.className.indexOf('metagrid-4') === -1, 'the salary stat row rides the metagrid family');
     // v1.45.20 (owner order): the salary row is the strict 2x2 hairline grid
-    R.ok(src.includes('#ca-arch-meta-salary { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0; row-gap: 0; }'), 'v1.45.20: the salary row is the strict 2x2 grid, no gaps - the hairlines own the tracks');
-    R.ok(src.includes('#ca-arch-meta-salary > div { padding: 12px; border-color: rgba(255, 255, 255, 0.08); }'), 'every quadrant pads a uniform 12px off the tracks, hairlines at the night white tint');
-    R.ok(src.includes('html:not(.dark) #ca-arch-meta-salary > div { border-color: rgba(0, 0, 0, 0.06); }'), 'by day the hairlines shift to the quiet charcoal tint');
-    R.ok(src.includes('#ca-arch-meta-salary .ca-arch-msq-r { border-right-width: 1px; border-right-style: solid; }') && src.includes('#ca-arch-meta-salary .ca-arch-msq-b { border-bottom-width: 1px; border-bottom-style: solid; }'), 'the vertical centre axis + horizontal centre axis hairlines ride longhand width/style - the border-color rules stay the single colour source (shorthands would smuggle currentcolor past them)');
+    R.ok(src.includes('#ca-arch-meta-salary, #ca-arch-meta-cop { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0; row-gap: 0; }'), 'v1.45.21: BOTH meta rows ride the unified strict 2x2 - no gaps, the hairlines own the tracks');
+    R.ok(src.includes('#ca-arch-meta-salary > div, #ca-arch-meta-cop > div { padding: 12px; border-color: rgba(255, 255, 255, 0.08); }'), 'every quadrant on both rows pads the uniform 12px, hairlines at the night white tint');
+    R.ok(src.includes('html:not(.dark) #ca-arch-meta-salary > div, html:not(.dark) #ca-arch-meta-cop > div { border-color: rgba(0, 0, 0, 0.06); }'), 'by day the hairlines shift to the quiet charcoal tint');
+    R.ok(src.includes('#ca-arch-meta-salary .ca-arch-msq-r, #ca-arch-meta-cop .ca-arch-msq-r { border-right-width: 1px; border-right-style: solid; }') && src.includes('#ca-arch-meta-salary .ca-arch-msq-b, #ca-arch-meta-cop .ca-arch-msq-b { border-bottom-width: 1px; border-bottom-style: solid; }'), 'the centre axes ride longhand width/style on both rows - the border-color rules stay the single colour source (shorthands would smuggle currentcolor past them)');
     R.ok([...salRow.children].map((c) => c.className).join(',') === 'ca-arch-msq-r ca-arch-msq-b,ca-arch-msq-b,ca-arch-msq-r,', 'the quadrants carry their hairline classes: Basic r+b, Fixed b, After-hours r, COP bare');
     R.ok(src.includes('.ca-arch-metico { color: rgba(26, 19, 0, 0.55); }'), 'the 14px label icons ride the low-opacity espresso token');
     R.ok(src.includes('@media (max-width: 359px) {') && src.includes('#ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }'), 'the v1.45.19 under-360px 1.5px value step survives the rebuild');
