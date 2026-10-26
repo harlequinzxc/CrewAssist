@@ -281,22 +281,33 @@ buttons ride a flex `items-center justify-center` wrapper in their fixed
 slot, and fine-tune translations are added only when a measured gap
 survives the centring (v1.45.15 measured 0.0px — none needed).
 
-**Long-value rows weight their tracks.** When a stat row's values differ
-wildly in length (a midnight count-and-amount pair beside seven-digit
-career aggregates), equal tracks collide: weight the grid to the data
-(here Basic 3 / Fixed 2 / Midnights 3 / COP 4 of twelve) with a right
-buffer on the value that borders its neighbour, and fold to two tracks
-at the width where the weighted row stops fitting — earlier than the
-shorter-valued grids. Under the narrowest tier the values step DOWN
-(14 → 12.5px, the one owner-ordered off-rung size), never back up
-(v1.45.19).
+**Equal quadrants with interior hairlines.** When a stat row's values
+differ wildly in length (a count-and-amount pair beside seven-digit
+career aggregates), the strict 2×2 supersedes the weighted ladder:
+equal halves carry the weights in aggregate, the 1px hairlines ride the
+centre axes only (never the outer edge), every quadrant pads uniformly
+off the hairlines, and the hairline tint follows the theme — a
+low-alpha white by night, a quiet charcoal by day. The axis rules ride
+longhand width/style declarations with the colour living only in the
+`border-color` rules: a `border-right: 1px solid` shorthand out-ranks
+the colour declarations and smuggles `currentcolor` past the theme
+tokens (v1.45.19's weighted ladder, superseded v1.45.20; the
+under-narrowest-tier value step DOWN — 14 → 12.5px, the one
+owner-ordered off-rung size — survives the supersession).
 
-**Static figures left, temporal context right.** A subtext row under a
-headline number splits at the seam of permanence: the static deductions
-(Gross, CPF) group left behind a muted pipe; the milestone or comparison
-that changes with time (On track for, vs LY) rides its own right-hand
-bounding area — one flex row, two meanings, never one continuous
-dot-separated string to clip (v1.45.19).
+**Labels lead with their icon.** Every label on an icon-bearing stat row
+leads with a 14px Lucide glyph at the low-opacity ink token, on the
+strict horizontal centre baseline; a two-part concept wears its glyph
+pair tight (a 2px flex) rather than collapsing to one glyph (v1.45.20).
+
+**Static figures alone; comparisons break below.** A subtext row under a
+headline number keeps the static deductions (Gross, CPF) grouped behind
+a muted pipe under a strict no-wrap — and in the default view the right
+side stays completely empty: breathing room is the layout invariant,
+not a slot awaiting content. Only the year-over-year comparison grows
+a second row, flush right, quieter through weight and opacity — never
+through a size below the MICRO floor (v1.45.20; the v1.45.19
+left/right split superseded).
 
 **Labels wrap before they clip; values never truncate.** When a dense stat
 grid meets a narrow viewport, the labels may wrap (their tracking relaxes

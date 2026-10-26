@@ -1184,9 +1184,14 @@ function todayYmd() {
       R.eq(d.getElementById('ca-arch-total').textContent, '$10,186.20', 'all-time net = gross 12259 - CPF 2072.80');
       R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross $12,259.00') !== -1 && d.getElementById('ca-arch-gross-line').textContent.indexOf('CPF \u2212$2,072.80') !== -1, 'gross and CPF ride under the number');
       const src19 = fs.readFileSync(APP, 'utf8');
-      R.ok(d.getElementById('ca-arch-gross-line').className.indexOf('flex-row justify-between items-center w-full') !== -1, 'v1.45.19: the subtext row is the structured flex container, never one continuous string');
-      R.ok(d.getElementById('ca-arch-gross-line').innerHTML.indexOf('ca-arch-gross-sep">|</span>') !== -1, 'Gross and CPF group left behind the muted pipe');
+      const gl20 = d.getElementById('ca-arch-gross-line');
+      R.ok(gl20.className.indexOf('flex flex-col w-full') !== -1, 'v1.45.20: the subtext block is the flex column - one row, plus the year-only trailing row');
+      R.ok(gl20.children[0] && gl20.children[0].className.indexOf('flex-row justify-between items-center w-full') !== -1, 'row one keeps the structured flex-row justify-between container');
+      R.ok(gl20.children[0].children[0].getAttribute('style').indexOf('white-space: nowrap') !== -1, 'v1.45.20: the Gross|CPF string carries the strict no-wrap security');
+      R.ok(gl20.children.length === 1 && gl20.textContent.indexOf('On track for') === -1 && gl20.textContent.indexOf('vs ') === -1, 'v1.45.20: the MONTH view right side is completely empty - the milestone and the month comparison are deleted');
+      R.ok(gl20.innerHTML.indexOf('ca-arch-gross-sep">|</span>') !== -1, 'Gross and CPF group left behind the muted pipe');
       R.ok(src19.includes('.ca-arch-gross-sep { opacity: .45; padding: 0 4px; }'), 'the pipe rides slightly more muted with breathing room');
+      R.ok(src19.includes('.ca-arch-gross-ly { font-weight: 400; opacity: .7; padding-top: 2px; }'), 'the year comparison row rides quieter: normal weight, muted, under the figures');
       R.eq(d.getElementById('ca-arch-m-basic').textContent, '$7,800.00', 'basic meta = 3 tracked months x 2600');
       R.eq(d.getElementById('ca-arch-m-fixed').textContent, '$1,395.00', 'fixed meta = 3 x (125 + 340)');
       R.ok(d.getElementById('ca-arch-m-mid').textContent.indexOf('2') === 0 && d.getElementById('ca-arch-m-mid').textContent.indexOf('$64.00') !== -1, 'midnight meta shows 2 duties = $64');
@@ -1351,13 +1356,19 @@ function todayYmd() {
     d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     const salRow = d.getElementById('ca-arch-meta-salary');
     R.ok(salRow.className.indexOf('ca-arch-metagrid') !== -1 && salRow.className.indexOf('metagrid-4') === -1, 'the salary stat row rides the metagrid family');
-    // v1.45.19 (owner order): the salary row is a WEIGHTED 12-track ladder
-    R.ok(src.includes('#ca-arch-meta-salary { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 4px; }'), 'v1.45.19: the salary row rides the 12-track ladder on a 4px gap');
-    R.ok(src.includes('#ca-arch-meta-salary .ca-arch-msp3 { grid-column: span 3; }') && src.includes('#ca-arch-meta-salary .ca-arch-msp2 { grid-column: span 2; }') && src.includes('#ca-arch-meta-salary .ca-arch-msp4 { grid-column: span 4; }'), 'Basic 3, Fixed 2, Midnights 3, COP 4 - the weighted fractions');
-    R.ok(src.includes('#ca-arch-meta-salary #ca-arch-m-mid { padding-right: 8px; }'), 'the Midnights value keeps its strict 8px right buffer');
-    R.ok(src.includes('@media (max-width: 519px) {') && src.includes('#ca-arch-meta-salary { grid-template-columns: repeat(2, minmax(0, 1fr)); }'), 'the salary row folds to two tracks under 520px - earlier than the COP grid, its values are the longest');
-    R.ok(src.includes('@media (max-width: 359px) {') && src.includes('#ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }'), 'under 360px the salary values scale down 1.5px (14 -> 12.5px) - never back up');
-    R.ok([...salRow.children].map((c) => c.className).join(',') === 'ca-arch-msp3,ca-arch-msp2,ca-arch-msp3,ca-arch-msp4', 'the four cells carry their weighted span classes in order');
+    // v1.45.20 (owner order): the salary row is the strict 2x2 hairline grid
+    R.ok(src.includes('#ca-arch-meta-salary { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 0; row-gap: 0; }'), 'v1.45.20: the salary row is the strict 2x2 grid, no gaps - the hairlines own the tracks');
+    R.ok(src.includes('#ca-arch-meta-salary > div { padding: 12px; border-color: rgba(255, 255, 255, 0.08); }'), 'every quadrant pads a uniform 12px off the tracks, hairlines at the night white tint');
+    R.ok(src.includes('html:not(.dark) #ca-arch-meta-salary > div { border-color: rgba(0, 0, 0, 0.06); }'), 'by day the hairlines shift to the quiet charcoal tint');
+    R.ok(src.includes('#ca-arch-meta-salary .ca-arch-msq-r { border-right-width: 1px; border-right-style: solid; }') && src.includes('#ca-arch-meta-salary .ca-arch-msq-b { border-bottom-width: 1px; border-bottom-style: solid; }'), 'the vertical centre axis + horizontal centre axis hairlines ride longhand width/style - the border-color rules stay the single colour source (shorthands would smuggle currentcolor past them)');
+    R.ok([...salRow.children].map((c) => c.className).join(',') === 'ca-arch-msq-r ca-arch-msq-b,ca-arch-msq-b,ca-arch-msq-r,', 'the quadrants carry their hairline classes: Basic r+b, Fixed b, After-hours r, COP bare');
+    R.ok(src.includes('.ca-arch-metico { color: rgba(26, 19, 0, 0.55); }'), 'the 14px label icons ride the low-opacity espresso token');
+    R.ok(src.includes('@media (max-width: 359px) {') && src.includes('#ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }'), 'the v1.45.19 under-360px 1.5px value step survives the rebuild');
+    const metLbls = [...salRow.querySelectorAll('.ca-arch-metalabel')].map((l) => l.textContent.trim());
+    R.ok(metLbls.join('|') === 'Basic|Fixed|After-hours|COP', 'v1.45.20: MIDNIGHTS is renamed AFTER-HOURS (small muted uppercase inherited)');
+    const metIcos = [...salRow.querySelectorAll('.ca-arch-metalabel > i, .ca-arch-metalabel .ca-arch-metipair > i')].map((i) => i.getAttribute('data-lucide'));
+    R.ok(metIcos.join(',') === 'circle-dollar-sign,shirt,car-front,car-taxi-front,plane', 'the icon map: Basic circle-dollar-sign, Fixed shirt+car-front pair, After-hours car-taxi-front, COP plane');
+    R.ok(salRow.querySelectorAll('.ca-arch-metalabel i.w-3\.h-3\.5, .ca-arch-metalabel i[class*="w-3.5"]').length === 5, 'every icon renders at the uniform 14px (w-3.5 h-3.5)');
     R.eq(salRow.querySelectorAll(':scope > div').length, 4, 'four stat cells - Basic, Fixed, Midnights, COP');
     R.ok(!d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the Year-by-Year legend shows in salary view');
     // the list: month cards, solid pills, the money column (salary mode is
