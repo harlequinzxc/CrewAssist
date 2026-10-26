@@ -252,7 +252,7 @@ const fs = require('fs');
     const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
     R.ok(headOf('2026-03').querySelector('.ca-arch-badge-best') && headOf('2026-03').textContent.indexOf('Best') !== -1, 'Best badge on the top month');
     R.ok(headOf('2026-04').querySelector('.ca-arch-badge-low') && headOf('2026-04').textContent.indexOf('Low') !== -1, 'Low badge on the weakest month');
-    R.ok(headOf('2026-09').querySelector('.ca-arch-badge-prog') && headOf('2026-09').textContent.indexOf('In progress') !== -1, 'In progress badge on the current month');
+    R.ok(headOf('2026-09').textContent.indexOf('In progress') !== -1, 'In progress status on the current month (v1.45.16: the word rides the count line, the state rides the icon)');
     const up = d.querySelectorAll('.ca-arch-yoy-up'), down = d.querySelectorAll('.ca-arch-yoy-down');
     R.eq(up.length, 1, 'one YoY arrow in the list');
     R.ok(up[0].closest('.ca-arch-group-head').getAttribute('data-mk') === '2026-08' && up[0].textContent.indexOf('100.0%') !== -1, 'Aug 2026 up 100.0% vs Aug 2025');
@@ -1291,7 +1291,7 @@ function todayYmd() {
     R.ok(src.includes('.ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }'), 'v1.45.13: values never truncate - nowrap with no clip, the tiers carry the width');
     R.ok(src.includes('.ca-arch-metalabel { font-size: 11px; letter-spacing: .03em;'), 'labels keep the 11px floor with roomier tracking (wrap before ellipsis)');
     R.ok(src.includes('--ca-arch-seg-ink: #1A1300;'), 'v1.45.15: the inactive tab ink is espresso solid by night (the .75 tint read thin)');
-    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #2D1E0F; }'), 'v1.45.15: strict walnut #2D1E0F by day');
+    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { color: #2D1E0F; }'), 'v1.45.15/16: strict walnut #2D1E0F by day, ACTIVE pill excluded (the 1.45.16 invisibility fix)');
     R.ok(src.includes('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { font-weight: 800; }'), 'v1.45.15: the inactive pills carry font-weight 800 in both themes');
     R.ok(src.includes('rgba(26,19,0,.8)\" id=\"ca-arch-gross-line\"'), 'the gross line ink rides at .80 over the gold');
 
@@ -1354,10 +1354,16 @@ function todayYmd() {
     const groups = d.querySelectorAll('.ca-arch-group');
     R.ok(groups.length >= 2, 'every month rides its own rounded surface card');
     const headOf2 = (mk) => d.querySelector('.ca-arch-group-head[data-mk=\"' + mk + '\"]');
-    R.ok(headOf2('2026-10').querySelector('.ca-arch-badge-live') && headOf2('2026-10').textContent.indexOf('In progress') !== -1, 'the live month wears the blue solid pill');
-    R.ok(headOf2('2026-11').querySelector('.ca-arch-badge-upcoming') && headOf2('2026-11').textContent.indexOf('Upcoming') !== -1, 'the future month wears the grey solid pill');
-    R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-live { background: rgba(96, 165, 250, 0.16); color: #93C5FD; }'), 'in-progress pill: blue wash, high-contrast text (dark)');
-    R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-upcoming, .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); }'), 'upcoming/completed pill: grey wash, high-contrast text (dark)');
+    // v1.45.16 (owner order): the text status badges are gone - the state
+    // rides a Lucide icon beside the title and the word rides the count line
+    const octTitle = headOf2('2026-10').querySelector('.text-\\[17px\\]');
+    R.ok(octTitle.nextElementSibling && octTitle.nextElementSibling.getAttribute('data-lucide') === 'refresh-cw', 'the live month wears the refresh-cw icon immediately right of the title');
+    R.ok(octTitle.nextElementSibling.className.indexOf('ca-arch-liveico') !== -1, 'the live icon carries the slow-spin class');
+    R.ok(headOf2('2026-10').textContent.indexOf('In progress') !== -1, 'the live month keeps its status word (now in the count line)');
+    const novTitle = headOf2('2026-11').querySelector('.text-\\[17px\\]');
+    R.ok(novTitle.nextElementSibling && novTitle.nextElementSibling.getAttribute('data-lucide') === 'clock-arrow-up', 'the future month wears the clock-arrow-up icon');
+    R.ok(headOf2('2026-11').textContent.indexOf('Upcoming') !== -1, 'the future month keeps its status word');
+    R.ok(!src.includes('ca-arch-badge-prog'), 'the status badge family is gone from src (Best/Low accolades stay)');
     const aRow = headOf2('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-row');
     R.eq(aRow.children.length, 3, 'v1.45.14: a ledger row is three structural parts - route block, value, \u2715 slot');
     R.ok(aRow.children[0].classList.contains('ca-arch-rowmain') && aRow.children[2].classList.contains('ca-arch-del'), 'the route block leads, the delete \u2715 closes the row');
@@ -1450,6 +1456,49 @@ function todayYmd() {
     // a past month is untouched by the roster (ymd >= today excludes it)
     R.ok(!head4('2026-09'), 'no phantom past group');
     void w;
+  }
+
+  // ---- v1.45.16: the state icons + count-line status + the daylight
+  // active pill (owner order: the badges wrapped the header; the active
+  // pill read invisible by day) ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-10-26T12:00:00+08:00' });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      { id: 's0', savedAt: '2026-08-05T10:00:00Z', monthKey: '2026-08', sectorDate: '2026-08-05', stationDisplay: 'SIN/KUL', amount: 100 },
+      { id: 's1', savedAt: '2026-09-05T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-05', stationDisplay: 'SIN/BKK', amount: 120 },
+      { id: 's2', savedAt: '2026-10-08T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-08', stationDisplay: 'SIN/NRT', amount: 300 },
+      { id: 's3', savedAt: '2026-10-25T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-31', stationDisplay: 'SIN/AMD', amount: 200 },
+      { id: 's4', savedAt: '2026-10-25T10:00:00Z', monthKey: '2026-11', sectorDate: '2026-11-15', stationDisplay: 'SIN/HKT', amount: 500 }
+    ]));
+    w.showArchiveOverlay(); await wait(150);
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
+    const head5 = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    const subOf = (mk) => head5(mk).querySelector('.block.text-sm').textContent.replace(/\s+/g, ' ').trim();
+    R.eq(subOf('2026-10'), '2 flights \u2022 In progress', 'the live month counts its flights then names its state (owner format)');
+    R.eq(subOf('2026-11'), '1 flight \u2022 Upcoming', 'the future month rides the owner format too');
+    R.ok(subOf('2026-09').indexOf('\u2022') === -1, 'history carries no state suffix - no icon asset, no word');
+    const titleOf = (mk) => head5(mk).querySelector('.text-\\[17px\\]');
+    R.ok(!titleOf('2026-09').nextElementSibling, 'a past month renders no state icon at all');
+    R.ok(titleOf('2026-10').nextElementSibling.getAttribute('data-lucide') === 'refresh-cw' && titleOf('2026-10').nextElementSibling.getAttribute('style').indexOf('--ca-gold') !== -1, 'the live icon is a refresh-cw in the signature gold');
+    R.ok(titleOf('2026-11').nextElementSibling.getAttribute('data-lucide') === 'clock-arrow-up' && titleOf('2026-11').nextElementSibling.getAttribute('style').indexOf('--arch-muted') !== -1, 'the upcoming icon is a muted clock-arrow-up');
+    R.ok(head5('2026-10').classList.contains('items-center'), 'the head row keeps its uniform centre axis (items-center)');
+    // the completed word survives for an all-flown current month (October,
+    // everything landed, nothing on the roster)
+    w.eval("localStorage.setItem('crewAssist.archive', JSON.stringify([JSON.parse(localStorage.getItem('crewAssist.archive'))[2]]))");
+    w.closeArchOverlay(); w.showArchiveOverlay(); await wait(150);
+    R.ok(subOf('2026-10') === '1 flight \u2022 Completed' && !head5('2026-10').querySelector('i[data-lucide="refresh-cw"], i[data-lucide="clock-arrow-up"]'), 'an all-flown current month reads Completed in the count line, icon-free (accolade badges may still follow the title)');
+    void w;
+  }
+  // ---- v1.45.16 src pins: the spin, the reduced-motion gate, the daylight
+  // active pill ----
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    R.ok(src.includes('@keyframes caArchLive { to { transform: rotate(1turn); } }'), 'the live icon spins a full turn');
+    R.ok(src.includes('.ca-arch-liveico { animation: caArchLive 6s linear infinite; }'), 'the spin is the slowed 6s ambient loop');
+    R.ok(src.includes('html.ca-reduced .animate-bounce, html.ca-reduced .ca-arch-liveico {'), 'the ambient loop stops behind the ca-reduced gate');
+    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { color: #2D1E0F; }'), 'v1.45.16: the daylight walnut rule EXCLUDES the active pill (the invisibility root cause)');
+    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg.ca-arch-segon { background: #FFFFFF; color: #2D1E0F; }'), 'the daylight active pill is crisp white with walnut ink');
+    R.ok(src.includes('.ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }'), 'the night active pill keeps its espresso fill and clean gold ink');
   }
 
   process.exit(R.done() ? 1 : 0);

@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.15), the changelog's current entry,
-  the service-worker cache name (v246).
+- Stamps: `APP_VERSION` (currently 1.45.16), the changelog's current entry,
+  the service-worker cache name (v247).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -70,7 +70,8 @@ the service-worker stamp. It checks:
   clear of the fixed 40px ✕ slot; All-time returns to the flat 4-track
   meta; and daylight computes warm — canvas #F4F4F0, solid white cards
   with the 0 4px 12px rgba(0,0,0,0.03) shadow, walnut #3D2D1B inactive
-  pills at AA over the gold.
+  pills at AA over the gold (the badge-pill probes themselves became the
+  v1.45.16 state-icon + active-pill probes below).
 - v1.45.15 roster-aware notice + centring: the CURRENT month carries the
   still-to-fly notice while its roster has legs ahead (the gold card reads
   "On track · N roster flights still to fly", never "Month complete"; the
@@ -81,6 +82,18 @@ the service-worker stamp. It checks:
   compute espresso rgb(26, 19, 0) by night and walnut rgb(45, 30, 15) by
   day, at font-weight 800 in both themes, the walnut reading AA (7.51:1)
   over the composited gold.
+- v1.45.16 state icons + daylight active pill: the live month wears a
+  refresh-cw whose computed animation is the caArchLive 6s infinite loop
+  (and stops dead behind the ca-reduced gate, resuming when it lifts); the
+  future month wears clock-arrow-up; the night active pill computes
+  espresso/gold while the DAY active pill computes white/walnut at AA
+  (16.10:1 — the invisibility fix, read with transitions snapped); the
+  count line carries the owner's exact formats ('2 flights • In progress',
+  '1 flight • Upcoming', '• Completed' for an all-flown current month);
+  and a past month renders no state asset and no suffix. The rig blocks
+  the CDN, so the icons stay `<i>` stubs — name + class + computed
+  animation are the proof, and the name's production resolution was
+  verified against the unpacked lucide package.
 
 ## Running it
 
