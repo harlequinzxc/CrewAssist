@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.19), the changelog's current entry,
-  the service-worker cache name (v250).
+- Stamps: `APP_VERSION` (currently 1.45.20), the changelog's current entry,
+  the service-worker cache name (v251).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -108,15 +108,22 @@ the service-worker stamp. It checks:
   label rung with the $750.00 value as BARE text (zero spans — the ctx
   ellipsis rule can never clip it), matching the FLIGHTS / AVG-per-flight
   typography, while YEAR keeps its YTD context.
-- v1.45.19 salary layout: the salary stat row rides its early two-track
-  fold at the rig's 390px viewport (spans stood down, nothing clips), the
-  gross/CPF subtext computes as the flex-row justify-between container
-  with the muted pipe at opacity .45 and the temporal milestone on its
-  own shrink-0 right area; at an 800px viewport the weighted 12-track
-  ladder holds the 3/2/3/4 span ratios with the 8px Midnights buffer and
-  zero clipping; and at 340px the values compute at the owner-ordered
-  12.5px scale-down inside the intact fold. The layer swaps viewports
-  (390 → 800 → 340 → 390) and restores before health.
+- v1.45.20 after-hours quadrants: the salary stat row rides the strict
+  2×2 at every viewport (nothing clips), the labels read Basic / Fixed /
+  After-hours / COP leading with their Lucide icons at a uniform 14px on
+  the low-opacity espresso token (the Fixed pair shirt+car-front tight
+  at a 2px gap), and the gross/CPF subtext computes as the flex column —
+  a single no-wrap figures row with the muted pipe at opacity .45 and a
+  COMPLETELY EMPTY right side in month view (the milestone is deleted);
+  the YEAR view grows the flush-right comparison second row (weight 400,
+  opacity .7, 2px off the row above) and ALL-TIME drops back to one row;
+  at an 800px viewport the quadrants measure equal halves with uniform
+  12px padding, both hairline axes on the right classes, and the theme
+  tokens verified by flipping dark/light (night rgba(255,255,255,0.08),
+  day rgba(0,0,0,0.06)) — the axis rules must stay longhand or
+  currentcolor beats the tokens; and at 340px the values compute at the
+  owner-ordered 12.5px scale-down inside the intact 2×2. The layer swaps
+  viewports (390 → 800 → 340 → 390) and restores before health.
 
 ## Running it
 

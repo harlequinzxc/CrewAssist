@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.19', 'APP_VERSION is 1.45.19');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.19' && e.d === '2026-10-26' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.19 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v250'), 'the service-worker cache name is bumped to v250 (the v1.45.19 salary-layout release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.20', 'APP_VERSION is 1.45.20');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.20' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.20 entry with its three pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v251'), 'the service-worker cache name is bumped to v251 (the v1.45.20 after-hours release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.19'; }), 'the What\'s New sheet carries the v1.45.19 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.20'; }), 'the What\'s New sheet carries the v1.45.20 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -724,8 +724,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const spans = [...el.children].map((c) => getComputedStyle(c).gridColumnStart + '/' + getComputedStyle(c).gridColumnEnd);
             return { tracks, clips, vals, spans };
         });
-        ok(grid4.tracks.length === 2 && Math.abs(grid4.tracks[0] - grid4.tracks[1]) <= 1 && !grid4.clips.some(Boolean) && !grid4.vals.some(Boolean), 'v1.45.19: at 390px the salary row rides its early two-track fold and nothing clips');
-        ok(grid4.spans.every((sp) => sp === 'auto/auto'), 'the weighted spans stand down under the fold (' + grid4.spans.join(' ') + ')');
+        ok(grid4.tracks.length === 2 && Math.abs(grid4.tracks[0] - grid4.tracks[1]) <= 1 && !grid4.clips.some(Boolean) && !grid4.vals.some(Boolean), 'v1.45.20: the salary row rides the strict 2x2 quadrant grid and nothing clips');
+        ok(grid4.spans.every((sp) => sp === 'auto/auto'), 'no span classes anywhere - every quadrant fills its single track (' + grid4.spans.join(' ') + ')');
         // AA: every readable text on the gold card - inactive tabs (over the
         // pill wash over the gradient's LIGHTEST stop, the worst case for
         // dark ink) and the meta labels (over the DARKEST stop, where the
@@ -1241,9 +1241,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
-        console.log('— v1.45.19: the weighted salary grid + the split gross row —');
-        // a salary profile + a month with data; the rig viewport (390px) sits
-        // inside the early fold band, then a wide viewport proves the ladder
+        console.log('— v1.45.20: the hairline quadrants + the breathing month row —');
+        // a salary profile + a month with data + one entry last year (the
+        // YEAR row-2 comparison needs a last-year record); the rig viewport
+        // (390px) proves the layout, then a wide viewport proves the quadrants
         await page.evaluate(() => {
             const now = new Date();
             const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
@@ -1252,7 +1253,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('g0', past, 300), ent('g1', ahead, 396.91)]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('g0', past, 300), ent('g1', ahead, 396.91), ent('gly', new Date(now.getFullYear() - 1, now.getMonth(), 10), 150)]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1260,43 +1261,93 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
         await sleep(300);
-        const gross19 = await page.evaluate(() => {
+        const gross20 = await page.evaluate(() => {
             const gl = document.getElementById('ca-arch-gross-line');
             const cs = getComputedStyle(gl);
-            return { text: gl.textContent.trim(), kids: gl.children.length, left: gl.children[0] ? gl.children[0].textContent : '', right: gl.children[1] ? gl.children[1].textContent : '', rightCls: gl.children[1] ? gl.children[1].className : '', display: cs.display, justify: cs.justifyContent, align: cs.alignItems, pipe: !!gl.querySelector('.ca-arch-gross-sep'), pipeOp: gl.querySelector('.ca-arch-gross-sep') ? getComputedStyle(gl.querySelector('.ca-arch-gross-sep')).opacity : '' };
+            const row1 = gl.children[0];
+            const r1 = row1 ? getComputedStyle(row1) : null;
+            return { text: gl.textContent.trim(), kids: gl.children.length, row1: row1 ? row1.textContent : '', row1Cls: row1 ? row1.className : '', dir: cs.flexDirection, display: cs.display, justify: r1 ? r1.justifyContent : '', align: r1 ? r1.alignItems : '', nowrap: row1 && row1.children[0] ? (row1.children[0].getAttribute('style') || '') : '', right: gl.children[1] ? gl.children[1].textContent : '', pipe: !!gl.querySelector('.ca-arch-gross-sep'), pipeOp: gl.querySelector('.ca-arch-gross-sep') ? getComputedStyle(gl.querySelector('.ca-arch-gross-sep')).opacity : '' };
         });
-        ok(gross19.display === 'flex' && gross19.justify === 'space-between' && gross19.align === 'center', 'v1.45.19: the subtext row is the flex-row justify-between items-center w-full container (' + gross19.display + '/' + gross19.justify + ')');
-        ok(gross19.kids === 2 && gross19.left.indexOf('Gross ') === 0 && gross19.left.indexOf('CPF ') !== -1, 'Gross and CPF group seamlessly on the left: ' + gross19.left);
-        ok(gross19.right.indexOf('On track for ') === 0 && gross19.rightCls.indexOf('shrink-0') !== -1, 'the temporal milestone rides its own right bounding area: ' + gross19.right);
-        ok(gross19.pipe && gross19.pipeOp === '0.45', 'the muted pipe separates Gross from CPF (opacity ' + gross19.pipeOp + ')');
-        // the weighted ladder at a wide viewport
+        ok(gross20.display === 'flex' && gross20.dir === 'column', 'v1.45.20: the subtext block is the flex column (display ' + gross20.display + '/' + gross20.dir + ')');
+        ok(gross20.kids === 1 && gross20.row1.indexOf('Gross ') === 0 && gross20.row1.indexOf('CPF ') !== -1, 'the MONTH view carries a single row: ' + gross20.row1);
+        ok(gross20.justify === 'space-between' && gross20.align === 'center' && gross20.nowrap.indexOf('nowrap') !== -1, 'row one keeps the justify-between items-center w-full structure with the strict no-wrap security on the figures');
+        ok(!gross20.right && gross20.text.indexOf('On track for') === -1 && gross20.text.indexOf('vs ') === -1, 'the right side is completely empty - the on-track milestone and the month comparison are deleted (breathing room)');
+        ok(gross20.pipe && gross20.pipeOp === '0.45', 'the muted pipe separates Gross from CPF (opacity ' + gross20.pipeOp + ')');
+        // the quadrant labels + icons at the rig viewport
+        const icons20 = await page.evaluate(() => {
+            const el = document.getElementById('ca-arch-meta-salary');
+            const labels = [...el.querySelectorAll('.ca-arch-metalabel')].map((l) => l.textContent.trim());
+            const icos = [...el.querySelectorAll('.ca-arch-metalabel i')].map((i) => ({ n: i.getAttribute('data-lucide'), w: i.getBoundingClientRect().width, h: i.getBoundingClientRect().height, c: getComputedStyle(i).color }));
+            const pair = el.querySelector('.ca-arch-metipair');
+            return { labels, icos, pairGap: pair ? getComputedStyle(pair).gap : '' };
+        });
+        ok(icons20.labels.join('|') === 'Basic|Fixed|After-hours|COP', 'v1.45.20: MIDNIGHTS is renamed AFTER-HOURS (the small muted uppercasing rides the label CSS)');
+        ok(icons20.icos.map((i) => i.n).join(',') === 'circle-dollar-sign,shirt,car-front,car-taxi-front,plane', 'the icon map: Basic circle-dollar-sign, Fixed shirt+car-front, After-hours car-taxi-front, COP plane');
+        ok(icons20.icos.every((i) => Math.abs(i.w - 14) <= 0.5 && Math.abs(i.h - 14) <= 0.5), 'every icon renders at the uniform 14px (w-3.5 h-3.5)');
+        ok(icons20.icos.every((i) => i.c === 'rgba(26, 19, 0, 0.55)') && icons20.pairGap === '2px', 'the icons ride the low-opacity espresso token and the Fixed pair sits tight (' + icons20.icos[0].c + ', gap ' + icons20.pairGap + ')');
+        // the YEAR view breaks the comparison onto its own second row
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="year"]').click());
+        await sleep(300);
+        const year20 = await page.evaluate(() => {
+            const gl = document.getElementById('ca-arch-gross-line');
+            const ly = gl.querySelector('.ca-arch-gross-ly');
+            const cs = ly ? getComputedStyle(ly) : null;
+            return { kids: gl.children.length, txt: ly ? ly.textContent : '', cls: ly ? ly.className : '', fw: cs ? cs.fontWeight : '', op: cs ? cs.opacity : '', pt: cs ? cs.paddingTop : '', ta: cs ? cs.textAlign : '' };
+        });
+        ok(year20.kids === 2 && year20.txt.indexOf(' YTD') !== -1 && year20.txt.indexOf(' vs LY') !== -1, 'the YEAR view carries the comparison on its own second row: ' + year20.txt);
+        ok(year20.cls.indexOf('text-right') !== -1 && year20.ta === 'right', 'the comparison row rides flush right underneath the figures');
+        ok(year20.fw === '400' && year20.op === '0.7' && year20.pt === '2px', 'quieter than the figures above: normal weight, muted .7, 2px off the row (fw ' + year20.fw + '/' + year20.op + '/' + year20.pt + ')');
+        // ALL-TIME drops back to the single row
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
+        const all20 = await page.evaluate(() => ({ kids: document.getElementById('ca-arch-gross-line').children.length, ly: !!document.getElementById('ca-arch-gross-line').querySelector('.ca-arch-gross-ly') }));
+        ok(all20.kids === 1 && !all20.ly, 'the ALL-TIME view drops back to the single row - the comparison is a YEAR-only privilege');
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="month"]').click());
+        await sleep(300);
+        // the strict 2x2 at a wide viewport
         await page.setViewport({ width: 800, height: 844, hasTouch: true });
         await sleep(400);
-        const ladder19 = await page.evaluate(() => {
+        const quad20 = await page.evaluate(() => {
             const el = document.getElementById('ca-arch-meta-salary');
             const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
-            const widths = [...el.children].map((c) => c.getBoundingClientRect().width);
-            const mid = document.getElementById('ca-arch-m-mid');
-            const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
-            return { tracks: tracks.length, widths, ratio: [widths[0] / widths[1], widths[2] / widths[1], widths[3] / widths[1]], midPad: getComputedStyle(mid).paddingRight, clips };
+            const kids = [...el.children];
+            const widths = kids.map((c) => c.getBoundingClientRect().width);
+            const heights = kids.map((c) => c.getBoundingClientRect().height);
+            const gs = kids.map((c) => { const g = getComputedStyle(c); return { pr: g.paddingRight, brw: g.borderRightWidth, bbw: g.borderBottomWidth }; });
+            const clips = kids.map((c) => c.scrollWidth > c.clientWidth + 1);
+            return { tracks, widths, heights, gs, clips, xr: widths[0] / widths[1], yr: heights[0] / heights[2] };
         });
-        ok(ladder19.tracks === 12, 'v1.45.19: at 800px the salary row rides the weighted 12-track ladder (' + ladder19.tracks + ' tracks)');
-        ok(Math.abs(ladder19.ratio[0] - 1.5) <= 0.1 && Math.abs(ladder19.ratio[1] - 1.5) <= 0.1 && Math.abs(ladder19.ratio[2] - 2) <= 0.1, 'the spans hold: Basic 3 / Fixed 2 / Midnights 3 / COP 4 (ratios ' + ladder19.ratio.map((r) => r.toFixed(2)).join('/') + ' - span cells carry their share of the 4px gaps)');
-        eq(ladder19.midPad, '8px', 'the Midnights value keeps its strict 8px right buffer');
-        ok(!ladder19.clips.some(Boolean), 'nothing clips on the ladder - seven-digit aggregates keep layout freedom');
+        ok(quad20.tracks.length === 2 && Math.abs(quad20.tracks[0] - quad20.tracks[1]) <= 1, 'v1.45.20: at 800px the salary row still rides the strict 2x2 - the hairlines own the tracks, no fold');
+        ok(Math.abs(quad20.xr - 1) <= 0.02 && Math.abs(quad20.yr - 1) <= 0.1, 'equal halves, equal rows - the quadrant aggregate of the old 3/2/3/4 weights (ratios ' + quad20.xr.toFixed(2) + '/' + quad20.yr.toFixed(2) + ')');
+        ok(quad20.gs.every((g) => g.pr === '12px'), 'every quadrant pads a uniform 12px off the hairlines');
+        ok(quad20.gs[0].brw === '1px' && quad20.gs[2].brw === '1px' && quad20.gs[1].brw === '0px' && quad20.gs[3].brw === '0px', 'the vertical centre axis: Basic + After-hours carry the right hairline');
+        ok(quad20.gs[0].bbw === '1px' && quad20.gs[1].bbw === '1px' && quad20.gs[2].bbw === '0px' && quad20.gs[3].bbw === '0px', 'the horizontal centre axis: Basic + Fixed carry the bottom hairline');
+        ok(!quad20.clips.some(Boolean), 'nothing clips on the quadrants - seven-digit aggregates keep layout freedom');
+        const hair20 = await page.evaluate(() => {
+            const h = document.documentElement;
+            const wasDark = h.classList.contains('dark');
+            const el = document.getElementById('ca-arch-meta-salary').children[0];
+            h.classList.add('dark'); void el.offsetWidth;
+            const dk = getComputedStyle(el).borderRightColor;
+            h.classList.remove('dark'); void el.offsetWidth;
+            const lt = getComputedStyle(el).borderRightColor;
+            if (wasDark) h.classList.add('dark');
+            return { dk, lt };
+        });
+        ok(hair20.dk === 'rgba(255, 255, 255, 0.08)' && hair20.lt === 'rgba(0, 0, 0, 0.06)', 'the hairlines ride the theme tokens (night ' + hair20.dk + ' / day ' + hair20.lt + ')');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(400);
         // under 360px the values scale down 1.5px
         await page.setViewport({ width: 340, height: 844, hasTouch: true });
         await sleep(400);
-        const tiny19 = await page.evaluate(() => {
+        const tiny20 = await page.evaluate(() => {
             const el = document.getElementById('ca-arch-meta-salary');
             const vals = [...el.querySelectorAll('.ca-arch-metaval')].map((v) => v.scrollWidth > v.clientWidth + 1);
             const size = getComputedStyle(document.getElementById('ca-arch-m-cop')).fontSize;
             return { size, clips: vals.some(Boolean), tracks: getComputedStyle(el).gridTemplateColumns.split(' ').length };
         });
-        eq(tiny19.size, '12.5px', 'under 360px the salary values scale down 1.5px (14 -> 12.5px)');
-        ok(tiny19.tracks === 2 && !tiny19.clips, 'the two-track fold holds under 360px and nothing breaks');
+        eq(tiny20.size, '12.5px', 'the under-360px value step survives the rebuild (14 -> 12.5px)');
+        ok(tiny20.tracks === 2 && !tiny20.clips, 'the 2x2 quadrant grid holds under 360px and nothing breaks');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
