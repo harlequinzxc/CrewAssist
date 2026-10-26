@@ -281,6 +281,23 @@ buttons ride a flex `items-center justify-center` wrapper in their fixed
 slot, and fine-tune translations are added only when a measured gap
 survives the centring (v1.45.15 measured 0.0px — none needed).
 
+**Long-value rows weight their tracks.** When a stat row's values differ
+wildly in length (a midnight count-and-amount pair beside seven-digit
+career aggregates), equal tracks collide: weight the grid to the data
+(here Basic 3 / Fixed 2 / Midnights 3 / COP 4 of twelve) with a right
+buffer on the value that borders its neighbour, and fold to two tracks
+at the width where the weighted row stops fitting — earlier than the
+shorter-valued grids. Under the narrowest tier the values step DOWN
+(14 → 12.5px, the one owner-ordered off-rung size), never back up
+(v1.45.19).
+
+**Static figures left, temporal context right.** A subtext row under a
+headline number splits at the seam of permanence: the static deductions
+(Gross, CPF) group left behind a muted pipe; the milestone or comparison
+that changes with time (On track for, vs LY) rides its own right-hand
+bounding area — one flex row, two meanings, never one continuous
+dot-separated string to clip (v1.45.19).
+
 **Labels wrap before they clip; values never truncate.** When a dense stat
 grid meets a narrow viewport, the labels may wrap (their tracking relaxes
 first, ellipsis is the last resort) but the *values* keep `white-space:

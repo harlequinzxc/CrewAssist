@@ -1183,6 +1183,10 @@ function todayYmd() {
       // cpf = .2x(3x2600 + 2500 + 64) = 2072.80; net = 10186.20
       R.eq(d.getElementById('ca-arch-total').textContent, '$10,186.20', 'all-time net = gross 12259 - CPF 2072.80');
       R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross $12,259.00') !== -1 && d.getElementById('ca-arch-gross-line').textContent.indexOf('CPF \u2212$2,072.80') !== -1, 'gross and CPF ride under the number');
+      const src19 = fs.readFileSync(APP, 'utf8');
+      R.ok(d.getElementById('ca-arch-gross-line').className.indexOf('flex-row justify-between items-center w-full') !== -1, 'v1.45.19: the subtext row is the structured flex container, never one continuous string');
+      R.ok(d.getElementById('ca-arch-gross-line').innerHTML.indexOf('ca-arch-gross-sep">|</span>') !== -1, 'Gross and CPF group left behind the muted pipe');
+      R.ok(src19.includes('.ca-arch-gross-sep { opacity: .45; padding: 0 4px; }'), 'the pipe rides slightly more muted with breathing room');
       R.eq(d.getElementById('ca-arch-m-basic').textContent, '$7,800.00', 'basic meta = 3 tracked months x 2600');
       R.eq(d.getElementById('ca-arch-m-fixed').textContent, '$1,395.00', 'fixed meta = 3 x (125 + 340)');
       R.ok(d.getElementById('ca-arch-m-mid').textContent.indexOf('2') === 0 && d.getElementById('ca-arch-m-mid').textContent.indexOf('$64.00') !== -1, 'midnight meta shows 2 duties = $64');
@@ -1346,7 +1350,14 @@ function todayYmd() {
     R.ok(!d.getElementById('ca-arch-meta-cop').classList.contains('ca-arch-metarows'), 'v1.45.14: All-time returns to the flat 4-track grid (metarows off)');
     d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     const salRow = d.getElementById('ca-arch-meta-salary');
-    R.ok(salRow.className.indexOf('ca-arch-metagrid') !== -1 && salRow.className.indexOf('metagrid-4') === -1, 'the salary stat row rides the same strict 4-track grid');
+    R.ok(salRow.className.indexOf('ca-arch-metagrid') !== -1 && salRow.className.indexOf('metagrid-4') === -1, 'the salary stat row rides the metagrid family');
+    // v1.45.19 (owner order): the salary row is a WEIGHTED 12-track ladder
+    R.ok(src.includes('#ca-arch-meta-salary { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 4px; }'), 'v1.45.19: the salary row rides the 12-track ladder on a 4px gap');
+    R.ok(src.includes('#ca-arch-meta-salary .ca-arch-msp3 { grid-column: span 3; }') && src.includes('#ca-arch-meta-salary .ca-arch-msp2 { grid-column: span 2; }') && src.includes('#ca-arch-meta-salary .ca-arch-msp4 { grid-column: span 4; }'), 'Basic 3, Fixed 2, Midnights 3, COP 4 - the weighted fractions');
+    R.ok(src.includes('#ca-arch-meta-salary #ca-arch-m-mid { padding-right: 8px; }'), 'the Midnights value keeps its strict 8px right buffer');
+    R.ok(src.includes('@media (max-width: 519px) {') && src.includes('#ca-arch-meta-salary { grid-template-columns: repeat(2, minmax(0, 1fr)); }'), 'the salary row folds to two tracks under 520px - earlier than the COP grid, its values are the longest');
+    R.ok(src.includes('@media (max-width: 359px) {') && src.includes('#ca-arch-meta-salary .ca-arch-metaval { font-size: 12.5px; }'), 'under 360px the salary values scale down 1.5px (14 -> 12.5px) - never back up');
+    R.ok([...salRow.children].map((c) => c.className).join(',') === 'ca-arch-msp3,ca-arch-msp2,ca-arch-msp3,ca-arch-msp4', 'the four cells carry their weighted span classes in order');
     R.eq(salRow.querySelectorAll(':scope > div').length, 4, 'four stat cells - Basic, Fixed, Midnights, COP');
     R.ok(!d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the Year-by-Year legend shows in salary view');
     // the list: month cards, solid pills, the money column (salary mode is

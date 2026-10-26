@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.18', 'APP_VERSION is 1.45.18');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.18' && e.d === '2026-10-26' && e.items.length === 3 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.18 entry with its three pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v249'), 'the service-worker cache name is bumped to v249 (the v1.45.18 remaining-flights release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.19', 'APP_VERSION is 1.45.19');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.19' && e.d === '2026-10-26' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.19 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v250'), 'the service-worker cache name is bumped to v250 (the v1.45.19 salary-layout release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.18'; }), 'the What\'s New sheet carries the v1.45.18 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.19'; }), 'the What\'s New sheet carries the v1.45.19 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -720,9 +720,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const el = document.getElementById('ca-arch-meta-salary');
             const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
             const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
-            return { tracks, clips };
+            const vals = [...el.querySelectorAll('.ca-arch-metaval')].map((v) => v.scrollWidth > v.clientWidth + 1);
+            const spans = [...el.children].map((c) => getComputedStyle(c).gridColumnStart + '/' + getComputedStyle(c).gridColumnEnd);
+            return { tracks, clips, vals, spans };
         });
-        ok(grid4.tracks.length === 4 && Math.max(...grid4.tracks) - Math.min(...grid4.tracks) <= 1 && !grid4.clips.some(Boolean), 'the salary stat row fills the same 4-track grid and nothing clips');
+        ok(grid4.tracks.length === 2 && Math.abs(grid4.tracks[0] - grid4.tracks[1]) <= 1 && !grid4.clips.some(Boolean) && !grid4.vals.some(Boolean), 'v1.45.19: at 390px the salary row rides its early two-track fold and nothing clips');
+        ok(grid4.spans.every((sp) => sp === 'auto/auto'), 'the weighted spans stand down under the fold (' + grid4.spans.join(' ') + ')');
         // AA: every readable text on the gold card - inactive tabs (over the
         // pill wash over the gradient's LIGHTEST stop, the worst case for
         // dark ink) and the meta labels (over the DARKEST stop, where the
@@ -1235,6 +1238,67 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         const year18 = await page.evaluate(() => document.getElementById('ca-arch-m-ctx-label').textContent);
         ok(/YTD$/.test(year18), 'the YEAR scope keeps its YTD context (only ALL-TIME carries Annual avg): ' + year18);
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.19: the weighted salary grid + the split gross row —');
+        // a salary profile + a month with data; the rig viewport (390px) sits
+        // inside the early fold band, then a wide viewport proves the ladder
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const past = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 9, 1));
+            const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('g0', past, 300), ent('g1', ahead, 396.91)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.mouse.move(2, 2);
+        await sleep(300);
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        await sleep(300);
+        const gross19 = await page.evaluate(() => {
+            const gl = document.getElementById('ca-arch-gross-line');
+            const cs = getComputedStyle(gl);
+            return { text: gl.textContent.trim(), kids: gl.children.length, left: gl.children[0] ? gl.children[0].textContent : '', right: gl.children[1] ? gl.children[1].textContent : '', rightCls: gl.children[1] ? gl.children[1].className : '', display: cs.display, justify: cs.justifyContent, align: cs.alignItems, pipe: !!gl.querySelector('.ca-arch-gross-sep'), pipeOp: gl.querySelector('.ca-arch-gross-sep') ? getComputedStyle(gl.querySelector('.ca-arch-gross-sep')).opacity : '' };
+        });
+        ok(gross19.display === 'flex' && gross19.justify === 'space-between' && gross19.align === 'center', 'v1.45.19: the subtext row is the flex-row justify-between items-center w-full container (' + gross19.display + '/' + gross19.justify + ')');
+        ok(gross19.kids === 2 && gross19.left.indexOf('Gross ') === 0 && gross19.left.indexOf('CPF ') !== -1, 'Gross and CPF group seamlessly on the left: ' + gross19.left);
+        ok(gross19.right.indexOf('On track for ') === 0 && gross19.rightCls.indexOf('shrink-0') !== -1, 'the temporal milestone rides its own right bounding area: ' + gross19.right);
+        ok(gross19.pipe && gross19.pipeOp === '0.45', 'the muted pipe separates Gross from CPF (opacity ' + gross19.pipeOp + ')');
+        // the weighted ladder at a wide viewport
+        await page.setViewport({ width: 800, height: 844, hasTouch: true });
+        await sleep(400);
+        const ladder19 = await page.evaluate(() => {
+            const el = document.getElementById('ca-arch-meta-salary');
+            const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
+            const widths = [...el.children].map((c) => c.getBoundingClientRect().width);
+            const mid = document.getElementById('ca-arch-m-mid');
+            const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
+            return { tracks: tracks.length, widths, ratio: [widths[0] / widths[1], widths[2] / widths[1], widths[3] / widths[1]], midPad: getComputedStyle(mid).paddingRight, clips };
+        });
+        ok(ladder19.tracks === 12, 'v1.45.19: at 800px the salary row rides the weighted 12-track ladder (' + ladder19.tracks + ' tracks)');
+        ok(Math.abs(ladder19.ratio[0] - 1.5) <= 0.1 && Math.abs(ladder19.ratio[1] - 1.5) <= 0.1 && Math.abs(ladder19.ratio[2] - 2) <= 0.1, 'the spans hold: Basic 3 / Fixed 2 / Midnights 3 / COP 4 (ratios ' + ladder19.ratio.map((r) => r.toFixed(2)).join('/') + ' - span cells carry their share of the 4px gaps)');
+        eq(ladder19.midPad, '8px', 'the Midnights value keeps its strict 8px right buffer');
+        ok(!ladder19.clips.some(Boolean), 'nothing clips on the ladder - seven-digit aggregates keep layout freedom');
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(400);
+        // under 360px the values scale down 1.5px
+        await page.setViewport({ width: 340, height: 844, hasTouch: true });
+        await sleep(400);
+        const tiny19 = await page.evaluate(() => {
+            const el = document.getElementById('ca-arch-meta-salary');
+            const vals = [...el.querySelectorAll('.ca-arch-metaval')].map((v) => v.scrollWidth > v.clientWidth + 1);
+            const size = getComputedStyle(document.getElementById('ca-arch-m-cop')).fontSize;
+            return { size, clips: vals.some(Boolean), tracks: getComputedStyle(el).gridTemplateColumns.split(' ').length };
+        });
+        eq(tiny19.size, '12.5px', 'under 360px the salary values scale down 1.5px (14 -> 12.5px)');
+        ok(tiny19.tracks === 2 && !tiny19.clips, 'the two-track fold holds under 360px and nothing breaks');
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(300);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
