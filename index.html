@@ -752,9 +752,20 @@
         .dark .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); }
         /* v1.45.13 (owner order): every month sits in its own rounded card
            on a subtle tint layer over the deep canvas - white at 2% by
-           night, a white lift by day - with the hairline doing the edge */
+           night - with the hairline doing the edge. v1.45.14 (owner order):
+           by DAY the card turns solid white with a soft low-blur shadow -
+           the 0.55 wash read muddy over the new warm canvas */
         .ca-arch-group { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }
-        html:not(.dark) .ca-arch-group { background: rgba(255, 255, 255, 0.55); }
+        html:not(.dark) .ca-arch-group { background: #FFFFFF; }
+        /* v1.45.14 (owner order, light theme): the earnings canvas deepens
+           to a premium warm gray so the white card containers - the trend,
+           the insights and the month cards - carry real depth by day */
+        html:not(.dark) #ca-arch-sheet { background: #F4F4F0; }
+        html:not(.dark) .ca-arch-surface, html:not(.dark) .ca-arch-group { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }
+        /* v1.45.14 (owner order, light theme): the inactive pills on the
+           gold card read dark walnut - crisp under bright light, never
+           washed out (the dark theme keeps its .75 ink) */
+        html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #3D2D1B; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
@@ -820,6 +831,22 @@
             .ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .ca-arch-metagrid .ca-arch-metaval { font-size: 14px; }
         }
+        /* v1.45.14 (owner order): in COP + MONTH the meta tells a two-row
+           story - Flights and Avg / flight pair up in two equal columns,
+           and the On-track milestone takes the whole width of the card on
+           its own line underneath, free to render without truncation on
+           every mobile viewport */
+        .ca-arch-metagrid.ca-arch-metarows { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }
+        .ca-arch-metarows .ca-arch-metaspan2 { grid-column: 1 / -1; }
+        .ca-arch-metarows #ca-arch-m-ctx { font-size: 12px; }
+        /* v1.45.14 (owner order): the ledger row is a strict column grid -
+           [route + date] on the elastic first track, the value right-
+           aligned in its own column, the delete ✕ locked into a fixed-
+           width slot at the row's right edge (16px inside the card) so the
+           figures align down one edge, independent of the icon's target */
+        .ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: baseline; }
+        .ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }
+        .ca-arch-row .ca-arch-del { justify-self: end; align-self: center; }
         /* v1.45.13 (owner order): definitive breathing room around the core
            figure - 16px above and below (8 + the 8 from v1.45.12) */
         #ca-arch-total { padding-top: 16px; padding-bottom: 16px; }
@@ -2018,7 +2045,7 @@
                             </div>
                             <div class="ca-arch-metaspan2">
                                 <div class="ca-arch-metalabel" id="ca-arch-m-ctx-label">&nbsp;</div>
-                                <div class="ca-arch-metaval flex items-center gap-1" id="ca-arch-m-ctx"></div>
+                                <div class="ca-arch-metaval flex items-center gap-2" id="ca-arch-m-ctx"></div>
                             </div>
                         </div>
                         <!-- salary mode meta row: the strict 4-track grid (v1.45.13) -->
@@ -2655,7 +2682,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.13'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.14'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2677,6 +2704,13 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.14', d: '2026-10-26', items: [
+                { c: 'fix', t: 'Earnings opens on the current month, never a pre-saved future one.' },
+                { c: 'imp', t: 'Month view pairs the counts; the on-track line gets full width.' },
+                { c: 'imp', t: 'Ledger figures align down one strict column beside the delete slot.' },
+                { c: 'imp', t: 'Daylight earns a warm canvas under crisp white cards.' },
+                { c: 'imp', t: 'Inactive tabs read dark walnut on the gold card by day.' }
+            ] },
             { v: '1.45.13', d: '2026-10-26', items: [
                 { c: 'imp', t: 'Earnings opens on this month’s COP allowance.' },
                 { c: 'imp', t: 'The redundant IFA counting row is gone.' },
@@ -13200,11 +13234,20 @@
             // crew expect "this month" to mean. If the current month has
             // nothing saved yet (early in a month), it falls back to the
             // newest entry's month so the scope never shows a dead zero.
+            // v1.45.14 (owner bug report): the fallback may only look BACK.
+            // A pre-saved future month used to win the "newest entry" race
+            // and pull the fresh-open Month scope onto the UPCOMING month
+            // (its Still-to-fly notice) instead of the current one. The
+            // fallback now picks the newest-saved entry whose month is not
+            // ahead of the real calendar; with only future data on file the
+            // scope stays on the current month and reads its honest zero.
             const nowMk = todayLocalYMD().slice(0, 7);
-            const n = es.reduce((m, e) => (String(e.savedAt || '') > String(m.savedAt || '') ? e : m), es[0]);
-            const newestMk = n.monthKey || String(n.sectorDate || n.savedAt || '').slice(0, 7);
-            const mk = es.some((e) => String(e.monthKey || '').slice(0, 7) === nowMk) ? nowMk : newestMk;
-            const yr = es.some((e) => String(e.monthKey || '').slice(0, 4) === nowMk.slice(0, 4)) ? nowMk.slice(0, 4) : newestMk.slice(0, 4);
+            const mkOf = (e) => String(e.monthKey || String(e.sectorDate || '').slice(0, 7) || '');
+            const past = es.filter((e) => { const m = mkOf(e); return /^\d{4}-\d{2}$/.test(m) && m <= nowMk; });
+            const n = past.reduce((m, e) => (String(e.savedAt || '') > String(m.savedAt || '') ? e : m), past[0]);
+            const newestMk = n ? mkOf(n) : nowMk;
+            const mk = es.some((e) => mkOf(e) === nowMk) ? nowMk : newestMk;
+            const yr = es.some((e) => mkOf(e).slice(0, 4) === nowMk.slice(0, 4)) ? nowMk.slice(0, 4) : newestMk.slice(0, 4);
             return { mk: mk, yr: yr };
         }
         function archExpandMk() {
@@ -13212,7 +13255,12 @@
             const mks = []; all.forEach((e) => { if (e.monthKey && mks.indexOf(e.monthKey) === -1) mks.push(e.monthKey); });
             mks.sort().reverse();
             const nowMk = todayLocalYMD().slice(0, 7);
-            return mks.indexOf(nowMk) !== -1 ? nowMk : (mks[0] || '');
+            if (mks.indexOf(nowMk) !== -1) return nowMk;
+            // v1.45.14: never default-open a month ahead of the calendar —
+            // the newest month that has already begun wins; only when every
+            // group is future does the newest of those open
+            const begun = mks.filter((m) => m <= nowMk);
+            return begun.length ? begun[0] : (mks[0] || '');
         }
         // ---- v1.45.11: Monthly Salary (CA 058/2025) ----
         // One $32 per duty whose report at Changi falls 0000-0700 inclusive
@@ -13904,14 +13952,20 @@
                         + '</div></div>';
                 }
                 rows.forEach((e) => {
-                    // v1.45.13: the row sits on ONE text baseline (the X
-                    // keeps its own centre - icons have no baseline)
-                    html += '<div class="ca-arch-row flex items-baseline gap-2.5 py-2.5 px-1 rounded-lg cursor-pointer" data-id="' + e.id + '">'
+                    // v1.45.13: one text baseline. v1.45.14 (owner order):
+                    // a strict three-track grid - [airport code + date] on
+                    // the elastic track, the value right-aligned in its own
+                    // column, the ✕ in a fixed 40px slot whose right edge
+                    // sits 16px inside the card (body px-3 + row px-1), so
+                    // the figures never shift with the icon's touch target
+                    html += '<div class="ca-arch-row py-2.5 px-1 rounded-lg cursor-pointer" data-id="' + e.id + '">'
+                        + '<span class="ca-arch-rowmain min-w-0 flex items-baseline gap-2">'
                         + '<span class="ca-arch-dot"></span>'
                         + '<span class="font-bold text-sm" style="color: var(--arch-fg)">' + archRoute(e) + '</span>'
                         + '<span class="text-xs" style="color: var(--arch-muted)">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
-                        + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
-                        + '<button type="button" class="ca-arch-del ca-hit p-3 rounded-full self-center" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                        + '</span>'
+                        + '<button type="button" class="ca-arch-amt font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
+                        + '<button type="button" class="ca-arch-del ca-hit p-3 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 html += '</div></div>';
             });
@@ -14005,6 +14059,9 @@
                 b.classList.toggle('ca-arch-segon', b.getAttribute('data-scope') === archState.scope);
             });
             archEl('ca-arch-meta-cop').classList.toggle('hidden', isSalary);
+            // v1.45.14 (owner order): COP + MONTH swaps the 4-track grid for
+            // the two-row summary - counts paired, on-track line freed
+            archEl('ca-arch-meta-cop').classList.toggle('ca-arch-metarows', archState.scope === 'month');
             archEl('ca-arch-meta-salary').classList.toggle('hidden', !isSalary || !hasBasic);
             archEl('ca-arch-salary-prompt').classList.toggle('hidden', !(isSalary && !hasBasic));
 

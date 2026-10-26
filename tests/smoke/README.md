@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.13), the changelog's current entry,
-  the service-worker cache name (v244).
+- Stamps: `APP_VERSION` (currently 1.45.14), the changelog's current entry,
+  the service-worker cache name (v245).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -62,6 +62,15 @@ the service-worker stamp. It checks:
   position holds a `:hover` on a seg and skews the ink reading), and the
   future placeholder reads its inline `height` style because the .4s bar
   grow animation races `getBoundingClientRect()`.
+- v1.45.14 earnings depth: the fresh open lands on the CURRENT month even
+  when a pre-saved future month is the newest save (the never-fallback
+  fix); COP + Month pairs the counts in two equal columns with the
+  on-track milestone spanning the full card width (and the bullseye icon
+  at gap-x-2); the ledger values align down one strict column, ending
+  clear of the fixed 40px ✕ slot; All-time returns to the flat 4-track
+  meta; and daylight computes warm — canvas #F4F4F0, solid white cards
+  with the 0 4px 12px rgba(0,0,0,0.03) shadow, walnut #3D2D1B inactive
+  pills at AA over the gold.
 
 ## Running it
 
