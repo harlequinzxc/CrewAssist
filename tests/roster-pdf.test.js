@@ -714,6 +714,10 @@ const MONTH = [
     R.ok(!d.getElementById('ca-arch-toast').classList.contains('hidden'), 'the save lands as a toast, not a pop-up');
     w.showArchiveOverlay();
     await wait(100);
+    // v1.45.13: a fresh open lands on Month - All-time restores the
+    // newest-first row order this reopen has always clicked through
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(100);
     d.querySelectorAll('.ca-arch-row')[0].click();
     await wait(400);
     const sheet = d.getElementById('ca-arch-sub-sheet').textContent;

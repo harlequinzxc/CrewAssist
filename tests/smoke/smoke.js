@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.12', 'APP_VERSION is 1.45.12');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.12' && e.d === '2026-10-26' && e.items.length === 4 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.12 entry with its four pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v243'), 'the service-worker cache name is bumped to v243 (the v1.45.12 earnings-polish release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.13', 'APP_VERSION is 1.45.13');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.13' && e.d === '2026-10-26' && e.items.length === 5 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.13 entry with its five pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v244'), 'the service-worker cache name is bumped to v244 (the v1.45.13 earnings-fresh-open release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.12'; }), 'the What\'s New sheet carries the v1.45.12 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.13'; }), 'the What\'s New sheet carries the v1.45.13 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -647,6 +647,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         ok(await page.evaluate(() => document.getElementById('ca-arch-total-label').textContent === 'Total earnings'), 'the earnings sheet opens in COP mode');
+        ok(await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon') && !document.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon')), 'v1.45.13: a fresh open lands on Month, the new default');
+        ok(await page.evaluate(() => !document.getElementById('ca-arch-coprow') && !document.querySelector('.ca-arch-copseg')), 'v1.45.13: the IFA/LMA counting row is gone');
         // a DOM-level click: renderArch re-renders the summary, and a
         // geometry-based click can race the node swap mid-render
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
@@ -663,6 +665,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         await page.evaluate(() => showArchiveOverlay());
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
         await sleep(400);
         // two tracked months: gross = 2x(2600+125+340) + 200 = 6330;
@@ -688,14 +692,28 @@ async function calcCard(page, { type, t1, t2, lma }) {
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
-        ok(await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('ca-arch-total')); return cs.paddingTop === '8px' && cs.paddingBottom === '8px'; }), 'the core figure carries 8px of air above and below');
+        // the virtual cursor still sits wherever the calendar drag left it;
+        // parked in the corner it cannot hold a :hover over the segs and
+        // skew the ink probes below (the segs carry a hover colour)
+        await page.mouse.move(2, 2);
+        // v1.45.13 default: the fresh open lands on Month (the current
+        // month's COP allowance) - then All-time so the pills and money
+        // column below see every seeded month
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
+        ok(await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('ca-arch-total')); return cs.paddingTop === '16px' && cs.paddingBottom === '16px'; }), 'v1.45.13: the core figure carries 16px of air above and below');
         const grid3 = await page.evaluate(() => {
             const el = document.getElementById('ca-arch-meta-cop');
             const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
             const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
-            return { tracks, clips };
+            const vals = [...el.querySelectorAll('.ca-arch-metaval')].map((v) => v.scrollWidth > v.clientWidth + 1);
+            const span = el.children[2];
+            const gs = getComputedStyle(span);
+            return { tracks, clips, vals, span: gs.gridColumnStart === 'span 2' || gs.gridColumnEnd === 'span 2', spanDbg: gs.gridColumnStart + '/' + gs.gridColumnEnd + ' cls=' + span.className };
         });
-        ok(grid3.tracks.length === 3 && Math.max(...grid3.tracks) - Math.min(...grid3.tracks) <= 1 && !grid3.clips.some(Boolean), 'the COP stat row is an equal 3-column grid and nothing clips');
+        ok(grid3.tracks.length === 4 && Math.max(...grid3.tracks) - Math.min(...grid3.tracks) <= 1 && !grid3.clips.some(Boolean), 'v1.45.13: the COP stat row rides the strict 4-track grid and nothing clips');
+        ok(grid3.span === true, 'the COP context cell spans the last two tracks (' + grid3.spanDbg + ')');
+        ok(!grid3.vals.some(Boolean), 'stat values never truncate (nowrap, no clip)');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
         await sleep(300);
         const grid4 = await page.evaluate(() => {
@@ -704,12 +722,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const clips = [...el.children].map((c) => c.scrollWidth > c.clientWidth + 1);
             return { tracks, clips };
         });
-        ok(grid4.tracks.length === 4 && Math.max(...grid4.tracks) - Math.min(...grid4.tracks) <= 1 && !grid4.clips.some(Boolean), 'the salary stat row is an equal 4-column grid and nothing clips');
+        ok(grid4.tracks.length === 4 && Math.max(...grid4.tracks) - Math.min(...grid4.tracks) <= 1 && !grid4.clips.some(Boolean), 'the salary stat row fills the same 4-track grid and nothing clips');
         // AA: every readable text on the gold card - inactive tabs (over the
         // pill wash over the gradient's LIGHTEST stop, the worst case for
         // dark ink) and the meta labels (over the DARKEST stop, where the
         // stat grid sits)
-        const aaSeg = await page.evaluate(() => {
+        const aaSegFn = () => page.evaluate(() => {
+            // headless compositors run colour transitions slowly - snap them
+            // to the settled state the crew actually reads
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
             const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
             const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
             const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
@@ -727,6 +748,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
             out.label = ratio(comp(parse(getComputedStyle(lab).color), lo), lo);
             return out;
         });
+        // the mode pill inks cross through a .15s colour transition and a
+        // probe can land mid-flight under load - sample until it settles
+        let aaSeg = await aaSegFn();
+        for (let t = 0; t < 10 && (aaSeg.seg.some((r) => r < 4.5) || aaSeg.label < 4.5); t++) {
+            await sleep(200);
+            const next = await aaSegFn();
+            if (JSON.stringify(next) === JSON.stringify(aaSeg)) break;
+            aaSeg = next;
+        }
         ok(aaSeg.seg.length >= 3 && aaSeg.seg.every((r) => r >= 4.5), 'every inactive tab reads at AA (>=4.5:1) against the gold (worst-case stop, got ' + aaSeg.seg.map((r) => r.toFixed(2)).join('/') + ')');
         ok(aaSeg.label >= 4.5, 'the stat labels read at AA over the darkest gold stop (got ' + aaSeg.label.toFixed(2) + ')');
         // the money column: net and gross right-aligned to the same edge
@@ -746,7 +776,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
             const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
             const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
-            const cardBg = parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor);
+            // v1.45.13: the month card is a translucent tint over the sheet
+            // canvas - composite the stack first, then measure against it
+            const cardBg = comp(parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor), parse(getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor));
             const live = document.querySelector('.ca-arch-badge-live');
             const up = document.querySelector('.ca-arch-badge-upcoming');
             const solid = (b) => b && parse(getComputedStyle(b).backgroundColor).a > 0.05;
@@ -769,7 +801,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
             const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
             const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
-            const cardBg = parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor);
+            const cardBg = comp(parse(getComputedStyle(document.querySelector('.ca-arch-group')).backgroundColor), parse(getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor));
             const r = (b) => ratio(comp(parse(getComputedStyle(b).color), comp(parse(getComputedStyle(b).backgroundColor), cardBg)), comp(parse(getComputedStyle(b).backgroundColor), cardBg));
             const parse2 = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
             const comp2 = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
@@ -781,7 +813,56 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return { liveR: r(document.querySelector('.ca-arch-badge-live')), upR: r(document.querySelector('.ca-arch-badge-upcoming')), segR: ratio(comp2(parse2(getComputedStyle(seg).color), pillBg), pillBg) };
         });
         ok(pillsLight.liveR >= 4.5 && pillsLight.upR >= 4.5, 'badge text reads at AA in daylight too (in-progress ' + pillsLight.liveR.toFixed(2) + ', upcoming ' + pillsLight.upR.toFixed(2) + ')');
-        ok(pillsLight.segR >= 4.5, 'the inactive tabs read at AA in daylight too (got ' + pillsLight.segR.toFixed(2) + ')');
+        let segLight = pillsLight.segR;
+        for (let t = 0; t < 10 && segLight < 4.5; t++) {
+            await sleep(200);
+            const next = await page.evaluate(() => {
+                document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
+                const parse2 = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+                const comp2 = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+                const lum2 = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+                const ratio2 = (a, b) => { const l1 = Math.max(lum2(a), lum2(b)), l2 = Math.min(lum2(a), lum2(b)); return (l1 + 0.05) / (l2 + 0.05); };
+                const stops = [...getComputedStyle(document.getElementById('ca-arch-summary')).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse2(m[0]));
+                const wash = parse2(getComputedStyle(document.querySelector('.ca-arch-segtrack')).backgroundColor);
+                const pillBg = comp2(wash, stops[0]);
+                const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+                return ratio2(comp2(parse2(getComputedStyle(seg).color), pillBg), pillBg);
+            });
+            if (Math.abs(next - segLight) < 0.01) break;
+            segLight = next;
+        }
+        ok(segLight >= 4.5, 'the inactive tabs read at AA in daylight too (got ' + segLight.toFixed(2) + ')');
+
+        console.log('— v1.45.13: the fresh-open earnings, chart mute + future stripes —');
+        // still in salary + All-time (Year-by-Year): the legend must show
+        ok(await page.evaluate(() => !document.getElementById('ca-arch-legend').classList.contains('hidden')), 'the Year-by-Year legend shows in salary view');
+        ok(await page.evaluate(() => { const l = document.getElementById('ca-arch-legend'); return l.textContent.indexOf('Basic Salary') !== -1 && l.textContent.indexOf('Allowances') !== -1; }), 'the legend names both stacked golds');
+        const legSw = await page.evaluate(() => {
+            const sal = getComputedStyle(document.querySelector('.ca-arch-legsw-sal')).backgroundColor;
+            const fly = getComputedStyle(document.querySelector('.ca-arch-legsw-fly')).backgroundColor;
+            return { sal, fly };
+        });
+        ok(legSw.sal === 'rgba(146, 94, 14, 0.45)' && legSw.fly === 'rgba(212, 175, 55, 0.65)', 'the swatches match the bar segments pixel for pixel (' + legSw.sal + ' / ' + legSw.fly + ')');
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="cop"]').click());
+        await sleep(300);
+        ok(await page.evaluate(() => document.getElementById('ca-arch-legend').classList.contains('hidden')), 'the legend steps aside in COP view');
+        // the year window: past bars muted, the empty future striped
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="year"]').click());
+        await sleep(300);
+        const chartYr = await page.evaluate(() => {
+            const bars = [...document.querySelectorAll('#ca-arch-chart .ca-arch-barcol')];
+            const active = bars.find((b) => b.classList.contains('ca-arch-baron'));
+            const past = bars.find((b) => !b.classList.contains('ca-arch-baron') && b.querySelector('.ca-arch-bar') && !b.querySelector('.ca-arch-bar').classList.contains('ca-arch-barfuture'));
+            const fut = bars.map((b) => b.querySelector('.ca-arch-barfuture')).filter(Boolean)[0];
+            // the bars grow in over a .4s animation (transform scale), so the
+            // geometry rect races it - the inline height is the layout truth
+            const out = { pastBg: past ? getComputedStyle(past.querySelector('.ca-arch-bar')).backgroundColor : null, futH: 0, futStriped: false };
+            if (fut) { const m = /height:\s*(\d+(?:\.\d+)?)px/.exec(fut.getAttribute('style') || ''); out.futH = m ? parseFloat(m[1]) : 0; const bg = getComputedStyle(fut).backgroundImage; out.futStriped = bg.indexOf('repeating-linear-gradient') !== -1; }
+            void active;
+            return out;
+        });
+        ok(chartYr.pastBg === 'rgba(212, 175, 55, 0.65)', 'a non-selected past bar sits at 0.65 alpha - 35% under the selected bar\u2019s solid gold (got ' + chartYr.pastBg + ')');
+        ok(chartYr.futH >= 15 && chartYr.futStriped, 'an empty future month renders the 16px striped placeholder (' + chartYr.futH.toFixed(0) + 'px)');
         await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 

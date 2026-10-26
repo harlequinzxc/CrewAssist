@@ -214,6 +214,14 @@ composite read 4.09:1, below AA; at .75 it reads 5.2:1 (v1.45.12). Status
 badges follow the same maths on their own washes — solid low-opacity pills
 with high-contrast text, never outline-only ghosts.
 
+**Labels wrap before they clip; values never truncate.** When a dense stat
+grid meets a narrow viewport, the labels may wrap (their tracking relaxes
+first, ellipsis is the last resort) but the *values* keep `white-space:
+nowrap` with no clip at all — a truncated figure is a wrong figure. The
+width comes from responsive track tiers (the earnings meta grid: values step
+to 12px under 420px, the grid folds to two tracks under 360px), never from
+cutting the text (v1.45.13).
+
 ### Two kinds of token
 
 This distinction matters more than any other rule in this section.

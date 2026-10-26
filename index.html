@@ -187,7 +187,7 @@
             --ca-badge-green-line: rgba(34, 197, 94, 0.45);
             /* the earnings chart's gold family (212/230 = gold-bright and
                arch-ink-gold bases at measured alphas) */
-            --ca-arch-bar: rgba(212, 175, 55, 0.35);
+            --ca-arch-bar: rgba(212, 175, 55, 0.65); /* v1.45.13: non-active bars sit 35% under the selected bar's solid gold */
             --ca-arch-proj: rgba(212, 175, 55, 0.28);
             --ca-arch-proj-fade: rgba(212, 175, 55, 0.08);
             --ca-arch-best-line: rgba(212, 175, 55, 0.12);
@@ -750,10 +750,11 @@
         .dark .ca-arch-toast { background: var(--ca-toast-bg); color: var(--ca-toast-ink); }
         .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); font-weight: 700; }
         .dark .ca-arch-toast .ca-toast-undo { color: var(--ca-toast-undo); }
-        /* v1.45.12: every month sits in its own rounded card, mirroring the
-           trend/insights surfaces above - a shade lighter than the sheet
-           canvas in both themes */
-        .ca-arch-group { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }
+        /* v1.45.13 (owner order): every month sits in its own rounded card
+           on a subtle tint layer over the deep canvas - white at 2% by
+           night, a white lift by day - with the hairline doing the edge */
+        .ca-arch-group { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }
+        html:not(.dark) .ca-arch-group { background: rgba(255, 255, 255, 0.55); }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
@@ -776,11 +777,6 @@
         .ca-arch-segtrack { display: inline-flex; background: var(--ca-arch-segtrack); border-radius: 999px; padding: 3px; gap: 2px; }
         .ca-arch-seg { border: none; background: transparent; color: var(--ca-arch-seg-ink); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
         .ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }
-        /* v1.45.11: the COP refinement row (IFA + LMA / IFA) - a quiet text
-           pair under the number, never a third full pill track */
-        .ca-arch-coprow .ca-arch-coplab { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.75); }
-        .ca-arch-copseg { border: none; background: transparent; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.75); padding: 2px 4px; border-radius: 6px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: color .15s ease, background .15s ease; }
-        .ca-arch-copseg.ca-arch-copon { color: var(--ca-arch-ink-on-gold); background: rgba(26,19,0,.10); }
         /* the big number cross-fades when the lens flips (the standing
            animation rule: nothing snaps) */
         @keyframes caArchNumFlip { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -803,23 +799,30 @@
         .ca-arch-yearhead { display: flex; align-items: center; gap: 8px; margin: 14px 2px 4px; }
         .ca-arch-yearhead span { font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--arch-muted); }
         .ca-arch-yearhead::after { content: ""; flex: 1; height: 1px; background: var(--arch-surface-border); }
-        /* v1.45.12: the meta labels live on the GOLD card - dark ink at .85
-           (the old --arch-muted read 60% WHITE on gold in the dark theme),
-           and every cell truncates instead of clipping ('COP $12...') */
-        .ca-arch-metalabel { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* v1.45.13 (owner order): the meta labels live on the GOLD card -
+           dark ink at .85 (the old --arch-muted read 60% WHITE on gold in
+           the dark theme). Labels may WRAP (tighter tracking, 11px holds the
+           MICRO floor); values never truncate - nowrap, no clip, and the
+           responsive tiers below keep every track wide enough */
+        .ca-arch-metalabel { font-size: 11px; letter-spacing: .03em; text-transform: uppercase; font-weight: 700; color: rgba(26,19,0,.85); overflow: hidden; text-overflow: ellipsis; }
+        .ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
         #ca-arch-m-ctx span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .ca-arch-metadot { color: rgba(26,19,0,.55); font-weight: 700; }
-        /* v1.45.12: the secondary stat rows standardize on an equal-width
-           grid - 3 columns in COP view, 4 in salary - so the figures line up
-           and share space fairly on narrow phones */
-        .ca-arch-metagrid { display: grid; column-gap: 10px; }
-        .ca-arch-metagrid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .ca-arch-metagrid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        /* v1.45.13: a STRICT four-track grid for both views - the COP row's
+           context cell spans the last two tracks; the salary row fills all
+           four. Under 420px the values step down a rung (12px); under 360px
+           the grid folds to two tracks so nothing ever clips */
+        .ca-arch-metagrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 8px; }
+        .ca-arch-metaspan2 { grid-column: span 2; }
         .ca-arch-metagrid > div { min-width: 0; }
-        /* v1.45.12: breathing room around the core figure - 8px above and
-           below, separating it from the label and the gross line */
-        #ca-arch-total { padding-top: 8px; padding-bottom: 8px; }
+        @media (max-width: 419px) { .ca-arch-metagrid .ca-arch-metaval { font-size: 12px; } }
+        @media (max-width: 359px) {
+            .ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .ca-arch-metagrid .ca-arch-metaval { font-size: 14px; }
+        }
+        /* v1.45.13 (owner order): definitive breathing room around the core
+           figure - 16px above and below (8 + the 8 from v1.45.12) */
+        #ca-arch-total { padding-top: 16px; padding-bottom: 16px; }
         .ca-arch-surface { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); }
         .ca-arch-barcol { border: none; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-height: 44px; cursor: pointer; -webkit-tap-highlight-color: transparent; padding: 0; flex: 1 1 0; min-width: 0; }
         .ca-arch-barcol:active .ca-arch-barlab { color: var(--sia-gold-ink, #7d650f); }
@@ -827,6 +830,16 @@
         .ca-arch-bar { width: 100%; max-width: 26px; border-radius: 3px 3px 0 0; background: var(--ca-arch-bar); }
         .ca-arch-bar.ca-arch-baron { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, var(--ca-gold))); }
         .ca-arch-barproj { width: 100%; max-width: 26px; border-top: 1px dashed var(--ca-arch-proj-ink); background: repeating-linear-gradient(45deg, var(--ca-arch-proj) 0 4px, var(--ca-arch-proj-fade) 4px 8px); }
+        /* v1.45.13: the diagonal stripe belongs to the FUTURE alone - an
+           empty month ahead renders as a striped placeholder slot */
+        .ca-arch-bar.ca-arch-barfuture { background: repeating-linear-gradient(45deg, var(--ca-arch-proj) 0 4px, var(--ca-arch-proj-fade) 4px 8px); }
+        /* v1.45.13: the Year-by-Year legend - dark gold = Basic Salary,
+           light gold = Allowances (the stacked bar's two segments) */
+        .ca-arch-legend { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+        .ca-arch-legsw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+        .ca-arch-legsw-sal { background: rgba(146, 94, 14, 0.45); }
+        .ca-arch-legsw-fly { background: rgba(212, 175, 55, 0.65); }
+        .ca-arch-leglab { font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--arch-muted); }
         .ca-arch-barlab { font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--arch-muted); margin-top: 6px; }
         .ca-arch-barlab.ca-arch-baron { color: var(--sia-gold-ink, #7d650f); }
         .ca-arch-bartip { display: none; position: relative; margin-bottom: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(10,12,20,.92); color: var(--ca-tip-ink); padding: 3px 7px; border-radius: 6px; font-variant-numeric: tabular-nums; }
@@ -1981,13 +1994,6 @@
                         <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
                         <!-- salary mode: gross and CPF ride under the number -->
                         <div class="ca-micro font-bold mt-1.5 hidden" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
-                        <!-- the COP refinement: which flight-allowance parts
-                             count. Applies in both views (owner ruling). -->
-                        <div class="flex items-center justify-center gap-3 mt-2" id="ca-arch-coprow" aria-label="COP components">
-                            <span class="ca-arch-coplab">Counting</span>
-                            <button type="button" class="ca-arch-copseg" data-cop="all">IFA + LMA</button>
-                            <button type="button" class="ca-arch-copseg" data-cop="ifa">IFA</button>
-                        </div>
                     </div>
                     <!-- salary mode: no basic yet — ask, never guess (the CA
                          publishes ranges; the exact figure is personal) -->
@@ -1999,8 +2005,9 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-3 border-t" style="border-color: rgba(26,19,0,.1)">
-                        <!-- COP mode meta row: an equal 3-column grid (v1.45.12) -->
-                        <div class="ca-arch-metagrid ca-arch-metagrid-3" id="ca-arch-meta-cop">
+                        <!-- COP mode meta row: the strict 4-track grid, the
+                             context cell spanning the last two (v1.45.13) -->
+                        <div class="ca-arch-metagrid" id="ca-arch-meta-cop">
                             <div>
                                 <div class="ca-arch-metalabel">Flights</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-flights">0</div>
@@ -2009,13 +2016,13 @@
                                 <div class="ca-arch-metalabel">Avg / flight</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-avg">—</div>
                             </div>
-                            <div>
+                            <div class="ca-arch-metaspan2">
                                 <div class="ca-arch-metalabel" id="ca-arch-m-ctx-label">&nbsp;</div>
                                 <div class="ca-arch-metaval flex items-center gap-1" id="ca-arch-m-ctx"></div>
                             </div>
                         </div>
-                        <!-- salary mode meta row: an equal 4-column grid (v1.45.12) -->
-                        <div class="ca-arch-metagrid ca-arch-metagrid-4 hidden" id="ca-arch-meta-salary">
+                        <!-- salary mode meta row: the strict 4-track grid (v1.45.13) -->
+                        <div class="ca-arch-metagrid hidden" id="ca-arch-meta-salary">
                             <div>
                                 <div class="ca-arch-metalabel">Basic</div>
                                 <div class="ca-arch-metaval" id="ca-arch-m-basic">—</div>
@@ -2043,6 +2050,12 @@
                             <span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)" id="ca-arch-trend-title">12-Month Trend</span>
                         </div>
                         <span class="ca-arch-num ca-micro font-bold" style="color: rgba(212,175,55,.7)" id="ca-arch-peak"></span>
+                    </div>
+                    <!-- v1.45.13: the Year-by-Year legend - the stacked bar's
+                         two gold segments, named (salary view only) -->
+                    <div class="ca-arch-legend hidden" id="ca-arch-legend" aria-hidden="true">
+                        <span class="flex items-center gap-1.5"><span class="ca-arch-legsw ca-arch-legsw-sal"></span><span class="ca-arch-leglab">Basic Salary</span></span>
+                        <span class="flex items-center gap-1.5"><span class="ca-arch-legsw ca-arch-legsw-fly"></span><span class="ca-arch-leglab">Allowances</span></span>
                     </div>
                     <div class="relative mt-4">
                         <div class="flex items-end gap-1" id="ca-arch-chart"></div>
@@ -2642,7 +2655,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.12'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.13'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2664,6 +2677,13 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.13', d: '2026-10-26', items: [
+                { c: 'imp', t: 'Earnings opens on this month’s COP allowance.' },
+                { c: 'imp', t: 'The redundant IFA counting row is gone.' },
+                { c: 'imp', t: 'Past chart bars sit quieter; stripes mark the future.' },
+                { c: 'imp', t: 'A legend names the year chart’s gold segments.' },
+                { c: 'imp', t: 'Stat values never clip on narrow phones.' }
+            ] },
             { v: '1.45.12', d: '2026-10-26', items: [
                 { c: 'imp', t: 'The earnings figure gets breathing room and a tidier stat grid.' },
                 { c: 'imp', t: 'Months sit in their own cards with solid status pills.' },
@@ -13162,17 +13182,13 @@
         }
 
         // ============ EARNINGS ARCHIVE (v1.19.13 redesign) ============
-        const archState = { scope: 'all', search: '', collapsed: {}, projOpen: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '',
-            // v1.45.11: COP Allowance vs Monthly Salary, the IFA/LMA
-            // refinement, and the cycled year (tap the Year pill again).
+        // v1.45.13 (owner order): every fresh open starts on this month's
+        // COP allowance — the view resets with the sheet, like every other
+        // surface state (the v1.44.5 reopen-fresh ruling). The lens and the
+        // IFA/LMA refinement no longer persist; the refinement row itself
+        // is gone (it served no informational purpose).
+        const archState = { scope: 'month', search: '', collapsed: {}, projOpen: {}, insightsOpen: false, insightsAll: false, chartSel: null, landedSig: '',
             mode: 'cop', copScope: 'all', yearSel: null };
-        // A view preference, like the theme: remembered per device.
-        (function archLoadPrefs() {
-            try {
-                if (localStorage.getItem('crewAssist.archMode') === 'salary') archState.mode = 'salary';
-                if (localStorage.getItem('crewAssist.archCopMode') === 'ifa') archState.copScope = 'ifa';
-            } catch (e) {}
-        })();
         let archUndoTimer = null;
         function archEl(id) { return document.getElementById(id); }
         function archRoute(e) { const full = String((e && e.stationDisplay) || ''); const parts = full.split('/').filter((p) => p && p !== 'SIN'); return parts.length ? parts.join('/') : (full.split('/')[0] || ''); }
@@ -13888,12 +13904,14 @@
                         + '</div></div>';
                 }
                 rows.forEach((e) => {
-                    html += '<div class="ca-arch-row flex items-center gap-2.5 py-2.5 px-1 rounded-lg cursor-pointer" data-id="' + e.id + '">'
+                    // v1.45.13: the row sits on ONE text baseline (the X
+                    // keeps its own centre - icons have no baseline)
+                    html += '<div class="ca-arch-row flex items-baseline gap-2.5 py-2.5 px-1 rounded-lg cursor-pointer" data-id="' + e.id + '">'
                         + '<span class="ca-arch-dot"></span>'
                         + '<span class="font-bold text-sm" style="color: var(--arch-fg)">' + archRoute(e) + '</span>'
                         + '<span class="text-xs" style="color: var(--arch-muted)">' + (archiveDayLabel(e.sectorDate) || (e.flightType || '')) + '</span>'
                         + '<button type="button" class="ca-arch-amt ml-auto font-bold text-sm bg-transparent p-0" style="color: var(--arch-fg)" data-amt="' + e.id + '" aria-label="Correct amount — ' + archRoute(e) + '">' + formatMoney(e.amount) + '</button>'
-                        + '<button type="button" class="ca-arch-del ca-hit p-3 rounded-full" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
+                        + '<button type="button" class="ca-arch-del ca-hit p-3 rounded-full self-center" style="color: var(--arch-muted)" data-id="' + e.id + '" aria-label="Delete ' + archRoute(e) + '"><i data-lucide="x" class="w-4 h-4"></i></button></div>';
                 });
                 html += '</div></div>';
             });
@@ -13981,9 +13999,6 @@
             document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-mode]').forEach((b) => {
                 b.classList.toggle('ca-arch-segon', b.getAttribute('data-mode') === archState.mode);
             });
-            document.querySelectorAll('#ca-arch-summary .ca-arch-copseg').forEach((b) => {
-                b.classList.toggle('ca-arch-copon', b.getAttribute('data-cop') === archState.copScope);
-            });
             const yrBtn = archEl('ca-arch-seg-year');
             if (yrBtn) yrBtn.textContent = (archState.scope === 'year') ? archSelYr() : 'Year';
             document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').forEach((b) => {
@@ -13992,7 +14007,6 @@
             archEl('ca-arch-meta-cop').classList.toggle('hidden', isSalary);
             archEl('ca-arch-meta-salary').classList.toggle('hidden', !isSalary || !hasBasic);
             archEl('ca-arch-salary-prompt').classList.toggle('hidden', !(isSalary && !hasBasic));
-            archEl('ca-arch-coprow').classList.toggle('hidden', false);
 
             let total = 0, count = 0, ctxLabel = '\u00a0', ctxHtml = '<span style="opacity:.4">\u2014</span>';
             let sal = null, salCtx = '';
@@ -14186,6 +14200,10 @@
             const selMk = archState.chartSel || (archState.scope === 'month' ? (info.mk || currentMk) : '');
             const title = archEl('ca-arch-trend-title');
             if (title) title.textContent = (archState.scope === 'year') ? (archSelYr() + ' by Month') : (archState.scope === 'all' ? 'Year by Year' : '12-Month Trend');
+            // v1.45.13: the segment legend rides the Year-by-Year layout in
+            // salary view - the only place the stacked segments are years
+            const legend = archEl('ca-arch-legend');
+            if (legend) legend.classList.toggle('hidden', !(units.kind === 'years' && isSalary));
             let maxTotal = 0;
             units.items.forEach((u) => { maxTotal = Math.max(maxTotal, u.total); });
             archEl('ca-arch-peak').textContent = maxTotal > 0 ? archPeakFmt(maxTotal) : '';
@@ -14198,9 +14216,22 @@
                 let projTotal = 0, tipNow = u.total;
                 let barPx = Math.round(120 * (Math.max(u.total, 0) / (maxTotal || 1)));
                 let projPx = 0;
+                const isFuture = (units.kind === 'months' && u.mk > currentMk);
                 if (units.kind === 'months') {
                     const ms = archMonthState(u.mk, all);
-                    if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004 && u.count) {
+                    if (isFuture) {
+                        // v1.45.13 (owner order): the stripe is the future's
+                        // pattern alone - a month ahead renders as pure
+                        // projection whatever the lens (data-known months
+                        // stripe at their scheduled height; empty ones take
+                        // the 16px placeholder slot)
+                        if (ms.total > 0.004) {
+                            projTotal = isSalary && u.sal ? Math.round((u.sal.basic + u.sal.fixed + u.sal.midAmt + ms.total) * 100) / 100 : ms.total;
+                            barPx = 0;
+                            tipNow = ms.flown;
+                            projPx = Math.max(0, Math.min(Math.round(120 * (projTotal / (maxTotal || 1))), 120));
+                        }
+                    } else if (ms.inProgress && ms.unflownCount > 0 && ms.total > 0.004 && u.count) {
                         if (isSalary) {
                             // the salary stack is already whole (basic and
                             // fixed are monthly); the hatch is the projected
@@ -14232,11 +14263,14 @@
                 }
                 if ((units.kind === 'years' && parseInt(u.yr, 10) < parseInt(curYr, 10)) ||
                     (units.kind === 'months' && u.mk < currentMk && u.total > 0.004)) completeTotals.push(u.total);
-                const stub = (u.total <= 0 && projPx <= 0);
+                // v1.45.13: an empty month AHEAD renders as a striped
+                // placeholder slot (the stripe is the future's pattern); an
+                // empty PAST month keeps its 2px sliver
+                const stub = (u.total <= 0 && projPx <= 0 && !isFuture);
                 const label = units.kind === 'years' ? u.yr : (MON3[parseInt(u.mk.slice(5, 7), 10) - 1] || '');
                 const tipLabel = units.kind === 'years' ? u.yr : archiveMonthLabel(u.mk);
                 let inner = '';
-                if (isSalary && u.sal) {
+                if (isSalary && u.sal && !isFuture) {
                     // the salary slice below, flying above; the hatch grows
                     // out of the flying part (the projection is flying)
                     const salPart = Math.min(u.sal.basic + u.sal.fixed + u.sal.midAmt, u.total);
@@ -14249,7 +14283,7 @@
                     + '<div class="ca-arch-bararea">'
                     + '<span class="ca-arch-bartip">' + tipLabel + ' \u00b7 ' + formatMoney(tipNow) + (projTotal ? ' \u2192 ' + formatMoney(projTotal) : '') + '</span>'
                     + (projPx > 0 ? '<div class="ca-arch-barproj" style="height:' + projPx + 'px"></div>' : '')
-                    + '<div class="ca-arch-bar' + (on ? ' ca-arch-baron' : '') + (isSalary ? ' ca-arch-barstack' : '') + '" style="height:' + (stub ? 2 : Math.max(2, barPx)) + 'px">' + (stub ? '' : inner) + '</div>'
+                    + '<div class="ca-arch-bar' + (on ? ' ca-arch-baron' : '') + ((isFuture && u.total <= 0.004) ? ' ca-arch-barfuture' : '') + '" style="height:' + (stub ? 2 : (isFuture && u.total <= 0.004 ? 16 : Math.max(2, barPx))) + 'px">' + (stub ? '' : inner) + '</div>'
                     + '</div>'
                     + '<span class="ca-arch-barlab' + (on ? ' ca-arch-baron' : '') + '">' + label + '</span>'
                     + '</button>';
@@ -14461,7 +14495,7 @@
         // Everything worth keeping on this device, as one file. Menu caches and
         // one-time flags are deliberately absent — caches re-fetch, flags are
         // this device's own business.
-        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards', 'crewAssist.archMode', 'crewAssist.archCopMode'];
+        const BACKUP_KEYS = ['crewAssist.profile', 'crewAssist.prefs', 'crewAssist.theme', 'crewAssist.calcUi', 'crewAssist.motion', 'crewAssist.rates', 'crewAssist.ratesUpdatedAt', 'crewAssist.archive', 'crewAssist.dutyDays', 'crewAssist.allFlights', 'crewAssist.upcoming', 'crewAssist.recentFlights', 'crewAssist.manualCards'];
         function buildFullBackup() {
             const data = {};
             BACKUP_KEYS.forEach((k) => {
@@ -14639,7 +14673,7 @@
         }
 
         function showArchiveOverlay() {
-            archState.scope = 'all'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false; archState.insightsAll = false;
+            archState.scope = 'month'; archState.mode = 'cop'; archState.search = ''; archState.collapsed = {}; archState.chartSel = null; archState.insightsOpen = false; archState.insightsAll = false;
             // v1.44.5 (owner order): a reopen always starts fresh. projOpen
             // joins the reset (a projection left open used to survive the
             // close), and the list scroll zeroes BEFORE renderArch so the
@@ -14690,14 +14724,6 @@
                 const m = b.getAttribute('data-mode') || 'cop';
                 if (archState.mode === m) return;
                 archState.mode = m;
-                try { localStorage.setItem('crewAssist.archMode', m); } catch (e) {}
-                renderArch();
-            }));
-            document.querySelectorAll('#ca-arch-summary .ca-arch-copseg').forEach((b) => b.addEventListener('click', () => {
-                const c = b.getAttribute('data-cop') === 'ifa' ? 'ifa' : 'all';
-                if (archState.copScope === c) return;
-                archState.copScope = c;
-                try { localStorage.setItem('crewAssist.archCopMode', c); } catch (e) {}
                 renderArch();
             }));
             const salarySetup = archEl('ca-arch-salary-setup');

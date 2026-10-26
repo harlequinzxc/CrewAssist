@@ -18,6 +18,11 @@ const fs = require('fs');
     ]));
     w.showArchiveOverlay();
     await wait(100);
+    // v1.45.13: a fresh open starts on the current month's COP allowance
+    R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon') && !d.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon'), 'v1.45.13: Month is the default scope');
+    R.ok(d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'v1.45.13: COP Allowance is the default lens');
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(100);
     const txt = d.getElementById('ca-arch-list').textContent;
     R.ok(txt.includes('JNB') && !txt.includes('JNB/SIN'), 'SIN stripped from turnaround');
     R.ok(txt.includes('JNB/CPT') && txt.includes('NRT/LAX'), 'multisector kept');
@@ -36,6 +41,8 @@ const fs = require('fs');
     seed();
     w.showArchiveOverlay();
     await wait(100);
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(50);
     d.getElementById('ca-arch-trash').click();
     await wait(50);
     const backdrop = d.getElementById('app-dialog-backdrop');
@@ -191,7 +198,12 @@ const fs = require('fs');
     R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-mode]').length, 2, 'v1.45.11: two view pills - COP Allowance / Monthly Salary');
     const segOf = (scope) => d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="' + scope + '"]');
     R.ok(['month', 'year', 'all'].every((s) => !!segOf(s)), 'segmented buttons: month / year / all');
-    R.ok(segOf('all').classList.contains('ca-arch-segon'), 'All-time is the default scope');
+    R.ok(segOf('month').classList.contains('ca-arch-segon') && !segOf('all').classList.contains('ca-arch-segon'), 'v1.45.13: Month is the default scope');
+    R.ok(d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'v1.45.13: COP Allowance is the default lens');
+    R.ok(!d.getElementById('ca-arch-coprow') && !d.querySelector('.ca-arch-copseg'), 'v1.45.13: the IFA/LMA counting row is gone');
+    R.ok(fs.readFileSync(APP, 'utf8').indexOf('crewAssist.archMode') === -1 && fs.readFileSync(APP, 'utf8').indexOf('crewAssist.archCopMode') === -1, 'v1.45.13: the lens no longer persists (no archMode / archCopMode keys)');
+    segOf('all').click();
+    await wait(50);
 
     // -- all-time gold card: $7,423.23 across 19 flights
     R.eq(d.getElementById('ca-arch-total').textContent, '$7,423.23', 'all-time total');
@@ -373,6 +385,7 @@ const fs = require('fs');
       ]));
     } });
     w.showArchiveOverlay();
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(50);
     await wait(200);
     const type = async (q) => {
       const s = d.getElementById('ca-arch-search');
@@ -725,6 +738,8 @@ const fs = require('fs');
     ]));
     w.showArchiveOverlay();
     await wait(100);
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(50);
     const search = d.getElementById('ca-arch-search');
     const rows = () => d.querySelectorAll('.ca-arch-row').length;
     search.value = 'september';
@@ -791,6 +806,8 @@ const fs = require('fs');
       { id: 'C3', savedAt: '2026-09-25T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-05', flightType: 'Layover', stationDisplay: 'NRT', amount: 400 }
     ]));
     w.showArchiveOverlay();
+    await wait(150);
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
     await wait(150);
     const headOf = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
     const bodyOf = (mk) => headOf(mk).closest('.ca-arch-group').querySelector('.ca-arch-group-body');
@@ -901,6 +918,8 @@ const fs = require('fs');
       { id: 't2', savedAt: '2026-09-01T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-12', flightType: 'Layover', stationDisplay: 'KTM', amount: 120 }
     ]));
     w.showArchiveOverlay();
+    await wait(50);
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
     await wait(50);
     R.ok(!!d.querySelector('.ca-arch-headrule'), 'a hairline divides the file pair from the destructive pair (E2)');
     // unfiltered: the confirm says ALL plus the count
@@ -1056,6 +1075,8 @@ function todayYmd() {
     await wait(100);
     e.w.eval('showArchiveOverlay()');
     await wait(150);
+    e.d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(150);
     const grp = e.d.querySelector('.ca-arch-group-head[data-mk="2026-09"]').closest('.ca-arch-group');
     const tgl = grp.querySelector('.ca-arch-proj-btn');
     R.ok(!!tgl && tgl.tagName === 'BUTTON' && !tgl.querySelector('i'), 'hotfix: the total stays tappable with no chevron shifting the text');
@@ -1082,14 +1103,16 @@ function todayYmd() {
     ]));
     w.showArchiveOverlay();
     await wait(100);
+    // v1.45.13 made Month + COP the default, so the drift demo now leaves
+    // the sheet from All-time (the reopen must come back to the default)
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(30);
     const si = d.getElementById('ca-arch-search');
     si.value = 'NRT';
     si.dispatchEvent(new w.Event('input', { bubbles: true }));
     await wait(30);
     R.ok(d.getElementById('ca-arch-list').textContent.includes('NRT') && !d.getElementById('ca-arch-list').textContent.includes('JNB'), 'the search filter takes before the close');
-    d.querySelector('.ca-arch-seg[data-scope="month"]').click();
-    await wait(30);
-    R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon'), 'the Month scope takes before the close');
+    R.ok(d.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon'), 'All-time takes before the close');
     d.getElementById('ca-arch-scroll').scrollTop = 777;
     R.eq(d.getElementById('ca-arch-scroll').scrollTop, 777, 'the list scroll sits deep while the sheet stays open');
     w.closeArchOverlay();
@@ -1097,8 +1120,9 @@ function todayYmd() {
     w.showArchiveOverlay();
     await wait(100);
     R.eq(d.getElementById('ca-arch-search').value, '', 'v1.44.5: a reopen clears the search');
-    R.ok(d.getElementById('ca-arch-list').textContent.includes('JNB'), 'v1.44.5: a reopen lists every entry again');
-    R.ok(d.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon'), 'v1.44.5: the scope seg returns to All-time');
+    R.ok(d.getElementById('ca-arch-list').textContent.includes('NRT') && !d.getElementById('ca-arch-list').textContent.includes('JNB'), 'v1.45.13: a reopen returns to the current month only');
+    R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon'), 'v1.45.13: the scope seg returns to Month (the default)');
+    R.ok(d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'v1.45.13: the lens returns to COP Allowance (the default)');
     R.eq(d.getElementById('ca-arch-scroll').scrollTop, 0, 'v1.44.5: the list reopens scrolled to the top');
     w.closeArchOverlay();
   }
@@ -1150,8 +1174,9 @@ function todayYmd() {
       const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
       w.showArchiveOverlay(); await wait(150);
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Total earnings', 'the card opens in COP Allowance as before');
-      R.eq(d.getElementById('ca-arch-total').textContent, '$3,000.00', 'the COP total is untouched in COP mode');
       R.ok(!d.getElementById('ca-arch-salary-prompt') || d.getElementById('ca-arch-salary-prompt').classList.contains('hidden'), 'no salary prompt while COP mode is on');
+      d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
+      R.eq(d.getElementById('ca-arch-total').textContent, '$3,000.00', 'the COP total is untouched in COP mode');
       d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Net take-home', 'the label flips with the lens');
       // all-time: 3 tracked months. gross = 3x(2600+465) + 2x32 + 3000 = 12259;
@@ -1162,7 +1187,6 @@ function todayYmd() {
       R.eq(d.getElementById('ca-arch-m-fixed').textContent, '$1,395.00', 'fixed meta = 3 x (125 + 340)');
       R.ok(d.getElementById('ca-arch-m-mid').textContent.indexOf('2') === 0 && d.getElementById('ca-arch-m-mid').textContent.indexOf('$64.00') !== -1, 'midnight meta shows 2 duties = $64');
       R.eq(d.getElementById('ca-arch-m-cop').textContent, '$3,000.00', 'COP meta carries the flight allowance');
-      R.eq(w.localStorage.getItem('crewAssist.archMode'), 'salary', 'the lens choice persists');
       // month figures via Year 2025 -> tap the Jun bar -> Month pill (the
       // tap moves the selection, the owner's spec)
       d.querySelector('.ca-arch-seg[data-scope="year"]').click(); await wait(150);
@@ -1190,6 +1214,7 @@ function todayYmd() {
     {
       const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
       w.showArchiveOverlay(); await wait(150);
+      d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
       const yrBars = d.querySelectorAll('.ca-arch-barcol[data-yr]');
       R.eq(Array.from(yrBars).map((b) => b.getAttribute('data-yr')).join(','), '2025,2026', 'All-time draws one bar per year');
       R.eq(d.getElementById('ca-arch-trend-title').textContent, 'Year by Year', 'the trend title names the all-time shape');
@@ -1204,16 +1229,19 @@ function todayYmd() {
       d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
       R.ok(d.querySelectorAll('#ca-arch-chart .ca-arch-barsal').length >= 2, 'salary mode stacks a salary slice into each bar');
       R.ok(d.querySelectorAll('#ca-arch-chart .ca-arch-barfly').length >= 2, 'the flying slice rides on top');
+      // v1.45.13: the Year-by-Year legend names the stacked golds (salary only)
+      const legend = d.getElementById('ca-arch-legend');
+      R.ok(legend && !legend.classList.contains('hidden'), 'the legend rides under the Year-by-Year title in salary view');
+      R.ok(legend.textContent.indexOf('Basic Salary') !== -1 && legend.textContent.indexOf('Allowances') !== -1, 'the legend names both stacked segments');
+      d.querySelector('.ca-arch-seg[data-mode="cop"]').click(); await wait(150);
+      R.ok(legend.classList.contains('hidden'), 'the legend steps aside in COP view');
     }
 
-    // D) IFA-only counting and the trash narrowing
+    // D) the trash narrowing (the IFA-only counting row is gone as of
+    // v1.45.13 - the narrowing demo only needs a scope that narrows)
     {
       const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
       w.showArchiveOverlay(); await wait(150);
-      d.querySelector('.ca-arch-copseg[data-cop="ifa"]').click(); await wait(150);
-      R.eq(d.getElementById('ca-arch-total').textContent, '$2,500.00', 'IFA-only counts the IFA portions: 500+1000+300+700');
-      R.eq(w.localStorage.getItem('crewAssist.archCopMode'), 'ifa', 'the refinement persists');
-      d.querySelector('.ca-arch-copseg[data-cop="all"]').click(); await wait(150);
       d.querySelector('.ca-arch-seg[data-scope="month"]').click(); await wait(150);
       d.getElementById('ca-arch-trash').click(); await wait(100);
       R.ok(d.getElementById('app-dialog-msg').textContent.indexOf('Delete 1 shown entry') !== -1, 'trash names the shown entries when a scope narrows the list');
@@ -1235,6 +1263,7 @@ function todayYmd() {
     {
       const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
       w.showArchiveOverlay(); await wait(150);
+      d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
       d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
       d.getElementById('ca-arch-ins-toggle').click(); await wait(150);
       const labels = d.getElementById('ca-arch-insights').textContent;
@@ -1245,19 +1274,34 @@ function todayYmd() {
     }
   }
 
-  // ---- v1.45.12: the gold-card and list polish ----
-  // Breathing room around the core figure, the equal-width stat grid that
-  // truncates instead of clipping, AA ink over the gold, month cards, solid
-  // status pills, and the right-aligned net/gross money column.
+  // ---- v1.45.12 + v1.45.13: the gold-card and list polish ----
+  // v1.45.12 brought the breathing room, equal-width stat grids, AA ink over
+  // the gold, month cards, solid status pills and the right-aligned money
+  // column; v1.45.13 doubled the air (16px), hardened the grid to a strict
+  // 4-track layout whose values never clip, muted the non-active chart bars,
+  // striped the future and tinted the month cards.
   {
     const src = fs.readFileSync(APP, 'utf8');
     // the card: src pins (jsdom cannot compute var()-backed properties)
-    R.ok(src.includes('#ca-arch-total { padding-top: 8px; padding-bottom: 8px; }'), 'the core figure carries 8px of air above and below');
-    R.ok(src.includes('.ca-arch-metagrid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }') && src.includes('.ca-arch-metagrid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }'), 'the stat rows standardize on equal-width grids - 3 COP columns, 4 salary');
+    R.ok(src.includes('#ca-arch-total { padding-top: 16px; padding-bottom: 16px; }'), 'v1.45.13: the core figure carries 16px of air above and below (the 8 from v1.45.12 + 8 more)');
+    R.ok(src.includes('.ca-arch-metagrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); column-gap: 8px; }'), 'v1.45.13: a strict four-track stat grid for both views');
+    R.ok(src.includes('.ca-arch-metaspan2 { grid-column: span 2; }'), 'the COP context cell spans the last two tracks');
+    R.ok(src.includes('@media (max-width: 419px) { .ca-arch-metagrid .ca-arch-metaval { font-size: 12px; } }'), 'values step to 12px under 420px before anything can clip');
+    R.ok(src.includes('@media (max-width: 359px) {') && src.includes('.ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }'), 'the grid folds to two tracks under 360px');
+    R.ok(src.includes('.ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }'), 'v1.45.13: values never truncate - nowrap with no clip, the tiers carry the width');
+    R.ok(src.includes('.ca-arch-metalabel { font-size: 11px; letter-spacing: .03em;'), 'labels keep the 11px floor with roomier tracking (wrap before ellipsis)');
     R.ok(src.includes('--ca-arch-seg-ink: rgba(26, 19, 0, 0.75);'), 'the inactive tab ink reads .75 dark-on-gold (was .65, 4.09:1)');
-    R.ok(src.includes('color: rgba(26,19,0,.85); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }'), 'meta labels: dark-on-gold ink (the old --arch-muted read 60% white on gold at night) plus truncation');
-    R.ok(src.includes('.ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }'), 'meta values truncate - no COP $12... clipping on narrow phones');
-    R.ok(src.includes('rgba(26,19,0,.8)" id="ca-arch-gross-line"'), 'the gross line ink rides at .80 over the gold');
+    R.ok(src.includes('rgba(26,19,0,.8)\" id=\"ca-arch-gross-line\"'), 'the gross line ink rides at .80 over the gold');
+
+    // v1.45.13 chart pins: the mute, the future stripe, the legend
+    R.ok(src.includes('--ca-arch-bar: rgba(212, 175, 55, 0.65);'), 'v1.45.13: non-active bars sit at 0.65 alpha - 35% under the selected bar\u2019s solid gold');
+    R.ok(src.includes('.ca-arch-bar.ca-arch-barfuture { background: repeating-linear-gradient(45deg, var(--ca-arch-proj) 0 4px, var(--ca-arch-proj-fade) 4px 8px); }'), 'the diagonal stripe pattern belongs to the future placeholder');
+    R.ok(src.includes('.ca-arch-legsw-sal { background: rgba(146, 94, 14, 0.45); }') && src.includes('.ca-arch-legsw-fly { background: rgba(212, 175, 55, 0.65); }'), 'the legend swatches match the stacked segments - dark gold basic, light gold allowances');
+
+    // v1.45.13 list pins: the tint over the canvas
+    R.ok(src.includes('.ca-arch-group { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }'), 'v1.45.13: month cards ride a subtle white-2% tint over the dark canvas');
+    R.ok(src.includes('html:not(.dark) .ca-arch-group { background: rgba(255, 255, 255, 0.55); }'), 'the day theme lifts the card with a white wash');
+    R.ok(src.includes('ca-arch-row flex items-baseline gap-2.5'), 'flight rows sit on one text baseline');
 
     // the DOM contract on a live boot
     const NOW2 = '2026-10-20T12:00:00+08:00';
@@ -1273,18 +1317,32 @@ function todayYmd() {
     };
     const { w, d } = await boot(APP, { now: NOW2, seed: (x) => seed2(x, true) });
     w.showArchiveOverlay(); await wait(150);
+    // v1.45.13: the sheet opens on the current month
+    R.ok(d.querySelector('.ca-arch-seg[data-scope=\"month\"]').classList.contains('ca-arch-segon'), 'a fresh open lands on Month');
+    R.ok(!d.getElementById('ca-arch-coprow'), 'the counting row is absent from the DOM');
     const copRow = d.getElementById('ca-arch-meta-cop');
-    R.ok(copRow.className.indexOf('ca-arch-metagrid ca-arch-metagrid-3') !== -1, 'the COP stat row rides the 3-column grid');
-    R.eq(copRow.querySelectorAll(':scope > div').length, 3, 'three equal stat cells, no dot separators');
+    R.ok(copRow.className.indexOf('ca-arch-metagrid') !== -1 && copRow.className.indexOf('metagrid-3') === -1, 'the COP stat row rides the strict 4-track grid');
+    R.eq(copRow.querySelectorAll(':scope > div').length, 3, 'three stat cells - the context cell spans the fourth track');
+    R.ok(copRow.querySelector('.ca-arch-metaspan2') === copRow.children[2], 'the context cell is the two-track spanner');
     R.eq(copRow.querySelectorAll('.ca-arch-metadot').length, 0, 'the old dot separators are gone from the stat row');
-    d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+    // the year window: empty future months take the 16px striped placeholder
+    d.querySelector('.ca-arch-seg[data-scope=\"year\"]').click(); await wait(150);
+    const novBar = d.querySelector('.ca-arch-barcol[data-mk=\"2026-11\"] .ca-arch-bar');
+    const decBar = d.querySelector('.ca-arch-barcol[data-mk=\"2026-12\"] .ca-arch-bar');
+    R.ok(!novBar.classList.contains('ca-arch-barfuture') && d.querySelector('.ca-arch-barcol[data-mk=\"2026-11\"] .ca-arch-barproj'), 'a future month WITH data stripes at its scheduled height (Nov carries the saved $200)');
+    R.ok(decBar.classList.contains('ca-arch-barfuture') && decBar.getAttribute('style').indexOf('height:16px') !== -1, 'v1.45.13: an EMPTY future month takes the 16px striped placeholder (Dec has nothing saved)');
+    R.ok(!d.querySelector('.ca-arch-barcol[data-mk=\"2026-12\"] .ca-arch-barproj'), 'the placeholder needs no projection div of its own');
+    d.querySelector('.ca-arch-seg[data-scope=\"all\"]').click(); await wait(150);
+    d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     const salRow = d.getElementById('ca-arch-meta-salary');
-    R.ok(salRow.className.indexOf('ca-arch-metagrid ca-arch-metagrid-4') !== -1, 'the salary stat row rides the 4-column grid');
-    R.eq(salRow.querySelectorAll(':scope > div').length, 4, 'four equal stat cells - Basic, Fixed, Midnights, COP');
-    // the list: month cards, solid pills, the money column
+    R.ok(salRow.className.indexOf('ca-arch-metagrid') !== -1 && salRow.className.indexOf('metagrid-4') === -1, 'the salary stat row rides the same strict 4-track grid');
+    R.eq(salRow.querySelectorAll(':scope > div').length, 4, 'four stat cells - Basic, Fixed, Midnights, COP');
+    R.ok(!d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the Year-by-Year legend shows in salary view');
+    // the list: month cards, solid pills, the money column (salary mode is
+    // where the net/gross column earns its keep)
     const groups = d.querySelectorAll('.ca-arch-group');
-    R.ok(groups.length >= 2 && src.includes('.ca-arch-group { background: var(--arch-surface); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }'), 'every month rides its own rounded surface card');
-    const headOf2 = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(groups.length >= 2, 'every month rides its own rounded surface card');
+    const headOf2 = (mk) => d.querySelector('.ca-arch-group-head[data-mk=\"' + mk + '\"]');
     R.ok(headOf2('2026-10').querySelector('.ca-arch-badge-live') && headOf2('2026-10').textContent.indexOf('In progress') !== -1, 'the live month wears the blue solid pill');
     R.ok(headOf2('2026-11').querySelector('.ca-arch-badge-upcoming') && headOf2('2026-11').textContent.indexOf('Upcoming') !== -1, 'the future month wears the grey solid pill');
     R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-live { background: rgba(96, 165, 250, 0.16); color: #93C5FD; }'), 'in-progress pill: blue wash, high-contrast text (dark)');
@@ -1293,7 +1351,9 @@ function todayYmd() {
     R.ok(amt.className.indexOf('flex-col') !== -1 && amt.className.indexOf('items-end') !== -1, 'the money block is a right-aligned column');
     R.ok(amt.querySelector('.ca-arch-amt-net') && amt.textContent.indexOf('net ') !== -1 && amt.textContent.indexOf('gross ') !== -1, 'net rides over gross inside the column');
     R.ok(amt.querySelector('.ca-arch-amt-net').className.indexOf('text-[17px]') !== -1 && amt.children[1].className.indexOf('text-sm') !== -1, 'net keeps the 17px figure, gross the quieter 14px line - baselines pair with the month and count lines');
-    void d;
+    d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
+    R.ok(d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the legend steps aside in COP view');
+    void w; void d;
   }
 
   process.exit(R.done() ? 1 : 0);
