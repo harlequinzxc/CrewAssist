@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.16), the changelog's current entry,
-  the service-worker cache name (v247).
+- Stamps: `APP_VERSION` (currently 1.45.17), the changelog's current entry,
+  the service-worker cache name (v248).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -94,6 +94,13 @@ the service-worker stamp. It checks:
   the CDN, so the icons stay `<i>` stubs — name + class + computed
   animation are the proof, and the name's production resolution was
   verified against the unpacked lucide package.
+- v1.45.17 milestone + placeholder: the gold card's milestone label
+  computes 'Remaining to earn' with its uppercase transform, tracking and
+  the 11px MICRO rung intact, the bullseye riding the flex items-center
+  gap-2 baseline, the line reading '$696.91 before end of month' verbatim;
+  and the daylight 'Search flights…' placeholder computes dark slate
+  rgb(107, 114, 128) at opacity 1 while the night ink stays its own
+  (default) value — read through getComputedStyle(el, '::placeholder').
 
 ## Running it
 
