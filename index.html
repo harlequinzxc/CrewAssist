@@ -194,7 +194,7 @@
             --ca-arch-best-wash: rgba(230, 194, 84, 0.45);
             --ca-arch-proj-ink: rgba(230, 194, 84, 0.75);
             --ca-arch-segtrack: rgba(26, 19, 0, 0.10);
-            --ca-arch-seg-ink: rgba(26, 19, 0, 0.75); /* v1.45.12: AA on gold - .65 computed 4.09:1 */
+            --ca-arch-seg-ink: #1A1300; /* v1.45.15 (owner order): espresso solid - the .75 tint read thin on the gold (5.2:1 -> ~7.8:1) */
             --ca-arch-card-hi: #dcc163;
             --ca-arch-card-mid: #c9a23e;
             --ca-arch-card-lo: #b8942f;
@@ -764,8 +764,11 @@
         html:not(.dark) .ca-arch-surface, html:not(.dark) .ca-arch-group { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }
         /* v1.45.14 (owner order, light theme): the inactive pills on the
            gold card read dark walnut - crisp under bright light, never
-           washed out (the dark theme keeps its .75 ink) */
-        html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #3D2D1B; }
+           washed out. v1.45.15 (owner order): strict walnut #2D1E0F under
+           harsh glare, and the inactive pills carry font-weight 800 in
+           BOTH themes (the active pill keeps its 700 gold-on-ink) */
+        html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #2D1E0F; }
+        #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { font-weight: 800; }
         .ca-arch-group-body { overflow: hidden; max-height: 3000px; opacity: 1; transition: max-height .3s ease, opacity .3s ease; }
         .ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }
         /* v1.38.0 (A1): the still-to-fly panel unfolds under a month header
@@ -844,9 +847,14 @@
            aligned in its own column, the delete ✕ locked into a fixed-
            width slot at the row's right edge (16px inside the card) so the
            figures align down one edge, independent of the icon's target */
-        .ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: baseline; }
+        /* v1.45.15 (owner order): the row CENTRES its columns - the text
+           columns share one line box (route and value both ride text-sm, so
+           their baselines coincide) while the X centres against them and
+           no longer sags below the text; the route block keeps its own
+           internal items-baseline for code + date */
+        .ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: center; }
         .ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }
-        .ca-arch-row .ca-arch-del { justify-self: end; align-self: center; }
+        .ca-arch-row .ca-arch-del { justify-self: end; display: flex; align-items: center; justify-content: center; }
         /* v1.45.13 (owner order): definitive breathing room around the core
            figure - 16px above and below (8 + the 8 from v1.45.12) */
         #ca-arch-total { padding-top: 16px; padding-bottom: 16px; }
@@ -2682,7 +2690,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.14'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.15'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2704,6 +2712,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.15', d: '2026-10-26', items: [
+                { c: 'fix', t: 'The current month shows its still-to-fly notice from the roster.' },
+                { c: 'imp', t: 'Roster-only flights say so plainly; no dollar is guessed.' },
+                { c: 'imp', t: 'Inactive pills read heavier espresso and walnut ink.' },
+                { c: 'imp', t: 'The ledger ✕ centres on its row; the sag is gone.' }
+            ] },
             { v: '1.45.14', d: '2026-10-26', items: [
                 { c: 'fix', t: 'Earnings opens on the current month, never a pre-saved future one.' },
                 { c: 'imp', t: 'Month view pairs the counts; the on-track line gets full width.' },
@@ -13902,7 +13916,13 @@
                 // unflown duties — tap to unfold "still to fly". Completed
                 // months keep a plain amount. (Hotfix: no chevron — it
                 // shifted the amount text; the tap still works.)
-                const hasUnflown = ms.unflownCount > 0;
+                // v1.45.15 (owner report): the still-to-fly notice is
+                // ROSTER-aware. The current month carries it while the
+                // roster still has legs ahead, even before those trips are
+                // saved - the notice used to appear only on a pre-saved
+                // upcoming month, never on the month actually in progress
+                const rosterLeft = ms.upcomingLeft;
+                const hasUnflown = ms.unflownCount > 0 || rosterLeft > 0;
                 // v1.45.11: salary mode leads with the month's net - the
                 // payslip-checkable figure. v1.45.12: net rides over gross in
                 // a right-aligned column, so both figures stack into a
@@ -13941,14 +13961,20 @@
                         : '<span class="' + amtCls + ' shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>')
                     + '</div>'
                     + '<div class="ca-arch-group-body px-3 pb-1">';
-                if (hasUnflown && ms.total > 0.004) {
+                if (hasUnflown && (ms.total > 0.004 || rosterLeft > 0)) {
+                    // v1.45.15: saved trips tell the $ story; roster-only
+                    // flights tell the count and say plainly they are not
+                    // saved yet (no dollar is ever guessed for a flight the
+                    // calculator has not priced)
+                    const savedLeft = ms.unflownCount > 0;
+                    const nLeft = savedLeft ? ms.unflownCount : rosterLeft;
                     html += '<div class="ca-arch-proj-wrap' + (archState.projOpen[mk] ? ' open' : '') + '" data-mk="' + mk + '">'
                         + '<div class="mb-2 p-3 rounded-xl border border-sia-gold/30 bg-sia-gold/5" role="status">'
                         + '<div class="flex items-center justify-between gap-2">'
-                        + '<span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">Still to fly \u00b7 ' + ms.unflownCount + ' flight' + (ms.unflownCount === 1 ? '' : 's') + '</span>'
-                        + '<span class="text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(ms.unflown) + '</span>'
+                        + '<span class="ca-micro font-bold uppercase tracking-[0.08em]" style="color: var(--arch-muted)">Still to fly \u00b7 ' + nLeft + ' flight' + (nLeft === 1 ? '' : 's') + '</span>'
+                        + (ms.unflown > 0.004 ? '<span class="text-[17px] font-bold" style="color: var(--sia-gold-ink, #7d650f)">' + formatMoney(ms.unflown) + '</span>' : '')
                         + '</div>'
-                        + '<div class="text-xs mt-1" style="color: var(--arch-muted)">Landed ' + formatMoney(ms.flown) + ' \u00b7 on track for ' + formatMoney(ms.total) + '</div>'
+                        + '<div class="text-xs mt-1" style="color: var(--arch-muted)">Landed ' + formatMoney(ms.flown) + ' \u00b7 ' + (savedLeft ? 'on track for ' + formatMoney(ms.total) : rosterLeft + ' roster flight' + (rosterLeft === 1 ? '' : 's') + ' not saved yet') + '</div>'
                         + '</div></div>';
                 }
                 rows.forEach((e) => {
@@ -14088,6 +14114,12 @@
                             ctxLabel = 'On track';
                             ctxHtml = '<i data-lucide="target" class="w-3.5 h-3.5 shrink-0"></i><span>On track for ' + formatMoney(ms.total) + ' \u00b7 ' + formatMoney(ms.unflown) + ' left</span>';
                         }
+                    } else if (!isSalary && ms.inProgress && ms.upcomingLeft > 0) {
+                        // v1.45.15: flights still on the roster - the month
+                        // is not complete, and no dollar is guessed for
+                        // trips the calculator has not priced
+                        ctxLabel = 'On track';
+                        ctxHtml = '<i data-lucide="plane" class="w-3.5 h-3.5 shrink-0"></i><span>' + ms.upcomingLeft + ' roster flight' + (ms.upcomingLeft === 1 ? '' : 's') + ' still to fly</span>';
                     } else if (!isSalary) {
                         ctxLabel = 'Month total';
                         ctxHtml = '<i data-lucide="check" class="w-3.5 h-3.5 shrink-0"></i><span>Month complete</span>';

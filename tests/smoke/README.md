@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.14), the changelog's current entry,
-  the service-worker cache name (v245).
+- Stamps: `APP_VERSION` (currently 1.45.15), the changelog's current entry,
+  the service-worker cache name (v246).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -71,6 +71,16 @@ the service-worker stamp. It checks:
   meta; and daylight computes warm — canvas #F4F4F0, solid white cards
   with the 0 4px 12px rgba(0,0,0,0.03) shadow, walnut #3D2D1B inactive
   pills at AA over the gold.
+- v1.45.15 roster-aware notice + centring: the CURRENT month carries the
+  still-to-fly notice while its roster has legs ahead (the gold card reads
+  "On track · N roster flights still to fly", never "Month complete"; the
+  panel says "not saved yet" with no guessed dollar and no fake $0.00);
+  the ledger ✕ centres on its text block (measured sag ≤2px, actual 0.0px)
+  with route and value sharing one baseline (≤1.5px, actual 0.0px) over
+  the flex items-center justify-center wrapper; and the inactive pills
+  compute espresso rgb(26, 19, 0) by night and walnut rgb(45, 30, 15) by
+  day, at font-weight 800 in both themes, the walnut reading AA (7.51:1)
+  over the composited gold.
 
 ## Running it
 

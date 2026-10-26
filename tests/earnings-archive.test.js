@@ -1290,7 +1290,9 @@ function todayYmd() {
     R.ok(src.includes('@media (max-width: 359px) {') && src.includes('.ca-arch-metagrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }'), 'the grid folds to two tracks under 360px');
     R.ok(src.includes('.ca-arch-metaval { font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }'), 'v1.45.13: values never truncate - nowrap with no clip, the tiers carry the width');
     R.ok(src.includes('.ca-arch-metalabel { font-size: 11px; letter-spacing: .03em;'), 'labels keep the 11px floor with roomier tracking (wrap before ellipsis)');
-    R.ok(src.includes('--ca-arch-seg-ink: rgba(26, 19, 0, 0.75);'), 'the inactive tab ink reads .75 dark-on-gold (was .65, 4.09:1)');
+    R.ok(src.includes('--ca-arch-seg-ink: #1A1300;'), 'v1.45.15: the inactive tab ink is espresso solid by night (the .75 tint read thin)');
+    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #2D1E0F; }'), 'v1.45.15: strict walnut #2D1E0F by day');
+    R.ok(src.includes('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { font-weight: 800; }'), 'v1.45.15: the inactive pills carry font-weight 800 in both themes');
     R.ok(src.includes('rgba(26,19,0,.8)\" id=\"ca-arch-gross-line\"'), 'the gross line ink rides at .80 over the gold');
 
     // v1.45.13 chart pins: the mute, the future stripe, the legend
@@ -1303,8 +1305,9 @@ function todayYmd() {
     R.ok(src.includes('html:not(.dark) .ca-arch-group { background: #FFFFFF; }'), 'v1.45.14: the day theme cards turn solid white over the warm canvas');
     R.ok(src.includes('html:not(.dark) #ca-arch-sheet { background: #F4F4F0; }'), 'v1.45.14: the light earnings canvas deepens to the warm gray');
     R.ok(src.includes('html:not(.dark) .ca-arch-surface, html:not(.dark) .ca-arch-group { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }'), 'v1.45.14: white containers carry the soft low-blur shadow by day');
-    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #3D2D1B; }'), 'v1.45.14: inactive pills read dark walnut on the gold card by day');
-    R.ok(src.includes('.ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: baseline; }'), 'v1.45.14: the ledger row is a strict grid - elastic route track, value column, fixed 40px \u2715 slot');
+
+    R.ok(src.includes('.ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: center; }'), 'v1.45.15: the ledger row CENTRES its columns (the text line boxes coincide; the \u2715 no longer sags)');
+    R.ok(src.includes('.ca-arch-row .ca-arch-del { justify-self: end; display: flex; align-items: center; justify-content: center; }'), 'v1.45.15: the \u2715 rides a flex-centred wrapper in its fixed end slot');
     R.ok(src.includes('.ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }'), 'v1.45.14: row values right-align inside their own column, independent of the \u2715 slot');
     R.ok(src.includes('.ca-arch-metagrid.ca-arch-metarows { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }') && src.includes('.ca-arch-metarows .ca-arch-metaspan2 { grid-column: 1 / -1; }'), 'v1.45.14: COP + Month swaps to the two-row meta - counts paired, on-track full width');
     R.ok(src.includes('ca-arch-metaval flex items-center gap-2'), 'v1.45.14: the bullseye icon keeps gap-x-2 from the milestone text');
@@ -1404,6 +1407,49 @@ function todayYmd() {
       w.showArchiveOverlay(); await wait(150);
       R.ok(d.querySelector('.ca-arch-group-head[data-mk="2026-10"]') && !d.querySelector('.ca-arch-group-head[data-mk="2026-11"]'), 'the current month with data is the landing, future saves wait their turn');
     }
+  }
+
+  // ---- v1.45.15: the still-to-fly notice is roster-aware (owner report:
+  // the notice lived only on the pre-saved upcoming month, never on the
+  // current month - its remaining flights were on the roster, not saved) ----
+  {
+    const NOW4 = '2026-10-26T12:00:00+08:00';
+    const seedUp = (x) => {
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        { id: 'o1', savedAt: '2026-10-05T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-05', stationDisplay: 'KTM', amount: 300, endAt: Date.parse('2026-10-05T20:00:00+08:00') },
+        { id: 'n1', savedAt: '2026-10-25T10:00:00Z', monthKey: '2026-11', sectorDate: '2026-11-02', stationDisplay: 'NRT', amount: 500 }
+      ]));
+      x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({
+        '2026-10': [
+          { fn: '322', dep: 'SIN', arr: 'AMD', ymd: '2026-10-31', std: '07:00', sta: '10:00', stdYmd: '2026-10-31', staYmd: '2026-10-31' },
+          { fn: '323', dep: 'AMD', arr: 'SIN', ymd: '2026-10-31', std: '12:00', sta: '18:00', stdYmd: '2026-10-31', staYmd: '2026-10-31' }
+        ]
+      }));
+    };
+    const { w, d } = await boot(APP, { now: NOW4, seed: seedUp });
+    w.showArchiveOverlay(); await wait(150);
+    const head4 = (mk) => d.querySelector('.ca-arch-group-head[data-mk="' + mk + '"]');
+    R.ok(!!head4('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn'), 'v1.45.15: the CURRENT month carries the still-to-fly notice while its roster has legs ahead');
+    R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'On track', 'the context label stays On track (not Month complete)');
+    R.ok(d.getElementById('ca-arch-m-ctx').textContent.indexOf('2 roster flights still to fly') !== -1, 'the context names the roster flights still to fly');
+    head4('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-proj-btn').click(); await wait(150);
+    const octWrap = head4('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-proj-wrap');
+    R.ok(octWrap.textContent.indexOf('Still to fly \u00b7 2 flights') !== -1, 'the panel counts the roster flights');
+    R.ok(octWrap.textContent.indexOf('Landed $300.00 \u00b7 2 roster flights not saved yet') !== -1, 'roster-only flights say so plainly - and no dollar is guessed');
+    R.ok(octWrap.textContent.indexOf('$0.00') === -1, 'no fake $0.00 still-to-fly figure');
+    // every scope shows the current month's notice
+    for (const sc of ['all', 'year']) {
+      d.querySelector('.ca-arch-seg[data-scope="' + sc + '"]').click(); await wait(150);
+      const btns = [...d.querySelectorAll('.ca-arch-proj-btn')].map((b) => b.getAttribute('data-mk'));
+      R.ok(btns.indexOf('2026-10') !== -1 && btns.indexOf('2026-11') !== -1, 'v1.45.15: ' + sc + '-time shows the notice on the current month AND the pre-saved upcoming one');
+    }
+    // the upcoming month's saved story is unchanged
+    const novG = head4('2026-11').closest('.ca-arch-group');
+    novG.querySelector('.ca-arch-proj-btn').click(); await wait(150);
+    R.ok(novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('Still to fly \u00b7 1 flight') !== -1 && novG.querySelector('.ca-arch-proj-wrap').textContent.indexOf('$500.00') !== -1, 'the pre-saved upcoming month keeps its dollar story');
+    // a past month is untouched by the roster (ymd >= today excludes it)
+    R.ok(!head4('2026-09'), 'no phantom past group');
+    void w;
   }
 
   process.exit(R.done() ? 1 : 0);

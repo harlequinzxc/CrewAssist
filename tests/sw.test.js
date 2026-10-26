@@ -13,7 +13,7 @@ const SW = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
 const IX = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 const BASE = 'https://crewassist.test';      // the SW's scope origin (no trailing slash)
 const ORIGIN = BASE + '/';                   // base for relative-URL resolution
-const CACHE = 'crewassist-v245';
+const CACHE = 'crewassist-v246';
 
 // Real CacheStorage keys are absolute URLs — normalise the same way so the
 // install's './index.html' and a navigation to the same document collide.
