@@ -899,6 +899,32 @@
            internal items-baseline for code + date */
         .ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: center; }
         .ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }
+        /* v1.45.23 (owner order): the month money column is a RIGID
+           two-column tabular grid — the UPPERCASE label rail left-aligned
+           within the block, the figures right-aligned on one decimal edge,
+           every cell nowrap so an iPhone 11 (375px) never wraps or clips.
+           Rows keep the strict NET → GROSS → AFTER EXPENSES sequence; the
+           after-expenses row unmounts entirely when the month has none
+           (NET and GROSS compress naturally — no row padding exists to
+           change). The NET row carries the gold accent + the strongest
+           weight (inherited from the block's --sia-gold-ink); the
+           secondary rows opt out to the muted ink. Labels ride the 11px
+           MICRO label rung (metalabel tracking), baseline-paired with
+           their figures.
+           No-clash at 375px (measured): the grid (label rail + figure
+           rail) is wider than the old pair rows, and a September-width
+           month name cannot share the row with it — so the head ROW wraps:
+           the month block keeps a 120px floor, and the money grid drops
+           to its own line, still right-aligned (margin-left:auto). Wide
+           screens keep the side-by-side form unchanged. */
+        .ca-arch-moneygrid { display: grid; grid-template-columns: auto auto; column-gap: 8px; row-gap: 0; align-items: baseline; align-content: center; justify-content: end; text-align: right; margin-left: auto; }
+        .ca-arch-moneygrid > span { white-space: nowrap; line-height: 1.25; }
+        .ca-arch-mglbl { font-size: 11px; letter-spacing: .03em; text-align: left; }
+        .ca-arch-mgmut { color: var(--arch-muted); }
+        /* two classes on purpose: the head button also carries Tailwind's
+           min-w-0, and the compiled stylesheet loads AFTER this block — a
+           single-class tie loses, the floor must win */
+        .ca-arch-group .ca-arch-group-head { min-width: 120px; }
         .ca-arch-row .ca-arch-del { justify-self: end; display: flex; align-items: center; justify-content: center; }
         /* v1.45.13 (owner order): definitive breathing room around the core
            figure - 16px above and below (8 + the 8 from v1.45.12) */
@@ -2770,7 +2796,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.22'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.23'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2792,6 +2818,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.23', d: '2026-10-26', items: [
+                { c: 'imp', t: 'Month money columns ride a rigid uppercase tabular grid.' },
+                { c: 'imp', t: 'The net figure anchors its column in the gold accent.' }
+            ] },
             { v: '1.45.22', d: '2026-10-26', items: [
                 { c: 'new', t: 'Layover trips track overseas expenses against take-home.' },
                 { c: 'imp', t: 'Year badges wear the trending icon, not a glyph.' },
@@ -14058,27 +14088,26 @@
                 // scannable money column down the list (net shares its
                 // baseline with the month line, gross with the count line).
                 // Search-filtered months keep the filtered COP view, like today.
-                // v1.45.22 (owner order): each figure is its own label+value
-                // pair on one line, the column vertically centred against
-                // the two left lines, and a month with overseas expenses
-                // gains a quiet third 'after exp' row.
                 const byMkFull = archEntriesByMk(all);
                 const isSalList = archState.mode === 'salary' && salaryBasic() > 0;
                 const monthSal = isSalList ? archSalaryMonth(mk, byMkFull[mk] || []) : null;
                 let amtHtml, amtCls;
                 if (monthSal && !filtered) {
                     const mExp = archExpTotal(byMkFull[mk] || []);
-                    // each figure = its own lowercase label + value pair on one
-                    // never-wrapping line; the value span carries the size so
-                    // the decimals can track one vertical edge (tabular via
-                    // .ca-arch-amt above)
-                    const pairRow = (label, hook, val, big, muted) => '<span class="flex items-baseline justify-end gap-1.5 whitespace-nowrap leading-tight' + (muted ? '" style="color: var(--arch-muted)' : '') + '">'
-                        + '<span class="' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + '">' + label + '</span>'
-                        + '<span class="' + hook + ' ' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + '">' + val + '</span></span>';
-                    amtHtml = pairRow('net', 'ca-arch-amt-net', formatMoney(monthSal.net), true, false)
-                        + pairRow('gross', 'ca-arch-amt-gross', formatMoney(monthSal.gross), false, true)
-                        + (mExp > 0.004 ? pairRow('after exp', 'ca-arch-amt-after', formatMoney(monthSal.net - mExp), false, true) : '');
-                    amtCls = 'ca-arch-amt flex flex-col items-end justify-center text-right';
+                    // v1.45.23 (owner order): the rigid two-column tabular
+                    // grid — UPPERCASE labels on the left rail, figures on
+                    // the one right-hand decimal edge, every cell nowrap.
+                    // NET keeps the gold accent (inherited off the block)
+                    // and the strongest weight at 17px bold; GROSS and
+                    // AFTER EXPENSES ride the desaturated muted ink at 14px.
+                    // The after-expenses row unmounts entirely when the
+                    // month carries no expenses.
+                    const lbl = (t, net) => '<span class="ca-arch-mglbl font-' + (net ? 'bold' : 'normal') + (net ? '' : ' ca-arch-mgmut') + '">' + t + '</span>';
+                    const val = (t, hook, big, muted) => '<span class="' + hook + ' ' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + (muted ? ' ca-arch-mgmut' : '') + '">' + t + '</span>';
+                    amtHtml = lbl('NET', true) + val(formatMoney(monthSal.net), 'ca-arch-amt-net', true, false)
+                        + lbl('GROSS', false) + val(formatMoney(monthSal.gross), 'ca-arch-amt-gross', false, true)
+                        + (mExp > 0.004 ? lbl('AFTER EXPENSES', false) + val(formatMoney(monthSal.net - mExp), 'ca-arch-amt-after', false, true) : '');
+                    amtCls = 'ca-arch-amt ca-arch-moneygrid';
                 } else if (monthSal && filtered) {
                     amtHtml = formatMoney(sub) + ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of net ' + formatMoney(monthSal.net) + '</span>';
                     amtCls = 'ca-arch-amt text-[17px] font-bold';
@@ -14087,7 +14116,7 @@
                     amtCls = 'ca-arch-amt text-[17px] font-bold';
                 }
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2.5">'
-                    + '<div class="flex items-center gap-2.5 py-3 px-3">'
+                    + '<div class="flex flex-wrap items-center gap-2.5 py-3 px-3">'
                     + '<button type="button" class="ca-arch-group-head flex-1 min-w-0 flex items-center gap-2.5 text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
                     + '<i data-lucide="chevron-right" class="ca-arch-chev w-3 h-3 shrink-0" style="color: var(--arch-muted)"></i>'
                     + '<span class="flex-1 min-w-0">'
@@ -14097,7 +14126,7 @@
                     + '</span></span>'
                     + '</button>'
                     + (hasUnflown
-                        ? '<button type="button" class="ca-arch-proj-btn flex items-center shrink-0 rounded-xl pl-2 pr-0 py-1" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
+                        ? '<button type="button" class="ca-arch-proj-btn flex items-center shrink-0 rounded-xl pl-2 pr-0 py-1 ml-auto" data-mk="' + mk + '" aria-expanded="' + (!!archState.projOpen[mk]) + '" aria-label="Show what is still to fly for ' + archiveMonthLabel(mk) + '">'
                         + '<span class="' + amtCls + '" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>'
                         + '</button>'
                         : '<span class="' + amtCls + ' shrink-0" style="color: var(--sia-gold-ink, #7d650f)">' + amtHtml + '</span>')

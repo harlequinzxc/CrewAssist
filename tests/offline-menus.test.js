@@ -432,11 +432,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.22';"), 'APP_VERSION stamped 1.45.22');
+    R.ok(src.includes("var APP_VERSION = '1.45.23';"), 'APP_VERSION stamped 1.45.23');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v253"), 'service-worker cache name bumped to v253 (the v1.45.22 overseas-expense release)');
+    R.ok(sw.includes("crewassist-v254"), 'service-worker cache name bumped to v254 (the v1.45.23 tabular-grid release)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs
