@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.13', 'APP_VERSION is 1.45.13');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.13' && e.d === '2026-10-26' && e.items.length === 5 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.13 entry with its five pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v244'), 'the service-worker cache name is bumped to v244 (the v1.45.13 earnings-fresh-open release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.14', 'APP_VERSION is 1.45.14');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.14' && e.d === '2026-10-26' && e.items.length === 5 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.14 entry with its five pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v245'), 'the service-worker cache name is bumped to v245 (the v1.45.14 earnings-depth release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.13'; }), 'the What\'s New sheet carries the v1.45.13 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.14'; }), 'the What\'s New sheet carries the v1.45.14 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -863,6 +863,97 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         ok(chartYr.pastBg === 'rgba(212, 175, 55, 0.65)', 'a non-selected past bar sits at 0.65 alpha - 35% under the selected bar\u2019s solid gold (got ' + chartYr.pastBg + ')');
         ok(chartYr.futH >= 15 && chartYr.futStriped, 'an empty future month renders the 16px striped placeholder (' + chartYr.futH.toFixed(0) + 'px)');
+        await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.14: never-future fallback, two-row month meta, ledger grid, daylight depth —');
+        // seed: the current month carries a flown + an unflown entry; the
+        // next month carries a pre-saved future one (the fallback trap)
+        await page.evaluate(() => {
+            const now = new Date();
+            const ym = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
+            const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+            const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
+            const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('d0', cur, 88), ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), ent('d2', nxt, 40)]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await page.mouse.move(2, 2);
+        // the fresh open lands on the CURRENT month - never the pre-saved future one
+        const landMk = await page.evaluate(() => {
+            const now = new Date();
+            const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            const heads = [...document.querySelectorAll('.ca-arch-group-head')].map((h) => h.getAttribute('data-mk'));
+            return { ym, heads };
+        });
+        ok(landMk.heads.length === 1 && landMk.heads[0] === landMk.ym, 'v1.45.14: the fresh open lands on the current month (' + landMk.heads.join(',') + ' vs ' + landMk.ym + ')');
+        // COP + MONTH: the two-row meta - two equal tracks, the on-track cell full width
+        const metaRows = await page.evaluate(() => {
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
+            const el = document.getElementById('ca-arch-meta-cop');
+            const tracks = getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat);
+            const ctx = el.children[2];
+            const gs = getComputedStyle(ctx);
+            return { tracks, cls: el.classList.contains('ca-arch-metarows'), start: gs.gridColumnStart, end: gs.gridColumnEnd, gap: getComputedStyle(document.getElementById('ca-arch-m-ctx')).columnGap, ctxFont: getComputedStyle(document.getElementById('ca-arch-m-ctx')).fontSize };
+        });
+        ok(metaRows.cls && metaRows.tracks.length === 2 && Math.abs(metaRows.tracks[0] - metaRows.tracks[1]) <= 1, 'v1.45.14: COP + Month pairs the counts in two equal columns');
+        ok(metaRows.start === '1' && metaRows.end === '-1', 'the on-track milestone spans the full card width on its own row');
+        ok(metaRows.gap === '8px', 'the bullseye icon keeps gap-x-2 from the milestone text (got ' + metaRows.gap + ')');
+        // the ledger row grid: value column right-aligned and independent of the ✕ slot
+        const rowGrid = await page.evaluate(() => {
+            const rows = [...document.querySelectorAll('#ca-arch-list .ca-arch-row')];
+            if (!rows.length) return { none: true };
+            const amts = rows.map((r) => r.querySelector('.ca-arch-amt').getBoundingClientRect().right);
+            const dels = rows.map((r) => r.querySelector('.ca-arch-del').getBoundingClientRect());
+            const kids = rows.map((r) => r.children.length);
+            const track = getComputedStyle(rows[0]).gridTemplateColumns;
+            return { none: false, n: rows.length, spread: Math.max(...amts) - Math.min(...amts), amtRight: amts[0], delLeft: dels[0].left, delW: Math.max(...dels.map((d) => d.width)), kids: kids.every((k) => k === 3), track };
+        });
+        ok(!rowGrid.none && rowGrid.n >= 2 && rowGrid.spread <= 1, 'v1.45.14: ledger values align down one strict column (spread ' + (rowGrid.spread || 0).toFixed(1) + 'px over ' + (rowGrid.n || 0) + ' rows)');
+        ok(rowGrid.kids && rowGrid.amtRight < rowGrid.delLeft - 4, 'the value column ends clear of the fixed ✕ slot - independent of its touch target');
+        ok(rowGrid.track.split(' ').length === 3 && /40px/.test(rowGrid.track), 'the row is a three-track grid with the fixed 40px ✕ slot (got ' + rowGrid.track + ')');
+        // All-time returns to the flat 4-track meta
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
+        const metaFlat = await page.evaluate(() => {
+            const el = document.getElementById('ca-arch-meta-cop');
+            return { cls: el.classList.contains('ca-arch-metarows'), tracks: getComputedStyle(el).gridTemplateColumns.split(' ').map(parseFloat) };
+        });
+        ok(!metaFlat.cls && metaFlat.tracks.length === 4, 'All-time returns to the flat 4-track meta grid');
+        // daylight depth: warm canvas, solid white cards, walnut ink
+        await page.evaluate(() => { document.documentElement.classList.remove('dark'); });
+        await sleep(300);
+        const lightDepth = await page.evaluate(() => {
+            document.getAnimations().forEach((a) => { try { a.finish(); } catch (e) {} });
+            const sheet = getComputedStyle(document.getElementById('ca-arch-sheet')).backgroundColor;
+            const group = document.querySelector('.ca-arch-group');
+            const card = getComputedStyle(group);
+            const trend = getComputedStyle(document.getElementById('ca-arch-trend'));
+            const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+            return { sheet, groupBg: card.backgroundColor, groupShadow: card.boxShadow, trendBg: trend.backgroundColor, trendShadow: trend.boxShadow, segColor: getComputedStyle(seg).color };
+        });
+        eq(lightDepth.sheet, 'rgb(244, 244, 240)', 'v1.45.14: the light earnings canvas is the warm gray #F4F4F0');
+        eq(lightDepth.groupBg, 'rgb(255, 255, 255)', 'the month cards are solid white by day');
+        ok(lightDepth.groupShadow.indexOf('rgba(0, 0, 0, 0.03)') !== -1, 'month cards carry the soft low-blur shadow by day');
+        eq(lightDepth.trendBg, 'rgb(255, 255, 255)', 'the trend card stays crisp white by day');
+        ok(lightDepth.trendShadow.indexOf('rgba(0, 0, 0, 0.03)') !== -1, 'the trend card carries the shadow too');
+        eq(lightDepth.segColor, 'rgb(61, 45, 27)', 'inactive pills read dark walnut #3D2D1B by day');
+        // the walnut ink holds AA over the gold wash
+        const walnutAA = await page.evaluate(() => {
+            const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 }; };
+            const comp = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+            const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+            const ratio = (a, b) => { const l1 = Math.max(lum(a), lum(b)), l2 = Math.min(lum(a), lum(b)); return (l1 + 0.05) / (l2 + 0.05); };
+            const stops = [...getComputedStyle(document.getElementById('ca-arch-summary')).backgroundImage.matchAll(/rgba?\([^)]+\)/g)].map((m) => parse(m[0]));
+            const wash = parse(getComputedStyle(document.querySelector('.ca-arch-segtrack')).backgroundColor);
+            const pillBg = comp(wash, stops[0]);
+            const seg = document.querySelector('#ca-arch-summary .ca-arch-seg:not(.ca-arch-segon)');
+            return ratio(comp(parse(getComputedStyle(seg).color), pillBg), pillBg);
+        });
+        ok(walnutAA >= 4.5, 'the walnut ink reads at AA over the gold by day (got ' + walnutAA.toFixed(2) + ':1)');
         await page.evaluate(() => { document.documentElement.classList.add('dark'); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 

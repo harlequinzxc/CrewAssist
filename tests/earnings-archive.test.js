@@ -1300,8 +1300,14 @@ function todayYmd() {
 
     // v1.45.13 list pins: the tint over the canvas
     R.ok(src.includes('.ca-arch-group { background: rgba(255, 255, 255, 0.02); border: 1px solid var(--arch-surface-border); border-radius: 12px; overflow: hidden; }'), 'v1.45.13: month cards ride a subtle white-2% tint over the dark canvas');
-    R.ok(src.includes('html:not(.dark) .ca-arch-group { background: rgba(255, 255, 255, 0.55); }'), 'the day theme lifts the card with a white wash');
-    R.ok(src.includes('ca-arch-row flex items-baseline gap-2.5'), 'flight rows sit on one text baseline');
+    R.ok(src.includes('html:not(.dark) .ca-arch-group { background: #FFFFFF; }'), 'v1.45.14: the day theme cards turn solid white over the warm canvas');
+    R.ok(src.includes('html:not(.dark) #ca-arch-sheet { background: #F4F4F0; }'), 'v1.45.14: the light earnings canvas deepens to the warm gray');
+    R.ok(src.includes('html:not(.dark) .ca-arch-surface, html:not(.dark) .ca-arch-group { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03); }'), 'v1.45.14: white containers carry the soft low-blur shadow by day');
+    R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg { color: #3D2D1B; }'), 'v1.45.14: inactive pills read dark walnut on the gold card by day');
+    R.ok(src.includes('.ca-arch-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; column-gap: 10px; align-items: baseline; }'), 'v1.45.14: the ledger row is a strict grid - elastic route track, value column, fixed 40px \u2715 slot');
+    R.ok(src.includes('.ca-arch-row .ca-arch-amt { justify-self: end; text-align: right; }'), 'v1.45.14: row values right-align inside their own column, independent of the \u2715 slot');
+    R.ok(src.includes('.ca-arch-metagrid.ca-arch-metarows { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 6px; }') && src.includes('.ca-arch-metarows .ca-arch-metaspan2 { grid-column: 1 / -1; }'), 'v1.45.14: COP + Month swaps to the two-row meta - counts paired, on-track full width');
+    R.ok(src.includes('ca-arch-metaval flex items-center gap-2'), 'v1.45.14: the bullseye icon keeps gap-x-2 from the milestone text');
 
     // the DOM contract on a live boot
     const NOW2 = '2026-10-20T12:00:00+08:00';
@@ -1322,6 +1328,7 @@ function todayYmd() {
     R.ok(!d.getElementById('ca-arch-coprow'), 'the counting row is absent from the DOM');
     const copRow = d.getElementById('ca-arch-meta-cop');
     R.ok(copRow.className.indexOf('ca-arch-metagrid') !== -1 && copRow.className.indexOf('metagrid-3') === -1, 'the COP stat row rides the strict 4-track grid');
+    R.ok(copRow.classList.contains('ca-arch-metarows'), 'v1.45.14: the fresh Month open tells the two-row story (metarows on)');
     R.eq(copRow.querySelectorAll(':scope > div').length, 3, 'three stat cells - the context cell spans the fourth track');
     R.ok(copRow.querySelector('.ca-arch-metaspan2') === copRow.children[2], 'the context cell is the two-track spanner');
     R.eq(copRow.querySelectorAll('.ca-arch-metadot').length, 0, 'the old dot separators are gone from the stat row');
@@ -1333,6 +1340,7 @@ function todayYmd() {
     R.ok(decBar.classList.contains('ca-arch-barfuture') && decBar.getAttribute('style').indexOf('height:16px') !== -1, 'v1.45.13: an EMPTY future month takes the 16px striped placeholder (Dec has nothing saved)');
     R.ok(!d.querySelector('.ca-arch-barcol[data-mk=\"2026-12\"] .ca-arch-barproj'), 'the placeholder needs no projection div of its own');
     d.querySelector('.ca-arch-seg[data-scope=\"all\"]').click(); await wait(150);
+    R.ok(!d.getElementById('ca-arch-meta-cop').classList.contains('ca-arch-metarows'), 'v1.45.14: All-time returns to the flat 4-track grid (metarows off)');
     d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     const salRow = d.getElementById('ca-arch-meta-salary');
     R.ok(salRow.className.indexOf('ca-arch-metagrid') !== -1 && salRow.className.indexOf('metagrid-4') === -1, 'the salary stat row rides the same strict 4-track grid');
@@ -1347,6 +1355,9 @@ function todayYmd() {
     R.ok(headOf2('2026-11').querySelector('.ca-arch-badge-upcoming') && headOf2('2026-11').textContent.indexOf('Upcoming') !== -1, 'the future month wears the grey solid pill');
     R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-live { background: rgba(96, 165, 250, 0.16); color: #93C5FD; }'), 'in-progress pill: blue wash, high-contrast text (dark)');
     R.ok(src.includes('.ca-arch-badge-prog.ca-arch-badge-upcoming, .ca-arch-badge-prog.ca-arch-badge-done { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.75); }'), 'upcoming/completed pill: grey wash, high-contrast text (dark)');
+    const aRow = headOf2('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-row');
+    R.eq(aRow.children.length, 3, 'v1.45.14: a ledger row is three structural parts - route block, value, \u2715 slot');
+    R.ok(aRow.children[0].classList.contains('ca-arch-rowmain') && aRow.children[2].classList.contains('ca-arch-del'), 'the route block leads, the delete \u2715 closes the row');
     const amt = headOf2('2026-10').closest('.ca-arch-group').querySelector('.ca-arch-amt');
     R.ok(amt.className.indexOf('flex-col') !== -1 && amt.className.indexOf('items-end') !== -1, 'the money block is a right-aligned column');
     R.ok(amt.querySelector('.ca-arch-amt-net') && amt.textContent.indexOf('net ') !== -1 && amt.textContent.indexOf('gross ') !== -1, 'net rides over gross inside the column');
@@ -1354,6 +1365,45 @@ function todayYmd() {
     d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
     R.ok(d.getElementById('ca-arch-legend').classList.contains('hidden'), 'the legend steps aside in COP view');
     void w; void d;
+  }
+
+  // ---- v1.45.14: the Month fallback never looks ahead of the calendar ----
+  // (owner bug report: the fresh-open landed on the UPCOMING month's
+  // Still-to-fly notice instead of the current month - a pre-saved future
+  // month used to win the "newest entry" race in archScopeInfo)
+  {
+    const NOW3 = '2026-10-26T12:00:00+08:00';
+    const ent = (id, mk, date) => ({ id, savedAt: date + 'T10:00:00Z', monthKey: mk, sectorDate: date, stationDisplay: 'SIN/KUL', amount: 100, flightType: 'Turnaround' });
+    // current month empty, September past, November pre-saved (the newest save)
+    {
+      const { w, d } = await boot(APP, { now: NOW3 });
+      w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        ent('s1', '2026-09', '2026-09-20'),
+        ent('n1', '2026-11', '2026-11-02')
+      ]));
+      w.showArchiveOverlay(); await wait(150);
+      const mks = [...d.querySelectorAll('.ca-arch-group-head')].map((h) => h.getAttribute('data-mk'));
+      R.ok(mks.indexOf('2026-09') !== -1 && mks.indexOf('2026-11') === -1, 'v1.45.14: the fresh Month open falls back to the newest PAST month, never the pre-saved future one');
+      R.ok(!d.querySelector('.ca-arch-proj-btn'), 'the upcoming month\u2019s Still-to-fly notice is not the landing view');
+    }
+    // only future data on file: the scope stays on the current month
+    {
+      const { w, d } = await boot(APP, { now: NOW3 });
+      w.localStorage.setItem('crewAssist.archive', JSON.stringify([ent('n1', '2026-11', '2026-11-02')]));
+      w.showArchiveOverlay(); await wait(150);
+      R.ok(!d.querySelector('.ca-arch-group-head[data-mk="2026-11"]'), 'v1.45.14: with only future data the Month scope stays on the current month (honest zero, no upcoming landing)');
+      R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon'), 'the Month pill stays selected');
+    }
+    // the current month with data still wins outright
+    {
+      const { w, d } = await boot(APP, { now: NOW3 });
+      w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        ent('o1', '2026-10', '2026-10-05'),
+        ent('n1', '2026-11', '2026-11-02')
+      ]));
+      w.showArchiveOverlay(); await wait(150);
+      R.ok(d.querySelector('.ca-arch-group-head[data-mk="2026-10"]') && !d.querySelector('.ca-arch-group-head[data-mk="2026-11"]'), 'the current month with data is the landing, future saves wait their turn');
+    }
   }
 
   process.exit(R.done() ? 1 : 0);

@@ -214,6 +214,17 @@ composite read 4.09:1, below AA; at .75 it reads 5.2:1 (v1.45.12). Status
 badges follow the same maths on their own washes — solid low-opacity pills
 with high-contrast text, never outline-only ghosts.
 
+**Daylight depth is canvas-then-card.** In the light theme the earnings
+canvas deepens to the warm gray `#F4F4F0` and every card container on it
+(trend, insights, month groups) turns solid `#FFFFFF` with the soft
+`0 4px 12px rgba(0, 0, 0, 0.03)` shadow — depth comes from the
+canvas/card step plus the shadow, never from translucent washes stacked
+on washes (the 0.55 white wash read muddy over the warm canvas; v1.45.14).
+The dark theme keeps its tint-layer language: 2% white cards on the deep
+canvas, hairlines, no shadows. Inactive pills on the gold card read dark
+walnut `#3D2D1B` by day — bright-light readability — while the dark theme
+keeps its `.75` ink.
+
 **Labels wrap before they clip; values never truncate.** When a dense stat
 grid meets a narrow viewport, the labels may wrap (their tracking relaxes
 first, ellipsis is the last resort) but the *values* keep `white-space:
