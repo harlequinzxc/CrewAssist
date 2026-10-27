@@ -186,6 +186,18 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await wait(60);
     R.eq(w.eval('currentMenuSearch.flightNumber'), '735', 'a tap fresh-opens the next saved menu');
     R.ok(d.getElementById('menu-hero-content').textContent.indexOf('SQ735') >= 0, 'the flight hero card names the cycled flight');
+    // v1.45.24 (owner order): the hero's centre-axis rigidity - the separator
+    // is a standalone absolutely-centred layer between two strictly
+    // symmetrical halves
+    const heroSrc = fs.readFileSync(APP, 'utf8');
+    R.ok(heroSrc.includes('ca-menu-hero-isle absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-24 z-20 pointer-events-none flex flex-col items-center'), 'the flight separator (arc + plane + duration) is its own standalone layer, absolutely centred on BOTH axes of the stations row');
+    R.ok(heroSrc.includes('ca-menu-hero-dep w-1/2 flex flex-col items-end text-right pr-14') && heroSrc.includes('ca-menu-hero-arr w-1/2 flex flex-col items-start text-left pl-14'), 'the station columns are strictly identical halves (w-1/2 each) - departure right-aligned, arrival left-aligned toward the track, each keeping its 56px inner clearance off the centre island');
+    R.ok(!heroSrc.includes('flex-[1.2]') && !heroSrc.includes('justify-between items-start'), 'the old content-negotiated centre zone is gone - no flex sibling can slide the track off the card axis');
+    const heroIsle = d.querySelector('#menu-hero-content .ca-menu-hero-isle');
+    const heroPill = heroIsle ? heroIsle.querySelector('.ca-micro') : null;
+    R.ok(!!heroIsle && !!heroPill && heroPill.className.indexOf('whitespace-nowrap') !== -1, 'the duration pill carries the no-wrap constraint - the track and duration string can never drop lines');
+    R.ok(!!d.querySelector('#menu-hero-content .ca-menu-hero-dep') && !!d.querySelector('#menu-hero-content .ca-menu-hero-arr'), 'both halves render on the live boot');
+    R.ok(!!d.querySelector('#menu-hero-content .ca-menu-hero-dep .truncate') && !!d.querySelector('#menu-hero-content .ca-menu-hero-arr .truncate'), 'the station-name lines ride the truncate triple (nowrap + overflow-hidden + text-ellipsis) beneath their IATA codes');
     d.getElementById('btn-menu-cycle').click();
     await wait(60);
     R.eq(w.eval('currentMenuSearch.flightNumber'), '736', 'the cycle wraps back to the first');
@@ -432,11 +444,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.23';"), 'APP_VERSION stamped 1.45.23');
+    R.ok(src.includes("var APP_VERSION = '1.45.24';"), 'APP_VERSION stamped 1.45.24');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v254"), 'service-worker cache name bumped to v254 (the v1.45.23 tabular-grid release)');
+    R.ok(sw.includes("crewassist-v255"), 'service-worker cache name bumped to v255 (the v1.45.24 centre-axis release)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs

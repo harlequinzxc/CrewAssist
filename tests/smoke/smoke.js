@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.23', 'APP_VERSION is 1.45.23');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.23' && e.d === '2026-10-26' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.23 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v254'), 'the service-worker cache name is bumped to v254 (the v1.45.23 tabular-grid release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.24', 'APP_VERSION is 1.45.24');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.24' && e.d === '2026-10-27' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.24 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v255'), 'the service-worker cache name is bumped to v255 (the v1.45.24 centre-axis release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.23'; }), 'the What\'s New sheet carries the v1.45.23 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.24'; }), 'the What\'s New sheet carries the v1.45.24 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -774,11 +774,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
                     disp: cs.display, tracks: cs.gridTemplateColumns.split(' ').length, cgap: parseFloat(cs.columnGap), ac: cs.alignContent, ai: cs.alignItems, jc: cs.justifyContent,
                     wrap: cells.every((x) => getComputedStyle(x).whiteSpace === 'nowrap'), lbl: cells[0].textContent, lblL: cells[0].getBoundingClientRect().left, lbl2L: cells[2].getBoundingClientRect().left, netBold: getComputedStyle(net).fontWeight, netGold: getComputedStyle(net).color, secMut: getComputedStyle(gross).color };
             });
-            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)), disp: edges.every((e) => e.disp === 'grid'), tracks: edges.every((e) => e.tracks === 2), cgap: edges.every((e) => Math.abs(e.cgap - 8) <= 0.5), ac: edges.every((e) => e.ac === 'center'), ai: edges.every((e) => e.ai === 'baseline'), jc: edges.every((e) => e.jc === 'end'), wrap: edges.every((e) => e.wrap), lbl: edges.every((e) => e.lbl === 'NET'), rail: edges.every((e) => Math.abs(e.lblL - e.lbl2L) <= 1), bold: edges.every((e) => e.netBold === '700') };
+            return { none: false, pair: Math.max(...edges.map((e) => e.pair)), across: Math.max(...edges.map((e) => e.col)) - Math.min(...edges.map((e) => e.col)), disp: edges.every((e) => e.disp === 'grid'), tracks: edges.every((e) => e.tracks === 2), cgap: edges.every((e) => Math.abs(e.cgap - 8) <= 0.5), ac: edges.every((e) => e.ac === 'center'), ai: edges.every((e) => e.ai === 'baseline'), jc: edges.every((e) => e.jc === 'end'), wrap: edges.every((e) => e.wrap), lbl: edges.every((e) => e.lbl === 'N'), rail: edges.every((e) => Math.abs(e.lblL - e.lbl2L) <= 1), bold: edges.every((e) => e.netBold === '700') };
         });
         ok(!money.none && money.pair <= 1.5 && money.across <= 1.5, 'net and gross ride the grid right-aligned, value edge straight across months (pair ' + (money.pair || 0).toFixed(1) + 'px, across ' + (money.across || 0).toFixed(1) + 'px)');
         ok(money.disp && money.tracks && money.cgap && money.ac && money.ai && money.jc, 'v1.45.23: the money block is the rigid two-column grid - 8px between the rails, baselines paired, rows centred, columns pushed right');
-        ok(money.wrap && money.lbl && money.rail, 'every cell never wraps and the UPPERCASE labels sit on one left rail (NET leading)');
+        ok(money.wrap && money.lbl && money.rail, 'every cell never wraps and the single-character tokens sit on one left rail (N leading)');
         ok(money.bold, 'the NET figure carries the strongest weight (700)');
         // v1.45.16 (owner order): the status badges are gone - the state
         // rides Lucide icons (the rig blocks the CDN, so the icons stay <i>
@@ -985,7 +985,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const past = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 5, 1));
             const past2 = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 9, 1));
             const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-            const late = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 3, 27));
+            // v1.45.24 rig fix (no app change): the old Math.min(date+3, 27)
+            // cap made the "ahead" legs land ON the 27th's 18:00 STA - any
+            // evening run that month saw them landed and the notice vanished
+            // (the next-flight fixed-walls precedent). Three days out, no
+            // cap: JS spills into the next month at month-end, and the
+            // upcoming store is keyed by this run's month either way.
+            const late = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
             localStorage.setItem('crewAssist.archive', JSON.stringify([ent('e0', past, 88), ent('e1', past2, 60), ent('e2', nxt, 40)]));
@@ -1430,7 +1436,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         ok(exp22.expSeg, 'v1.45.22: the subtext gains the Exp segment beside Gross|CPF');
         ok(!exp22.afterHidden && exp22.afterTxt === exp22.afterWant, 'the quiet after-expenses line reads net minus the month\u2019s expenses (' + exp22.afterTxt + ')');
-        ok(exp22.rows === 6 && exp22.afterVal === exp22.afterWantVal && exp22.rowLbl === 'AFTER EXPENSES', 'the month head grows the third row - six grid cells, the UPPERCASE AFTER EXPENSES label leading its figure');
+        ok(exp22.rows === 6 && exp22.afterVal === exp22.afterWantVal && exp22.rowLbl === 'N\u2212', 'the month head grows the third row - six grid cells, the N-minus token leading its figure');
         ok(Math.abs(exp22.edgeN - exp22.edgeG) <= 1.5 && Math.abs(exp22.edgeN - exp22.edgeA) <= 1.5, 'all three figures right-align to the same edge - the decimals track one vertical line');
         ok(exp22.rowMuted, 'the third row rides the same muted ink as the gross row');
         // the no-expense month keeps two rows (all-time shows both months)
@@ -1490,7 +1496,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
-        console.log('— v1.45.23: the rigid money grid at iPhone width —');
+        console.log('— v1.45.24: the money grid at iPhone width —');
         // The order's headline contract, measured where it lives: nothing
         // wraps and nothing clashes at 375px. A three-row month (expenses
         // present) drops the grid to its own right-aligned line under the
@@ -1524,16 +1530,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const lblL = cells.filter((c) => c.classList.contains('ca-arch-mglbl')).map((c) => c.getBoundingClientRect().left);
             const valR = [net, gross, after].map((c) => c.getBoundingClientRect().right);
             return { cells: cells.length, stacked: ab.top > hb.bottom - 2,
-                month1: monthLbl.getBoundingClientRect().height <= 22, count1: countLine.getBoundingClientRect().height <= 21,
-                noClip: cells.every((c) => c.scrollWidth <= c.clientWidth + 1),
+                month1: monthLbl.getBoundingClientRect().height <= 22, count2: countLine.getBoundingClientRect().height <= 41,
+                noClip: cells.every((c) => c.scrollWidth <= c.clientWidth + (c.classList.contains('ca-arch-mgtok') ? 5 : 1)),
                 rail: Math.max(...lblL) - Math.min(...lblL) <= 1, edge: Math.max(...valR) - Math.min(...valR) <= 1.5,
                 right: Math.abs(ab.right - (amt.closest('div.flex').getBoundingClientRect().right - 12)) <= 1,
                 listOk: document.getElementById('ca-arch-list').scrollWidth <= document.getElementById('ca-arch-list').clientWidth + 1,
                 netGold: getComputedStyle(net).color, netLblGold: getComputedStyle(cells[0]).color, secMut: getComputedStyle(gross).color };
         });
-        ok(grid375.cells === 6 && grid375.stacked, 'v1.45.23 at 375px: the three-row grid rides its own line under the month text (six cells, no squeeze)');
-        ok(grid375.month1 && grid375.count1, 'the month label and the count line each stay one line - no wrapping, no clashing');
-        ok(grid375.noClip && grid375.listOk, 'no cell clips and the list never scrolls sideways');
+        ok(grid375.cells === 6 && !grid375.stacked, 'v1.45.24 at 375px: the token rail is narrow enough that the three-row grid SHARES the row with the month text again (six cells, no squeeze - the wrap guardrail stays dormant until a value runs long)');
+        ok(grid375.month1 && grid375.count2, 'the month label stays one line; a long count line wraps cleanly at its word boundary inside its own box (two lines, never a collision - one line plus the block is 3px more than 375px can hold)');
+        ok(grid375.noClip && grid375.listOk, 'no cell clips (the tokens\u2019 ::after hit extenders aside) and the list never scrolls sideways');
         ok(grid375.rail && grid375.edge && grid375.right, 'the label rail is one vertical line, the decimals track one right edge, the block hugs the row edge (12px inset)');
         ok(grid375.netGold === 'rgb(201, 162, 39)' && grid375.netLblGold === 'rgb(201, 162, 39)', 'the NET row wears the gold accent by night (label + figure: ' + grid375.netGold + ')');
         ok(grid375.secMut === 'rgba(255, 255, 255, 0.6)', 'the secondary rows ride the desaturated muted ink by night (' + grid375.secMut + ')');
@@ -1548,6 +1554,26 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return out;
         });
         ok(gridDay.net === 'rgb(125, 101, 15)' && gridDay.sec === 'rgba(17, 24, 39, 0.62)', 'by day the NET gold ink reads #7d650f and the secondary rows the light muted token (' + gridDay.net + ' / ' + gridDay.sec + ')');
+        // v1.45.24: the tokens decode on tap, in the real browser
+        const tapN = await page.evaluate(() => {
+            const tok = document.querySelector('.ca-arch-group .ca-arch-mgtok');
+            tok.click();
+            const tip = tok.querySelector('.ca-arch-mgtip');
+            return { shown: !!tip, txt: tip ? tip.textContent : '', role: tip ? tip.getAttribute('role') : '', leftOf: tip ? tip.getBoundingClientRect().right <= tok.getBoundingClientRect().left : false, surface: tip ? getComputedStyle(tip).borderRadius : '' };
+        });
+        ok(tapN.shown && tapN.txt === 'Net Earnings' && tapN.role === 'tooltip' && tapN.leftOf, 'v1.45.24: tapping the N token decodes it - the micro-card bubble opens left of the token, on its own row (Net Earnings)');
+        await sleep(2100);
+        ok(await page.evaluate(() => !document.querySelector('.ca-arch-mgtip')), 'the bubble dismisses itself (the 1.8s auto-dismiss, fade included)');
+        const tapOut = await page.evaluate(() => {
+            const tok = document.querySelector('.ca-arch-group .ca-arch-mgtok');
+            tok.click();
+            return true;
+        });
+        await sleep(200);
+        ok(await page.evaluate(() => !!document.querySelector('.ca-arch-mgtip')), 'the decode opens again after dismissal' + (tapOut ? '' : ''));
+        await page.evaluate(() => document.body.click());
+        await sleep(300);
+        ok(await page.evaluate(() => !document.querySelector('.ca-arch-mgtip')), 'an outside tap dismisses the bubble');
         // a two-row month keeps the side-by-side form even at 375px
         const two375 = await page.evaluate(() => {
             const arr = JSON.parse(localStorage.getItem('crewAssist.archive'));
@@ -1557,7 +1583,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const grp = document.querySelector('.ca-arch-group');
             const head = grp.querySelector('.ca-arch-group-head');
             const amt = grp.querySelector('.ca-arch-amt');
-            return { cells: amt.children.length, side: amt.getBoundingClientRect().top < head.getBoundingClientRect().bottom - 2, noClip: [...amt.children].every((c) => c.scrollWidth <= c.clientWidth + 1) };
+            return { cells: amt.children.length, side: amt.getBoundingClientRect().top < head.getBoundingClientRect().bottom - 2, noClip: [...amt.children].every((c) => c.scrollWidth <= c.clientWidth + (c.classList.contains('ca-arch-mgtok') ? 5 : 1)) };
         });
         ok(two375.cells === 4 && two375.side && two375.noClip, 'the AFTER EXPENSES row unmounts entirely - four cells, and the tight grid shares the row again at 375px');
         // wide screens keep the side-by-side form for the three-row grid too
@@ -1574,12 +1600,65 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const head = grp.querySelector('.ca-arch-group-head');
             const amt = grp.querySelector('.ca-arch-amt');
             const hb = head.getBoundingClientRect(), ab = amt.getBoundingClientRect();
-            return { side: ab.top < hb.bottom - 2, cells: amt.children.length, noClip: [...amt.children].every((c) => c.scrollWidth <= c.clientWidth + 1) };
+            return { side: ab.top < hb.bottom - 2, cells: amt.children.length, noClip: [...amt.children].every((c) => c.scrollWidth <= c.clientWidth + (c.classList.contains('ca-arch-mgtok') ? 5 : 1)) };
         });
-        ok(wide23.side && wide23.cells === 6 && wide23.noClip, 'at 430px the three-row grid shares the row again - the stacked form is the narrow-screen grace, not a redesign');
+        ok(wide23.side && wide23.cells === 6 && wide23.noClip, 'at 430px the three-row grid shares the row, as it now does even at 375px - the wrap guardrail only fires when a value truly runs long');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        await sleep(300);
+
+        console.log('— v1.45.24: the menu hero on the true centre —');
+        // The centre-axis rigidity, measured: the separator is a standalone
+        // absolutely-centred layer between two strictly symmetrical halves,
+        // so no text length on either side can move the track. The arrival
+        // city is the owner's own worst case (SIEM REAP ANGKOR).
+        const heroDate = await page.evaluate(() => {
+            const dt = new Date(); dt.setDate(dt.getDate() + 7);
+            const d = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+            const fd = { departureAirportCode: 'SIN', departureCityName: 'SINGAPORE', arrivalAirportCode: 'REP', arrivalCityName: 'SIEM REAP ANGKOR', departureLocalDate: d + ' 09:20:00', arrivalLocalDate: d + ' 10:45:00', departureUtcDate: d + ' 01:20:00', arrivalUtcDate: d + ' 03:45:00', flightDuration: '2h 25m' };
+            const data = { statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL'], legs: [{ flightDetails: fd }] };
+            localStorage.setItem('SQ836:' + d + ':CABINS', JSON.stringify({ timestamp: Date.now(), data: data }));
+            localStorage.setItem('SQ836:' + d + ':JCL', JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, legs: [{ flightDetails: fd }] } }));
+            return d;
+        });
+        await page.evaluate((d) => openNextFlightViewer('836', d), heroDate);
+        await sleep(600);
+        await page.setViewport({ width: 375, height: 812, hasTouch: true });
+        await sleep(400);
+        const hero = await page.evaluate(() => {
+            const dep = document.querySelector('#menu-hero-content .ca-menu-hero-dep');
+            const arr = document.querySelector('#menu-hero-content .ca-menu-hero-arr');
+            const isle = document.querySelector('#menu-hero-content .ca-menu-hero-isle');
+            if (!dep || !arr || !isle) return { none: true };
+            const row = dep.parentElement;
+            const depCity = dep.querySelector('.truncate'), arrCity = arr.querySelector('.truncate');
+            const pill = isle.querySelector('.ca-micro');
+            const plane = isle.querySelector('i[data-lucide="plane"]');
+            const arc = isle.children[0];
+            const rb = row.getBoundingClientRect(), ib = isle.getBoundingClientRect(), db = dep.getBoundingClientRect(), xb = arr.getBoundingClientRect();
+            const pcb = depCity.getBoundingClientRect(), acb = arrCity.getBoundingClientRect(), pb = pill.getBoundingClientRect();
+            const cs = (el) => getComputedStyle(el);
+            return { none: false,
+                x: Math.abs((ib.left + ib.right) / 2 - (rb.left + rb.right) / 2),
+                y: Math.abs((ib.top + ib.bottom) / 2 - (rb.top + rb.bottom) / 2),
+                halves: Math.abs(db.width - xb.width) <= 0.5,
+                pill1: pb.height <= 28, pillWrap: cs(pill).whiteSpace === 'nowrap',
+                clearDep: (ib.left - pcb.right) >= 4, clearArr: (acb.left - ib.right) >= 4,
+                depR: cs(dep.querySelector('.text-2xl')).textAlign === 'right', arrL: cs(arr.querySelector('.text-2xl')).textAlign === 'left',
+                ellip: cs(depCity).textOverflow === 'ellipsis' && cs(depCity).overflow === 'hidden' && cs(arrCity).textOverflow === 'ellipsis',
+                plane: !!plane, arcDot: cs(arc).borderTopStyle === 'dotted',
+                noWide: document.getElementById('menu-sector-content').scrollWidth <= document.getElementById('menu-sector-content').clientWidth + 1 };
+        });
+        ok(!hero.none && hero.x <= 0.5 && hero.y <= 0.5, 'v1.45.24 at 375px: the separator island sits on the stations row\u2019s TRUE centre, both axes (x off ' + (hero.x || 0).toFixed(2) + 'px, y off ' + (hero.y || 0).toFixed(2) + 'px)');
+        ok(hero.halves && hero.depR && hero.arrL, 'the station columns are strictly identical halves - departure right-aligned, arrival left-aligned toward the track');
+        ok(hero.pill1 && hero.pillWrap, 'the duration pill never wraps and never drops lines');
+        ok(hero.clearDep && hero.clearArr, 'both city lines keep the safety clearance off the centre island (dep ' + (hero.clearDep ? 'ok' : 'clip') + ' / arr ' + (hero.clearArr ? 'ok' : 'clip') + ')');
+        ok(hero.ellip && hero.noWide, 'long city names ellipsize under the truncate triple instead of pushing the columns - nothing scrolls sideways');
+        ok(hero.plane && hero.arcDot, 'the plane rides the dotted arc apex inside the island');
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(300);
+        await page.evaluate((d) => { closeMenuViewer(); localStorage.removeItem('SQ836:' + d + ':CABINS'); localStorage.removeItem('SQ836:' + d + ':JCL'); }, heroDate);
         await sleep(300);
 
         console.log('— health —');
