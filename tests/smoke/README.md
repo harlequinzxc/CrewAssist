@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.26), the changelog's current entry,
-  the service-worker cache name (v257).
+- Stamps: `APP_VERSION` (currently 1.45.27), the changelog's current entry,
+  the service-worker cache name (v258).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -245,6 +245,27 @@ the service-worker stamp. It checks:
   gold-settle pin below it already used). Both times the app was correct
   and the timing was the enemy; hardening happened AFTER the failures,
   and the full run went 259/259.
+- v1.45.27 the still ground: the owner's round-two report (sheet still
+  draggable off-screen, twitching with the keyboard up, off-screen
+  furniture reachable by swiping) traced to PAGE SCROLL ROOM — iOS
+  Safari scrolls the document when it can (the reveal), swipes chain
+  into it, and the 1.45.26 pin fought it frame by frame. Two creators:
+  min-h-screen (100vh = toolbars-collapsed, taller than the visible
+  screen) and the closed sheets parked at translate-y-full (Safari
+  counts fixed-below-fold elements into scrollable overflow; Chromium
+  does not — the rig could never see it). The app froze the document
+  (html,body overflow hidden + overscroll-behavior none) and moved the
+  root columns to 100dvh. The rig's still-ground layer pins what
+  Chromium CAN prove: the computed freeze on both root elements, NO
+  scroll room (neither root taller than the screen), and the app
+  root's computed min-height landing exactly on the viewport height
+  (the dvh proof). **tw.css was recompiled for this release** (the
+  min-h-dvh class is new; md5 97583e2d59d26a4c4f2429e5ef518eca) —
+  remember the standing rule: class changes go through
+  `tests/smoke/node_modules/.bin/tailwindcss -c tw.config.cjs -o
+  tw.css --minify` from the repo root, never a hand edit. The
+  iOS-specific behaviour (Safari counting the parked sheets, the
+  toolbars gap) is the iPhone's to judge.
 
 ## Running it
 
