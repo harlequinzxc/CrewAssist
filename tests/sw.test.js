@@ -13,7 +13,7 @@ const SW = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
 const IX = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 const BASE = 'https://crewassist.test';      // the SW's scope origin (no trailing slash)
 const ORIGIN = BASE + '/';                   // base for relative-URL resolution
-const CACHE = 'crewassist-v257';
+const CACHE = 'crewassist-v258';
 
 // Real CacheStorage keys are absolute URLs — normalise the same way so the
 // install's './index.html' and a navigation to the same document collide.
@@ -80,7 +80,7 @@ function bootSW() {
 
 (async () => {
   // --- source shape: the refactor's own promises ---
-  R.ok(SW.includes("const CACHE_NAME = '" + CACHE + "';"), 'cache name is v257 (the v1.45.26 keyboard-ground release)');
+  R.ok(SW.includes("const CACHE_NAME = '" + CACHE + "';"), 'cache name is v258 (the v1.45.27 still-ground release)');
   R.ok(!/v1\.\d/.test(SW) && !SW.includes('hotfix'), 'version-history stamps are gone; the comments describe current behaviour');
   R.eq((SW.match(/function cachePut/g) || []).length, 1, 'exactly one cachePut helper');
   R.ok(SW.includes('return caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});'), 'cachePut returns its promise and swallows cache-write failures (audit fix 3)');
@@ -94,7 +94,7 @@ function bootSW() {
     const { env, fire, cache, tick } = bootSW();
     await fire('install'); await tick();
     const c = cache();
-    R.ok(!!c, 'install opens the v257 cache');
+    R.ok(!!c, 'install opens the v258 cache');
     R.ok(c.addAllCalls.indexOf(ORIGIN + 'index.html') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'tw.css') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'rates.json') !== -1, 'install precaches the shell, the compiled styles and rates');
     R.eq(c.addCalls.length, 4, 'the four CDN assets are fetched individually');
     fontsUrl = c.addCalls.filter((u) => u.indexOf('https://fonts.googleapis.com/css2') === 0)[0];
