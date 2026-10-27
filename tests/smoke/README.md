@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.25), the changelog's current entry,
-  the service-worker cache name (v256).
+- Stamps: `APP_VERSION` (currently 1.45.26), the changelog's current entry,
+  the service-worker cache name (v257).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -227,6 +227,24 @@ the service-worker stamp. It checks:
   entry — `archEntryLanded` honours endAt over dates, so the seeds are
   run-hour-immune at any hour of any day (the hotfix-9 fixed-walls
   precedent, met a third time).
+- v1.45.26 the pan pin: the fake visual viewport grows two pieces —
+  `__kbPan(y)` (sets the fake's offsetTop, the iOS keyboard PAN) and a
+  `window.scrollTo` wrap that records every call into `__kbPinCalls` and
+  MIRRORS SAFARI: a successful scrollTo resets the fake's offsetTop to 0
+  (that is what real iOS does when the page scrolls back). The pan layer
+  sits right after the composer-rise pin in the keyboard layer: it opens
+  the keyboard, pans 140px, and pins the causal chain — the pin fired
+  (`__kbPinCalls[0] === '0,0'`, at least one call), the metric HELD at
+  290px through the pan (the offsetTop subtraction, proven live), and the
+  dock's rect.bottom still sits on the keyboard line (±2px). RIG
+  HARDENING, same night, owner-approved round-27 class, NO app change:
+  two tap-race pins that flaked across the night's runs (the help-row tap
+  — a tap landing inside a brief chat-busy blip is rightly swallowed, now
+  a bounded 3-attempt retry on a quiet moment; the calendar tag toggle —
+  the instant class check now a bounded 2s poll, the same pattern the
+  gold-settle pin below it already used). Both times the app was correct
+  and the timing was the enemy; hardening happened AFTER the failures,
+  and the full run went 259/259.
 
 ## Running it
 

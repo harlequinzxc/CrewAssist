@@ -2812,7 +2812,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.25'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.26'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2834,6 +2834,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.26', d: '2026-10-28', items: [
+                { c: 'fix', t: 'The keyboard lift holds its ground: drags can no longer pan a drawer off-screen, and the caret sits inside the chat field.' }
+            ] },
             { v: '1.45.25', d: '2026-10-27', items: [
                 { c: 'imp', t: 'Keyboards lift every drawer and the chat bar clear of your typing.' },
                 { c: 'imp', t: 'Tap outside a field saves it and closes the keyboard.' }
@@ -13974,8 +13977,25 @@
             caKbArmed = on; caKbCentered = false;
             if (!on) document.documentElement.style.setProperty('--keyboard-height', '0px');
         }
+        // v1.45.26 (owner report, two findings, one root): iOS's keyboard
+        // PAN. The reveal shoves the visual viewport over the layout one,
+        // and any drag that runs past a scroll body's limit chains to the
+        // page and pans it further -- fixed panels ride up off the top of
+        // the screen (the owner could scroll the lifted sheet away
+        // entirely), and WebKit's native caret overlay does not track the
+        // pan, so the caret drew outside the chat field the eye was on.
+        // While a tracked field holds focus, every visual-viewport event
+        // pins the pan back to zero -- the lift IS the reveal now.
+        function caKbPin() {
+            if (!caKbArmed) return;
+            const vv = window.visualViewport;
+            if ((vv && vv.offsetTop > 0) || window.scrollY > 0) {
+                try { window.scrollTo(0, 0); } catch (e) {}
+            }
+        }
         function caKbPublish() {
             if (!caKbArmed) return;
+            caKbPin();
             const kb = caKbMetric();
             document.documentElement.style.setProperty('--keyboard-height', kb + 'px');
             if (kb > 0 && !caKbCentered) {
@@ -14006,6 +14026,11 @@
                     sh.querySelectorAll('.overflow-y-auto').forEach((body) => {
                         const base = parseFloat(getComputedStyle(body).paddingBottom) || 0;
                         body.style.paddingBottom = 'calc(' + base + 'px + var(--keyboard-height, 0px))';
+                        // v1.45.26: the drag STOPS at the body's own limit --
+                        // it must never chain to the page and pan the sheet
+                        // off the screen (the pin is the safety net, this is
+                        // the prevention)
+                        body.style.overscrollBehavior = 'contain';
                     });
                 });
                 const dock = document.getElementById('chat-dock');
