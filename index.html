@@ -2829,7 +2829,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.27'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.28'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2851,6 +2851,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.28', d: '2026-10-28', items: [
+                { c: 'fix', t: 'The keyboard lift serves the drawers only — the chat bar keeps its native behaviour.' }
+            ] },
             { v: '1.45.27', d: '2026-10-28', items: [
                 { c: 'fix', t: 'The ground holds still: the page behind the app no longer scrolls or rubber-bands — swipes stay inside the drawer, and the keyboard lift stops twitching.' }
             ] },
@@ -13972,13 +13975,13 @@
         // v1.45.25 (owner order): the soft-keyboard overlay fix. iOS never
         // resizes the layout viewport for the keyboard -- it overlays the
         // visual viewport on top of it -- so every panel pinned to the
-        // layout bottom (all the glide sheets, the chat dock) keeps its
+        // layout bottom (all the glide sheets) keeps its
         // inputs buried behind the keyboard, and the OS caret drifts off
         // the field it belongs to. Android resizes the layout, which is why
         // it never showed the bug. The fix measures the gap between the two
         // viewports and publishes it as --keyboard-height: the fixed sheets
-        // and the chat dock consume it as a bottom offset (the panel
-        // terminates at the keyboard's top edge, not the viewport's), and
+        // consume it as a bottom offset (the panel terminates at the
+        // keyboard's top edge, not the viewport's), and
         // every sheet scroll body consumes it as trailing scroll room so the
         // focused row can actually be scrolled into the visible centre.
         // documentElement.clientHeight is the STABLE layout viewport on iOS
@@ -14053,11 +14056,11 @@
                         body.style.overscrollBehavior = 'contain';
                     });
                 });
-                const dock = document.getElementById('chat-dock');
-                if (dock) {
-                    dock.setAttribute('data-ca-kbtrack', '1');
-                    dock.style.bottom = 'var(--keyboard-height, 0px)';
-                }
+                // v1.45.28 (owner order): the chat dock is OUT of the
+                // keyboard system -- no tracking, no lift, no pin. The
+                // drawers keep the full treatment; the composer keeps its
+                // native behaviour (iOS reveals it on focus, caret quirks
+                // and all -- accepted by the owner).
                 // the sweep is the disarm's only body: a receipt-row commit
                 // REMOVES its input while focused, and a detached node's
                 // focusout never reaches the document -- so every path that

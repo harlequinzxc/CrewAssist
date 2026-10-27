@@ -100,9 +100,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.27', 'APP_VERSION is 1.45.27');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.27' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.27 entry with its one fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v258'), 'the service-worker cache name is bumped to v258 (the v1.45.27 still-ground release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.28', 'APP_VERSION is 1.45.28');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.28' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.28 entry with its one fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v259'), 'the service-worker cache name is bumped to v259 (the v1.45.28 drawers-only release)');
 
         console.log('— the still ground (v1.45.27) —');
         // iOS Safari counts the toolbars-collapsed 100vh column and the
@@ -118,7 +118,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.27'; }), 'the What\'s New sheet carries the v1.45.27 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.28'; }), 'the What\'s New sheet carries the v1.45.28 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1570,6 +1570,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         const kbOpen = await page.evaluate(() => ({
             v: document.documentElement.style.getPropertyValue('--keyboard-height'),
             line: window.innerHeight - 290,
+            h: window.innerHeight,
             sheetB: +document.getElementById('ca-arch-sheet').getBoundingClientRect().bottom.toFixed(1),
             subB: +document.getElementById('ca-arch-sub-sheet').getBoundingClientRect().bottom.toFixed(1),
             dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
@@ -1578,12 +1579,26 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }));
         ok(kbOpen.v === '290px', 'the simulated keyboard publishes --keyboard-height (290px, the layout-visual gap)');
         ok(Math.abs(kbOpen.sheetB - kbOpen.line) < 2 && Math.abs(kbOpen.subB - kbOpen.line) < 2, 'the earnings sheet AND its absolute sub-sheet terminate at the keyboard\'s top edge (viewport height minus the 290px keyboard, not the buried viewport bottom)');
-        ok(Math.abs(kbOpen.dockB - kbOpen.line) < 2, 'the chat dock rides the same metric - the composer\'s TRUE layout rises, which is what puts the caret back inside the field');
+        ok(Math.abs(kbOpen.dockB - kbOpen.h) < 2, 'v1.45.28: the chat dock stays native at the viewport bottom while the drawers lift - the scope is drawers only');
         ok(kbOpen.bodyPad === '322px', 'the scroll body carries the trailing room (its own 32px + the 290px keyboard)');
         ok(kbOpen.sivCenter >= 1, 'the focused row glides to the visible centre (scrollIntoView block:center, once per focus)');
         await sleep(700);
         const kbSeen = await page.evaluate(() => ({ b: +document.querySelector('#ca-arch-exp-val input').getBoundingClientRect().bottom.toFixed(1), line: window.innerHeight - 290 }));
         ok(kbSeen.b < kbSeen.line + 1, 'after the glide the expense input sits fully above the keyboard line');
+        // v1.45.26: the PAN - iOS's reveal/drag pan slid the lifted sheet
+        // off-screen and desynced the caret; while a tracked DRAWER field
+        // holds focus, every pan is pinned straight back to zero
+        await page.evaluate(() => window.__kbPan(140));
+        await sleep(200);
+        const kbPan = await page.evaluate(() => ({
+            pins: window.__kbPinCalls.length,
+            first: (window.__kbPinCalls[0] || []).join(','),
+            metric: document.documentElement.style.getPropertyValue('--keyboard-height'),
+            sheetB: +document.getElementById('ca-arch-sub-sheet').getBoundingClientRect().bottom.toFixed(1),
+            line: window.innerHeight - 290
+        }));
+        ok(kbPan.pins >= 1 && kbPan.first === '0,0', 'a 140px keyboard pan over a drawer field is pinned straight back to zero - the lift IS the reveal, the sheet can no longer be scrolled off the screen');
+        ok(kbPan.metric === '290px' && Math.abs(kbPan.sheetB - kbPan.line) < 2, 'through the pan the metric holds and the sheet stays glued at the keyboard line (the caret follows)');
         // the outside tap (owner order): blur IS the commit, panels return
         await page.evaluate(() => document.getElementById('ca-arch-sub-title').click());
         await sleep(400);
@@ -1597,7 +1612,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }));
         ok(kbShut.stored === 64 && kbShut.val === '$64.00', 'the outside tap collapses the keyboard AND commits the typed figure');
         ok(kbShut.v === '0px' && Math.abs(kbShut.sheetB - kbShut.h) < 2 && kbShut.focused === 'BODY', 'the metric clears, the sheet returns to the viewport bottom, nothing holds focus');
-        // the chat dock flow: focus the composer, keyboard up, background tap
+        // v1.45.28 (owner order): the chat bar is keyboard-NATIVE - no
+        // lift, no pin, no fight. iOS reveals the composer on focus and
+        // owns the caret (misplaced and accepted); the rig proves the
+        // app's machinery stays silent for the composer.
         await page.evaluate(() => closeArchSub());
         await sleep(300);
         await page.evaluate(() => document.getElementById('chat-input').focus());
@@ -1605,29 +1623,25 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         const dockUp = await page.evaluate(() => ({
             line: window.innerHeight - 290,
+            h: window.innerHeight,
             dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
             pillB: +document.getElementById('chat-input').closest('.glass-panel').getBoundingClientRect().bottom.toFixed(1),
-            v: document.documentElement.style.getPropertyValue('--keyboard-height')
+            v: document.documentElement.style.getPropertyValue('--keyboard-height'),
+            pins: window.__kbPinCalls.length
         }));
-        ok(dockUp.v === '290px' && Math.abs(dockUp.dockB - dockUp.line) < 2 && dockUp.pillB < dockUp.line + 1, 'the composer rises with the keyboard - the pill\'s true layout clears the line');
-        // v1.45.26: the PAN - iOS's reveal/drag pan slid the lifted sheet
-        // off-screen and desynced the caret; the pin holds it at zero
+        ok(dockUp.v === '0px' && Math.abs(dockUp.dockB - dockUp.h) < 2, 'the composer focus lifts nothing - the metric stays zero and the dock keeps its native bottom (the drawers-only scope)');
+        ok(dockUp.pillB > dockUp.line, 'the composer stays in its native place behind the keyboard line - iOS reveals it, the app does not');
+        // the native reveal PAN is left alone: no pin fires for the chat bar
         await page.evaluate(() => window.__kbPan(140));
         await sleep(200);
-        const kbPan = await page.evaluate(() => ({
+        const chatPan = await page.evaluate(() => ({
             pins: window.__kbPinCalls.length,
-            first: (window.__kbPinCalls[0] || []).join(','),
             metric: document.documentElement.style.getPropertyValue('--keyboard-height'),
             dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
-            line: window.innerHeight - 290
+            h: window.innerHeight
         }));
-        ok(kbPan.pins >= 1 && kbPan.first === '0,0', 'a 140px keyboard pan is pinned straight back to zero - the lift IS the reveal, the sheet can no longer be scrolled off the screen');
-        ok(kbPan.metric === '290px' && Math.abs(kbPan.dockB - kbPan.line) < 2, 'through the pan the metric holds and the dock stays glued at the keyboard line (the caret follows)');
-        await page.evaluate(() => document.getElementById('chat-container').click());
-        await sleep(300);
-        const dockDn = await page.evaluate(() => ({ v: document.documentElement.style.getPropertyValue('--keyboard-height'), h: window.innerHeight, dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1) }));
-        ok(dockDn.v === '0px' && Math.abs(dockDn.dockB - dockDn.h) < 2, 'a background tap collapses the keyboard and the dock returns to baseline');
-        await page.evaluate(() => window.__kbShut());
+        ok(chatPan.pins === dockUp.pins && chatPan.metric === '0px' && Math.abs(chatPan.dockB - chatPan.h) < 2, 'a pan over the composer is NOT pinned and nothing lifts - no fight: the chat bar keeps its native behaviour, caret and all (owner-accepted)');
+        await page.evaluate(() => { document.getElementById('chat-input').blur(); window.__kbShut(); });
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
