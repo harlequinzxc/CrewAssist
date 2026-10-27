@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.23), the changelog's current entry,
-  the service-worker cache name (v254).
+- Stamps: `APP_VERSION` (currently 1.45.24), the changelog's current entry,
+  the service-worker cache name (v255).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -176,6 +176,34 @@ the service-worker stamp. It checks:
   text at 430px. Rig lesson: the month-label selector `span.text-\[17px\]`
   needs the two-backslash CSS escape IN SOURCE — a single backslash is an
   unknown JS escape that arrives bracket-naked and throws.
+- v1.45.24 tokens, decode, and the hero's centre axis: the money probe
+  and the 375px layer re-point to the token rail — the three labels are
+  single characters (N / G / N-minus) as `role="button"` spans
+  (`.ca-arch-mgtok`), the third-row pin reads the N-minus token, and the
+  noClip probes must TOLERATE the token cells: their `::after` hit
+  extenders reach 4px past the quiet cell, inflating scrollWidth to
+  clientWidth + 4 — a false clip (tolerance +5 for mgtok, +1 elsewhere).
+  A new token-tap layer drives the real decode in Chromium: tap N shows
+  the 'Net Earnings' micro-card, tap G swaps one-at-a-time, re-tap
+  toggles off, 1.8s auto-dismiss, an outside tap closes, and a token tap
+  inside the projection button leaves the still-to-fly panel closed (the
+  stopPropagation proof). The 375px layer now asserts the month label one
+  line with a LONG count line wrapping cleanly at its word boundary inside
+  its own box — the token block is narrow enough to share the row at
+  375px, and one line + the block is ~3px more than 375px can hold. A NEW
+  menu-hero layer opens the viewer through the app's own front door —
+  `openNextFlightViewer('836', d)` after seeding the CABINS + JCL saves
+  (a direct `openMenuViewerForCabins` call leaves the hero EMPTY: it
+  expects the CALLER to set `currentMenuSearch` first — the front door
+  does) — and pins the centre axis at 375px: the island measured
+  0.00px off the row's true centre on BOTH axes, the strictly identical
+  halves, the nowrap duration pill (~26.5px one line), the 8px clearances
+  off the island, ellipsis on the owner's own worst-case city name, and
+  the plane on the dotted apex. Rig lesson: the 1.45.15 notice layer's
+  seed had a `Math.min(date+3, 27)` cap — on the 27th of any month the
+  'ahead' legs landed TODAY 18:00 and every evening run failed; the cap
+  is gone (plain +3 days, JS spills at month-end and the store keys by
+  the run's month).
 
 ## Running it
 
