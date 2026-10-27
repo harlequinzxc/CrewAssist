@@ -463,80 +463,82 @@ const mkUntil = (d) => async (cond, ms) => {
       // --keyboard-height. v1.45.26 (owner report): the PAN pin - iOS's
       // keyboard pan slid the lifted sheet off-screen and desynced the
       // caret. v1.45.27 (owner report): the still ground - the frozen
-      // document - takes the head. 1.45.26 shifts down one; the 1.45.10
-      // pin leaves the pinned window (floor 1.45.11; its pointers stay
-      // in the feed).
-      R.eq(entries[0].v, '1.45.27', 'the 1.45.27 still-ground release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.45.27 entry carries its one fix pointer');
+      // document. v1.45.28 (owner order): the drawers-only scope - the
+      // chat bar goes native - takes the head. 1.45.27 shifts down one;
+      // the 1.45.11 pin leaves the pinned window (floor 1.45.12; its
+      // pointers stay in the feed).
+      R.eq(entries[0].v, '1.45.28', 'the 1.45.28 drawers-only release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.45.28 entry carries its one fix pointer');
+      R.ok(src.includes("c: 'fix', t: 'The keyboard lift serves the drawers only \u2014 the chat bar keeps its native behaviour.' }"), 'the drawers-only pointer reads as approved, inside the release it ships');
+      R.eq(entries[1].v, '1.45.27', 'the 1.45.27 still-ground release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.45.27 entry carries its one fix pointer');
       R.ok(src.includes("c: 'fix', t: 'The ground holds still: the page behind the app no longer scrolls or rubber-bands \u2014 swipes stay inside the drawer, and the keyboard lift stops twitching.' }"), 'the still-ground pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.45.26', 'the 1.45.26 keyboard-ground release sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.45.26 entry carries its one fix pointer');
+      R.eq(entries[2].v, '1.45.26', 'the 1.45.26 keyboard-ground release sits second, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.45.26 entry carries its one fix pointer');
       R.ok(src.includes("c: 'fix', t: 'The keyboard lift holds its ground: drags can no longer pan a drawer off-screen, and the caret sits inside the chat field.' }"), 'the keyboard-ground pointer reads as approved, inside the release it ships');
-      R.eq(entries[2].v, '1.45.25', 'the 1.45.25 keyboard-overlay release sits second, newest first');
-      R.eq(entries[2].items.length, 2, 'the 1.45.25 entry carries its two pointers');
+      R.eq(entries[3].v, '1.45.25', 'the 1.45.25 keyboard-overlay release sits second, newest first');
+      R.eq(entries[3].items.length, 2, 'the 1.45.25 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Keyboards lift every drawer and the chat bar clear of your typing.' }"), 'the keyboard pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Tap outside a field saves it and closes the keyboard.' }"), 'the outside-tap pointer reads as approved, inside the release it ships');
-      R.eq(entries[3].v, '1.45.24', 'the 1.45.24 centre-axis release sits second, newest first');
-      R.eq(entries[3].items.length, 2, 'the 1.45.24 entry carries its two pointers');
+      R.eq(entries[4].v, '1.45.24', 'the 1.45.24 centre-axis release sits second, newest first');
+      R.eq(entries[4].items.length, 2, 'the 1.45.24 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Month money tokens decode their figures on tap.' }"), 'the token pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The menu hero locks its flight track on the true centre.' }"), 'the hero pointer reads as approved, inside the release it ships');
-      R.eq(entries[4].v, '1.45.23', 'the 1.45.23 tabular-grid release sits second, newest first');
-      R.eq(entries[4].items.length, 2, 'the 1.45.23 entry carries its two pointers');
+      R.eq(entries[5].v, '1.45.23', 'the 1.45.23 tabular-grid release sits second, newest first');
+      R.eq(entries[5].items.length, 2, 'the 1.45.23 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Month money columns ride a rigid uppercase tabular grid.' }"), 'the grid pointer reads as approved, inside the release it ships');
-      R.eq(entries[5].v, '1.45.22', 'the 1.45.22 overseas-expense release sits third, newest first');
-      R.eq(entries[5].items.length, 3, 'the 1.45.22 entry carries its three pointers');
+      R.eq(entries[6].v, '1.45.22', 'the 1.45.22 overseas-expense release sits third, newest first');
+      R.eq(entries[6].items.length, 3, 'the 1.45.22 entry carries its three pointers');
       R.ok(src.includes("c: 'new', t: 'Layover trips track overseas expenses against take-home.' }"), 'the expense pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Year badges wear the trending icon, not a glyph.' }"), 'the badge pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Month money columns stack net, gross, after-expenses.' }"), 'the money-column pointer reads as approved, inside the release it ships');
-      R.eq(entries[6].v, '1.45.21', 'the 1.45.21 quadrant-unification release sits second, newest first');
-      R.eq(entries[6].items.length, 3, 'the 1.45.21 entry carries its three pointers');
+      R.eq(entries[7].v, '1.45.21', 'the 1.45.21 quadrant-unification release sits second, newest first');
+      R.eq(entries[7].items.length, 3, 'the 1.45.21 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'COP stats ride the hairline quadrant architecture.' }"), 'the quadrant pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Yearly net comparisons badge the headline figure.' }"), 'the badge pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The earliest year reads a quiet em dash.' }"), 'the em-dash pointer reads as approved, inside the release it ships');
-      R.eq(entries[7].v, '1.45.20', 'the 1.45.20 after-hours release sits third, newest first');
-      R.eq(entries[7].items.length, 3, 'the 1.45.20 entry carries its three pointers');
+      R.eq(entries[8].v, '1.45.20', 'the 1.45.20 after-hours release sits third, newest first');
+      R.eq(entries[8].items.length, 3, 'the 1.45.20 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'After-hours rides a strict 2x2 grid with hairlines.' }"), 'the quadrant pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Every salary metric leads with its Lucide icon.' }"), 'the icon pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The month view breathes; yearly comparisons break below.' }"), 'the breathing-room pointer reads as approved, inside the release it ships');
-      R.eq(entries[8].v, '1.45.19', 'the 1.45.19 salary-layout release sits fourth, newest first');
-      R.eq(entries[8].items.length, 2, 'the 1.45.19 entry carries its two pointers');
+      R.eq(entries[9].v, '1.45.19', 'the 1.45.19 salary-layout release sits fourth, newest first');
+      R.eq(entries[9].items.length, 2, 'the 1.45.19 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Salary stats ride a weighted grid that never collides.' }"), 'the weighted-grid pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Gross and CPF group left; milestones ride right.' }"), 'the split-row pointer reads as approved, inside the release it ships');
-      R.eq(entries[9].v, '1.45.18', 'the 1.45.18 remaining-flights release sits second, newest first');
-      R.eq(entries[9].items.length, 3, 'the 1.45.18 entry carries its three pointers');
+      R.eq(entries[10].v, '1.45.18', 'the 1.45.18 remaining-flights release sits second, newest first');
+      R.eq(entries[10].items.length, 3, 'the 1.45.18 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'The still-to-fly panel reads Remaining flights.' }"), 'the remaining-flights pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Its line counts completed flights and legs left.' }"), 'the completed-left pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'All-time COP gains an annual average figure.' }"), 'the annual-average pointer reads as approved, inside the release it ships');
-      R.eq(entries[10].v, '1.45.17', 'the 1.45.17 milestone release sits third, newest first');
-      R.eq(entries[10].items.length, 2, 'the 1.45.17 entry carries its two pointers');
+      R.eq(entries[11].v, '1.45.17', 'the 1.45.17 milestone release sits third, newest first');
+      R.eq(entries[11].items.length, 2, 'the 1.45.17 entry carries its two pointers');
       R.ok(src.includes("c: 'fix', t: 'Daylight search placeholders read dark slate gray.' }"), 'the placeholder pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The milestone line names what remains to earn.' }"), 'the milestone pointer reads as approved, inside the release it ships');
-      R.eq(entries[11].v, '1.45.16', 'the 1.45.16 state-icons release sits third, newest first');
-      R.eq(entries[11].items.length, 4, 'the 1.45.16 entry carries its four pointers');
+      R.eq(entries[12].v, '1.45.16', 'the 1.45.16 state-icons release sits third, newest first');
+      R.eq(entries[12].items.length, 4, 'the 1.45.16 entry carries its four pointers');
       R.ok(src.includes("c: 'fix', t: 'Daylight active pills turn white with walnut ink.' }"), 'the daylight-pill pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Month states ride Lucide icons beside the title.' }"), 'the state-icons pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The live month spins a slow gold refresh-cw.' }"), 'the spinning-refresh-cw pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Status words join the flight count line.' }"), 'the count-line-status pointer reads as approved, inside the release it ships');
-      R.eq(entries[12].v, '1.45.15', 'the 1.45.15 roster-notice release sits third, newest first');
-      R.eq(entries[12].items.length, 4, 'the 1.45.15 entry carries its four pointers');
+      R.eq(entries[13].v, '1.45.15', 'the 1.45.15 roster-notice release sits third, newest first');
+      R.eq(entries[13].items.length, 4, 'the 1.45.15 entry carries its four pointers');
       R.ok(src.includes("c: 'fix', t: 'The current month shows its still-to-fly notice from the roster.' }"), 'the roster-notice pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The ledger \u2715 centres on its row; the sag is gone.' }"), 'the centred-\u2715 pointer reads as approved, inside the release it ships');
-      R.eq(entries[13].v, '1.45.14', 'the 1.45.14 earnings-depth release sits third, newest first');
-      R.eq(entries[13].items.length, 5, 'the 1.45.14 entry carries its five pointers');
+      R.eq(entries[14].v, '1.45.14', 'the 1.45.14 earnings-depth release sits third, newest first');
+      R.eq(entries[14].items.length, 5, 'the 1.45.14 entry carries its five pointers');
       R.ok(src.includes("c: 'fix', t: 'Earnings opens on the current month, never a pre-saved future one.' }"), 'the never-future pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Daylight earns a warm canvas under crisp white cards.' }"), 'the daylight-depth pointer reads as approved, inside the release it ships');
-      R.eq(entries[14].v, '1.45.13', 'the 1.45.13 earnings-fresh-open release sits third, newest first');
-      R.eq(entries[14].items.length, 5, 'the 1.45.13 entry carries its five pointers');
+      R.eq(entries[15].v, '1.45.13', 'the 1.45.13 earnings-fresh-open release sits third, newest first');
+      R.eq(entries[15].items.length, 5, 'the 1.45.13 entry carries its five pointers');
       R.ok(src.includes("c: 'imp', t: 'Earnings opens on this month\u2019s COP allowance.' }"), 'the fresh-open pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Past chart bars sit quieter; stripes mark the future.' }"), 'the chart-mute pointer reads as approved, inside the release it ships');
-      R.eq(entries[15].v, '1.45.12', 'the 1.45.12 earnings-polish release sits third, newest first');
-      R.eq(entries[15].items.length, 4, 'the 1.45.12 entry carries its four pointers');
+      R.eq(entries[16].v, '1.45.12', 'the 1.45.12 earnings-polish release sits third, newest first');
+      R.eq(entries[16].items.length, 4, 'the 1.45.12 entry carries its four pointers');
       R.ok(src.includes("c: 'imp', t: 'The earnings figure gets breathing room and a tidier stat grid.' }"), 'the breathing-room pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Gold-card text meets AA contrast in both themes.' }"), 'the contrast pointer reads as approved, inside the release it ships');
-      R.eq(entries[16].v, '1.45.11', 'the 1.45.11 monthly-salary release sits second, newest first');
-      R.eq(entries[16].items.length, 4, 'the 1.45.11 entry carries its four pointers');
-      R.ok(src.includes("c: 'new', t: 'Monthly Salary \u2014 your net take-home beside the COP allowance.' }"), 'the salary pointer reads as approved, inside the release it ships');
-      R.ok(src.includes("c: 'imp', t: 'The earnings chart gains an average line and a year-by-year view.' }"), 'the chart pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'new', t: 'Monthly Salary \u2014 your net take-home beside the COP allowance.' }"), 'the salary pointer reads as approved (just past the pinned window, still in the feed)');
+      R.ok(src.includes("c: 'imp', t: 'The earnings chart gains an average line and a year-by-year view.' }"), 'the chart pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'fix', t: 'A searched flight’s cycle button flips through its own sectors — never back to the saved menus — and hides for single-sector flights.' }"), 'the 1.45.10 pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'fix', t: 'A positioning leg that lands at a different airport than the operating leg departs no longer orphans the return leg.' }"), 'the deadhead pointer reads as approved, inside the release it ships');
       // v1.45.9 (owner rulings 2026-10-24: the printer's ONE chip line, the
@@ -551,12 +553,14 @@ const mkUntil = (d) => async (cond, ms) => {
       R.ok(src.includes("c: 'fix', t: 'The roster diff sees same-day duty changes, standby to flight included.' }"), 'the 1.45.4 pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'fix', t: 'A fully-saved flight set never shows the menu nudge.' }"), 'the 1.45.3 pointer reads as approved, inside the twelve-word cap');
       // v1.45.25 (owner order): the keyboard overlay fix - the structural
-      // pins. iOS overlays the keyboard instead of resizing; the sheets and
-      // the chat dock now ride --keyboard-height, and the outside tap
-      // collapses the field (on the receipt row the blur IS the commit).
+      // pins. iOS overlays the keyboard instead of resizing; the sheets
+      // ride --keyboard-height, and the outside tap collapses the field
+      // (on the receipt row the blur IS the commit). v1.45.28 (owner
+      // order): the scope is the DRAWERS ONLY - the chat dock left the
+      // keyboard system and keeps its native behaviour.
       R.ok(src.includes('id="chat-dock"'), 'the chat dock (the composer\'s fixed wrapper) carries its id');
       R.ok(src.includes('function caKbMetric()') && src.includes("setProperty('--keyboard-height'"), 'the visual-viewport metric publishes --keyboard-height');
-      R.ok(d.getElementById('chat-dock').getAttribute('data-ca-kbtrack') === '1' && d.getElementById('chat-dock').style.bottom === 'var(--keyboard-height, 0px)', 'the dock is a tracked surface riding the keyboard height as its bottom offset');
+      R.ok(!d.getElementById('chat-dock').hasAttribute('data-ca-kbtrack') && d.getElementById('chat-dock').style.bottom !== 'var(--keyboard-height, 0px)' && !src.includes("dock.setAttribute('data-ca-kbtrack'") && !src.includes("dock.style.bottom = 'var(--keyboard-height, 0px)'"), 'v1.45.28: the dock is OUT of the keyboard system - untracked, no bottom var, native bottom-0 (the drawers-only scope)');
       const kbFixedSheets = ['settings-sheet', 'ca-changelog-sheet', 'ca-arch-sheet', 'results-sheet', 'menu-sheet'];
       R.ok(kbFixedSheets.every((id) => d.getElementById(id) && d.getElementById(id).style.bottom === 'var(--keyboard-height, 0px)'), 'the five FIXED glide sheets ride --keyboard-height as their bottom offset (the panel terminates at the keyboard\'s top edge, not the viewport\'s)');
       R.ok(['ca-arch-sub-sheet', 'ca-rc-sheet'].every((id) => d.getElementById(id) && d.getElementById(id).style.bottom === 'var(--keyboard-height, 0px)'), 'the two ABSOLUTE sub-sheets ride standalone fixed inset-0 veils - they carry the offset of their own (a sheet never nests inside a sheet)');
@@ -570,6 +574,13 @@ const mkUntil = (d) => async (cond, ms) => {
       R.eq(d.documentElement.style.getPropertyValue('--keyboard-height'), (w.eval('window.innerHeight') - 500) + 'px', 'a focus inside a tracked sheet publishes the layout-vs-visual viewport gap as --keyboard-height');
       d.body.click();
       R.ok(d.activeElement !== d.getElementById('ca-arch-search'), 'a click landing on nothing interactive blurs the focused field (the keyboard collapses)');
+      // v1.45.28 (owner order): the chat bar is keyboard-native - a
+      // composer focus arms nothing and publishes nothing
+      d.getElementById('chat-input').focus();
+      await wait(30);
+      R.eq(d.documentElement.style.getPropertyValue('--keyboard-height'), '0px', 'a composer focus never publishes the metric - the chat bar is out of the keyboard system (drawers only)');
+      R.ok(d.activeElement === d.getElementById('chat-input'), 'the composer keeps its focus natively - no sweep disarms what was never armed');
+      d.getElementById('chat-input').blur();
       await wait(30);
       R.eq(d.documentElement.style.getPropertyValue('--keyboard-height'), '0px', 'the blur clears the metric back to zero');
       // v1.45.26 (owner report): the PAN pin. iOS's reveal/drag pan slid

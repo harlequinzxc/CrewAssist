@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.27), the changelog's current entry,
-  the service-worker cache name (v258).
+- Stamps: `APP_VERSION` (currently 1.45.28), the changelog's current entry,
+  the service-worker cache name (v259).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -266,6 +266,20 @@ the service-worker stamp. It checks:
   tw.css --minify` from the repo root, never a hand edit. The
   iOS-specific behaviour (Safari counting the parked sheets, the
   toolbars gap) is the iPhone's to judge.
+- v1.45.28 the drawers-only scope (owner order): the chat dock left
+  the keyboard system — no `data-ca-kbtrack`, no bottom var, native
+  `fixed bottom-0`. The rig's proof split: the PAN layer moved into
+  the sheet flow (a 140px pan over the focused EXPENSE field pins
+  back to zero and the sub-sheet stays glued at the keyboard line),
+  and the chat flow now asserts the OPPOSITE of its old pins — the
+  composer focus publishes NOTHING (metric stays 0px), the dock and
+  its pill stay in their native places behind the keyboard line, and
+  a pan over the composer fires NO pin (the no-fight proof: the pin
+  count must not move). The old dock pins (rides-the-line,
+  pill-clears-the-line, background-tap-collapses) are retired by the
+  scope ruling — a composer tap outside no longer blurs either,
+  because the outside-tap rule is armed-only and the composer never
+  arms.
 
 ## Running it
 
