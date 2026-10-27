@@ -83,6 +83,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
                 window.visualViewport = { height: window.innerHeight, offsetTop: 0, addEventListener: (t, fn) => { (kbL[t] = kbL[t] || []).push(fn); } };
                 window.__kbOpen = (px) => { window.visualViewport.height = window.innerHeight - px; (kbL.resize || []).forEach((f) => f()); };
                 window.__kbShut = () => { window.visualViewport.height = window.innerHeight; window.visualViewport.offsetTop = 0; (kbL.resize || []).forEach((f) => f()); };
+                window.__kbPan = (y) => { window.visualViewport.offsetTop = y; (kbL.scroll || []).forEach((f) => f()); };
+                window.__kbPinCalls = [];
+                const kbOs = window.scrollTo ? window.scrollTo.bind(window) : function () {};
+                window.scrollTo = function () { window.__kbPinCalls.push([].slice.call(arguments)); try { window.visualViewport.offsetTop = 0; } catch (e) {} return kbOs.apply(this, arguments); };
                 window.__siv = [];
                 const kbOrig = Element.prototype.scrollIntoView;
                 Element.prototype.scrollIntoView = function (o) { try { window.__siv.push({ id: this.id || String(this.className).slice(0, 40), behavior: o && o.behavior, block: o && o.block }); } catch (e) {} try { return kbOrig.apply(this, arguments); } catch (e) {} };
@@ -96,13 +100,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.25', 'APP_VERSION is 1.45.25');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.25' && e.d === '2026-10-27' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.25 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v256'), 'the service-worker cache name is bumped to v256 (the v1.45.25 keyboard-overlay release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.26', 'APP_VERSION is 1.45.26');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.26' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.26 entry with its one fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v257'), 'the service-worker cache name is bumped to v257 (the v1.45.26 keyboard-ground release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.25'; }), 'the What\'s New sheet carries the v1.45.25 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.26'; }), 'the What\'s New sheet carries the v1.45.26 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -147,8 +151,19 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // pointer-inert (the anti-double-fire rule), so a mid-typing tap
         // would rightly be swallowed.
         await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
-        await page.click('[data-ca-help-cmd="menu"]');
-        ok(await page.evaluate(() => {
+        // flake hardening (the round-27 owner-approved class): the tap can
+        // land inside a brief busy blip and be rightly swallowed - the app
+        // is correct, the timing is the enemy. Retry on a quiet moment,
+        // bounded, and only when the insert never landed.
+        let helpTapLanded = false;
+        for (let helpTry = 0; helpTry < 3 && !helpTapLanded; helpTry++) {
+            await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
+            await sleep(150);
+            await page.click('[data-ca-help-cmd="menu"]');
+            await sleep(120);
+            helpTapLanded = await page.evaluate(() => document.getElementById('chat-input').value === 'menu ');
+        }
+        ok(helpTapLanded && await page.evaluate(() => {
             const row = document.querySelector('[data-ca-help-cmd="menu"]');
             const inp = document.getElementById('chat-input');
             return inp.value === 'menu ' && document.activeElement === inp && row.classList.contains('ca-help-flash');
@@ -523,7 +538,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // correctly present. Assert the logical state first, then poll the
         // gold to settled (bounded 2s, caught — a timeout is a real CSS
         // failure reported as a failed check, never a rig crash).
-        ok(await page.evaluate(() => document.getElementById('ca-rc-tag').classList.contains('ca-rc-tagon')), 'hotfix: the toggle is exempt — the on-state class survives the release');
+        // flake hardening (the same round-27 class as the gold poll below):
+        // under main-thread jank the tap's delivery can trail the evaluate -
+        // poll the logical state, bounded 2s (a timeout is a real failure,
+        // reported as a failed check)
+        ok(await page.waitForFunction(() => document.getElementById('ca-rc-tag').classList.contains('ca-rc-tagon'), { timeout: 2000 }).then(() => true, () => false), 'hotfix: the toggle is exempt — the on-state class survives the release');
         ok(await page.waitForFunction(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)', { timeout: 2000 }).then(() => true, () => false), 'hotfix: the toggle is exempt — the on-state gold settles (bounded poll)');
         await page.evaluate(() => document.getElementById('ca-rc-close').click());
         await sleep(400);
@@ -1579,6 +1598,19 @@ async function calcCard(page, { type, t1, t2, lma }) {
             v: document.documentElement.style.getPropertyValue('--keyboard-height')
         }));
         ok(dockUp.v === '290px' && Math.abs(dockUp.dockB - dockUp.line) < 2 && dockUp.pillB < dockUp.line + 1, 'the composer rises with the keyboard - the pill\'s true layout clears the line');
+        // v1.45.26: the PAN - iOS's reveal/drag pan slid the lifted sheet
+        // off-screen and desynced the caret; the pin holds it at zero
+        await page.evaluate(() => window.__kbPan(140));
+        await sleep(200);
+        const kbPan = await page.evaluate(() => ({
+            pins: window.__kbPinCalls.length,
+            first: (window.__kbPinCalls[0] || []).join(','),
+            metric: document.documentElement.style.getPropertyValue('--keyboard-height'),
+            dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
+            line: window.innerHeight - 290
+        }));
+        ok(kbPan.pins >= 1 && kbPan.first === '0,0', 'a 140px keyboard pan is pinned straight back to zero - the lift IS the reveal, the sheet can no longer be scrolled off the screen');
+        ok(kbPan.metric === '290px' && Math.abs(kbPan.dockB - kbPan.line) < 2, 'through the pan the metric holds and the dock stays glued at the keyboard line (the caret follows)');
         await page.evaluate(() => document.getElementById('chat-container').click());
         await sleep(300);
         const dockDn = await page.evaluate(() => ({ v: document.documentElement.style.getPropertyValue('--keyboard-height'), h: window.innerHeight, dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1) }));
