@@ -1815,7 +1815,7 @@
             </main>
 
             <!-- Input Area -->
-            <div class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
+            <div id="chat-dock" class="fixed bottom-0 inset-x-0 pt-10 pb-6 px-4 z-20 pointer-events-none">
                 <div class="absolute inset-0 bg-gradient-to-t from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90 dark:to-transparent"></div>
                 <div class="max-w-xl mx-auto w-full flex flex-col gap-3 relative pointer-events-auto">
                     <button type="button" id="btn-scroll-bottom" aria-label="Scroll to latest" class="ca-hit absolute right-0 -top-11 z-30 w-10 h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black flex items-center justify-center shadow-md opacity-0 scale-75 pointer-events-none transition-all duration-300 ease-out">
@@ -2812,7 +2812,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.24'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.25'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2834,6 +2834,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.25', d: '2026-10-27', items: [
+                { c: 'imp', t: 'Keyboards lift every drawer and the chat bar clear of your typing.' },
+                { c: 'imp', t: 'Tap outside a field saves it and closes the keyboard.' }
+            ] },
             { v: '1.45.24', d: '2026-10-27', items: [
                 { c: 'imp', t: 'Month money tokens decode their figures on tap.' },
                 { c: 'imp', t: 'The menu hero locks its flight track on the true centre.' }
@@ -13942,6 +13946,114 @@
                 break;
             }
         }
+        // v1.45.25 (owner order): the soft-keyboard overlay fix. iOS never
+        // resizes the layout viewport for the keyboard -- it overlays the
+        // visual viewport on top of it -- so every panel pinned to the
+        // layout bottom (all the glide sheets, the chat dock) keeps its
+        // inputs buried behind the keyboard, and the OS caret drifts off
+        // the field it belongs to. Android resizes the layout, which is why
+        // it never showed the bug. The fix measures the gap between the two
+        // viewports and publishes it as --keyboard-height: the fixed sheets
+        // and the chat dock consume it as a bottom offset (the panel
+        // terminates at the keyboard's top edge, not the viewport's), and
+        // every sheet scroll body consumes it as trailing scroll room so the
+        // focused row can actually be scrolled into the visible centre.
+        // documentElement.clientHeight is the STABLE layout viewport on iOS
+        // and shrinks WITH the keyboard on Android (resizes-content), so the
+        // metric self-disables there -- no UA sniffing. visualViewport.offsetTop
+        // is subtracted so a native pan and our lift can never stack.
+        var caKbArmed = false, caKbCentered = false;
+        function caKbMetric() {
+            const vv = window.visualViewport;
+            if (!vv) return 0;
+            const lv = document.documentElement.clientHeight || window.innerHeight || 0;
+            const kb = lv - vv.height - vv.offsetTop;
+            return (isFinite(kb) && kb > 0) ? Math.round(kb) : 0;
+        }
+        function caKbArm(on) {
+            caKbArmed = on; caKbCentered = false;
+            if (!on) document.documentElement.style.setProperty('--keyboard-height', '0px');
+        }
+        function caKbPublish() {
+            if (!caKbArmed) return;
+            const kb = caKbMetric();
+            document.documentElement.style.setProperty('--keyboard-height', kb + 'px');
+            if (kb > 0 && !caKbCentered) {
+                const ae = document.activeElement;
+                if (ae && ae.tagName === 'INPUT' && ae.closest('div[id$="-sheet"]')) {
+                    caKbCentered = true;   // once per focus: the lift lands, then the row glides to centre
+                    const row = ae.closest('button') || ae;
+                    const smooth = !document.documentElement.classList.contains('ca-reduced');
+                    try { row.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'center' }); } catch (e) {}
+                }
+            }
+        }
+        (function caKbBind() {
+            try {
+                const kbSheets = Array.prototype.slice.call(document.querySelectorAll('div[id$="-sheet"]'));
+                kbSheets.forEach((sh) => sh.setAttribute('data-ca-kbtrack', '1'));
+                kbSheets.forEach((sh) => {
+                    // fixed sheets pin straight to the layout viewport; the
+                    // ABSOLUTE ones (the flight-details and roster-calendar
+                    // sheets) ride standalone fixed inset-0 veils, so their
+                    // bottom-0 is the viewport bottom too — every sheet gets
+                    // the offset unless it truly sits inside another tracked
+                    // sheet (the house rule says none ever does; the closest
+                    // guard is the defense in depth)
+                    if (sh.classList.contains('fixed') || !(sh.parentElement && sh.parentElement.closest('[data-ca-kbtrack]'))) {
+                        sh.style.bottom = 'var(--keyboard-height, 0px)';
+                    }
+                    sh.querySelectorAll('.overflow-y-auto').forEach((body) => {
+                        const base = parseFloat(getComputedStyle(body).paddingBottom) || 0;
+                        body.style.paddingBottom = 'calc(' + base + 'px + var(--keyboard-height, 0px))';
+                    });
+                });
+                const dock = document.getElementById('chat-dock');
+                if (dock) {
+                    dock.setAttribute('data-ca-kbtrack', '1');
+                    dock.style.bottom = 'var(--keyboard-height, 0px)';
+                }
+                // the sweep is the disarm's only body: a receipt-row commit
+                // REMOVES its input while focused, and a detached node's
+                // focusout never reaches the document -- so every path that
+                // might end a focus (focusout, a non-field focusin such as
+                // focus falling back to body, the dismiss blur) re-checks
+                // instead of trusting one event
+                function caKbSweep() {
+                    setTimeout(() => {
+                        const ae = document.activeElement;
+                        if (ae && ae.closest && ae.closest('[data-ca-kbtrack]') &&
+                            (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT')) return;
+                        caKbArm(false);
+                    }, 0);
+                }
+                document.addEventListener('focusin', (ev) => {
+                    const t = ev.target;
+                    const tracked = t && t.closest && t.closest('[data-ca-kbtrack]') &&
+                        (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT');
+                    if (!tracked) { caKbSweep(); return; }
+                    caKbArm(true);
+                    caKbPublish();
+                });
+                document.addEventListener('focusout', caKbSweep);
+                // the outside tap (owner order): a click landing on nothing
+                // interactive while a tracked field holds focus collapses the
+                // keyboard -- on the receipt row that blur IS the commit
+                document.addEventListener('click', (ev) => {
+                    if (!caKbArmed) return;
+                    const t = ev.target;
+                    if (t && t.closest && t.closest('input, textarea, select, button, [role="button"], label, a, [contenteditable="true"]')) return;
+                    const ae = document.activeElement;
+                    if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA')) { try { ae.blur(); } catch (e) {} }
+                    caKbSweep();   // the blur handler may remove the field mid-dispatch - re-check, don't trust the event
+                });
+                if (window.visualViewport && window.visualViewport.addEventListener) {
+                    window.visualViewport.addEventListener('resize', caKbPublish);
+                    window.visualViewport.addEventListener('scroll', caKbPublish);
+                }
+                document.addEventListener('visibilitychange', () => { if (document.hidden) caKbArm(false); });
+            } catch (e) {}
+        })();
         function archDeleteOne(id) {
             const all = loadArchive(); const removed = all.filter((x) => x.id === id);
             if (!removed.length) return;
