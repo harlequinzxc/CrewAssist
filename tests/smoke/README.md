@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.28), the changelog's current entry,
-  the service-worker cache name (v259).
+- Stamps: `APP_VERSION` (currently 1.45.29), the changelog's current entry,
+  the service-worker cache name (v260).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -280,6 +280,21 @@ the service-worker stamp. It checks:
   scope ruling — a composer tap outside no longer blurs either,
   because the outside-tap rule is armed-only and the composer never
   arms.
+- v1.45.29 the height floor (owner report: "a gap at the bottom of
+  the app"): the keyboard-pan theories died on geometry — with the
+  frozen document the visual viewport's pan is clamped inside the
+  layout viewport, so no over-pan strip or residue can show bare
+  canvas. The real cause, REPRODUCED in the rig: `min-h-dvh` is the
+  one class new since the 1.45.23-era stylesheet (recompiled
+  1.45.27), the stylesheet URL carries no content hash, and the
+  owner's phone held a SPLIT CACHE — fresh HTML against stale CSS.
+  With the rule stripped from the served tw.css, body and #app-root
+  measure 0px (the in-flow column collapses; the fixed dock floats
+  over the sky canvas). The fix: `body, #app-root { min-height:
+  100vh; min-height: 100dvh; }` in the inline style block — the
+  floor travels inside the document. The rig's still-ground layer
+  gains the FILL pin: body AND app-root must measure at least the
+  viewport height, making the collapse class detectable forever.
 
 ## Running it
 

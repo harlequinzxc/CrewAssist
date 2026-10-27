@@ -398,6 +398,22 @@
             overscroll-behavior: none;
         }
 
+        /* v1.45.29 (owner report — the bottom gap): the height floor
+           ships INSIDE the document. The min-h-dvh classes live in the
+           compiled stylesheet, and the class is new since the v1.45.27
+           recompile — a device holding a stale tw.css (same URL, no
+           content hash — a split cache between the fresh HTML and the
+           old stylesheet) has no rule for it, the column collapses to
+           nothing, and the empty space above the dock reads as a gap
+           at the bottom of the app. The document now carries its own
+           floor — 100vh everywhere, 100dvh where supported — the
+           classes stay, but nothing depends on the stylesheet
+           reaching the device in sync. */
+        body, #app-root {
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+
         html, body, * {
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -2829,7 +2845,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.28'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.29'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2851,6 +2867,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.29', d: '2026-10-28', items: [
+                { c: 'fix', t: 'The app fills the screen again — its height floor now travels inside the app itself.' }
+            ] },
             { v: '1.45.28', d: '2026-10-28', items: [
                 { c: 'fix', t: 'The keyboard lift serves the drawers only — the chat bar keeps its native behaviour.' }
             ] },
