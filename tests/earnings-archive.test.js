@@ -1533,6 +1533,19 @@ function todayYmd() {
     R.ok(!('expense' in JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail), 'a zero commit removes the expense field - absent means none');
     R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add expense', 'the row falls back to the Add expense affordance');
     R.ok(d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'with no expenses left the after-expenses line hides again');
+    // v1.45.25 (owner order): the outside tap commits - and the keyboard
+    // metric rides the focus lifecycle (fake visualViewport: layout 768,
+    // visual 500 -> the 268px gap)
+    w.eval("window.visualViewport = { height: 500, offsetTop: 0, addEventListener: function () {} }");
+    d.getElementById('ca-arch-exp-btn').click(); await wait(50);
+    const kbIn = d.querySelector('#ca-arch-exp-val input');
+    R.ok(kbIn && d.activeElement === kbIn, 'the edit opens with its input focused');
+    R.eq(d.documentElement.style.getPropertyValue('--keyboard-height'), (w.eval('window.innerHeight') - 500) + 'px', 'the focus publishes the keyboard gap as --keyboard-height');
+    kbIn.value = '64';
+    d.getElementById('ca-arch-sub-title').click(); await wait(100);
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 64, 'the outside tap blurs the field - and the blur IS the commit');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, '$64.00', 'the row paints the committed figure');
+    R.eq(d.documentElement.style.getPropertyValue('--keyboard-height'), '0px', 'the focus leaving clears the keyboard metric');
     // a turnaround summary never carries the row
     w.closeArchSub(); await wait(50);
     d.querySelector('.ca-arch-row[data-id=\"q3\"]').click(); await wait(100);

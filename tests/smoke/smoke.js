@@ -74,6 +74,20 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— boot —');
         await page.evaluateOnNewDocument(() => { try { if (localStorage.getItem('__smokeFreshBoot')) return; localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' })); localStorage.setItem('crewAssist.wnSeen', '1.39.0'); localStorage.setItem('crewAssist.calcUi', 'manual'); } catch (e) {} });
+        // v1.45.25: the simulated soft keyboard - a fake visualViewport whose
+        // height drops on demand (Chrome headless has no on-screen keyboard),
+        // plus a scrollIntoView spy for the centre-glide pin
+        await page.evaluateOnNewDocument(() => {
+            try {
+                const kbL = {};
+                window.visualViewport = { height: window.innerHeight, offsetTop: 0, addEventListener: (t, fn) => { (kbL[t] = kbL[t] || []).push(fn); } };
+                window.__kbOpen = (px) => { window.visualViewport.height = window.innerHeight - px; (kbL.resize || []).forEach((f) => f()); };
+                window.__kbShut = () => { window.visualViewport.height = window.innerHeight; window.visualViewport.offsetTop = 0; (kbL.resize || []).forEach((f) => f()); };
+                window.__siv = [];
+                const kbOrig = Element.prototype.scrollIntoView;
+                Element.prototype.scrollIntoView = function (o) { try { window.__siv.push({ id: this.id || String(this.className).slice(0, 40), behavior: o && o.behavior, block: o && o.block }); } catch (e) {} try { return kbOrig.apply(this, arguments); } catch (e) {} };
+            } catch (e) {}
+        });
         await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
         await page.waitForSelector('#chat-container', { timeout: 20000 });
         ok(true, 'the app boots to the chat view');
@@ -82,13 +96,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.24', 'APP_VERSION is 1.45.24');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.24' && e.d === '2026-10-27' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.24 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v255'), 'the service-worker cache name is bumped to v255 (the v1.45.24 centre-axis release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.25', 'APP_VERSION is 1.45.25');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.25' && e.d === '2026-10-27' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.25 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v256'), 'the service-worker cache name is bumped to v256 (the v1.45.25 keyboard-overlay release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.24'; }), 'the What\'s New sheet carries the v1.45.24 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.25'; }), 'the What\'s New sheet carries the v1.45.25 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -688,7 +702,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), ent('r1', cur, 88), ent('r2', nxt, 60)]));
+            const r1e = ent('r1', cur, 88); r1e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall (see the state16 note): stays unflown at any run hour
+            const r2e = ent('r2', nxt, 60); r2e.endAt = Date.now() + 30 * 24 * 3600 * 1000;
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), r1e, r2e]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -891,7 +907,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('d0', cur, 88), ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), ent('d2', nxt, 40)]));
+            const d0e = ent('d0', cur, 88); d0e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: the current month keeps its live state
+            const d2e = ent('d2', nxt, 40); d2e.endAt = Date.now() + 30 * 24 * 3600 * 1000;
+            localStorage.setItem('crewAssist.archive', JSON.stringify([d0e, ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), d2e]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1082,8 +1100,18 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+            // midnight bomb (the hotfix-9 class, met again): the old seed dated
+            // the live month's ahead flight with Math.min(date+5, 27), which
+            // on the 27th evening was TODAY - and past midnight it read as
+            // flown, the live month flipped to Completed, and the refresh-cw
+            // probe crashed the run on a null. endAt in the future is the
+            // run-hour-immune wall: archEntryLanded honours it over dates, so
+            // the ahead and next-month entries stay unflown at any hour of
+            // any day the rig runs.
+            const aheadEnt = ent('i2', ahead, 70); aheadEnt.endAt = Date.now() + 6 * 3600 * 1000;
+            const nxtEnt = ent('i3', nxt, 60); nxtEnt.endAt = Date.now() + 30 * 24 * 3600 * 1000;
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), ent('i2', ahead, 70), ent('i3', nxt, 60)]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), aheadEnt, nxtEnt]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1152,7 +1180,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), ent('k1', ahead, 696.91)]));
+            const k1e = ent('k1', ahead, 696.91); k1e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: Remaining to earn, never Month complete
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), k1e]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1197,7 +1226,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), ent('r2', ahead, 696.91)]));
+            const r2w = ent('r2', ahead, 696.91); r2w.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: the panel's still-to-fly leg stays ahead
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), r2w]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1493,6 +1523,67 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => { closeArchSub(); document.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); });
         await sleep(400);
         ok(await page.evaluate(() => document.getElementById('ca-arch-after-line').classList.contains('hidden') && document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1), 'the COP lens shows no expense context');
+        // v1.45.25: the keyboard overlay lifts the panels (simulated soft
+        // keyboard: the fake visualViewport shrinks 290px and fires resize)
+        console.log('\u2014 v1.45.25: the keyboard overlay lifts the panels \u2014');
+        await page.evaluate(() => { if (!document.querySelector('.ca-arch-row[data-id=\"x1\"]')) document.querySelector('.ca-arch-group-head').click(); });
+        await sleep(300);
+        await page.evaluate(() => document.querySelector('.ca-arch-row[data-id=\"x1\"]').click());
+        await sleep(400);
+        await page.evaluate(() => document.getElementById('ca-arch-exp-btn').click());
+        await sleep(200);
+        await page.evaluate(() => { const i = document.querySelector('#ca-arch-exp-val input'); i.focus(); i.select(); });
+        await page.keyboard.type('64');
+        await page.evaluate(() => window.__kbOpen(290));
+        await sleep(300);
+        const kbOpen = await page.evaluate(() => ({
+            v: document.documentElement.style.getPropertyValue('--keyboard-height'),
+            line: window.innerHeight - 290,
+            sheetB: +document.getElementById('ca-arch-sheet').getBoundingClientRect().bottom.toFixed(1),
+            subB: +document.getElementById('ca-arch-sub-sheet').getBoundingClientRect().bottom.toFixed(1),
+            dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
+            bodyPad: getComputedStyle(document.getElementById('ca-arch-sub-body')).paddingBottom,
+            sivCenter: (window.__siv || []).filter((e) => e.block === 'center').length
+        }));
+        ok(kbOpen.v === '290px', 'the simulated keyboard publishes --keyboard-height (290px, the layout-visual gap)');
+        ok(Math.abs(kbOpen.sheetB - kbOpen.line) < 2 && Math.abs(kbOpen.subB - kbOpen.line) < 2, 'the earnings sheet AND its absolute sub-sheet terminate at the keyboard\'s top edge (viewport height minus the 290px keyboard, not the buried viewport bottom)');
+        ok(Math.abs(kbOpen.dockB - kbOpen.line) < 2, 'the chat dock rides the same metric - the composer\'s TRUE layout rises, which is what puts the caret back inside the field');
+        ok(kbOpen.bodyPad === '322px', 'the scroll body carries the trailing room (its own 32px + the 290px keyboard)');
+        ok(kbOpen.sivCenter >= 1, 'the focused row glides to the visible centre (scrollIntoView block:center, once per focus)');
+        await sleep(700);
+        const kbSeen = await page.evaluate(() => ({ b: +document.querySelector('#ca-arch-exp-val input').getBoundingClientRect().bottom.toFixed(1), line: window.innerHeight - 290 }));
+        ok(kbSeen.b < kbSeen.line + 1, 'after the glide the expense input sits fully above the keyboard line');
+        // the outside tap (owner order): blur IS the commit, panels return
+        await page.evaluate(() => document.getElementById('ca-arch-sub-title').click());
+        await sleep(400);
+        const kbShut = await page.evaluate(() => ({
+            h: window.innerHeight,
+            stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'x1').detail.expense,
+            val: document.getElementById('ca-arch-exp-val').textContent,
+            v: document.documentElement.style.getPropertyValue('--keyboard-height'),
+            sheetB: +document.getElementById('ca-arch-sheet').getBoundingClientRect().bottom.toFixed(1),
+            focused: document.activeElement ? document.activeElement.tagName : ''
+        }));
+        ok(kbShut.stored === 64 && kbShut.val === '$64.00', 'the outside tap collapses the keyboard AND commits the typed figure');
+        ok(kbShut.v === '0px' && Math.abs(kbShut.sheetB - kbShut.h) < 2 && kbShut.focused === 'BODY', 'the metric clears, the sheet returns to the viewport bottom, nothing holds focus');
+        // the chat dock flow: focus the composer, keyboard up, background tap
+        await page.evaluate(() => closeArchSub());
+        await sleep(300);
+        await page.evaluate(() => document.getElementById('chat-input').focus());
+        await page.evaluate(() => window.__kbOpen(290));
+        await sleep(300);
+        const dockUp = await page.evaluate(() => ({
+            line: window.innerHeight - 290,
+            dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
+            pillB: +document.getElementById('chat-input').closest('.glass-panel').getBoundingClientRect().bottom.toFixed(1),
+            v: document.documentElement.style.getPropertyValue('--keyboard-height')
+        }));
+        ok(dockUp.v === '290px' && Math.abs(dockUp.dockB - dockUp.line) < 2 && dockUp.pillB < dockUp.line + 1, 'the composer rises with the keyboard - the pill\'s true layout clears the line');
+        await page.evaluate(() => document.getElementById('chat-container').click());
+        await sleep(300);
+        const dockDn = await page.evaluate(() => ({ v: document.documentElement.style.getPropertyValue('--keyboard-height'), h: window.innerHeight, dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1) }));
+        ok(dockDn.v === '0px' && Math.abs(dockDn.dockB - dockDn.h) < 2, 'a background tap collapses the keyboard and the dock returns to baseline');
+        await page.evaluate(() => window.__kbShut());
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 

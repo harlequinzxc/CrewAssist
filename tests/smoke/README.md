@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.24), the changelog's current entry,
-  the service-worker cache name (v255).
+- Stamps: `APP_VERSION` (currently 1.45.25), the changelog's current entry,
+  the service-worker cache name (v256).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -204,6 +204,29 @@ the service-worker stamp. It checks:
   'ahead' legs landed TODAY 18:00 and every evening run failed; the cap
   is gone (plain +3 days, JS spills at month-end and the store keys by
   the run's month).
+- v1.45.25 the keyboard overlay: the rig gains a SIMULATED SOFT KEYBOARD
+  — `evaluateOnNewDocument` replaces `window.visualViewport` (it is a
+  Replaceable property in Chromium) with a fake whose height drops on
+  demand (`window.__kbOpen(px)` fires the resize listeners; Chrome
+  headless has no on-screen keyboard), plus a `scrollIntoView` spy on the
+  prototype. The keyboard layer opens the expense edit, "opens" the
+  keyboard (290px), and pins: the metric publishes `--keyboard-height`,
+  the earnings sheet AND its veil-riding absolute sub-sheet terminate at
+  the keyboard's top edge, the chat dock rides the same line, the scroll
+  body resolves its own padding + the keyboard as trailing room, the
+  focused row glides to centre, the input clears the line, the outside
+  tap commits the figure and returns every panel to baseline, and the
+  composer's pill rises with the keyboard. TWO rig lessons: the viewport
+  is 390×844 — geometry pins must be viewport-relative
+  (`window.innerHeight - px`), never 812-hardcoded; and THE MIDNIGHT
+  BOMBS — five archive seeds dated their "ahead" flight
+  `Math.min(date+5, 27)`, which on the 27th is TODAY and past midnight
+  read as flown (the live month flipped to Completed at 00:06 SGT, caught
+  live between two runs, and the refresh-cw probe crashed the run on a
+  null). The wall is a FUTURE `endAt` on every ahead/next-month seed
+  entry — `archEntryLanded` honours endAt over dates, so the seeds are
+  run-hour-immune at any hour of any day (the hotfix-9 fixed-walls
+  precedent, met a third time).
 
 ## Running it
 
