@@ -1366,5 +1366,53 @@ const synthItems = [].concat(
     R.ok(d2.getElementById('ca-rc-pod').classList.contains('hidden'), 'an imported future roster alone shows no podium button (v1.45.39)');
   }
 
+  // ---- v1.45.40 (owner order, the polish round): the leaderboard's dates
+  // align into one straight column (fixed count + date tracks), the
+  // multiplier glyph steps back to stone ink, and the hero code grows to
+  // 20px — reviewed from an external spec, adopted only in house terms
+  // (SIA gold, both themes, the 11px floor; amber, white-only tokens,
+  // border-2, text-[10px], a lowercase x and the '1st' label all
+  // declined under the standing rulings) ----
+  {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    R.ok(src.includes('.ca-rc-pod-x { color: var(--ca-ink-stone); }'), 'v1.45.40: the × glyph rides the stone token — muted, never amber, never white-only');
+    R.ok(src.includes('.ca-rc-pod-lcount { width: 44px; flex: none; }'), 'v1.45.40: the row count rides a fixed 44px track');
+    R.ok(src.includes('.ca-rc-pod-lmeta .ca-rc-pod-ldate { font-size: 11px; width: 84px; flex: none; }'), 'v1.45.40: the row date rides its own fixed track at the 11px floor — a right-anchored cluster with variable children can never align on its own, BOTH children need tracks');
+    R.ok(src.includes('.ca-rc-pod-hero .ca-rc-pod-code { color: var(--sia-gold-ink); font-size: 20px; }'), 'v1.45.40: the hero code grows to 20px in SIA gold ink — a half-step, the crown and wash untouched');
+    R.ok(src.includes("font-bold' + (rk === 1 ? '' : ' text-sm')") && !src.includes("font-bold' + (rk === 1 ? ' text-lg' : ' text-sm')"), 'v1.45.40: the hero code shed the text-lg utility — its 20px size lives in the custom rule, the sides keep text-sm');
+  }
+  {
+    // the render: the split × span must never break the contiguous
+    // ×N reading the rest of the suite pins
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-09', std: '08:00', sta: '09:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-09', std: '11:00', sta: '12:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '61', dep: 'SIN', arr: 'NRT', ymd: '2026-10-12', std: '08:00', sta: '09:00', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '62', dep: 'NRT', arr: 'SIN', ymd: '2026-10-12', std: '11:00', sta: '12:00', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '481', dep: 'SIN', arr: 'CPT', ymd: '2026-10-15', std: '08:00', sta: '09:00', stdYmd: '2026-10-15', staYmd: '2026-10-15', ft: '01:00', ac: '77W', rpt: '06:30', pos: false },
+        { fn: '482', dep: 'CPT', arr: 'SIN', ymd: '2026-10-15', std: '11:00', sta: '12:00', stdYmd: '2026-10-15', staYmd: '2026-10-15', ft: '01:00', ac: '77W', rpt: '', pos: false },
+        { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:00', sta: '10:00', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '08:00', ac: '77W', rpt: '00:00', pos: false },
+        { fn: '472', dep: 'JNB', arr: 'SIN', ymd: '2026-10-20', std: '12:00', sta: '13:00', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '08:00', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(100);
+    const hero = d.querySelector('#ca-rc-pod-body .ca-rc-pod-hero');
+    const heroX = hero.querySelector('.ca-rc-pod-count .ca-rc-pod-x');
+    R.ok(!!heroX && heroX.textContent === '×', 'v1.45.40: the podium count carries the muted × glyph span');
+    R.ok(hero.textContent.indexOf('×1') >= 0, 'the hero still reads ×1 contiguously — the split span never breaks the reading (adjacent, no whitespace)');
+    R.ok(!hero.querySelector('.ca-rc-pod-code').classList.contains('text-lg'), 'the hero code no longer rides a utility size — the 20px lives in the custom rule');
+    const row = d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow');
+    R.ok(!!row && row.textContent.indexOf('KUL') >= 0, 'the four-station seed leaves one leaderboard row — rank four is KUL, the oldest visit');
+    const rc = row.querySelector('.ca-rc-pod-lcount');
+    R.ok(!!rc && !!rc.querySelector('.ca-rc-pod-x') && row.textContent.indexOf('×1') >= 0, 'v1.45.40: the row count rides the fixed track with the muted glyph, still reading ×1 contiguously');
+    R.ok(!!row.querySelector('.ca-rc-pod-ldate'), 'the row date rides its own track beside the count');
+    w.eval('closeRcPod()');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

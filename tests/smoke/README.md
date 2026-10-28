@@ -342,6 +342,14 @@ the service-worker stamp. It checks:
   section's fixed October/November 2026 seed opens November from
   1 Nov 2026 and the October day pins stop resolving. Version pins:
   1.45.39 / v270, three-pointer changelog entry.
+- v1.45.40 the polish release, proven live: the hero code computes to
+  exactly 20px (sized by the custom rule, the text-lg utility shed), and
+  the multiplier glyph computes to stone rgb(168, 162, 158) — the muted
+  operator beside the bold count, the same token in both themes. The
+  leaderboard's fixed tracks are pinned source-side in the jsdom suite
+  (geometry beyond the seeded two-station list would need a fatter seed,
+  and fattening the smoke seed risks the calendar pins — the documented
+  boundary). Version pins: 1.45.40 / v271, one-pointer changelog entry.
 
 ## Running it
 
