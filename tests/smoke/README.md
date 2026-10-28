@@ -357,6 +357,17 @@ the service-worker stamp. It checks:
   the changelog) is guarded in dev-ui against all 139 airport codes and
   the flight-number pattern. Version pins: 1.45.41 / v272, one-pointer
   changelog entry.
+- v1.45.42 the visit-log release: the version pins re-point (APP_VERSION
+  1.45.42, the two-pointer changelog entry, the v1.45.42 What's New
+  header, sw v273) and the expansion goes LIVE for the first time — the
+  seeded hero takes a real Chromium tap and unfolds its visit log with
+  the date, the flight number and the kind mark, announces through
+  aria-expanded, and a second tap folds it away. The icon-pass fix is
+  pinned by proxy: the rig blocks the CDN so the crown stays a stub by
+  design, and the jsdom spy (roster-calendar) owns the pass-count
+  regression. The accordion and the fold-span shapes live jsdom-side
+  too — the smoke seed carries one visit, exactly enough to prove the
+  tap, the content and the collapse in a real browser.
 
 ## Running it
 
