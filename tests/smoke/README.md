@@ -310,6 +310,19 @@ the service-worker stamp. It checks:
   colour). Version pins: 1.45.37 / v268, three-pointer changelog entry.
   The rig again: tests/smoke/node_modules was recycled away; npm install
   there + node build-app.js before the run.
+- v1.45.38 the podium release, all proven live: the records page opens over
+  the calendar (a direct body child at the archive sub-sheet's rung — the
+  cluster-order pin extends to the podium button), the chip row reads the
+  changelog chip pattern (Routes gold, computed rgb(201, 162, 39)), the
+  seeded podium ranks the real truth (SIN-KUL ×3 above SIN-SYD ×2 — pairs
+  fold both directions, positioning legs count), the Layovers list carries
+  SYD plus the never-returning November leg's final stop (a roster that
+  ends before the return lays over at its last station — the marks' rule),
+  both themes shift the sheet and row fills with the dark class, and the
+  close glides home to the live calendar. The icon pin reads the
+  i[data-lucide="podium"] STUB — the rig blocks the CDN by design, so svg
+  presence is not pinnable here; the glyph is verified in the lucide
+  bundle itself. Version pins: 1.45.38 / v269, one-pointer changelog entry.
 
 ## Running it
 

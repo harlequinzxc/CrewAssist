@@ -588,6 +588,22 @@
            (class + pseudo-class) outranks a plain utility — an ID selector
            outranks them both, so the gold survives the sticky hover. */
         #ca-rc-tag.ca-rc-tagon { background: var(--ca-gold); color: #0B0E14; }
+        /* v1.45.38 (owner order, the podium release): the records page's
+           rows. Rank one wears the SIA Gold accent — the soft wash, the
+           gold hairline and the paired gold rank inks (the saving-pill's
+           tokens) — while ranks two and three stay on the glass surface:
+           silver and bronze would be invented colours, and the accent
+           hierarchy stays gold-only. The rows ride .glass-panel for the
+           surface (border + fill + the per-theme shadow token, v1.45.37);
+           this CSS adds only layout, no new type sizes. */
+        .ca-rc-pod-chips { display: flex; gap: 8px; padding-bottom: 14px; }
+        .ca-rc-pod-row { display: flex; align-items: center; gap: 10px; border-radius: 1rem; padding: 10px 14px; margin-bottom: 8px; }
+        .ca-rc-pod-rank { width: 20px; flex: none; text-align: center; color: var(--ca-ink-stone); }
+        .ca-rc-pod-row.ca-rc-pod-first { border-color: var(--ca-gold-line); background: var(--ca-gold-soft-12); }
+        html:not(.dark) .ca-rc-pod-row.ca-rc-pod-first { background: var(--ca-gold-soft-15); }
+        .ca-rc-pod-row.ca-rc-pod-first .ca-rc-pod-rank { color: var(--sia-gold-ink); }
+        html.dark .ca-rc-pod-row.ca-rc-pod-first .ca-rc-pod-rank { color: var(--ca-gold-hi); }
+        .ca-rc-pod-all { display: block; width: 100%; text-align: center; padding: 12px 0 4px; }
         /* hotfix: a day with two stops wears one tag per corner, same tilt */
         .ca-rc-tag.slot-b { left: -3px; right: auto; }
         .ca-rc-nav { border-radius: 999px; transition: background-color .15s ease, transform .12s ease; }
@@ -2365,6 +2381,13 @@
                              calendar is collapsed. -->
                         <button type="button" id="ca-rc-tag" aria-label="Destination tags" aria-pressed="false" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="tag" class="w-5 h-5"></i></button>
                         <button type="button" id="ca-rc-shot" aria-label="Capture the roster as an image" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="camera" class="w-5 h-5"></i></button>
+                        <!-- v1.45.38 (owner order 2026-10-28): the podium ends the
+                             left cluster — tag + camera stay the destination-
+                             marks pair. It reveals with the same pop
+                             discipline, but only when the never-pruned store
+                             holds at least one leg (a fresh install sees
+                             nothing to rank yet). -->
+                        <button type="button" id="ca-rc-pod" aria-label="Your records" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="podium" class="w-5 h-5"></i></button>
                     </div>
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -2379,6 +2402,35 @@
                 <div id="ca-rc-detail" class="flex-1 min-h-0 overflow-y-auto pt-3 border-t ca-hairline" aria-live="polite"></div>
                 <p id="ca-rc-empty" class="hidden text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3 flex-none"></p>
                 </div>
+            </div>
+        </div>
+
+        <!-- v1.45.38 (owner order 2026-10-28, the podium release): the
+             records page — the crew's all-time top routes, top layover
+             stations and top turnaround stations. A full-page sub-sheet over
+             the ROSTER CALENDAR, built on the archive sub-sheet's pattern:
+             never nested inside another sheet (a sheet sits as a direct
+             child of <body>), same z-[62] rung — the two sub-sheets can
+             never stack, each covers the page that opens it. Chip row +
+             one list (the changelog filter-chip pattern), a top-3 podium
+             with a View-all door, and everything derived live from
+             rcTripsAll() — the never-pruned allFlights store chained
+             SIN->SIN across month borders, so the page stores nothing of
+             its own. -->
+        <div id="ca-rc-podwrap" class="fixed inset-0 z-[62] hidden">
+            <div class="ca-rc-pod-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-pod-close></div>
+            <div id="ca-rc-pod-sheet" role="dialog" aria-modal="true" aria-label="Your records" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+                <div class="w-full flex justify-center py-3 shrink-0">
+                    <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+                </div>
+                <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-3 shrink-0 max-w-2xl mx-auto">
+                    <div class="min-w-0">
+                        <h3 class="text-xl font-bold truncate">Your records</h3>
+                        <p id="ca-rc-pod-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
+                    </div>
+                    <button type="button" id="btn-close-rc-pod" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close records"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="ca-rc-pod-body" class="flex-grow overflow-y-auto overscroll-contain px-5 pb-8 max-w-2xl mx-auto w-full"></div>
             </div>
         </div>
 
@@ -2872,7 +2924,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.37'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.38'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2894,6 +2946,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.38', d: '2026-10-28', items: [
+                { c: 'new', t: 'Your top routes, layovers and turnarounds — all-time, from the podium.' }
+            ] },
             { v: '1.45.37', d: '2026-10-28', items: [
                 { c: 'imp', t: 'Light’s chip shadows turn navy and tight; the smudge is gone.' },
                 { c: 'imp', t: 'Dark cards regain their edge: hairlines strengthen from five to eight percent.' },
@@ -5878,6 +5933,131 @@
                 tagBtn.setAttribute('aria-pressed', rcTagsOn ? 'true' : 'false');
             }
             if (shotBtn) rcBtnAnimate(shotBtn, !collapsed && rcTagsOn);
+            // v1.45.38: the podium reveals with the same pop discipline —
+            // expanded calendar AND at least one leg ever imported
+            const podBtn = document.getElementById('ca-rc-pod');
+            if (podBtn) rcBtnAnimate(podBtn, !collapsed && rcPodHasData());
+        }
+        // v1.45.38 (owner order 2026-10-28, the podium release): the records
+        // page — all-time top routes, top layover stations and top turnaround
+        // stations, derived LIVE from rcTripsAll() (the never-pruned
+        // allFlights store, chained SIN->SIN across month borders). The page
+        // persists nothing: every open recomputes, so a re-imported month
+        // heals the counts the way it heals the calendar.
+        function rcPodHasData() {
+            const store = loadAllFlights();
+            return Object.keys(store).some((mk) => (store[mk] || []).length > 0);
+        }
+        function rcPodStats() {
+            const routes = {}, stops = {};
+            let first = '';
+            rcTripsAll().forEach((t) => {
+                const secs = (t && t.sectors) || [];
+                secs.forEach((sec) => {
+                    if (!sec || !sec.dep || !sec.arr) return;
+                    // routes are STATION PAIRS, both directions one route
+                    // (owner order): SIN-NRT and NRT-SIN are one. Every leg
+                    // the roster prints counts — positioning sectors too, the
+                    // calendar's own retell-the-whole-duty rule.
+                    const pk = [sec.dep, sec.arr].sort().join('|');
+                    const r = routes[pk] || (routes[pk] = { n: 0, last: '', a: pk.split('|')[0], b: pk.split('|')[1] });
+                    r.n++;
+                    const d = String(sec.depDate || sec.ymd || '');
+                    if (d && d > r.last) r.last = d;
+                    if (d && (!first || d < first)) first = d;
+                });
+                // stations are PER VISIT (the v1.40.0 ruling — each stay is
+                // its own station) and classified by the marks' own rule:
+                // the ground time at THIS station decides, > 6h lays over
+                secs.forEach((sec, i) => {
+                    if (!sec || !sec.arr || sec.arr === 'SIN' || !sec.arrDate) return;
+                    const nxt = secs[i + 1];
+                    const am = (sec.arrDate && sec.staHm) ? new Date(sec.arrDate + 'T' + sec.staHm + ':00') : null;
+                    const bm = (nxt && nxt.dep === sec.arr && nxt.depDate && nxt.stdHm) ? new Date(nxt.depDate + 'T' + nxt.stdHm + ':00') : null;
+                    const ground = (am && bm) ? (bm - am) / 60000 : 99999;
+                    const kind = ground > 360 ? 'lo' : 'ta';
+                    const st = stops[sec.arr] || (stops[sec.arr] = { lo: { n: 0, last: '' }, ta: { n: 0, last: '' } });
+                    st[kind].n++;
+                    if (String(sec.arrDate) > st[kind].last) st[kind].last = String(sec.arrDate);
+                });
+            });
+            const rank = (o, kind) => Object.keys(o)
+                .map((k) => ({ code: k, label: k, n: kind ? o[k][kind].n : o[k].n, last: kind ? o[k][kind].last : o[k].last }))
+                .filter((x) => x.n > 0)
+                .sort((a, b) => (b.n - a.n) || (b.last > a.last ? 1 : b.last < a.last ? -1 : 0) || (a.code < b.code ? -1 : 1));
+            // the route label names SIN first when the pair holds it (the
+            // crew's home base reads first), otherwise alphabetical
+            const withPairLabel = (x) => {
+                const pair = x.code.split('|');
+                x.label = (pair[0] === 'SIN' || pair[1] === 'SIN') ? 'SIN-' + (pair[0] === 'SIN' ? pair[1] : pair[0]) : pair[0] + '-' + pair[1];
+                return x;
+            };
+            return { routes: rank(routes).map(withPairLabel), lo: rank(stops, 'lo'), ta: rank(stops, 'ta'), first: first };
+        }
+        function rcPodWhen(ymd) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+            return m ? parseInt(m[3], 10) + ' ' + CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] + ' ' + m[1] : '';
+        }
+        function rcPodSince(ymd) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+            return m ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] + ' ' + m[1] : '';
+        }
+        let rcPodTab = 'routes';
+        const rcPodAll = { routes: false, lo: false, ta: false };   // View-all per list, session only — never persisted
+        const RC_POD_TABS = [['routes', 'Routes'], ['lo', 'Layovers'], ['ta', 'Turnarounds']];
+        function rcPodRowHtml(rk, it) {
+            return '<div class="ca-rc-pod-row glass-panel' + (rk === 1 ? ' ca-rc-pod-first' : '') + '">'
+                + '<span class="ca-rc-pod-rank ca-micro font-bold">' + rk + '</span>'
+                + '<span class="font-bold text-sm whitespace-nowrap">' + it.label + '</span>'
+                + '<span class="ca-amt text-[17px] font-bold">\u00d7' + it.n + '</span>'
+                + '<span class="ml-auto text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">' + (it.last ? 'last ' + rcPodWhen(it.last) : '') + '</span>'
+                + '</div>';
+        }
+        function renderRcPod() {
+            const body = document.getElementById('ca-rc-pod-body');
+            if (!body) return;
+            const stats = rcPodStats();
+            const sub = document.getElementById('ca-rc-pod-subtitle');
+            if (sub) sub.textContent = stats.first ? ('All-time \u00b7 since ' + rcPodSince(stats.first)) : 'All-time';
+            if (!stats.routes.length && !stats.lo.length && !stats.ta.length) {
+                body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
+                return;
+            }
+            const list = stats[rcPodTab] || [];
+            let html = '<div class="ca-rc-pod-chips">' + RC_POD_TABS.map((t) =>
+                '<button type="button" class="ca-cl-chip' + (t[0] === rcPodTab ? ' ca-cl-chipon' : '') + '" data-ca-rc-pod-tab="' + t[0] + '" aria-pressed="' + (t[0] === rcPodTab ? 'true' : 'false') + '">' + t[1] + '</button>'
+            ).join('') + '</div>';
+            if (!list.length) {
+                html += '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
+            } else {
+                const show = rcPodAll[rcPodTab] ? list : list.slice(0, 3);
+                html += show.map((it, i) => rcPodRowHtml(i + 1, it)).join('');
+                if (list.length > 3) html += '<button type="button" class="ca-rc-pod-all ca-micro uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400" data-ca-rc-pod-all="' + (rcPodAll[rcPodTab] ? '0' : '1') + '">' + (rcPodAll[rcPodTab] ? 'Fold back' : 'View all \u00b7 ' + list.length) + '</button>';
+            }
+            body.innerHTML = html;
+        }
+        function openRcPod() {
+            const wrap = document.getElementById('ca-rc-podwrap');
+            const sheet = document.getElementById('ca-rc-pod-sheet');
+            if (!wrap || !sheet) return;
+            caSheetHideCancel(wrap);   // hotfix 14: a quick close-and-reopen never hides the wrap mid-open
+            rcPodTab = 'routes';       // every open starts on the routes podium
+            renderRcPod();
+            try { lucide.createIcons(); } catch (err) {}
+            wrap.classList.remove('hidden');
+            caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
+            caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
+        }
+        function closeRcPod() {
+            const wrap = document.getElementById('ca-rc-podwrap');
+            const sheet = document.getElementById('ca-rc-pod-sheet');
+            if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
+            caSheetFocusOut(sheet);
+            const shade = wrap.querySelector('.ca-rc-pod-shade');
+            if (shade) shade.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
+            sheet.classList.add('translate-y-full');
+            caSheetHideArm(wrap);      // hotfix 14: arm, never a bare timer
         }
         // v1.43.0 (owner spec + hotfix): the roster capture — the month
         // header is drawn by hand (the real header is buttons), and the grid
@@ -7102,6 +7282,22 @@
                     rcTagsSync(document.getElementById('ca-rc-grid').classList.contains('hidden'));
                 });
                 on('ca-rc-shot', () => { captureRosterShot(); });
+                // v1.45.38: the podium door + its page. The page is a body
+                // child, not calendar markup — its clicks ride one delegated
+                // listener bound here, once (chips, View-all and the shade
+                // close all live inside the wrap).
+                on('ca-rc-pod', () => openRcPod());
+                on('btn-close-rc-pod', () => closeRcPod());
+                const podWrapEl = document.getElementById('ca-rc-podwrap');
+                if (podWrapEl) podWrapEl.addEventListener('click', (ev) => {
+                    if (!ev.target || !ev.target.closest) return;
+                    const closer = ev.target.closest('[data-ca-rc-pod-close]');
+                    if (closer) { closeRcPod(); return; }
+                    const tab = ev.target.closest('[data-ca-rc-pod-tab]');
+                    if (tab) { rcPodTab = tab.getAttribute('data-ca-rc-pod-tab'); renderRcPod(); return; }
+                    const all = ev.target.closest('[data-ca-rc-pod-all]');
+                    if (all) { rcPodAll[rcPodTab] = all.getAttribute('data-ca-rc-pod-all') === '1'; renderRcPod(); }
+                });
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
                 // hotfix 5 + 8 (owner orders): swipe the grid sideways to
                 // change months — now a finger-following glide. The track
