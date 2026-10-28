@@ -467,6 +467,12 @@ const mkUntil = (d) => async (cond, ms) => {
       // Mode's alone. v1.45.32 (owner order): the Storage panel's values
       // sit flush on one line (the rigid baseline flex + the no-wrap) and
       // the expense labels read their plurals. v1.45.33 (owner order): the
+      // v1.45.41 (owner ruling, the shuttle fold + generic copy): a quick
+      // return to a station already visited this trip is a connection, not
+      // a second visit; a real second stay (over six hours) stands alone.
+      // And the changelog/What's New copy never names a flight or station
+      // - takes the head with one pointer; 1.45.40 shifts down one; the
+      // 1.45.18 pin leaves the pinned window (floor 1.45.19).
       // v1.45.40 (owner order, the polish round, from a reviewed external
       // spec): the leaderboard's dates align into one straight column
       // (fixed count + date tracks), the multiplier glyph steps back to
@@ -489,73 +495,84 @@ const mkUntil = (d) => async (cond, ms) => {
       // symmetric - takes the head with three pointers. 1.45.36 shifts
       // down one; the 1.45.14 pin leaves the pinned window (floor
       // 1.45.15; its pointers stay in the feed).
-      R.eq(entries[0].v, '1.45.40', 'the 1.45.40 polish release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.45.40 entry carries its single pointer');
+      R.eq(entries[0].v, '1.45.41', 'the 1.45.41 shuttle-fold release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 1, 'the 1.45.41 entry carries its single pointer');
+      R.ok(src.includes("c: 'imp', t: 'A quick shuttle back to the same station never counts twice.' }"), 'the shuttle-fold pointer reads as approved, inside the release it ships');
+      R.eq(entries[1].v, '1.45.40', 'the 1.45.40 polish release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.45.40 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The leaderboard aligns its dates; the \u00d7 steps back, the hero grows.' }"), 'the polish pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.45.39', 'the 1.45.39 current-records release sits second, newest first');
-      R.eq(entries[1].items.length, 3, 'the 1.45.39 entry carries its three pointers');
+      R.eq(entries[2].v, '1.45.39', 'the 1.45.39 current-records release sits second, newest first');
+      R.eq(entries[2].items.length, 3, 'the 1.45.39 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'Records count only flown legs \u2014 the future waits its turn.' }"), 'the landing-gate pointer reads as approved, inside the release it ships');
-      R.ok(src.includes("c: 'imp', t: 'All Flights counts station visits \u2014 SIN-MEL-SIN is MEL \u00d71.' }"), 'the visits pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'All Flights counts station visits, not out-and-back pairs.' }"), 'the visits pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The records page wears a podium grid and a mono leaderboard.' }"), 'the redesign pointer reads as approved, inside the release it ships');
-      R.eq(entries[2].v, '1.45.38', 'the 1.45.38 podium release sits second, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.45.38 entry carries its single pointer');
+      R.eq(entries[3].v, '1.45.38', 'the 1.45.38 podium release sits second, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.45.38 entry carries its single pointer');
       R.ok(src.includes("c: 'new', t: 'Your top routes, layovers and turnarounds \u2014 all-time, from the podium.' }"), 'the podium pointer reads as approved, inside the release it ships');
-      R.eq(entries[3].v, '1.45.37', 'the 1.45.37 crisp-edges release sits second, newest first');
-      R.eq(entries[3].items.length, 3, 'the 1.45.37 entry carries its three pointers');
+      R.eq(entries[4].v, '1.45.37', 'the 1.45.37 crisp-edges release sits second, newest first');
+      R.eq(entries[4].items.length, 3, 'the 1.45.37 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'Light\u2019s chip shadows turn navy and tight; the smudge is gone.' }"), 'the shadow-diet pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Dark cards regain their edge: hairlines strengthen from five to eight percent.' }"), 'the hairline pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The flight status card\u2019s padding sits symmetric on all four sides.' }"), 'the symmetry pointer reads as approved, inside the release it ships');
-      R.eq(entries[4].v, '1.45.36', 'the 1.45.36 veil-free release sits second, newest first');
-      R.eq(entries[4].items.length, 2, 'the 1.45.36 entry carries its two pointers');
+      R.eq(entries[5].v, '1.45.36', 'the 1.45.36 veil-free release sits second, newest first');
+      R.eq(entries[5].items.length, 2, 'the 1.45.36 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'The chat\u2019s quick-action chips fade at both edges, veil-free.' }"), 'the rail-fade pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The changelog badge reads POLISH, matching its chip.' }"), 'the badge pointer reads as approved, inside the release it ships');
-      R.eq(entries[5].v, '1.45.35', 'the 1.45.35 stuck-guard release sits second, newest first');
-      R.eq(entries[5].items.length, 1, 'the 1.45.35 entry carries its single pointer');
+      R.eq(entries[6].v, '1.45.35', 'the 1.45.35 stuck-guard release sits second, newest first');
+      R.eq(entries[6].items.length, 1, 'the 1.45.35 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'A quick tap after a pinch always closes the image view; the exit guard can never stick.' }"), 'the stuck-guard pointer reads as approved, inside the release it ships');
-      R.eq(entries[6].v, '1.45.34', 'the 1.45.34 chip-fade release sits second, newest first');
-      R.eq(entries[6].items.length, 1, 'the 1.45.34 entry carries its single pointer');
+      R.eq(entries[7].v, '1.45.34', 'the 1.45.34 chip-fade release sits second, newest first');
+      R.eq(entries[7].items.length, 1, 'the 1.45.34 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The changelog filters fade at the row\u2019s edges; Improvements reads Polish.' }"), 'the chip-fade pointer reads as approved, inside the release it ships');
-      R.eq(entries[7].v, '1.45.33', 'the 1.45.33 pinch-zoom release sits third, newest first');
-      R.eq(entries[7].items.length, 1, 'the 1.45.33 entry carries its single pointer');
+      R.eq(entries[8].v, '1.45.33', 'the 1.45.33 pinch-zoom release sits third, newest first');
+      R.eq(entries[8].items.length, 1, 'the 1.45.33 entry carries its single pointer');
       R.ok(src.includes("c: 'new', t: 'Pinch the menu image to zoom and pan; release snaps home.' }"), 'the pinch pointer reads as approved, inside the release it ships');
-      R.eq(entries[8].v, '1.45.32', 'the 1.45.32 storage-flush release sits second, newest first');
-      R.eq(entries[8].items.length, 2, 'the 1.45.32 entry carries its two pointers');
+      R.eq(entries[9].v, '1.45.32', 'the 1.45.32 storage-flush release sits second, newest first');
+      R.eq(entries[9].items.length, 2, 'the 1.45.32 entry carries its two pointers');
       R.ok(src.includes("c: 'fix', t: 'The Storage panel’s values sit flush on one line — compressed, never dropping under their labels.' }"), 'the storage-flush pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The expense labels read Overseas Expenses and Add Expenses.' }"), 'the plural-labels pointer reads as approved, inside the release it ships');
-      R.eq(entries[9].v, '1.45.31', 'the 1.45.31 dev-gated expense release sits second, newest first');
-      R.eq(entries[9].items.length, 1, 'the 1.45.31 entry carries its single pointer');
+      R.eq(entries[10].v, '1.45.31', 'the 1.45.31 dev-gated expense release sits second, newest first');
+      R.eq(entries[10].items.length, 1, 'the 1.45.31 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The overseas expense field sits right under the grand total — above the keyboard\u2019s reach — and appears only in Developer Mode.' }"), 'the 1.45.31 pointer reads as approved, inside the release it ships');
-      R.eq(entries[10].v, '1.45.24', 'the 1.45.24 centre-axis release sits second, newest first');
-      R.eq(entries[10].items.length, 2, 'the 1.45.24 entry carries its two pointers');
+      R.eq(entries[11].v, '1.45.24', 'the 1.45.24 centre-axis release sits second, newest first');
+      R.eq(entries[11].items.length, 2, 'the 1.45.24 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Month money tokens decode their figures on tap.' }"), 'the token pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The menu hero locks its flight track on the true centre.' }"), 'the hero pointer reads as approved, inside the release it ships');
-      R.eq(entries[11].v, '1.45.23', 'the 1.45.23 tabular-grid release sits second, newest first');
-      R.eq(entries[11].items.length, 2, 'the 1.45.23 entry carries its two pointers');
+      R.eq(entries[12].v, '1.45.23', 'the 1.45.23 tabular-grid release sits second, newest first');
+      R.eq(entries[12].items.length, 2, 'the 1.45.23 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Month money columns ride a rigid uppercase tabular grid.' }"), 'the grid pointer reads as approved, inside the release it ships');
-      R.eq(entries[12].v, '1.45.22', 'the 1.45.22 overseas-expense release sits third, newest first');
-      R.eq(entries[12].items.length, 3, 'the 1.45.22 entry carries its three pointers');
+      R.eq(entries[13].v, '1.45.22', 'the 1.45.22 overseas-expense release sits third, newest first');
+      R.eq(entries[13].items.length, 3, 'the 1.45.22 entry carries its three pointers');
       R.ok(src.includes("c: 'new', t: 'Layover trips track overseas expenses against take-home.' }"), 'the expense pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Year badges wear the trending icon, not a glyph.' }"), 'the badge pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Month money columns stack net, gross, after-expenses.' }"), 'the money-column pointer reads as approved, inside the release it ships');
-      R.eq(entries[13].v, '1.45.21', 'the 1.45.21 quadrant-unification release sits second, newest first');
-      R.eq(entries[13].items.length, 3, 'the 1.45.21 entry carries its three pointers');
+      R.eq(entries[14].v, '1.45.21', 'the 1.45.21 quadrant-unification release sits second, newest first');
+      R.eq(entries[14].items.length, 3, 'the 1.45.21 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'COP stats ride the hairline quadrant architecture.' }"), 'the quadrant pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Yearly net comparisons badge the headline figure.' }"), 'the badge pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The earliest year reads a quiet em dash.' }"), 'the em-dash pointer reads as approved, inside the release it ships');
-      R.eq(entries[14].v, '1.45.20', 'the 1.45.20 after-hours release sits third, newest first');
-      R.eq(entries[14].items.length, 3, 'the 1.45.20 entry carries its three pointers');
+      R.eq(entries[15].v, '1.45.20', 'the 1.45.20 after-hours release sits third, newest first');
+      R.eq(entries[15].items.length, 3, 'the 1.45.20 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'After-hours rides a strict 2x2 grid with hairlines.' }"), 'the quadrant pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Every salary metric leads with its Lucide icon.' }"), 'the icon pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The month view breathes; yearly comparisons break below.' }"), 'the breathing-room pointer reads as approved, inside the release it ships');
-      R.eq(entries[15].v, '1.45.19', 'the 1.45.19 salary-layout release sits fourth, newest first');
-      R.eq(entries[15].items.length, 2, 'the 1.45.19 entry carries its two pointers');
+      // v1.45.41 (owner ruling): the changelog and What's New never name a
+      // flight or a station — the copy stays generic. Guarded forever:
+      // every airport code from the app's own station data, and every
+      // flight-number pattern, must be absent from every pointer.
+      const tzBody = (src.match(/const AIRPORT_TZ = \{([\s\S]*?)\n\s*\};/) || [])[1] || '';
+      const stCodes = [...tzBody.matchAll(/\b([A-Z]{3}):/g)].map((m) => m[1]);
+      R.ok(stCodes.length > 100, 'the generic-copy guard reads the app station codes (' + stCodes.length + ' of them)');
+      const clItems = [...src.matchAll(/\{ c: '([^']+)', t: '([^']*)' \}/g)];
+      R.ok(clItems.every((m) => !stCodes.some((cd) => new RegExp('\\b' + cd + '\\b').test(m[2]))), 'v1.45.41 ruling: no changelog pointer names a station');
+      R.ok(clItems.every((m) => !/\bSQ\s?\d/.test(m[2])), 'v1.45.41 ruling: no changelog pointer names a flight');
+      R.eq(entries[16].v, '1.45.19', 'the 1.45.19 salary-layout release sits fourth, newest first');
+      R.eq(entries[16].items.length, 2, 'the 1.45.19 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Salary stats ride a weighted grid that never collides.' }"), 'the weighted-grid pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Gross and CPF group left; milestones ride right.' }"), 'the split-row pointer reads as approved, inside the release it ships');
-      R.eq(entries[16].v, '1.45.18', 'the 1.45.18 remaining-flights release sits second, newest first');
-      R.eq(entries[16].items.length, 3, 'the 1.45.18 entry carries its three pointers');
-      R.ok(src.includes("c: 'imp', t: 'The still-to-fly panel reads Remaining flights.' }"), 'the remaining-flights pointer reads as approved, inside the release it ships');
-      R.ok(src.includes("c: 'imp', t: 'Its line counts completed flights and legs left.' }"), 'the completed-left pointer reads as approved, inside the release it ships');
-      R.ok(src.includes("c: 'imp', t: 'All-time COP gains an annual average figure.' }"), 'the annual-average pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'The still-to-fly panel reads Remaining flights.' }"), 'the remaining-flights pointer reads as approved, just past the pinned window, still in the feed');
+      R.ok(src.includes("c: 'imp', t: 'Its line counts completed flights and legs left.' }"), 'the completed-left pointer reads as approved, just past the pinned window, still in the feed');
+      R.ok(src.includes("c: 'imp', t: 'All-time COP gains an annual average figure.' }"), 'the annual-average pointer reads as approved, just past the pinned window, still in the feed');
       R.ok(src.includes("c: 'fix', t: 'Daylight search placeholders read dark slate gray.' }"), 'the placeholder pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'imp', t: 'The milestone line names what remains to earn.' }"), 'the milestone pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'fix', t: 'Daylight active pills turn white with walnut ink.' }"), 'the daylight-pill pointer reads as approved (just past the pinned window, still in the feed)');

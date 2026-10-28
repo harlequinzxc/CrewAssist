@@ -350,6 +350,13 @@ the service-worker stamp. It checks:
   (geometry beyond the seeded two-station list would need a fatter seed,
   and fattening the smoke seed risks the calendar pins — the documented
   boundary). Version pins: 1.45.40 / v271, one-pointer changelog entry.
+- v1.45.41 the shuttle-fold release: version pins only — the seeded
+  trips carry no same-trip revisits, so the fold math lives jsdom-side
+  (roster-calendar pins it on the owner's own duty shapes). The
+  generic-copy ruling (no flight or station ever named in What's New or
+  the changelog) is guarded in dev-ui against all 139 airport codes and
+  the flight-number pattern. Version pins: 1.45.41 / v272, one-pointer
+  changelog entry.
 
 ## Running it
 

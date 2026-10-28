@@ -2969,7 +2969,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.40'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.41'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2991,12 +2991,15 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.41', d: '2026-10-29', items: [
+                { c: 'imp', t: 'A quick shuttle back to the same station never counts twice.' }
+            ] },
             { v: '1.45.40', d: '2026-10-29', items: [
                 { c: 'imp', t: 'The leaderboard aligns its dates; the × steps back, the hero grows.' }
             ] },
             { v: '1.45.39', d: '2026-10-29', items: [
                 { c: 'imp', t: 'Records count only flown legs — the future waits its turn.' },
-                { c: 'imp', t: 'All Flights counts station visits — SIN-MEL-SIN is MEL ×1.' },
+                { c: 'imp', t: 'All Flights counts station visits, not out-and-back pairs.' },
                 { c: 'imp', t: 'The records page wears a podium grid and a mono leaderboard.' }
             ] },
             { v: '1.45.38', d: '2026-10-28', items: [
@@ -3184,7 +3187,7 @@
                 { c: 'fix', t: 'The tag and camera buttons sit by the chevron and stay gold, popping in and out cleanly; hiding the tags pops them back out.' },
                 { c: 'fix', t: 'The capture photographs the calendar exactly as shown; the month never wraps to two rows and swiping respects the data edges like the arrows.' },
                 { c: 'fix', t: 'The station list refreshes to the current SQ and Scoot network; time zones self-check at boot, East Malaysia reads true, and landing conversions pad their hours.' },
-                { c: 'fix', t: 'The next-flight card retires a rung suggested alarm, suggests one alarm for a multi-sector day, and reads the KUL wake-up lines closer to departure.' },
+                { c: 'fix', t: 'The next-flight card retires a rung suggested alarm, suggests one alarm for a multi-sector day, and reads short-haul wake-up lines closer to departure.' },
                 { c: 'fix', t: 'Tapped buttons settle back to rest on touch screens.' },
                 { c: 'fix', t: 'The next-flight feed holds its order \u2014 time zone card, flight card, menu nudge \u2014 and every menu save shows its true state: saving, saved, partial, not published, or failed with a retry.' },
                 { c: 'fix', t: 'The menu nudge stays in the chat until you close it or the flight lands; a landed sector leaves just that line, and saved menus keep it as an offline launcher.' },
@@ -3419,7 +3422,7 @@
             { v: '1.22.0', d: '2026-09-21', items: [
                 { c: 'new', t: 'Flight Overview tells each duty’s story.' },
                 { c: 'new', t: 'Archive rows reopen their whole summary.' },
-                { c: 'fix', t: 'KTM layovers finally earn LMA (Nepal region fix).' },
+                { c: 'fix', t: 'Nepal layovers finally earn LMA.' },
             ] },
             { v: '1.21.0', d: '2026-09-21', items: [
                 { c: 'new', t: 'Calculate all handles every trip at once.' },
@@ -3538,7 +3541,7 @@
             ] },
             { v: '1.11.0', d: '2026-09-16', items: [
                 { c: 'new', t: 'Scroll rules follow the bubble’s height.' },
-                { c: 'imp', t: 'Turnaround hints read SQ 852 / 853.' },
+                { c: 'imp', t: 'Turnaround hints read their own flight numbers.' },
             ] },
             { v: '1.10.0', d: '2026-09-16', items: [
                 { c: 'new', t: 'Flight-number hints per pairing.' },
@@ -3564,7 +3567,7 @@
                 { c: 'imp', t: 'A calendar hairline.' },
             ] },
             { v: '1.5.9', d: '2026-09-15', items: [
-                { c: 'fix', t: 'LMA out-date uses the next sector’s typed date, so overnight SQ11 never pushes layover-out a day.' },
+                { c: 'fix', t: 'LMA out-date uses the next sector’s typed date, so an overnight first leg never pushes layover-out a day.' },
                 { c: 'imp', t: 'The calendar header reads e.g. Sat, 26 Sept 2026 with a gold hairline.' },
                 { c: 'imp', t: 'A Today / Selected legend with a Today button bottom-left.' },
                 { c: 'fix', t: 'A fixed six-week grid so the window never resizes.' },
@@ -6039,6 +6042,17 @@
                 // A visit exists once the crew has landed there; the split
                 // still reads the FULL chain's ground time, so a turnaround
                 // in progress classifies as a turnaround, never a misread.
+                // v1.45.41 (owner ruling, the shuttle fold): a quick return
+                // to a station already visited THIS trip is a CONNECTION,
+                // not a second visit — the CPT-style shuttle counts its
+                // hub once. A REAL second stay (more than six hours on the
+                // ground before the next departure) stands as its own visit
+                // — the double-layover hubs keep counting twice — and
+                // unreadable ground never folds (it never becomes a
+                // turnaround, the standing rule). The folded touch only
+                // refreshes the station's last-flown dates; the anchor stay
+                // keeps its kind.
+                const seen = {};
                 secs.forEach((sec, i) => {
                     if (!sec || !sec.arr || sec.arr === 'SIN' || !sec.arrDate) return;
                     if (!rcPodHasLanded(sec.arrDate, sec.staHm, nowMs)) return;
@@ -6047,6 +6061,13 @@
                     const bm = (nxt && nxt.dep === sec.arr && nxt.depDate && nxt.stdHm) ? new Date(nxt.depDate + 'T' + nxt.stdHm + ':00') : null;
                     const ground = (am && bm) ? (bm - am) / 60000 : 99999;
                     const kind = ground > 360 ? 'lo' : 'ta';
+                    if (seen[sec.arr] && am && bm && ground <= 360) {
+                        const st = stops[sec.arr];
+                        if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
+                        if (String(sec.arrDate) > st[seen[sec.arr]].last) st[seen[sec.arr]].last = String(sec.arrDate);
+                        return;
+                    }
+                    seen[sec.arr] = kind;
                     const st = stops[sec.arr] || (stops[sec.arr] = { all: { n: 0, last: '' }, lo: { n: 0, last: '' }, ta: { n: 0, last: '' } });
                     st.all.n++; st[kind].n++;
                     if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
