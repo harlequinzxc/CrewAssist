@@ -1205,7 +1205,7 @@ const synthItems = [].concat(
     } });
     const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
     R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|KUL:2|NRT:2|CPT:1', 'All Flights counts station VISITS (v1.45.39) — SIN-MEL-SIN is MEL ×1, the JNB double-visit trip counts both stays, ties break by recency');
-    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|NRT:2', 'layover stations count PER VISIT — the JNB out-stay and back-stay are two lays, and unreadable ground never turns into a turnaround');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|NRT:2', 'layover stations count PER VISIT — the JNB out-stay and back-stay are two REAL lays (v1.45.41: the fold only takes transit touches; both stays here run days), and unreadable ground never turns into a turnaround');
     R.eq(stats.ta.map((r) => r.code + ':' + r.n).join('|'), 'KUL:2|CPT:1', 'turnaround stations ride the marks\u2019 own rule — quick ground only, positioning stays included');
     R.eq(stats.first, '2026-09-30', 'the all-time window opens on the earliest FLOWN leg, across the month border the trip chains over');
     R.eq(String(w.eval('rcPodHasData()')), 'true', 'the reveal check sees the landed legs');
@@ -1412,6 +1412,52 @@ const synthItems = [].concat(
     R.ok(!!rc && !!rc.querySelector('.ca-rc-pod-x') && row.textContent.indexOf('×1') >= 0, 'v1.45.40: the row count rides the fixed track with the muted glyph, still reading ×1 contiguously');
     R.ok(!!row.querySelector('.ca-rc-pod-ldate'), 'the row date rides its own track beside the count');
     w.eval('closeRcPod()');
+  }
+
+  // ---- v1.45.41 (owner ruling, the shuttle fold): a quick return to a
+  // station already visited this trip is a CONNECTION, not a second visit
+  // — the side-trip shuttle counts its hub once. A REAL second stay (over
+  // six hours on the ground before the next departure) stands as its own
+  // visit. Pinned on the owner's own duty shapes ----
+  {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    R.ok(src.includes('if (seen[sec.arr] && am && bm && ground <= 360) {'), 'v1.45.41: the fold rule — a revisit inside the turnaround window folds into the surrounding stay');
+    R.ok(src.indexOf('const seen = {};', src.indexOf('function rcPodStats')) < src.indexOf('function rcPodWhen'), 'the seen map lives inside the stats walk, scoped per trip — a station from an EARLIER trip always counts fresh');
+  }
+  {
+    // the hub fold, real times: the long anchor stay, the quick side-trip,
+    // the transit touch home (the owner's South Africa shape)
+    const { w } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:10', sta: '07:05', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '10:55', ac: '77W', rpt: '', pos: false },
+        { fn: '484', dep: 'JNB', arr: 'CPT', ymd: '2026-10-21', std: '09:40', sta: '11:35', stdYmd: '2026-10-21', staYmd: '2026-10-21', ft: '01:55', ac: '7M8', rpt: '', pos: false },
+        { fn: '485', dep: 'CPT', arr: 'JNB', ymd: '2026-10-21', std: '13:30', sta: '15:25', stdYmd: '2026-10-21', staYmd: '2026-10-21', ft: '01:55', ac: '7M8', rpt: '', pos: false },
+        { fn: '472', dep: 'JNB', arr: 'SIN', ymd: '2026-10-21', std: '17:10', sta: '08:15', stdYmd: '2026-10-21', staYmd: '2026-10-22', ft: '10:05', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'CPT:1|JNB:1', 'the shuttle folds — the hub counts ONCE (the transit touch home is a connection, not a visit); the tie at one visit breaks by recency then alphabet');
+    R.eq(stats.lo.map((r) => r.code).join(','), 'JNB', 'the folded hub keeps its ANCHOR stay’s kind — the long layover');
+    R.eq(stats.ta.map((r) => r.code).join(','), 'CPT', 'the side-trip station stays the quick turnaround it always was');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.last).join('|'), 'JNB:2026-10-21', 'the folded touch refreshes the last-flown date to the transit arrival');
+  }
+  {
+    // the double-layover hub stands TWICE (the owner’s other ruling):
+    // both touches over six hours are real stays
+    const { w } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '26', dep: 'SIN', arr: 'FRA', ymd: '2026-10-06', std: '02:00', sta: '06:30', stdYmd: '2026-10-06', staYmd: '2026-10-06', ft: '10:30', ac: '77W', rpt: '', pos: false },
+        { fn: '26', dep: 'FRA', arr: 'JFK', ymd: '2026-10-07', std: '13:30', sta: '16:00', stdYmd: '2026-10-07', staYmd: '2026-10-07', ft: '08:30', ac: '77W', rpt: '', pos: false },
+        { fn: '25', dep: 'JFK', arr: 'FRA', ymd: '2026-10-08', std: '18:00', sta: '07:30', stdYmd: '2026-10-08', staYmd: '2026-10-09', ft: '07:30', ac: '77W', rpt: '', pos: false },
+        { fn: '25', dep: 'FRA', arr: 'SIN', ymd: '2026-10-09', std: '17:30', sta: '12:00', stdYmd: '2026-10-09', staYmd: '2026-10-10', ft: '11:30', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'FRA:2|JFK:1', 'a REAL second stay — over six hours on the ground — stands as its own visit (the fold only takes transit touches)');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'FRA:2|JFK:1', 'both hub stays and the down-leg lay over');
+    R.eq(stats.ta.map((r) => r.code).join(','), '', 'nothing turns around');
   }
 
   process.exit(R.done() ? 1 : 0);
