@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.24', 'APP_VERSION is 1.45.24');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.24' && e.d === '2026-10-27' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.24 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v255'), 'the service-worker cache name is bumped to v255 (the v1.45.24 centre-axis release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.31', 'APP_VERSION is 1.45.31');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.31' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.31 entry with its single pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v262'), 'the service-worker cache name is bumped to v262 (the v1.45.31 dev-gated expense release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.24'; }), 'the What\'s New sheet carries the v1.45.24 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.31'; }), 'the What\'s New sheet carries the v1.45.31 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -688,7 +688,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), ent('r1', cur, 88), ent('r2', nxt, 60)]));
+            const r1e = ent('r1', cur, 88); r1e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall (see the state16 note): stays unflown at any run hour
+            const r2e = ent('r2', nxt, 60); r2e.endAt = Date.now() + 30 * 24 * 3600 * 1000;
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), r1e, r2e]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -891,7 +893,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('d0', cur, 88), ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), ent('d2', nxt, 40)]));
+            const d0e = ent('d0', cur, 88); d0e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: the current month keeps its live state
+            const d2e = ent('d2', nxt, 40); d2e.endAt = Date.now() + 30 * 24 * 3600 * 1000;
+            localStorage.setItem('crewAssist.archive', JSON.stringify([d0e, ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), d2e]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1083,7 +1087,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), ent('i2', ahead, 70), ent('i3', nxt, 60)]));
+            // the live month's ahead flight with Math.min(date+5, 27), which
+            // on the 27th evening was TODAY - and past midnight it read as
+            // flown, the live month flipped to Completed, and the refresh-cw
+            // probe crashed the run on a null. endAt in the future is the
+            // run-hour-immune wall: archEntryLanded honours it over dates, so
+            // the ahead and next-month entries stay unflown at any hour of
+            // any day the rig runs.
+            const aheadEnt = ent('i2', ahead, 70); aheadEnt.endAt = Date.now() + 6 * 3600 * 1000;
+            const nxtEnt = ent('i3', nxt, 60); nxtEnt.endAt = Date.now() + 30 * 24 * 3600 * 1000;
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), aheadEnt, nxtEnt]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1152,7 +1165,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), ent('k1', ahead, 696.91)]));
+            const k1e = ent('k1', ahead, 696.91); k1e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: Remaining to earn, never Month complete
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), k1e]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1197,7 +1211,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), ent('r2', ahead, 696.91)]));
+            const r2w = ent('r2', ahead, 696.91); r2w.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: the panel's still-to-fly leg stays ahead
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), r2w]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1411,7 +1426,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ymd = (d) => ym(d) + '-' + String(d.getDate()).padStart(2, '0');
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const prev = new Date(now.getFullYear(), now.getMonth() - 1, 15);
-            const det = (amount, exp) => { const d = { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] }; if (exp) d.expense = exp; return d; };
+            const det = (amount, exp) => { const d = { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, rankRate: 22.5, sectors: [{ fn: '603', dep: 'SIN', arr: 'ICN', depYmd: '2026-10-05', ftHm: '6H 20M', mult: 1, amount: 50, paxing: false }], stations: [{ code: 'SIN' }, { code: 'ICN' }] }; if (exp) d.expense = exp; return d; };
             const lay = (id, d, amount, exp) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/ICN', amount, flightType: 'Layover', detail: det(amount, exp) });
             const tur = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: det(amount, 0) });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
@@ -1420,6 +1435,25 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click());
+        await sleep(400);
+        // v1.45.31 (owner order, Option A): every expense surface renders
+        // only in Developer Mode. Dev off (the fresh boot): no Exp segment,
+        // no after line, no third grid row - and the layover summary shows
+        // no receipt row. Then the only door: ten taps on the brand.
+        const gate31 = await page.evaluate(() => {
+            const gl = document.getElementById('ca-arch-gross-line');
+            const al = document.getElementById('ca-arch-after-line');
+            const amt = document.querySelector('.ca-arch-group-head').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+            return { expSeg: gl.textContent.indexOf('Exp ') !== -1, afterHidden: al.classList.contains('hidden'), cells: amt ? amt.children.length : 0, hasAfter: !!(amt && amt.querySelector('.ca-arch-amt-after')) };
+        });
+        ok(gate31.expSeg === false && gate31.afterHidden && gate31.cells === 4 && gate31.hasAfter === false, 'v1.45.31: dev mode off - the card and the grid show no expense surface at all (Option A)');
+        ok(await page.evaluate(() => { openArchEntry('x1'); return !document.getElementById('ca-arch-exp-btn'); }), 'v1.45.31: dev mode off - the layover summary carries no receipt row');
+        await page.evaluate(() => { closeArchSub(); closeArchOverlay(); });
+        await sleep(300);
+        await page.evaluate(() => { for (let i = 0; i < 10; i++) document.getElementById('header-brand').click(); });
+        await sleep(300);
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.devMode') === 'true' && !document.getElementById('settings-developer').classList.contains('hidden') && document.getElementById('ca-arch-toast').textContent.indexOf('Developer Mode Enabled') !== -1), 'v1.45.31: ten taps on the brand unlock Developer Mode - the pane appears and the toast confirms');
+        await page.evaluate(() => { showArchiveOverlay(); document.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); });
         await sleep(400);
         const exp22 = await page.evaluate(() => {
             const mk = document.querySelector('.ca-arch-group-head').getAttribute('data-mk');
@@ -1456,6 +1490,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.querySelector('.ca-arch-row[data-id=\"x1\"]').click());
         await sleep(400);
         ok(await page.evaluate(() => { const b = document.getElementById('ca-arch-exp-btn'); return b && b.textContent.indexOf('Overseas expense') !== -1 && document.getElementById('ca-arch-exp-val').textContent === '$120.00'; }), 'the layover summary carries the receipt row with the stored figure');
+        ok(await page.evaluate(() => { const body = document.getElementById('ca-arch-sub-body'); const row = document.getElementById('ca-arch-exp-btn').parentElement; return body.children[0].textContent.indexOf('Grand Total') !== -1 && body.children[1] === row && body.children[2].textContent.indexOf('Flight Overview') !== -1; }), 'v1.45.31: the receipt row rides between the grand total card and the Flight Overview - above the iOS keyboard\u2019s reach (the owner\u2019s workaround)');
         await page.evaluate(() => document.getElementById('ca-arch-exp-btn').click());
         await sleep(200);
         await page.evaluate(() => { const i = document.querySelector('#ca-arch-exp-val input'); i.focus(); i.select(); });
@@ -1605,7 +1640,20 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(wide23.side && wide23.cells === 6 && wide23.noClip, 'at 430px the three-row grid shares the row, as it now does even at 375px - the wrap guardrail only fires when a value truly runs long');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
-        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
+        // v1.45.31 (owner order, Option A): the gate is display-only - the
+        // stored figures never budge while hidden, and dev on brings every
+        // surface back pre-filled.
+        await page.evaluate(() => { appDevMode = false; localStorage.setItem('crewAssist.devMode', 'false'); renderArch(); });
+        await sleep(300);
+        const hide31 = await page.evaluate(() => ({
+            cells: (document.querySelector('.ca-arch-group .ca-arch-amt') || { children: [] }).children.length,
+            expSeg: document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') !== -1,
+            stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'g1').detail.expense
+        }));
+        ok(hide31.cells === 4 && hide31.expSeg === false && hide31.stored === 120, 'v1.45.31: dev off again - the grid drops its third row and the card its Exp segment, while the stored figure sits untouched');
+        ok(await page.evaluate(() => { openArchEntry('g1'); return !document.getElementById('ca-arch-exp-btn'); }), 'v1.45.31: dev off again - the receipt row is gone from the summary');
+        ok(await page.evaluate(() => { closeArchSub(); appDevMode = true; openArchEntry('g1'); return document.getElementById('ca-arch-exp-val') ? document.getElementById('ca-arch-exp-val').textContent : null; }) === '$120.00', 'v1.45.31: dev on - the receipt row returns pre-filled with the stored figure (Option A: display-only, never a data concern)');
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); appDevMode = false; localStorage.setItem('crewAssist.devMode', 'false'); closeArchOverlay(); });
         await sleep(300);
 
         console.log('— v1.45.24: the menu hero on the true centre —');

@@ -1460,9 +1460,8 @@ function todayYmd() {
   // the saved entry's summary sheet (tap the receipt row, edit, commit); the
   // figure is post-CPF context - net headline, chart, insights and the
   // calculator never move. Old entries and turnarounds read as no expense.
-  {
-    const NOWE = '2026-10-20T12:00:00+08:00';
-    const seedE = (x, basic) => {
+  const NOWE = '2026-10-20T12:00:00+08:00';
+  const seedE = (x, basic) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
       x.localStorage.setItem('crewAssist.tourDone', '1');
       x.localStorage.setItem('crewAssist.tourOffered', '1');
@@ -1476,8 +1475,9 @@ function todayYmd() {
         mk('q2', '2026-10-12', 'SIN/MLE', 300, 'Layover', 0),
         mk('q3', '2026-10-18', 'SIN/KUL', 90, 'Turnaround', 0)
       ]));
-    };
-    const { w, d } = await boot(APP, { now: NOWE, seed: (x) => seedE(x, true) });
+  };
+  {
+    const { w, d } = await boot(APP, { now: NOWE, seed: (x) => { seedE(x, true); x.localStorage.setItem('crewAssist.devMode', 'true'); } });
     const netE = () => w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net)");
     w.showArchiveOverlay(); await wait(150);
     d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
@@ -1502,6 +1502,7 @@ function todayYmd() {
     d.querySelector('.ca-arch-row[data-id=\"q1\"]').click(); await wait(100);
     R.ok(d.getElementById('ca-arch-exp-btn') && d.getElementById('ca-arch-exp-btn').textContent.indexOf('Overseas expense') !== -1, 'the layover summary carries the Overseas expense row');
     R.ok(d.querySelector('#ca-arch-exp-btn i[data-lucide=\"receipt\"]'), 'the row wears the receipt icon (a stub in jsdom - the name is the proof)');
+    R.ok((() => { const body = d.getElementById('ca-arch-sub-body'); const row = d.getElementById('ca-arch-exp-btn').parentElement; return body.children[0].textContent.indexOf('Grand Total') !== -1 && body.children[1].tagName === 'P' && body.children[2] === row; })(), 'v1.45.31: the row rides right after the grand total card and its note - above the iOS keyboard\u2019s reach (old entries)');
     R.eq(d.getElementById('ca-arch-exp-val').textContent, '$120.00', 'the seeded expense shows as the row figure');
     // edit: 250 commits, the card + head pick it up live behind the sheet
     d.getElementById('ca-arch-exp-btn').click(); await wait(50);
@@ -1544,13 +1545,67 @@ function todayYmd() {
     w.closeArchSub();
     // no basic set: the salary card stays keyable and silent, but the
     // expense row still works on the sheet (the entry door is the sheet)
-    const { w: w2, d: d2 } = await boot(APP, { now: NOWE, seed: (x) => seedE(x, false) });
+    const { w: w2, d: d2 } = await boot(APP, { now: NOWE, seed: (x) => { seedE(x, false); x.localStorage.setItem('crewAssist.devMode', 'true'); } });
     w2.showArchiveOverlay(); await wait(150);
     d2.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     R.ok(d2.getElementById('ca-arch-after-line').classList.contains('hidden') && d2.getElementById('ca-arch-total').textContent === '\u2014', 'without a basic the salary card still refuses to guess - no expense figure either');
     d2.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').click(); await wait(50);
     d2.querySelector('.ca-arch-row[data-id=\"q2\"]').click(); await wait(100);
     R.ok(d2.getElementById('ca-arch-exp-btn'), 'the expense row still rides the summary sheet without a basic set');
+    void w; void d;
+  }
+
+  // ---- v1.45.31 (owner order, Option A): the expense surface is the ----
+  // ---- developer's alone - a display gate, never a data concern ----
+  {
+    const { w, d } = await boot(APP, { now: NOWE, seed: (x) => seedE(x, true) });
+    // dev mode off (the default boot): every expense surface stays hidden
+    w.showArchiveOverlay(); await wait(150);
+    d.querySelector('.ca-arch-seg[data-mode=salary]').click(); await wait(150);
+    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1 && d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'dev off: the salary card shows no expense context at all');
+    const headG = d.querySelector('.ca-arch-group-head[data-mk=2026-10]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+    R.ok(headG.children.length === 4 && !headG.querySelector('.ca-arch-amt-after'), 'dev off: the month head keeps its two rows - no N-minus token, no after figure');
+    d.querySelector('.ca-arch-group-head[data-mk=2026-10]').click(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(100);
+    R.ok(!d.getElementById('ca-arch-exp-btn'), 'dev off: the layover summary carries no receipt row');
+    w.eval("window.__csvText = null; const __RB = Blob; Blob = function (parts) { window.__csvText = parts.join(''); return {}; }; archShareOrDownload = function () {}; archDoExport('csv'); Blob = __RB;");
+    await wait(50);
+    const csvOff = await w.eval("window.__csvText");
+    R.ok(csvOff && csvOff.indexOf('route,date,type,amount\n') === 0 && csvOff.indexOf('expense') === -1, 'dev off: the CSV keeps its four clean columns');
+    R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 120, 'dev off: the stored expense sits untouched - the gate is display-only');
+    // ten taps on the brand - the only door - and every surface returns
+    w.closeArchSub(); await wait(50);
+    w.closeArchOverlay(); await wait(100);
+    for (let i = 0; i < 10; i++) d.getElementById('header-brand').click();
+    await wait(150);
+    R.ok(w.localStorage.getItem('crewAssist.devMode') === 'true' && !d.getElementById('settings-developer').classList.contains('hidden'), 'ten taps on the brand unlock Developer Mode - the settings pane appears');
+    w.showArchiveOverlay(); await wait(150);
+    d.querySelector('.ca-arch-seg[data-mode=salary]').click(); await wait(150);
+    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$120.00') !== -1 && !d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'dev on: the Exp segment and the after line return');
+    const headH = d.querySelector('.ca-arch-group-head[data-mk=2026-10]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+    R.ok(headH.children.length === 6 && headH.children[4].textContent === 'N\u2212' && !!headH.querySelector('.ca-arch-amt-after'), 'dev on: the third grid row returns (six cells, the N-minus token back)');
+    d.querySelector('.ca-arch-group-head[data-mk=2026-10]').click(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(100);
+    R.ok(d.getElementById('ca-arch-exp-btn') && d.getElementById('ca-arch-exp-val').textContent === '$120.00', 'dev on: the receipt row returns pre-filled with the stored figure');
+    // the detailed branch (real saved flights): between the card and the
+    // Flight Overview - the owner's iOS workaround, pinned
+    const archD = JSON.parse(w.localStorage.getItem('crewAssist.archive'));
+    archD.find((e) => e.id === 'q1').detail.sectors = [{ fn: '603', dep: 'SIN', arr: 'ICN', depYmd: '2026-10-05', ftHm: '6H 20M', mult: 1, amount: 50, paxing: false }];
+    archD.find((e) => e.id === 'q1').detail.stations = [{ code: 'SIN' }, { code: 'ICN' }];
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify(archD));
+    w.closeArchSub(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(100);
+    R.ok((() => { const body = d.getElementById('ca-arch-sub-body'); const row = d.getElementById('ca-arch-exp-btn').parentElement; return body.children[0].textContent.indexOf('Grand Total') !== -1 && body.children[1] === row && body.children[2].textContent.indexOf('Flight Overview') !== -1; })(), 'the detailed summary seats the row between the grand total and the Flight Overview');
+    w.eval("window.__csvText = null; const __RB2 = Blob; Blob = function (parts) { window.__csvText = parts.join(''); return {}; }; archDoExport('csv'); Blob = __RB2;");
+    await wait(50);
+    const csvOn = await w.eval("window.__csvText");
+    R.ok(csvOn && csvOn.indexOf('route,date,type,amount,expense\n') === 0 && /,120\.00\n/.test(csvOn), 'dev on: the CSV regains its fifth expense column');
+    // toggled off again: the row hides once more, the figure still never budges
+    for (let i = 0; i < 10; i++) d.getElementById('header-brand').click();
+    await wait(150);
+    w.closeArchSub(); await wait(50);
+    d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(100);
+    R.ok(!d.getElementById('ca-arch-exp-btn') && JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense === 120, 'toggled off again: the row hides, the stored figure stays - the cycle is lossless');
     void w; void d;
   }
 

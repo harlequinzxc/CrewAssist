@@ -204,6 +204,32 @@ the service-worker stamp. It checks:
   'ahead' legs landed TODAY 18:00 and every evening run failed; the cap
   is gone (plain +3 days, JS spills at month-end and the store keys by
   the run's month).
+- v1.45.31 the expense surface becomes Developer Mode's (Option A): the
+  expense section now runs the whole gate story in real Chromium — with
+  dev mode off (the fresh boot) the card shows no Exp segment, the grid
+  keeps four cells, and the layover summary carries no receipt row
+  (`openArchEntry('x1')` — the internal door, no navigation needed);
+  then TEN TAPS on `#header-brand` (the only door — the brand sits under
+  the full-screen archive, so the section closes the overlay first) and
+  the unlock toast + the settings pane + the localStorage flag prove the
+  door. The section's x1 is seeded WITH sectors now, so the summary opens
+  the DETAILED branch and the position pin reads the receipt row at
+  `children[1]` — between the grand total card and the Flight Overview,
+  the owner's iOS workaround (the position is the fix). A persistence
+  block rides after the 375 layers — dev off drops the third grid row
+  and the Exp segment while the stored figure sits untouched, dev on
+  brings the row back pre-filled ($120.00), and the section closes with
+  dev mode restored OFF (the rest of the run expects the default state).
+  Rig lessons: the 375 money-grid section re-seeds the archive with its
+  own g1/g2/g3 ids — cross-section pins must target the CURRENT ids, not
+  the expense section's x1; and the 1.45.25 midnight bombs re-landed on
+  this rig (five ahead/next-month seeds with `Math.min(date+5, 27)` — on
+  the 27th they read as flown, the live month flipped to Completed and
+  the refresh-cw probe crashed on a null): the walls are future `endAt`
+  stamps on every ahead/next-month seed (`archEntryLanded` honours endAt
+  over dates — run-hour-immune), ported test-side only from the 1.45.25
+  rig work; the app's keyboard rounds stay rolled back. One motion-pill
+  tap flake (run 1 of 3) did not reproduce — recorded, not hardened.
 
 ## Running it
 

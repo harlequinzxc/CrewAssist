@@ -2812,7 +2812,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.24'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.31'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2834,6 +2834,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.31', d: '2026-10-28', items: [
+                { c: 'fix', t: 'The overseas expense field sits right under the grand total — above the keyboard’s reach — and appears only in Developer Mode.' }
+            ] },
             { v: '1.45.24', d: '2026-10-27', items: [
                 { c: 'imp', t: 'Month money tokens decode their figures on tap.' },
                 { c: 'imp', t: 'The menu hero locks its flight track on the true centre.' }
@@ -14164,7 +14167,10 @@
                     const val = (t, hook, big, muted) => '<span class="' + hook + ' ' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + (muted ? ' ca-arch-mgmut' : '') + '">' + t + '</span>';
                     amtHtml = lbl('N', true, 'Net Earnings') + val(formatMoney(monthSal.net), 'ca-arch-amt-net', true, false)
                         + lbl('G', false, 'Gross Earnings') + val(formatMoney(monthSal.gross), 'ca-arch-amt-gross', false, true)
-                        + (mExp > 0.004 ? lbl('N\u2212', false, 'Net After Expenses') + val(formatMoney(monthSal.net - mExp), 'ca-arch-amt-after', false, true) : '');
+                        // v1.45.31 (owner order, Option A): the after-expenses
+                        // surfaces are Developer Mode's alone - the stored
+                        // values persist either way, the gate is display-only
+                        + (appDevMode && mExp > 0.004 ? lbl('N\u2212', false, 'Net After Expenses') + val(formatMoney(monthSal.net - mExp), 'ca-arch-amt-after', false, true) : '');
                     amtCls = 'ca-arch-amt ca-arch-moneygrid';
                 } else if (monthSal && filtered) {
                     amtHtml = formatMoney(sub) + ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of net ' + formatMoney(monthSal.net) + '</span>';
@@ -14486,9 +14492,10 @@
                 // same string with a third Exp segment, and the quiet line
                 // under it carries the after-expenses net.
                 grossEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf)
-                    + (expTotal > 0.004 ? ' <span class="ca-arch-gross-sep">|</span> Exp \u2212' + formatMoney(expTotal) : '') + '</span>';
+                    // v1.45.31 (Option A): dev-only display
+                    + (appDevMode && expTotal > 0.004 ? ' <span class="ca-arch-gross-sep">|</span> Exp \u2212' + formatMoney(expTotal) : '') + '</span>';
                 grossEl.classList.remove('hidden');
-                if (expTotal > 0.004) {
+                if (appDevMode && expTotal > 0.004) {   // v1.45.31 (Option A): dev-only display
                     afterEl.textContent = 'After expenses ' + formatMoney(sal.net - expTotal);
                     afterEl.classList.remove('hidden');
                 } else afterEl.classList.add('hidden');
@@ -14836,6 +14843,33 @@
             return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         }
 
+        // v1.45.31 (owner order, two parts): the overseas expense row moved
+        // from the BOTTOM of the summary (deep in the scroll, where the iOS
+        // keyboard sits on it) to just under the Grand Total card and above
+        // the Flight Overview — the sheet's upper zone, above the keyboard's
+        // reach. No keyboard machinery involved; position IS the fix.
+        // v1.45.31 (owner order, Option A): the row renders ONLY in Developer
+        // Mode. The stored values persist in the archive either way — the
+        // gate is a display concern, never a data one: key expenses in dev
+        // mode, switch it off (values stay), switch it back on (every
+        // layover's row returns pre-filled). Turnarounds never see the row -
+        // a Singapore turnaround spends nothing overseas.
+        function archExpenseRowHtml(e) {
+            if (!appDevMode) return '';
+            if (String(e.flightType || '') !== 'Layover') return '';
+            const hasExp = archEntryExp(e) > 0.004;
+            return '<div class="mt-6 border-t ca-hairline pt-4">'
+                + '<button type="button" id="ca-arch-exp-btn" class="w-full flex items-center justify-between gap-2 p-3 rounded-xl ca-inset border ca-hairline text-left">'
+                + '<span class="flex items-center gap-2 min-w-0">'
+                + '<i data-lucide="receipt" class="w-4 h-4 shrink-0 text-sia-gold"></i>'
+                + '<span class="text-sm font-bold">Overseas expense</span>'
+                + '</span>'
+                + '<span id="ca-arch-exp-val" class="ca-amt shrink-0 ' + (hasExp ? 'font-bold text-sm' : 'text-sm font-normal') + '"' + (hasExp ? '' : ' style="color: var(--arch-muted)"') + '>'
+                + (hasExp ? formatMoney(archEntryExp(e)) : 'Add expense')
+                + '</span>'
+                + '</button></div>';
+        }
+
         // Tap a saved flight: reopen its whole summary — gold total, Flight
         // Overview and both breakdowns — rebuilt from the frozen snapshot. Old
         // entries (pre-v1.22.0) have no snapshot and say so honestly.
@@ -14851,6 +14885,9 @@
                 html += '<div class="p-6 bg-gradient-to-r from-sia-goldlt to-sia-gold rounded-2xl text-black shadow-lg mb-6">'
                     + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
                     + '<p class="text-4xl font-bold ca-amt">' + formatMoney(s.grandTotal != null ? s.grandTotal : e.amount) + '</p></div>';
+                // v1.45.31: the expense row rides BETWEEN the grand total
+                // card and the Flight Overview — above the keyboard's reach
+                html += archExpenseRowHtml(e);
                 html += overviewBlock(flightOverviewText(s));
                 html += overviewDetailHtml(s);
             } else {
@@ -14858,25 +14895,8 @@
                     + '<p class="text-xs uppercase font-bold opacity-70 tracking-wider mb-1">Grand Total</p>'
                     + '<p class="text-4xl font-bold ca-amt">' + formatMoney(e.amount) + '</p></div>'
                     + "<p class=\"text-xs text-gray-500 text-center\">Saved before detailed summaries — the numbers are here, the story isn't.</p>";
-            }
-            // v1.45.22 (owner order, C): layovers carry an overseas expense
-            // row - the SGD lump sum the crew actually spent on the stop.
-            // Tap to edit (the amount-correction pattern: Enter or blur
-            // commits, Escape cancels); 0 or clearing the field removes it.
-            // Turnarounds never see the row - a Singapore turnaround spends
-            // nothing overseas.
-            if (String(e.flightType || '') === 'Layover') {
-                const hasExp = archEntryExp(e) > 0.004;
-                html += '<div class="mt-6 border-t ca-hairline pt-4">'
-                    + '<button type="button" id="ca-arch-exp-btn" class="w-full flex items-center justify-between gap-2 p-3 rounded-xl ca-inset border ca-hairline text-left">'
-                    + '<span class="flex items-center gap-2 min-w-0">'
-                    + '<i data-lucide="receipt" class="w-4 h-4 shrink-0 text-sia-gold"></i>'
-                    + '<span class="text-sm font-bold">Overseas expense</span>'
-                    + '</span>'
-                    + '<span id="ca-arch-exp-val" class="ca-amt shrink-0 ' + (hasExp ? 'font-bold text-sm' : 'text-sm font-normal') + '"' + (hasExp ? '' : ' style="color: var(--arch-muted)"') + '>'
-                    + (hasExp ? formatMoney(archEntryExp(e)) : 'Add expense')
-                    + '</span>'
-                    + '</button></div>';
+                // v1.45.31: old entries get the row right under the card too
+                html += archExpenseRowHtml(e);
             }
             const saved = String(e.savedAt || '').slice(0, 10);
             if (saved) html += '<p class="ca-micro text-gray-400 text-center pt-3">Saved ' + ovDay(saved) + '</p>';
@@ -15087,9 +15107,11 @@
             } else {
                 // v1.45.22 (C): the CSV carries the overseas expense as a
                 // fifth column - 0.00 for every trip without one, so a
-                // spreadsheet import never sees a ragged column
-                let csv = 'route,date,type,amount,expense\n';
-                data.forEach((e) => { csv += csvCell(e.stationDisplay) + ',' + (e.sectorDate || '') + ',' + csvCell(e.flightType || '') + ',' + (Number(e.amount) || 0).toFixed(2) + ',' + archEntryExp(e).toFixed(2) + '\n'; });
+                // spreadsheet import never sees a ragged column.
+                // v1.45.31 (owner order, Option A): the column is Developer
+                // Mode's alone - everyone else gets the clean four columns
+                let csv = appDevMode ? 'route,date,type,amount,expense\n' : 'route,date,type,amount\n';
+                data.forEach((e) => { csv += csvCell(e.stationDisplay) + ',' + (e.sectorDate || '') + ',' + csvCell(e.flightType || '') + ',' + (Number(e.amount) || 0).toFixed(2) + (appDevMode ? ',' + archEntryExp(e).toFixed(2) : '') + '\n'; });
                 archShareOrDownload(new Blob([csv], { type: 'text/csv' }), 'crewassist-earnings-' + suf + '.csv');
             }
             closeArchSub();
