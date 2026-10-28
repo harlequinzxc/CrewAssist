@@ -1557,6 +1557,17 @@
         /* ---- Changelog sheet (v1.35.0 hotfix-3 redesign) ---- */
         .ca-cl-chips { scrollbar-width: none; }
         .ca-cl-chips::-webkit-scrollbar { display: none; }
+        /* v1.45.34 (owner order): the premium edge fade - the chat window's
+           chip-rail treatment, worn on BOTH edges here. The mask paints on
+           the scroll container's own boundary box (it never travels with
+           the content), so the pills melt away as they approach either
+           viewport edge - the quiet signal that more chips swipe into
+           reach. A mask touches PAINT only: the faded pills keep their
+           whole touch hit-targets, and the layer is already compositor-side */
+        .ca-cl-chips {
+            mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+        }
         .ca-cl-chip { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 11px; font-weight: 600; padding: 8px 14px; border-radius: 9999px; border: 1px solid var(--ca-stone-line); color: var(--ca-ink-stone); background: transparent; min-height: 40px; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
         .ca-cl-chip svg { width: 12px; height: 12px; }
         html:not(.dark) .ca-cl-chip { color: #57534e; border-color: var(--ca-stone-line-light); }
@@ -2066,7 +2077,7 @@
                     <button type="button" class="ca-cl-chip ca-cl-chipon" data-filter="all" aria-pressed="true">All</button>
                     <button type="button" class="ca-cl-chip" data-filter="new" aria-pressed="false"><i data-lucide="sparkles" class="w-3 h-3"></i><span>New</span></button>
                     <button type="button" class="ca-cl-chip" data-filter="fix" aria-pressed="false"><i data-lucide="bug" class="w-3 h-3"></i><span>Fixes</span></button>
-                    <button type="button" class="ca-cl-chip" data-filter="imp" aria-pressed="false"><i data-lucide="wrench" class="w-3 h-3"></i><span>Improvements</span></button>
+                    <button type="button" class="ca-cl-chip" data-filter="imp" aria-pressed="false"><i data-lucide="wrench" class="w-3 h-3"></i><span>Polish</span></button>
                 </div>
                 <button type="button" id="ca-cl-sort" class="p-3 rounded-full shrink-0 hover:bg-black/5 dark:hover:bg-white/5 active:bg-black/10 dark:active:bg-white/10 transition-colors" aria-label="Newest first. Tap for oldest first.">
                     <i data-lucide="arrow-down-wide-narrow" class="w-4 h-4"></i>
@@ -2835,7 +2846,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.33'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.34'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2857,6 +2868,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.34', d: '2026-10-28', items: [
+                { c: 'imp', t: 'The changelog filters fade at the row’s edges; Improvements reads Polish.' }
+            ] },
             { v: '1.45.33', d: '2026-10-28', items: [
                 { c: 'new', t: 'Pinch the menu image to zoom and pan; release snaps home.' }
             ] },
@@ -4492,7 +4506,7 @@
         // v1.35.0 hotfix 3 (owner spec, no version bump): the Settings
         // changelog is redesigned into a self-contained viewer over the same
         // APP_CHANGELOG the What's New delta reads - filter chips (All / New /
-        // Fixes / Improvements), a newest-first vs oldest-first sort toggle,
+        // Fixes / Polish), a newest-first vs oldest-first sort toggle,
         // a "What's new for you" summary card (the unseen delta, or the
         // current release when caught up), sticky version headers with
         // NEW / CURRENT badges and relative dates, categorised rows
@@ -4502,7 +4516,7 @@
         const CL_CATS = {
             new: { label: 'New', tag: 'NEW', icon: 'sparkles' },
             fix: { label: 'Fixes', tag: 'FIX', icon: 'bug' },
-            imp: { label: 'Improvements', tag: 'IMPROVE', icon: 'wrench' },
+            imp: { label: 'Polish', tag: 'IMPROVE', icon: 'wrench' },
             fun: { label: 'Fun', tag: 'FUN', icon: 'smile' }
         };
         const CL_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
