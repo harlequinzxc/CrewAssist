@@ -311,7 +311,7 @@ const mkUntil = (d) => async (cond, ms) => {
     // token's exact pair). The archive veil's /90+/80 alpha pair and the
     // capture canvas backdrop stay literal BY REPORT: no existing token carries
     // rgba(246,241,232,.9)/rgba(8,11,20,.8), and canvas fillStyle cannot var()
-    R.ok(src.includes('from-[color:var(--bg-color)] via-[color:var(--bg-color)] to-transparent dark:from-[#04070F] dark:via-[#04070F]/90'), 'round 3 value 4: the composer fade rides the bg-color token, dark overrides intact');
+    R.ok(src.includes('background-image: linear-gradient(to top, var(--bg-color) 0%, var(--bg-color) 55%, transparent 100%);') && src.includes('html.dark .ca-input-veil { background-image: linear-gradient(to top, #04070F 0%, rgba(4, 7, 15, 0.9) 55%, transparent 100%); }'), 'round 3 value 4 (re-pointed v1.45.36): the composer fade still rides the bg-color token with dark overrides intact - now as the .ca-input-veil custom rule pinned below the chips (the utility-gradient div retired)');
     // v1.44.9 (owner order 'mint the token'): the two archive-veil alpha sites
     // now ride --ca-arch-veil — the value-4 stay-literal ruling was overturned;
     // the capture canvas backdrop remains the only #F6F1E8-family literal
@@ -463,79 +463,82 @@ const mkUntil = (d) => async (cond, ms) => {
       // Mode's alone. v1.45.32 (owner order): the Storage panel's values
       // sit flush on one line (the rigid baseline flex + the no-wrap) and
       // the expense labels read their plurals. v1.45.33 (owner order): the
-      // v1.45.35 (owner report): a quick tap after a pinch always closes
-      // the image view - the exit guard can never stick - takes the head.
-      // 1.45.34 shifts down one; the 1.45.12 pin leaves the pinned window
-      // (floor 1.45.13; its pointers stay in the feed).
-      R.eq(entries[0].v, '1.45.35', 'the 1.45.35 stuck-guard release sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.45.35 entry carries its single pointer');
+      // v1.45.36 (owner order, confirmed after review): the chat rail joins
+      // the both-edge fade, the veil retires to the composer, the badge
+      // reads POLISH - takes the head with two pointers. 1.45.35 shifts
+      // down one; the 1.45.13 pin leaves the pinned window (floor 1.45.14;
+      // its pointers stay in the feed).
+      R.eq(entries[0].v, '1.45.36', 'the 1.45.36 veil-free release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 2, 'the 1.45.36 entry carries its two pointers');
+      R.ok(src.includes("c: 'imp', t: 'The chat\u2019s quick-action chips fade at both edges, veil-free.' }"), 'the rail-fade pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'The changelog badge reads POLISH, matching its chip.' }"), 'the badge pointer reads as approved, inside the release it ships');
+      R.eq(entries[1].v, '1.45.35', 'the 1.45.35 stuck-guard release sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.45.35 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'A quick tap after a pinch always closes the image view; the exit guard can never stick.' }"), 'the stuck-guard pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.45.34', 'the 1.45.34 chip-fade release sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.45.34 entry carries its single pointer');
+      R.eq(entries[2].v, '1.45.34', 'the 1.45.34 chip-fade release sits second, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.45.34 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The changelog filters fade at the row\u2019s edges; Improvements reads Polish.' }"), 'the chip-fade pointer reads as approved, inside the release it ships');
-      R.eq(entries[2].v, '1.45.33', 'the 1.45.33 pinch-zoom release sits third, newest first');
-      R.eq(entries[2].items.length, 1, 'the 1.45.33 entry carries its single pointer');
+      R.eq(entries[3].v, '1.45.33', 'the 1.45.33 pinch-zoom release sits third, newest first');
+      R.eq(entries[3].items.length, 1, 'the 1.45.33 entry carries its single pointer');
       R.ok(src.includes("c: 'new', t: 'Pinch the menu image to zoom and pan; release snaps home.' }"), 'the pinch pointer reads as approved, inside the release it ships');
-      R.eq(entries[3].v, '1.45.32', 'the 1.45.32 storage-flush release sits second, newest first');
-      R.eq(entries[3].items.length, 2, 'the 1.45.32 entry carries its two pointers');
+      R.eq(entries[4].v, '1.45.32', 'the 1.45.32 storage-flush release sits second, newest first');
+      R.eq(entries[4].items.length, 2, 'the 1.45.32 entry carries its two pointers');
       R.ok(src.includes("c: 'fix', t: 'The Storage panel’s values sit flush on one line — compressed, never dropping under their labels.' }"), 'the storage-flush pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The expense labels read Overseas Expenses and Add Expenses.' }"), 'the plural-labels pointer reads as approved, inside the release it ships');
-      R.eq(entries[4].v, '1.45.31', 'the 1.45.31 dev-gated expense release sits second, newest first');
-      R.eq(entries[4].items.length, 1, 'the 1.45.31 entry carries its single pointer');
+      R.eq(entries[5].v, '1.45.31', 'the 1.45.31 dev-gated expense release sits second, newest first');
+      R.eq(entries[5].items.length, 1, 'the 1.45.31 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The overseas expense field sits right under the grand total — above the keyboard\u2019s reach — and appears only in Developer Mode.' }"), 'the 1.45.31 pointer reads as approved, inside the release it ships');
-      R.eq(entries[5].v, '1.45.24', 'the 1.45.24 centre-axis release sits second, newest first');
-      R.eq(entries[5].items.length, 2, 'the 1.45.24 entry carries its two pointers');
+      R.eq(entries[6].v, '1.45.24', 'the 1.45.24 centre-axis release sits second, newest first');
+      R.eq(entries[6].items.length, 2, 'the 1.45.24 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Month money tokens decode their figures on tap.' }"), 'the token pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The menu hero locks its flight track on the true centre.' }"), 'the hero pointer reads as approved, inside the release it ships');
-      R.eq(entries[6].v, '1.45.23', 'the 1.45.23 tabular-grid release sits second, newest first');
-      R.eq(entries[6].items.length, 2, 'the 1.45.23 entry carries its two pointers');
+      R.eq(entries[7].v, '1.45.23', 'the 1.45.23 tabular-grid release sits second, newest first');
+      R.eq(entries[7].items.length, 2, 'the 1.45.23 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Month money columns ride a rigid uppercase tabular grid.' }"), 'the grid pointer reads as approved, inside the release it ships');
-      R.eq(entries[7].v, '1.45.22', 'the 1.45.22 overseas-expense release sits third, newest first');
-      R.eq(entries[7].items.length, 3, 'the 1.45.22 entry carries its three pointers');
+      R.eq(entries[8].v, '1.45.22', 'the 1.45.22 overseas-expense release sits third, newest first');
+      R.eq(entries[8].items.length, 3, 'the 1.45.22 entry carries its three pointers');
       R.ok(src.includes("c: 'new', t: 'Layover trips track overseas expenses against take-home.' }"), 'the expense pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Year badges wear the trending icon, not a glyph.' }"), 'the badge pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Month money columns stack net, gross, after-expenses.' }"), 'the money-column pointer reads as approved, inside the release it ships');
-      R.eq(entries[8].v, '1.45.21', 'the 1.45.21 quadrant-unification release sits second, newest first');
-      R.eq(entries[8].items.length, 3, 'the 1.45.21 entry carries its three pointers');
+      R.eq(entries[9].v, '1.45.21', 'the 1.45.21 quadrant-unification release sits second, newest first');
+      R.eq(entries[9].items.length, 3, 'the 1.45.21 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'COP stats ride the hairline quadrant architecture.' }"), 'the quadrant pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Yearly net comparisons badge the headline figure.' }"), 'the badge pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The earliest year reads a quiet em dash.' }"), 'the em-dash pointer reads as approved, inside the release it ships');
-      R.eq(entries[9].v, '1.45.20', 'the 1.45.20 after-hours release sits third, newest first');
-      R.eq(entries[9].items.length, 3, 'the 1.45.20 entry carries its three pointers');
+      R.eq(entries[10].v, '1.45.20', 'the 1.45.20 after-hours release sits third, newest first');
+      R.eq(entries[10].items.length, 3, 'the 1.45.20 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'After-hours rides a strict 2x2 grid with hairlines.' }"), 'the quadrant pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Every salary metric leads with its Lucide icon.' }"), 'the icon pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The month view breathes; yearly comparisons break below.' }"), 'the breathing-room pointer reads as approved, inside the release it ships');
-      R.eq(entries[10].v, '1.45.19', 'the 1.45.19 salary-layout release sits fourth, newest first');
-      R.eq(entries[10].items.length, 2, 'the 1.45.19 entry carries its two pointers');
+      R.eq(entries[11].v, '1.45.19', 'the 1.45.19 salary-layout release sits fourth, newest first');
+      R.eq(entries[11].items.length, 2, 'the 1.45.19 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Salary stats ride a weighted grid that never collides.' }"), 'the weighted-grid pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Gross and CPF group left; milestones ride right.' }"), 'the split-row pointer reads as approved, inside the release it ships');
-      R.eq(entries[11].v, '1.45.18', 'the 1.45.18 remaining-flights release sits second, newest first');
-      R.eq(entries[11].items.length, 3, 'the 1.45.18 entry carries its three pointers');
+      R.eq(entries[12].v, '1.45.18', 'the 1.45.18 remaining-flights release sits second, newest first');
+      R.eq(entries[12].items.length, 3, 'the 1.45.18 entry carries its three pointers');
       R.ok(src.includes("c: 'imp', t: 'The still-to-fly panel reads Remaining flights.' }"), 'the remaining-flights pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Its line counts completed flights and legs left.' }"), 'the completed-left pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'All-time COP gains an annual average figure.' }"), 'the annual-average pointer reads as approved, inside the release it ships');
-      R.eq(entries[12].v, '1.45.17', 'the 1.45.17 milestone release sits third, newest first');
-      R.eq(entries[12].items.length, 2, 'the 1.45.17 entry carries its two pointers');
+      R.eq(entries[13].v, '1.45.17', 'the 1.45.17 milestone release sits third, newest first');
+      R.eq(entries[13].items.length, 2, 'the 1.45.17 entry carries its two pointers');
       R.ok(src.includes("c: 'fix', t: 'Daylight search placeholders read dark slate gray.' }"), 'the placeholder pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The milestone line names what remains to earn.' }"), 'the milestone pointer reads as approved, inside the release it ships');
-      R.eq(entries[13].v, '1.45.16', 'the 1.45.16 state-icons release sits third, newest first');
-      R.eq(entries[13].items.length, 4, 'the 1.45.16 entry carries its four pointers');
+      R.eq(entries[14].v, '1.45.16', 'the 1.45.16 state-icons release sits third, newest first');
+      R.eq(entries[14].items.length, 4, 'the 1.45.16 entry carries its four pointers');
       R.ok(src.includes("c: 'fix', t: 'Daylight active pills turn white with walnut ink.' }"), 'the daylight-pill pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Month states ride Lucide icons beside the title.' }"), 'the state-icons pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The live month spins a slow gold refresh-cw.' }"), 'the spinning-refresh-cw pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Status words join the flight count line.' }"), 'the count-line-status pointer reads as approved, inside the release it ships');
-      R.eq(entries[14].v, '1.45.15', 'the 1.45.15 roster-notice release sits third, newest first');
-      R.eq(entries[14].items.length, 4, 'the 1.45.15 entry carries its four pointers');
+      R.eq(entries[15].v, '1.45.15', 'the 1.45.15 roster-notice release sits third, newest first');
+      R.eq(entries[15].items.length, 4, 'the 1.45.15 entry carries its four pointers');
       R.ok(src.includes("c: 'fix', t: 'The current month shows its still-to-fly notice from the roster.' }"), 'the roster-notice pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The ledger \u2715 centres on its row; the sag is gone.' }"), 'the centred-\u2715 pointer reads as approved, inside the release it ships');
-      R.eq(entries[15].v, '1.45.14', 'the 1.45.14 earnings-depth release sits third, newest first');
-      R.eq(entries[15].items.length, 5, 'the 1.45.14 entry carries its five pointers');
+      R.eq(entries[16].v, '1.45.14', 'the 1.45.14 earnings-depth release rides the window floor');
+      R.eq(entries[16].items.length, 5, 'the 1.45.14 entry carries its five pointers');
       R.ok(src.includes("c: 'fix', t: 'Earnings opens on the current month, never a pre-saved future one.' }"), 'the never-future pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Daylight earns a warm canvas under crisp white cards.' }"), 'the daylight-depth pointer reads as approved, inside the release it ships');
-      R.eq(entries[16].v, '1.45.13', 'the 1.45.13 earnings-fresh-open release rides the window floor');
-      R.eq(entries[16].items.length, 5, 'the 1.45.13 entry carries its five pointers');
-      R.ok(src.includes("c: 'imp', t: 'Earnings opens on this month\u2019s COP allowance.' }"), 'the fresh-open pointer reads as approved, inside the release it ships');
-      R.ok(src.includes("c: 'imp', t: 'Past chart bars sit quieter; stripes mark the future.' }"), 'the chart-mute pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'Earnings opens on this month\u2019s COP allowance.' }"), 'the 1.45.13 fresh-open pointer reads as approved (just past the pinned window, still in the feed)');
+      R.ok(src.includes("c: 'imp', t: 'Past chart bars sit quieter; stripes mark the future.' }"), 'the 1.45.13 chart-mute pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'imp', t: 'The earnings figure gets breathing room and a tidier stat grid.' }"), 'the 1.45.12 breathing-room pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'imp', t: 'Gold-card text meets AA contrast in both themes.' }"), 'the 1.45.12 contrast pointer reads as approved (just past the pinned window, still in the feed)');
       R.ok(src.includes("c: 'new', t: 'Monthly Salary \u2014 your net take-home beside the COP allowance.' }"), 'the 1.45.11 salary pointer reads as approved (just past the pinned window, still in the feed)');
@@ -870,7 +873,16 @@ const mkUntil = (d) => async (cond, ms) => {
     R.ok(chips34.join('|') === 'All|New|Fixes|Polish', 'v1.45.34: the filter tokens read All / New / Fixes / Polish - the compact three-tier framework');
     const src34 = require('fs').readFileSync(APP, 'utf8');
     R.ok(src34.includes('mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);') && src34.includes('-webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);'), 'v1.45.34: the chips rail wears the both-edge gradient mask (the chat-rail treatment, 24px rails) - painted on the scroll boundary, never on the hit targets');
-    R.ok(src34.includes("imp: { label: 'Polish', tag: 'IMPROVE', icon: 'wrench' }") && !src34.includes('<span>Improvements</span>'), 'v1.45.34: the imp category reads Polish everywhere - the long Improvements token is gone');
+    R.ok(src34.includes("imp: { label: 'Polish', tag: 'POLISH', icon: 'wrench' }") && !src34.includes('<span>Improvements</span>') && !src34.includes("tag: 'IMPROVE'"), 'v1.45.34: the imp category reads Polish everywhere - and v1.45.36: its badge token reads POLISH too, the IMPROVE spelling fully retired');
+    // v1.45.36 (owner order, confirmed after review): the chat rail joins
+    // the fade - and the painted veil behind the chips retires to the
+    // composer. One shared class for both rails, one visual language.
+    R.ok(c.d.getElementById('ca-cl-chips').className.includes('ca-rail-fade') && c.d.getElementById('action-chips').className.includes('ca-rail-fade') && !c.d.getElementById('action-chips').className.includes('mask-edge'), 'v1.45.36: the changelog rail and the chat\u2019s quick-action rail wear the SAME ca-rail-fade class - the one-sided melt is retired, and the two can never drift apart');
+    R.ok(src34.includes('.ca-rail-fade {') && src34.includes('.ca-input-veil { position: absolute; left: 0; right: 0; top: 92px; bottom: 0;') && src34.includes('html.dark .ca-input-veil { background-image: linear-gradient(to top, #04070F 0%, rgba(4, 7, 15, 0.9) 55%, transparent 100%); }') && !src34.includes('via-[color:var(--bg-color)]'), 'v1.45.36: the veil is custom CSS now, pinned at the chips\u2019 bottom edge (92px) in BOTH themes - the full-height painted gradient behind the chips is gone');
+    const veil36 = c.d.querySelector('.ca-input-veil');
+    R.ok(veil36 && veil36.className === 'ca-input-veil' && c.d.querySelectorAll('.ca-input-veil').length === 1, 'v1.45.36: the chat input area carries exactly ONE veil element, the class-only div - the old utility-gradient div is retired');
+    const impBadge36 = c.d.querySelector('#ca-changelog-list .ca-cl-tag-imp');
+    R.ok(impBadge36 && impBadge36.textContent.trim() === 'POLISH', 'v1.45.36: the imp badge reads POLISH in the rendered rows - the chip, the label and the badge all speak the same token');
     // filter chips narrow the list; groups without matches hide
     c.d.querySelector('#ca-cl-chips [data-filter="fix"]').click();
     const fixHeads = vheads();
