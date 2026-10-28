@@ -285,6 +285,17 @@ the service-worker stamp. It checks:
   single taps can be driven the same way as the multi-touch pinch (id 3
   here; the pair's ids 1/2 are what the fresh-tap logic must NOT match).
   Version pins: 1.45.35 / v266.
+- v1.45.36 the shared rail fade + the retracted veil + the POLISH badge,
+  all proven live: the chat quick-action rail's COMPUTED mask matches the
+  same CSSOM regex as the changelog rail (one shared class, two elements,
+  identical computed style); the veil's computed position is exactly 92px
+  below the input wrapper's top with a linear-gradient background - the
+  retraction is geometric, not just present in source (getBoundingClientRect
+  against the wrapper, tolerance <1px, since the wrapper's top moves with
+  composer growth); and the imp badge's textContent reads POLISH in the
+  rendered rows. Version pins: 1.45.36 / v267, two-pointer changelog entry.
+  Mid-round note: a recycle wiped both node_modules; npm install under
+  tests/ and tests/smoke/ is the whole recovery.
 
 ## Running it
 
