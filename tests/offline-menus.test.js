@@ -440,15 +440,72 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(hero.includes('HKT'), "the duty's own menu renders — not the searched flight's (SQ736 owner report)");
   }
 
+  // --- v1.45.33 (owner order): the lightbox pinch engine - ONE unified ---
+  // --- gesture, no phases, no dead zones                        ---
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    const { w, d } = await boot(APP, {});
+    const box = () => d.getElementById('menu-lightbox');
+    const img = () => d.getElementById('menu-lightbox-img');
+    const hint = () => d.getElementById('menu-lightbox-hint');
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    R.ok(!box().classList.contains('hidden'), 'the lightbox mounts over the viewer');
+    // the transient micro hint: quiet low-contrast micro text, three seconds
+    R.ok(hint() && hint().textContent === 'Pinch to zoom & pan' && !hint().classList.contains('opacity-0') && hint().className.indexOf('duration-500') !== -1 && hint().className.indexOf('ease-in-out') !== -1 && hint().className.indexOf('pointer-events-none') !== -1, 'v1.45.33: the micro hint mounts visible - ca-micro, muted ink, the 500ms ease-in-out fade armed');
+    R.ok(src.includes('#menu-lightbox img.ca-lb-snap { transition: transform 380ms cubic-bezier(0.22, 1.28, 0.36, 1); }') && src.includes('will-change: transform;') && src.includes('touch-action: none;'), 'v1.45.33: the transform parks on the compositor (will-change), the engine owns every touch (touch-action none), and the snap-back rides the gentle elastic ease-out');
+    R.ok(src.includes("setTimeout(() => hint.classList.add('opacity-0'), 3000);"), 'v1.45.33: the hint lifecycle is exactly three seconds, then the fade');
+    // the unified engine: two pointers = spread scales around the pair pivot
+    // AND the midpoint's travel pans - both in the same paint
+    const pt = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; box().dispatchEvent(e); };
+    const mv = (id, x, y) => { const e = new w.Event('pointermove', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    const up = (id) => { const e = new w.Event('pointerup', { bubbles: true }); e.pointerId = id; w.dispatchEvent(e); };
+    // a single finger drags nothing: the engine is the PAIR's
+    pt(9, 100, 100);
+    mv(9, 400, 500);
+    R.ok(img().style.transform === '', 'v1.45.33: a single finger never moves the image - the engine waits for the pair');
+    up(9);
+    R.ok(!img().classList.contains('ca-lb-snap'), 'v1.45.33: a lone finger releasing snaps nothing');
+    // the pair lands, spreads and slides in one continuous motion
+    pt(1, 150, 300); pt(2, 250, 300);
+    mv(1, 130, 250); mv(2, 290, 330);
+    R.eq(img().style.transform, 'translate(10.00px, -10.00px) scale(1.7889)', 'v1.45.33: the spread scales around the pivot while the midpoint pans - zoom and travel in the same paint (no phases, no dead zones)');
+    R.ok(img().classList.contains('ca-lb-live'), 'v1.45.33: the compositor promotion is born with the pair - never at rest');
+    // a gesture's trailing click never closes the view
+    d.getElementById('menu-lightbox-dismiss').click();
+    R.ok(!box().classList.contains('opacity-0'), 'v1.45.33: a click riding a gesture never closes the lightbox');
+    img().click();
+    R.ok(!box().classList.contains('opacity-0'), 'v1.45.33: a tap on the image right after a pinch stays open too');
+    // the release springs home
+    up(1);
+    R.ok(img().classList.contains('ca-lb-snap') && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.45.33: the pair breaks - the elastic ease-out snaps the image back to its baseline');
+    await wait(500);
+    R.ok(!img().classList.contains('ca-lb-snap') && !img().classList.contains('ca-lb-live'), 'v1.45.33: the snap-back class and the compositor promotion both retire when the spring lands');
+    // exactly three seconds in, the hint is gone
+    await wait(2700);
+    R.ok(hint().classList.contains('opacity-0'), 'v1.45.33: exactly three seconds from mount, the hint fades to nothing');
+    // the view still open; a plain tap on the image now exits
+    R.ok(!box().classList.contains('hidden'), 'v1.45.33: the lightbox is still up after the full gesture cycle');
+    img().click();
+    await wait(350);
+    R.ok(box().classList.contains('hidden'), 'v1.45.33: a plain tap on the image exits the view');
+    // the reopen: a fresh mount re-arms the hint's three seconds
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    R.ok(!hint().classList.contains('opacity-0'), 'v1.45.33: a fresh mount brings the hint back - the lifecycle is per-view');
+    w.eval('closeMenuLightbox()');
+    await wait(350);
+  }
+
   // --- version stamps: app + service worker + hardened precache ---
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.32';"), 'APP_VERSION stamped 1.45.32');
+    R.ok(src.includes("var APP_VERSION = '1.45.33';"), 'APP_VERSION stamped 1.45.33');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v263"), 'service-worker cache name bumped to v263 (the v1.45.32 storage-flush release)');
+    R.ok(sw.includes("crewassist-v264"), 'service-worker cache name bumped to v264 (the v1.45.33 pinch-zoom release)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs

@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.32', 'APP_VERSION is 1.45.32');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.32' && e.d === '2026-10-28' && e.items.length === 2 && e.items[0].c === 'fix' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.32 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v263'), 'the service-worker cache name is bumped to v263 (the v1.45.32 storage-flush release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.33', 'APP_VERSION is 1.45.33');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.33' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.33 entry with its single pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v264'), 'the service-worker cache name is bumped to v264 (the v1.45.33 pinch-zoom release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.32'; }), 'the What\'s New sheet carries the v1.45.32 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.33'; }), 'the What\'s New sheet carries the v1.45.33 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1704,6 +1704,35 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(hero.clearDep && hero.clearArr, 'both city lines keep the safety clearance off the centre island (dep ' + (hero.clearDep ? 'ok' : 'clip') + ' / arr ' + (hero.clearArr ? 'ok' : 'clip') + ')');
         ok(hero.ellip && hero.noWide, 'long city names ellipsize under the truncate triple instead of pushing the columns - nothing scrolls sideways');
         ok(hero.plane && hero.arcDot, 'the plane rides the dotted arc apex inside the island');
+        // v1.45.33 (owner order): the lightbox answers a two-finger pinch -
+        // ONE unified engine, proven with real multi-touch in real Chromium
+        // (CDP touch points, two ids)
+        await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+        await sleep(300);
+        const lbOpen33 = Date.now();
+        ok(await page.evaluate(() => { const h = document.getElementById('menu-lightbox-hint'); return h && !h.classList.contains('opacity-0') && h.textContent === 'Pinch to zoom & pan' && getComputedStyle(h).fontSize === '11px'; }), 'v1.45.33: the hint mounts visible - quiet 11px micro text, centered at the bottom');
+        const cdp33 = await page.createCDPSession();
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 100, y: 300, id: 1 }, { x: 260, y: 300, id: 2 }] });
+        await sleep(150);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 60, y: 260, id: 1 }, { x: 320, y: 340, id: 2 }] });
+        await sleep(150);
+        const pinch33 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
+        ok((() => { const m = (pinch33 || '').match(/translate\(([\d.-]+)px, ([\d.-]+)px\) scale\(([\d.]+)\)/); return !!m && Number(m[1]) === 10 && Number(m[2]) === 0 && Math.abs(Number(m[3]) - 1.7002) < 1e-6; })(), 'v1.45.33: the real two-finger pinch tracks both engines at once - the spread scales around the pivot while the midpoint pans (got ' + pinch33 + ')');
+        // jsdom keeps the raw inline string; Chromium re-serializes through
+        // the CSSOM without trailing zeros (10px, scale(1)) - parse the
+        // numbers, never pin the spelling
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await sleep(200);
+        ok(await page.evaluate(() => document.getElementById('menu-lightbox-img').classList.contains('ca-lb-snap')), 'v1.45.33: the release springs the image home through the gentle elastic ease-out');
+        ok(await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('hidden')), 'v1.45.33: the gesture\u2019s trailing release never closes the view');
+        await sleep(400);
+        const back33 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
+        ok((() => { const m = (back33 || '').match(/translate\(([\d.-]+)px, ([\d.-]+)px\) scale\(([\d.]+)\)/); return !!m && Number(m[1]) === 0 && Number(m[2]) === 0 && Number(m[3]) === 1; })(), 'v1.45.33: the image rests back at its baseline centered fit (got ' + back33 + ')');
+        await sleep(2200);
+        ok(await page.evaluate(() => document.getElementById('menu-lightbox-hint').classList.contains('opacity-0')), 'v1.45.33: exactly three seconds from mount, the hint fades to nothing');
+        await page.evaluate(() => document.getElementById('menu-lightbox-img').click());
+        await sleep(400);
+        ok(await page.evaluate(() => document.getElementById('menu-lightbox').classList.contains('hidden')), 'v1.45.33: a plain tap on the image exits the view');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
         await page.evaluate((d) => { closeMenuViewer(); localStorage.removeItem('SQ836:' + d + ':CABINS'); localStorage.removeItem('SQ836:' + d + ':JCL'); }, heroDate);
