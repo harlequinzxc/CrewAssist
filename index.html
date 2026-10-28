@@ -2812,7 +2812,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.31'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.32'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2834,6 +2834,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.32', d: '2026-10-28', items: [
+                { c: 'fix', t: 'The Storage panel’s values sit flush on one line — compressed, never dropping under their labels.' },
+                { c: 'imp', t: 'The expense labels read Overseas Expenses and Add Expenses.' }
+            ] },
             { v: '1.45.31', d: '2026-10-28', items: [
                 { c: 'fix', t: 'The overseas expense field sits right under the grand total — above the keyboard’s reach — and appears only in Developer Mode.' }
             ] },
@@ -8804,7 +8808,11 @@
             } catch (e) {}
             // hotfix: the panel joins the house box style — one glass panel,
             // hairline-separated rows, the action inside the box.
-            const row = (label, val, id) => '<div class="flex items-center justify-between py-2.5"><span class="text-xs font-bold">' + label + '</span><span class="text-xs font-bold text-sia-gold" ' + (id ? 'id="' + id + '"' : '') + '>' + val + '</span></div>';
+            // v1.45.32 (owner order): the row rides the rigid two-column baseline
+            // flex and the right-aligned value carries the strict no-wrap -
+            // a long figure can never drop, step or underlap onto a second
+            // vertical line, whatever the viewport width.
+            const row = (label, val, id) => '<div class="flex justify-between items-baseline py-2.5"><span class="text-xs font-bold">' + label + '</span><span class="text-xs font-bold text-sia-gold whitespace-nowrap" ' + (id ? 'id="' + id + '"' : '') + '>' + val + '</span></div>';
             let html = '<div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">'
                 + row('Earnings entries', String(entries))
                 + '<div class="border-t ca-hairline"></div>'
@@ -8824,13 +8832,13 @@
             try {
                 if (navigator.storage && navigator.storage.estimate) {
                     navigator.storage.estimate().then((es) => {
-                        if (usageEl && es && isFinite(es.usage)) usageEl.textContent = '\u2248 ' + (es.usage / (1024 * 1024)).toFixed(1) + ' MB (approximate)';
+                        if (usageEl && es && isFinite(es.usage)) usageEl.textContent = '\u2248 ' + (es.usage / (1024 * 1024)).toFixed(1) + ' MB (approx)';
                     }).catch(() => { if (usageEl) usageEl.textContent = '\u2014'; });
                 } else if (usageEl) usageEl.textContent = '\u2014';
             } catch (e) { if (usageEl) usageEl.textContent = '\u2014'; }
             try {
                 if (navigator.storage && navigator.storage.persisted) {
-                    navigator.storage.persisted().then((p) => { if (persistEl) persistEl.textContent = p ? 'On \u2014 protected from auto-cleanup' : 'Off'; }).catch(() => { if (persistEl) persistEl.textContent = '\u2014'; });
+                    navigator.storage.persisted().then((p) => { if (persistEl) persistEl.textContent = p ? 'On (Auto-protected)' : 'Off'; }).catch(() => { if (persistEl) persistEl.textContent = '\u2014'; });
                 } else if (persistEl) persistEl.textContent = '\u2014';
             } catch (e) { if (persistEl) persistEl.textContent = '\u2014'; }
             const clr = document.getElementById('btn-clear-menus');
@@ -14862,10 +14870,10 @@
                 + '<button type="button" id="ca-arch-exp-btn" class="w-full flex items-center justify-between gap-2 p-3 rounded-xl ca-inset border ca-hairline text-left">'
                 + '<span class="flex items-center gap-2 min-w-0">'
                 + '<i data-lucide="receipt" class="w-4 h-4 shrink-0 text-sia-gold"></i>'
-                + '<span class="text-sm font-bold">Overseas expense</span>'
+                + '<span class="text-sm font-bold">Overseas Expenses</span>'
                 + '</span>'
                 + '<span id="ca-arch-exp-val" class="ca-amt shrink-0 ' + (hasExp ? 'font-bold text-sm' : 'text-sm font-normal') + '"' + (hasExp ? '' : ' style="color: var(--arch-muted)"') + '>'
-                + (hasExp ? formatMoney(archEntryExp(e)) : 'Add expense')
+                + (hasExp ? formatMoney(archEntryExp(e)) : 'Add Expenses')
                 + '</span>'
                 + '</button></div>';
         }
@@ -14919,12 +14927,12 @@
             btn.dataset.editing = '1';
             const cur = archEntryExp(e);
             const restore = val.innerHTML;
-            val.innerHTML = '<input type="text" inputmode="decimal" class="ca-arch-amt-input w-24 text-right bg-transparent outline-none border-b-2 border-sia-gold/70" style="color: var(--arch-fg)" value="' + (cur > 0 ? cur : '') + '" aria-label="Overseas expense">';
+            val.innerHTML = '<input type="text" inputmode="decimal" class="ca-arch-amt-input w-24 text-right bg-transparent outline-none border-b-2 border-sia-gold/70" style="color: var(--arch-fg)" value="' + (cur > 0 ? cur : '') + '" aria-label="Overseas Expenses">';
             const inp = val.querySelector('input');
             inp.focus(); try { inp.select(); } catch (err) {}
             const paint = () => {
                 const now = archEntryExp(e);
-                val.innerHTML = now > 0.004 ? formatMoney(now) : 'Add expense';
+                val.innerHTML = now > 0.004 ? formatMoney(now) : 'Add Expenses';
                 if (now > 0.004) { val.className = 'ca-amt shrink-0 font-bold text-sm'; val.removeAttribute('style'); }
                 else { val.className = 'ca-amt shrink-0 text-sm font-normal'; val.setAttribute('style', 'color: var(--arch-muted)'); }
             };

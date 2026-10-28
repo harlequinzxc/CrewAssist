@@ -1500,7 +1500,7 @@ function todayYmd() {
     // the summary sheet: layovers carry the receipt row, turnarounds never
     d.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').click(); await wait(50);
     d.querySelector('.ca-arch-row[data-id=\"q1\"]').click(); await wait(100);
-    R.ok(d.getElementById('ca-arch-exp-btn') && d.getElementById('ca-arch-exp-btn').textContent.indexOf('Overseas expense') !== -1, 'the layover summary carries the Overseas expense row');
+    R.ok(d.getElementById('ca-arch-exp-btn') && d.getElementById('ca-arch-exp-btn').textContent.indexOf('Overseas Expenses') !== -1, 'the layover summary carries the Overseas Expenses row');
     R.ok(d.querySelector('#ca-arch-exp-btn i[data-lucide=\"receipt\"]'), 'the row wears the receipt icon (a stub in jsdom - the name is the proof)');
     R.ok((() => { const body = d.getElementById('ca-arch-sub-body'); const row = d.getElementById('ca-arch-exp-btn').parentElement; return body.children[0].textContent.indexOf('Grand Total') !== -1 && body.children[1].tagName === 'P' && body.children[2] === row; })(), 'v1.45.31: the row rides right after the grand total card and its note - above the iOS keyboard\u2019s reach (old entries)');
     R.eq(d.getElementById('ca-arch-exp-val').textContent, '$120.00', 'the seeded expense shows as the row figure');
@@ -1532,7 +1532,7 @@ function todayYmd() {
     ein3.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     await wait(100);
     R.ok(!('expense' in JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail), 'a zero commit removes the expense field - absent means none');
-    R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add expense', 'the row falls back to the Add expense affordance');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add Expenses', 'the row falls back to the Add Expenses affordance');
     R.ok(d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'with no expenses left the after-expenses line hides again');
     // a turnaround summary never carries the row
     w.closeArchSub(); await wait(50);
@@ -1541,7 +1541,7 @@ function todayYmd() {
     // the unspent layover shows the affordance, not a figure
     w.closeArchSub(); await wait(50);
     d.querySelector('.ca-arch-row[data-id=\"q2\"]').click(); await wait(100);
-    R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add expense', 'a layover without expenses shows the Add expense affordance');
+    R.eq(d.getElementById('ca-arch-exp-val').textContent, 'Add Expenses', 'a layover without expenses shows the Add Expenses affordance');
     w.closeArchSub();
     // no basic set: the salary card stays keyable and silent, but the
     // expense row still works on the sheet (the entry door is the sheet)

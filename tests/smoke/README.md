@@ -230,6 +230,12 @@ the service-worker stamp. It checks:
   over dates — run-hour-immune), ported test-side only from the 1.45.25
   rig work; the app's keyboard rounds stay rolled back. One motion-pill
   tap flake (run 1 of 3) did not reproduce — recorded, not hardened.
+- v1.45.32 the plural expense labels: the expense section's two label pins
+  re-point — the row-presence pin reads 'Overseas Expenses' and the
+  zero-commit pin reads 'Add Expenses' (the storage-panel layout work rides
+  the dev-ui suite; the smoke's settings layers never pinned the storage
+  values). Version pins: APP_VERSION 1.45.32, the changelog's two-pointer
+  entry, sw v263, the v1.45.32 What's New header.
 
 ## Running it
 
