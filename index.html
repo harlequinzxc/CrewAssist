@@ -630,6 +630,24 @@
         .ca-rc-pod-x { color: var(--ca-ink-stone); }
         .ca-rc-pod-lcount { width: 44px; flex: none; }
         .ca-rc-pod-lmeta .ca-rc-pod-ldate { font-size: 11px; width: 84px; flex: none; }
+        /* v1.45.42 (owner order): every station carries its history — tap a
+           card or row and the visit log unfolds in place (one at a time,
+           the rates-fold clip idiom: 0fr→1fr, the padding on a
+           grandchild). And the render owns the icon pass, so a tab swap
+           can never lose the crown again. */
+        .ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; }
+        .ca-rc-pod-card:active, .ca-rc-pod-lrow:active { opacity: .7; }
+        .ca-rc-pod-xp { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .2s ease-out; margin: 6px 0; }
+        .ca-rc-pod-xp.ca-rc-pod-xpon { grid-template-rows: 1fr; }
+        .ca-rc-pod-xpin { overflow: hidden; min-height: 0; }
+        .ca-rc-pod-xpin > div { padding: 2px 10px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-solid-bg); }
+        .ca-rc-pod-xl { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px solid var(--glass-border); font-size: 11px; }
+        .ca-rc-pod-xl:last-child { border-bottom: none; }
+        .ca-rc-pod-xld { color: var(--ca-ink-navy); }
+        .ca-rc-pod-xle { color: var(--ca-ink-stone); }
+        .ca-rc-pod-xlfn { margin-left: auto; color: var(--ca-ink-navy); font-weight: 600; }
+        .ca-rc-pod-xlk { flex: none; color: var(--ca-ink-stone); letter-spacing: .06em; }
+        html.ca-reduced .ca-rc-pod-xp { transition: none; }
         .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
         .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; border-bottom: 1px solid var(--glass-border); }
         .ca-rc-pod-lrank { width: 22px; flex: none; font-size: 11px; color: var(--ca-ink-stone); }
@@ -2969,7 +2987,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.41'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.42'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2991,6 +3009,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.42', d: '2026-10-29', items: [
+                { c: 'imp', t: 'Tapping between lists never loses the crown again.' },
+                { c: 'imp', t: 'Tap a station to unfold every flight you’ve flown there.' }
+            ] },
             { v: '1.45.41', d: '2026-10-29', items: [
                 { c: 'imp', t: 'A quick shuttle back to the same station never counts twice.' }
             ] },
@@ -6064,18 +6086,22 @@
                     if (seen[sec.arr] && am && bm && ground <= 360) {
                         const st = stops[sec.arr];
                         if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
-                        if (String(sec.arrDate) > st[seen[sec.arr]].last) st[seen[sec.arr]].last = String(sec.arrDate);
+                        if (String(sec.arrDate) > st[seen[sec.arr].k].last) st[seen[sec.arr].k].last = String(sec.arrDate);
+                        if (String(sec.arrDate) > seen[sec.arr].d) seen[sec.arr].end = String(sec.arrDate);
                         return;
                     }
-                    seen[sec.arr] = kind;
-                    const st = stops[sec.arr] || (stops[sec.arr] = { all: { n: 0, last: '' }, lo: { n: 0, last: '' }, ta: { n: 0, last: '' } });
+                    const visit = { d: String(sec.arrDate), fn: sec.fn || '', k: kind, end: '' };
+                    seen[sec.arr] = visit;
+                    const st = stops[sec.arr] || (stops[sec.arr] = { all: { n: 0, last: '', visits: [] }, lo: { n: 0, last: '', visits: [] }, ta: { n: 0, last: '', visits: [] } });
                     st.all.n++; st[kind].n++;
+                    st.all.visits.push(visit);
+                    st[kind].visits.push(visit);
                     if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
                     if (String(sec.arrDate) > st[kind].last) st[kind].last = String(sec.arrDate);
                 });
             });
             const rank = (kind) => Object.keys(stops)
-                .map((k) => ({ code: k, label: k, n: stops[k][kind].n, last: stops[k][kind].last }))
+                .map((k) => ({ code: k, label: k, n: stops[k][kind].n, last: stops[k][kind].last, visits: stops[k][kind].visits.slice().sort((x, y) => y.d > x.d ? 1 : y.d < x.d ? -1 : 0) }))
                 .filter((x) => x.n > 0)
                 .sort((a, b) => (b.n - a.n) || (b.last > a.last ? 1 : b.last < a.last ? -1 : 0) || (a.code < b.code ? -1 : 1));
             return { flights: rank('all'), lo: rank('lo'), ta: rank('ta'), first: first };
@@ -6107,7 +6133,7 @@
         }
         function rcPodCardHtml(rk, it, stagger) {
             const cls = rk === 1 ? 'ca-rc-pod-hero' : ('ca-rc-pod-side' + (rk === 3 ? ' ca-rc-pod-dim' : ''));
-            return '<div class="ca-rc-pod-card ' + cls + (stagger ? ' ca-rc-pod-d' + (rk === 1 ? 0 : rk - 1) : '') + '">'
+            return '<div class="ca-rc-pod-card ' + cls + (stagger ? ' ca-rc-pod-d' + (rk === 1 ? 0 : rk - 1) : '') + '" data-ca-rc-pod-station="' + it.code + '" role="button" tabindex="0" aria-expanded="' + (rcPodOpen === it.code) + '">'
                 + (rk === 1
                     ? '<i data-lucide="crown" class="w-4 h-4 ca-rc-pod-crown"></i>'
                     : '<span class="ca-rc-pod-ord ca-mono">' + (rk === 2 ? '2nd' : '3rd') + '</span>')
@@ -6117,11 +6143,59 @@
                 + '</div>';
         }
         function rcPodLrowHtml(rk, it, stagger) {
-            return '<div class="ca-rc-pod-lrow' + (stagger ? ' ca-rc-pod-cas' : '') + '"' + (stagger ? ' style="animation-delay: ' + (150 + (rk - 4) * 30) + 'ms"' : '') + '>'
+            return '<div class="ca-rc-pod-lrow' + (stagger ? ' ca-rc-pod-cas' : '') + '"' + (stagger ? ' style="animation-delay: ' + (150 + (rk - 4) * 30) + 'ms"' : '') + ' data-ca-rc-pod-station="' + it.code + '" role="button" tabindex="0" aria-expanded="' + (rcPodOpen === it.code) + '">'
                 + '<span class="ca-rc-pod-lrank">' + rk + '</span>'
                 + '<span class="ca-mono font-bold text-sm">' + it.code + '</span>'
                 + '<span class="ca-rc-pod-lmeta"><span class="ca-rc-pod-lcount ca-mono text-xs font-semibold"><span class="ca-rc-pod-x">\u00d7</span>' + it.n + '</span><span class="ca-rc-pod-ldate ca-mono">' + (it.last ? rcPodWhen(it.last) : '') + '</span></span>'
                 + '</div>';
+        }
+        // v1.45.42 (owner order): the visit log — tap a station and every
+        // flight you flew there unfolds in place, newest first, flight
+        // number beside its date (the audit trail for the counts and the
+        // shuttle fold). One station open at a time, session only.
+        let rcPodOpen = '';
+        function rcPodWhenShort(d, ref) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ''));
+            const r = /^(\d{4})-/.exec(String(ref || ''));
+            return m ? (parseInt(m[3], 10) + ' ' + CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] + (r && r[1] === m[1] ? '' : ' ' + m[1])) : '';
+        }
+        function rcPodXpLines(entry) {
+            return entry.visits.map((v) => '<div class="ca-rc-pod-xl">'
+                + '<span class="ca-rc-pod-xld ca-mono">' + rcPodWhen(v.d) + '</span>'
+                + (v.end ? '<span class="ca-rc-pod-xle ca-mono">→ ' + rcPodWhenShort(v.end, v.d) + '</span>' : '')
+                + '<span class="ca-rc-pod-xlfn ca-mono">' + (v.fn ? 'SQ ' + v.fn : '—') + '</span>'
+                + (rcPodTab === 'flights' ? '<span class="ca-rc-pod-xlk ca-mono">' + (v.k === 'lo' ? 'LO' : 'TA') + '</span>' : '')
+                + '</div>').join('');
+        }
+        function rcPodXpMount(entry, anchor, animate) {
+            const xp = document.createElement('div');
+            xp.className = 'ca-rc-pod-xp';
+            xp.setAttribute('data-ca-rc-pod-xp', entry.code);
+            xp.innerHTML = '<div class="ca-rc-pod-xpin"><div>' + rcPodXpLines(entry) + '</div></div>';
+            anchor.parentNode.insertBefore(xp, anchor.nextSibling);
+            if (animate) requestAnimationFrame(() => xp.classList.add('ca-rc-pod-xpon'));
+            else xp.classList.add('ca-rc-pod-xpon');
+            return xp;
+        }
+        function rcPodToggle(code) {
+            const body = document.getElementById('ca-rc-pod-body');
+            if (!body) return;
+            const same = rcPodOpen === code;
+            rcPodOpen = same ? '' : code;
+            body.querySelectorAll('[data-ca-rc-pod-station]').forEach((el) => el.setAttribute('aria-expanded', el.getAttribute('data-ca-rc-pod-station') === rcPodOpen ? 'true' : 'false'));
+            const cur = body.querySelector('[data-ca-rc-pod-xp]');
+            if (cur) {
+                cur.classList.remove('ca-rc-pod-xpon');
+                setTimeout(() => { if (cur.parentNode && !cur.classList.contains('ca-rc-pod-xpon')) cur.parentNode.removeChild(cur); }, 220);
+            }
+            if (same) return;
+            const entry = (rcPodStats()[rcPodTab] || []).filter((x) => x.code === code)[0];
+            if (!entry || !entry.visits.length) { rcPodOpen = ''; return; }
+            const el = body.querySelector('[data-ca-rc-pod-station="' + code + '"]');
+            if (!el) { rcPodOpen = ''; return; }
+            // a card's log unfolds as a full-width strip under the podium
+            // grid; a row's unfolds inline beneath its hairline
+            rcPodXpMount(entry, el.classList.contains('ca-rc-pod-card') ? el.parentNode : el, true);
         }
         function renderRcPod(stagger) {
             const body = document.getElementById('ca-rc-pod-body');
@@ -6132,15 +6206,12 @@
             if (sub) sub.textContent = stats.first ? ('All-time \u00b7 since ' + rcPodSince(stats.first)) : 'All-time';
             const idx = Math.max(0, RC_POD_TABS.findIndex((t) => t[0] === rcPodTab));
             tabsWrap.innerHTML = rcPodTabsHtml(idx);
+            const list = stats[rcPodTab] || [];
             if (!stats.flights.length && !stats.lo.length && !stats.ta.length) {
                 body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
-                return;
-            }
-            const list = stats[rcPodTab] || [];
-            if (!list.length) {
+            } else if (!list.length) {
                 body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
-                return;
-            }
+            } else {
             // the podium: 2nd - 1st - 3rd across the grid, rank one center
             // and elevated (owner order, the dense redesign)
             const pod = list.slice(0, 3);
@@ -6161,6 +6232,22 @@
                 else if (openAll) rows += '<button type="button" class="ca-rc-pod-all ca-micro uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400" data-ca-rc-pod-all="0">Fold back</button>';
                 body.insertAdjacentHTML('beforeend', rows);
             }
+                // a re-render (tab swap, door, resize) keeps the open log
+                // when the station still lives in this list — mounted
+                // settled, no replay
+                if (rcPodOpen) {
+                    const entry = list.filter((x) => x.code === rcPodOpen)[0];
+                    if (entry && entry.visits.length) {
+                        const el = body.querySelector('[data-ca-rc-pod-station="' + rcPodOpen + '"]');
+                        if (el) rcPodXpMount(entry, el.classList.contains('ca-rc-pod-card') ? el.parentNode : el, false);
+                    } else rcPodOpen = '';
+                }
+            }
+            // v1.45.42 (owner report): the render OWNS the icon pass —
+            // every rebuild (open, tab swap, door, resize) refreshes the
+            // stubs, because an unreplaced stub renders as nothing. The
+            // shared guarded helper; the opener's inline call is retired.
+            refreshIcons();
         }
         function openRcPod() {
             const wrap = document.getElementById('ca-rc-podwrap');
@@ -6168,8 +6255,8 @@
             if (!wrap || !sheet) return;
             caSheetHideCancel(wrap);   // hotfix 14: a quick close-and-reopen never hides the wrap mid-open
             rcPodTab = 'flights';      // every open starts on the All Flights podium
-            renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant
-            try { lucide.createIcons(); } catch (err) {}
+            rcPodOpen = '';            // and the visit log starts folded
+            renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass
             wrap.classList.remove('hidden');
             caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
             caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
@@ -7419,10 +7506,17 @@
                     if (!ev.target || !ev.target.closest) return;
                     const closer = ev.target.closest('[data-ca-rc-pod-close]');
                     if (closer) { closeRcPod(); return; }
+                    const stn = ev.target.closest('[data-ca-rc-pod-station]');
+                    if (stn) { rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); return; }
                     const tab = ev.target.closest('[data-ca-rc-pod-tab]');
                     if (tab) { rcPodTab = tab.getAttribute('data-ca-rc-pod-tab'); renderRcPod(); return; }
                     const all = ev.target.closest('[data-ca-rc-pod-all]');
                     if (all) { rcPodAll[rcPodTab] = all.getAttribute('data-ca-rc-pod-all') === '1'; renderRcPod(); }
+                });
+                podWrapEl.addEventListener('keydown', (ev) => {
+                    if (ev.key !== 'Enter' && ev.key !== ' ') return;
+                    const stn = ev.target && ev.target.closest ? ev.target.closest('[data-ca-rc-pod-station]') : null;
+                    if (stn) { ev.preventDefault(); rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); }
                 });
                 // v1.45.39: a fold or rotation re-measures the viewport's
                 // row budget (debounced; only while the page is open)

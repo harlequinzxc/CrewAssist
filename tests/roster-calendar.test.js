@@ -1460,5 +1460,116 @@ const synthItems = [].concat(
     R.eq(stats.ta.map((r) => r.code).join(','), '', 'nothing turns around');
   }
 
+  // ---- v1.45.42 (owner orders: the crown fix + the visit log): the render
+  // owns the icon pass (a tab swap rebuilt the podium without replacing
+  // the stub — an unreplaced stub renders as nothing), and every station
+  // unfolds its flight history in place, newest first, one at a time ----
+  {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    const rrp = src.slice(src.indexOf('function renderRcPod'), src.indexOf('function openRcPod'));
+    R.ok(rrp.indexOf('refreshIcons();') >= 0, 'v1.45.42: renderRcPod owns the icon pass — every rebuild refreshes the stubs');
+    const orp = src.slice(src.indexOf('function openRcPod'), src.indexOf('function closeRcPod'));
+    R.ok(orp.indexOf('lucide.createIcons') < 0, 'the opener’s inline icon call is retired — one owner, not two');
+    R.ok(src.includes('.ca-rc-pod-xp { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .2s ease-out; margin: 6px 0; }'), 'v1.45.42: the visit log unfolds through the rates-fold clip idiom (0fr→1fr)');
+    R.ok(src.includes('html.ca-reduced .ca-rc-pod-xp { transition: none; }'), 'the unfold stands down under ca-reduced');
+    R.ok(/podWrapEl\.addEventListener\('keydown'[\s\S]*?data-ca-rc-pod-station/.test(src), 'the stations are keyboard-reachable (Enter/Space toggle the log)');
+  }
+  {
+    // the owner's South Africa shape: the visit records carry flight
+    // numbers and the fold span; the icon-pass regression rides this boot
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:10', sta: '07:05', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '10:55', ac: '77W', rpt: '', pos: false },
+        { fn: '484', dep: 'JNB', arr: 'CPT', ymd: '2026-10-21', std: '09:40', sta: '11:35', stdYmd: '2026-10-21', staYmd: '2026-10-21', ft: '01:55', ac: '7M8', rpt: '', pos: false },
+        { fn: '485', dep: 'CPT', arr: 'JNB', ymd: '2026-10-21', std: '13:30', sta: '15:25', stdYmd: '2026-10-21', staYmd: '2026-10-21', ft: '01:55', ac: '7M8', rpt: '', pos: false },
+        { fn: '472', dep: 'JNB', arr: 'SIN', ymd: '2026-10-21', std: '17:10', sta: '08:15', stdYmd: '2026-10-21', staYmd: '2026-10-22', ft: '10:05', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    const jnb = stats.flights.filter((r) => r.code === 'JNB')[0];
+    const cpt = stats.flights.filter((r) => r.code === 'CPT')[0];
+    R.eq(JSON.stringify(jnb.visits), JSON.stringify([{ d: '2026-10-20', fn: '471', k: 'lo', end: '2026-10-21' }]), 'v1.45.42: the folded hub carries ONE visit record — the anchor date, the flight that landed it, the anchor kind, and the transit-touch end');
+    R.eq(JSON.stringify(cpt.visits), JSON.stringify([{ d: '2026-10-21', fn: '484', k: 'ta', end: '' }]), 'the side-trip station carries its own visit record');
+    // the icon-pass regression (owner report: toggling chips lost the
+    // crown) — a lucide spy counts the passes; the rig blocks the CDN, so
+    // the spy IS the icon engine here
+    w.eval("window.lucide = { createIcons: () => { window.__ic = (window.__ic || 0) + 1; } }; window.__ic = 0;");
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(100);
+    const c1 = Number(w.eval('window.__ic'));
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
+    await wait(50);
+    const c2 = Number(w.eval('window.__ic'));
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
+    await wait(50);
+    const c3 = Number(w.eval('window.__ic'));
+    R.ok(c1 >= 1 && c2 > c1 && c3 > c2, 'v1.45.42: the icon pass fires on open AND on every tab swap — the crown can never vanish again (spy counts ' + c1 + '/' + c2 + '/' + c3 + ')');
+    // the fold span, live: tap the folded hub (rank two here — CPT's 21 Oct
+    // touch outranks JNB's 20 Oct anchor) and the log shows the anchor
+    // date, the flight number, and the shuttle's transit-touch end
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="flights"]').click();
+    await wait(50);
+    const jnbCard = d.querySelector('#ca-rc-pod-body .ca-rc-pod-card[data-ca-rc-pod-station="JNB"]');
+    R.ok(!!jnbCard && jnbCard.classList.contains('ca-rc-pod-side'), 'the folded hub rides the podium as the rank-two side card');
+    jnbCard.click();
+    await wait(60);
+    const xp = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]');
+    R.ok(!!xp && xp.classList.contains('ca-rc-pod-xpon') && xp.textContent.indexOf('20 Oct 2026') >= 0 && xp.textContent.indexOf('SQ 471') >= 0 && xp.textContent.indexOf('→ 21 Oct') >= 0, 'v1.45.42: tapping the hub unfolds the visit log — date, flight number, and the fold’s transit span (the audit trail)');
+    R.ok(xp.textContent.indexOf('LO') >= 0, 'the All Flights tab marks each visit’s kind');
+    R.eq(jnbCard.getAttribute('aria-expanded'), 'true', 'the expanded station announces itself');
+  }
+  {
+    // the accordion: one log at a time, tab swaps keep it where the
+    // station still lives, closing the page folds it away
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-09', std: '08:00', sta: '09:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-09', std: '11:00', sta: '12:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '61', dep: 'SIN', arr: 'NRT', ymd: '2026-10-12', std: '08:00', sta: '09:00', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '62', dep: 'NRT', arr: 'SIN', ymd: '2026-10-12', std: '11:00', sta: '12:00', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '481', dep: 'SIN', arr: 'CPT', ymd: '2026-10-15', std: '08:00', sta: '09:00', stdYmd: '2026-10-15', staYmd: '2026-10-15', ft: '01:00', ac: '77W', rpt: '06:30', pos: false },
+        { fn: '482', dep: 'CPT', arr: 'SIN', ymd: '2026-10-15', std: '11:00', sta: '12:00', stdYmd: '2026-10-15', staYmd: '2026-10-15', ft: '01:00', ac: '77W', rpt: '', pos: false },
+        { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:00', sta: '10:00', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '08:00', ac: '77W', rpt: '00:00', pos: false },
+        { fn: '472', dep: 'JNB', arr: 'SIN', ymd: '2026-10-20', std: '19:00', sta: '03:00', stdYmd: '2026-10-20', staYmd: '2026-10-21', ft: '08:00', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(100);
+    const hero = d.querySelector('#ca-rc-pod-body .ca-rc-pod-hero');
+    hero.click();
+    await wait(60);
+    R.ok(d.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-xp]').length === 1, 'one log open at a time — the hero’s');
+    const row = d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow');
+    R.ok(!!row && row.textContent.indexOf('KUL') >= 0, 'rank four is the KUL row');
+    row.click();
+    await wait(320);
+    const xps = d.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-xp]');
+    R.ok(xps.length === 1 && xps[0].getAttribute('data-ca-rc-pod-xp') === 'KUL', 'tapping the row folds the hero’s log and opens the row’s — one at a time, always');
+    R.ok(xps[0].textContent.indexOf('SQ 106') >= 0 && xps[0].textContent.indexOf('TA') >= 0, 'the row’s log carries its flight and kind');
+    R.eq(hero.getAttribute('aria-expanded'), 'false', 'the hero announces its fold');
+    R.eq(row.getAttribute('aria-expanded'), 'true', 'the row announces its open');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
+    await wait(60);
+    let kp = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]');
+    R.ok(!!kp && kp.getAttribute('data-ca-rc-pod-xp') === 'KUL', 'a tab swap keeps the open log where the station still lives');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
+    await wait(60);
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'a list without the station folds the log away');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="flights"]').click();
+    await wait(60);
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'and the reset holds — the log never outlives its station');
+    d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').click();
+    await wait(60);
+    d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').click();
+    await wait(320);
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'tapping the station again folds its log (the 220ms removal settles)');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
