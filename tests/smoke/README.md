@@ -323,6 +323,25 @@ the service-worker stamp. It checks:
   i[data-lucide="podium"] STUB — the rig blocks the CDN by design, so svg
   presence is not pinnable here; the glyph is verified in the lucide
   bundle itself. Version pins: 1.45.38 / v269, one-pointer changelog entry.
+- v1.45.39 the current-records release, all proven live: the segmented tab
+  bar reads All Flights with the gliding gold pill (computed
+  rgb(201, 162, 39) — SIA gold, never Tailwind amber), the 2-1-3 podium
+  ranks the seeded truth as VISITS — KUL ×1 crowned center (the future
+  November leg does NOT count: records are current to wheels-down), SYD
+  2nd at the side — the hero carries the mount stagger class and the
+  theme-correct gold-soft wash (0.15 light / 0.12 dark, pinned by
+  reading the theme at evaluation time), the glide pill's computed
+  transform moves across a tab swap while the panel renders INSTANT (no
+  stagger replay), and both themes shift the sheet and hero fills with
+  the dark class. Rig fixes this round (no app change): the still-to-fly
+  seed rides the month's LAST day with end-of-day STAs —
+  archMonthState matches an upcoming leg by its own ymd month, so the
+  old now+3 spilled past the month edge on the last three days of any
+  month (first hit 29 Oct 2026) and read Month complete. Known
+  pre-existing drift, on record for a future reseed: the calendar
+  section's fixed October/November 2026 seed opens November from
+  1 Nov 2026 and the October day pins stop resolving. Version pins:
+  1.45.39 / v270, three-pointer changelog entry.
 
 ## Running it
 

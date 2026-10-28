@@ -588,21 +588,50 @@
            (class + pseudo-class) outranks a plain utility — an ID selector
            outranks them both, so the gold survives the sticky hover. */
         #ca-rc-tag.ca-rc-tagon { background: var(--ca-gold); color: #0B0E14; }
-        /* v1.45.38 (owner order, the podium release): the records page's
-           rows. Rank one wears the SIA Gold accent — the soft wash, the
-           gold hairline and the paired gold rank inks (the saving-pill's
-           tokens) — while ranks two and three stay on the glass surface:
-           silver and bronze would be invented colours, and the accent
-           hierarchy stays gold-only. The rows ride .glass-panel for the
-           surface (border + fill + the per-theme shadow token, v1.45.37);
-           this CSS adds only layout, no new type sizes. */
-        .ca-rc-pod-chips { display: flex; gap: 8px; padding-bottom: 14px; }
-        .ca-rc-pod-row { display: flex; align-items: center; gap: 10px; border-radius: 1rem; padding: 10px 14px; margin-bottom: 8px; }
-        .ca-rc-pod-rank { width: 20px; flex: none; text-align: center; color: var(--ca-ink-stone); }
-        .ca-rc-pod-row.ca-rc-pod-first { border-color: var(--ca-gold-line); background: var(--ca-gold-soft-12); }
-        html:not(.dark) .ca-rc-pod-row.ca-rc-pod-first { background: var(--ca-gold-soft-15); }
-        .ca-rc-pod-row.ca-rc-pod-first .ca-rc-pod-rank { color: var(--sia-gold-ink); }
-        html.dark .ca-rc-pod-row.ca-rc-pod-first .ca-rc-pod-rank { color: var(--ca-gold-hi); }
+        /* v1.45.39 (owner order, the current-records redesign): the records
+           page wears the dense instrument-panel look — a segmented tab bar
+           with a gliding gold pill, a 2-1-3 podium grid, and a cascading
+           hairline leaderboard. Rank one wears the SIA Gold accent (the
+           soft wash, the gold hairline, the paired gold inks); ranks two
+           and three differentiate by SATURATION, never by invented metals
+           (the v1.45.38 gold-only ruling). Numerics ride .ca-mono (the
+           system mono stack — no font download, offline-proof) so codes,
+           counts and dates never jitter. Motion is one-shot and structural
+           (200ms ease-out; 50/100ms podium stagger, 30ms/row cascade,
+           mount-only — tab swaps are instant) and stands down under
+           ca-reduced. Layout lives here, not in utilities — no tw.css
+           recompile. */
+        .ca-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+        .ca-rc-pod-tabs { position: relative; display: flex; gap: 4px; padding: 4px; border: 1px solid var(--glass-border); border-radius: 9999px; background: var(--glass-solid-bg); margin-bottom: 12px; }
+        .ca-rc-pod-glider { position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 16px) / 3); border-radius: 9999px; background: var(--ca-gold); transition: transform .2s ease-out; }
+        .ca-rc-pod-tab { position: relative; z-index: 1; flex: 1 1 0; min-height: 36px; border-radius: 9999px; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--ca-ink-stone); transition: color .2s ease-out; }
+        .ca-rc-pod-tab.ca-rc-pod-tabon { color: var(--ca-ink-navy); font-weight: 700; }
+        .ca-rc-pod-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: end; margin: 4px 0 10px; }
+        .ca-rc-pod-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden; border-radius: 12px; }
+        .ca-rc-pod-hero { border: 1px solid var(--ca-gold-line); background: var(--ca-gold-soft-12); padding: 12px 8px 14px; }
+        html:not(.dark) .ca-rc-pod-hero { background: var(--ca-gold-soft-15); }
+        .ca-rc-pod-side { border: 1px solid var(--glass-border); background: var(--glass-solid-bg); padding: 8px 6px 12px; }
+        .ca-rc-pod-crown { margin-bottom: 2px; }
+        html.dark .ca-rc-pod-crown { color: var(--ca-gold-hi); }
+        html:not(.dark) .ca-rc-pod-crown { color: var(--sia-gold-ink); }
+        .ca-rc-pod-ord { margin-bottom: 2px; }
+        .ca-rc-pod-code { letter-spacing: .04em; margin-top: 2px; }
+        .ca-rc-pod-hero .ca-rc-pod-code { color: var(--sia-gold-ink); }
+        html.dark .ca-rc-pod-hero .ca-rc-pod-code { color: var(--ca-gold-hi); }
+        .ca-rc-pod-dim .ca-rc-pod-code { color: var(--ca-ink-stone); }
+        .ca-rc-pod-count { margin-top: 2px; }
+        .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
+        .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; border-bottom: 1px solid var(--glass-border); }
+        .ca-rc-pod-lrank { width: 22px; flex: none; font-size: 11px; color: var(--ca-ink-stone); }
+        .ca-rc-pod-lmeta { display: flex; align-items: baseline; gap: 14px; margin-left: auto; }
+        @keyframes caRcPodIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .ca-rc-pod-d0 { animation: caRcPodIn .2s ease-out both; }
+        .ca-rc-pod-d1 { animation: caRcPodIn .2s ease-out .05s both; }
+        .ca-rc-pod-d2 { animation: caRcPodIn .2s ease-out .1s both; }
+        .ca-rc-pod-lrow.ca-rc-pod-cas { animation: caRcPodIn .2s ease-out both; }
+        html.ca-reduced .ca-rc-pod-d0, html.ca-reduced .ca-rc-pod-d1,
+        html.ca-reduced .ca-rc-pod-d2, html.ca-reduced .ca-rc-pod-lrow.ca-rc-pod-cas { animation: ca-reduce-fade 150ms ease-out both; }
+        html.ca-reduced .ca-rc-pod-glider, html.ca-reduced .ca-rc-pod-tab { transition: none; }
         .ca-rc-pod-all { display: block; width: 100%; text-align: center; padding: 12px 0 4px; }
         /* hotfix: a day with two stops wears one tag per corner, same tilt */
         .ca-rc-tag.slot-b { left: -3px; right: auto; }
@@ -2430,7 +2459,13 @@
                     </div>
                     <button type="button" id="btn-close-rc-pod" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close records"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <div id="ca-rc-pod-body" class="flex-grow overflow-y-auto overscroll-contain px-5 pb-8 max-w-2xl mx-auto w-full"></div>
+                <div class="flex-grow min-h-0 flex flex-col px-5 pb-8 max-w-2xl mx-auto w-full">
+                    <!-- v1.45.39: the segmented tab bar stays PINNED above the
+                         scroll — the dense redesign's control never scrolls
+                         away under the crew's thumb -->
+                    <div id="ca-rc-pod-tabs-wrap" class="flex-none pt-1"></div>
+                    <div id="ca-rc-pod-body" class="flex-grow min-h-0 overflow-y-auto overscroll-contain"></div>
+                </div>
             </div>
         </div>
 
@@ -2924,7 +2959,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.38'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.39'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2946,6 +2981,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.39', d: '2026-10-29', items: [
+                { c: 'imp', t: 'Records count only flown legs — the future waits its turn.' },
+                { c: 'imp', t: 'All Flights counts station visits — SIN-MEL-SIN is MEL ×1.' },
+                { c: 'imp', t: 'The records page wears a podium grid and a mono leaderboard.' }
+            ] },
             { v: '1.45.38', d: '2026-10-28', items: [
                 { c: 'new', t: 'Your top routes, layovers and turnarounds — all-time, from the podium.' }
             ] },
@@ -5944,55 +5984,67 @@
         // allFlights store, chained SIN->SIN across month borders). The page
         // persists nothing: every open recomputes, so a re-imported month
         // heals the counts the way it heals the calendar.
+        // v1.45.39 (owner order): the records are CURRENT — a leg counts
+        // only once the crew has LANDED at the destination. The chain still
+        // walks the whole roster (a layover you are on right now knows its
+        // return time and classifies correctly), but the count gate is the
+        // landing: wheels-down, then it exists. Times unreadable counts as
+        // landed only once the day has fully passed.
+        function rcPodHasLanded(dateStr, timeStr, nowMs) {
+            const d = String(dateStr || '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return false;
+            const t = /^(\d{1,2}):(\d{2})/.exec(String(timeStr || ''));
+            if (t) {
+                const ms = new Date(d + 'T' + ('0' + t[1]).slice(-2) + ':' + t[2] + ':00').getTime();
+                return !isNaN(ms) && ms <= nowMs;
+            }
+            return d < todayLocalYMD();
+        }
         function rcPodHasData() {
+            const nowMs = Date.now();
             const store = loadAllFlights();
-            return Object.keys(store).some((mk) => (store[mk] || []).length > 0);
+            return Object.keys(store).some((mk) => (store[mk] || []).some((f) => f && rcPodHasLanded(f.staYmd || f.ymd, f.sta, nowMs)));
         }
         function rcPodStats() {
-            const routes = {}, stops = {};
+            const stops = {};
             let first = '';
+            const nowMs = Date.now();
             rcTripsAll().forEach((t) => {
                 const secs = (t && t.sectors) || [];
                 secs.forEach((sec) => {
                     if (!sec || !sec.dep || !sec.arr) return;
-                    // routes are STATION PAIRS, both directions one route
-                    // (owner order): SIN-NRT and NRT-SIN are one. Every leg
-                    // the roster prints counts — positioning sectors too, the
-                    // calendar's own retell-the-whole-duty rule.
-                    const pk = [sec.dep, sec.arr].sort().join('|');
-                    const r = routes[pk] || (routes[pk] = { n: 0, last: '', a: pk.split('|')[0], b: pk.split('|')[1] });
-                    r.n++;
-                    const d = String(sec.depDate || sec.ymd || '');
-                    if (d && d > r.last) r.last = d;
-                    if (d && (!first || d < first)) first = d;
+                    if (rcPodHasLanded(sec.arrDate, sec.staHm, nowMs)) {
+                        const d = String(sec.depDate || sec.ymd || '');
+                        if (d && (!first || d < first)) first = d;
+                    }
                 });
                 // stations are PER VISIT (the v1.40.0 ruling — each stay is
-                // its own station) and classified by the marks' own rule:
-                // the ground time at THIS station decides, > 6h lays over
+                // its own station), and v1.45.39 folds the old pair-counted
+                // routes list into the same unit: All Flights = every visit,
+                // Layovers/Turnarounds the same visits split by the marks'
+                // own rule — ground time at THIS station, > 6h lays over.
+                // A visit exists once the crew has landed there; the split
+                // still reads the FULL chain's ground time, so a turnaround
+                // in progress classifies as a turnaround, never a misread.
                 secs.forEach((sec, i) => {
                     if (!sec || !sec.arr || sec.arr === 'SIN' || !sec.arrDate) return;
+                    if (!rcPodHasLanded(sec.arrDate, sec.staHm, nowMs)) return;
                     const nxt = secs[i + 1];
                     const am = (sec.arrDate && sec.staHm) ? new Date(sec.arrDate + 'T' + sec.staHm + ':00') : null;
                     const bm = (nxt && nxt.dep === sec.arr && nxt.depDate && nxt.stdHm) ? new Date(nxt.depDate + 'T' + nxt.stdHm + ':00') : null;
                     const ground = (am && bm) ? (bm - am) / 60000 : 99999;
                     const kind = ground > 360 ? 'lo' : 'ta';
-                    const st = stops[sec.arr] || (stops[sec.arr] = { lo: { n: 0, last: '' }, ta: { n: 0, last: '' } });
-                    st[kind].n++;
+                    const st = stops[sec.arr] || (stops[sec.arr] = { all: { n: 0, last: '' }, lo: { n: 0, last: '' }, ta: { n: 0, last: '' } });
+                    st.all.n++; st[kind].n++;
+                    if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
                     if (String(sec.arrDate) > st[kind].last) st[kind].last = String(sec.arrDate);
                 });
             });
-            const rank = (o, kind) => Object.keys(o)
-                .map((k) => ({ code: k, label: k, n: kind ? o[k][kind].n : o[k].n, last: kind ? o[k][kind].last : o[k].last }))
+            const rank = (kind) => Object.keys(stops)
+                .map((k) => ({ code: k, label: k, n: stops[k][kind].n, last: stops[k][kind].last }))
                 .filter((x) => x.n > 0)
                 .sort((a, b) => (b.n - a.n) || (b.last > a.last ? 1 : b.last < a.last ? -1 : 0) || (a.code < b.code ? -1 : 1));
-            // the route label names SIN first when the pair holds it (the
-            // crew's home base reads first), otherwise alphabetical
-            const withPairLabel = (x) => {
-                const pair = x.code.split('|');
-                x.label = (pair[0] === 'SIN' || pair[1] === 'SIN') ? 'SIN-' + (pair[0] === 'SIN' ? pair[1] : pair[0]) : pair[0] + '-' + pair[1];
-                return x;
-            };
-            return { routes: rank(routes).map(withPairLabel), lo: rank(stops, 'lo'), ta: rank(stops, 'ta'), first: first };
+            return { flights: rank('all'), lo: rank('lo'), ta: rank('ta'), first: first };
         }
         function rcPodWhen(ymd) {
             const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
@@ -6002,47 +6054,87 @@
             const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
             return m ? CA_MONTHS_SHORT[parseInt(m[2], 10) - 1] + ' ' + m[1] : '';
         }
-        let rcPodTab = 'routes';
-        const rcPodAll = { routes: false, lo: false, ta: false };   // View-all per list, session only — never persisted
-        const RC_POD_TABS = [['routes', 'Routes'], ['lo', 'Layovers'], ['ta', 'Turnarounds']];
-        function rcPodRowHtml(rk, it) {
-            return '<div class="ca-rc-pod-row glass-panel' + (rk === 1 ? ' ca-rc-pod-first' : '') + '">'
-                + '<span class="ca-rc-pod-rank ca-micro font-bold">' + rk + '</span>'
-                + '<span class="font-bold text-sm whitespace-nowrap">' + it.label + '</span>'
-                + '<span class="ca-amt text-[17px] font-bold">\u00d7' + it.n + '</span>'
-                + '<span class="ml-auto text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">' + (it.last ? 'last ' + rcPodWhen(it.last) : '') + '</span>'
+        let rcPodTab = 'flights';
+        const rcPodAll = { flights: false, lo: false, ta: false };   // View-all per list, session only — never persisted
+        const RC_POD_TABS = [['flights', 'All Flights'], ['lo', 'Layovers'], ['ta', 'Turnarounds']];
+        // viewport-aware depth (owner order): the leaderboard fills ranks
+        // 4 through what the real screen height holds — the foldable's
+        // tall canvas simply shows more rows. jsdom has no layout
+        // (clientHeight 0); the fixed seven there is the no-layout answer.
+        function rcPodFit(body, grid) {
+            if (!body || !body.clientHeight) return 7;
+            const used = (grid ? grid.offsetHeight : 0) + 64;   // the door + margins
+            return Math.max(1, Math.floor((body.clientHeight - used) / 44));
+        }
+        function rcPodTabsHtml(idx) {
+            return '<div class="ca-rc-pod-tabs"><span class="ca-rc-pod-glider" style="transform: translateX(calc(' + (idx * 100) + '% + ' + (idx * 4) + 'px))"></span>'
+                + RC_POD_TABS.map((t, i) => '<button type="button" class="ca-rc-pod-tab' + (i === idx ? ' ca-rc-pod-tabon' : '') + '" data-ca-rc-pod-tab="' + t[0] + '" aria-pressed="' + (i === idx ? 'true' : 'false') + '">' + t[1] + '</button>').join('')
                 + '</div>';
         }
-        function renderRcPod() {
+        function rcPodCardHtml(rk, it, stagger) {
+            const cls = rk === 1 ? 'ca-rc-pod-hero' : ('ca-rc-pod-side' + (rk === 3 ? ' ca-rc-pod-dim' : ''));
+            return '<div class="ca-rc-pod-card ' + cls + (stagger ? ' ca-rc-pod-d' + (rk === 1 ? 0 : rk - 1) : '') + '">'
+                + (rk === 1
+                    ? '<i data-lucide="crown" class="w-4 h-4 ca-rc-pod-crown"></i>'
+                    : '<span class="ca-rc-pod-ord ca-mono">' + (rk === 2 ? '2nd' : '3rd') + '</span>')
+                + '<span class="ca-rc-pod-code ca-mono font-bold' + (rk === 1 ? ' text-lg' : ' text-sm') + '">' + it.code + '</span>'
+                + '<span class="ca-rc-pod-count ca-mono text-xs font-semibold">\u00d7' + it.n + '</span>'
+                + '<span class="ca-rc-pod-ldate ca-mono ca-micro">' + (it.last ? rcPodWhen(it.last) : '') + '</span>'
+                + '</div>';
+        }
+        function rcPodLrowHtml(rk, it, stagger) {
+            return '<div class="ca-rc-pod-lrow' + (stagger ? ' ca-rc-pod-cas' : '') + '"' + (stagger ? ' style="animation-delay: ' + (150 + (rk - 4) * 30) + 'ms"' : '') + '>'
+                + '<span class="ca-rc-pod-lrank">' + rk + '</span>'
+                + '<span class="ca-mono font-bold text-sm">' + it.code + '</span>'
+                + '<span class="ca-rc-pod-lmeta"><span class="ca-mono text-xs font-semibold">\u00d7' + it.n + '</span><span class="ca-rc-pod-ldate ca-mono">' + (it.last ? rcPodWhen(it.last) : '') + '</span></span>'
+                + '</div>';
+        }
+        function renderRcPod(stagger) {
             const body = document.getElementById('ca-rc-pod-body');
-            if (!body) return;
+            const tabsWrap = document.getElementById('ca-rc-pod-tabs-wrap');
+            if (!body || !tabsWrap) return;
             const stats = rcPodStats();
             const sub = document.getElementById('ca-rc-pod-subtitle');
             if (sub) sub.textContent = stats.first ? ('All-time \u00b7 since ' + rcPodSince(stats.first)) : 'All-time';
-            if (!stats.routes.length && !stats.lo.length && !stats.ta.length) {
+            const idx = Math.max(0, RC_POD_TABS.findIndex((t) => t[0] === rcPodTab));
+            tabsWrap.innerHTML = rcPodTabsHtml(idx);
+            if (!stats.flights.length && !stats.lo.length && !stats.ta.length) {
                 body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
                 return;
             }
             const list = stats[rcPodTab] || [];
-            let html = '<div class="ca-rc-pod-chips">' + RC_POD_TABS.map((t) =>
-                '<button type="button" class="ca-cl-chip' + (t[0] === rcPodTab ? ' ca-cl-chipon' : '') + '" data-ca-rc-pod-tab="' + t[0] + '" aria-pressed="' + (t[0] === rcPodTab ? 'true' : 'false') + '">' + t[1] + '</button>'
-            ).join('') + '</div>';
             if (!list.length) {
-                html += '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
-            } else {
-                const show = rcPodAll[rcPodTab] ? list : list.slice(0, 3);
-                html += show.map((it, i) => rcPodRowHtml(i + 1, it)).join('');
-                if (list.length > 3) html += '<button type="button" class="ca-rc-pod-all ca-micro uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400" data-ca-rc-pod-all="' + (rcPodAll[rcPodTab] ? '0' : '1') + '">' + (rcPodAll[rcPodTab] ? 'Fold back' : 'View all \u00b7 ' + list.length) + '</button>';
+                body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
+                return;
             }
-            body.innerHTML = html;
+            // the podium: 2nd - 1st - 3rd across the grid, rank one center
+            // and elevated (owner order, the dense redesign)
+            const pod = list.slice(0, 3);
+            let ph = '';
+            if (pod[1]) ph += rcPodCardHtml(2, pod[1], stagger);
+            if (pod[0]) ph += rcPodCardHtml(1, pod[0], stagger);
+            if (pod[2]) ph += rcPodCardHtml(3, pod[2], stagger);
+            body.innerHTML = '<div class="ca-rc-pod-grid">' + ph + '</div>';
+            if (list.length > 3) {
+                // two-phase: the podium is in the DOM now, so the fit
+                // measures its real height before the rows fill the rest
+                const grid = body.querySelector('.ca-rc-pod-grid');
+                const openAll = rcPodAll[rcPodTab];
+                const shown = openAll ? list.length : Math.min(list.length, 3 + rcPodFit(body, grid));
+                let rows = '';
+                list.slice(3, shown).forEach((it, i) => { rows += rcPodLrowHtml(i + 4, it, stagger); });
+                if (list.length > shown) rows += '<button type="button" class="ca-rc-pod-all ca-micro uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400" data-ca-rc-pod-all="1">View all \u00b7 ' + list.length + '</button>';
+                else if (openAll) rows += '<button type="button" class="ca-rc-pod-all ca-micro uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400" data-ca-rc-pod-all="0">Fold back</button>';
+                body.insertAdjacentHTML('beforeend', rows);
+            }
         }
         function openRcPod() {
             const wrap = document.getElementById('ca-rc-podwrap');
             const sheet = document.getElementById('ca-rc-pod-sheet');
             if (!wrap || !sheet) return;
             caSheetHideCancel(wrap);   // hotfix 14: a quick close-and-reopen never hides the wrap mid-open
-            rcPodTab = 'routes';       // every open starts on the routes podium
-            renderRcPod();
+            rcPodTab = 'flights';      // every open starts on the All Flights podium
+            renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant
             try { lucide.createIcons(); } catch (err) {}
             wrap.classList.remove('hidden');
             caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
@@ -7297,6 +7389,15 @@
                     if (tab) { rcPodTab = tab.getAttribute('data-ca-rc-pod-tab'); renderRcPod(); return; }
                     const all = ev.target.closest('[data-ca-rc-pod-all]');
                     if (all) { rcPodAll[rcPodTab] = all.getAttribute('data-ca-rc-pod-all') === '1'; renderRcPod(); }
+                });
+                // v1.45.39: a fold or rotation re-measures the viewport's
+                // row budget (debounced; only while the page is open)
+                let rcPodRzT = null;
+                window.addEventListener('resize', () => {
+                    const pw = document.getElementById('ca-rc-podwrap');
+                    if (!pw || pw.classList.contains('hidden')) return;
+                    if (rcPodRzT) clearTimeout(rcPodRzT);
+                    rcPodRzT = setTimeout(() => { rcPodRzT = null; renderRcPod(); }, 150);
                 });
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
                 // hotfix 5 + 8 (owner orders): swipe the grid sideways to

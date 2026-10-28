@@ -1159,18 +1159,27 @@ const synthItems = [].concat(
   }
 
 
-  // ---- v1.45.38 (owner order, the podium release): the records page ----
+  // ---- v1.45.39 (owner order, the current-records release): the
+  // records page — flown-only semantics, station-visit counting, and the
+  // dense redesign (segmented tabs + glide pill, 2-1-3 podium grid,
+  // cascading leaderboard) ----
   {
     const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
     // the door ends the left cluster; the page is a body child, never nested
     R.ok(src.indexOf('id="ca-rc-shot"') < src.indexOf('id="ca-rc-pod"'), 'the podium button sits right of the camera — tag + camera stay the marks pair');
     R.ok(/function openRcPod\(\)[\s\S]*?caSheetHideCancel\(wrap\);[\s\S]*?caSheetGlideArm\(sheet, wrap\.querySelector\('\.ca-rc-pod-shade'\), null\);/.test(src), 'the records page opens through the shared hide-cancel + glide arm (hotfix 13/14 discipline)');
     R.ok(/function closeRcPod\(\)[\s\S]*?caSheetGlideCancel\(sheet\);[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the records page closes through the shared glide-cancel + hide arm — a quick reopen can never wedge it');
-    R.ok(/const podBtn = document\.getElementById\('ca-rc-pod'\);\s*\n\s*if \(podBtn\) rcBtnAnimate\(podBtn, !collapsed && rcPodHasData\(\)\);/.test(src), 'the podium reveals through the same pop discipline — expanded AND at least one leg ever imported');
+    R.ok(/const podBtn = document\.getElementById\('ca-rc-pod'\);\s*\n\s*if \(podBtn\) rcBtnAnimate\(podBtn, !collapsed && rcPodHasData\(\)\);/.test(src), 'the podium reveals through the same pop discipline — expanded AND at least one landed leg');
+    R.ok(src.includes("font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace") && src.includes('.ca-mono {'), 'v1.45.39: the numerics ride the system mono stack via the house .ca-mono class — no font download, no tw.css recompile');
+    R.ok(/html\.ca-reduced \.ca-rc-pod-glider[^\n]*\{ transition: none; \}/.test(src) && /html\.ca-reduced \.ca-rc-pod-d0/.test(src), 'v1.45.39: the glide and the stagger stand down under ca-reduced (snap + plain fade)');
+    const cssLo = src.indexOf('/* v1.45.39 (owner order, the current-records redesign)');
+    const cssHi = src.indexOf('.ca-rc-pod-all {', cssLo);
+    const podCss = src.slice(cssLo, cssHi);
+    R.ok(podCss.indexOf('ca-rc-pod-dim') >= 0 && podCss.indexOf('silver') < 0 && podCss.indexOf('bronze') < 0, 'v1.45.39: ranks two and three differentiate by saturation (ca-rc-pod-dim) — the gold-only accent ruling holds, no invented metals in the podium CSS');
   }
   {
-    // the stats math: cross-month chaining, pair folding, per-visit stays,
-    // the 6h split, positioning legs, tie-breaks by recency
+    // the stats math: cross-month chaining, per-visit stays, the 6h split,
+    // positioning legs, tie-breaks by recency — all through the LANDING gate
     const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       const legs = {
@@ -1195,54 +1204,53 @@ const synthItems = [].concat(
       x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-09': [{ ymd: '2026-09-30', kind: 'fly', code: '', loc: '', fns: ['1'], dkey: 'k1' }], '2026-10': [{ ymd: '2026-10-02', kind: 'fly', code: '', loc: '', fns: ['2'], dkey: 'k2' }, { ymd: '2026-10-09', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k3' }] }));
     } });
     const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
-    R.eq(stats.routes.map((r) => r.label + ':' + r.n).join('|'), 'SIN-KUL:4|SIN-NRT:4|SIN-JNB:2|CPT-JNB:2', 'routes are station pairs, both directions folded — the n=4 tie breaks by recency (KUL flown 11 Oct outranks NRT 07 Oct) and non-SIN pairs read alphabetically');
-    R.eq(stats.routes.map((r) => r.label)[1], 'SIN-NRT', 'a pair names SIN first (the home base reads first), never the raw alphabetical key');
+    R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|KUL:2|NRT:2|CPT:1', 'All Flights counts station VISITS (v1.45.39) — SIN-MEL-SIN is MEL ×1, the JNB double-visit trip counts both stays, ties break by recency');
     R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|NRT:2', 'layover stations count PER VISIT — the JNB out-stay and back-stay are two lays, and unreadable ground never turns into a turnaround');
     R.eq(stats.ta.map((r) => r.code + ':' + r.n).join('|'), 'KUL:2|CPT:1', 'turnaround stations ride the marks\u2019 own rule — quick ground only, positioning stays included');
-    R.eq(stats.first, '2026-09-30', 'the all-time window opens on the earliest leg, across the month border the trip chains over');
-    R.eq(String(w.eval('rcPodHasData()')), 'true', 'the reveal check sees the store');
-    // the render + the UI: podium, chips, view-all, close, reopen
+    R.eq(stats.first, '2026-09-30', 'the all-time window opens on the earliest FLOWN leg, across the month border the trip chains over');
+    R.eq(String(w.eval('rcPodHasData()')), 'true', 'the reveal check sees the landed legs');
+    // the render + the UI: segmented tabs with the glide pill, the 2-1-3
+    // podium, the leaderboard, close, reopen
     w.eval('openRosterCalendar()');
     await wait(300);
     const podBtn = d.getElementById('ca-rc-pod');
     R.ok(!!podBtn, 'the podium button exists in the header');
-    R.ok(!podBtn.classList.contains('hidden'), 'the podium button reveals when the calendar opens with imported history');
+    R.ok(!podBtn.classList.contains('hidden'), 'the podium button reveals when the calendar opens with landed history');
     R.ok(d.getElementById('ca-rc-shot').nextElementSibling === podBtn, 'DOM order: the podium ends the left cluster, right of the camera');
     R.ok(!d.getElementById('ca-roster-cal').contains(d.getElementById('ca-rc-podwrap')) && d.body.contains(d.getElementById('ca-rc-podwrap')), 'the records page is a direct child of <body> — never nested inside the calendar sheet');
     podBtn.click();
     await wait(100);
     const wrap = d.getElementById('ca-rc-podwrap'), body = d.getElementById('ca-rc-pod-body');
     R.ok(!wrap.classList.contains('hidden'), 'tapping the podium opens the records page over the calendar');
-    R.eq(d.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-tab]').length, 3, 'the chip row carries all three lists');
-    const chips = d.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-tab]');
-    R.ok(chips[0].textContent === 'Routes' && chips[0].classList.contains('ca-cl-chipon') && chips[0].getAttribute('aria-pressed') === 'true', 'Routes is the default chip, gold and pressed');
-    R.eq(d.getElementById('ca-rc-pod-subtitle').textContent, 'All-time \u00b7 since Sept 2026', 'the subtitle names the all-time window from the earliest leg');
-    let rows = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row');
-    R.eq(rows.length, 3, 'the podium shows the top three');
-    R.ok(rows[0].classList.contains('ca-rc-pod-first') && rows[0].textContent.indexOf('SIN-KUL') >= 0 && rows[0].textContent.indexOf('\u00d74') >= 0, 'rank one wears the gold accent and carries the pair with its count');
-    R.ok(!rows[1].classList.contains('ca-rc-pod-first') && !rows[2].classList.contains('ca-rc-pod-first'), 'ranks two and three stay on the glass surface — no silver, no bronze');
-    const allBtn = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]');
-    R.ok(!!allBtn && allBtn.textContent.indexOf('View all \u00b7 4') >= 0, 'the View-all door names the full depth when the list runs past three');
-    allBtn.click();
-    await wait(50);
-    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row').length, 4, 'View all expands to the complete ranked list');
-    R.ok(d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').textContent.indexOf('Fold back') >= 0, 'the door flips to Fold back');
-    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').click();
-    await wait(50);
-    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row').length, 3, 'folding returns to the podium');
-    // re-query at click time: every render rebuilds the chips, and a
+    const tabs = d.querySelectorAll('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab]');
+    R.eq(tabs.length, 3, 'the segmented tab bar carries all three lists');
+    R.ok(tabs[0].textContent === 'All Flights' && tabs[0].classList.contains('ca-rc-pod-tabon') && tabs[0].getAttribute('aria-pressed') === 'true', 'All Flights is the default tab, navy on the gold pill');
+    R.eq(d.querySelector('.ca-rc-pod-glider').style.transform, 'translateX(calc(0% + 0px))', 'the glide pill parks under the first tab');
+    R.eq(d.getElementById('ca-rc-pod-subtitle').textContent, 'All-time \u00b7 since Sept 2026', 'the subtitle names the all-time window from the earliest flown leg');
+    let cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
+    R.eq(cards.length, 3, 'the podium grid carries the top three');
+    R.ok(cards[1].classList.contains('ca-rc-pod-hero') && cards[1].textContent.indexOf('JNB') >= 0 && cards[1].textContent.indexOf('\u00d72') >= 0, 'the CENTER column is rank one — the hero card wears the gold frame and the crown, with the count');
+    R.ok(cards[0].classList.contains('ca-rc-pod-side') && !cards[0].classList.contains('ca-rc-pod-dim') && cards[0].textContent.indexOf('2nd') >= 0 && cards[0].textContent.indexOf('KUL') >= 0, 'the LEFT column is rank two — full-saturation side card with its ordinal');
+    R.ok(cards[2].classList.contains('ca-rc-pod-side') && cards[2].classList.contains('ca-rc-pod-dim') && cards[2].textContent.indexOf('3rd') >= 0 && cards[2].textContent.indexOf('NRT') >= 0, 'the RIGHT column is rank three — the desaturated side card (saturation, never invented metals)');
+    R.ok(!!d.querySelector('#ca-rc-pod-body .ca-rc-pod-hero i[data-lucide="crown"]'), 'the hero wears the crown glyph');
+    R.ok(cards[1].classList.contains('ca-rc-pod-d0') && cards[0].classList.contains('ca-rc-pod-d1') && cards[2].classList.contains('ca-rc-pod-d2'), 'the open render staggers the podium — rank one at 0ms, two at 50ms, three at 100ms');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 1, 'the leaderboard carries rank four');
+    R.ok(d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').textContent.indexOf('CPT') >= 0, 'rank four is CPT — the mono leaderboard row');
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]'), 'no View-all door when the list fits the podium plus the leaderboard');
+    // re-query at click time: every render rebuilds the tabs, and a
     // captured NodeList goes stale (detached clicks never reach the
     // delegated listener)
-    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="lo"]').click();
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
     await wait(50);
-    rows = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row');
-    R.eq(rows.length, 2, 'the Layovers chip swaps the list');
-    R.ok(rows[0].textContent.indexOf('JNB') >= 0 && rows[1].textContent.indexOf('NRT') >= 0, 'JNB outranks NRT — equal counts break by the more recent stay');
-    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]'), 'no View-all door when the list fits the podium');
-    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="ta"]').click();
+    cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
+    R.eq(cards.length, 2, 'the Layovers tab swaps the panel — two overnight stations');
+    R.ok(cards[1].classList.contains('ca-rc-pod-hero') && cards[1].textContent.indexOf('JNB') >= 0 && cards[0].textContent.indexOf('NRT') >= 0 && cards[0].textContent.indexOf('2nd') >= 0, 'JNB outranks NRT — equal counts break by the more recent stay');
+    R.eq(d.querySelector('.ca-rc-pod-glider').style.transform, 'translateX(calc(100% + 4px))', 'the glide pill slid one tab over — the container frame never moved');
+    R.ok(!cards[1].classList.contains('ca-rc-pod-d0'), 'a tab swap renders INSTANT — the stagger is mount-only');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
     await wait(50);
-    rows = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row');
-    R.ok(rows.length === 2 && rows[0].textContent.indexOf('KUL') >= 0 && rows[1].textContent.indexOf('CPT') >= 0, 'the Turnarounds chip carries the quick-ground list');
+    cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
+    R.ok(cards.length === 2 && cards[1].textContent.indexOf('KUL') >= 0 && cards[0].textContent.indexOf('CPT') >= 0, 'the Turnarounds tab carries the quick-ground list');
     d.getElementById('btn-close-rc-pod').click();
     await wait(100);
     R.ok(d.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full'), 'closing parks the sheet below the fold');
@@ -1250,7 +1258,71 @@ const synthItems = [].concat(
     R.ok(wrap.classList.contains('hidden'), 'the wrap hides after the glide (hotfix 14 arm)');
     podBtn.click();
     await wait(100);
-    R.ok(d.querySelector('#ca-rc-pod-body .ca-rc-pod-row').textContent.indexOf('SIN-KUL') >= 0, 'every open starts on the routes podium again');
+    R.ok(d.querySelector('#ca-rc-pod-body .ca-rc-pod-card').textContent.indexOf('KUL') >= 0, 'every open starts on the All Flights podium again');
+  }
+  {
+    // the landing gate (v1.45.39): a visit exists once the crew has LANDED
+    // there — times unreadable counts only once the day has fully passed
+    const { w } = await boot(APP, { now: '2026-10-08T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const legs = [
+        // landed two hours ago: a 150-minute turnaround
+        { fn: '11', dep: 'SIN', arr: 'KTI', ymd: '2026-10-08', std: '08:00', sta: '10:00', stdYmd: '2026-10-08', staYmd: '2026-10-08', ft: '02:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '12', dep: 'KTI', arr: 'SIN', ymd: '2026-10-08', std: '12:30', sta: '13:30', stdYmd: '2026-10-08', staYmd: '2026-10-08', ft: '02:00', ac: '7M8', rpt: '', pos: false },
+        // lands three hours FROM NOW: nothing of WSI exists yet (and the
+        // seed never interleaves the pairs — the chain walker orders
+        // sectors by arrival, like a real roster's clock)
+        { fn: '13', dep: 'SIN', arr: 'WSI', ymd: '2026-10-08', std: '13:45', sta: '15:00', stdYmd: '2026-10-08', staYmd: '2026-10-08', ft: '04:00', ac: '7M8', rpt: '08:30', pos: false },
+        { fn: '14', dep: 'WSI', arr: 'SIN', ymd: '2026-10-08', std: '19:00', sta: '20:00', stdYmd: '2026-10-08', staYmd: '2026-10-08', ft: '04:00', ac: '7M8', rpt: '', pos: false },
+        // yesterday, no readable times: landed only once the day passed
+        { fn: '15', dep: 'SIN', arr: 'PEK', ymd: '2026-10-07', std: '', sta: '', stdYmd: '2026-10-07', staYmd: '2026-10-07', ft: '', ac: '', rpt: '', pos: false },
+        { fn: '16', dep: 'PEK', arr: 'SIN', ymd: '2026-10-07', std: '', sta: '', stdYmd: '2026-10-07', staYmd: '2026-10-07', ft: '', ac: '', rpt: '', pos: false },
+        // tomorrow, no readable times: still the future
+        { fn: '17', dep: 'SIN', arr: 'HKG', ymd: '2026-10-09', std: '', sta: '', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '', ac: '', rpt: '', pos: false },
+        { fn: '18', dep: 'HKG', arr: 'SIN', ymd: '2026-10-09', std: '', sta: '', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '', ac: '', rpt: '', pos: false }
+      ];
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': legs }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.ok(stats.flights.map((r) => r.code).indexOf('WSI') < 0, 'a leg that lands two hours from now does not count — wheels-down is the gate');
+    R.ok(stats.flights.map((r) => r.code).indexOf('HKG') < 0, 'a tomorrow leg with no readable times stays the future');
+    R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'KTI:1|PEK:1', 'landed visits count — two hours ago, and yesterday\u2019s unreadable-time leg once the day passed');
+    R.eq(stats.ta.map((r) => r.code).join(','), 'KTI', 'the landed quick-ground stay is a TURNAROUND — the gate holds, and the exact 360/361 boundary lives in its own block below');
+    R.eq(stats.lo.map((r) => r.code).join(','), 'PEK', 'the unreadable-time stay reads as a layover — the marks\u2019 rule for unreadable ground');
+  }
+  {
+    // the viewport-aware leaderboard + the View-all door: eleven stations,
+    // the jsdom no-layout answer is the fixed seven (ranks 4-10)
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const stations = [['PEK', '2026-10-01'], ['HKG', '2026-10-02'], ['KTI', '2026-10-03'], ['WSI', '2026-10-04'], ['SUB', '2026-10-05'], ['DRW', '2026-10-06'], ['LGW', '2026-10-07'], ['UPG', '2026-10-08'], ['KNO', '2026-10-09'], ['VTE', '2026-10-10'], ['BWN', '2026-10-11']];
+      const legs = [];
+      stations.forEach(([code, ymd]) => {
+        legs.push({ fn: '9' + code, dep: 'SIN', arr: code, ymd, std: '08:00', sta: '09:00', stdYmd: ymd, staYmd: ymd, ft: '01:00', ac: '7M8', rpt: '06:30', pos: false });
+        legs.push({ fn: '8' + code, dep: code, arr: 'SIN', ymd, std: '11:00', sta: '12:00', stdYmd: ymd, staYmd: ymd, ft: '01:00', ac: '7M8', rpt: '', pos: false });
+      });
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': legs }));
+    } });
+    // the delegated click wiring binds when the CALENDAR opens (the
+    // data-bound once-block) - open it first, then the page
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(100);
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card').length, 3, 'the podium holds the top three');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'the leaderboard fills ranks four through ten — the no-layout answer (the real browser measures the actual screen)');
+    const door = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]');
+    R.ok(!!door && door.textContent.indexOf('View all \u00b7 11') >= 0, 'the View-all door names the full depth past what the screen holds');
+    R.ok(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow')[6].textContent.indexOf('HKG') >= 0, 'rank ten is the last visible row — PEK waits behind the door');
+    door.click();
+    await wait(50);
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 8, 'View all unfolds the complete list — ranks four through eleven');
+    R.ok(d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').textContent.indexOf('Fold back') >= 0, 'the door flips to Fold back');
+    R.ok(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow')[7].textContent.indexOf('PEK') >= 0, 'the eleventh station is reachable');
+    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').click();
+    await wait(50);
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'folding returns to the viewport-fit depth');
+    w.eval('closeRcPod()');
   }
   {
     // the 6h boundary, exact: 360 minutes is a turnaround, 361 lays over
@@ -1269,7 +1341,8 @@ const synthItems = [].concat(
     R.eq(stats.lo.map((r) => r.code).join(','), 'WSI', '361 minutes LAYS OVER — one minute past the boundary flips the kind');
   }
   {
-    // empty state: a fresh install sees no door, and the page guards itself
+    // empty state: a fresh install sees no door — and so does a store
+    // holding ONLY the future (the landing gate tightens the reveal)
     const { w, d } = await boot(APP, { now: '2026-10-08T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
     } });
@@ -1281,6 +1354,16 @@ const synthItems = [].concat(
     await wait(100);
     R.ok(d.getElementById('ca-rc-pod-body').textContent.indexOf('No records yet') >= 0, 'a direct open still renders the house empty state — never zeros');
     w.eval('closeRcPod()');
+    const { w: w2, d: d2 } = await boot(APP, { now: '2026-10-08T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '99', dep: 'SIN', arr: 'KUL', ymd: '2026-10-30', std: '09:00', sta: '10:10', stdYmd: '2026-10-30', staYmd: '2026-10-30', ft: '01:10', ac: '7M8', rpt: '', pos: false }
+      ] }));
+    } });
+    R.eq(String(w2.eval('rcPodHasData()')), 'false', 'a store holding only FUTURE legs fails the reveal check — nothing has landed');
+    w2.eval('openRosterCalendar()');
+    await wait(300);
+    R.ok(d2.getElementById('ca-rc-pod').classList.contains('hidden'), 'an imported future roster alone shows no podium button (v1.45.39)');
   }
 
   process.exit(R.done() ? 1 : 0);
