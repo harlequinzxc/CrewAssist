@@ -643,9 +643,13 @@
         .ca-rc-pod-xpin > div { padding: 2px 10px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-solid-bg); }
         .ca-rc-pod-xl { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px solid var(--glass-border); font-size: 11px; }
         .ca-rc-pod-xl:last-child { border-bottom: none; }
-        .ca-rc-pod-xld { color: var(--ca-ink-navy); }
+        /* v1.45.43 (owner report, dark mode): the date and flight number
+           ride the INHERITED theme ink, like the station codes — navy is
+           gold-fill ink and vanished on the dark glass panel. The muted
+           spans (the fold end, the kind mark) stay stone, like every
+           other date on this page. */
         .ca-rc-pod-xle { color: var(--ca-ink-stone); }
-        .ca-rc-pod-xlfn { margin-left: auto; color: var(--ca-ink-navy); font-weight: 600; }
+        .ca-rc-pod-xlfn { margin-left: auto; font-weight: 600; }
         .ca-rc-pod-xlk { flex: none; color: var(--ca-ink-stone); letter-spacing: .06em; }
         html.ca-reduced .ca-rc-pod-xp { transition: none; }
         .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
@@ -2987,7 +2991,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.42'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.43'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3009,6 +3013,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.43', d: '2026-10-29', items: [
+                { c: 'imp', t: 'A turnaround shuttle folds its hub, however long the return wait.' },
+                { c: 'imp', t: 'The visit log reads right in dark mode too.' }
+            ] },
             { v: '1.45.42', d: '2026-10-29', items: [
                 { c: 'imp', t: 'Tapping between lists never loses the crown again.' },
                 { c: 'imp', t: 'Tap a station to unfold every flight you’ve flown there.' }
@@ -6066,15 +6074,24 @@
                 // in progress classifies as a turnaround, never a misread.
                 // v1.45.41 (owner ruling, the shuttle fold): a quick return
                 // to a station already visited THIS trip is a CONNECTION,
-                // not a second visit — the CPT-style shuttle counts its
-                // hub once. A REAL second stay (more than six hours on the
-                // ground before the next departure) stands as its own visit
-                // — the double-layover hubs keep counting twice — and
-                // unreadable ground never folds (it never becomes a
-                // turnaround, the standing rule). The folded touch only
-                // refreshes the station's last-flown dates; the anchor stay
-                // keeps its kind.
+                // not a second visit — the side-trip shuttle counts its
+                // hub once. A REAL second stay stands as its own visit.
+                // v1.45.43 (owner report, the September duty — the ruling
+                // corrected to the owner's own line): the fold rides the
+                // SIDE-TRIP's own character, never the hub's return
+                // transit. The real shuttle turns around at its far end
+                // (CPT, ninety minutes) and then waits TWO DAYS at the hub
+                // for the flight home — the hub still counts once, because
+                // the whole out-and-back is one stay with a day-trip inside
+                // it. But when the side-trip LAYS OVER at its far end
+                // (NRT-LAX, FRA-JFK), both hub touches are real stays and
+                // each counts. So: the fold fires when every visit created
+                // since this hub's anchor is a TURNAROUND — the layover/
+                // turnaround logic itself decides, which is what the owner
+                // asked for. Unreadable ground at the far end reads as a
+                // layover and blocks the fold (the standing safe default).
                 const seen = {};
+                const vlog = [];
                 secs.forEach((sec, i) => {
                     if (!sec || !sec.arr || sec.arr === 'SIN' || !sec.arrDate) return;
                     if (!rcPodHasLanded(sec.arrDate, sec.staHm, nowMs)) return;
@@ -6083,15 +6100,20 @@
                     const bm = (nxt && nxt.dep === sec.arr && nxt.depDate && nxt.stdHm) ? new Date(nxt.depDate + 'T' + nxt.stdHm + ':00') : null;
                     const ground = (am && bm) ? (bm - am) / 60000 : 99999;
                     const kind = ground > 360 ? 'lo' : 'ta';
-                    if (seen[sec.arr] && am && bm && ground <= 360) {
-                        const st = stops[sec.arr];
-                        if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
-                        if (String(sec.arrDate) > st[seen[sec.arr].k].last) st[seen[sec.arr].k].last = String(sec.arrDate);
-                        if (String(sec.arrDate) > seen[sec.arr].d) seen[sec.arr].end = String(sec.arrDate);
-                        return;
+                    if (seen[sec.arr]) {
+                        const side = vlog.slice(seen[sec.arr].vi + 1);
+                        if (side.length && side.every((v) => v.k === 'ta')) {
+                            const st = stops[sec.arr];
+                            const anc = seen[sec.arr].v;
+                            if (String(sec.arrDate) > st.all.last) st.all.last = String(sec.arrDate);
+                            if (String(sec.arrDate) > st[anc.k].last) st[anc.k].last = String(sec.arrDate);
+                            if (String(sec.arrDate) > anc.d) anc.end = String(sec.arrDate);
+                            return;
+                        }
                     }
                     const visit = { d: String(sec.arrDate), fn: sec.fn || '', k: kind, end: '' };
-                    seen[sec.arr] = visit;
+                    seen[sec.arr] = { v: visit, vi: vlog.length };
+                    vlog.push(visit);
                     const st = stops[sec.arr] || (stops[sec.arr] = { all: { n: 0, last: '', visits: [] }, lo: { n: 0, last: '', visits: [] }, ta: { n: 0, last: '', visits: [] } });
                     st.all.n++; st[kind].n++;
                     st.all.visits.push(visit);
