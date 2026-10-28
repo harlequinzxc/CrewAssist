@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.34', 'APP_VERSION is 1.45.34');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.34' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.34 entry with its single pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v265'), 'the service-worker cache name is bumped to v265 (the v1.45.34 chip-fade release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.35', 'APP_VERSION is 1.45.35');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.35' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.35 entry with its single pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v266'), 'the service-worker cache name is bumped to v266 (the v1.45.35 stuck-guard release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.34'; }), 'the What\'s New sheet carries the v1.45.34 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.35'; }), 'the What\'s New sheet carries the v1.45.35 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1761,6 +1761,25 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.getElementById('menu-lightbox-img').click());
         await sleep(400);
         ok(await page.evaluate(() => document.getElementById('menu-lightbox').classList.contains('hidden')), 'v1.45.33: a plain tap on the image exits the view');
+        // v1.45.35 (owner report: "sometimes I cannot exit out of the image
+        // by tapping outside of the image"): the old engine's lone-pointer
+        // pointerdown cancelled the only timer that ever cleared the exit
+        // guard - one quick tap inside the 460ms window and the guard stuck
+        // true FOREVER (no tap, veil or image, could ever close the view
+        // again). Prove the fix in the real browser: pinch, release, then a
+        // fresh one-finger tap on the VEIL while the guard window is live
+        await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+        await sleep(300);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 100, y: 300, id: 1 }, { x: 260, y: 300, id: 2 }] });
+        await sleep(150);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 60, y: 260, id: 1 }, { x: 320, y: 340, id: 2 }] });
+        await sleep(100);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await sleep(120);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 12, y: 500, id: 3 }] });
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
+        ok(true, 'v1.45.35: a quick tap on the veil right after the pinch closes the view - a deliberate tap is never the pinch\u2019s trailing click, and the guard can never stick (the owner bug)');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
         await page.evaluate((d) => { closeMenuViewer(); localStorage.removeItem('SQ836:' + d + ':CABINS'); localStorage.removeItem('SQ836:' + d + ':JCL'); }, heroDate);
