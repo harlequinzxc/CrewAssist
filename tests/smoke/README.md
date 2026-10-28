@@ -236,6 +236,18 @@ the service-worker stamp. It checks:
   the dev-ui suite; the smoke's settings layers never pinned the storage
   values). Version pins: APP_VERSION 1.45.32, the changelog's two-pointer
   entry, sw v263, the v1.45.32 What's New header.
+- v1.45.33 the lightbox pinch, proven with REAL multi-touch: a CDP session
+  (`Input.dispatchTouchEvent`) drives two touch-point ids — the pair lands,
+  spreads and slides in one motion, and the inline transform is read back:
+  zoom and pan in the same paint, the release springs home through the
+  elastic class, the trailing release never closes the view, the hint fades
+  at exactly three seconds, and a plain tap on the image exits. LESSON:
+  jsdom keeps the raw inline style string, but Chromium re-serializes
+  through the CSSOM without trailing zeros ('10px', 'scale(1)') — browser
+  pins PARSE the numbers out of the transform, never pin the spelling. One
+  tap-race flake (the roster tag toggle, the round-27 hardened pin) fired
+  once in three runs and passed the other two — the recorded environmental
+  class. Version pins: 1.45.33 / v264.
 
 ## Running it
 

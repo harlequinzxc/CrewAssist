@@ -1288,10 +1288,28 @@
             background: var(--ca-lightbox-veil);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
+            /* v1.45.33 (owner order): the unified pinch engine owns every
+               touch on the whole view - the browser's native page pinch
+               never competes with it */
+            touch-action: none;
         }
         #menu-lightbox img {
             box-shadow: 0 12px 40px var(--ca-lightbox-shadow);
+            /* v1.45.33 (owner order): the gesture's only moving part is the
+               transform - nothing else repaints, nothing reflows. touch-action
+               hands every touch on the image to the unified engine */
+            touch-action: none;
+            -webkit-user-select: none; user-select: none;
+            -webkit-touch-callout: none;
         }
+        /* v1.45.33: the compositor promotion is BORN with the pair and
+           DESTROYED when the spring lands - the hotfix-17+18 rule (nothing
+           at rest carries a standing layer; mobile memory is not free) */
+        #menu-lightbox img.ca-lb-live { will-change: transform; }
+        /* v1.45.33: the gentle elastic reset - a soft ease-out with the
+           faintest overshoot. The pair breaks and the image springs home to
+           its baseline centered fit */
+        #menu-lightbox img.ca-lb-snap { transition: transform 380ms cubic-bezier(0.22, 1.28, 0.36, 1); }
 
         /* Inflight Menu Printer */
         #print-paper-wrap { transform-origin: top center; }
@@ -2352,6 +2370,11 @@
         <div id="menu-lightbox" class="fixed inset-0 z-[80] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <button type="button" id="menu-lightbox-dismiss" class="absolute inset-0 w-full h-full cursor-zoom-out" aria-label="Close image"></button>
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
+            <!-- v1.45.33 (owner order): the transient micro-instructional
+                 hint - quiet low-contrast micro text, centered at the
+                 bottom, active exactly three seconds from mount, then a
+                 smooth 500ms ease-in-out fade to nothing -->
+            <p id="menu-lightbox-hint" class="ca-micro absolute bottom-6 inset-x-0 text-center pointer-events-none transition-opacity duration-500 ease-in-out" style="color: var(--arch-muted)">Pinch to zoom &amp; pan</p>
         </div>
 
         <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true">
@@ -2812,7 +2835,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.32'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.33'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2834,6 +2857,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.33', d: '2026-10-28', items: [
+                { c: 'new', t: 'Pinch the menu image to zoom and pan; release snaps home.' }
+            ] },
             { v: '1.45.32', d: '2026-10-28', items: [
                 { c: 'fix', t: 'The Storage panel’s values sit flush on one line — compressed, never dropping under their labels.' },
                 { c: 'imp', t: 'The expense labels read Overseas Expenses and Add Expenses.' }
@@ -16104,20 +16130,110 @@
             else caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
 
+        // v1.45.33 (owner order): the lightbox image answers a two-finger
+        // pinch through ONE unified pointer engine - no phases, no dead
+        // zones, no delay blocks. While two pointers are down, the scale
+        // tracks the finger spread around the pair's own pivot and the
+        // translation tracks the pivot's travel, both in the same paint:
+        // spread = zoom, slide = pan, one continuous physical interaction.
+        // The transform is the only thing that moves, so the image tracks the
+        // fingers flawlessly at display refresh. The compositor promotion
+        // (ca-lb-live) is born with the pair and destroyed when the spring
+        // lands. The moment the pair breaks - either finger lifts
+        // - the image springs back to its baseline centered fit through the
+        // gentle elastic ease-out, and a plain tap anywhere (the veil or the
+        // image itself, once no gesture ran) still closes the view.
+        let lbGestPts = new Map();
+        let lbGestBase = null;    // { dist, midX, midY } at the pair's landing
+        let lbGestFrom = null;    // { tx, ty, sc } at the pair's landing
+        let lbGestOn = false;     // exactly two pointers tracked
+        let lbGestRan = false;    // a gesture ran in this interaction - guards the tap-to-close
+        let lbGestEaseT = null;   // the snap-back class cleanup
+        let lbHintT = null;       // the hint's three-second lifetime
+        function lbGestPaint(tx, ty, sc) {
+            const img = document.getElementById('menu-lightbox-img');
+            if (img) img.style.transform = 'translate(' + tx.toFixed(2) + 'px, ' + ty.toFixed(2) + 'px) scale(' + sc.toFixed(4) + ')';
+        }
+        function lbGestSnapBack() {
+            const img = document.getElementById('menu-lightbox-img');
+            lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
+            if (!img) return;
+            img.classList.add('ca-lb-snap');
+            lbGestPaint(0, 0, 1);
+            clearTimeout(lbGestEaseT);
+            lbGestEaseT = setTimeout(() => { img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); lbGestRan = false; }, 460);   // destroyed when the spring lands
+        }
+        (function menuLbGestInit() {
+            const box = document.getElementById('menu-lightbox');
+            const img = document.getElementById('menu-lightbox-img');
+            if (!box || !img) return;
+            box.addEventListener('pointerdown', (e) => {
+                if (lbGestOn) return;
+                clearTimeout(lbGestEaseT);
+                img.classList.remove('ca-lb-snap');   // tracking mode: no transition, the fingers rule
+                lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                if (lbGestPts.size === 2) {
+                    const ps = [...lbGestPts.values()];
+                    lbGestBase = { dist: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1, midX: (ps[0].x + ps[1].x) / 2, midY: (ps[0].y + ps[1].y) / 2 };
+                    lbGestFrom = { tx: 0, ty: 0, sc: 1 };
+                    lbGestOn = true; lbGestRan = true;
+                    img.classList.add('ca-lb-live');   // born with the pair
+                }
+            });
+            img.addEventListener('click', () => { if (!lbGestRan) closeMenuLightbox(); });
+        })();
+        window.addEventListener('pointermove', (e) => {
+            if (!lbGestOn) return;
+            if (!lbGestPts.has(e.pointerId)) return;
+            lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            if (lbGestPts.size !== 2) return;
+            const ps = [...lbGestPts.values()];
+            const dist = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1;
+            const midX = (ps[0].x + ps[1].x) / 2, midY = (ps[0].y + ps[1].y) / 2;
+            const sc = Math.min(6, Math.max(1, lbGestFrom.sc * (dist / lbGestBase.dist)));
+            const tx = lbGestFrom.tx + (midX - lbGestBase.midX);
+            const ty = lbGestFrom.ty + (midY - lbGestBase.midY);
+            lbGestPaint(tx, ty, sc);
+        });
+        function lbGestEnd(e) {
+            if (!lbGestPts.has(e.pointerId)) return;
+            lbGestPts.delete(e.pointerId);
+            if (lbGestOn && lbGestPts.size < 2) lbGestSnapBack();   // the pair broke: spring home
+        }
+        window.addEventListener('pointerup', lbGestEnd);
+        window.addEventListener('pointercancel', lbGestEnd);
+
         function openMenuLightbox(url) {
             if (!url) return;
             const box = document.getElementById('menu-lightbox');
             const img = document.getElementById('menu-lightbox-img');
+            const hint = document.getElementById('menu-lightbox-hint');
             if (!box || !img) return;
             img.src = url;
             box.classList.remove('hidden');
+            // v1.45.33: the hint mounts visible instantly (no fade-in eats
+            // into its three seconds), then fades smoothly to nothing
+            if (hint) {
+                hint.style.transition = 'none';
+                hint.classList.remove('opacity-0');
+                void hint.offsetWidth;   // forced reflow: the pose lands before the fade arms
+                hint.style.transition = '';
+                clearTimeout(lbHintT);
+                lbHintT = setTimeout(() => hint.classList.add('opacity-0'), 3000);
+            }
             requestAnimationFrame(() => box.classList.remove('opacity-0'));
         }
 
         function closeMenuLightbox() {
             const box = document.getElementById('menu-lightbox');
             const img = document.getElementById('menu-lightbox-img');
+            const hint = document.getElementById('menu-lightbox-hint');
             if (!box) return;
+            clearTimeout(lbHintT);
+            if (hint) hint.classList.add('opacity-0');
+            lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
+            clearTimeout(lbGestEaseT);
+            if (img) { img.style.transform = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); }
             box.classList.add('opacity-0');
             setTimeout(() => {
                 box.classList.add('hidden');
@@ -16133,7 +16249,7 @@
                 openMenuLightbox(thumb.getAttribute('data-full'));
                 return;
             }
-            if (e.target && e.target.id === 'menu-lightbox-dismiss') closeMenuLightbox();
+            if (e.target && e.target.id === 'menu-lightbox-dismiss' && !lbGestRan) closeMenuLightbox();
         });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeMenuLightbox();
