@@ -100,9 +100,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.29', 'APP_VERSION is 1.45.29');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.29' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.29 entry with its one fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v260'), 'the service-worker cache name is bumped to v260 (the v1.45.29 height-floor release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.30', 'APP_VERSION is 1.45.30');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.30' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.30 entry with its one fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v261'), 'the service-worker cache name is bumped to v261 (the v1.45.30 visible-bottom release)');
 
         console.log('— the still ground (v1.45.27) —');
         // iOS Safari counts the toolbars-collapsed 100vh column and the
@@ -116,10 +116,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight && document.body.scrollHeight <= window.innerHeight), 'no scroll room: neither root element is taller than the screen - nothing to reveal, nothing to chain to');
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('app-root')).minHeight === window.innerHeight + 'px'), 'the app root fills the visible screen (100dvh), not the toolbars-collapsed 100vh');
         ok(await page.evaluate(() => document.body.getBoundingClientRect().height >= window.innerHeight - 0.5 && document.getElementById('app-root').getBoundingClientRect().height >= window.innerHeight - 0.5), 'v1.45.29: the column FILLS the screen - body and app-root measure at least the viewport height (the stale-stylesheet collapse the owner saw reads as a gap at the bottom; the floor now travels inside the document)');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('chat-dock')).bottom === '0px' && Math.abs(document.getElementById('chat-dock').getBoundingClientRect().bottom - window.innerHeight) < 1), 'v1.45.30: the dock rides the visible bottom - calc(100lvh - 100dvh) computes to zero where no toolbars exist (the rig), and the dock sits flush at the viewport bottom');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.29'; }), 'the What\'s New sheet carries the v1.45.29 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.30'; }), 'the What\'s New sheet carries the v1.45.30 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');

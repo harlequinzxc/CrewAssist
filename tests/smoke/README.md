@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.29), the changelog's current entry,
-  the service-worker cache name (v260).
+- Stamps: `APP_VERSION` (currently 1.45.30), the changelog's current entry,
+  the service-worker cache name (v261).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -295,6 +295,20 @@ the service-worker stamp. It checks:
   floor travels inside the document. The rig's still-ground layer
   gains the FILL pin: body AND app-root must measure at least the
   viewport height, making the collapse class detectable forever.
+- v1.45.30 the visible bottom (owner report round two: the gap to
+  the screen edge): with viewport-fit=cover (in the meta since the
+  first commit — verified via `git log -S`), `bottom: 0` on a fixed
+  panel means the layout viewport's bottom = the screen edge — but
+  iOS Safari's toolbars overlay it, and the frozen document (1.45.27)
+  can never scroll so the bars can never collapse. The dock gained
+  the inline rule `#chat-dock { bottom: calc(100lvh - 100dvh); }`
+  and the sheets' bind line became `max(var(--keyboard-height, 0px),
+  calc(100lvh - 100dvh))` (the keyboard metric already spans toolbar
+  + keyboard, so max() never double-counts). In the rig lvh === dvh,
+  so the calc is INERT there — every existing geometry pin held
+  unchanged, and the new pin asserts exactly that: the computed
+  bottom is 0px and the dock sits flush at the viewport bottom. The
+  rig cannot prove Safari's toolbar geometry; the iPhone judges it.
 
 ## Running it
 

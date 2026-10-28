@@ -414,6 +414,23 @@
             min-height: 100dvh;
         }
 
+        /* v1.45.30 (owner report — the gap to the screen's edge): fixed
+           panels anchor to the LAYOUT viewport's bottom, which with
+           viewport-fit=cover is the screen edge — but iOS Safari's
+           toolbars overlay it, and since the document froze (1.45.27)
+           the bars can never collapse (they only collapse on a page
+           scroll), so the dock sat behind the bar and the app read as
+           stopping short of the edge. The dock now rides the VISIBLE
+           bottom: 100lvh - 100dvh is exactly the toolbar intrusion —
+           zero when the bars are collapsed, zero in the home-screen
+           app, on Android, and in the rig; only Safari's expanded
+           bars lift it to sit flush on top of them. Older browsers
+           that cannot parse the units fall back to the bottom-0
+           class. */
+        #chat-dock {
+            bottom: calc(100lvh - 100dvh);
+        }
+
         html, body, * {
             scrollbar-width: none;
             -ms-overflow-style: none;
@@ -2845,7 +2862,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.29'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.30'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2867,6 +2884,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.30', d: '2026-10-28', items: [
+                { c: 'fix', t: 'The app meets the screen again — the chat bar and the drawers ride Safari’s toolbars, keyboard and all.' }
+            ] },
             { v: '1.45.29', d: '2026-10-28', items: [
                 { c: 'fix', t: 'The app fills the screen again — its height floor now travels inside the app itself.' }
             ] },
@@ -14063,7 +14083,13 @@
                     // sheet (the house rule says none ever does; the closest
                     // guard is the defense in depth)
                     if (sh.classList.contains('fixed') || !(sh.parentElement && sh.parentElement.closest('[data-ca-kbtrack]'))) {
-                        sh.style.bottom = 'var(--keyboard-height, 0px)';
+                        // v1.45.30: max() picks the toolbar intrusion at
+                        // rest (calc(100lvh - 100dvh), zero when the bars
+                        // are gone) and the full keyboard span while a
+                        // drawer field holds focus (the metric measures
+                        // from the layout viewport, so it already covers
+                        // toolbar + keyboard together)
+                        sh.style.bottom = 'max(var(--keyboard-height, 0px), calc(100lvh - 100dvh))';
                     }
                     sh.querySelectorAll('.overflow-y-auto').forEach((body) => {
                         const base = parseFloat(getComputedStyle(body).paddingBottom) || 0;
