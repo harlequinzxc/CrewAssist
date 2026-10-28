@@ -616,10 +616,20 @@
         html:not(.dark) .ca-rc-pod-crown { color: var(--sia-gold-ink); }
         .ca-rc-pod-ord { margin-bottom: 2px; }
         .ca-rc-pod-code { letter-spacing: .04em; margin-top: 2px; }
-        .ca-rc-pod-hero .ca-rc-pod-code { color: var(--sia-gold-ink); }
+        .ca-rc-pod-hero .ca-rc-pod-code { color: var(--sia-gold-ink); font-size: 20px; }
         html.dark .ca-rc-pod-hero .ca-rc-pod-code { color: var(--ca-gold-hi); }
         .ca-rc-pod-dim .ca-rc-pod-code { color: var(--ca-ink-stone); }
         .ca-rc-pod-count { margin-top: 2px; }
+        /* v1.45.40 (owner order, the polish round): the multiplier GLYPH
+           steps back to stone ink so the count carries the weight, and the
+           leaderboard's count and date ride FIXED tracks — the dates
+           align into one straight column down the list (a right-anchored
+           cluster with variable-width children can never align on its
+           own; both children need their own track). The hero code grows
+           to 20px — a half-step, the crown and wash untouched. */
+        .ca-rc-pod-x { color: var(--ca-ink-stone); }
+        .ca-rc-pod-lcount { width: 44px; flex: none; }
+        .ca-rc-pod-lmeta .ca-rc-pod-ldate { font-size: 11px; width: 84px; flex: none; }
         .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
         .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; border-bottom: 1px solid var(--glass-border); }
         .ca-rc-pod-lrank { width: 22px; flex: none; font-size: 11px; color: var(--ca-ink-stone); }
@@ -2959,7 +2969,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.39'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.40'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2981,6 +2991,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.40', d: '2026-10-29', items: [
+                { c: 'imp', t: 'The leaderboard aligns its dates; the × steps back, the hero grows.' }
+            ] },
             { v: '1.45.39', d: '2026-10-29', items: [
                 { c: 'imp', t: 'Records count only flown legs — the future waits its turn.' },
                 { c: 'imp', t: 'All Flights counts station visits — SIN-MEL-SIN is MEL ×1.' },
@@ -6077,8 +6090,8 @@
                 + (rk === 1
                     ? '<i data-lucide="crown" class="w-4 h-4 ca-rc-pod-crown"></i>'
                     : '<span class="ca-rc-pod-ord ca-mono">' + (rk === 2 ? '2nd' : '3rd') + '</span>')
-                + '<span class="ca-rc-pod-code ca-mono font-bold' + (rk === 1 ? ' text-lg' : ' text-sm') + '">' + it.code + '</span>'
-                + '<span class="ca-rc-pod-count ca-mono text-xs font-semibold">\u00d7' + it.n + '</span>'
+                + '<span class="ca-rc-pod-code ca-mono font-bold' + (rk === 1 ? '' : ' text-sm') + '">' + it.code + '</span>'
+                + '<span class="ca-rc-pod-count ca-mono text-xs font-semibold"><span class="ca-rc-pod-x">\u00d7</span>' + it.n + '</span>'
                 + '<span class="ca-rc-pod-ldate ca-mono ca-micro">' + (it.last ? rcPodWhen(it.last) : '') + '</span>'
                 + '</div>';
         }
@@ -6086,7 +6099,7 @@
             return '<div class="ca-rc-pod-lrow' + (stagger ? ' ca-rc-pod-cas' : '') + '"' + (stagger ? ' style="animation-delay: ' + (150 + (rk - 4) * 30) + 'ms"' : '') + '>'
                 + '<span class="ca-rc-pod-lrank">' + rk + '</span>'
                 + '<span class="ca-mono font-bold text-sm">' + it.code + '</span>'
-                + '<span class="ca-rc-pod-lmeta"><span class="ca-mono text-xs font-semibold">\u00d7' + it.n + '</span><span class="ca-rc-pod-ldate ca-mono">' + (it.last ? rcPodWhen(it.last) : '') + '</span></span>'
+                + '<span class="ca-rc-pod-lmeta"><span class="ca-rc-pod-lcount ca-mono text-xs font-semibold"><span class="ca-rc-pod-x">\u00d7</span>' + it.n + '</span><span class="ca-rc-pod-ldate ca-mono">' + (it.last ? rcPodWhen(it.last) : '') + '</span></span>'
                 + '</div>';
         }
         function renderRcPod(stagger) {
