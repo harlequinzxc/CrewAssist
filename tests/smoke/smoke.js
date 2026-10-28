@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.31', 'APP_VERSION is 1.45.31');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.31' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.31 entry with its single pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v262'), 'the service-worker cache name is bumped to v262 (the v1.45.31 dev-gated expense release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.32', 'APP_VERSION is 1.45.32');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.32' && e.d === '2026-10-28' && e.items.length === 2 && e.items[0].c === 'fix' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.32 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v263'), 'the service-worker cache name is bumped to v263 (the v1.45.32 storage-flush release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.31'; }), 'the What\'s New sheet carries the v1.45.31 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.32'; }), 'the What\'s New sheet carries the v1.45.32 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1489,7 +1489,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(200);
         await page.evaluate(() => document.querySelector('.ca-arch-row[data-id=\"x1\"]').click());
         await sleep(400);
-        ok(await page.evaluate(() => { const b = document.getElementById('ca-arch-exp-btn'); return b && b.textContent.indexOf('Overseas expense') !== -1 && document.getElementById('ca-arch-exp-val').textContent === '$120.00'; }), 'the layover summary carries the receipt row with the stored figure');
+        ok(await page.evaluate(() => { const b = document.getElementById('ca-arch-exp-btn'); return b && b.textContent.indexOf('Overseas Expenses') !== -1 && document.getElementById('ca-arch-exp-val').textContent === '$120.00'; }), 'the layover summary carries the receipt row with the stored figure');
         ok(await page.evaluate(() => { const body = document.getElementById('ca-arch-sub-body'); const row = document.getElementById('ca-arch-exp-btn').parentElement; return body.children[0].textContent.indexOf('Grand Total') !== -1 && body.children[1] === row && body.children[2].textContent.indexOf('Flight Overview') !== -1; }), 'v1.45.31: the receipt row rides between the grand total card and the Flight Overview - above the iOS keyboard\u2019s reach (the owner\u2019s workaround)');
         await page.evaluate(() => document.getElementById('ca-arch-exp-btn').click());
         await sleep(200);
@@ -1523,7 +1523,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             val: document.getElementById('ca-arch-exp-val').textContent,
             afterHidden: document.getElementById('ca-arch-after-line').classList.contains('hidden')
         }));
-        ok(!zero22.has && zero22.val === 'Add expense' && zero22.afterHidden, 'a zero commit removes the expense - the affordance returns, the after line hides');
+        ok(!zero22.has && zero22.val === 'Add Expenses' && zero22.afterHidden, 'a zero commit removes the expense - the affordance returns, the after line hides');
         // COP lens: expenses are a salary-lens privilege
         await page.evaluate(() => { closeArchSub(); document.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); });
         await sleep(400);
