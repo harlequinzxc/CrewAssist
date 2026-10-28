@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.38', 'APP_VERSION is 1.45.38');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.38' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.38 entry with its single new pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v269'), 'the service-worker cache name is bumped to v269 (the v1.45.38 podium release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.39', 'APP_VERSION is 1.45.39');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.39' && e.d === '2026-10-29' && e.items.length === 3 && e.items[0].c === 'imp' && e.items[1].c === 'imp' && e.items[2].c === 'imp'; }), 'the changelog carries the 1.45.39 entry with its three pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v270'), 'the service-worker cache name is bumped to v270 (the v1.45.39 current-records release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.38'; }), 'the What\'s New sheet carries the v1.45.38 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.39'; }), 'the What\'s New sheet carries the v1.45.39 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -380,17 +380,19 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.getElementById('ca-rc-pod').click());
         await sleep(600);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-podwrap').classList.contains('hidden') && !document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: tapping the podium glides the records page up over the calendar');
-        ok(await page.evaluate(() => { const chips = document.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-tab]'); return chips.length === 3 && chips[0].textContent === 'Routes' && chips[0].classList.contains('ca-cl-chipon') && getComputedStyle(chips[0]).backgroundColor === 'rgb(201, 162, 39)'; }), 'v1.45.38: the chip row carries all three lists and Routes rides gold (computed - the changelog chip pattern)');
-        ok(await page.evaluate(() => document.getElementById('ca-rc-pod-subtitle').textContent === 'All-time \u00b7 since Oct 2026'), 'v1.45.38: the subtitle names the all-time window from the earliest imported leg');
-        ok(await page.evaluate(() => { const rows = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row'); return rows.length === 2 && rows[0].classList.contains('ca-rc-pod-first') && rows[0].textContent.indexOf('SIN-KUL') >= 0 && rows[0].textContent.indexOf('\u00d73') >= 0 && rows[1].textContent.indexOf('SIN-SYD') >= 0; }), 'v1.45.38: the routes podium ranks the seeded truth - SIN-KUL \u00d73 in gold above SIN-SYD \u00d72 (pairs fold both directions, positioning counts)');
-        ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]')), 'v1.45.38: no View-all door when the list fits the podium');
-        ok(await page.evaluate(() => { document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="lo"]').click(); const rows = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row'); return rows.length === 2 && rows[0].textContent.indexOf('KUL') >= 0 && rows[1].textContent.indexOf('SYD') >= 0; }), 'v1.45.38: the Layovers chip carries the overnight stations - SYD, plus the never-returning November leg\u2019s final stop (KUL lays over when the roster ends before the return, the marks\u2019 rule) - ranked by recency');
-        ok(await page.evaluate(() => { document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="ta"]').click(); const rows = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row'); return rows.length === 1 && rows[0].textContent.indexOf('KUL') >= 0; }), 'v1.45.38: the Turnarounds chip carries the quick-ground stations');
-        // both themes are a hard acceptance criterion: the records page's
-        // fill must shift with the dark class (real var() resolution)
+        ok(await page.evaluate(() => { const tabs = document.querySelectorAll('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab]'); return tabs.length === 3 && tabs[0].textContent === 'All Flights' && tabs[0].classList.contains('ca-rc-pod-tabon') && getComputedStyle(document.querySelector('.ca-rc-pod-glider')).backgroundColor === 'rgb(201, 162, 39)'; }), 'v1.45.39: the segmented tab bar carries all three lists, All Flights rides the gliding gold pill (computed SIA gold, never Tailwind amber)');
+        ok(await page.evaluate(() => document.getElementById('ca-rc-pod-subtitle').textContent === 'All-time \u00b7 since Oct 2026'), 'v1.45.39: the subtitle names the all-time window from the earliest flown leg');
+        ok(await page.evaluate(() => { const cards = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card'); return cards.length === 2 && cards[1].classList.contains('ca-rc-pod-hero') && cards[1].textContent.indexOf('KUL') >= 0 && cards[1].textContent.indexOf('\u00d71') >= 0 && !!cards[1].querySelector('i[data-lucide="crown"]') && cards[0].textContent.indexOf('2nd') >= 0 && cards[0].textContent.indexOf('SYD') >= 0; }), 'v1.45.39: the 2-1-3 podium ranks the seeded truth as VISITS - KUL \u00d71 crowned center (the future November leg does NOT count: records are current to wheels-down), SYD 2nd at the side');
+        ok(await page.evaluate(() => { const hero = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero'); const want = document.documentElement.classList.contains('dark') ? 'rgba(201, 162, 39, 0.12)' : 'rgba(201, 162, 39, 0.15)'; return hero.classList.contains('ca-rc-pod-d0') && getComputedStyle(hero).backgroundColor === want; }), 'v1.45.39: the hero card carries the mount stagger class and the theme-correct gold-soft wash (computed - 0.15 light, 0.12 dark)');
+        ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]') && document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length === 0), 'v1.45.39: no leaderboard rows and no View-all door when the list fits the podium');
+        ok(await page.evaluate(() => { const before = getComputedStyle(document.querySelector('.ca-rc-pod-glider')).transform; document.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click(); const after = getComputedStyle(document.querySelector('.ca-rc-pod-glider')).transform; const cards = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card'); return before !== after && cards.length === 1 && cards[0].classList.contains('ca-rc-pod-hero') && cards[0].textContent.indexOf('SYD') >= 0 && !cards[0].classList.contains('ca-rc-pod-d0'); }), 'v1.45.39: tapping Layovers glides the pill across (computed transform moves) and swaps the panel INSTANT - SYD alone lays over, and the stagger never replays on a swap');
+        ok(await page.evaluate(() => { document.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click(); const cards = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card'); return cards.length === 1 && cards[0].textContent.indexOf('KUL') >= 0; }), 'v1.45.39: the Turnarounds tab carries the quick-ground list');
+        // both themes are a hard acceptance criterion: the sheet and the
+        // hero card's fills must shift with the dark class (real var()
+        // resolution - the gold-soft wash deepens from 0.15 to 0.12)
         ok(await page.evaluate(() => {
             const h = document.documentElement;
-            const read = () => getComputedStyle(document.getElementById('ca-rc-pod-sheet')).backgroundColor + '|' + getComputedStyle(document.querySelector('#ca-rc-pod-body .ca-rc-pod-row')).backgroundColor;
+            const read = () => getComputedStyle(document.getElementById('ca-rc-pod-sheet')).backgroundColor + '|' + getComputedStyle(document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero')).backgroundColor;
             const wasDark = h.classList.contains('dark');
             h.classList.remove('dark');
             const light = read();
@@ -398,7 +400,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const dark = read();
             if (wasDark) h.classList.add('dark'); else h.classList.remove('dark');
             return light !== dark;
-        }), 'v1.45.38: both themes carry the records page - sheet and row fills shift with the dark class');
+        }), 'v1.45.39: both themes carry the records page - sheet and hero fills shift with the dark class');
         await page.evaluate(() => document.getElementById('btn-close-rc-pod').click());
         await sleep(700);
         ok(await page.evaluate(() => document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: closing glides the page below the fold and hides the wrap after the window');
@@ -1081,20 +1083,22 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const past = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 5, 1));
             const past2 = new Date(now.getFullYear(), now.getMonth(), Math.max(now.getDate() - 9, 1));
             const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-            // v1.45.24 rig fix (no app change): the old Math.min(date+3, 27)
-            // cap made the "ahead" legs land ON the 27th's 18:00 STA - any
-            // evening run that month saw them landed and the notice vanished
-            // (the next-flight fixed-walls precedent). Three days out, no
-            // cap: JS spills into the next month at month-end, and the
-            // upcoming store is keyed by this run's month either way.
-            const late = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 3);
+            // v1.45.39 rig fix (no app change): archMonthState matches an
+            // upcoming leg by its OWN ymd month, so a now+3 that spills
+            // past the month edge (the last three days of any month -
+            // first hit 29 Oct 2026) left the card reading Month complete.
+            // The "ahead" legs now ride the month's LAST day with
+            // end-of-day STAs, so they stay unlanded for every run hour
+            // of the month (the v1.45.24 fixed-walls precedent; only the
+            // final minute of the month can see them landed).
+            const late = new Date(now.getFullYear(), now.getMonth() + 1, 0);
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
             localStorage.setItem('crewAssist.archive', JSON.stringify([ent('e0', past, 88), ent('e1', past2, 60), ent('e2', nxt, 40)]));
             localStorage.setItem('crewAssist.upcoming', JSON.stringify({
                 [ym(now)]: [
-                    { fn: '322', dep: 'SIN', arr: 'AMD', ymd: ymd(late), std: '07:00', sta: '10:00', stdYmd: ymd(late), staYmd: ymd(late) },
-                    { fn: '323', dep: 'AMD', arr: 'SIN', ymd: ymd(late), std: '12:00', sta: '18:00', stdYmd: ymd(late), staYmd: ymd(late) }
+                    { fn: '322', dep: 'SIN', arr: 'AMD', ymd: ymd(late), std: '20:00', sta: '22:00', stdYmd: ymd(late), staYmd: ymd(late) },
+                    { fn: '323', dep: 'AMD', arr: 'SIN', ymd: ymd(late), std: '23:00', sta: '23:59', stdYmd: ymd(late), staYmd: ymd(late) }
                 ]
             }));
             showArchiveOverlay();
