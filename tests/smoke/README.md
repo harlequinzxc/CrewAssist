@@ -248,6 +248,32 @@ the service-worker stamp. It checks:
   tap-race flake (the roster tag toggle, the round-27 hardened pin) fired
   once in three runs and passed the other two — the recorded environmental
   class. Version pins: 1.45.33 / v264.
+- v1.45.34 the changelog chips in the real browser: a 7c layer right after
+  the settings widths pin opens the changelog through the real UI
+  (`openChangelog()`), pins the normalized chip join All|New|Fixes|Polish,
+  and reads the REAL computed mask — `getComputedStyle(#ca-cl-chips)
+  .maskImage` regex-matched, because Chromium re-serializes the gradient's
+  colors through the CSSOM (transparent → rgba(0, 0, 0, 0), black →
+  rgb(0, 0, 0)); jsdom's computed mask is NOT reliable, so the jsdom layer
+  pins the rule in SOURCE, and only this browser layer owns the style.
+  SEAM LESSON (the big one this round): a layer that adds wall-time between
+  two existing sections inherits every boot-time visitor that fires in the
+  gap it widens — the reduced-motion tap downstream moved past TWO latent
+  ones. (1) The welcome cadence's late typing windows: a leftover
+  #typing-indicator tripped the reduced-motion pin — fixed with a chat-idle
+  drain wait inside the layer's tail (chat-busy is CONTINUOUS across the
+  whole bot queue; it only clears when the queue drains, so one idle wait
+  IS the drain signal — the rig's own restored-phone precedent). (2) The
+  one-shot install-hint dialog (`maybeInstallHint`, armed by the
+  restored-phone archive + a quiet boot, firing ~2.5s after init): it sits
+  above the settings sheet and the coordinate TAP landed on app-dialog-msg
+  while every evaluate pin around it stayed green (evaluate clicks sail
+  past overlays; only coordinate taps meet them — a green section followed
+  by a tap timeout means SOMETHING IS ON TOP: dump elementFromPoint and the
+  app-dialog state before suspecting the element). Fixed with a user-style
+  app-dialog-ok dismissal at the layer's tail — the same guard the later
+  clear-data seam always ran, just earlier. diag34.js reproduces the seam
+  (timeline + catch modes). Version pins: 1.45.34 / v265.
 
 ## Running it
 

@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.33', 'APP_VERSION is 1.45.33');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.33' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.33 entry with its single pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v264'), 'the service-worker cache name is bumped to v264 (the v1.45.33 pinch-zoom release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.34', 'APP_VERSION is 1.45.34');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.34' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.34 entry with its single pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v265'), 'the service-worker cache name is bumped to v265 (the v1.45.34 chip-fade release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.33'; }), 'the What\'s New sheet carries the v1.45.33 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.34'; }), 'the What\'s New sheet carries the v1.45.34 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -263,6 +263,34 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return ['btn-edit-profile', 'btn-replay-tour', 'btn-changelog'].every((id) => Math.abs(wd(document.getElementById(id)) - tg) < 1.5);
         }), 'hotfix: Edit, Replay, View and Telegram render one width (the compiled stylesheet carries w-32)');
         await page.evaluate(() => closeSettings());
+
+        // 7c. v1.45.34 (owner order): the changelog filter chips in the real
+        // browser - the compact three-tier framework, and the painted fade.
+        await page.evaluate(() => openChangelog());
+        await page.waitForFunction(() => { const b = document.getElementById('ca-changelog-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 5000 });
+        ok(await page.evaluate(() => [...document.querySelectorAll('#ca-cl-chips .ca-cl-chip')].map((x) => x.textContent.replace(/\s+/g, ' ').trim()).join('|') === 'All|New|Fixes|Polish'), 'v1.45.34: the filter tokens read All / New / Fixes / Polish - the compact three-tier framework');
+        ok(await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('ca-cl-chips')); const m = cs.maskImage || cs.webkitMaskImage; return /linear-gradient\(to right, (?:rgba\(0, 0, 0, 0\)|transparent), (?:rgb\(0, 0, 0\)|black) 24px,/.test(m); }), 'v1.45.34: the chips rail fades at both edges - the 24px gradient mask paints on the scroll boundary, never on the hit targets (Chromium re-serializes the colors through the CSSOM)');
+        await page.evaluate(() => document.getElementById('ca-changelog-close').click());
+        await sleep(400);
+        // the layer's few seconds once shifted the 7b seam into the welcome
+        // cadence's typing windows (a leftover bubble tripped the reduced-
+        // motion pin and the tap behind it). chat-busy is continuous across
+        // the whole bot queue - it only clears when the queue drains - so
+        // one idle wait here hands 7b the drained chat it always had (the
+        // rig's own restored-phone precedent, before the calendar tap).
+        await page.waitForFunction(() => !document.documentElement.classList.contains('chat-busy'), { timeout: 20000 });
+        // same seam, second visitor: the last reload armed the one-shot
+        // install hint (a restored archive + a quiet boot) and it lands
+        // ~2.5s after init - squarely on this seam now that the layer's
+        // seconds moved 7b past it. The dialog sits above the sheet and a
+        // coordinate tap lands on it, not the pill (evaluate clicks sail
+        // past, which is why every pin around it stays green). Dismiss it
+        // like a user would - the rig's own later guard (the clear-data
+        // seam) has always been the one to clean it up; here it just
+        // happens earlier.
+        await page.waitForFunction(() => !document.getElementById('app-dialog-backdrop').classList.contains('hidden'), { timeout: 15000 });
+        await page.evaluate(() => document.getElementById('app-dialog-ok').click());
+        await sleep(400);
 
         // 7b. v1.45.0 (divergence #1a + the owner's binary toggle): reduced
         // motion — the OS switch lands the marker, the toggle overrides it,
