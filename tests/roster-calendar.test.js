@@ -1158,5 +1158,130 @@ const synthItems = [].concat(
     R.ok(label().indexOf('Oct 2026') === 0, 'v1.44.0: with the calendar closed the arrows do nothing at all');
   }
 
+
+  // ---- v1.45.38 (owner order, the podium release): the records page ----
+  {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    // the door ends the left cluster; the page is a body child, never nested
+    R.ok(src.indexOf('id="ca-rc-shot"') < src.indexOf('id="ca-rc-pod"'), 'the podium button sits right of the camera — tag + camera stay the marks pair');
+    R.ok(/function openRcPod\(\)[\s\S]*?caSheetHideCancel\(wrap\);[\s\S]*?caSheetGlideArm\(sheet, wrap\.querySelector\('\.ca-rc-pod-shade'\), null\);/.test(src), 'the records page opens through the shared hide-cancel + glide arm (hotfix 13/14 discipline)');
+    R.ok(/function closeRcPod\(\)[\s\S]*?caSheetGlideCancel\(sheet\);[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the records page closes through the shared glide-cancel + hide arm — a quick reopen can never wedge it');
+    R.ok(/const podBtn = document\.getElementById\('ca-rc-pod'\);\s*\n\s*if \(podBtn\) rcBtnAnimate\(podBtn, !collapsed && rcPodHasData\(\)\);/.test(src), 'the podium reveals through the same pop discipline — expanded AND at least one leg ever imported');
+  }
+  {
+    // the stats math: cross-month chaining, pair folding, per-visit stays,
+    // the 6h split, positioning legs, tie-breaks by recency
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const legs = {
+        '2026-09': [
+          { fn: '1', dep: 'SIN', arr: 'NRT', ymd: '2026-09-30', std: '09:00', sta: '18:00', stdYmd: '2026-09-30', staYmd: '2026-09-30', ft: '09:00', ac: '77W', rpt: '07:00', pos: false }
+        ],
+        '2026-10': [
+          { fn: '2', dep: 'NRT', arr: 'SIN', ymd: '2026-10-02', std: '20:00', sta: '05:00', stdYmd: '2026-10-02', staYmd: '2026-10-03', ft: '09:00', ac: '77W', rpt: '', pos: false },
+          { fn: '3', dep: 'SIN', arr: 'NRT', ymd: '2026-10-05', std: '09:00', sta: '18:00', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '09:00', ac: '77W', rpt: '07:00', pos: false },
+          { fn: '4', dep: 'NRT', arr: 'SIN', ymd: '2026-10-07', std: '20:00', sta: '05:00', stdYmd: '2026-10-07', staYmd: '2026-10-08', ft: '09:00', ac: '77W', rpt: '', pos: false },
+          { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-09', std: '08:00', sta: '09:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+          { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-09', std: '11:00', sta: '12:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+          { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-11', std: '08:00', sta: '09:00', stdYmd: '2026-10-11', staYmd: '2026-10-11', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+          { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-11', std: '11:00', sta: '12:00', stdYmd: '2026-10-11', staYmd: '2026-10-11', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+          { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:00', sta: '10:00', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '08:00', ac: '77W', rpt: '00:00', pos: false },
+          { fn: '472', dep: 'JNB', arr: 'CPT', ymd: '2026-10-22', std: '12:00', sta: '14:00', stdYmd: '2026-10-22', staYmd: '2026-10-22', ft: '02:00', ac: '77W', rpt: '', pos: true },
+          { fn: '473', dep: 'CPT', arr: 'JNB', ymd: '2026-10-22', std: '15:00', sta: '17:00', stdYmd: '2026-10-22', staYmd: '2026-10-22', ft: '02:00', ac: '77W', rpt: '', pos: true },
+          { fn: '474', dep: 'JNB', arr: 'SIN', ymd: '2026-10-25', std: '19:00', sta: '03:00', stdYmd: '2026-10-25', staYmd: '2026-10-26', ft: '08:00', ac: '77W', rpt: '', pos: false }
+        ]
+      };
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify(legs));
+      x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2026-09': [{ ymd: '2026-09-30', kind: 'fly', code: '', loc: '', fns: ['1'], dkey: 'k1' }], '2026-10': [{ ymd: '2026-10-02', kind: 'fly', code: '', loc: '', fns: ['2'], dkey: 'k2' }, { ymd: '2026-10-09', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k3' }] }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.eq(stats.routes.map((r) => r.label + ':' + r.n).join('|'), 'SIN-KUL:4|SIN-NRT:4|SIN-JNB:2|CPT-JNB:2', 'routes are station pairs, both directions folded — the n=4 tie breaks by recency (KUL flown 11 Oct outranks NRT 07 Oct) and non-SIN pairs read alphabetically');
+    R.eq(stats.routes.map((r) => r.label)[1], 'SIN-NRT', 'a pair names SIN first (the home base reads first), never the raw alphabetical key');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|NRT:2', 'layover stations count PER VISIT — the JNB out-stay and back-stay are two lays, and unreadable ground never turns into a turnaround');
+    R.eq(stats.ta.map((r) => r.code + ':' + r.n).join('|'), 'KUL:2|CPT:1', 'turnaround stations ride the marks\u2019 own rule — quick ground only, positioning stays included');
+    R.eq(stats.first, '2026-09-30', 'the all-time window opens on the earliest leg, across the month border the trip chains over');
+    R.eq(String(w.eval('rcPodHasData()')), 'true', 'the reveal check sees the store');
+    // the render + the UI: podium, chips, view-all, close, reopen
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    const podBtn = d.getElementById('ca-rc-pod');
+    R.ok(!!podBtn, 'the podium button exists in the header');
+    R.ok(!podBtn.classList.contains('hidden'), 'the podium button reveals when the calendar opens with imported history');
+    R.ok(d.getElementById('ca-rc-shot').nextElementSibling === podBtn, 'DOM order: the podium ends the left cluster, right of the camera');
+    R.ok(!d.getElementById('ca-roster-cal').contains(d.getElementById('ca-rc-podwrap')) && d.body.contains(d.getElementById('ca-rc-podwrap')), 'the records page is a direct child of <body> — never nested inside the calendar sheet');
+    podBtn.click();
+    await wait(100);
+    const wrap = d.getElementById('ca-rc-podwrap'), body = d.getElementById('ca-rc-pod-body');
+    R.ok(!wrap.classList.contains('hidden'), 'tapping the podium opens the records page over the calendar');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-tab]').length, 3, 'the chip row carries all three lists');
+    const chips = d.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-tab]');
+    R.ok(chips[0].textContent === 'Routes' && chips[0].classList.contains('ca-cl-chipon') && chips[0].getAttribute('aria-pressed') === 'true', 'Routes is the default chip, gold and pressed');
+    R.eq(d.getElementById('ca-rc-pod-subtitle').textContent, 'All-time \u00b7 since Sept 2026', 'the subtitle names the all-time window from the earliest leg');
+    let rows = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row');
+    R.eq(rows.length, 3, 'the podium shows the top three');
+    R.ok(rows[0].classList.contains('ca-rc-pod-first') && rows[0].textContent.indexOf('SIN-KUL') >= 0 && rows[0].textContent.indexOf('\u00d74') >= 0, 'rank one wears the gold accent and carries the pair with its count');
+    R.ok(!rows[1].classList.contains('ca-rc-pod-first') && !rows[2].classList.contains('ca-rc-pod-first'), 'ranks two and three stay on the glass surface — no silver, no bronze');
+    const allBtn = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]');
+    R.ok(!!allBtn && allBtn.textContent.indexOf('View all \u00b7 4') >= 0, 'the View-all door names the full depth when the list runs past three');
+    allBtn.click();
+    await wait(50);
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row').length, 4, 'View all expands to the complete ranked list');
+    R.ok(d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').textContent.indexOf('Fold back') >= 0, 'the door flips to Fold back');
+    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').click();
+    await wait(50);
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row').length, 3, 'folding returns to the podium');
+    // re-query at click time: every render rebuilds the chips, and a
+    // captured NodeList goes stale (detached clicks never reach the
+    // delegated listener)
+    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="lo"]').click();
+    await wait(50);
+    rows = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row');
+    R.eq(rows.length, 2, 'the Layovers chip swaps the list');
+    R.ok(rows[0].textContent.indexOf('JNB') >= 0 && rows[1].textContent.indexOf('NRT') >= 0, 'JNB outranks NRT — equal counts break by the more recent stay');
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]'), 'no View-all door when the list fits the podium');
+    d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="ta"]').click();
+    await wait(50);
+    rows = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row');
+    R.ok(rows.length === 2 && rows[0].textContent.indexOf('KUL') >= 0 && rows[1].textContent.indexOf('CPT') >= 0, 'the Turnarounds chip carries the quick-ground list');
+    d.getElementById('btn-close-rc-pod').click();
+    await wait(100);
+    R.ok(d.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full'), 'closing parks the sheet below the fold');
+    await wait(400);
+    R.ok(wrap.classList.contains('hidden'), 'the wrap hides after the glide (hotfix 14 arm)');
+    podBtn.click();
+    await wait(100);
+    R.ok(d.querySelector('#ca-rc-pod-body .ca-rc-pod-row').textContent.indexOf('SIN-KUL') >= 0, 'every open starts on the routes podium again');
+  }
+  {
+    // the 6h boundary, exact: 360 minutes is a turnaround, 361 lays over
+    const { w } = await boot(APP, { now: '2026-10-08T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const legs = [
+        { fn: '11', dep: 'SIN', arr: 'KTI', ymd: '2026-10-05', std: '08:00', sta: '09:00', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '12', dep: 'KTI', arr: 'SIN', ymd: '2026-10-05', std: '15:00', sta: '16:00', stdYmd: '2026-10-05', staYmd: '2026-10-05', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '13', dep: 'SIN', arr: 'WSI', ymd: '2026-10-06', std: '08:00', sta: '09:00', stdYmd: '2026-10-06', staYmd: '2026-10-06', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '14', dep: 'WSI', arr: 'SIN', ymd: '2026-10-06', std: '15:01', sta: '16:01', stdYmd: '2026-10-06', staYmd: '2026-10-06', ft: '01:00', ac: '7M8', rpt: '', pos: false }
+      ];
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': legs }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.eq(stats.ta.map((r) => r.code).join(','), 'KTI', 'exactly 360 minutes on the ground is a TURNAROUND — the marks\u2019 boundary, to the minute');
+    R.eq(stats.lo.map((r) => r.code).join(','), 'WSI', '361 minutes LAYS OVER — one minute past the boundary flips the kind');
+  }
+  {
+    // empty state: a fresh install sees no door, and the page guards itself
+    const { w, d } = await boot(APP, { now: '2026-10-08T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+    } });
+    R.eq(String(w.eval('rcPodHasData()')), 'false', 'no legs ever imported — the reveal check is false');
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    R.ok(d.getElementById('ca-rc-pod').classList.contains('hidden'), 'the podium button stays hidden on a fresh install (the tag/camera reveal discipline)');
+    w.eval('openRcPod()');
+    await wait(100);
+    R.ok(d.getElementById('ca-rc-pod-body').textContent.indexOf('No records yet') >= 0, 'a direct open still renders the house empty state — never zeros');
+    w.eval('closeRcPod()');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

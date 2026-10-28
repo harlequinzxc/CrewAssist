@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.37', 'APP_VERSION is 1.45.37');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.37' && e.d === '2026-10-28' && e.items.length === 3 && e.items[0].c === 'imp' && e.items[1].c === 'imp' && e.items[2].c === 'imp'; }), 'the changelog carries the 1.45.37 entry with its three pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v268'), 'the service-worker cache name is bumped to v268 (the v1.45.37 crisp-edges release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.38', 'APP_VERSION is 1.45.38');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.38' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'new'; }), 'the changelog carries the 1.45.38 entry with its single new pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v269'), 'the service-worker cache name is bumped to v269 (the v1.45.38 podium release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.37'; }), 'the What\'s New sheet carries the v1.45.37 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.38'; }), 'the What\'s New sheet carries the v1.45.38 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -373,6 +373,36 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return Array.from(det.querySelectorAll('.ca-rc-row')).some((r) => { const t = r.getBoundingClientRect(); return t.bottom > dr.top + 2 && t.top < dr.bottom - 2; });
         }), 'round 33: a window re-derived at any resting position spans the scroller \u2014 the head-spacer blank cannot exist');
         ok(await page.evaluate(() => document.getElementById('ca-rc-fold').nextElementSibling === document.getElementById('ca-rc-tag') && document.getElementById('ca-rc-tag').nextElementSibling === document.getElementById('ca-rc-shot')), 'hotfix: the tag and camera sit right of the chevron');
+        // v1.45.38 (owner order, the podium release): the records page,
+        // proven live in Chromium
+        ok(await page.evaluate(() => document.getElementById('ca-rc-shot').nextElementSibling === document.getElementById('ca-rc-pod') && !document.getElementById('ca-roster-cal').contains(document.getElementById('ca-rc-podwrap')) && document.body.contains(document.getElementById('ca-rc-podwrap'))), 'v1.45.38: the podium button ends the left cluster, and the records page is a direct child of <body> - never nested in the calendar sheet');
+        ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod'); return b && !b.classList.contains('hidden') && !!(b.querySelector('i[data-lucide="podium"]')); }), 'v1.45.38: the podium button is revealed carrying the podium icon (the rig blocks the CDN, so the pin reads the stub - the glyph itself is verified in the lucide bundle)');
+        await page.evaluate(() => document.getElementById('ca-rc-pod').click());
+        await sleep(600);
+        ok(await page.evaluate(() => !document.getElementById('ca-rc-podwrap').classList.contains('hidden') && !document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: tapping the podium glides the records page up over the calendar');
+        ok(await page.evaluate(() => { const chips = document.querySelectorAll('#ca-rc-pod-body [data-ca-rc-pod-tab]'); return chips.length === 3 && chips[0].textContent === 'Routes' && chips[0].classList.contains('ca-cl-chipon') && getComputedStyle(chips[0]).backgroundColor === 'rgb(201, 162, 39)'; }), 'v1.45.38: the chip row carries all three lists and Routes rides gold (computed - the changelog chip pattern)');
+        ok(await page.evaluate(() => document.getElementById('ca-rc-pod-subtitle').textContent === 'All-time \u00b7 since Oct 2026'), 'v1.45.38: the subtitle names the all-time window from the earliest imported leg');
+        ok(await page.evaluate(() => { const rows = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row'); return rows.length === 2 && rows[0].classList.contains('ca-rc-pod-first') && rows[0].textContent.indexOf('SIN-KUL') >= 0 && rows[0].textContent.indexOf('\u00d73') >= 0 && rows[1].textContent.indexOf('SIN-SYD') >= 0; }), 'v1.45.38: the routes podium ranks the seeded truth - SIN-KUL \u00d73 in gold above SIN-SYD \u00d72 (pairs fold both directions, positioning counts)');
+        ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]')), 'v1.45.38: no View-all door when the list fits the podium');
+        ok(await page.evaluate(() => { document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="lo"]').click(); const rows = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row'); return rows.length === 2 && rows[0].textContent.indexOf('KUL') >= 0 && rows[1].textContent.indexOf('SYD') >= 0; }), 'v1.45.38: the Layovers chip carries the overnight stations - SYD, plus the never-returning November leg\u2019s final stop (KUL lays over when the roster ends before the return, the marks\u2019 rule) - ranked by recency');
+        ok(await page.evaluate(() => { document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-tab="ta"]').click(); const rows = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-row'); return rows.length === 1 && rows[0].textContent.indexOf('KUL') >= 0; }), 'v1.45.38: the Turnarounds chip carries the quick-ground stations');
+        // both themes are a hard acceptance criterion: the records page's
+        // fill must shift with the dark class (real var() resolution)
+        ok(await page.evaluate(() => {
+            const h = document.documentElement;
+            const read = () => getComputedStyle(document.getElementById('ca-rc-pod-sheet')).backgroundColor + '|' + getComputedStyle(document.querySelector('#ca-rc-pod-body .ca-rc-pod-row')).backgroundColor;
+            const wasDark = h.classList.contains('dark');
+            h.classList.remove('dark');
+            const light = read();
+            h.classList.add('dark');
+            const dark = read();
+            if (wasDark) h.classList.add('dark'); else h.classList.remove('dark');
+            return light !== dark;
+        }), 'v1.45.38: both themes carry the records page - sheet and row fills shift with the dark class');
+        await page.evaluate(() => document.getElementById('btn-close-rc-pod').click());
+        await sleep(700);
+        ok(await page.evaluate(() => document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: closing glides the page below the fold and hides the wrap after the window');
+        ok(await page.evaluate(() => !document.getElementById('ca-roster-cal').classList.contains('hidden')), 'v1.45.38: closing the records page returns to the live calendar behind it');
         ok(await page.evaluate(() => {
             const g = document.getElementById('ca-rc-grid');
             const tagBtn = document.getElementById('ca-rc-tag');
