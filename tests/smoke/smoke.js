@@ -74,24 +74,6 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— boot —');
         await page.evaluateOnNewDocument(() => { try { if (localStorage.getItem('__smokeFreshBoot')) return; localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' })); localStorage.setItem('crewAssist.wnSeen', '1.39.0'); localStorage.setItem('crewAssist.calcUi', 'manual'); } catch (e) {} });
-        // v1.45.25: the simulated soft keyboard - a fake visualViewport whose
-        // height drops on demand (Chrome headless has no on-screen keyboard),
-        // plus a scrollIntoView spy for the centre-glide pin
-        await page.evaluateOnNewDocument(() => {
-            try {
-                const kbL = {};
-                window.visualViewport = { height: window.innerHeight, offsetTop: 0, addEventListener: (t, fn) => { (kbL[t] = kbL[t] || []).push(fn); } };
-                window.__kbOpen = (px) => { window.visualViewport.height = window.innerHeight - px; (kbL.resize || []).forEach((f) => f()); };
-                window.__kbShut = () => { window.visualViewport.height = window.innerHeight; window.visualViewport.offsetTop = 0; (kbL.resize || []).forEach((f) => f()); };
-                window.__kbPan = (y) => { window.visualViewport.offsetTop = y; (kbL.scroll || []).forEach((f) => f()); };
-                window.__kbPinCalls = [];
-                const kbOs = window.scrollTo ? window.scrollTo.bind(window) : function () {};
-                window.scrollTo = function () { window.__kbPinCalls.push([].slice.call(arguments)); try { window.visualViewport.offsetTop = 0; } catch (e) {} return kbOs.apply(this, arguments); };
-                window.__siv = [];
-                const kbOrig = Element.prototype.scrollIntoView;
-                Element.prototype.scrollIntoView = function (o) { try { window.__siv.push({ id: this.id || String(this.className).slice(0, 40), behavior: o && o.behavior, block: o && o.block }); } catch (e) {} try { return kbOrig.apply(this, arguments); } catch (e) {} };
-            } catch (e) {}
-        });
         await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
         await page.waitForSelector('#chat-container', { timeout: 20000 });
         ok(true, 'the app boots to the chat view');
@@ -100,27 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.30', 'APP_VERSION is 1.45.30');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.30' && e.d === '2026-10-28' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.30 entry with its one fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v261'), 'the service-worker cache name is bumped to v261 (the v1.45.30 visible-bottom release)');
-
-        console.log('— the still ground (v1.45.27) —');
-        // iOS Safari counts the toolbars-collapsed 100vh column and the
-        // fixed sheets parked below the fold (translate-y-full) as
-        // scrollable overflow, so the page behind the app scrolled: the
-        // reveal moved it, swipes chained into it, the pin fought it
-        // (the twitch). The document is now frozen - the rig proves the
-        // freeze computes and that neither root element has scroll room;
-        // the iPhone stays the judge of Safari's own quirks.
-        ok(await page.evaluate(() => { const h = getComputedStyle(document.documentElement); const b = getComputedStyle(document.body); return h.overflow === 'hidden' && b.overflow === 'hidden' && h.overscrollBehavior === 'none' && b.overscrollBehavior === 'none'; }), 'the document is frozen - overflow hidden + no rubber-band on both root elements');
-        ok(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight && document.body.scrollHeight <= window.innerHeight), 'no scroll room: neither root element is taller than the screen - nothing to reveal, nothing to chain to');
-        ok(await page.evaluate(() => getComputedStyle(document.getElementById('app-root')).minHeight === window.innerHeight + 'px'), 'the app root fills the visible screen (100dvh), not the toolbars-collapsed 100vh');
-        ok(await page.evaluate(() => document.body.getBoundingClientRect().height >= window.innerHeight - 0.5 && document.getElementById('app-root').getBoundingClientRect().height >= window.innerHeight - 0.5), 'v1.45.29: the column FILLS the screen - body and app-root measure at least the viewport height (the stale-stylesheet collapse the owner saw reads as a gap at the bottom; the floor now travels inside the document)');
-        ok(await page.evaluate(() => getComputedStyle(document.getElementById('chat-dock')).bottom === '0px' && Math.abs(document.getElementById('chat-dock').getBoundingClientRect().bottom - window.innerHeight) < 1), 'v1.45.30: the dock rides the visible bottom - calc(100lvh - 100dvh) computes to zero where no toolbars exist (the rig), and the dock sits flush at the viewport bottom');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.24', 'APP_VERSION is 1.45.24');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.24' && e.d === '2026-10-27' && e.items.length === 2 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.24 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v255'), 'the service-worker cache name is bumped to v255 (the v1.45.24 centre-axis release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.30'; }), 'the What\'s New sheet carries the v1.45.30 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.24'; }), 'the What\'s New sheet carries the v1.45.24 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -165,19 +133,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // pointer-inert (the anti-double-fire rule), so a mid-typing tap
         // would rightly be swallowed.
         await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
-        // flake hardening (the round-27 owner-approved class): the tap can
-        // land inside a brief busy blip and be rightly swallowed - the app
-        // is correct, the timing is the enemy. Retry on a quiet moment,
-        // bounded, and only when the insert never landed.
-        let helpTapLanded = false;
-        for (let helpTry = 0; helpTry < 3 && !helpTapLanded; helpTry++) {
-            await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
-            await sleep(150);
-            await page.click('[data-ca-help-cmd="menu"]');
-            await sleep(120);
-            helpTapLanded = await page.evaluate(() => document.getElementById('chat-input').value === 'menu ');
-        }
-        ok(helpTapLanded && await page.evaluate(() => {
+        await page.click('[data-ca-help-cmd="menu"]');
+        ok(await page.evaluate(() => {
             const row = document.querySelector('[data-ca-help-cmd="menu"]');
             const inp = document.getElementById('chat-input');
             return inp.value === 'menu ' && document.activeElement === inp && row.classList.contains('ca-help-flash');
@@ -552,11 +509,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // correctly present. Assert the logical state first, then poll the
         // gold to settled (bounded 2s, caught — a timeout is a real CSS
         // failure reported as a failed check, never a rig crash).
-        // flake hardening (the same round-27 class as the gold poll below):
-        // under main-thread jank the tap's delivery can trail the evaluate -
-        // poll the logical state, bounded 2s (a timeout is a real failure,
-        // reported as a failed check)
-        ok(await page.waitForFunction(() => document.getElementById('ca-rc-tag').classList.contains('ca-rc-tagon'), { timeout: 2000 }).then(() => true, () => false), 'hotfix: the toggle is exempt — the on-state class survives the release');
+        ok(await page.evaluate(() => document.getElementById('ca-rc-tag').classList.contains('ca-rc-tagon')), 'hotfix: the toggle is exempt — the on-state class survives the release');
         ok(await page.waitForFunction(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)', { timeout: 2000 }).then(() => true, () => false), 'hotfix: the toggle is exempt — the on-state gold settles (bounded poll)');
         await page.evaluate(() => document.getElementById('ca-rc-close').click());
         await sleep(400);
@@ -735,9 +688,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            const r1e = ent('r1', cur, 88); r1e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall (see the state16 note): stays unflown at any run hour
-            const r2e = ent('r2', nxt, 60); r2e.endAt = Date.now() + 30 * 24 * 3600 * 1000;
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), r1e, r2e]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', new Date(now.getFullYear() - 1, 8, 15), 100), ent('r1', cur, 88), ent('r2', nxt, 60)]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -940,9 +891,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const cur = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS', basicSalary: 2600 }));
-            const d0e = ent('d0', cur, 88); d0e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: the current month keeps its live state
-            const d2e = ent('d2', nxt, 40); d2e.endAt = Date.now() + 30 * 24 * 3600 * 1000;
-            localStorage.setItem('crewAssist.archive', JSON.stringify([d0e, ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), d2e]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('d0', cur, 88), ent('d1', new Date(now.getFullYear(), now.getMonth(), 2), 60), ent('d2', nxt, 40)]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1133,18 +1082,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const nxt = new Date(now.getFullYear(), now.getMonth() + 1, 15);
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
-            // midnight bomb (the hotfix-9 class, met again): the old seed dated
-            // the live month's ahead flight with Math.min(date+5, 27), which
-            // on the 27th evening was TODAY - and past midnight it read as
-            // flown, the live month flipped to Completed, and the refresh-cw
-            // probe crashed the run on a null. endAt in the future is the
-            // run-hour-immune wall: archEntryLanded honours it over dates, so
-            // the ahead and next-month entries stay unflown at any hour of
-            // any day the rig runs.
-            const aheadEnt = ent('i2', ahead, 70); aheadEnt.endAt = Date.now() + 6 * 3600 * 1000;
-            const nxtEnt = ent('i3', nxt, 60); nxtEnt.endAt = Date.now() + 30 * 24 * 3600 * 1000;
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), aheadEnt, nxtEnt]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('i0', past, 90), ent('i1', flown, 80), ent('i2', ahead, 70), ent('i3', nxt, 60)]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1213,8 +1152,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            const k1e = ent('k1', ahead, 696.91); k1e.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: Remaining to earn, never Month complete
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), k1e]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('k0', past, 300), ent('k1', ahead, 696.91)]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1259,8 +1197,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const ahead = new Date(now.getFullYear(), now.getMonth(), Math.min(now.getDate() + 5, 27));
             const ent = (id, d, amount) => ({ id, savedAt: ymd(d) + 'T10:00:00Z', monthKey: ym(d), sectorDate: ymd(d), stationDisplay: 'SIN/KUL', amount, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
             localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' }));
-            const r2w = ent('r2', ahead, 696.91); r2w.endAt = Date.now() + 6 * 3600 * 1000;   // midnight wall: the panel's still-to-fly leg stays ahead
-            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), r2w]));
+            localStorage.setItem('crewAssist.archive', JSON.stringify([ent('r0', p1, 150), ent('r1', p2, 150), ent('r2', ahead, 696.91)]));
             showArchiveOverlay();
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
@@ -1556,94 +1493,6 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => { closeArchSub(); document.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); });
         await sleep(400);
         ok(await page.evaluate(() => document.getElementById('ca-arch-after-line').classList.contains('hidden') && document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1), 'the COP lens shows no expense context');
-        // v1.45.25: the keyboard overlay lifts the panels (simulated soft
-        // keyboard: the fake visualViewport shrinks 290px and fires resize)
-        console.log('\u2014 v1.45.25: the keyboard overlay lifts the panels \u2014');
-        await page.evaluate(() => { if (!document.querySelector('.ca-arch-row[data-id=\"x1\"]')) document.querySelector('.ca-arch-group-head').click(); });
-        await sleep(300);
-        await page.evaluate(() => document.querySelector('.ca-arch-row[data-id=\"x1\"]').click());
-        await sleep(400);
-        await page.evaluate(() => document.getElementById('ca-arch-exp-btn').click());
-        await sleep(200);
-        await page.evaluate(() => { const i = document.querySelector('#ca-arch-exp-val input'); i.focus(); i.select(); });
-        await page.keyboard.type('64');
-        await page.evaluate(() => window.__kbOpen(290));
-        await sleep(300);
-        const kbOpen = await page.evaluate(() => ({
-            v: document.documentElement.style.getPropertyValue('--keyboard-height'),
-            line: window.innerHeight - 290,
-            h: window.innerHeight,
-            sheetB: +document.getElementById('ca-arch-sheet').getBoundingClientRect().bottom.toFixed(1),
-            subB: +document.getElementById('ca-arch-sub-sheet').getBoundingClientRect().bottom.toFixed(1),
-            dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
-            bodyPad: getComputedStyle(document.getElementById('ca-arch-sub-body')).paddingBottom,
-            sivCenter: (window.__siv || []).filter((e) => e.block === 'center').length
-        }));
-        ok(kbOpen.v === '290px', 'the simulated keyboard publishes --keyboard-height (290px, the layout-visual gap)');
-        ok(Math.abs(kbOpen.sheetB - kbOpen.line) < 2 && Math.abs(kbOpen.subB - kbOpen.line) < 2, 'the earnings sheet AND its absolute sub-sheet terminate at the keyboard\'s top edge (viewport height minus the 290px keyboard, not the buried viewport bottom)');
-        ok(Math.abs(kbOpen.dockB - kbOpen.h) < 2, 'v1.45.28: the chat dock stays native at the viewport bottom while the drawers lift - the scope is drawers only');
-        ok(kbOpen.bodyPad === '322px', 'the scroll body carries the trailing room (its own 32px + the 290px keyboard)');
-        ok(kbOpen.sivCenter >= 1, 'the focused row glides to the visible centre (scrollIntoView block:center, once per focus)');
-        await sleep(700);
-        const kbSeen = await page.evaluate(() => ({ b: +document.querySelector('#ca-arch-exp-val input').getBoundingClientRect().bottom.toFixed(1), line: window.innerHeight - 290 }));
-        ok(kbSeen.b < kbSeen.line + 1, 'after the glide the expense input sits fully above the keyboard line');
-        // v1.45.26: the PAN - iOS's reveal/drag pan slid the lifted sheet
-        // off-screen and desynced the caret; while a tracked DRAWER field
-        // holds focus, every pan is pinned straight back to zero
-        await page.evaluate(() => window.__kbPan(140));
-        await sleep(200);
-        const kbPan = await page.evaluate(() => ({
-            pins: window.__kbPinCalls.length,
-            first: (window.__kbPinCalls[0] || []).join(','),
-            metric: document.documentElement.style.getPropertyValue('--keyboard-height'),
-            sheetB: +document.getElementById('ca-arch-sub-sheet').getBoundingClientRect().bottom.toFixed(1),
-            line: window.innerHeight - 290
-        }));
-        ok(kbPan.pins >= 1 && kbPan.first === '0,0', 'a 140px keyboard pan over a drawer field is pinned straight back to zero - the lift IS the reveal, the sheet can no longer be scrolled off the screen');
-        ok(kbPan.metric === '290px' && Math.abs(kbPan.sheetB - kbPan.line) < 2, 'through the pan the metric holds and the sheet stays glued at the keyboard line (the caret follows)');
-        // the outside tap (owner order): blur IS the commit, panels return
-        await page.evaluate(() => document.getElementById('ca-arch-sub-title').click());
-        await sleep(400);
-        const kbShut = await page.evaluate(() => ({
-            h: window.innerHeight,
-            stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'x1').detail.expense,
-            val: document.getElementById('ca-arch-exp-val').textContent,
-            v: document.documentElement.style.getPropertyValue('--keyboard-height'),
-            sheetB: +document.getElementById('ca-arch-sheet').getBoundingClientRect().bottom.toFixed(1),
-            focused: document.activeElement ? document.activeElement.tagName : ''
-        }));
-        ok(kbShut.stored === 64 && kbShut.val === '$64.00', 'the outside tap collapses the keyboard AND commits the typed figure');
-        ok(kbShut.v === '0px' && Math.abs(kbShut.sheetB - kbShut.h) < 2 && kbShut.focused === 'BODY', 'the metric clears, the sheet returns to the viewport bottom, nothing holds focus');
-        // v1.45.28 (owner order): the chat bar is keyboard-NATIVE - no
-        // lift, no pin, no fight. iOS reveals the composer on focus and
-        // owns the caret (misplaced and accepted); the rig proves the
-        // app's machinery stays silent for the composer.
-        await page.evaluate(() => closeArchSub());
-        await sleep(300);
-        await page.evaluate(() => document.getElementById('chat-input').focus());
-        await page.evaluate(() => window.__kbOpen(290));
-        await sleep(300);
-        const dockUp = await page.evaluate(() => ({
-            line: window.innerHeight - 290,
-            h: window.innerHeight,
-            dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
-            pillB: +document.getElementById('chat-input').closest('.glass-panel').getBoundingClientRect().bottom.toFixed(1),
-            v: document.documentElement.style.getPropertyValue('--keyboard-height'),
-            pins: window.__kbPinCalls.length
-        }));
-        ok(dockUp.v === '0px' && Math.abs(dockUp.dockB - dockUp.h) < 2, 'the composer focus lifts nothing - the metric stays zero and the dock keeps its native bottom (the drawers-only scope)');
-        ok(dockUp.pillB > dockUp.line, 'the composer stays in its native place behind the keyboard line - iOS reveals it, the app does not');
-        // the native reveal PAN is left alone: no pin fires for the chat bar
-        await page.evaluate(() => window.__kbPan(140));
-        await sleep(200);
-        const chatPan = await page.evaluate(() => ({
-            pins: window.__kbPinCalls.length,
-            metric: document.documentElement.style.getPropertyValue('--keyboard-height'),
-            dockB: +document.getElementById('chat-dock').getBoundingClientRect().bottom.toFixed(1),
-            h: window.innerHeight
-        }));
-        ok(chatPan.pins === dockUp.pins && chatPan.metric === '0px' && Math.abs(chatPan.dockB - chatPan.h) < 2, 'a pan over the composer is NOT pinned and nothing lifts - no fight: the chat bar keeps its native behaviour, caret and all (owner-accepted)');
-        await page.evaluate(() => { document.getElementById('chat-input').blur(); window.__kbShut(); });
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 

@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.30), the changelog's current entry,
-  the service-worker cache name (v261).
+- Stamps: `APP_VERSION` (currently 1.45.24), the changelog's current entry,
+  the service-worker cache name (v255).
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.
@@ -204,111 +204,6 @@ the service-worker stamp. It checks:
   'ahead' legs landed TODAY 18:00 and every evening run failed; the cap
   is gone (plain +3 days, JS spills at month-end and the store keys by
   the run's month).
-- v1.45.25 the keyboard overlay: the rig gains a SIMULATED SOFT KEYBOARD
-  — `evaluateOnNewDocument` replaces `window.visualViewport` (it is a
-  Replaceable property in Chromium) with a fake whose height drops on
-  demand (`window.__kbOpen(px)` fires the resize listeners; Chrome
-  headless has no on-screen keyboard), plus a `scrollIntoView` spy on the
-  prototype. The keyboard layer opens the expense edit, "opens" the
-  keyboard (290px), and pins: the metric publishes `--keyboard-height`,
-  the earnings sheet AND its veil-riding absolute sub-sheet terminate at
-  the keyboard's top edge, the chat dock rides the same line, the scroll
-  body resolves its own padding + the keyboard as trailing room, the
-  focused row glides to centre, the input clears the line, the outside
-  tap commits the figure and returns every panel to baseline, and the
-  composer's pill rises with the keyboard. TWO rig lessons: the viewport
-  is 390×844 — geometry pins must be viewport-relative
-  (`window.innerHeight - px`), never 812-hardcoded; and THE MIDNIGHT
-  BOMBS — five archive seeds dated their "ahead" flight
-  `Math.min(date+5, 27)`, which on the 27th is TODAY and past midnight
-  read as flown (the live month flipped to Completed at 00:06 SGT, caught
-  live between two runs, and the refresh-cw probe crashed the run on a
-  null). The wall is a FUTURE `endAt` on every ahead/next-month seed
-  entry — `archEntryLanded` honours endAt over dates, so the seeds are
-  run-hour-immune at any hour of any day (the hotfix-9 fixed-walls
-  precedent, met a third time).
-- v1.45.26 the pan pin: the fake visual viewport grows two pieces —
-  `__kbPan(y)` (sets the fake's offsetTop, the iOS keyboard PAN) and a
-  `window.scrollTo` wrap that records every call into `__kbPinCalls` and
-  MIRRORS SAFARI: a successful scrollTo resets the fake's offsetTop to 0
-  (that is what real iOS does when the page scrolls back). The pan layer
-  sits right after the composer-rise pin in the keyboard layer: it opens
-  the keyboard, pans 140px, and pins the causal chain — the pin fired
-  (`__kbPinCalls[0] === '0,0'`, at least one call), the metric HELD at
-  290px through the pan (the offsetTop subtraction, proven live), and the
-  dock's rect.bottom still sits on the keyboard line (±2px). RIG
-  HARDENING, same night, owner-approved round-27 class, NO app change:
-  two tap-race pins that flaked across the night's runs (the help-row tap
-  — a tap landing inside a brief chat-busy blip is rightly swallowed, now
-  a bounded 3-attempt retry on a quiet moment; the calendar tag toggle —
-  the instant class check now a bounded 2s poll, the same pattern the
-  gold-settle pin below it already used). Both times the app was correct
-  and the timing was the enemy; hardening happened AFTER the failures,
-  and the full run went 259/259.
-- v1.45.27 the still ground: the owner's round-two report (sheet still
-  draggable off-screen, twitching with the keyboard up, off-screen
-  furniture reachable by swiping) traced to PAGE SCROLL ROOM — iOS
-  Safari scrolls the document when it can (the reveal), swipes chain
-  into it, and the 1.45.26 pin fought it frame by frame. Two creators:
-  min-h-screen (100vh = toolbars-collapsed, taller than the visible
-  screen) and the closed sheets parked at translate-y-full (Safari
-  counts fixed-below-fold elements into scrollable overflow; Chromium
-  does not — the rig could never see it). The app froze the document
-  (html,body overflow hidden + overscroll-behavior none) and moved the
-  root columns to 100dvh. The rig's still-ground layer pins what
-  Chromium CAN prove: the computed freeze on both root elements, NO
-  scroll room (neither root taller than the screen), and the app
-  root's computed min-height landing exactly on the viewport height
-  (the dvh proof). **tw.css was recompiled for this release** (the
-  min-h-dvh class is new; md5 97583e2d59d26a4c4f2429e5ef518eca) —
-  remember the standing rule: class changes go through
-  `tests/smoke/node_modules/.bin/tailwindcss -c tw.config.cjs -o
-  tw.css --minify` from the repo root, never a hand edit. The
-  iOS-specific behaviour (Safari counting the parked sheets, the
-  toolbars gap) is the iPhone's to judge.
-- v1.45.28 the drawers-only scope (owner order): the chat dock left
-  the keyboard system — no `data-ca-kbtrack`, no bottom var, native
-  `fixed bottom-0`. The rig's proof split: the PAN layer moved into
-  the sheet flow (a 140px pan over the focused EXPENSE field pins
-  back to zero and the sub-sheet stays glued at the keyboard line),
-  and the chat flow now asserts the OPPOSITE of its old pins — the
-  composer focus publishes NOTHING (metric stays 0px), the dock and
-  its pill stay in their native places behind the keyboard line, and
-  a pan over the composer fires NO pin (the no-fight proof: the pin
-  count must not move). The old dock pins (rides-the-line,
-  pill-clears-the-line, background-tap-collapses) are retired by the
-  scope ruling — a composer tap outside no longer blurs either,
-  because the outside-tap rule is armed-only and the composer never
-  arms.
-- v1.45.29 the height floor (owner report: "a gap at the bottom of
-  the app"): the keyboard-pan theories died on geometry — with the
-  frozen document the visual viewport's pan is clamped inside the
-  layout viewport, so no over-pan strip or residue can show bare
-  canvas. The real cause, REPRODUCED in the rig: `min-h-dvh` is the
-  one class new since the 1.45.23-era stylesheet (recompiled
-  1.45.27), the stylesheet URL carries no content hash, and the
-  owner's phone held a SPLIT CACHE — fresh HTML against stale CSS.
-  With the rule stripped from the served tw.css, body and #app-root
-  measure 0px (the in-flow column collapses; the fixed dock floats
-  over the sky canvas). The fix: `body, #app-root { min-height:
-  100vh; min-height: 100dvh; }` in the inline style block — the
-  floor travels inside the document. The rig's still-ground layer
-  gains the FILL pin: body AND app-root must measure at least the
-  viewport height, making the collapse class detectable forever.
-- v1.45.30 the visible bottom (owner report round two: the gap to
-  the screen edge): with viewport-fit=cover (in the meta since the
-  first commit — verified via `git log -S`), `bottom: 0` on a fixed
-  panel means the layout viewport's bottom = the screen edge — but
-  iOS Safari's toolbars overlay it, and the frozen document (1.45.27)
-  can never scroll so the bars can never collapse. The dock gained
-  the inline rule `#chat-dock { bottom: calc(100lvh - 100dvh); }`
-  and the sheets' bind line became `max(var(--keyboard-height, 0px),
-  calc(100lvh - 100dvh))` (the keyboard metric already spans toolbar
-  + keyboard, so max() never double-counts). In the rig lvh === dvh,
-  so the calc is INERT there — every existing geometry pin held
-  unchanged, and the new pin asserts exactly that: the computed
-  bottom is 0px and the dock sits flush at the viewport bottom. The
-  rig cannot prove Safari's toolbar geometry; the iPhone judges it.
 
 ## Running it
 
