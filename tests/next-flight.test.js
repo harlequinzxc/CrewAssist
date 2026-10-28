@@ -473,6 +473,10 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.eq((src.match(/html\.dark \.ca-pill\[data-state=/g) || []).length, 6, 'every pill state has a dark twin');
     R.ok(src.indexOf('const NF_FEED_ORDER') >= 0, 'the canonical feed order exists (TZ → card → nudge → confirm)');
     R.eq((src.match(/nfInsertAtSlot\(el, \d\)/g) || []).length, 4, 'all four proactive cards take their slot instead of appending');
+    // v1.45.37 (owner order, the crisp-edges release): the padding
+    // symmetry pin, source level - jsdom strips Tailwind so the computed
+    // 16px check lives in smoke; this pins the class that produces it
+    R.ok(src.includes('"ca-hero-card relative p-4 text-sm w-[85%]"'), 'v1.45.37: the flight status card wears p-4 - one padding class, symmetric on all four margins (the smoke pins the computed 16px)');
   }
   {
     // offline boot → no nudge; coming online brings it back

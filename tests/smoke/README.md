@@ -296,6 +296,20 @@ the service-worker stamp. It checks:
   rendered rows. Version pins: 1.45.36 / v267, two-pointer changelog entry.
   Mid-round note: a recycle wiped both node_modules; npm install under
   tests/ and tests/smoke/ is the whole recovery.
+- v1.45.37 the crisp-edges release, all three changes proven live with the
+  theme-flip idiom (the same h.classList.remove/add('dark') + wasDark
+  restore the both-theme pins use): the flight status card's four computed
+  paddings all read 16px (the p-4 symmetry, enforced in the real browser —
+  the class-level twin lives in next-flight); an action chip's COMPUTED
+  box-shadow is read in light AND dark — light must match
+  /rgba\(11, 26, 58, 0\.06\)/ with a 12px blur (the navy diet) while dark
+  keeps its 30px and the two strings differ (regex, never eq-match:
+  Chromium serialises the colour first, and eq-matching a serialized
+  shadow list is brittle); and in dark the chip's glass hairline reads
+  exactly 'rgba(255, 255, 255, 0.08)' (eq-match is safe for a single
+  colour). Version pins: 1.45.37 / v268, three-pointer changelog entry.
+  The rig again: tests/smoke/node_modules was recycled away; npm install
+  there + node build-app.js before the run.
 
 ## Running it
 
