@@ -2846,7 +2846,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.34'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.35'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -2868,6 +2868,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.35', d: '2026-10-28', items: [
+                { c: 'fix', t: 'A quick tap after a pinch always closes the image view; the exit guard can never stick.' }
+            ] },
             { v: '1.45.34', d: '2026-10-28', items: [
                 { c: 'imp', t: 'The changelog filters fade at the row’s edges; Improvements reads Polish.' }
             ] },
@@ -16162,6 +16165,8 @@
         let lbGestFrom = null;    // { tx, ty, sc } at the pair's landing
         let lbGestOn = false;     // exactly two pointers tracked
         let lbGestRan = false;    // a gesture ran in this interaction - guards the tap-to-close
+        let lbGestIds = null;     // the pair's own pointer ids - their trailing click is the one the guard exists for
+        let lbFreshTap = false;   // a lone pointer went down and up clean, never joining a pair - a deliberate tap
         let lbGestEaseT = null;   // the snap-back class cleanup
         let lbHintT = null;       // the hint's three-second lifetime
         function lbGestPaint(tx, ty, sc) {
@@ -16175,7 +16180,7 @@
             img.classList.add('ca-lb-snap');
             lbGestPaint(0, 0, 1);
             clearTimeout(lbGestEaseT);
-            lbGestEaseT = setTimeout(() => { img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); lbGestRan = false; }, 460);   // destroyed when the spring lands
+            lbGestEaseT = setTimeout(() => { img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); lbGestRan = false; lbGestIds = null; }, 460);   // destroyed when the spring lands
         }
         (function menuLbGestInit() {
             const box = document.getElementById('menu-lightbox');
@@ -16183,23 +16188,34 @@
             if (!box || !img) return;
             box.addEventListener('pointerdown', (e) => {
                 if (lbGestOn) return;
-                clearTimeout(lbGestEaseT);
+                lbFreshTap = false;   // a new pointer resets the mark - its own clean lift may set it again
                 img.classList.remove('ca-lb-snap');   // tracking mode: no transition, the fingers rule
-                lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+                lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY });   // ox/oy: the down origin - a TAP lifts where it landed
                 if (lbGestPts.size === 2) {
+                    // v1.45.35: ONLY a real pair may cancel the landing cleanup. The
+                    // old blanket clearTimeout here let a lone tap inside the 460ms
+                    // guard window eat the only code that ever cleared lbGestRan -
+                    // the guard then stuck true forever and no tap, veil or image,
+                    // could ever close the view again (owner report: "sometimes I
+                    // cannot exit out of the image by tapping outside of the image").
+                    clearTimeout(lbGestEaseT);
                     const ps = [...lbGestPts.values()];
                     lbGestBase = { dist: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1, midX: (ps[0].x + ps[1].x) / 2, midY: (ps[0].y + ps[1].y) / 2 };
                     lbGestFrom = { tx: 0, ty: 0, sc: 1 };
                     lbGestOn = true; lbGestRan = true;
+                    lbGestIds = new Set(lbGestPts.keys());   // these two fingers own the trailing click
                     img.classList.add('ca-lb-live');   // born with the pair
                 }
             });
-            img.addEventListener('click', () => { if (!lbGestRan) closeMenuLightbox(); });
+            // v1.45.35: a fresh tap (a lone pointer that never joined the pair) closes
+            // even inside the guard window - the pinch's own fingers never do
+            img.addEventListener('click', () => { if (!lbGestRan || lbFreshTap) closeMenuLightbox(); });
         })();
         window.addEventListener('pointermove', (e) => {
             if (!lbGestOn) return;
             if (!lbGestPts.has(e.pointerId)) return;
-            lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            const o = lbGestPts.get(e.pointerId);   // v1.45.35: the down origin survives the move - the tap-slop test needs it
+            lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: (o && typeof o.ox === 'number') ? o.ox : e.clientX, oy: (o && typeof o.oy === 'number') ? o.oy : e.clientY });
             if (lbGestPts.size !== 2) return;
             const ps = [...lbGestPts.values()];
             const dist = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1;
@@ -16211,8 +16227,17 @@
         });
         function lbGestEnd(e) {
             if (!lbGestPts.has(e.pointerId)) return;
+            const p = lbGestPts.get(e.pointerId);   // captured before the delete - the lift position needs the origin
             lbGestPts.delete(e.pointerId);
-            if (lbGestOn && lbGestPts.size < 2) lbGestSnapBack();   // the pair broke: spring home
+            if (lbGestOn && lbGestPts.size < 2) { lbGestSnapBack(); return; }   // the pair broke: spring home
+            // v1.45.35: a lone pointer lifting clean - no gesture on, an empty
+            // slate, never one of the pair's own ids, and TAP-LIKE (it lifts
+            // where it landed, within the tap slop) - is a deliberate tap, and
+            // its click may close the view even while the trailing-click guard
+            // window is still armed. A drag lifts far from its origin and
+            // never marks (browsers synthesize no click for it anyway).
+            if (lbGestOn || lbGestPts.size || (lbGestIds && lbGestIds.has(e.pointerId))) return;
+            if (typeof e.clientX === 'number' && typeof p.ox === 'number' && Math.hypot(e.clientX - p.ox, e.clientY - p.oy) <= 10) lbFreshTap = true;
         }
         window.addEventListener('pointerup', lbGestEnd);
         window.addEventListener('pointercancel', lbGestEnd);
@@ -16246,6 +16271,7 @@
             clearTimeout(lbHintT);
             if (hint) hint.classList.add('opacity-0');
             lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
+            lbGestRan = false; lbGestIds = null; lbFreshTap = false;   // v1.45.35: the whole interaction state dies with the view
             clearTimeout(lbGestEaseT);
             if (img) { img.style.transform = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); }
             box.classList.add('opacity-0');
@@ -16263,7 +16289,7 @@
                 openMenuLightbox(thumb.getAttribute('data-full'));
                 return;
             }
-            if (e.target && e.target.id === 'menu-lightbox-dismiss' && !lbGestRan) closeMenuLightbox();
+            if (e.target && e.target.id === 'menu-lightbox-dismiss' && (!lbGestRan || lbFreshTap)) closeMenuLightbox();
         });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') closeMenuLightbox();

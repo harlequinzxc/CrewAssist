@@ -274,6 +274,17 @@ the service-worker stamp. It checks:
   app-dialog-ok dismissal at the layer's tail — the same guard the later
   clear-data seam always ran, just earlier. diag34.js reproduces the seam
   (timeline + catch modes). Version pins: 1.45.34 / v265.
+- v1.45.35 the stuck exit guard, proven live: after the v1.45.33 two-finger
+  CDP pinch, both fingers lift (the snap-back springs home, the 460ms
+  trailing-click guard window arms), then a fresh ONE-finger CDP tap lands
+  on the veil 120ms later — inside the live window — and the view CLOSES.
+  That is the owner bug in miniature: under the old engine this exact tap's
+  pointerdown cancelled the only timer that ever cleared the guard, and no
+  tap could ever close the view again. A CDP touchStart/touchEnd pair with
+  one touch-point synthesizes the full pointerdown/up + click sequence, so
+  single taps can be driven the same way as the multi-touch pinch (id 3
+  here; the pair's ids 1/2 are what the fresh-tap logic must NOT match).
+  Version pins: 1.45.35 / v266.
 
 ## Running it
 

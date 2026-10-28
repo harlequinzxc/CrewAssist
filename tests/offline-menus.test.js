@@ -497,15 +497,72 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await wait(350);
   }
 
+  // --- v1.45.35 (owner report: "sometimes I cannot exit out of the     ---
+  // --- image by tapping outside of the image"): the exit guard could   ---
+  // --- STICK - a lone pointerdown inside the 460ms trailing-click      ---
+  // --- window ate the only timer that ever cleared lbGestRan, and     ---
+  // --- from then on no tap, veil or image, could ever close the view  ---
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    const { w, d } = await boot(APP, {});
+    const box = () => d.getElementById('menu-lightbox');
+    const img = () => d.getElementById('menu-lightbox-img');
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    const pt = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; box().dispatchEvent(e); };
+    const mv = (id, x, y) => { const e = new w.Event('pointermove', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    const upAt = (id, x, y) => { const e = new w.Event('pointerup', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    // a pinch: the pair lands, breaks - the trailing-click guard window arms
+    pt(1, 150, 300); pt(2, 250, 300);
+    mv(1, 130, 250); mv(2, 290, 330);
+    upAt(1, 130, 250);
+    // the pair's own trailing click (no fresh pointer behind it) stays guarded
+    d.getElementById('menu-lightbox-dismiss').click();
+    R.ok(!box().classList.contains('opacity-0'), 'v1.45.35: the pair\u2019s trailing click stays guarded right after the break');
+    img().click();
+    R.ok(!box().classList.contains('opacity-0'), 'v1.45.35: the image door guards the same trailing click');
+    // THE OWNER BUG: a fresh lone tap inside the guard window - the exact tap
+    // whose pointerdown used to eat the cleanup timer and stick the guard
+    pt(7, 200, 100); upAt(7, 200, 100);
+    d.getElementById('menu-lightbox-dismiss').click();
+    R.ok(box().classList.contains('opacity-0'), 'v1.45.35: a quick tap on the veil right after the pinch CLOSES the view - a deliberate tap is never the pinch\u2019s trailing click (the owner bug)');
+    await wait(400);
+    R.ok(box().classList.contains('hidden'), 'v1.45.35: the quick-tap close completes - the view is gone');
+    // the close wiped the whole interaction state: a reopen exits on a plain tap, no residue
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    R.ok(!box().classList.contains('hidden') && !box().classList.contains('opacity-0'), 'v1.45.35: the lightbox reopens clean after the quick-tap close');
+    img().click();
+    await wait(350);
+    R.ok(box().classList.contains('hidden'), 'v1.45.35: the guard state dies with the view - a plain image tap exits the reopened view');
+    // a lone DRAG never marks a fresh tap: down, travel, lift far from the origin
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    pt(3, 150, 300); pt(4, 250, 300);
+    upAt(3, 150, 300);
+    pt(8, 100, 400); mv(8, 300, 500); upAt(8, 300, 500);
+    d.getElementById('menu-lightbox-dismiss').click();
+    R.ok(!box().classList.contains('opacity-0'), 'v1.45.35: a lone drag lifts far from its origin - it never marks a fresh tap, its click stays guarded');
+    await wait(500);
+    d.getElementById('menu-lightbox-dismiss').click();
+    R.ok(box().classList.contains('opacity-0'), 'v1.45.35: once the guard window lapses the veil tap exits again - the guard is a window, never a wall');
+    await wait(400);
+    // the source shape: ONLY a real pair may cancel the landing cleanup
+    const pdH = src.slice(src.indexOf("box.addEventListener('pointerdown'"), src.indexOf("img.addEventListener('click'"));
+    R.ok(pdH.indexOf('if (lbGestPts.size === 2)') !== -1 && pdH.indexOf('clearTimeout(lbGestEaseT);') > pdH.indexOf('if (lbGestPts.size === 2)'), 'v1.45.35: the clearTimeout sits INSIDE the pair branch - a lone pointer can never cancel the landing cleanup (the stuck-guard root cause)');
+    R.ok(src.includes('lbGestRan = false; lbGestIds = null; lbFreshTap = false;'), 'v1.45.35: the close path wipes the whole interaction state - a stale guard never survives a reopen');
+    R.ok(src.split('(!lbGestRan || lbFreshTap)').length - 1 === 2, 'v1.45.35: BOTH doors take the fresh-tap allowance - the veil and the image close identically');
+  }
+
   // --- version stamps: app + service worker + hardened precache ---
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.34';"), 'APP_VERSION stamped 1.45.34');
+    R.ok(src.includes("var APP_VERSION = '1.45.35';"), 'APP_VERSION stamped 1.45.35');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v265"), 'service-worker cache name bumped to v265 (the v1.45.34 chip-fade release)');
+    R.ok(sw.includes("crewassist-v266"), 'service-worker cache name bumped to v266 (the v1.45.35 stuck-guard release)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs
