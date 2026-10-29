@@ -3033,7 +3033,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.45'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.46'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3055,6 +3055,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.46', d: '2026-10-30', items: [
+                { c: 'fix', t: 'The records list fills the height your screen gives it.' }
+            ] },
             { v: '1.45.45', d: '2026-10-29', items: [
                 { c: 'imp', t: 'Light’s quiet ink reads clearly now.' },
                 { c: 'fix', t: 'A long press on a record never selects its text.' }
@@ -6352,8 +6355,14 @@
             caSheetHideCancel(wrap);   // hotfix 14: a quick close-and-reopen never hides the wrap mid-open
             rcPodTab = 'flights';      // every open starts on the All Flights podium
             rcPodOpen = '';            // and the visit log starts folded
-            renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass
+            // v1.45.46 (owner report, iPhone 11): the wrap must be VISIBLE
+            // before the render measures it — display:none zeroes
+            // clientHeight, so the fit ALWAYS fell to its no-layout
+            // fallback (7 rows, 10 entries, every screen). Un-hide and
+            // render in the same synchronous task: the browser paints
+            // only after the block completes, so nothing flashes.
             wrap.classList.remove('hidden');
+            renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass
             caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
             caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
         }

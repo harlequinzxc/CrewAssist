@@ -1644,6 +1644,13 @@ const synthItems = [].concat(
     // lock text selection, and hover stays OUT (offered, declined)
     R.ok(src.includes('.ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; user-select: none; -webkit-user-select: none;'), 'v1.45.45: a long press on a card or row opens the log — it never grabs the station code as a text selection');
     R.ok(!/\.ca-rc-pod-[a-z-]+\s*:hover/.test(src), 'v1.45.45 ruling: the records page CSS carries NO hover selector — press feedback only, the (hover:hover) gate stays closed here');
+    // v1.45.46 (owner report, iPhone 11): the wrap must be VISIBLE before
+    // the render measures it — the old order rendered under display:none,
+    // clientHeight read 0, and the fit fell to its no-layout fallback on
+    // EVERY screen (7 rows, 10 entries, tall or short)
+    const orp = src.slice(src.indexOf('function openRcPod'), src.indexOf('function closeRcPod'));
+    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true);'), 'v1.45.46: openRcPod un-hides the wrap BEFORE the render — the fit measures a real clientHeight, never the fallback (the flat-10-everywhere report)');
+    R.ok(orp.indexOf('display:none zeroes') >= 0, 'the trap is recorded in-source where the next editor will read it');
   }
   {
     // live: the ring, the recede flag, the drawer’s header, and the

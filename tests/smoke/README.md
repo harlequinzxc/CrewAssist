@@ -400,6 +400,21 @@ the service-worker stamp. It checks:
   restored). The style-snapshot rig ran before/after: 8,052 elements x
   both themes, zero real computed diffs outside the changelog
   version-dance surfaces.
+- v1.45.46 the visible-fit release: the version pins re-point
+  (APP_VERSION 1.45.46, the single-fix changelog entry, the v1.45.46
+  What's New header, sw v277) plus the run's first DYNAMIC-VIEWPORT
+  pin, at the tail where nothing downstream can break: seed a
+  14-station store, open records at 390x844 (9 rows), close, re-open
+  at 390x620 (4 rows) — the shorter window must fit FEWER rows,
+  which the display:none regression (a flat 7 everywhere) cannot
+  satisfy. Rig lessons: `page.setViewport` mid-run is safe but fires
+  the app's resize listeners (records re-fits only while its wrap is
+  un-hidden), so wait past the 150ms debounce and restore the viewport
+  before yielding; and a jsdom suite can NEVER own this pin — its
+  fallback IS the no-layout value the bug produced, so the flat-7
+  regression was invisible there by construction. The one flake of the
+  round (the tag-toggle gold fill) is the recorded under-load class:
+  clean on rerun, never hardened on a single observation.
 
 ## Running it
 
