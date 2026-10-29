@@ -1640,6 +1640,10 @@ const synthItems = [].concat(
     R.ok(src.includes('border-bottom: 1px dashed var(--glass-border); font-size: 11px; }'), 'the visit lines part on dashed hairlines');
     R.ok(src.includes('html.ca-reduced .ca-rc-pod-card, html.ca-reduced .ca-rc-pod-lrow { transition: none; }'), 'the recede stands down under ca-reduced');
     R.ok(src.includes('FLIGHT HISTORY \\u00b7 ') && src.includes("=== 1 ? ' VISIT' : ' VISITS'"), 'the drawer names its station and its count agrees with the ×n the card shows');
+    // v1.45.45 (owner orders, the accessibility round): the tap targets
+    // lock text selection, and hover stays OUT (offered, declined)
+    R.ok(src.includes('.ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; user-select: none; -webkit-user-select: none;'), 'v1.45.45: a long press on a card or row opens the log — it never grabs the station code as a text selection');
+    R.ok(!/\.ca-rc-pod-[a-z-]+\s*:hover/.test(src), 'v1.45.45 ruling: the records page CSS carries NO hover selector — press feedback only, the (hover:hover) gate stays closed here');
   }
   {
     // live: the ring, the recede flag, the drawer’s header, and the

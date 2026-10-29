@@ -54,6 +54,12 @@
             /* Light Mode Variables */
             --bg-color: #F6F1E8;
             --text-main: #111827;
+            /* v1.45.45 (owner order, the accessibility round): light's
+               muted ink deepens to stone-500 — stone-400 on the linen
+               computed ~2.2:1, stone-500 lands ~4.2:1 and still reads
+               muted beside the near-black body ink. Dark keeps the
+               shared stone-400 (it computes ~7:1 on the dark glass). */
+            --ca-ink-stone: #78716C;
             --glass-bg: rgba(255, 255, 255, 0.6);
             --glass-border: rgba(0, 0, 0, 0.1);
             --glass-bubble-bg: rgba(201, 162, 39, 0.2);
@@ -101,7 +107,7 @@
             --ca-ink-navy: #0B1A3A;                    /* navy ink on gold-tinted fills (both themes) */
             --ca-ink-deep: #111827;                    /* near-black: inverse text on gold, deep fills */
             --ca-ink-faint: #9CA3AF;                   /* the gray-400 read */
-            --ca-ink-stone: #A8A29E;                   /* stone-400 muted text */
+            --ca-ink-stone: #A8A29E;                   /* stone-400 muted text (dark's value; light overrides to stone-500, v1.45.45) */
             --ca-ink-stone-deep: #78716C;              /* stone-500 — stone-400's light-theme value */
             /* the elevated panel pair (the date picker) */
             --ca-panel-bg: #0B1A3A;
@@ -635,7 +641,10 @@
            the rates-fold clip idiom: 0fr→1fr, the padding on a
            grandchild). And the render owns the icon pass, so a tab swap
            can never lose the crown again. */
-        .ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; transition: opacity .2s ease-out, border-color .2s ease-out, background-color .2s ease-out, box-shadow .2s ease-out; }
+        /* v1.45.45 (owner order): the tap targets never text-select —
+           a long press opens the log, it must not grab the station
+           code (the calendar grid and drag tracks already lock this) */
+        .ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; user-select: none; -webkit-user-select: none; transition: opacity .2s ease-out, border-color .2s ease-out, background-color .2s ease-out, box-shadow .2s ease-out; }
         .ca-rc-pod-card:active, .ca-rc-pod-lrow:active { opacity: .7; }
         /* v1.45.44 (owner order): the open station ANCHORS the view —
            its card or row takes the gold ring while the visit log is
@@ -3024,7 +3033,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.44'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.45'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3046,6 +3055,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.45', d: '2026-10-29', items: [
+                { c: 'imp', t: 'Light’s quiet ink reads clearly now.' },
+                { c: 'fix', t: 'A long press on a record never selects its text.' }
+            ] },
             { v: '1.45.44', d: '2026-10-29', items: [
                 { c: 'imp', t: 'The open station wears its gold ring while the history is out.' },
                 { c: 'imp', t: 'Visit logs name their station and count, with calendar-colored stays.' }
