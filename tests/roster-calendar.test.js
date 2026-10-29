@@ -1554,16 +1554,18 @@ const synthItems = [].concat(
     R.ok(xps[0].textContent.indexOf('SQ 106') >= 0 && xps[0].textContent.indexOf('TA') >= 0, 'the row’s log carries its flight and kind');
     R.eq(hero.getAttribute('aria-expanded'), 'false', 'the hero announces its fold');
     R.eq(row.getAttribute('aria-expanded'), 'true', 'the row announces its open');
+    const pbody = d.querySelector('#ca-rc-pod-body');
+    pbody.scrollTop = 120;
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
     await wait(60);
-    let kp = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]');
-    R.ok(!!kp && kp.getAttribute('data-ca-rc-pod-xp') === 'KUL', 'a tab swap keeps the open log where the station still lives');
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'v1.45.47 (owner order): a new pill folds the open log — the keep-where-it-lives rule is retired');
+    R.eq(pbody.scrollTop, 0, 'v1.45.47 (owner order): the same pill scrolls the body home — a fresh page, top of the list');
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
     await wait(60);
-    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'a list without the station folds the log away');
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'and the fold holds across every pill');
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="flights"]').click();
     await wait(60);
-    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'and the reset holds — the log never outlives its station');
+    R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'and the reset holds — no log outlives its pill');
     d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').click();
     await wait(60);
     d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').click();
@@ -1651,6 +1653,12 @@ const synthItems = [].concat(
     const orp = src.slice(src.indexOf('function openRcPod'), src.indexOf('function closeRcPod'));
     R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true);'), 'v1.45.46: openRcPod un-hides the wrap BEFORE the render — the fit measures a real clientHeight, never the fallback (the flat-10-everywhere report)');
     R.ok(orp.indexOf('display:none zeroes') >= 0, 'the trap is recorded in-source where the next editor will read it');
+    // v1.45.47 (owner order, the green-light round): rows only, rotate on
+    // open — the pre-tap affordance the six external specs kept asking for,
+    // built the house way: a CSS glyph, never a Lucide stub
+    R.ok(src.includes(".ca-rc-pod-lrow::after { content: '\\203a'") && src.includes('.ca-rc-pod-lrow.ca-rc-pod-on::after { transform: rotate(90deg); }') && src.includes('html.ca-reduced .ca-rc-pod-lrow::after { transition: none; }'), 'v1.45.47: every leaderboard row carries the chevron — a CSS glyph at the right edge, turning down while its log is out (the archive chevron idiom), standing down under ca-reduced');
+    R.ok(/\.ca-rc-pod-lrow \{[^}]*padding: 11px 8px/.test(src), 'v1.45.47 (owner report): the row breathes — 8px horizontal, so the rank digit never hugs the highlighted box\u2019s left edge (constant padding: a state-dependent one would jump the row on tap)');
+    R.ok(src.includes('// v1.45.47 (owner order): a new pill is a fresh') && src.indexOf("rcPodOpen = '';\n                        renderRcPod();") > 0 && src.includes('if (pb) pb.scrollTop = 0;'), 'v1.45.47 (owner order): the tab handler folds every log and scrolls the body home before the render');
   }
   {
     // live: the ring, the recede flag, the drawer’s header, and the
@@ -1701,7 +1709,7 @@ const synthItems = [].concat(
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
     await wait(60);
     const nrtAny = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-station="NRT"]');
-    R.ok(!!nrtAny && nrtAny.classList.contains('ca-rc-pod-on') && nrtAny.classList.contains('ca-rc-pod-card') && body.classList.contains('ca-rc-pod-hasopen'), 'a tab swap rebuilds the list with the ring still on the open station — here it rode onto the podium, where the ta list keeps it');
+    R.ok(!!nrtAny && !nrtAny.classList.contains('ca-rc-pod-on') && !body.classList.contains('ca-rc-pod-hasopen') && !d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'v1.45.47 (owner order): the new pill clears the ring, the flag and the log together — the keep-where-it-lives rule is retired here too');
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
     await wait(60);
     R.ok(!body.classList.contains('ca-rc-pod-hasopen'), 'a list without the open station lowers the flag — nothing recedes');

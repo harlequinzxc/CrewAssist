@@ -416,6 +416,16 @@ the service-worker stamp. It checks:
   round (the tag-toggle gold fill) is the recorded under-load class:
   clean on rerun, never hardened on a single observation.
 
+- v1.45.47 the chevron release: four live pins on the tail block's
+  14-station store — the computed ::after glyph at rest (Chromium
+  resolves pseudo-element content and transform; jsdom cannot), the
+  rotation on the open row, and the tab-pill reset (fold + ring-clear +
+  scrollTop 0). Rig lesson: a scroll-reset pin needs a REAL overflow
+  precondition — the fit packs the list to the viewport by design, so
+  open the View-all door first if scrollTop won't take; pin the
+  precondition separately so a no-scroll environment fails loudly
+  instead of passing vacuously.
+
 ## Running it
 
 ```bash

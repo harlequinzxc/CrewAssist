@@ -689,7 +689,19 @@
         html.ca-reduced .ca-rc-pod-xp { transition: none; }
         html.ca-reduced .ca-rc-pod-card, html.ca-reduced .ca-rc-pod-lrow { transition: none; }
         .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
-        .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; border-bottom: 1px solid var(--glass-border); }
+        .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 8px; border-bottom: 1px solid var(--glass-border); }
+        /* v1.45.47 (owner report): the rank digit hugged the left edge of
+           the highlighted box — the anchor's inset hairline + radius need
+           breathing room. 8px horizontal, CONSTANT (a state-dependent
+           padding would jump the row on tap). */
+        /* v1.45.47 (owner order, rows only): the pre-tap affordance — a
+           muted stone chevron at every leaderboard row's right edge,
+           turning down toward the visit log it reveals while that log is
+           out (the archive chevron's idiom). A CSS glyph, never a Lucide
+           stub: no icon pass to own, renders CDN-blocked, zero DOM cost. */
+        .ca-rc-pod-lrow::after { content: '\203a'; flex: none; width: 14px; margin-left: 6px; font-size: 14px; line-height: 1; text-align: right; color: var(--ca-ink-stone); transition: transform .2s ease-out; }
+        .ca-rc-pod-lrow.ca-rc-pod-on::after { transform: rotate(90deg); }
+        html.ca-reduced .ca-rc-pod-lrow::after { transition: none; }
         .ca-rc-pod-lrank { width: 22px; flex: none; font-size: 11px; color: var(--ca-ink-stone); }
         .ca-rc-pod-lmeta { display: flex; align-items: baseline; gap: 14px; margin-left: auto; }
         @keyframes caRcPodIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -3033,7 +3045,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.46'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.47'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3055,6 +3067,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.47', d: '2026-10-30', items: [
+                { c: 'imp', t: 'Rows carry a quiet chevron that turns as their log opens.' },
+                { c: 'fix', t: 'The highlighted row breathes at its edges, and a new tab folds every log and returns you to the top.' }
+            ] },
             { v: '1.45.46', d: '2026-10-30', items: [
                 { c: 'fix', t: 'The records list fills the height your screen gives it.' }
             ] },
@@ -7614,7 +7630,17 @@
                     const stn = ev.target.closest('[data-ca-rc-pod-station]');
                     if (stn) { rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); return; }
                     const tab = ev.target.closest('[data-ca-rc-pod-tab]');
-                    if (tab) { rcPodTab = tab.getAttribute('data-ca-rc-pod-tab'); renderRcPod(); return; }
+                    if (tab) {
+                        rcPodTab = tab.getAttribute('data-ca-rc-pod-tab');
+                        // v1.45.47 (owner order): a new pill is a fresh
+                        // page — fold every log (the keep-where-it-lives
+                        // rule is retired) and scroll back to the top
+                        rcPodOpen = '';
+                        renderRcPod();
+                        const pb = document.getElementById('ca-rc-pod-body');
+                        if (pb) pb.scrollTop = 0;
+                        return;
+                    }
                     const all = ev.target.closest('[data-ca-rc-pod-all]');
                     if (all) { rcPodAll[rcPodTab] = all.getAttribute('data-ca-rc-pod-all') === '1'; renderRcPod(); }
                 });
