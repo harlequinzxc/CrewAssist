@@ -392,6 +392,14 @@ the service-worker stamp. It checks:
   cascade forever — the recede could never show on mount-staggered
   cards; jsdom's class pins were blind to it. Fill is now BACKWARDS
   (same reveal, cascade owns the element after the run).
+- v1.45.45 the accessibility release: the version pins re-point
+  (APP_VERSION 1.45.45, the imp+fix changelog entry, the v1.45.45
+  What's New header, sw v276) and the multiplier-glyph pin becomes the
+  both-theme ink split — stone-400 on the dark glass, stone-500 in
+  light (the accessibility bump, computed with each theme forced and
+  restored). The style-snapshot rig ran before/after: 8,052 elements x
+  both themes, zero real computed diffs outside the changelog
+  version-dance surfaces.
 
 ## Running it
 
