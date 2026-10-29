@@ -635,34 +635,67 @@
            the rates-fold clip idiom: 0fr→1fr, the padding on a
            grandchild). And the render owns the icon pass, so a tab swap
            can never lose the crown again. */
-        .ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; }
+        .ca-rc-pod-card, .ca-rc-pod-lrow { cursor: pointer; transition: opacity .2s ease-out, border-color .2s ease-out, background-color .2s ease-out, box-shadow .2s ease-out; }
         .ca-rc-pod-card:active, .ca-rc-pod-lrow:active { opacity: .7; }
+        /* v1.45.44 (owner order): the open station ANCHORS the view —
+           its card or row takes the gold ring while the visit log is
+           out, and every other station recedes into the canvas until
+           it folds. The recede depths are theme-tuned: the light linen
+           needs more ink left in a receding row than the dark glass
+           does. */
+        .ca-rc-pod-card.ca-rc-pod-on { border-color: var(--ca-gold-line-strong); background: var(--ca-gold-soft-15); }
+        html.dark .ca-rc-pod-card.ca-rc-pod-on { background: var(--ca-gold-soft-12); }
+        .ca-rc-pod-lrow.ca-rc-pod-on { background: var(--ca-gold-soft-12); box-shadow: inset 0 0 0 1px var(--ca-gold-line); border-radius: 8px; }
+        html.dark .ca-rc-pod-lrow.ca-rc-pod-on { background: var(--ca-gold-soft-15); }
+        #ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-card:not(.ca-rc-pod-on) { opacity: .4; }
+        html.dark #ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-card:not(.ca-rc-pod-on) { opacity: .25; }
+        #ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-lrow:not(.ca-rc-pod-on) { opacity: .5; }
+        html.dark #ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-lrow:not(.ca-rc-pod-on) { opacity: .4; }
         .ca-rc-pod-xp { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .2s ease-out; margin: 6px 0; }
         .ca-rc-pod-xp.ca-rc-pod-xpon { grid-template-rows: 1fr; }
         .ca-rc-pod-xpin { overflow: hidden; min-height: 0; }
         .ca-rc-pod-xpin > div { padding: 2px 10px; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--glass-solid-bg); }
-        .ca-rc-pod-xl { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px solid var(--glass-border); font-size: 11px; }
+        .ca-rc-pod-xph { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 6px 2px 5px; border-bottom: 1px dashed var(--glass-border); }
+        .ca-rc-pod-xphl { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--sia-gold-ink); }
+        html.dark .ca-rc-pod-xphl { color: var(--ca-gold-hi); }
+        .ca-rc-pod-xphn { font-size: 11px; letter-spacing: .04em; color: var(--ca-ink-stone); }
+        .ca-rc-pod-xl { display: flex; align-items: baseline; gap: 10px; padding: 5px 2px; border-bottom: 1px dashed var(--glass-border); font-size: 11px; }
         .ca-rc-pod-xl:last-child { border-bottom: none; }
         /* v1.45.43 (owner report, dark mode): the date and flight number
            ride the INHERITED theme ink, like the station codes — navy is
            gold-fill ink and vanished on the dark glass panel. The muted
-           spans (the fold end, the kind mark) stay stone, like every
-           other date on this page. */
+           spans (the fold end) stay stone, like every other date on
+           this page. */
         .ca-rc-pod-xle { color: var(--ca-ink-stone); }
         .ca-rc-pod-xlfn { margin-left: auto; font-weight: 600; }
+        /* v1.45.44 (owner order): the kind marks ride the CALENDAR TAG
+           hues — orange LO, green TA — so the records page and the
+           roster tags speak one color language (the tag chips' own
+           values, as text ink). */
         .ca-rc-pod-xlk { flex: none; color: var(--ca-ink-stone); letter-spacing: .06em; }
+        .ca-rc-pod-xlk-lo { color: #C2410C; }
+        .ca-rc-pod-xlk-ta { color: var(--ca-success-deep); }
+        html.dark .ca-rc-pod-xlk-lo { color: #FDBA74; }
+        html.dark .ca-rc-pod-xlk-ta { color: #86EFAC; }
         html.ca-reduced .ca-rc-pod-xp { transition: none; }
+        html.ca-reduced .ca-rc-pod-card, html.ca-reduced .ca-rc-pod-lrow { transition: none; }
         .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
         .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 2px; border-bottom: 1px solid var(--glass-border); }
         .ca-rc-pod-lrank { width: 22px; flex: none; font-size: 11px; color: var(--ca-ink-stone); }
         .ca-rc-pod-lmeta { display: flex; align-items: baseline; gap: 14px; margin-left: auto; }
         @keyframes caRcPodIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-        .ca-rc-pod-d0 { animation: caRcPodIn .2s ease-out both; }
-        .ca-rc-pod-d1 { animation: caRcPodIn .2s ease-out .05s both; }
-        .ca-rc-pod-d2 { animation: caRcPodIn .2s ease-out .1s both; }
-        .ca-rc-pod-lrow.ca-rc-pod-cas { animation: caRcPodIn .2s ease-out both; }
+        /* fill BACKWARDS, never both: a forwards-filled animation keeps
+           its final opacity:1 keyframe applied forever, and the
+           animation origin beats the cascade — the v1.45.44 recede
+           (opacity .25/.4/.5 on the non-anchor stations) could never
+           win. Backwards holds the from-frame through the stagger
+           delay; after the run the cascade owns the card again. */
+        .ca-rc-pod-d0 { animation: caRcPodIn .2s ease-out backwards; }
+        .ca-rc-pod-d1 { animation: caRcPodIn .2s ease-out .05s backwards; }
+        .ca-rc-pod-d2 { animation: caRcPodIn .2s ease-out .1s backwards; }
+        .ca-rc-pod-lrow.ca-rc-pod-cas { animation: caRcPodIn .2s ease-out backwards; }
         html.ca-reduced .ca-rc-pod-d0, html.ca-reduced .ca-rc-pod-d1,
-        html.ca-reduced .ca-rc-pod-d2, html.ca-reduced .ca-rc-pod-lrow.ca-rc-pod-cas { animation: ca-reduce-fade 150ms ease-out both; }
+        html.ca-reduced .ca-rc-pod-d2, html.ca-reduced .ca-rc-pod-lrow.ca-rc-pod-cas { animation: ca-reduce-fade 150ms ease-out backwards; }
         html.ca-reduced .ca-rc-pod-glider, html.ca-reduced .ca-rc-pod-tab { transition: none; }
         .ca-rc-pod-all { display: block; width: 100%; text-align: center; padding: 12px 0 4px; }
         /* hotfix: a day with two stops wears one tag per corner, same tilt */
@@ -2991,7 +3024,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.43'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.44'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3013,6 +3046,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.44', d: '2026-10-29', items: [
+                { c: 'imp', t: 'The open station wears its gold ring while the history is out.' },
+                { c: 'imp', t: 'Visit logs name their station and count, with calendar-colored stays.' }
+            ] },
             { v: '1.45.43', d: '2026-10-29', items: [
                 { c: 'imp', t: 'A turnaround shuttle folds its hub, however long the return wait.' },
                 { c: 'imp', t: 'The visit log reads right in dark mode too.' }
@@ -6155,7 +6192,8 @@
         }
         function rcPodCardHtml(rk, it, stagger) {
             const cls = rk === 1 ? 'ca-rc-pod-hero' : ('ca-rc-pod-side' + (rk === 3 ? ' ca-rc-pod-dim' : ''));
-            return '<div class="ca-rc-pod-card ' + cls + (stagger ? ' ca-rc-pod-d' + (rk === 1 ? 0 : rk - 1) : '') + '" data-ca-rc-pod-station="' + it.code + '" role="button" tabindex="0" aria-expanded="' + (rcPodOpen === it.code) + '">'
+            const on = rcPodOpen === it.code;
+            return '<div class="ca-rc-pod-card ' + cls + (on ? ' ca-rc-pod-on' : '') + (stagger ? ' ca-rc-pod-d' + (rk === 1 ? 0 : rk - 1) : '') + '" data-ca-rc-pod-station="' + it.code + '" role="button" tabindex="0" aria-expanded="' + on + '">'
                 + (rk === 1
                     ? '<i data-lucide="crown" class="w-4 h-4 ca-rc-pod-crown"></i>'
                     : '<span class="ca-rc-pod-ord ca-mono">' + (rk === 2 ? '2nd' : '3rd') + '</span>')
@@ -6165,7 +6203,8 @@
                 + '</div>';
         }
         function rcPodLrowHtml(rk, it, stagger) {
-            return '<div class="ca-rc-pod-lrow' + (stagger ? ' ca-rc-pod-cas' : '') + '"' + (stagger ? ' style="animation-delay: ' + (150 + (rk - 4) * 30) + 'ms"' : '') + ' data-ca-rc-pod-station="' + it.code + '" role="button" tabindex="0" aria-expanded="' + (rcPodOpen === it.code) + '">'
+            const on = rcPodOpen === it.code;
+            return '<div class="ca-rc-pod-lrow' + (on ? ' ca-rc-pod-on' : '') + (stagger ? ' ca-rc-pod-cas' : '') + '"' + (stagger ? ' style="animation-delay: ' + (150 + (rk - 4) * 30) + 'ms"' : '') + ' data-ca-rc-pod-station="' + it.code + '" role="button" tabindex="0" aria-expanded="' + on + '">'
                 + '<span class="ca-rc-pod-lrank">' + rk + '</span>'
                 + '<span class="ca-mono font-bold text-sm">' + it.code + '</span>'
                 + '<span class="ca-rc-pod-lmeta"><span class="ca-rc-pod-lcount ca-mono text-xs font-semibold"><span class="ca-rc-pod-x">\u00d7</span>' + it.n + '</span><span class="ca-rc-pod-ldate ca-mono">' + (it.last ? rcPodWhen(it.last) : '') + '</span></span>'
@@ -6186,25 +6225,43 @@
                 + '<span class="ca-rc-pod-xld ca-mono">' + rcPodWhen(v.d) + '</span>'
                 + (v.end ? '<span class="ca-rc-pod-xle ca-mono">→ ' + rcPodWhenShort(v.end, v.d) + '</span>' : '')
                 + '<span class="ca-rc-pod-xlfn ca-mono">' + (v.fn ? 'SQ ' + v.fn : '—') + '</span>'
-                + (rcPodTab === 'flights' ? '<span class="ca-rc-pod-xlk ca-mono">' + (v.k === 'lo' ? 'LO' : 'TA') + '</span>' : '')
+                + (rcPodTab === 'flights' ? '<span class="ca-rc-pod-xlk ca-rc-pod-xlk-' + v.k + ' ca-mono">' + (v.k === 'lo' ? 'LO' : 'TA') + '</span>' : '')
                 + '</div>').join('');
         }
         function rcPodXpMount(entry, anchor, animate) {
             const xp = document.createElement('div');
             xp.className = 'ca-rc-pod-xp';
             xp.setAttribute('data-ca-rc-pod-xp', entry.code);
-            xp.innerHTML = '<div class="ca-rc-pod-xpin"><div>' + rcPodXpLines(entry) + '</div></div>';
+            // v1.45.44 (owner order): the drawer names what it holds —
+            // a gold FLIGHT HISTORY label on the station, and the visit
+            // count agreeing with the ×n the card already shows
+            xp.innerHTML = '<div class="ca-rc-pod-xpin"><div>'
+                + '<div class="ca-rc-pod-xph"><span class="ca-rc-pod-xphl">FLIGHT HISTORY \u00b7 ' + entry.code + '</span><span class="ca-rc-pod-xphn ca-mono">' + entry.visits.length + (entry.visits.length === 1 ? ' VISIT' : ' VISITS') + '</span></div>'
+                + rcPodXpLines(entry) + '</div></div>';
             anchor.parentNode.insertBefore(xp, anchor.nextSibling);
             if (animate) requestAnimationFrame(() => xp.classList.add('ca-rc-pod-xpon'));
             else xp.classList.add('ca-rc-pod-xpon');
             return xp;
+        }
+        // v1.45.44: one walker keeps aria-expanded, the gold ring and the
+        // body dim flag in lockstep — every path that touches rcPodOpen
+        // (toggle, the no-entry guards, the re-render) lands here
+        function rcPodSyncOpen(body) {
+            body.querySelectorAll('[data-ca-rc-pod-station]').forEach((el) => {
+                el.setAttribute('aria-expanded', el.getAttribute('data-ca-rc-pod-station') === rcPodOpen ? 'true' : 'false');
+                el.classList.toggle('ca-rc-pod-on', el.getAttribute('data-ca-rc-pod-station') === rcPodOpen);
+            });
+            body.classList.toggle('ca-rc-pod-hasopen', !!rcPodOpen);
         }
         function rcPodToggle(code) {
             const body = document.getElementById('ca-rc-pod-body');
             if (!body) return;
             const same = rcPodOpen === code;
             rcPodOpen = same ? '' : code;
-            body.querySelectorAll('[data-ca-rc-pod-station]').forEach((el) => el.setAttribute('aria-expanded', el.getAttribute('data-ca-rc-pod-station') === rcPodOpen ? 'true' : 'false'));
+            // v1.45.44: the anchor classes ride the same walk as
+            // aria-expanded — the open station wears the gold ring, the
+            // body-level flag dims every other station
+            rcPodSyncOpen(body);
             const cur = body.querySelector('[data-ca-rc-pod-xp]');
             if (cur) {
                 cur.classList.remove('ca-rc-pod-xpon');
@@ -6212,9 +6269,9 @@
             }
             if (same) return;
             const entry = (rcPodStats()[rcPodTab] || []).filter((x) => x.code === code)[0];
-            if (!entry || !entry.visits.length) { rcPodOpen = ''; return; }
+            if (!entry || !entry.visits.length) { rcPodOpen = ''; rcPodSyncOpen(body); return; }
             const el = body.querySelector('[data-ca-rc-pod-station="' + code + '"]');
-            if (!el) { rcPodOpen = ''; return; }
+            if (!el) { rcPodOpen = ''; rcPodSyncOpen(body); return; }
             // a card's log unfolds as a full-width strip under the podium
             // grid; a row's unfolds inline beneath its hairline
             rcPodXpMount(entry, el.classList.contains('ca-rc-pod-card') ? el.parentNode : el, true);
@@ -6262,9 +6319,13 @@
                     if (entry && entry.visits.length) {
                         const el = body.querySelector('[data-ca-rc-pod-station="' + rcPodOpen + '"]');
                         if (el) rcPodXpMount(entry, el.classList.contains('ca-rc-pod-card') ? el.parentNode : el, false);
+                        else rcPodOpen = '';
                     } else rcPodOpen = '';
                 }
             }
+            // the re-render rebuilt the cards with their ring classes
+            // inline; the body-level dim flag lands here (v1.45.44)
+            body.classList.toggle('ca-rc-pod-hasopen', !!rcPodOpen);
             // v1.45.42 (owner report): the render OWNS the icon pass —
             // every rebuild (open, tab swap, door, resize) refreshes the
             // stubs, because an unreplaced stub renders as nothing. The
