@@ -109,7 +109,14 @@ function rosterItems(flight, sector, dateTok, opts) {
     // future for every run hour — the fixed-walls precedent from the
     // landed-yesterday block below, applied here.)
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const tok = (s) => String(Number(s.slice(8))) + MON[Number(s.slice(5, 7)) - 1] + s.slice(2, 4);   // '24Oct26' style date anchor
+    // (v1.45.46 rig fix: tok() used to STRIP the day's zero pad — fine while
+    // the fixture sat mid-month, but a run whose day-after-tomorrow lands on
+    // the 1st-9th minted '1Nov26', and the parser (correctly — every real
+    // roster PDF zero-pads: '01Jul26' in the July fixtures) requires the
+    // 2-digit day. The STD column lost its anchor and the block failed on
+    // month-crossing days only. Same fixed-walls spirit as the v1.45.22 fix
+    // above: pad the day, keep the anchor shape the real PDFs print.)
+    const tok = (s) => String(Number(s.slice(8))).padStart(2, '0') + MON[Number(s.slice(5, 7)) - 1] + s.slice(2, 4);   // '24Oct26' style date anchor
     const its = [
       // report-day column: identity + report + flight time, NO std/sta
       { str: tok(rptDay), x: 818, y: 21, page: 1 },

@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.45', 'APP_VERSION is 1.45.45');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.45' && e.d === '2026-10-29' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.45.45 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v276'), 'the service-worker cache name is bumped to v276 (the v1.45.45 accessibility release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.46', 'APP_VERSION is 1.45.46');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.46' && e.d === '2026-10-30' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.46 entry with its single fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v277'), 'the service-worker cache name is bumped to v277 (the v1.45.46 visible-fit release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.45'; }), 'the What\'s New sheet carries the v1.45.45 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.46'; }), 'the What\'s New sheet carries the v1.45.46 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1876,6 +1876,41 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         await page.evaluate((d) => { closeMenuViewer(); localStorage.removeItem('SQ836:' + d + ':CABINS'); localStorage.removeItem('SQ836:' + d + ':JCL'); }, heroDate);
         await sleep(300);
+
+        // v1.45.46 (owner report, iPhone 11 - the flat 10): the records fit
+        // must measure a VISIBLE sheet. The old order rendered while the wrap
+        // was still display:none - clientHeight read 0, and every screen fell
+        // to the no-layout fallback (7 rows, 10 entries, tall or short). Seed
+        // a fourteen-station store, open records at two window heights, and
+        // the SHORTER window must fit FEWER rows (with the bug both opens
+        // returned the flat 7 and this pin fails).
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(300);
+        await page.evaluate(() => {
+            const ST = ['KUL', 'NRT', 'CPT', 'JNB', 'SYD', 'LHR', 'PVG', 'CGK', 'BOM', 'AKL', 'FRA', 'HKG', 'TPE', 'ICN'];
+            const fls = [];
+            ST.forEach((st, i) => {
+                const d = String(i * 2 + 1).padStart(2, '0');
+                fls.push({ fn: String(100 + i), dep: 'SIN', arr: st, ymd: '2026-10-' + d, std: '08:00', sta: '12:00', stdYmd: '2026-10-' + d, staYmd: '2026-10-' + d, ft: '04:00', ac: '7M8', rpt: '06:00', pos: false });
+                fls.push({ fn: String(101 + i), dep: st, arr: 'SIN', ymd: '2026-10-' + d, std: '20:00', sta: '23:00', stdYmd: '2026-10-' + d, staYmd: '2026-10-' + d, ft: '04:00', ac: '7M8', rpt: '', pos: false });
+            });
+            localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': fls }));
+            openRcPod();
+        });
+        await sleep(700);
+        const tallRows = await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length);
+        await page.evaluate(() => closeRcPod());
+        await sleep(600);
+        await page.setViewport({ width: 390, height: 620, hasTouch: true });
+        await sleep(300);
+        await page.evaluate(() => openRcPod());
+        await sleep(700);
+        const shortRows = await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length);
+        await page.evaluate(() => closeRcPod());
+        await sleep(500);
+        await page.setViewport({ width: 390, height: 844, hasTouch: true });
+        await sleep(200);
+        ok(shortRows < tallRows && tallRows > 7, 'v1.45.46: the records fit measures the VISIBLE sheet - ' + shortRows + ' rows on the short window vs ' + tallRows + ' on the tall one (the iPhone 11 flat-10 report: display:none zeroed the measurement and every screen fell to the 7-row fallback)');
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));
