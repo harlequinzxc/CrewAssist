@@ -1624,5 +1624,85 @@ const synthItems = [].concat(
     R.eq(stats.ta.map((r) => r.code).join(','), '', 'nothing turns around');
   }
 
+  // ---- v1.45.44 (owner orders, the grounding round): the open station
+  // anchors the view — the gold ring and the recede, the drawer names
+  // its station and count, and the kind marks ride the calendar tag hues
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    R.ok(src.includes('function rcPodSyncOpen(body)'), 'v1.45.44: one walker keeps aria-expanded, the gold ring and the dim flag in lockstep — every path that touches rcPodOpen lands there');
+    R.ok(src.includes('#ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-card:not(.ca-rc-pod-on) { opacity: .4; }'), 'the light podium recedes to 40 while a log is open');
+    R.ok(src.includes('html.dark #ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-card:not(.ca-rc-pod-on) { opacity: .25; }'), 'the dark podium recedes deeper — 25');
+    R.ok(src.includes('#ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-lrow:not(.ca-rc-pod-on) { opacity: .5; }'), 'the light rows keep more ink — 50');
+    R.ok(src.includes('html.dark #ca-rc-pod-body.ca-rc-pod-hasopen .ca-rc-pod-lrow:not(.ca-rc-pod-on) { opacity: .4; }'), 'the dark rows recede to 40');
+    R.ok(src.includes('.ca-rc-pod-card.ca-rc-pod-on { border-color: var(--ca-gold-line-strong); background: var(--ca-gold-soft-15); }'), 'the anchor card takes the gold ring and wash (tokens, never raw hex)');
+    R.ok(src.includes('.ca-rc-pod-xlk-lo { color: #C2410C; }') && src.includes('.ca-rc-pod-xlk-ta { color: var(--ca-success-deep); }'), 'v1.45.44: the kind marks ride the CALENDAR TAG hues — orange LO, green TA (the owner order, over both the spec’s amber/blue and the old stone)');
+    R.ok(src.includes('html.dark .ca-rc-pod-xlk-lo { color: #FDBA74; }') && src.includes('html.dark .ca-rc-pod-xlk-ta { color: #86EFAC; }'), 'the dark marks ride the dark tag inks');
+    R.ok(src.includes('border-bottom: 1px dashed var(--glass-border); font-size: 11px; }'), 'the visit lines part on dashed hairlines');
+    R.ok(src.includes('html.ca-reduced .ca-rc-pod-card, html.ca-reduced .ca-rc-pod-lrow { transition: none; }'), 'the recede stands down under ca-reduced');
+    R.ok(src.includes('FLIGHT HISTORY \\u00b7 ') && src.includes("=== 1 ? ' VISIT' : ' VISITS'"), 'the drawer names its station and its count agrees with the ×n the card shows');
+  }
+  {
+    // live: the ring, the recede flag, the drawer’s header, and the
+    // accordion keeping all of it honest
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2026-10-09', std: '08:00', sta: '09:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-09', std: '11:00', sta: '12:00', stdYmd: '2026-10-09', staYmd: '2026-10-09', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '118', dep: 'SIN', arr: 'KUL', ymd: '2026-10-10', std: '08:00', sta: '09:00', stdYmd: '2026-10-10', staYmd: '2026-10-10', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '117', dep: 'KUL', arr: 'SIN', ymd: '2026-10-10', std: '11:00', sta: '12:00', stdYmd: '2026-10-10', staYmd: '2026-10-10', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '61', dep: 'SIN', arr: 'NRT', ymd: '2026-10-12', std: '08:00', sta: '09:00', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:00', ac: '7M8', rpt: '06:30', pos: false },
+        { fn: '62', dep: 'NRT', arr: 'SIN', ymd: '2026-10-12', std: '11:00', sta: '12:00', stdYmd: '2026-10-12', staYmd: '2026-10-12', ft: '01:00', ac: '7M8', rpt: '', pos: false },
+        { fn: '481', dep: 'SIN', arr: 'CPT', ymd: '2026-10-15', std: '08:00', sta: '09:00', stdYmd: '2026-10-15', staYmd: '2026-10-15', ft: '01:00', ac: '77W', rpt: '06:30', pos: false },
+        { fn: '482', dep: 'CPT', arr: 'SIN', ymd: '2026-10-15', std: '11:00', sta: '12:00', stdYmd: '2026-10-15', staYmd: '2026-10-15', ft: '01:00', ac: '77W', rpt: '', pos: false },
+        { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:00', sta: '10:00', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '08:00', ac: '77W', rpt: '00:00', pos: false },
+        { fn: '472', dep: 'JNB', arr: 'SIN', ymd: '2026-10-20', std: '19:00', sta: '03:00', stdYmd: '2026-10-20', staYmd: '2026-10-21', ft: '08:00', ac: '77W', rpt: '', pos: false }
+      ] })); } });
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(100);
+    const body = d.querySelector('#ca-rc-pod-body');
+    R.ok(!body.classList.contains('ca-rc-pod-hasopen'), 'a fresh page dims nothing');
+    const hero = d.querySelector('#ca-rc-pod-body .ca-rc-pod-hero');
+    R.ok(!!hero && hero.textContent.indexOf('KUL') >= 0, 'the twice-turned hub leads the podium');
+    hero.click();
+    await wait(60);
+    R.ok(body.classList.contains('ca-rc-pod-hasopen'), 'an open log raises the recede flag');
+    R.ok(hero.classList.contains('ca-rc-pod-on'), 'the open station wears the gold ring');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card:not(.ca-rc-pod-on)').length, 2, 'the two siblings stand ready to recede');
+    let xp = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]');
+    R.ok(!!xp && xp.textContent.indexOf('FLIGHT HISTORY \u00b7 KUL') >= 0 && xp.textContent.indexOf('2 VISITS') >= 0, 'the drawer names its station and its count (plural) — agreeing with the hero’s ×2');
+    R.ok(!!d.querySelector('#ca-rc-pod-body .ca-rc-pod-xlk-ta'), 'a turnaround visit carries its green mark class');
+    const jnb = d.querySelector('#ca-rc-pod-body .ca-rc-pod-card[data-ca-rc-pod-station="JNB"]');
+    jnb.click();
+    await wait(320);
+    xp = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]');
+    R.ok(!!xp && xp.textContent.indexOf('FLIGHT HISTORY \u00b7 JNB') >= 0 && xp.textContent.indexOf('1 VISIT') >= 0, 'the side station’s drawer names its single visit (singular)');
+    R.ok(!!d.querySelector('#ca-rc-pod-body .ca-rc-pod-xlk-lo'), 'a layover visit carries its orange mark class');
+    R.ok(jnb.classList.contains('ca-rc-pod-on') && !hero.classList.contains('ca-rc-pod-on'), 'the ring follows the open station — the hero’s is gone');
+    const row = d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow');
+    R.ok(!!row && row.textContent.indexOf('NRT') >= 0, 'rank four is the NRT row');
+    row.click();
+    await wait(320);
+    R.ok(row.classList.contains('ca-rc-pod-on') && body.classList.contains('ca-rc-pod-hasopen'), 'the open row wears its wash and keeps the flag up');
+    R.ok(!jnb.classList.contains('ca-rc-pod-on'), 'the card ring cleared when the row opened — one anchor at a time');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
+    await wait(60);
+    const nrtAny = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-station="NRT"]');
+    R.ok(!!nrtAny && nrtAny.classList.contains('ca-rc-pod-on') && nrtAny.classList.contains('ca-rc-pod-card') && body.classList.contains('ca-rc-pod-hasopen'), 'a tab swap rebuilds the list with the ring still on the open station — here it rode onto the podium, where the ta list keeps it');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
+    await wait(60);
+    R.ok(!body.classList.contains('ca-rc-pod-hasopen'), 'a list without the open station lowers the flag — nothing recedes');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="flights"]').click();
+    await wait(60);
+    const row2 = d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow[data-ca-rc-pod-station="NRT"]');
+    row2.click();
+    await wait(60);
+    row2.click();
+    await wait(320);
+    R.ok(!body.classList.contains('ca-rc-pod-hasopen') && !d.querySelector('#ca-rc-pod-body .ca-rc-pod-on'), 'tapping the station again folds its log — ring, wash and flag all clear');
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();

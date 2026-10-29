@@ -379,6 +379,19 @@ the service-worker stamp. It checks:
   first version of this pin read rgb(246,246,247) and failed). The fold
   rule itself lives jsdom-side (roster-calendar pins it on the reference
   roster's own September times).
+- v1.45.44 the grounding release: the version pins re-point (APP_VERSION
+  1.45.44, the two-pointer changelog entry, the v1.45.44 What's New
+  header, sw v275) plus five computed pins on the open hero's drawer —
+  the gold ring's border color, the sibling card receding at 0.25 dark /
+  0.4 light (both themes forced and restored, the ink-pin idiom), the
+  drawer's FLIGHT HISTORY name and 1 VISIT count, the dashed header
+  parting (a single-visit line is a :last-child and rightly carries no
+  border), and the TA mark's calendar tag hue in both themes. This rig
+  caught the round's real bug: the podium stagger animations ran
+  animation-fill-mode BOTH, whose final opacity:1 keyframe outranks the
+  cascade forever — the recede could never show on mount-staggered
+  cards; jsdom's class pins were blind to it. Fill is now BACKWARDS
+  (same reveal, cascade owns the element after the run).
 
 ## Running it
 
