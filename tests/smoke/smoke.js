@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.46', 'APP_VERSION is 1.45.46');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.46' && e.d === '2026-10-30' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.46 entry with its single fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v277'), 'the service-worker cache name is bumped to v277 (the v1.45.46 visible-fit release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.47', 'APP_VERSION is 1.45.47');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.47' && e.d === '2026-10-30' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.45.47 entry with its imp + fix pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v278'), 'the service-worker cache name is bumped to v278 (the v1.45.47 chevron release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.46'; }), 'the What\'s New sheet carries the v1.45.46 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.47'; }), 'the What\'s New sheet carries the v1.45.47 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -1911,6 +1911,41 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(200);
         ok(shortRows < tallRows && tallRows > 7, 'v1.45.46: the records fit measures the VISIBLE sheet - ' + shortRows + ' rows on the short window vs ' + tallRows + ' on the tall one (the iPhone 11 flat-10 report: display:none zeroed the measurement and every screen fell to the 7-row fallback)');
+
+        // v1.45.47 (owner green light, after six external specs): the
+        // chevron affordance — rows only, turning down toward the log it
+        // reveals — plus the tab-pill reset (fold every log, scroll home).
+        // The 14-station store is still seeded; records is closed here.
+        await page.evaluate(() => openRcPod());
+        await sleep(600);
+        ok(await page.evaluate(() => {
+            const r = document.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow');
+            if (!r) return false;
+            const c = getComputedStyle(r, '::after');
+            return !!c.content && c.content.indexOf('›') >= 0 && c.transform === 'none' && getComputedStyle(r).paddingLeft === '8px';
+        }), 'v1.45.47: every row carries the chevron glyph at its right edge (computed pseudo-element, at rest un-rotated) and the row breathes at 8px');
+        await page.evaluate(() => document.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').click());
+        await sleep(400);
+        ok(await page.evaluate(() => {
+            const r = document.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow.ca-rc-pod-on');
+            if (!r) return false;
+            return getComputedStyle(r, '::after').transform !== 'none';
+        }), 'v1.45.47: the open row\u2019s chevron turns down toward the log it reveals (computed rotation)');
+        await page.evaluate(() => {
+            const b = document.getElementById('ca-rc-pod-body');
+            if (b.scrollTop < 100) { const door = document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]'); if (door) door.click(); }
+        });
+        await sleep(300);
+        ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod-body'); b.scrollTop = 140; return b.scrollTop >= 100; }), 'the records body really scrolls once the list is deep (the precondition the reset pin rides on)');
+        await page.evaluate(() => document.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click());
+        await sleep(400);
+        ok(await page.evaluate(() => {
+            const b = document.getElementById('ca-rc-pod-body');
+            return b.scrollTop === 0 && !document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]') && !document.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow.ca-rc-pod-on');
+        }), 'v1.45.47 (owner order): the new pill folds the log, clears the ring and scrolls the body home - a fresh page');
+        await page.evaluate(() => closeRcPod());
+        await sleep(400);
+
 
         console.log('— health —');
         eq(pageErrors.length, 0, 'zero page errors' + (pageErrors.length ? ' — ' + pageErrors.join(' | ') : ''));
