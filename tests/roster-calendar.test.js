@@ -1196,7 +1196,7 @@ const synthItems = [].concat(
           { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2026-10-11', std: '11:00', sta: '12:00', stdYmd: '2026-10-11', staYmd: '2026-10-11', ft: '01:00', ac: '7M8', rpt: '', pos: false },
           { fn: '471', dep: 'SIN', arr: 'JNB', ymd: '2026-10-20', std: '02:00', sta: '10:00', stdYmd: '2026-10-20', staYmd: '2026-10-20', ft: '08:00', ac: '77W', rpt: '00:00', pos: false },
           { fn: '472', dep: 'JNB', arr: 'CPT', ymd: '2026-10-22', std: '12:00', sta: '14:00', stdYmd: '2026-10-22', staYmd: '2026-10-22', ft: '02:00', ac: '77W', rpt: '', pos: true },
-          { fn: '473', dep: 'CPT', arr: 'JNB', ymd: '2026-10-22', std: '15:00', sta: '17:00', stdYmd: '2026-10-22', staYmd: '2026-10-22', ft: '02:00', ac: '77W', rpt: '', pos: true },
+          { fn: '473', dep: 'CPT', arr: 'JNB', ymd: '2026-10-22', std: '22:30', sta: '00:25', stdYmd: '2026-10-22', staYmd: '2026-10-23', ft: '02:00', ac: '77W', rpt: '', pos: true },
           { fn: '474', dep: 'JNB', arr: 'SIN', ymd: '2026-10-25', std: '19:00', sta: '03:00', stdYmd: '2026-10-25', staYmd: '2026-10-26', ft: '08:00', ac: '77W', rpt: '', pos: false }
         ]
       };
@@ -1205,8 +1205,8 @@ const synthItems = [].concat(
     } });
     const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
     R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|KUL:2|NRT:2|CPT:1', 'All Flights counts station VISITS (v1.45.39) — SIN-MEL-SIN is MEL ×1, the JNB double-visit trip counts both stays, ties break by recency');
-    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|NRT:2', 'layover stations count PER VISIT — the JNB out-stay and back-stay are two REAL lays (v1.45.41: the fold only takes transit touches; both stays here run days), and unreadable ground never turns into a turnaround');
-    R.eq(stats.ta.map((r) => r.code + ':' + r.n).join('|'), 'KUL:2|CPT:1', 'turnaround stations ride the marks\u2019 own rule — quick ground only, positioning stays included');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:2|NRT:2|CPT:1', 'layover stations count PER VISIT — the JNB out-stay and back-stay are two REAL lays (v1.45.43: the side-trip LAYS OVER at CPT, over six hours, so the hub stands twice), and unreadable ground never turns into a turnaround');
+    R.eq(stats.ta.map((r) => r.code + ':' + r.n).join('|'), 'KUL:2', 'turnaround stations ride the marks\u2019 own rule — quick ground only; the positioning stay at CPT now runs over six hours, so it lays over');
     R.eq(stats.first, '2026-09-30', 'the all-time window opens on the earliest FLOWN leg, across the month border the trip chains over');
     R.eq(String(w.eval('rcPodHasData()')), 'true', 'the reveal check sees the landed legs');
     // the render + the UI: segmented tabs with the glide pill, the 2-1-3
@@ -1243,14 +1243,14 @@ const synthItems = [].concat(
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click();
     await wait(50);
     cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
-    R.eq(cards.length, 2, 'the Layovers tab swaps the panel — two overnight stations');
+    R.eq(cards.length, 3, 'the Layovers tab swaps the panel — two overnight hubs plus the side-trip that laid over (v1.45.43: the over-six-hour positioning stay)');
     R.ok(cards[1].classList.contains('ca-rc-pod-hero') && cards[1].textContent.indexOf('JNB') >= 0 && cards[0].textContent.indexOf('NRT') >= 0 && cards[0].textContent.indexOf('2nd') >= 0, 'JNB outranks NRT — equal counts break by the more recent stay');
     R.eq(d.querySelector('.ca-rc-pod-glider').style.transform, 'translateX(calc(100% + 4px))', 'the glide pill slid one tab over — the container frame never moved');
     R.ok(!cards[1].classList.contains('ca-rc-pod-d0'), 'a tab swap renders INSTANT — the stagger is mount-only');
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
     await wait(50);
     cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
-    R.ok(cards.length === 2 && cards[1].textContent.indexOf('KUL') >= 0 && cards[0].textContent.indexOf('CPT') >= 0, 'the Turnarounds tab carries the quick-ground list');
+    R.ok(cards.length === 1 && cards[0].classList.contains('ca-rc-pod-hero') && cards[0].textContent.indexOf('KUL') >= 0, 'the Turnarounds tab carries the quick-ground list — KUL alone now, the positioning side-trip moved to the layover side');
     d.getElementById('btn-close-rc-pod').click();
     await wait(100);
     R.ok(d.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full'), 'closing parks the sheet below the fold');
@@ -1421,7 +1421,7 @@ const synthItems = [].concat(
   // visit. Pinned on the owner's own duty shapes ----
   {
     const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-    R.ok(src.includes('if (seen[sec.arr] && am && bm && ground <= 360) {'), 'v1.45.41: the fold rule — a revisit inside the turnaround window folds into the surrounding stay');
+    R.ok(src.slice(src.indexOf('function rcPodStats'), src.indexOf('function rcPodWhen')).indexOf('ground <= 360') < 0, 'v1.45.43: the fold no longer reads the hub’s return transit — the side-trip’s own character decides (the September correction)');
     R.ok(src.indexOf('const seen = {};', src.indexOf('function rcPodStats')) < src.indexOf('function rcPodWhen'), 'the seen map lives inside the stats walk, scoped per trip — a station from an EARLIER trip always counts fresh');
   }
   {
@@ -1569,6 +1569,59 @@ const synthItems = [].concat(
     d.querySelector('#ca-rc-pod-body .ca-rc-pod-lrow').click();
     await wait(320);
     R.ok(!d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp]'), 'tapping the station again folds its log (the 220ms removal settles)');
+  }
+
+
+  // ---- v1.45.43 (owner report, the September duty + dark mode): the fold
+  // rides the SIDE-TRIP's own character — every station touched between
+  // the hub visits must be a TURNAROUND, and then the hub counts once no
+  // matter how long it waits for the flight home; a side-trip that lays
+  // over anywhere leaves both hub touches as real stays. And the visit
+  // log's date + flight number ride the inherited theme ink ----
+  {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+    R.ok(src.includes('const side = vlog.slice(seen[sec.arr].vi + 1);'), 'v1.45.43: the fold reads the SIDE-TRIP — every visit created since the hub’s anchor');
+    R.ok(src.includes("if (side.length && side.every((v) => v.k === 'ta')) {"), 'the fold fires only when the whole side-trip turned around — the layover/turnaround logic itself decides');
+    R.ok(src.includes('.ca-rc-pod-xlfn { margin-left: auto; font-weight: 600; }'), 'v1.45.43: the visit-log flight number rides the inherited theme ink — the navy-on-glass rule is gone');
+    const cssLo = src.indexOf('/* v1.45.42 (owner order): every station carries its history');
+    const cssHi = src.indexOf('html.ca-reduced .ca-rc-pod-xp');
+    R.ok(cssLo >= 0 && cssHi > cssLo && src.slice(cssLo, cssHi).indexOf('ink-navy') < 0, 'no navy ink anywhere in the visit-log CSS — gold-fill ink never rides the glass panel (the dark-mode report)');
+  }
+  {
+    // the owner's REAL September duty (the reference roster's own times):
+    // the shuttle turns around at the far end in ninety minutes, but the
+    // flight home leaves TWO DAYS later — and the hub still counts once
+    const { w } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-09': [
+        { fn: '478', dep: 'SIN', arr: 'JNB', ymd: '2026-09-17', std: '01:18', sta: '05:51', stdYmd: '2026-09-17', staYmd: '2026-09-17', ft: '10:33', ac: '77W', rpt: '', pos: false },
+        { fn: '478', dep: 'JNB', arr: 'CPT', ymd: '2026-09-18', std: '07:04', sta: '09:17', stdYmd: '2026-09-18', staYmd: '2026-09-18', ft: '02:13', ac: '7M8', rpt: '', pos: false },
+        { fn: '479', dep: 'CPT', arr: 'JNB', ymd: '2026-09-18', std: '10:39', sta: '12:31', stdYmd: '2026-09-18', staYmd: '2026-09-18', ft: '01:52', ac: '7M8', rpt: '', pos: false },
+        { fn: '479', dep: 'JNB', arr: 'SIN', ymd: '2026-09-20', std: '13:45', sta: '06:20', stdYmd: '2026-09-20', staYmd: '2026-09-21', ft: '10:35', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'CPT:1|JNB:1', 'v1.45.43: the REAL September duty folds — the hub counts ONCE even with a two-day wait for the flight home (the owner report, reproduced from the reference roster’s own times)');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'JNB:1', 'the folded hub keeps the anchor stay’s layover — the whole South Africa stay is one visit');
+    R.eq(stats.ta.map((r) => r.code + ':' + r.n).join('|'), 'CPT:1', 'the far end stays the turnaround it was — the fold’s trigger');
+    R.eq(JSON.stringify((stats.flights.filter((r) => r.code === 'JNB')[0] || {}).visits), JSON.stringify([{ d: '2026-09-17', fn: '478', k: 'lo', end: '2026-09-18' }]), 'the folded visit carries the anchor date, the landing flight, the anchor kind, and the shuttle’s return date');
+  }
+  {
+    // the other side of the ruling, on the reference roster’s own times:
+    // the side-trip LAYS OVER at its far end, so both hub touches stand
+    const { w } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-09': [
+        { fn: '12', dep: 'SIN', arr: 'NRT', ymd: '2026-09-05', std: '09:33', sta: '17:27', stdYmd: '2026-09-05', staYmd: '2026-09-05', ft: '07:54', ac: '77W', rpt: '', pos: false },
+        { fn: '12', dep: 'NRT', arr: 'LAX', ymd: '2026-09-06', std: '18:48', sta: '12:59', stdYmd: '2026-09-06', staYmd: '2026-09-07', ft: '10:11', ac: '77W', rpt: '', pos: false },
+        { fn: '11', dep: 'LAX', arr: 'NRT', ymd: '2026-09-08', std: '14:14', sta: '17:03', stdYmd: '2026-09-08', staYmd: '2026-09-09', ft: '11:49', ac: '77W', rpt: '', pos: false },
+        { fn: '11', dep: 'NRT', arr: 'SIN', ymd: '2026-09-11', std: '19:08', sta: '00:59', stdYmd: '2026-09-11', staYmd: '2026-09-12', ft: '07:51', ac: '77W', rpt: '', pos: false }
+      ] }));
+    } });
+    const stats = JSON.parse(w.eval('JSON.stringify(rcPodStats())'));
+    R.eq(stats.flights.map((r) => r.code + ':' + r.n).join('|'), 'NRT:2|LAX:1', 'the double-lay duty stands — the far end LAYS OVER, so both hub touches are real stays (same roster, same ruling)');
+    R.eq(stats.lo.map((r) => r.code + ':' + r.n).join('|'), 'NRT:2|LAX:1', 'both hub stays and the down-leg lay over');
+    R.eq(stats.ta.map((r) => r.code).join(','), '', 'nothing turns around');
   }
 
   process.exit(R.done() ? 1 : 0);

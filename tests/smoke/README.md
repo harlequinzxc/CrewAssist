@@ -368,6 +368,17 @@ the service-worker stamp. It checks:
   regression. The accordion and the fold-span shapes live jsdom-side
   too — the smoke seed carries one visit, exactly enough to prove the
   tap, the content and the collapse in a real browser.
+- v1.45.43 the fold-correction release: the version pins re-point
+  (APP_VERSION 1.45.43, the two-pointer changelog entry, the v1.45.43
+  What's New header, sw v274) plus one computed both-theme pin — the
+  visit-log date must read the inherited theme ink (near-black on the
+  light glass, white on the dark glass), the navy-on-glass bug the owner
+  reported from their phone. Rig lesson: the body carries a 300ms color
+  transition, so a theme-toggle pin must WAIT OUT the transition before
+  reading computed colors — an immediate read lands mid-flight (the
+  first version of this pin read rgb(246,246,247) and failed). The fold
+  rule itself lives jsdom-side (roster-calendar pins it on the reference
+  roster's own September times).
 
 ## Running it
 

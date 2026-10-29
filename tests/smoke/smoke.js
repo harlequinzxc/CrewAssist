@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.42', 'APP_VERSION is 1.45.42');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.42' && e.d === '2026-10-29' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.42 entry with its two pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v273'), 'the service-worker cache name is bumped to v273 (the v1.45.42 visit-log release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.43', 'APP_VERSION is 1.45.43');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.43' && e.d === '2026-10-29' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.43 entry with its two pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v274'), 'the service-worker cache name is bumped to v274 (the v1.45.43 fold-correction release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.42'; }), 'the What\'s New sheet carries the v1.45.42 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.43'; }), 'the What\'s New sheet carries the v1.45.43 header');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
@@ -391,6 +391,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero').click());
         await sleep(400);
         ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body .ca-rc-pod-xpon')), 'tapping it again folds the log away');
+        await page.evaluate(() => document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero').click());
+        await sleep(400);
+        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const el = document.querySelector('#ca-rc-pod-body .ca-rc-pod-xpon .ca-rc-pod-xld'); if (!el) return false; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(450); const light = getComputedStyle(el).color; h.classList.add('dark'); await sleep(450); const dark = getComputedStyle(el).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgb(17, 24, 39)' && dark === 'rgb(255, 255, 255)'; }), 'v1.45.43: the visit-log date rides the inherited theme ink - near-black on the light glass, WHITE on the dark glass (the navy-on-dark-glass report, computed both themes)');
+        await page.evaluate(() => document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero').click());
+        await sleep(400);
         ok(await page.evaluate(() => { const hero = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero'); return getComputedStyle(hero.querySelector('.ca-rc-pod-code')).fontSize === '20px'; }), 'v1.45.40: the hero code computes to 20px - the half-step scale-up, sized by the custom rule');
         ok(await page.evaluate(() => { const x = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero .ca-rc-pod-x'); return !!x && x.textContent === '\u00d7' && getComputedStyle(x).color === 'rgb(168, 162, 158)'; }), 'v1.45.40: the multiplier glyph steps back to stone ink (computed stone-400, the same in both themes) while the count stays bold');
         ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]') && document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length === 0), 'v1.45.39: no leaderboard rows and no View-all door when the list fits the podium');
