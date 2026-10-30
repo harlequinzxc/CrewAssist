@@ -537,3 +537,16 @@ an older one, the older pin's waits may need widening — the visit-log ink
 pin passed for eleven releases, then needed 650ms once three more
 theme-flipping pins preceded it under box load.
 
+## Gradients pin by backgroundImage, angle-first (v1.45.55)
+
+Chromium's computed-style serialization of a gradient puts the ANGLE
+FIRST — `linear-gradient(135deg, rgb(220, 193, 99) 0%, …)` — and only
+`backgroundImage` carries it (`backgroundColor` reads empty for a
+gradient surface). Pin gradient surfaces with indexOf on that exact
+serialized form, never on the authored CSS string. A FIXED card (the
+gold hero, same in both themes) pins as the IDENTICAL computed string
+after a theme toggle — no tolerance, the whole string must match. And
+a control that trades min-height for padding (the tab pills, 5px 13px)
+keeps its row level with a height-parity pin: |ΔoffsetHeight| ≤ 1
+between the paired controls, computed in the live DOM.
+
