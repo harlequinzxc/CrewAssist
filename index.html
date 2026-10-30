@@ -702,18 +702,20 @@
         html.dark .ca-rc-pod-ypill.on { color: #0B0E14; box-shadow: none; }
         .ca-rc-pod-tel { border-radius: 20px; padding: 15px 16px 13px; background: linear-gradient(152deg, #0A1730 0%, #112749 54%, #0C1D3A 100%); box-shadow: 0 10px 28px rgba(6,13,27,.30), inset 0 0 0 1px rgba(233,222,196,.10); }
         html.dark .ca-rc-pod-tel { box-shadow: 0 10px 28px rgba(0,0,0,.45), inset 0 0 0 1px rgba(233,222,196,.14); }
+        /* v1.45.53 (owner order: "use the same style as the earnings
+           page"): the hero's figures ride the EARNINGS typeface — the
+           house sans, bold, tabular-nums, tight tracking (the archive
+           headline + meta-val idioms), never Space Mono; labels are the
+           11px uppercase metalabel idiom. */
         .ca-rc-pod-hcell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        .ca-rc-pod-hlabel { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: rgba(233,224,203,.62); white-space: nowrap; }
+        .ca-rc-pod-hlabel { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: rgba(233,224,203,.62); white-space: nowrap; }
         .ca-rc-pod-hlabel svg { width: 12px; height: 12px; flex: none; }
-        .ca-rc-pod-hval { font-family: 'Space Mono', monospace; font-weight: 700; font-size: 20px; line-height: 1.1; color: var(--ca-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ca-rc-pod-hsub { font-family: 'Space Mono', monospace; font-size: 11px; line-height: 1.3; color: rgba(233,224,203,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ca-rc-pod-hval { font-weight: 700; font-size: 24px; line-height: 1.15; letter-spacing: -.025em; font-variant-numeric: tabular-nums; color: var(--ca-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ca-rc-pod-hsub { font-size: 11px; line-height: 1.3; color: rgba(233,224,203,.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ca-rc-pod-hcell.mini .ca-rc-pod-hval { font-size: 14px; }
         .ca-rc-pod-gate { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 12px; border-radius: 9999px; color: var(--ca-ink-stone); background: transparent; box-shadow: inset 0 0 0 1px rgba(0,0,0,.10); transition: color .15s ease, box-shadow .15s ease; }
-        .ca-rc-pod-gate svg { width: 15px; height: 15px; transition: transform .2s ease; }
-        .ca-rc-pod-gate.on svg { transform: rotate(180deg); }
         html.dark .ca-rc-pod-gate { color: #A8A29E; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
-        #ca-rc-pod-records { transition: opacity .22s ease, transform .22s ease; }
-        html.ca-reduced #ca-rc-pod-records, html.ca-reduced .ca-rc-pod-gate svg, html.ca-reduced .ca-rc-pod-ypill { transition: none; }
+        html.ca-reduced .ca-rc-pod-ypill { transition: none; }
         .ca-rc-pod-ldate { margin-top: 4px; color: var(--ca-ink-stone); }
         .ca-rc-pod-lrow { display: flex; align-items: center; justify-content: space-between; padding: 11px 8px; border-bottom: 1px solid var(--glass-border); }
         /* v1.45.47 (owner report): the rank digit hugged the left edge of
@@ -2556,6 +2558,31 @@
              rcTripsAll() — the never-pruned allFlights store chained
              SIN->SIN across month borders, so the page stores nothing of
              its own. -->
+        <div id="ca-rc-statwrap" class="fixed inset-0 z-[64] hidden">
+            <div class="ca-rc-pod-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-stat-close></div>
+            <div id="ca-rc-stat-sheet" role="dialog" aria-modal="true" aria-label="All Flight Stats" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+                <div class="w-full flex justify-center py-3 shrink-0">
+                    <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+                </div>
+                <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-3 shrink-0 max-w-2xl mx-auto">
+                    <div class="min-w-0">
+                        <h3 class="text-xl font-bold truncate">All Flight Stats</h3>
+                        <p id="ca-rc-stat-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
+                    </div>
+                    <button type="button" data-ca-rc-stat-close class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex-grow min-h-0 flex flex-col px-5 pb-8 max-w-2xl mx-auto w-full">
+                    <!-- v1.45.39: the segmented tab bar stays PINNED above the
+                         scroll — the dense redesign's control never scrolls
+                         away under the crew's thumb. v1.45.52: the records
+                         list carries its own year pills (they filter this
+                         list alone, never the passport hero). -->
+                    <div id="ca-rc-pod-listyears" class="flex-none flex overflow-x-auto gap-2 pt-1 pb-2 ca-rc-pod-years" role="tablist" aria-label="Filter the flight stats by year"></div>
+                    <div id="ca-rc-pod-tabs-wrap" class="flex-none pt-1"></div>
+                    <div id="ca-rc-pod-body" class="flex-grow min-h-0 overflow-y-auto overscroll-contain"></div>
+                </div>
+            </div>
+        </div>
         <div id="ca-rc-podwrap" class="fixed inset-0 z-[62] hidden">
             <div class="ca-rc-pod-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-pod-close></div>
             <div id="ca-rc-pod-sheet" role="dialog" aria-modal="true" aria-label="Passport" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
@@ -2580,16 +2607,12 @@
                          hero. -->
                     <div id="ca-rc-pod-years" class="flex-none flex overflow-x-auto gap-2 pt-1 pb-2 ca-rc-pod-years" role="tablist" aria-label="Filter the passport by year"></div>
                     <div id="ca-rc-pod-herowrap" class="flex-none"></div>
-                    <button type="button" id="ca-rc-pod-gate" class="flex-none ca-rc-pod-gate mt-3" aria-expanded="false"><i data-lucide="chevron-down" class="w-4 h-4"></i><span class="ca-micro uppercase tracking-wider font-bold">All Flight Stats</span></button>
-                    <!-- v1.45.39: the segmented tab bar stays PINNED above the
-                         scroll — the dense redesign's control never scrolls
-                         away under the crew's thumb (now inside the gateway-
-                         gated records section) -->
-                    <div id="ca-rc-pod-records" class="flex flex-col flex-grow min-h-0 opacity-0 translate-y-2 hidden">
-                        <div id="ca-rc-pod-listyears" class="flex-none flex overflow-x-auto gap-2 pt-2 pb-2 ca-rc-pod-years" role="tablist" aria-label="Filter the flight stats by year"></div>
-                        <div id="ca-rc-pod-tabs-wrap" class="flex-none pt-1"></div>
-                        <div id="ca-rc-pod-body" class="flex-grow min-h-0 overflow-y-auto overscroll-contain"></div>
-                    </div>
+                    <!-- v1.45.53 (owner order: "instead of opening an
+                         accordion ... open another overlay instead"): the
+                         gateway is a DOOR — All Flight Stats rises as its
+                         own page over the passport, carrying the records
+                         list and its own year pills. No in-page accordion. -->
+                    <button type="button" id="ca-rc-pod-gate" class="flex-none ca-rc-pod-gate mt-3" aria-label="Open all flight stats"><i data-lucide="chevron-up" class="w-4 h-4"></i><span class="ca-micro uppercase tracking-wider font-bold">All Flight Stats</span></button>
                 </div>
             </div>
         </div>
@@ -3091,7 +3114,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.52'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.53'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3113,6 +3136,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.53', d: '2026-10-30', items: [
+                { c: 'imp', t: 'Passport figures wear the earnings page\u2019s bold, even-spaced type.' },
+                { c: 'imp', t: 'All Flight Stats opens as its own page above the passport.' }
+            ] },
             { v: '1.45.52', d: '2026-10-30', items: [
                 { c: 'imp', t: 'The passport gains year pills and a navy telemetry hero.' },
                 { c: 'imp', t: 'Ten flying metrics tell your story, foldable behind one button.' }
@@ -4058,6 +4085,7 @@
                     ['ca-changelog-sheet', closeChangelog],
                     ['ca-arch-sheet', closeArchOverlay],
                     ['settings-sheet', closeSettings],
+                    ['ca-rc-statwrap', closeRcStat],   // v1.45.53: the stats overlay sits ABOVE its passport - it closes first
                     ['ca-roster-cal', closeRosterCalendar],
                     ['menu-sheet', closeMenuViewer],
                     ['print-overlay', closeMenuPrinter],
@@ -6351,8 +6379,7 @@
         // v1.45.52 (owner spec): the telemetry stack's session state —
         // never persisted, every open starts clean (all-time, collapsed)
         let rcPodYear = 'all';        // the MAIN chip: drives the hero, syncs the inner chip on tap
-        let rcPodListYear = 'all';    // the INNER chip: drives the records list alone
-        let rcPodGate = false;        // the gateway: records list starts COLLAPSED (hero-first)
+        let rcPodListYear = 'all';    // the INNER chip (inside the stats overlay): drives the records list alone
         const rcPodAll = { flights: false, lo: false, ta: false };   // View-all per list, session only — never persisted
         const RC_POD_TABS = [['flights', 'All Flights'], ['lo', 'Layovers'], ['ta', 'Turnarounds']];
         // v1.45.51 (owner order): the leaderboard depth is the fixed TOP
@@ -6504,26 +6531,31 @@
                 + rcPodTelCell('Regions', 'globe', regions ? String(regions) : '\u2014', '', true)
                 + '</div></div>';
         }
-        // v1.45.52: the gateway — hidden + opacity-0 + translate-y-2 (the
-        // owner's utilities) with a 220ms settle; a re-render applies the
-        // settled state instantly (the accordion lesson: no replay)
-        function rcPodGateApply(instant) {
-            const rec = document.getElementById('ca-rc-pod-records');
-            const gate = document.getElementById('ca-rc-pod-gate');
-            if (!rec || !gate) return;
-            gate.classList.toggle('on', rcPodGate);
-            gate.setAttribute('aria-expanded', rcPodGate ? 'true' : 'false');
-            if (rec.__rcGateT) { clearTimeout(rec.__rcGateT); rec.__rcGateT = null; }
-            if (rcPodGate) {
-                rec.classList.remove('hidden');
-                if (instant) { rec.classList.remove('opacity-0', 'translate-y-2'); return; }
-                void rec.offsetWidth;   // unhide before the settle so the transition runs
-                requestAnimationFrame(() => { rec.classList.remove('opacity-0', 'translate-y-2'); });
-            } else {
-                rec.classList.add('opacity-0', 'translate-y-2');
-                if (instant) { rec.classList.add('hidden'); return; }
-                rec.__rcGateT = setTimeout(() => { rec.classList.add('hidden'); rec.__rcGateT = null; }, 240);
-            }
+        // v1.45.53 (owner order: the gateway opens ANOTHER overlay, not an
+        // accordion): the All Flight Stats page rises over the passport —
+        // the same sheet idiom (glide, shade, focus trap, hide-arm), its
+        // own subtitle, and the records list with its own year pills.
+        function openRcStat() {
+            const wrap = document.getElementById('ca-rc-statwrap');
+            const sheet = document.getElementById('ca-rc-stat-sheet');
+            if (!wrap || !sheet || !wrap.classList.contains('hidden')) return;
+            caSheetHideCancel(wrap);
+            renderRcPod(true);      // the overlay's podium mounts with the SAME staggered reveal
+            wrap.classList.remove('hidden');
+            sheet.classList.remove('translate-y-full');
+            caSheetFocusIn(sheet);
+            caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
+        }
+        function closeRcStat() {
+            const wrap = document.getElementById('ca-rc-statwrap');
+            const sheet = document.getElementById('ca-rc-stat-sheet');
+            if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
+            caSheetFocusOut(sheet);
+            const shade = wrap.querySelector('.ca-rc-pod-shade');
+            if (shade) shade.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
+            sheet.classList.add('translate-y-full');
+            caSheetHideArm(wrap);
         }
         function renderRcPod(stagger) {
             const body = document.getElementById('ca-rc-pod-body');
@@ -6533,15 +6565,19 @@
             // the hero reads the MAIN chip's year — a second walk only when
             // the two chips have diverged
             const heroStats = rcPodYear === rcPodListYear ? stats : rcPodStats(rcPodYear);
+            // v1.45.53: two subtitles — the passport's names the hero's
+            // year; the stats overlay's names the list's own chip
             const sub = document.getElementById('ca-rc-pod-subtitle');
+            const heroLabel = rcPodYear === 'all' ? 'All-time' : rcPodYear;
+            if (sub) sub.textContent = heroStats.first ? (heroLabel + ' \u00b7 since ' + rcPodSince(heroStats.first)) : heroLabel;
+            const statSub = document.getElementById('ca-rc-stat-subtitle');
             const subLabel = rcPodListYear === 'all' ? 'All-time' : rcPodListYear;
-            if (sub) sub.textContent = stats.first ? (subLabel + ' \u00b7 since ' + rcPodSince(stats.first)) : subLabel;
-            // v1.45.52: pills, hero, gateway — the telemetry stack renders
-            // with the list, one render, one icon pass
+            if (statSub) statSub.textContent = stats.first ? (subLabel + ' \u00b7 since ' + rcPodSince(stats.first)) : subLabel;
+            // the pills, the hero and the list render together — one
+            // render, one icon pass, wherever the sections currently live
             rcPodYearsHtml('ca-rc-pod-years', rcPodYear, 'ca-rc-pod-year');
             rcPodYearsHtml('ca-rc-pod-listyears', rcPodListYear, 'ca-rc-pod-lyear');
             rcPodTelRender(heroStats);
-            rcPodGateApply(true);
             const idx = Math.max(0, RC_POD_TABS.findIndex((t) => t[0] === rcPodTab));
             tabsWrap.innerHTML = rcPodTabsHtml(idx);
             const list = stats[rcPodTab] || [];
@@ -6596,10 +6632,10 @@
             rcPodTab = 'flights';      // every open starts on the All Flights podium
             rcPodOpen = '';            // and the visit log starts folded
             // v1.45.52 (owner spec): every open starts clean — all-time
-            // chips, and the gateway COLLAPSED (the hero leads the page)
+            // chips, the hero leads the page (v1.45.53: the stats live in
+            // their own overlay, opened by the gateway door)
             rcPodYear = 'all';
             rcPodListYear = 'all';
-            rcPodGate = false;
             // v1.45.46 (owner report, iPhone 11; the fit itself retired in
             // v1.45.51): the wrap is un-hidden BEFORE the render, in the
             // same synchronous task — the browser paints only after the
@@ -6615,6 +6651,7 @@
             const wrap = document.getElementById('ca-rc-podwrap');
             const sheet = document.getElementById('ca-rc-pod-sheet');
             if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
+            closeRcStat();   // v1.45.53: the stats overlay never outlives its passport
             caSheetFocusOut(sheet);
             const shade = wrap.querySelector('.ca-rc-pod-shade');
             if (shade) shade.classList.add('opacity-0');
@@ -8972,13 +9009,23 @@ SLOT|Special Lve others`;
                     const closer = ev.target.closest('[data-ca-rc-pod-close]');
                     if (closer) { closeRcPod(); return; }
                     // v1.45.52: the MAIN chip drives the hero AND syncs the
-                    // inner chip — one coherent page; the INNER chip drives
-                    // the records list alone and never touches the hero
+                    // inner chip — one coherent page; the INNER chip (in the
+                    // stats overlay) drives the records list alone
                     const yp = ev.target.closest('[data-ca-rc-pod-year]');
                     if (yp) { rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(); return; }
+                    // v1.45.53 (owner order): the gateway opens the stats
+                    // OVERLAY — no in-page accordion
+                    if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }
+                });
+                // v1.45.53: the All Flight Stats overlay carries the records
+                // list — its own delegated listener (pills, tabs, rows, close)
+                const statWrapEl = document.getElementById('ca-rc-statwrap');
+                if (statWrapEl) statWrapEl.addEventListener('click', (ev) => {
+                    if (!ev.target || !ev.target.closest) return;
+                    const closer = ev.target.closest('[data-ca-rc-stat-close]');
+                    if (closer) { closeRcStat(); return; }
                     const ly = ev.target.closest('[data-ca-rc-pod-lyear]');
                     if (ly) { rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return; }
-                    if (ev.target.closest('#ca-rc-pod-gate')) { rcPodGate = !rcPodGate; rcPodGateApply(false); return; }
                     const stn = ev.target.closest('[data-ca-rc-pod-station]');
                     if (stn) { rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); return; }
                     const tab = ev.target.closest('[data-ca-rc-pod-tab]');
@@ -8996,7 +9043,7 @@ SLOT|Special Lve others`;
                     const all = ev.target.closest('[data-ca-rc-pod-all]');
                     if (all) { rcPodAll[rcPodTab] = all.getAttribute('data-ca-rc-pod-all') === '1'; renderRcPod(); }
                 });
-                podWrapEl.addEventListener('keydown', (ev) => {
+                if (statWrapEl) statWrapEl.addEventListener('keydown', (ev) => {
                     if (ev.key !== 'Enter' && ev.key !== ' ') return;
                     const stn = ev.target && ev.target.closest ? ev.target.closest('[data-ca-rc-pod-station]') : null;
                     if (stn) { ev.preventDefault(); rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); }
