@@ -425,6 +425,34 @@ const synthItems = [].concat(
         w.localStorage.setItem(sbKey, sbBefore);
         w.eval('rosterCalTimelineInit()');
     }
+    // v1.45.49 (owner upload, docs/ROSTER_CODES.pdf - the official duty-code
+    // legend): duty days name their REAL code meanings; the generic line is
+    // retired. Same save/restore idiom as the SN60 window block above.
+    R.ok(src.includes('const RO_DUTY_DESC_RAW = `') && src.includes("RO_DUTY_DESC_RAW.split('\\n').forEach((l) => { const i = l.indexOf('|'); if (i > 0) RO_DUTY_DESC[l.slice(0, i)] = l.slice(i + 1); });"), 'v1.45.49: the official legend is embedded verbatim and parsed at boot - offline-first, like everything else the app ships');
+    R.ok((w.eval('Object.keys(RO_DUTY_DESC).length') || 0) >= 1000, 'the legend carries the full table (1,082 codes from the owner\u2019s PDF)');
+    R.ok(w.eval('RO_DUTY_DESC["33A2"]') === 'A330 AIRCRAFT VISIT' && w.eval('RO_DUTY_DESC["BH99"]') === 'FOOD HYGIENE COURSE', 'spot lookups read the official wording, caps and all - zero editorialising');
+    R.ok(src.includes("(desc || 'Ground duty')") && !src.includes(": 'Course or ground duty'"), 'the wiring names the legend meaning, with the short generic fallback - and the old generic literal is gone from the code entirely');
+    {
+        const lgKey = 'crewAssist.dutyDays';
+        const lgBefore = w.localStorage.getItem(lgKey);
+        const lgSt = JSON.parse(lgBefore);
+        lgSt['2026-10'] = (lgSt['2026-10'] || []).map((dd) => dd.ymd === '2026-10-06' ? { ymd: '2026-10-06', kind: 'duty', code: '33A2', loc: '', fns: [], dkey: '' } : dd);
+        w.localStorage.setItem(lgKey, JSON.stringify(lgSt));
+        w.eval('rosterCalTimelineInit()');
+        w.eval('rosterCalSelect("2026-10-06")');
+        await wait(200);
+        let lgDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+        R.ok(lgDet.indexOf('33A2') >= 0 && lgDet.indexOf('A330 AIRCRAFT VISIT') >= 0, 'v1.45.49: a known duty code names its official meaning - the aircraft visit, one row, the label\u2019s truncate holding the line');
+        lgSt['2026-10'] = (lgSt['2026-10'] || []).map((dd) => dd.ymd === '2026-10-06' ? { ymd: '2026-10-06', kind: 'duty', code: 'ZZ9Z', loc: '', fns: [], dkey: '' } : dd);
+        w.localStorage.setItem(lgKey, JSON.stringify(lgSt));
+        w.eval('rosterCalTimelineInit()');
+        w.eval('rosterCalSelect("2026-10-06")');
+        await wait(200);
+        lgDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+        R.ok(lgDet.indexOf('ZZ9Z') >= 0 && lgDet.indexOf('Ground duty') >= 0, 'a code the legend does not know falls back to the short generic');
+        w.localStorage.setItem(lgKey, lgBefore);
+        w.eval('rosterCalTimelineInit()');
+    }
     // a saved duty offers its earnings entry from the detail section
     w.eval("persistArchive([{ id: 'e1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-29', flightType: 'Layover', stationDisplay: 'HKT', amount: 318.55 }])");
     cells.find(c => c.getAttribute('data-ymd') === '2026-10-29').click();

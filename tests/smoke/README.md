@@ -434,6 +434,12 @@ the service-worker stamp. It checks:
   survives). Rig lesson: when icons are stubbed, pin the structure
   (the stub element + the absence of text), not the painted result.
 
+- v1.45.49 the legend release: version pins only (the functional
+  proof is jsdom's - the smoke's calendar seed carries no non-standby
+  duty days, and re-seeding one would disturb the pinned calendar
+  marks). The legend data itself was extracted from the owner's PDF
+  with this rig's own pdfjs-dist before embedding.
+
 ## Running it
 
 ```bash
