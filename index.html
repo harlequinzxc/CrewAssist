@@ -2623,8 +2623,15 @@
                 <div class="flex items-center justify-between mb-3">
                     <p id="cadate-month" class="text-sm font-bold"></p>
                     <div class="flex items-center gap-1">
-                        <button type="button" id="cadate-prev" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-lg font-bold" aria-label="Previous month">‹</button>
-                        <button type="button" id="cadate-next" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center text-lg font-bold" aria-label="Next month">›</button>
+                        <!-- v1.45.48 (owner order): the month arrows were text
+                             glyphs impersonating icons - the last buttons in the
+                             app whose whole visual was a bare character. Now
+                             true Lucide chevrons, matching the family already
+                             running (chevron-down/up/right). Static markup:
+                             the boot-time icon pass covers them forever, no
+                             re-render hazard. -->
+                        <button type="button" id="cadate-prev" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center" aria-label="Previous month"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+                        <button type="button" id="cadate-next" class="w-9 h-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 flex items-center justify-center" aria-label="Next month"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                     </div>
                 </div>
                 <div class="grid grid-cols-7 text-center ca-micro font-bold uppercase tracking-wider text-gray-500 mb-1">
@@ -3045,7 +3052,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.47'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.48'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3067,6 +3074,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.48', d: '2026-10-30', items: [
+                { c: 'imp', t: 'The calendar’s month arrows are true icons now.' }
+            ] },
             { v: '1.45.47', d: '2026-10-30', items: [
                 { c: 'imp', t: 'Rows carry a quiet chevron that turns as their log opens.' },
                 { c: 'fix', t: 'The highlighted row breathes at its edges, and a new tab folds every log and returns you to the top.' }

@@ -426,6 +426,14 @@ the service-worker stamp. It checks:
   precondition separately so a no-scroll environment fails loudly
   instead of passing vacuously.
 
+- v1.45.48 the icon-arrows release: the month-nav buttons carry true
+  Lucide chevrons, pinned as a MARKUP pin - the rig's CDN stub never
+  removes the stub element, so `#cadate-prev [data-lucide=
+  "chevron-left"]` asserts even where the glyph itself cannot render;
+  the buttons' textContent must be empty (no bare glyph text
+  survives). Rig lesson: when icons are stubbed, pin the structure
+  (the stub element + the absence of text), not the painted result.
+
 ## Running it
 
 ```bash

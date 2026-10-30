@@ -1659,6 +1659,10 @@ const synthItems = [].concat(
     R.ok(src.includes(".ca-rc-pod-lrow::after { content: '\\203a'") && src.includes('.ca-rc-pod-lrow.ca-rc-pod-on::after { transform: rotate(90deg); }') && src.includes('html.ca-reduced .ca-rc-pod-lrow::after { transition: none; }'), 'v1.45.47: every leaderboard row carries the chevron — a CSS glyph at the right edge, turning down while its log is out (the archive chevron idiom), standing down under ca-reduced');
     R.ok(/\.ca-rc-pod-lrow \{[^}]*padding: 11px 8px/.test(src), 'v1.45.47 (owner report): the row breathes — 8px horizontal, so the rank digit never hugs the highlighted box\u2019s left edge (constant padding: a state-dependent one would jump the row on tap)');
     R.ok(src.includes('// v1.45.47 (owner order): a new pill is a fresh') && src.indexOf("rcPodOpen = '';\n                        renderRcPod();") > 0 && src.includes('if (pb) pb.scrollTop = 0;'), 'v1.45.47 (owner order): the tab handler folds every log and scrolls the body home before the render');
+    // v1.45.48 (owner order, the glyph inventory): the month-nav buttons
+    // carry true Lucide chevrons - no bare glyph children anywhere
+    R.ok(src.includes('aria-label="Previous month"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>') && src.includes('aria-label="Next month"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>'), 'v1.45.48: the calendar\u2019s month arrows are true icons - chevron-left/right in the family idiom (w-5 h-5 in the w-9 target), verified in the lucide package before wiring');
+    R.ok(!/>\u2039</.test(src) && !/>\u203a</.test(src), 'no bare angle-quote glyph survives as a button\u2019s whole visual');
   }
   {
     // live: the ring, the recede flag, the drawer’s header, and the
