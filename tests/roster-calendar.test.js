@@ -1247,9 +1247,9 @@ const synthItems = [].concat(
     R.ok(/function openRcPod\(\)[\s\S]*?caSheetHideCancel\(wrap\);[\s\S]*?caSheetGlideArm\(sheet, wrap\.querySelector\('\.ca-rc-pod-shade'\), null\);/.test(src), 'the records page opens through the shared hide-cancel + glide arm (hotfix 13/14 discipline)');
     R.ok(/function closeRcPod\(\)[\s\S]*?caSheetGlideCancel\(sheet\);[\s\S]*?caSheetHideArm\(wrap\);/.test(src), 'the records page closes through the shared glide-cancel + hide arm — a quick reopen can never wedge it');
     R.ok(/const podBtn = document\.getElementById\('ca-rc-pod'\);\s*\n\s*if \(podBtn\) rcBtnAnimate\(podBtn, !collapsed && rcPodHasData\(\)\);/.test(src), 'the podium reveals through the same pop discipline — expanded AND at least one landed leg');
-    R.ok(src.includes("font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace") && src.includes('.ca-mono {'), 'v1.45.39: the numerics ride the system mono stack via the house .ca-mono class — no font download, no tw.css recompile');
-    R.ok(/html\.ca-reduced \.ca-rc-pod-glider[^\n]*\{ transition: none; \}/.test(src) && /html\.ca-reduced \.ca-rc-pod-d0/.test(src), 'v1.45.39: the glide and the stagger stand down under ca-reduced (snap + plain fade)');
-    const cssLo = src.indexOf('/* v1.45.39 (owner order, the current-records redesign)');
+    R.ok(src.includes('.ca-mono {') && !/ca-rc-pod-(code|count|lcount|ord|ldate|xld|xle|xlfn)[^"]*ca-mono/.test(src), 'v1.45.54 (owner order, the re-skin): the records\u2019 figures ride the house sans with tabular-nums — the mono stack retires from the pod (the class survives for its other call sites)');
+    R.ok(/html\.ca-reduced \.ca-rc-pod-tab \{ transition: none; \}/.test(src) && /html\.ca-reduced \.ca-rc-pod-d0/.test(src), 'v1.45.54: the segtrack pill and the stagger stand down under ca-reduced (snap + plain fade)');
+    const cssLo = src.indexOf('/* v1.45.39 (owner order, the current-records redesign');   // v1.45.54: the comment gained a supersede note
     const cssHi = src.indexOf('.ca-rc-pod-all {', cssLo);
     const podCss = src.slice(cssLo, cssHi);
     R.ok(podCss.indexOf('ca-rc-pod-dim') >= 0 && podCss.indexOf('silver') < 0 && podCss.indexOf('bronze') < 0, 'v1.45.39: ranks two and three differentiate by saturation (ca-rc-pod-dim) — the gold-only accent ruling holds, no invented metals in the podium CSS');
@@ -1302,7 +1302,7 @@ const synthItems = [].concat(
     const tabs = d.querySelectorAll('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab]');
     R.eq(tabs.length, 3, 'the segmented tab bar carries all three lists');
     R.ok(tabs[0].textContent === 'All Flights' && tabs[0].classList.contains('ca-rc-pod-tabon') && tabs[0].getAttribute('aria-pressed') === 'true', 'All Flights is the default tab, navy on the gold pill');
-    R.eq(d.querySelector('.ca-rc-pod-glider').style.transform, 'translateX(calc(0% + 0px))', 'the glide pill parks under the first tab');
+    R.ok(tabs[0].classList.contains('ca-rc-pod-tabon') && !tabs[1].classList.contains('ca-rc-pod-tabon') && !d.querySelector('.ca-rc-pod-tabs .ca-rc-pod-glider'), 'v1.45.54: the selected tab IS the bright pill — the glider is gone from the segtrack');
     R.eq(d.getElementById('ca-rc-pod-subtitle').textContent, 'All-time \u00b7 since Sept 2026', 'the subtitle names the all-time window from the earliest flown leg');
     let cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
     R.eq(cards.length, 3, 'the podium grid carries the top three');
@@ -1322,7 +1322,7 @@ const synthItems = [].concat(
     cards = d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card');
     R.eq(cards.length, 3, 'the Layovers tab swaps the panel — two overnight hubs plus the side-trip that laid over (v1.45.43: the over-six-hour positioning stay)');
     R.ok(cards[1].classList.contains('ca-rc-pod-hero') && cards[1].textContent.indexOf('JNB') >= 0 && cards[0].textContent.indexOf('NRT') >= 0 && cards[0].textContent.indexOf('2nd') >= 0, 'JNB outranks NRT — equal counts break by the more recent stay');
-    R.eq(d.querySelector('.ca-rc-pod-glider').style.transform, 'translateX(calc(100% + 4px))', 'the glide pill slid one tab over — the container frame never moved');
+    R.ok(d.querySelectorAll('#ca-rc-pod-tabs-wrap .ca-rc-pod-tab')[1].classList.contains('ca-rc-pod-tabon') && !d.querySelectorAll('#ca-rc-pod-tabs-wrap .ca-rc-pod-tab')[0].classList.contains('ca-rc-pod-tabon'), 'the bright pill moved one tab over — the container frame never moved');
     R.ok(!cards[1].classList.contains('ca-rc-pod-d0'), 'a tab swap renders INSTANT — the stagger is mount-only');
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click();
     await wait(50);
@@ -1435,7 +1435,7 @@ const synthItems = [].concat(
     // v1.45.53: the stats overlay starts closed — the passport leads with the hero
     R.ok(d.getElementById('ca-rc-statwrap').classList.contains('hidden') && d.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full'), 'v1.45.53: the All Flight Stats overlay starts closed — the passport leads with the hero');
     const cell = (label) => { const all = Array.from(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell')); const el = all.find((c) => c.querySelector('.ca-rc-pod-hlabel').textContent.trim() === label); return el ? el.querySelector('.ca-rc-pod-hval').textContent : 'MISSING'; };
-    R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length, 10, 'the navy hero carries its ten metrics');
+    R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length, 10, 'the hero carries its ten metrics — three headline figures, then the flying story');
     R.eq(cell('Flights'), '9', 'Flights counts every landed leg — the paxing sector included');
     R.eq(cell('Flight Time'), '1d 16h', 'Flight Time sums the roster block times (40h 30m reads as the pair)');
     R.eq(cell('Airports'), '4', 'Airports is the distinct landed stations — SYD, KUL, HKG, NRT');
@@ -1530,7 +1530,7 @@ const synthItems = [].concat(
     R.ok(src.includes('.ca-rc-pod-x { color: var(--ca-ink-stone); }'), 'v1.45.40: the × glyph rides the stone token — muted, never amber, never white-only');
     R.ok(src.includes('.ca-rc-pod-lcount { width: 44px; flex: none; }'), 'v1.45.40: the row count rides a fixed 44px track');
     R.ok(src.includes('.ca-rc-pod-lmeta .ca-rc-pod-ldate { font-size: 11px; width: 84px; flex: none; }'), 'v1.45.40: the row date rides its own fixed track at the 11px floor — a right-anchored cluster with variable children can never align on its own, BOTH children need tracks');
-    R.ok(src.includes('.ca-rc-pod-hero .ca-rc-pod-code { color: var(--sia-gold-ink); font-size: 20px; }'), 'v1.45.40: the hero code grows to 20px in SIA gold ink — a half-step, the crown and wash untouched');
+    R.ok(src.includes('.ca-rc-pod-hero .ca-rc-pod-code { color: var(--arch-fg); font-size: 20px; }'), 'v1.45.54 (owner order, ink-led): the hero code grows to 20px in SIA gold ink — a half-step, the crown and wash untouched');
     R.ok(src.includes("font-bold' + (rk === 1 ? '' : ' text-sm')") && !src.includes("font-bold' + (rk === 1 ? ' text-lg' : ' text-sm')"), 'v1.45.40: the hero code shed the text-lg utility — its 20px size lives in the custom rule, the sides keep text-sm');
   }
   {
@@ -1826,7 +1826,17 @@ const synthItems = [].concat(
     R.ok(src.includes('closeRcStat();   // v1.45.53') && src.includes("['ca-rc-statwrap', closeRcStat],   // v1.45.53"), 'v1.45.53: the stats overlay never outlives its passport — and Escape closes it before the pages beneath');
     R.ok(/<button[^>]*id="ca-rc-pod-gate"[^>]*><i data-lucide="chevron-up"/.test(src) && !/<button[^>]*id="ca-rc-pod-gate"[^>]*chevron-down/.test(src), 'v1.45.53: the gate wears the upward chevron — it raises a page');
     R.ok(/\.ca-rc-pod-hval \{ font-weight: 700; font-size: 24px;[^}]*font-variant-numeric: tabular-nums;[^}]*\}/.test(src) && !/ca-rc-pod-hval[^}]*Space Mono/.test(src) && !/ca-rc-pod-hsub[^}]*Space Mono/.test(src), 'v1.45.53 (owner order: the earnings page style): the hero figures ride the house SANS — bold, tabular-nums, tight tracking — no Space Mono anywhere in the telemetry cells');
-    R.ok(src.includes('.ca-rc-pod-tel { border-radius: 20px;') && src.includes('linear-gradient(152deg, #0A1730 0%') && !src.includes('.ca-rc-pod-tel { border: 1px solid var(--ca-gold-line)'), 'v1.45.52: the telemetry card is a FIXED navy gradient — a physical passport cover, the same card in both themes (its inks are literals, never theme tokens)');
+    R.ok(src.includes('.ca-rc-pod-tel { border-radius: 12px; padding: 15px 16px 13px; background: rgba(255,255,255,0.02); border: 1px solid var(--arch-surface-border); }') && src.includes('html:not(.dark) .ca-rc-pod-tel { background: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }') && !src.includes('linear-gradient(152deg, #0A1730') && !src.includes('.ca-rc-pod-tel { border: 1px solid var(--ca-gold-line)'), 'v1.45.52: the telemetry card is a FIXED navy gradient — a physical passport cover, the same card in both themes (its inks are literals, never theme tokens)');
+    // v1.45.54 (owner order, the re-skin — the earnings language): every
+    // skin surface of both overlays re-pointed above; the NEW idioms pin
+    // here so a future drift has a tripwire
+    R.ok(src.includes('.ca-rc-pod-segtrack { display: flex; gap: 4px; padding: 4px; border-radius: 9999px; background: var(--arch-hairline);') && !/\.ca-rc-pod-ypill \{[^}]*Space Mono/.test(src), 'v1.45.54: BOTH pill rows ride the earnings segtrack — house sans, a hairline-washed track; Space Mono retires from the overlays');
+    R.ok(src.includes('.ca-rc-pod-ypill.on { color: #2D1E0F; background: #FFFFFF; }') && src.includes('html.dark .ca-rc-pod-ypill.on { color: var(--ca-toast-ink); background: var(--ca-toast-bg); }'), 'v1.45.54: the selected year is a solid bright pill — white by day, cream at night (the toast pair\u2019s pole, theme-tuned twins)');
+    R.ok(src.includes('.ca-rc-pod-gate { width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px 12px; border-radius: 9999px; color: var(--ca-toast-ink); background: var(--ca-toast-bg);') && !src.includes('inset 0 0 0 1px rgba(0,0,0,.10); }'), 'v1.45.54 (owner order: solid): the gate fills with the theme\u2019s ink pole — the outline retires');
+    R.ok(src.includes('.ca-rc-pod-hero { border: 1px solid var(--ca-gold-line); background: rgba(255,255,255,0.02);') && src.includes('.ca-rc-pod-side { border: 1px solid var(--arch-surface-border); background: rgba(255,255,255,0.02);') && !src.includes('.ca-rc-pod-hero { border: 1px solid var(--ca-gold-line); background: var(--ca-gold-soft-12);'), 'v1.45.54: the podium rides the earnings card pair; rank one keeps ONE gold touch — the edge beside its crown (the wash retires)');
+    R.ok(src.includes('.ca-rc-pod-hband1 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));') && src.includes('.ca-rc-pod-hband2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));') && src.includes('.ca-rc-pod-hrule { height: 1px; background: var(--arch-hairline);') && src.includes('.ca-rc-pod-hcell.wide { grid-column: span 2; }'), 'v1.45.54 (owner order): two bands, one hairline — the big three lead, the rule divides, the flying story follows (Regions spans, the metaspan2 idiom)');
+    R.ok(src.includes('color: var(--arch-fg); white-space: nowrap') && src.includes('color: var(--arch-muted); white-space: nowrap') && !src.includes('rgba(233,224,203,.62)') && !src.includes('rgba(233,224,203,.5)'), 'v1.45.54 (owner order, ink-led): the hero\u2019s figures and labels read theme ink — the fixed cream literals retire with the navy card');
+
     // v1.45.47 (owner order, the green-light round): rows only, rotate on
     // open — the pre-tap affordance the six external specs kept asking for,
     // built the house way: a CSS glyph, never a Lucide stub
