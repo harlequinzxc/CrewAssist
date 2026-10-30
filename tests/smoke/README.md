@@ -465,3 +465,32 @@ tests/smoke/node_modules/.bin/tailwindcss -c tw.config.cjs -o tw.css --minify
 
 `build-app.js` then picks the fresh `tw.css` up on its next run (it copies the
 repo's `tw.css` next to the generated `app.html`).
+
+## Computed-colour pins must wait out transitions (v1.45.50)
+
+The overlay toggle's gold on-fill FADES IN (`transition-colors`): a probe read
+`rgba(201, 162, 39, 0.694)` at 100ms and solid gold by 200ms on an idle page —
+but deep into a full run, under load, the class application can lag and a 300ms
+read lands MID-FADE, false-negativing the exact-rgb pin (it failed twice,
+deterministically, on bytes that pass in isolation). Rule: any pin that reads a
+computed colour off an element with a transition must wait past the transition
+duration plus margin — the toggle pin now settles 450ms before reading. Same
+family as the v1.45.43 body-ink lesson (a 300ms colour transition read
+mid-flight); the rig's clocks get slower the longer the run.
+
+## New icons verify against the registry tarball (v1.45.51)
+
+The rig blocks the CDN, so icon pins read the `<i data-lucide>` stub — the
+stub only proves the NAME the app requests. Before shipping a new glyph,
+verify it exists in the real lucide build (the crown/chevron-left precedent):
+pull the latest tarball from registry.npmjs.org, extract
+`package/dist/umd/lucide.js`, and check the PascalCase node — `createIcons`
+converts the kebab-case `data-lucide` value via `toPascalCase` before lookup,
+so `book-user` resolves iff a `BookUser` node is exported. Names can drift
+between versions; the node is the truth.
+
+Same-task reads for instant behaviour: a "hidden the moment the tap lands"
+pin evaluates its reads in the same `page.evaluate` task as the click — any
+sleep between tap and read can mask a replay window (v1.45.51's exit-flash
+fix is pinned that way: no out class, `display: none`, no animation, camera
+`hidden`, all read post-click pre-sleep).

@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.49', 'APP_VERSION is 1.45.49');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.49' && e.d === '2026-10-30' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.49 entry with its single imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v280'), 'the service-worker cache name is bumped to v280 (the v1.45.49 legend release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.51', 'APP_VERSION is 1.45.51');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.51' && e.d === '2026-10-30' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.45.51 entry with its imp and fix pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v282'), 'the service-worker cache name is bumped to v282 (the v1.45.51 passport release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.49'; }), 'the What\'s New sheet carries the v1.45.49 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.51'; }), 'the What\'s New sheet carries the v1.45.51 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -377,10 +377,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // v1.45.38 (owner order, the podium release): the records page,
         // proven live in Chromium
         ok(await page.evaluate(() => document.getElementById('ca-rc-shot').nextElementSibling === document.getElementById('ca-rc-pod') && !document.getElementById('ca-roster-cal').contains(document.getElementById('ca-rc-podwrap')) && document.body.contains(document.getElementById('ca-rc-podwrap'))), 'v1.45.38: the podium button ends the left cluster, and the records page is a direct child of <body> - never nested in the calendar sheet');
-        ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod'); return b && !b.classList.contains('hidden') && !!(b.querySelector('i[data-lucide="podium"]')); }), 'v1.45.38: the podium button is revealed carrying the podium icon (the rig blocks the CDN, so the pin reads the stub - the glyph itself is verified in the lucide bundle)');
+        ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod'); return b && !b.classList.contains('hidden') && !!(b.querySelector('i[data-lucide="book-user"]')); }), 'v1.45.38 + v1.45.51: the passport button is revealed carrying the book-user icon (the rig blocks the CDN, so the pin reads the stub - the glyph itself is verified in the lucide bundle)');
         await page.evaluate(() => document.getElementById('ca-rc-pod').click());
         await sleep(600);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-podwrap').classList.contains('hidden') && !document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: tapping the podium glides the records page up over the calendar');
+        ok(await page.evaluate(() => document.querySelector('#ca-rc-pod-sheet h3').textContent === 'Passport' && document.getElementById('ca-rc-pod').getAttribute('aria-label') === 'Passport' && document.getElementById('ca-rc-pod').querySelector('i[data-lucide]').getAttribute('data-lucide') === 'book-user'), 'v1.45.51: the page titles itself Passport, and its button wears the book-user icon');
         ok(await page.evaluate(() => { const tabs = document.querySelectorAll('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab]'); return tabs.length === 3 && tabs[0].textContent === 'All Flights' && tabs[0].classList.contains('ca-rc-pod-tabon') && getComputedStyle(document.querySelector('.ca-rc-pod-glider')).backgroundColor === 'rgb(201, 162, 39)'; }), 'v1.45.39: the segmented tab bar carries all three lists, All Flights rides the gliding gold pill (computed SIA gold, never Tailwind amber)');
         ok(await page.evaluate(() => document.getElementById('ca-rc-pod-subtitle').textContent === 'All-time \u00b7 since Oct 2026'), 'v1.45.39: the subtitle names the all-time window from the earliest flown leg');
         ok(await page.evaluate(() => { const cards = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card'); return cards.length === 2 && cards[1].classList.contains('ca-rc-pod-hero') && cards[1].textContent.indexOf('KUL') >= 0 && cards[1].textContent.indexOf('\u00d71') >= 0 && !!cards[1].querySelector('i[data-lucide="crown"]') && cards[0].textContent.indexOf('2nd') >= 0 && cards[0].textContent.indexOf('SYD') >= 0; }), 'v1.45.39: the 2-1-3 podium ranks the seeded truth as VISITS - KUL \u00d71 crowned center (the future November leg does NOT count: records are current to wheels-down), SYD 2nd at the side');
@@ -442,6 +443,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
         await sleep(300);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !document.getElementById('ca-rc-shot').classList.contains('hidden')), 'one tap lights the overlay and shows the camera');
+        // the on-fill FADES IN (transition-colors): under a full run's load the
+        // 300ms read can land mid-fade (alpha < 1) and false-negative. Let the
+        // fade settle before reading the computed fill.
+        await sleep(450);
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle fills gold when on (computed — immune to the sticky touch hover)');
         ok(await page.evaluate(() => {
             const t9 = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
@@ -479,8 +484,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return apart && b.textContent === '1';
         }), 'hotfix: on a both-marks day the tag and the badge never intersect (tag owns the top band, badge the bottom)');
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
-        await sleep(60);
-        ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-out') && getComputedStyle(document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag')).animationName === 'ca-rc-popout' && getComputedStyle(document.getElementById('ca-rc-shot')).animationName === 'ca-rc-btnout'), 'hotfix: hiding pops the marks back out — and the camera button pops out with them');
+        // v1.45.51 (owner report, the hide-tap flash): the exit is clean —
+        // no out animation, no replay window; the class drop IS the hide.
+        // Read in the SAME task as the tap, before any sleep can mask it.
+        ok(await page.evaluate(() => {
+            const g = document.getElementById('ca-rc-grid');
+            const t = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
+            const cam = document.getElementById('ca-rc-shot');
+            return !g.classList.contains('rc-tags-on') && g.className.indexOf('rc-tags-out') < 0 && getComputedStyle(t).display === 'none' && getComputedStyle(t).animationName === 'none' && cam.classList.contains('hidden') && getComputedStyle(cam).animationName === 'none';
+        }), 'v1.45.51: tapping the tag icon off hides the marks and the camera in the same frame — no exit animation, no flash on the way out (the owner report)');
         await sleep(350);
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
         await sleep(400);
@@ -1899,6 +1911,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             openRcPod();
         });
         await sleep(700);
+        // v1.45.51 (owner order): the fit is scrapped — the depth is the
+        // fixed TOP TEN on every screen height. Same 14-station store on
+        // both windows: ranks four through ten (7 rows) tall AND short.
         const tallRows = await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length);
         await page.evaluate(() => closeRcPod());
         await sleep(600);
@@ -1911,7 +1926,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(500);
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(200);
-        ok(shortRows < tallRows && tallRows > 7, 'v1.45.46: the records fit measures the VISIBLE sheet - ' + shortRows + ' rows on the short window vs ' + tallRows + ' on the tall one (the iPhone 11 flat-10 report: display:none zeroed the measurement and every screen fell to the 7-row fallback)');
+        ok(tallRows === 7 && shortRows === 7, 'v1.45.51: the leaderboard depth is the fixed top ten - 7 rows (ranks four through ten) on the tall window AND the short one, no viewport math (' + shortRows + ' short vs ' + tallRows + ' tall)');
 
         // v1.45.47 (owner green light, after six external specs): the
         // chevron affordance — rows only, turning down toward the log it

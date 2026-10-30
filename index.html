@@ -576,13 +576,14 @@
            under the persistent rc-tags-on) arrive already settled. */
         #ca-rc-grid.rc-tags-pop .ca-rc-tag { animation: ca-rc-pop .18s ease-out both; }
         #ca-rc-grid.rc-tags-pop .ca-rc-badge { animation: ca-rc-popb .18s ease-out .05s both; }
-        /* hotfix (owner order): showing and hiding always ANIMATES — the
-           marks pop back OUT before the overlay drops them, and the
-           header buttons pop in and out instead of blinking. */
-        @keyframes ca-rc-popout { from { opacity: 1; transform: rotate(-14deg) scale(1); } to { opacity: 0; transform: rotate(-14deg) scale(.3); } }
-        @keyframes ca-rc-popbout { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.3); } }
-        #ca-rc-grid.rc-tags-out .ca-rc-tag { display: inline-flex; animation: ca-rc-popout .15s ease-in both; }
-        #ca-rc-grid.rc-tags-out .ca-rc-badge { display: inline-flex; animation: ca-rc-popbout .15s ease-in .05s both; }
+        /* v1.45.51 (owner report: tapping the tag icon to hide, the camera
+           button, the arrival badge and the station marks all FLASHED once
+           before getting hidden): the exit pop-out is scrapped. The marks
+           never re-render after the off-tap — dropping rc-tags-on is the
+           whole hide, one clean frame. (The exit animation's both-fill
+           from-state also snapped mid-flight marks back to full brightness
+           — a real one-frame flash when the off-tap landed inside the
+           pop-in window.) Arrival still pops IN; leaving is instant. */
         @keyframes ca-rc-btnin { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: scale(1); } }
         @keyframes ca-rc-btnout { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(.55); } }
         .ca-rc-btnin { animation: ca-rc-btnin .16s ease-out both; }
@@ -1754,8 +1755,6 @@
         html.ca-reduced .ca-rc-btnin, html.ca-reduced .ca-rc-btnout,
         html.ca-reduced #ca-rc-grid.rc-tags-pop .ca-rc-tag,
         html.ca-reduced #ca-rc-grid.rc-tags-pop .ca-rc-badge,
-        html.ca-reduced #ca-rc-grid.rc-tags-out .ca-rc-tag,
-        html.ca-reduced #ca-rc-grid.rc-tags-out .ca-rc-badge,
         html.ca-reduced .ca-cl-group, html.ca-reduced .dev-reset-pill {
             animation: ca-reduce-fade 150ms ease-out both;
         }
@@ -2502,7 +2501,7 @@
                              discipline, but only when the never-pruned store
                              holds at least one leg (a fresh install sees
                              nothing to rank yet). -->
-                        <button type="button" id="ca-rc-pod" aria-label="Your records" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="podium" class="w-5 h-5"></i></button>
+                        <button type="button" id="ca-rc-pod" aria-label="Passport" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="book-user" class="w-5 h-5"></i></button>
                     </div>
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-prev" aria-label="Previous month" class="ca-hit ca-rc-nav p-3 rounded-full"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
@@ -2534,13 +2533,13 @@
              its own. -->
         <div id="ca-rc-podwrap" class="fixed inset-0 z-[62] hidden">
             <div class="ca-rc-pod-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-pod-close></div>
-            <div id="ca-rc-pod-sheet" role="dialog" aria-modal="true" aria-label="Your records" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+            <div id="ca-rc-pod-sheet" role="dialog" aria-modal="true" aria-label="Passport" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
                 <div class="w-full flex justify-center py-3 shrink-0">
                     <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
                 </div>
                 <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-3 shrink-0 max-w-2xl mx-auto">
                     <div class="min-w-0">
-                        <h3 class="text-xl font-bold truncate">Your records</h3>
+                        <h3 class="text-xl font-bold truncate">Passport</h3>
                         <p id="ca-rc-pod-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
                     </div>
                     <button type="button" id="btn-close-rc-pod" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close records"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -3052,7 +3051,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.49'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.51'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3074,6 +3073,13 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.51', d: '2026-10-30', items: [
+                { c: 'imp', t: 'Your records page is now the Passport — top ten, every screen.' },
+                { c: 'fix', t: 'Tapping the tag icon off hides the marks at once — no flash on the way out.' }
+            ] },
+            { v: '1.45.50', d: '2026-10-30', items: [
+                { c: 'fix', t: 'Months saved before the calendar kept flight details now say how to rebuild them.' }
+            ] },
             { v: '1.45.49', d: '2026-10-30', items: [
                 { c: 'imp', t: 'Duty days carry their official code meanings now.' }
             ] },
@@ -6073,8 +6079,6 @@
             const shotBtn = document.getElementById('ca-rc-shot');
             if (grid) {
                 if (rcTagsOn) {
-                    if (grid.__rcOutT) { clearTimeout(grid.__rcOutT); grid.__rcOutT = null; }
-                    grid.classList.remove('rc-tags-out');
                     // round 15 (owner order): only a true off→on transition
                     // pops the marks in — re-syncs never replay it, and the
                     // transient rc-tags-pop leaves after the window so
@@ -6087,12 +6091,10 @@
                         grid.__rcPopT = setTimeout(function () { grid.classList.remove('rc-tags-pop'); grid.__rcPopT = null; }, 400);
                     }
                 } else if (grid.classList.contains('rc-tags-on')) {
-                    // hotfix (owner order): the marks pop back OUT before
-                    // the overlay drops them — a quick reverse of the pop-in
+                    // v1.45.51 (owner report, the hide-tap flash): the exit
+                    // is clean — no pop-out replay, no both-fill snap; the
+                    // class drop IS the hide
                     grid.classList.remove('rc-tags-on');
-                    grid.classList.add('rc-tags-out');
-                    if (grid.__rcOutT) clearTimeout(grid.__rcOutT);
-                    grid.__rcOutT = setTimeout(function () { grid.classList.remove('rc-tags-out'); grid.__rcOutT = null; }, 260);
                 }
             }
             if (tagBtn) {
@@ -6100,7 +6102,16 @@
                 tagBtn.classList.toggle('ca-rc-tagon', rcTagsOn);
                 tagBtn.setAttribute('aria-pressed', rcTagsOn ? 'true' : 'false');
             }
-            if (shotBtn) rcBtnAnimate(shotBtn, !collapsed && rcTagsOn);
+            if (shotBtn) {
+                // v1.45.51: the camera leaves with the overlay — instantly,
+                // no fade-out reading as a flash (arrival still pops in)
+                if (!collapsed && rcTagsOn) rcBtnAnimate(shotBtn, true);
+                else {
+                    if (shotBtn.__rcBtnT) { clearTimeout(shotBtn.__rcBtnT); shotBtn.__rcBtnT = null; }
+                    shotBtn.classList.remove('ca-rc-btnin', 'ca-rc-btnout');
+                    shotBtn.classList.add('hidden');
+                }
+            }
             // v1.45.38: the podium reveals with the same pop discipline —
             // expanded calendar AND at least one leg ever imported
             const podBtn = document.getElementById('ca-rc-pod');
@@ -6221,15 +6232,13 @@
         let rcPodTab = 'flights';
         const rcPodAll = { flights: false, lo: false, ta: false };   // View-all per list, session only — never persisted
         const RC_POD_TABS = [['flights', 'All Flights'], ['lo', 'Layovers'], ['ta', 'Turnarounds']];
-        // viewport-aware depth (owner order): the leaderboard fills ranks
-        // 4 through what the real screen height holds — the foldable's
-        // tall canvas simply shows more rows. jsdom has no layout
-        // (clientHeight 0); the fixed seven there is the no-layout answer.
-        function rcPodFit(body, grid) {
-            if (!body || !body.clientHeight) return 7;
-            const used = (grid ? grid.offsetHeight : 0) + 64;   // the door + margins
-            return Math.max(1, Math.floor((body.clientHeight - used) / 44));
-        }
+        // v1.45.51 (owner order): the leaderboard depth is the fixed TOP
+        // TEN — ranks 4 through 10 — on every screen, tall or short. The
+        // v1.45.39–46 viewport-fit machinery (rcPodFit, its no-layout
+        // fallback, the resize re-fit) is scrapped: no measuring, no
+        // re-fitting, the same ten everywhere. View all still unfolds the
+        // complete list past ten; Fold back returns to it.
+        const RC_POD_TOP = 10;
         function rcPodTabsHtml(idx) {
             return '<div class="ca-rc-pod-tabs"><span class="ca-rc-pod-glider" style="transform: translateX(calc(' + (idx * 100) + '% + ' + (idx * 4) + 'px))"></span>'
                 + RC_POD_TABS.map((t, i) => '<button type="button" class="ca-rc-pod-tab' + (i === idx ? ' ca-rc-pod-tabon' : '') + '" data-ca-rc-pod-tab="' + t[0] + '" aria-pressed="' + (i === idx ? 'true' : 'false') + '">' + t[1] + '</button>').join('')
@@ -6345,11 +6354,8 @@
             if (pod[2]) ph += rcPodCardHtml(3, pod[2], stagger);
             body.innerHTML = '<div class="ca-rc-pod-grid">' + ph + '</div>';
             if (list.length > 3) {
-                // two-phase: the podium is in the DOM now, so the fit
-                // measures its real height before the rows fill the rest
-                const grid = body.querySelector('.ca-rc-pod-grid');
                 const openAll = rcPodAll[rcPodTab];
-                const shown = openAll ? list.length : Math.min(list.length, 3 + rcPodFit(body, grid));
+                const shown = openAll ? list.length : Math.min(list.length, RC_POD_TOP);
                 let rows = '';
                 list.slice(3, shown).forEach((it, i) => { rows += rcPodLrowHtml(i + 4, it, stagger); });
                 if (list.length > shown) rows += '<button type="button" class="ca-rc-pod-all ca-micro uppercase tracking-wider font-bold text-gray-500 dark:text-gray-400" data-ca-rc-pod-all="1">View all \u00b7 ' + list.length + '</button>';
@@ -6384,12 +6390,12 @@
             caSheetHideCancel(wrap);   // hotfix 14: a quick close-and-reopen never hides the wrap mid-open
             rcPodTab = 'flights';      // every open starts on the All Flights podium
             rcPodOpen = '';            // and the visit log starts folded
-            // v1.45.46 (owner report, iPhone 11): the wrap must be VISIBLE
-            // before the render measures it — display:none zeroes
-            // clientHeight, so the fit ALWAYS fell to its no-layout
-            // fallback (7 rows, 10 entries, every screen). Un-hide and
-            // render in the same synchronous task: the browser paints
-            // only after the block completes, so nothing flashes.
+            // v1.45.46 (owner report, iPhone 11; the fit itself retired in
+            // v1.45.51): the wrap is un-hidden BEFORE the render, in the
+            // same synchronous task — the browser paints only after the
+            // block completes, so the slide-in and the render never flash.
+            // (The v1.45.46 lesson underneath it stands: display:none zeroes
+            // clientHeight — never measure a hidden page.)
             wrap.classList.remove('hidden');
             renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass
             caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
@@ -8471,7 +8477,23 @@ SLOT|Special Lve others`;
                     else if (rptLeg && rptLeg.rpt) body += rosterCalLabelRow('alarm-clock', 'Flying duty', 'Report ' + hmH(rptLeg.rpt));
                     else if (rptLeg) body += rosterCalLabelRow('alarm-clock', 'Flying duty', 'Duty begins this evening');
                     else if (arrLeg) body += rosterCalLabelRow('plane', 'Flying duty', 'Lands ' + arrLeg.arr + ' · ' + hmH(arrLeg.sta));
-                    else body += '<p class="text-sm text-gray-500 dark:text-gray-400">Flying duty — the roster printed no leg times for this day.</p>';
+                    else {
+                        // v1.45.50 (owner report, Oct 2025): distinguish a
+                        // real parse gap from a STORAGE-ERA gap. Duties
+                        // imported before the never-pruned allFlights store
+                        // (v1.39.0 hotfix 4) show fly days the store has no
+                        // legs for, and the old line blamed the roster for
+                        // the app's own history. When the month holds no
+                        // flights at all, the truth is the store: name it
+                        // and point at the remedy — re-attach the PDF,
+                        // the import replaces the month and the legs return.
+                        const mkLeg = String(day.ymd).slice(0, 7);
+                        const stLeg = loadAllFlights();
+                        const eraGap = !stLeg[mkLeg] || !stLeg[mkLeg].length;
+                        body += '<p class="text-sm text-gray-500 dark:text-gray-400">' + (eraGap
+                            ? 'This month’s roster was saved before the calendar kept flight details — re-attach its PDF to rebuild them.'
+                            : 'Flying duty — the roster printed no leg times for this day.') + '</p>';
+                    }
                 }
             } else if (kind === 'duty') {
                 const win = RC_STANDBY_TIMES[day.code];
@@ -8760,15 +8782,6 @@ SLOT|Special Lve others`;
                     if (ev.key !== 'Enter' && ev.key !== ' ') return;
                     const stn = ev.target && ev.target.closest ? ev.target.closest('[data-ca-rc-pod-station]') : null;
                     if (stn) { ev.preventDefault(); rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); }
-                });
-                // v1.45.39: a fold or rotation re-measures the viewport's
-                // row budget (debounced; only while the page is open)
-                let rcPodRzT = null;
-                window.addEventListener('resize', () => {
-                    const pw = document.getElementById('ca-rc-podwrap');
-                    if (!pw || pw.classList.contains('hidden')) return;
-                    if (rcPodRzT) clearTimeout(rcPodRzT);
-                    rcPodRzT = setTimeout(() => { rcPodRzT = null; renderRcPod(); }, 150);
                 });
                 wrap.querySelectorAll('[data-ca-rc-close]').forEach((el) => el.addEventListener('click', () => closeRosterCalendar()));
                 // hotfix 5 + 8 (owner orders): swipe the grid sideways to

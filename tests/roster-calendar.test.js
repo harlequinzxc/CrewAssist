@@ -432,6 +432,12 @@ const synthItems = [].concat(
     R.ok((w.eval('Object.keys(RO_DUTY_DESC).length') || 0) >= 1000, 'the legend carries the full table (1,082 codes from the owner\u2019s PDF)');
     R.ok(w.eval('RO_DUTY_DESC["33A2"]') === 'A330 AIRCRAFT VISIT' && w.eval('RO_DUTY_DESC["BH99"]') === 'FOOD HYGIENE COURSE', 'spot lookups read the official wording, caps and all - zero editorialising');
     R.ok(src.includes("(desc || 'Ground duty')") && !src.includes(": 'Course or ground duty'"), 'the wiring names the legend meaning, with the short generic fallback - and the old generic literal is gone from the code entirely');
+    // v1.45.50 (owner report, Oct 2025 - the whole month showed the
+    // no-leg-times line): duties imported before the never-pruned
+    // allFlights store (v1.39.0 hotfix 4) carry fly days the store has no
+    // legs for. The old line blamed the roster; the fix names the real
+    // cause and the remedy. Both sides pinned on the real Oct 2025 PDF.
+    R.ok(src.includes('const eraGap = !stLeg[mkLeg] || !stLeg[mkLeg].length;') && src.includes('re-attach its PDF to rebuild them') && src.includes("'Flying duty \u2014 the roster printed no leg times for this day.'"), 'v1.45.50: the fly-day fallback splits on the store\u2019s own month - the storage-era gap names itself and its remedy, the real parse gap keeps the honest roster line');
     {
         const lgKey = 'crewAssist.dutyDays';
         const lgBefore = w.localStorage.getItem(lgKey);
@@ -452,6 +458,37 @@ const synthItems = [].concat(
         R.ok(lgDet.indexOf('ZZ9Z') >= 0 && lgDet.indexOf('Ground duty') >= 0, 'a code the legend does not know falls back to the short generic');
         w.localStorage.setItem(lgKey, lgBefore);
         w.eval('rosterCalTimelineInit()');
+    }
+    // v1.45.50 live: the owner's exact device state, on a fresh page -
+    // duty days stored, the never-pruned flight store absent for the
+    // month. rcLegCache holds nothing on a fresh boot, so the store is
+    // the only voice: the fly day must name the storage-era gap and its
+    // remedy, not blame the roster.
+    {
+      const { w, d } = await boot(APP, { seed: (x) => {
+        x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+        x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({
+          '2025-10': [{ ymd: '2025-10-14', kind: 'fly', code: '', loc: '', fns: ['123'], dkey: '2025-10-14' }]
+        }));
+      } });
+      w.eval('openRosterCalendar()');
+      await wait(500);
+      w.eval('rosterCalSelect("2025-10-14")');
+      await wait(250);
+      let egDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+      R.ok(egDet.indexOf('saved before the calendar kept flight details') >= 0 && egDet.indexOf('re-attach its PDF') >= 0 && egDet.indexOf('no leg times') < 0, 'v1.45.50: a month with duty days but no stored flights names the storage-era gap and its remedy - the roster is no longer blamed');
+      // the same page, the month now holding one far-away leg: a REAL
+      // parse gap (a fly day no stored leg touches) keeps the honest line
+      w.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2025-10': [{ fn: '9992', dep: 'SIN', arr: 'KUL', ymd: '2025-10-02', std: '08:00', sta: '09:05', stdYmd: '2025-10-02', staYmd: '2025-10-02' }]
+      }));
+      w.eval('rosterCalTimelineInit()');
+      w.eval('rosterCalSelect("2025-10-13")');
+      await wait(250);
+      w.eval('rosterCalSelect("2025-10-14")');
+      await wait(250);
+      egDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+      R.ok(egDet.indexOf('no leg times') >= 0 && egDet.indexOf('saved before the calendar') < 0, 'a month that DOES hold flights keeps the honest parse-gap line for a legless day');
     }
     // a saved duty offers its earnings entry from the detail section
     w.eval("persistArchive([{ id: 'e1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-29', flightType: 'Layover', stationDisplay: 'HKT', amount: 318.55 }])");
@@ -789,6 +826,14 @@ const synthItems = [].concat(
         '2026-10': [fly('2026-10-26', '2026-10-26'), fly('2026-10-27', '2026-10-26'), fly('2026-10-28', '2026-10-26'), fly('2026-10-29', '2026-10-26'), fly('2026-10-30', '2026-10-26'), fly('2026-10-31', '2026-10-26'), fly('2026-10-08')],
         '2026-11': [fly('2026-11-01', '2026-10-26'), fly('2026-11-02', '2026-10-26')]
       }));
+      // v1.45.50: the fallback splits on whether the month holds stored
+      // flights at all. These two pins pin the PARSE-gap side (the roster
+      // parsed this month but printed no times for these days), so the
+      // month must hold one distant stored leg - far from every duty day
+      // above, so no day's legs change.
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2026-10': [{ fn: '9991', dep: 'SIN', arr: 'KUL', ymd: '2026-10-02', std: '08:00', sta: '09:05', stdYmd: '2026-10-02', staYmd: '2026-10-02' }]
+      }));
     } });
     w.eval('openRosterCalendar()');
     await wait(500);
@@ -986,24 +1031,28 @@ const synthItems = [].concat(
     // hotfix (owner order): showing and hiding ANIMATES — the marks pop
     // back out, the buttons pop out before display:none lands, and a
     // quick re-toggle rescues mid-pop-out
-    R.ok(fs.readFileSync(APP, 'utf8').indexOf('@keyframes ca-rc-popout') !== -1 && fs.readFileSync(APP, 'utf8').indexOf('ca-rc-btnin') !== -1, 'the out animations exist in source');
+    // v1.45.51: the exit pop-out is scrapped — the arrival pop-in and the
+    // button pop-in stay; nothing re-renders the marks after the off-tap
+    R.ok(fs.readFileSync(APP, 'utf8').indexOf('@keyframes ca-rc-pop') !== -1 && fs.readFileSync(APP, 'utf8').indexOf('ca-rc-btnin') !== -1 && fs.readFileSync(APP, 'utf8').indexOf('rc-tags-out') === -1 && fs.readFileSync(APP, 'utf8').indexOf('ca-rc-popout') === -1, 'v1.45.51: the IN animations exist and the OUT animations are gone from source — the hide is the class drop alone');
     tagBtn.click();
     await wait(60);
-    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'overlay back on for the out-animation pins');
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on'), 'overlay back on for the v1.45.51 hide pins');
+    // v1.45.51 (owner report: tapping the tag icon to hide, the camera
+    // button, the arrival badge and the station marks all FLASHED once
+    // before getting hidden): the exit pop-out is scrapped — the class
+    // drop IS the hide. Read synchronously after the tap: no out class,
+    // no animation holding the marks visible, no camera fade.
     tagBtn.click();
-    await wait(40);
-    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-out') && shotBtn.classList.contains('ca-rc-btnout'), 'hiding pops OUT first — the classes land before display:none');
-    await wait(350);
-    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-out') && shotBtn.classList.contains('hidden') && !shotBtn.classList.contains('ca-rc-btnout'), 'the out pass cleans up and hidden lands');
+    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && d.getElementById('ca-rc-grid').className.indexOf('rc-tags-out') < 0, 'v1.45.51: hiding drops rc-tags-on and NOTHING else — no out class, no replay window');
+    R.ok(w.getComputedStyle(t9).display === 'none' && shotBtn.classList.contains('hidden') && !shotBtn.classList.contains('ca-rc-btnout'), 'v1.45.51: the marks and the camera are hidden the moment the tap lands — one clean frame, no flash on the way out');
     tagBtn.click();
-    await wait(40);
+    await wait(60);
+    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && w.getComputedStyle(t9).display !== 'none' && !shotBtn.classList.contains('hidden'), 'tapping back on restores the marks and the camera');
     tagBtn.click();
-    await wait(40);
+    tagBtn.click();
     tagBtn.click();
     await wait(400);
-    R.ok(d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !d.getElementById('ca-rc-grid').classList.contains('rc-tags-out'), 'a quick re-toggle rescues the marks mid-pop-out');
-    tagBtn.click();
-    await wait(350);
+    R.ok(!d.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && d.getElementById('ca-rc-grid').className.indexOf('rc-tags-out') < 0 && shotBtn.classList.contains('hidden'), 'rapid toggling settles clean — an odd count of taps ends hidden, nothing left mid-flight');
     // tags never block a day tap
     tagBtn.click();
     await wait(60);
@@ -1338,9 +1387,9 @@ const synthItems = [].concat(
     w.eval('openRcPod()');
     await wait(100);
     R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card').length, 3, 'the podium holds the top three');
-    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'the leaderboard fills ranks four through ten — the no-layout answer (the real browser measures the actual screen)');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'the leaderboard fills ranks four through ten — the fixed top-ten depth (v1.45.51: no viewport math, jsdom and the phone agree)');
     const door = d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]');
-    R.ok(!!door && door.textContent.indexOf('View all \u00b7 11') >= 0, 'the View-all door names the full depth past what the screen holds');
+    R.ok(!!door && door.textContent.indexOf('View all \u00b7 11') >= 0, 'the View-all door names the full depth past the top ten');
     R.ok(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow')[6].textContent.indexOf('HKG') >= 0, 'rank ten is the last visible row — PEK waits behind the door');
     door.click();
     await wait(50);
@@ -1349,7 +1398,7 @@ const synthItems = [].concat(
     R.ok(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow')[7].textContent.indexOf('PEK') >= 0, 'the eleventh station is reachable');
     d.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]').click();
     await wait(50);
-    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'folding returns to the viewport-fit depth');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'folding returns to the top-ten depth (v1.45.51: ranks four through ten, every screen)');
     w.eval('closeRcPod()');
   }
   {
@@ -1679,8 +1728,16 @@ const synthItems = [].concat(
     // clientHeight read 0, and the fit fell to its no-layout fallback on
     // EVERY screen (7 rows, 10 entries, tall or short)
     const orp = src.slice(src.indexOf('function openRcPod'), src.indexOf('function closeRcPod'));
-    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true);'), 'v1.45.46: openRcPod un-hides the wrap BEFORE the render — the fit measures a real clientHeight, never the fallback (the flat-10-everywhere report)');
+    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true);'), 'v1.45.46 (re-pointed v1.45.51): openRcPod un-hides the wrap BEFORE the render, same synchronous task — the slide-in and the render never flash (the viewport fit the lesson rode on is scrapped; never measure a hidden page stands)');
     R.ok(orp.indexOf('display:none zeroes') >= 0, 'the trap is recorded in-source where the next editor will read it');
+    // v1.45.51 (owner orders): the records page is the PASSPORT — the
+    // title and both aria-labels rename, the podium button wears the
+    // book-user icon, the leaderboard depth is the fixed top ten on every
+    // screen (the viewport fit and its resize re-fit are scrapped), and
+    // the overlay's hide-tap flash is gone (pinned in the overlay block).
+    R.ok(src.includes('<h3 class="text-xl font-bold truncate">Passport</h3>') && src.includes('id="ca-rc-pod" aria-label="Passport"') && src.includes('aria-label="Passport" class="absolute inset-x-0 bottom-0') && !src.includes('aria-label="Your records"') && !src.includes('>Your records</h3>'), 'v1.45.51: the page title and both aria-labels read Passport — the UI wording is gone (the changelog pointer that ANNOUNCES the rename is copy, not UI)');
+    R.ok(src.includes('id="ca-rc-pod" aria-label="Passport" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="book-user"') && !src.includes('data-lucide="podium"'), 'v1.45.51: the passport button wears the book-user icon — the podium stub is retired');
+    R.ok(src.includes('const RC_POD_TOP = 10;') && src.includes('Math.min(list.length, RC_POD_TOP)') && !src.includes('function rcPodFit') && !src.includes('rcPodRzT'), 'v1.45.51: the leaderboard depth is the fixed top ten — the viewport fit and its resize re-fit are scrapped from the code');
     // v1.45.47 (owner order, the green-light round): rows only, rotate on
     // open — the pre-tap affordance the six external specs kept asking for,
     // built the house way: a CSS glyph, never a Lucide stub
