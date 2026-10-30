@@ -1401,6 +1401,80 @@ const synthItems = [].concat(
     R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length, 7, 'folding returns to the top-ten depth (v1.45.51: ranks four through ten, every screen)');
     w.eval('closeRcPod()');
   }
+  // ---- v1.45.52 (owner spec): the passport telemetry stack — pills, navy
+  // hero, gateway, and the two-chip sync model, on a two-year seed ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-10-30T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const legs = [];
+      const add = (ymd, fn, dep, arr, sta, ft, ac, pos) => legs.push({ fn: fn, dep: dep, arr: arr, ymd: ymd, std: '09:00', sta: sta, stdYmd: ymd, staYmd: ymd, ft: ft, ac: ac, rpt: '07:00', pos: !!pos });
+      add('2025-03-04', '221', 'SIN', 'SYD', '19:00', '8H 00M', '388');
+      add('2025-03-05', '222', 'SYD', 'SIN', '05:00', '8H 00M', '388');
+      add('2025-04-10', '111', 'SIN', 'KUL', '10:00', '1H 05M', '7M8');
+      add('2025-04-10', '112', 'KUL', 'SIN', '12:00', '1H 05M', '7M8');
+      add('2025-05-20', '331', 'SIN', 'HKG', '13:00', '3H 55M', '388');
+      add('2025-05-20', '332', 'HKG', 'SIN', '17:30', '3H 55M', '388');
+      add('2025-06-01', '991', 'SIN', 'KUL', '07:00', '', '7M8', true);   // paxing: no printed FT, no SIN sibling in its duty
+      add('2024-02-02', '631', 'SIN', 'NRT', '17:15', '7H 15M', '77W');
+      add('2024-02-03', '632', 'NRT', 'SIN', '23:55', '7H 15M', '77W');
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2024-02': legs.slice(7), '2025-03': [legs[0], legs[1]], '2025-04': [legs[2], legs[3], legs[6]], '2025-05': [legs[4], legs[5]] }));
+    } });
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(200);
+    // the formatter rules first, pure
+    R.eq(w.eval('rcPodFmtPair(124 * 1440 + 11 * 60)'), '124d 11h', 'the pair rule: days + hours when a day fits');
+    R.eq(w.eval('rcPodFmtPair(11 * 60 + 40)'), '11h 40m', 'the pair rule: hours + minutes under a day');
+    R.eq(w.eval('rcPodFmtPair(45)'), '45m', 'the pair rule: minutes alone under an hour');
+    R.ok(w.eval('rcFtToMins(\'12H 25M\')') === 745 && w.eval('rcFtToMins(\'04:00\')') === 240 && w.eval('rcFtToMins(\'\')') === 0, 'the roster FT string and the card format both parse; emptiness reads zero');
+    // the main pills: All-Time + the two travel years, newest first
+    const mainPills = () => Array.from(d.querySelectorAll('#ca-rc-pod-years .ca-rc-pod-ypill'));
+    R.eq(mainPills().map((b) => b.textContent).join('|'), 'All-Time|2025|2024', 'the main pills read All-Time and the travel years, newest first');
+    R.ok(mainPills()[0].classList.contains('on'), 'every open starts on All-Time');
+    // the gateway opens collapsed — the hero leads the page
+    R.ok(d.getElementById('ca-rc-pod-records').classList.contains('hidden') && d.getElementById('ca-rc-pod-gate').getAttribute('aria-expanded') === 'false', 'v1.45.52: the records section opens hidden behind the gateway (the hero-first default)');
+    const cell = (label) => { const all = Array.from(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell')); const el = all.find((c) => c.querySelector('.ca-rc-pod-hlabel').textContent.trim() === label); return el ? el.querySelector('.ca-rc-pod-hval').textContent : 'MISSING'; };
+    R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length, 10, 'the navy hero carries its ten metrics');
+    R.eq(cell('Flights'), '9', 'Flights counts every landed leg — the paxing sector included');
+    R.eq(cell('Flight Time'), '1d 16h', 'Flight Time sums the roster block times (40h 30m reads as the pair)');
+    R.eq(cell('Airports'), '4', 'Airports is the distinct landed stations — SYD, KUL, HKG, NRT');
+    R.eq(cell('Busiest station'), 'KUL \u00d72', 'Busiest station reads the visit walk — KUL twice, the paxing arrival counts');
+    R.eq(cell('Top aircraft'), '388 \u00b7 4', 'Top aircraft tallies by leg count');
+    R.eq(cell('Longest flight'), '8h 00m', 'Longest flight reads its own pair format');
+    R.ok(!!d.querySelector('#ca-rc-pod-herowrap [data-rc-longsub]') || cell('First flight') === '2 Feb 2024', 'First flight dates the house format');
+    R.eq(cell('First flight'), '2 Feb 2024', 'First flight is the earliest landed departure');
+    R.eq(cell('Latest flight'), '1 Jun 2025', 'Latest flight is the most recent landed departure');
+    R.eq(cell('Layover days'), '1d 5h', 'Layover days sums real ground at layover stops (SYD 14h + NRT 15h 45m) — the open paxing stop never guesses');
+    R.eq(cell('Regions'), '4', 'Regions counts the salary-region map over visited stations');
+    // the gateway opens the list; the inner pills render
+    d.getElementById('ca-rc-pod-gate').click();
+    await wait(350);
+    R.ok(!d.getElementById('ca-rc-pod-records').classList.contains('hidden') && d.getElementById('ca-rc-pod-gate').classList.contains('on'), 'one tap on the gateway reveals the records list and turns the chevron');
+    const innerPills = () => Array.from(d.querySelectorAll('#ca-rc-pod-listyears .ca-rc-pod-ypill'));
+    R.eq(innerPills().map((b) => b.textContent).join('|'), 'All-Time|2025|2024', 'the records section carries its own year pills');
+    R.ok(innerPills()[0].classList.contains('on'), 'the inner row starts synced to the main chip (All-Time)');
+    // the sync model: a main tap moves the hero AND the inner chip
+    d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2025"]').click();
+    await wait(200);
+    R.eq(cell('Flights'), '7', 'the 2025 main chip filters the hero — the two NRT legs drop');
+    R.eq(cell('Flight Time'), '1d 2h', 'the hero total recomputes to 2025\u2019s 26h');
+    R.ok(innerPills().find((b) => b.textContent === '2025').classList.contains('on'), 'the main tap SYNCED the inner chip to 2025');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card').length, 3, 'the list reflects the synced year — 2025\u2019s three stations podium');
+    // the inner chip filters the list ALONE — the hero holds
+    d.querySelector('#ca-rc-pod-listyears [data-ca-rc-pod-lyear="2024"]').click();
+    await wait(200);
+    R.eq(cell('Flights'), '7', 'the inner chip never moves the hero — still 2025');
+    R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card').length, 1, 'the list now reads 2024 — the lone NRT podium');
+    R.ok(mainPills().find((b) => b.textContent === '2025').classList.contains('on'), 'the main chip still reads 2025');
+    // every open starts clean again
+    w.eval('closeRcPod()');
+    await wait(150);
+    w.eval('openRcPod()');
+    await wait(200);
+    R.ok(mainPills()[0].classList.contains('on') && d.getElementById('ca-rc-pod-records').classList.contains('hidden'), 'a reopen resets to All-Time and a collapsed gateway — nothing persists');
+    w.eval('closeRcPod()');
+  }
   {
     // the 6h boundary, exact: 360 minutes is a turnaround, 361 lays over
     const { w } = await boot(APP, { now: '2026-10-08T12:00:00+08:00', seed: (x) => {
@@ -1738,6 +1812,18 @@ const synthItems = [].concat(
     R.ok(src.includes('<h3 class="text-xl font-bold truncate">Passport</h3>') && src.includes('id="ca-rc-pod" aria-label="Passport"') && src.includes('aria-label="Passport" class="absolute inset-x-0 bottom-0') && !src.includes('aria-label="Your records"') && !src.includes('>Your records</h3>'), 'v1.45.51: the page title and both aria-labels read Passport — the UI wording is gone (the changelog pointer that ANNOUNCES the rename is copy, not UI)');
     R.ok(src.includes('id="ca-rc-pod" aria-label="Passport" class="ca-hit p-3 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors hidden"><i data-lucide="book-user"') && !src.includes('data-lucide="podium"'), 'v1.45.51: the passport button wears the book-user icon — the podium stub is retired');
     R.ok(src.includes('const RC_POD_TOP = 10;') && src.includes('Math.min(list.length, RC_POD_TOP)') && !src.includes('function rcPodFit') && !src.includes('rcPodRzT'), 'v1.45.51: the leaderboard depth is the fixed top ten — the viewport fit and its resize re-fit are scrapped from the code');
+    // v1.45.52 (owner spec, the passport telemetry round): the year pills,
+    // the navy hero, the gateway. The pair-format and FT-parse rules, the
+    // dep-year filter, the sync model, and the fixed-navy card are pinned
+    // in source; the numbers are pinned LIVE on a two-year seed below.
+    R.ok(src.includes('function rcPodFmtPair(mins)') && src.includes("Math.floor(n / 1440) + 'd '") && src.includes("Math.floor(n / 60) + 'h '") && src.includes("return n + 'm';"), 'v1.45.52: the largest-unit pair rule is the shipped formatter — days+hours, hours+minutes, minutes alone');
+    R.ok(src.includes('function rcFtToMins(str)') && src.includes('\\d+)\\s*H\\s*(\\d+)\\s*M'), 'v1.45.52: the roster FT string parses to minutes (HH H MM M, the card HH:MM accepted)');
+    R.ok(src.includes('if (yf && String(ld.depDate).slice(0, 4) !== yf) return;'), 'v1.45.52: a leg belongs to its DEPARTURE year — the year filter slices depDate, the earnings rule');
+    R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page');
+    R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move');
+    R.ok(src.includes('id="ca-rc-pod-records" class="flex flex-col flex-grow min-h-0 opacity-0 translate-y-2 hidden"'), 'v1.45.52: the records section ships the owner\u2019s visibility utilities — hidden + opacity-0 + translate-y-2');
+    R.ok(src.includes('rcPodGate = false;') && src.indexOf('rcPodGate = false;', src.indexOf('function openRcPod')) > 0, 'v1.45.52: every open starts the gateway COLLAPSED — the hero leads the page');
+    R.ok(src.includes('.ca-rc-pod-tel { border-radius: 20px;') && src.includes('linear-gradient(152deg, #0A1730 0%') && !src.includes('.ca-rc-pod-tel { border: 1px solid var(--ca-gold-line)'), 'v1.45.52: the telemetry card is a FIXED navy gradient — a physical passport cover, the same card in both themes (its inks are literals, never theme tokens)');
     // v1.45.47 (owner order, the green-light round): rows only, rotate on
     // open — the pre-tap affordance the six external specs kept asking for,
     // built the house way: a CSS glyph, never a Lucide stub
