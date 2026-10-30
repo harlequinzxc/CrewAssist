@@ -494,3 +494,18 @@ pin evaluates its reads in the same `page.evaluate` task as the click — any
 sleep between tap and read can mask a replay window (v1.45.51's exit-flash
 fix is pinned that way: no out class, `display: none`, no animation, camera
 `hidden`, all read post-click pre-sleep).
+
+## Section data and live scrollers (v1.45.52)
+
+A pin reads the seed of ITS OWN section, not a later one — the early records
+section rides the calendar section's four-leg store; the 14-station store is
+seeded much later. When a pin's expected numbers come from a seed, walk the
+file up to the section's `localStorage.setItem` and compute from THOSE legs.
+And a section whose list now opens collapsed (the v1.45.52 gateway) must open
+the gate before any scroll pin runs — a display:none scroller cannot scroll;
+`scrollTop` writes are silently dropped.
+
+Load flakes still happen (two runs, two different one-off failures — a
+waitForSelector on the help card, the menu-tap gold flash read — third run
+clean on identical bytes): re-run before diagnosing, and record the flake in
+the HANDOVER the way round 25 did.

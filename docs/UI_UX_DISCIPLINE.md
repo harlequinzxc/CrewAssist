@@ -625,6 +625,20 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 - Measuring virtualized rows before `lucide.createIcons()` (hotfix 9): the placeholder `<i>` and its svg differ in size, so offsets go stale. Create icons first, then measure — and never rely on a re-measure happening (TLWindow's dedup early-return skips unchanged windows; store corrected offsets instead).
 - Padding on a `0fr` accordion inner (iOS header leak).
 
+### Telemetry cards: fixed ink, landed data, paired units (v1.45.52)
+
+- A fixed-background card (the navy passport hero) carries FIXED literal inks
+  in both themes — theme-scoped tokens (linen ink) fail one of the two
+  themes. The card is a physical object: same cover in light and dark.
+- A flown-record page counts LANDED legs only — an imported future month
+  joins the counts as its flights land, never before.
+- Time figures are a largest-unit PAIR (owner rule): days+hours when a day
+  fits, hours+minutes under a day, minutes alone under an hour. One rule,
+  every duration on the card.
+- New components ride the type ladder (11px micro, 14, 20, 24…) — the
+  battery's ladder guard catches off-rung sizes (9px/10px labels and the
+  banned 15px were caught and corrected in the same sitting).
+
 ### Exits are instant; entrances may animate (v1.45.51)
 
 - The owner's flash report settled the rule: when the crew asks for
