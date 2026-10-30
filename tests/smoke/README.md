@@ -465,3 +465,15 @@ tests/smoke/node_modules/.bin/tailwindcss -c tw.config.cjs -o tw.css --minify
 
 `build-app.js` then picks the fresh `tw.css` up on its next run (it copies the
 repo's `tw.css` next to the generated `app.html`).
+
+## Computed-colour pins must wait out transitions (v1.45.50)
+
+The overlay toggle's gold on-fill FADES IN (`transition-colors`): a probe read
+`rgba(201, 162, 39, 0.694)` at 100ms and solid gold by 200ms on an idle page —
+but deep into a full run, under load, the class application can lag and a 300ms
+read lands MID-FADE, false-negativing the exact-rgb pin (it failed twice,
+deterministically, on bytes that pass in isolation). Rule: any pin that reads a
+computed colour off an element with a transition must wait past the transition
+duration plus margin — the toggle pin now settles 450ms before reading. Same
+family as the v1.45.43 body-ink lesson (a 300ms colour transition read
+mid-flight); the rig's clocks get slower the longer the run.

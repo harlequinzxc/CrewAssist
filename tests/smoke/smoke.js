@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.49', 'APP_VERSION is 1.45.49');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.49' && e.d === '2026-10-30' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.49 entry with its single imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v280'), 'the service-worker cache name is bumped to v280 (the v1.45.49 legend release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.50', 'APP_VERSION is 1.45.50');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.50' && e.d === '2026-10-30' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.50 entry with its single fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v281'), 'the service-worker cache name is bumped to v281 (the v1.45.50 storage-era release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.49'; }), 'the What\'s New sheet carries the v1.45.49 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.50'; }), 'the What\'s New sheet carries the v1.45.50 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -442,6 +442,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => document.getElementById('ca-rc-tag').click());
         await sleep(300);
         ok(await page.evaluate(() => document.getElementById('ca-rc-grid').classList.contains('rc-tags-on') && !document.getElementById('ca-rc-shot').classList.contains('hidden')), 'one tap lights the overlay and shows the camera');
+        // the on-fill FADES IN (transition-colors): under a full run's load the
+        // 300ms read can land mid-fade (alpha < 1) and false-negative. Let the
+        // fade settle before reading the computed fill.
+        await sleep(450);
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle fills gold when on (computed — immune to the sticky touch hover)');
         ok(await page.evaluate(() => {
             const t9 = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');

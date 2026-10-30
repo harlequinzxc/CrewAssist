@@ -432,6 +432,12 @@ const synthItems = [].concat(
     R.ok((w.eval('Object.keys(RO_DUTY_DESC).length') || 0) >= 1000, 'the legend carries the full table (1,082 codes from the owner\u2019s PDF)');
     R.ok(w.eval('RO_DUTY_DESC["33A2"]') === 'A330 AIRCRAFT VISIT' && w.eval('RO_DUTY_DESC["BH99"]') === 'FOOD HYGIENE COURSE', 'spot lookups read the official wording, caps and all - zero editorialising');
     R.ok(src.includes("(desc || 'Ground duty')") && !src.includes(": 'Course or ground duty'"), 'the wiring names the legend meaning, with the short generic fallback - and the old generic literal is gone from the code entirely');
+    // v1.45.50 (owner report, Oct 2025 - the whole month showed the
+    // no-leg-times line): duties imported before the never-pruned
+    // allFlights store (v1.39.0 hotfix 4) carry fly days the store has no
+    // legs for. The old line blamed the roster; the fix names the real
+    // cause and the remedy. Both sides pinned on the real Oct 2025 PDF.
+    R.ok(src.includes('const eraGap = !stLeg[mkLeg] || !stLeg[mkLeg].length;') && src.includes('re-attach its PDF to rebuild them') && src.includes("'Flying duty \u2014 the roster printed no leg times for this day.'"), 'v1.45.50: the fly-day fallback splits on the store\u2019s own month - the storage-era gap names itself and its remedy, the real parse gap keeps the honest roster line');
     {
         const lgKey = 'crewAssist.dutyDays';
         const lgBefore = w.localStorage.getItem(lgKey);
@@ -452,6 +458,37 @@ const synthItems = [].concat(
         R.ok(lgDet.indexOf('ZZ9Z') >= 0 && lgDet.indexOf('Ground duty') >= 0, 'a code the legend does not know falls back to the short generic');
         w.localStorage.setItem(lgKey, lgBefore);
         w.eval('rosterCalTimelineInit()');
+    }
+    // v1.45.50 live: the owner's exact device state, on a fresh page -
+    // duty days stored, the never-pruned flight store absent for the
+    // month. rcLegCache holds nothing on a fresh boot, so the store is
+    // the only voice: the fly day must name the storage-era gap and its
+    // remedy, not blame the roster.
+    {
+      const { w, d } = await boot(APP, { seed: (x) => {
+        x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+        x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({
+          '2025-10': [{ ymd: '2025-10-14', kind: 'fly', code: '', loc: '', fns: ['123'], dkey: '2025-10-14' }]
+        }));
+      } });
+      w.eval('openRosterCalendar()');
+      await wait(500);
+      w.eval('rosterCalSelect("2025-10-14")');
+      await wait(250);
+      let egDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+      R.ok(egDet.indexOf('saved before the calendar kept flight details') >= 0 && egDet.indexOf('re-attach its PDF') >= 0 && egDet.indexOf('no leg times') < 0, 'v1.45.50: a month with duty days but no stored flights names the storage-era gap and its remedy - the roster is no longer blamed');
+      // the same page, the month now holding one far-away leg: a REAL
+      // parse gap (a fly day no stored leg touches) keeps the honest line
+      w.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2025-10': [{ fn: '9992', dep: 'SIN', arr: 'KUL', ymd: '2025-10-02', std: '08:00', sta: '09:05', stdYmd: '2025-10-02', staYmd: '2025-10-02' }]
+      }));
+      w.eval('rosterCalTimelineInit()');
+      w.eval('rosterCalSelect("2025-10-13")');
+      await wait(250);
+      w.eval('rosterCalSelect("2025-10-14")');
+      await wait(250);
+      egDet = d.getElementById('ca-rc-detail').textContent.replace(/\s+/g, ' ');
+      R.ok(egDet.indexOf('no leg times') >= 0 && egDet.indexOf('saved before the calendar') < 0, 'a month that DOES hold flights keeps the honest parse-gap line for a legless day');
     }
     // a saved duty offers its earnings entry from the detail section
     w.eval("persistArchive([{ id: 'e1', savedAt: new Date().toISOString(), monthKey: '2026-10', sectorDate: '2026-10-29', flightType: 'Layover', stationDisplay: 'HKT', amount: 318.55 }])");
@@ -788,6 +825,14 @@ const synthItems = [].concat(
       x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({
         '2026-10': [fly('2026-10-26', '2026-10-26'), fly('2026-10-27', '2026-10-26'), fly('2026-10-28', '2026-10-26'), fly('2026-10-29', '2026-10-26'), fly('2026-10-30', '2026-10-26'), fly('2026-10-31', '2026-10-26'), fly('2026-10-08')],
         '2026-11': [fly('2026-11-01', '2026-10-26'), fly('2026-11-02', '2026-10-26')]
+      }));
+      // v1.45.50: the fallback splits on whether the month holds stored
+      // flights at all. These two pins pin the PARSE-gap side (the roster
+      // parsed this month but printed no times for these days), so the
+      // month must hold one distant stored leg - far from every duty day
+      // above, so no day's legs change.
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2026-10': [{ fn: '9991', dep: 'SIN', arr: 'KUL', ymd: '2026-10-02', std: '08:00', sta: '09:05', stdYmd: '2026-10-02', staYmd: '2026-10-02' }]
       }));
     } });
     w.eval('openRosterCalendar()');

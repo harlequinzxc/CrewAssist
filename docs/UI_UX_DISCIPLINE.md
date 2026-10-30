@@ -625,6 +625,19 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 - Measuring virtualized rows before `lucide.createIcons()` (hotfix 9): the placeholder `<i>` and its svg differ in size, so offsets go stale. Create icons first, then measure — and never rely on a re-measure happening (TLWindow's dedup early-return skips unchanged windows; store corrected offsets instead).
 - Padding on a `0fr` accordion inner (iOS header leak).
 
+### Empty-state copy: blame the truth, name the remedy (v1.45.50)
+
+- When the app's OWN storage history is why data is missing, the empty-state
+  line must say so and point at the fix — never blame the crew's document.
+  The Oct 2025 case: months imported before the never-pruned flight store
+  (v1.39.0 hotfix 4) show fly days with no legs, and the old line read
+  "the roster printed no leg times" — wrong, the PDF printed them; the app
+  never stored them. The split reads the store's own month: no stored
+  flights at all → "This month's roster was saved before the calendar kept
+  flight details — re-attach its PDF to rebuild them."; flights present but
+  none for this day → the honest roster line. Same test for any fallback
+  copy: which side's fault is it, and can the crew act on the sentence?
+
 ---
 
 ## UI Pre-Delivery Checklist
