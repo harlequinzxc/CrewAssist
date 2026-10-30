@@ -639,6 +639,18 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   battery's ladder guard catches off-rung sizes (9px/10px labels and the
   banned 15px were caught and corrected in the same sitting).
 
+### Figures wear the earnings type; a door opens a page (v1.45.53)
+
+- Numbers a crew member READS (hero figures, headline values) wear the
+  earnings-page type: the house sans, bold, `tabular-nums`, tight tracking —
+  never Space Mono. Mono stays on stamps and chips (the tag, the year pills);
+  it is decoration, not data.
+- A gateway button that promises “all” of something opens its OWN overlay
+  page above the current one — never an in-page accordion. The overlay carries
+  its own title, subtitle, shade and glide; closing the parent closes it; and
+  Escape closes the TOP sheet first (the closers list is stack-ordered, not
+  insertion-ordered).
+
 ### Exits are instant; entrances may animate (v1.45.51)
 
 - The owner's flash report settled the rule: when the crew asks for

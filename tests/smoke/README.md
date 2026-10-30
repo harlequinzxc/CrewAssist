@@ -509,3 +509,20 @@ Load flakes still happen (two runs, two different one-off failures — a
 waitForSelector on the help card, the menu-tap gold flash read — third run
 clean on identical bytes): re-run before diagnosing, and record the flake in
 the HANDOVER the way round 25 did.
+
+## Overlays over sheets, and mount stagger (v1.45.53)
+
+The stats overlay (All Flight Stats) opens ABOVE the passport sheet — a pin
+that walks the records list opens the pod, then the gate, and reads inside
+`#ca-rc-statwrap`. Two hard-won rules from this release:
+
+- **A fresh mount deserves its stagger flag.** `openRcStat` calls
+  `renderRcPod(true)`. The first cut passed no argument, the podium re-rendered
+  without the `ca-rc-pod-d0/d1/d2` classes, and the computed-style pins read
+  MID-TRANSITION values (the sibling recede read 0.306726 where 0.4 was
+  pinned) even after their 450ms waits. When an opener re-renders a list,
+  check what the sibling openers pass it.
+- **Typeface pins read the computed style.** The earnings-type order is pinned
+  as `getComputedStyle(hval)` — family carries no 'Space Mono', weight 700,
+  `fontVariantNumeric === 'tabular-nums'` — not as a class-name guess.
+

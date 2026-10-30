@@ -1432,8 +1432,8 @@ const synthItems = [].concat(
     const mainPills = () => Array.from(d.querySelectorAll('#ca-rc-pod-years .ca-rc-pod-ypill'));
     R.eq(mainPills().map((b) => b.textContent).join('|'), 'All-Time|2025|2024', 'the main pills read All-Time and the travel years, newest first');
     R.ok(mainPills()[0].classList.contains('on'), 'every open starts on All-Time');
-    // the gateway opens collapsed — the hero leads the page
-    R.ok(d.getElementById('ca-rc-pod-records').classList.contains('hidden') && d.getElementById('ca-rc-pod-gate').getAttribute('aria-expanded') === 'false', 'v1.45.52: the records section opens hidden behind the gateway (the hero-first default)');
+    // v1.45.53: the stats overlay starts closed — the passport leads with the hero
+    R.ok(d.getElementById('ca-rc-statwrap').classList.contains('hidden') && d.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full'), 'v1.45.53: the All Flight Stats overlay starts closed — the passport leads with the hero');
     const cell = (label) => { const all = Array.from(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell')); const el = all.find((c) => c.querySelector('.ca-rc-pod-hlabel').textContent.trim() === label); return el ? el.querySelector('.ca-rc-pod-hval').textContent : 'MISSING'; };
     R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length, 10, 'the navy hero carries its ten metrics');
     R.eq(cell('Flights'), '9', 'Flights counts every landed leg — the paxing sector included');
@@ -1447,10 +1447,10 @@ const synthItems = [].concat(
     R.eq(cell('Latest flight'), '1 Jun 2025', 'Latest flight is the most recent landed departure');
     R.eq(cell('Layover days'), '1d 5h', 'Layover days sums real ground at layover stops (SYD 14h + NRT 15h 45m) — the open paxing stop never guesses');
     R.eq(cell('Regions'), '4', 'Regions counts the salary-region map over visited stations');
-    // the gateway opens the list; the inner pills render
+    // v1.45.53: the gate opens the OVERLAY — its own sheet over the passport
     d.getElementById('ca-rc-pod-gate').click();
     await wait(350);
-    R.ok(!d.getElementById('ca-rc-pod-records').classList.contains('hidden') && d.getElementById('ca-rc-pod-gate').classList.contains('on'), 'one tap on the gateway reveals the records list and turns the chevron');
+    R.ok(!d.getElementById('ca-rc-statwrap').classList.contains('hidden') && !d.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full') && d.querySelector('#ca-rc-stat-sheet h3').textContent === 'All Flight Stats', 'one tap on the gateway raises the All Flight Stats overlay — its own page, no accordion');
     const innerPills = () => Array.from(d.querySelectorAll('#ca-rc-pod-listyears .ca-rc-pod-ypill'));
     R.eq(innerPills().map((b) => b.textContent).join('|'), 'All-Time|2025|2024', 'the records section carries its own year pills');
     R.ok(innerPills()[0].classList.contains('on'), 'the inner row starts synced to the main chip (All-Time)');
@@ -1467,12 +1467,13 @@ const synthItems = [].concat(
     R.eq(cell('Flights'), '7', 'the inner chip never moves the hero — still 2025');
     R.eq(d.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card').length, 1, 'the list now reads 2024 — the lone NRT podium');
     R.ok(mainPills().find((b) => b.textContent === '2025').classList.contains('on'), 'the main chip still reads 2025');
-    // every open starts clean again
+    // every open starts clean again — and the overlay closes with its passport
     w.eval('closeRcPod()');
-    await wait(150);
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-podwrap').classList.contains('hidden') && d.getElementById('ca-rc-statwrap').classList.contains('hidden'), 'closing the passport closes the stats overlay with it — the overlay never outlives its page');
     w.eval('openRcPod()');
     await wait(200);
-    R.ok(mainPills()[0].classList.contains('on') && d.getElementById('ca-rc-pod-records').classList.contains('hidden'), 'a reopen resets to All-Time and a collapsed gateway — nothing persists');
+    R.ok(mainPills()[0].classList.contains('on') && d.getElementById('ca-rc-statwrap').classList.contains('hidden'), 'a reopen resets to All-Time chips and a closed overlay — nothing persists');
     w.eval('closeRcPod()');
   }
   {
@@ -1623,7 +1624,7 @@ const synthItems = [].concat(
     R.ok(orp.indexOf('lucide.createIcons') < 0, 'the opener’s inline icon call is retired — one owner, not two');
     R.ok(src.includes('.ca-rc-pod-xp { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .2s ease-out; margin: 6px 0; }'), 'v1.45.42: the visit log unfolds through the rates-fold clip idiom (0fr→1fr)');
     R.ok(src.includes('html.ca-reduced .ca-rc-pod-xp { transition: none; }'), 'the unfold stands down under ca-reduced');
-    R.ok(/podWrapEl\.addEventListener\('keydown'[\s\S]*?data-ca-rc-pod-station/.test(src), 'the stations are keyboard-reachable (Enter/Space toggle the log)');
+    R.ok(/statWrapEl\.addEventListener\('keydown'[\s\S]*?data-ca-rc-pod-station/.test(src), 'the stations are keyboard-reachable inside the stats overlay (Enter/Space toggle the log)');
   }
   {
     // the owner's South Africa shape: the visit records carry flight
@@ -1821,8 +1822,10 @@ const synthItems = [].concat(
     R.ok(src.includes('if (yf && String(ld.depDate).slice(0, 4) !== yf) return;'), 'v1.45.52: a leg belongs to its DEPARTURE year — the year filter slices depDate, the earnings rule');
     R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page');
     R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move');
-    R.ok(src.includes('id="ca-rc-pod-records" class="flex flex-col flex-grow min-h-0 opacity-0 translate-y-2 hidden"'), 'v1.45.52: the records section ships the owner\u2019s visibility utilities — hidden + opacity-0 + translate-y-2');
-    R.ok(src.includes('rcPodGate = false;') && src.indexOf('rcPodGate = false;', src.indexOf('function openRcPod')) > 0, 'v1.45.52: every open starts the gateway COLLAPSED — the hero leads the page');
+    R.ok(src.includes('id="ca-rc-statwrap" class="fixed inset-0 z-[64] hidden"') && src.includes('function openRcStat()') && src.includes('function closeRcStat()') && src.includes("if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }") && !src.includes('ca-rc-pod-records'), 'v1.45.53 (owner order): All Flight Stats opens as its OWN overlay above the passport — the gate is a door, the in-page accordion is gone from the code');
+    R.ok(src.includes('closeRcStat();   // v1.45.53') && src.includes("['ca-rc-statwrap', closeRcStat],   // v1.45.53"), 'v1.45.53: the stats overlay never outlives its passport — and Escape closes it before the pages beneath');
+    R.ok(/<button[^>]*id="ca-rc-pod-gate"[^>]*><i data-lucide="chevron-up"/.test(src) && !/<button[^>]*id="ca-rc-pod-gate"[^>]*chevron-down/.test(src), 'v1.45.53: the gate wears the upward chevron — it raises a page');
+    R.ok(/\.ca-rc-pod-hval \{ font-weight: 700; font-size: 24px;[^}]*font-variant-numeric: tabular-nums;[^}]*\}/.test(src) && !/ca-rc-pod-hval[^}]*Space Mono/.test(src) && !/ca-rc-pod-hsub[^}]*Space Mono/.test(src), 'v1.45.53 (owner order: the earnings page style): the hero figures ride the house SANS — bold, tabular-nums, tight tracking — no Space Mono anywhere in the telemetry cells');
     R.ok(src.includes('.ca-rc-pod-tel { border-radius: 20px;') && src.includes('linear-gradient(152deg, #0A1730 0%') && !src.includes('.ca-rc-pod-tel { border: 1px solid var(--ca-gold-line)'), 'v1.45.52: the telemetry card is a FIXED navy gradient — a physical passport cover, the same card in both themes (its inks are literals, never theme tokens)');
     // v1.45.47 (owner order, the green-light round): rows only, rotate on
     // open — the pre-tap affordance the six external specs kept asking for,
