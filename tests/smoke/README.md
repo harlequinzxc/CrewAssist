@@ -477,3 +477,20 @@ computed colour off an element with a transition must wait past the transition
 duration plus margin — the toggle pin now settles 450ms before reading. Same
 family as the v1.45.43 body-ink lesson (a 300ms colour transition read
 mid-flight); the rig's clocks get slower the longer the run.
+
+## New icons verify against the registry tarball (v1.45.51)
+
+The rig blocks the CDN, so icon pins read the `<i data-lucide>` stub — the
+stub only proves the NAME the app requests. Before shipping a new glyph,
+verify it exists in the real lucide build (the crown/chevron-left precedent):
+pull the latest tarball from registry.npmjs.org, extract
+`package/dist/umd/lucide.js`, and check the PascalCase node — `createIcons`
+converts the kebab-case `data-lucide` value via `toPascalCase` before lookup,
+so `book-user` resolves iff a `BookUser` node is exported. Names can drift
+between versions; the node is the truth.
+
+Same-task reads for instant behaviour: a "hidden the moment the tap lands"
+pin evaluates its reads in the same `page.evaluate` task as the click — any
+sleep between tap and read can mask a replay window (v1.45.51's exit-flash
+fix is pinned that way: no out class, `display: none`, no animation, camera
+`hidden`, all read post-click pre-sleep).
