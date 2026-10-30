@@ -526,3 +526,14 @@ that walks the records list opens the pod, then the gate, and reads inside
   as `getComputedStyle(hval)` — family carries no 'Space Mono', weight 700,
   `fontVariantNumeric === 'tabular-nums'` — not as a class-name guess.
 
+## Theme-toggling pins wait out EVERY transition they cross (v1.45.54)
+
+A computed pin that forces dark, reads, forces light, reads must wait out
+every transition its elements carry — not just the body's 300ms ink. The
+re-skin gave the pills and tabs a 150ms background-color transition: a pin
+that toggled and read after 50ms read a MID-FADE pill. 300ms after each
+toggle is the floor. And when a release ADDS theme-toggling pins ahead of
+an older one, the older pin's waits may need widening — the visit-log ink
+pin passed for eleven releases, then needed 650ms once three more
+theme-flipping pins preceded it under box load.
+

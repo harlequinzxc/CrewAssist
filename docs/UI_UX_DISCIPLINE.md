@@ -639,6 +639,22 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   battery's ladder guard catches off-rung sizes (9px/10px labels and the
   banned 15px were caught and corrected in the same sitting).
 
+### The overlays wear the earnings language (v1.45.54)
+
+- A sheet's content cards follow the earnings group pair: #FFFFFF with the
+  soft 12px shadow by day, 2% white glass with a hairline edge at night.
+  The passport's fixed navy cover is RETIRED — a card is a surface, not a
+  prop; only true physical-object metaphors (a stamp) may fix their ink.
+- Figures are INK-LED (`--arch-fg`), labels `--arch-muted`, subs stone.
+  Gold is reserved for selection and highlight moments: the selected pill,
+  the open station's ring, the winner's edge. Never for bulk numerals.
+- Pill-like controls are SEGTRACKS: one hairline-washed track, the selected
+  item a solid bright pill (white + espresso by day, the toast pair at
+  night). No gliders, no outlined chips, no mono fonts on data.
+- A card with many metrics splits into BANDS divided by one hairline:
+  headline figures lead, the rule divides, the story follows (the earnings
+  card hierarchy). Regions-style trailing cells span the full row.
+
 ### Figures wear the earnings type; a door opens a page (v1.45.53)
 
 - Numbers a crew member READS (hero figures, headline values) wear the
