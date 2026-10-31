@@ -616,18 +616,17 @@
            a solid bright pill (white by day, cream at night — the toast
            pair's pole). The gold glider retires with the gold-led pod. */
         .ca-rc-pod-tabs { position: relative; display: flex; gap: 4px; padding: 4px; border-radius: 9999px; background: var(--arch-hairline); margin-bottom: 12px; }
-        .ca-rc-pod-tab { position: relative; z-index: 1; flex: 1 1 0; min-height: 36px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--arch-muted); transition: color .15s ease-out, background-color .15s ease-out; }
+        .ca-rc-pod-tab { position: relative; z-index: 1; flex: 1 1 0; padding: 5px 13px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--arch-muted); transition: color .15s ease-out, background-color .15s ease-out; }
         .ca-rc-pod-tab.ca-rc-pod-tabon { background: #FFFFFF; color: #2D1E0F; }
         html.dark .ca-rc-pod-tab.ca-rc-pod-tabon { background: var(--ca-toast-bg); color: var(--ca-toast-ink); }
         .ca-rc-pod-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; align-items: end; margin: 4px 0 10px; }
         .ca-rc-pod-card { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; position: relative; overflow: hidden; border-radius: 12px; }
-        /* v1.45.54 (owner order): the podium rides the earnings card pair;
-           rank one keeps ONE gold touch — the gold edge beside its crown.
-           The soft wash and the gold code ink retire (ink-led figures). */
-        .ca-rc-pod-hero { border: 1px solid var(--ca-gold-line); background: rgba(255,255,255,0.02); padding: 12px 8px 14px; }
-        html:not(.dark) .ca-rc-pod-hero { background: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .ca-rc-pod-side { border: 1px solid var(--arch-surface-border); background: rgba(255,255,255,0.02); padding: 8px 6px 12px; }
-        html:not(.dark) .ca-rc-pod-side { background: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        /* v1.45.55 (owner order, the color round): the podium rides the
+           archive's own surface token — the navy cast #141823 at night,
+           white by day; rank one keeps the gold edge beside its crown. */
+        .ca-rc-pod-hero { border: 1px solid var(--ca-gold-line); background: var(--arch-surface); padding: 12px 8px 14px; }
+        .ca-rc-pod-side { border: 1px solid var(--arch-surface-border); background: var(--arch-surface); padding: 8px 6px 12px; }
+        html:not(.dark) .ca-rc-pod-hero, html:not(.dark) .ca-rc-pod-side { box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         .ca-rc-pod-crown { margin-bottom: 2px; }
         html.dark .ca-rc-pod-crown { color: var(--ca-gold-hi); }
         html:not(.dark) .ca-rc-pod-crown { color: var(--sia-gold-ink); }
@@ -719,31 +718,32 @@
         .ca-rc-pod-ypill { flex: none; padding: 5px 13px; border-radius: 9999px; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--arch-muted); background: transparent; transition: color .15s ease-out, background-color .15s ease-out; }
         .ca-rc-pod-ypill.on { color: #2D1E0F; background: #FFFFFF; }
         html.dark .ca-rc-pod-ypill.on { color: var(--ca-toast-ink); background: var(--ca-toast-bg); }
-        /* v1.45.54 (owner order, the re-skin): the hero card retires the
-           fixed navy "passport cover" and rides the earnings group pair —
-           white with the soft shadow by day, 2% glass with a hairline edge
-           at night. Figures go ink-led; gold leaves the card. */
-        .ca-rc-pod-tel { border-radius: 12px; padding: 15px 16px 13px; background: rgba(255,255,255,0.02); border: 1px solid var(--arch-surface-border); }
-        html:not(.dark) .ca-rc-pod-tel { background: #FFFFFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        /* v1.45.55 (owner order, the color round): the hero card IS the
+           earnings gold card — the same gradient, radius and glow, FIXED
+           in both themes (gold is gold day and night). Figures and labels
+           ride the on-gold idiom: espresso ink, labels at the darker .85
+           tint — the v1.45.13 metalabel-on-gold ruling, applied here. */
+        .ca-rc-pod-tel { border-radius: 16px; padding: 15px 16px 13px; background: linear-gradient(135deg, var(--ca-arch-card-hi) 0%, var(--ca-arch-card-mid) 60%, var(--ca-arch-card-lo) 100%); box-shadow: inset 0 1px 0 var(--ca-glow-28), 0 10px 28px -8px var(--ca-arch-card-glow); }
         /* v1.45.53 (owner order: "use the same style as the earnings
            page"): the hero's figures ride the EARNINGS typeface — the
            house sans, bold, tabular-nums, tight tracking (the archive
            headline + meta-val idioms), never Space Mono; labels are the
            11px uppercase metalabel idiom. */
         .ca-rc-pod-hcell { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        .ca-rc-pod-hlabel { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: var(--arch-muted); white-space: nowrap; }
+        .ca-rc-pod-hlabel { display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: rgba(26,19,0,.85); white-space: nowrap; }
         .ca-rc-pod-hlabel svg { width: 12px; height: 12px; flex: none; }
-        .ca-rc-pod-hval { font-weight: 700; font-size: 24px; line-height: 1.15; letter-spacing: -.025em; font-variant-numeric: tabular-nums; color: var(--arch-fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ca-rc-pod-hsub { font-size: 11px; line-height: 1.3; color: var(--ca-ink-stone); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ca-rc-pod-hval { font-weight: 700; font-size: 24px; line-height: 1.15; letter-spacing: -.025em; font-variant-numeric: tabular-nums; color: var(--ca-arch-ink-on-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ca-rc-pod-hsub { font-size: 11px; line-height: 1.3; color: rgba(26,19,0,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ca-rc-pod-hcell.mini .ca-rc-pod-hval { font-size: 14px; }
-        /* v1.45.54 (owner order): two bands, one hairline — the big three
-           as large figures, a theme rule, then the flying story below
-           (the earnings card hierarchy). Regions spans the full row, the
-           metaspan2 idiom. Layout lives here, not in utilities. */
-        .ca-rc-pod-hband1 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 8px; }
-        .ca-rc-pod-hband2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; margin-top: 13px; }
-        .ca-rc-pod-hcell.wide { grid-column: span 2; }
-        .ca-rc-pod-hrule { height: 1px; background: var(--arch-hairline); margin: 13px 2px 0; }
+        /* v1.45.55 (owner order, the chronology): five rows, two columns —
+           the owner's exact order. Each row carries the vertical divider
+           between its pair; the divider and the band rule read the on-gold
+           hairline tone (dark on gold, theme-independent like the card).
+           Layout lives here, not in utilities — no tw.css recompile. */
+        .ca-rc-pod-hrow { display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; }
+        .ca-rc-pod-hrow .ca-rc-pod-hcell + .ca-rc-pod-hcell { border-left: 1px solid rgba(26,19,0,.15); padding-left: 14px; }
+        .ca-rc-pod-hrows { display: flex; flex-direction: column; gap: 12px; margin-top: 13px; }
+        .ca-rc-pod-hrule { height: 1px; background: rgba(26,19,0,.15); margin: 13px 2px 0; }
         /* v1.45.54 (owner order: solid): the gate fills with the theme's
            ink pole — near-black by day, cream at night, inverted text (the
            toast pair, already theme-flipping). The outline retires. */
@@ -2594,13 +2594,13 @@
              its own. -->
         <div id="ca-rc-statwrap" class="fixed inset-0 z-[64] hidden">
             <div class="ca-rc-pod-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-stat-close></div>
-            <div id="ca-rc-stat-sheet" role="dialog" aria-modal="true" aria-label="All Flight Stats" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+            <div id="ca-rc-stat-sheet" role="dialog" aria-modal="true" aria-label="My Flight Stats" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
                 <div class="w-full flex justify-center py-3 shrink-0">
                     <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
                 </div>
                 <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-3 shrink-0 max-w-2xl mx-auto">
                     <div class="min-w-0">
-                        <h3 class="text-xl font-bold truncate">All Flight Stats</h3>
+                        <h3 class="text-xl font-bold truncate">My Flight Stats</h3>
                         <p id="ca-rc-stat-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
                     </div>
                     <button type="button" data-ca-rc-stat-close class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close"><i data-lucide="x" class="w-5 h-5"></i></button>
@@ -2646,7 +2646,7 @@
                          gateway is a DOOR — All Flight Stats rises as its
                          own page over the passport, carrying the records
                          list and its own year pills. No in-page accordion. -->
-                    <button type="button" id="ca-rc-pod-gate" class="flex-none ca-rc-pod-gate mt-3" aria-label="Open all flight stats"><i data-lucide="chevron-up" class="w-4 h-4"></i><span class="ca-micro uppercase tracking-wider font-bold">All Flight Stats</span></button>
+                    <button type="button" id="ca-rc-pod-gate" class="flex-none ca-rc-pod-gate mt-3" aria-label="Open my flight stats"><i data-lucide="chevron-up" class="w-4 h-4"></i><span class="ca-micro uppercase tracking-wider font-bold">My Flight Stats</span><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
                 </div>
             </div>
         </div>
@@ -3148,7 +3148,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.54'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.55'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3170,6 +3170,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.55', d: '2026-10-30', items: [
+                { c: 'imp', t: 'The hero card returns in the earnings gold; figures read espresso.' },
+                { c: 'imp', t: 'My Flight Stats: five ordered rows, and the page glides up.' }
+            ] },
             { v: '1.45.54', d: '2026-10-30', items: [
                 { c: 'imp', t: 'The passport wears the earnings page\u2019s cards, day and night.' },
                 { c: 'imp', t: 'Year chips and list tabs ride one pill track; figures read ink.' }
@@ -6535,8 +6539,8 @@
         }
         // v1.45.52: the navy telemetry card — the big three, then the
         // flying story; every icon rides the render's own icon pass
-        function rcPodTelCell(label, icon, val, sub, mini, wide) {
-            return '<div class="ca-rc-pod-hcell' + (mini ? ' mini' : '') + (wide ? ' wide' : '') + '">'
+        function rcPodTelCell(label, icon, val, sub, mini) {
+            return '<div class="ca-rc-pod-hcell' + (mini ? ' mini' : '') + '">'
                 + '<span class="ca-rc-pod-hlabel"><i data-lucide="' + icon + '"></i>' + label + '</span>'
                 + '<span class="ca-rc-pod-hval">' + val + '</span>'
                 + (sub ? '<span class="ca-rc-pod-hsub">' + sub + '</span>' : '')
@@ -6557,23 +6561,33 @@
             const seenR = {};
             ((st && st.flights) || []).forEach((x) => { const r = getRegionForAirport(x.code); if (r) seenR[r] = 1; });
             const regions = Object.keys(seenR).length;
-            // v1.45.54 (owner order): two bands, one hairline — the big
-            // three lead, the rule divides, the flying story follows
+            // v1.45.55 (owner order, the chronology): five rows, two
+            // columns — Flights + Flight Time lead large, then geography,
+            // operations, duty + rest, and the logbook's bookends. The
+            // renamed TOP ROSTERED is still the busiest station (visits)
             wrap.innerHTML = '<div class="ca-rc-pod-tel">'
-                + '<div class="ca-rc-pod-hband1" role="list" aria-label="Flight telemetry">'
+                + '<div class="ca-rc-pod-hrow" role="list" aria-label="Flight telemetry">'
                 + rcPodTelCell('Flights', 'plane', h.legs || 0, '', false)
                 + rcPodTelCell('Flight Time', 'clock', rcPodFmtPair(h.ftMins), '', false)
-                + rcPodTelCell('Airports', 'map-pin', h.airports || 0, '', false)
                 + '</div>'
                 + '<div class="ca-rc-pod-hrule"></div>'
-                + '<div class="ca-rc-pod-hband2">'
-                + rcPodTelCell('Busiest station', 'crown', busyTxt, '', true)
+                + '<div class="ca-rc-pod-hrows">'
+                + '<div class="ca-rc-pod-hrow">'
+                + rcPodTelCell('Airports', 'map-pin', h.airports || 0, '', true)
+                + rcPodTelCell('Regions', 'globe', regions ? String(regions) : '\u2014', '', true)
+                + '</div>'
+                + '<div class="ca-rc-pod-hrow">'
+                + rcPodTelCell('Top rostered', 'crown', busyTxt, '', true)
                 + rcPodTelCell('Top aircraft', 'plane-takeoff', acTxt, '', true)
+                + '</div>'
+                + '<div class="ca-rc-pod-hrow">'
                 + rcPodTelCell('Longest flight', 'route', longVal, longTxt, true)
+                + rcPodTelCell('Layover days', 'bed', rcPodFmtPair(h.loMins), '', true)
+                + '</div>'
+                + '<div class="ca-rc-pod-hrow">'
                 + rcPodTelCell('First flight', 'flag', firstTxt, '', true)
                 + rcPodTelCell('Latest flight', 'history', latestTxt, '', true)
-                + rcPodTelCell('Layover days', 'bed', rcPodFmtPair(h.loMins), '', true)
-                + rcPodTelCell('Regions', 'globe', regions ? String(regions) : '\u2014', '', true, true)
+                + '</div>'
                 + '</div></div>';
         }
         // v1.45.53 (owner order: the gateway opens ANOTHER overlay, not an
@@ -6587,7 +6601,12 @@
             caSheetHideCancel(wrap);
             renderRcPod(true);      // the overlay's podium mounts with the SAME staggered reveal
             wrap.classList.remove('hidden');
-            sheet.classList.remove('translate-y-full');
+            // v1.45.55 (owner report: "why isn't the stats page transitioning
+            // up?"): never lift translate-y-full here — a sheet with no
+            // painted box (display:none ancestor) snaps to the open pose in
+            // the same frame. The glide helper pins the closed pose with one
+            // reflow ~10ms later, THEN lifts — the same contract every
+            // other sheet rides.
             caSheetFocusIn(sheet);
             caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
         }

@@ -639,6 +639,28 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   battery's ladder guard catches off-rung sizes (9px/10px labels and the
   banned 15px were caught and corrected in the same sitting).
 
+### The hero wears the gold; rows tell the story (v1.45.55)
+
+- A HERO card is a highlight, not a neutral surface: the telemetry hero
+  wears the earnings GOLD (gradient, radius, double glow) FIXED in both
+  themes, with espresso-on-gold literal inks and an on-gold hairline
+  divider (`rgba(26,19,0,.15)` — the hairline READ on gold, never a
+  stone-colored line). Neutral theme-cards are for content groups. The
+  owner reversed the v1.45.54 neutral pick after seeing it: “just black
+  and white” is not a hero.
+- A ten-metric card is FIVE ROWS × two columns in a fixed chronology:
+  the headline pair LARGE (24px), one hairline after row one, then the
+  story pairs in the owner's order. Row names given in a spec are
+  organizational only — labels render their own text.
+- Depth tints by layer: the podium and stats surfaces ride
+  `var(--arch-surface)` (navy `#141823` at night, white by day) while
+  the hero stays fixed gold; rank one keeps ONE gold touch (the edge +
+  crown). One gold card per view — the hero.
+- An overlay's lift belongs to its GLIDE HELPER alone: opener functions
+  arm the glide and never touch the translate class — a direct removal
+  beside the helper's own left the sheet glued off-screen (the v1.45.55
+  fix). One owner per mechanism.
+
 ### The overlays wear the earnings language (v1.45.54)
 
 - A sheet's content cards follow the earnings group pair: #FFFFFF with the
