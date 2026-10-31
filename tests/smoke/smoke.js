@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.56', 'APP_VERSION is 1.45.56');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.56' && e.d === '2026-10-31' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.56 entry with its two imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v287'), 'the service-worker cache name is bumped to v287 (the v1.45.56 roll + veg label release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.57', 'APP_VERSION is 1.45.57');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.57' && e.d === '2026-10-31' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.57 hotfix entry with its single imp pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v288'), 'the service-worker cache name is bumped to v288 (the v1.45.57 whole-card roll hotfix)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.56'; }), 'the What\'s New sheet carries the v1.45.56 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.57'; }), 'the What\'s New sheet carries the v1.45.57 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -851,6 +851,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // the big number — and so does the lens change below. The numflip
         // cross-fade is retired; the roll owns the figure change
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0), 'v1.45.56 (owner order): a fresh earnings open rolls the big number');
+        ok(await page.evaluate(() => { const metas = document.querySelectorAll('#ca-arch-summary .ca-arch-metagrid:not(.hidden) .ca-arch-metaval'); const rolling = Array.from(metas).filter((c) => c.querySelectorAll('.ca-rollc').length > 0).length; const truthy = Array.from(metas).every((c) => !/\d/.test(c.textContent) || c.querySelector('.ca-rollc')); return metas.length >= 2 && rolling >= 2 && truthy; }), 'v1.45.57 hotfix (owner order): the metric quadrant row rolls WITH the big number — every figure in the gold card, each already reading its truth mid-roll');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
         await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
@@ -861,6 +862,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'with a basic set the net computes: gross 6330 - CPF 1080 = 5250');
         await sleep(600);
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length === 0 && document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'v1.45.56 (owner order): the earnings roll settles — reels unwrapped, the truth unchanged');
+        ok(await page.evaluate(() => document.querySelectorAll('#ca-arch-summary .ca-arch-metagrid:not(.hidden) .ca-arch-metaval .ca-rollc').length === 0), 'v1.45.57 hotfix: the quadrant row settles with the card — every reel unwrapped');
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
 
@@ -1362,7 +1364,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         await page.mouse.move(2, 2);
-        await sleep(300);
+        // v1.45.57 hotfix: the ctx cell rolls on the open — the icon/shape
+        // read waits out the settle; the text reads ride the truth
+        await sleep(1000);
         const milestone17 = await page.evaluate(() => {
             const label = document.getElementById('ca-arch-m-ctx-label');
             const ctx = document.getElementById('ca-arch-m-ctx');
@@ -1436,7 +1440,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
-        await sleep(300);
+        // v1.45.57 hotfix: the whole card rolled on the scope change — the
+        // spans/html shape read waits out the settle
+        await sleep(1000);
         const avg18 = await page.evaluate(() => {
             const label = document.getElementById('ca-arch-m-ctx-label');
             const ctx = document.getElementById('ca-arch-m-ctx');
