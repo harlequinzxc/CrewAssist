@@ -656,6 +656,15 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 - One animation owns one moment: the Earnings numflip cross-fade
   retired when the roll took the figure change. Never stack two
   animations on the same number.
+- A card that rolls is ONE FAMILY (v1.45.57): the earnings gold card
+  rolls EVERY figure it carries — the big number, the Gross|CPF and
+  after-expenses lines, and the metric quadrant row below the divider
+  — on one whole-card fingerprint, so any changed figure rolls the
+  family together even when the total alone wouldn't catch it. The
+  decision reads only the VISIBLE grid (`:not(.hidden)` — a lens
+  switch never rolls the quadrant that just left), labels never roll
+  (only the value cells), and a badge with its own reveal (the YoY)
+  stays out of the family.
 - A dropdown's labels must stay DISTINGUISHABLE: when shortened names
   collide (two meatless ethnics), the raw headers win — never two
   identical entries in one list.

@@ -210,6 +210,9 @@ const fs = require('fs');
     R.eq(d.getElementById('ca-arch-m-flights').textContent, '19', 'all-time flight count');
     R.eq(d.getElementById('ca-arch-m-avg').textContent, '$390.70', 'all-time average per flight');
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Annual avg', 'v1.45.18: COP + ALL-TIME carries the ANNUAL AVG career column (the Context line is unmounted)');
+    // v1.45.57 hotfix: the ctx cell ROLLS with the card now — the text
+    // pins read the truth mid-roll; the innerHTML shape pin waits the settle
+    await wait(900);
     const ctxAll = d.getElementById('ca-arch-m-ctx');
     const avgAll = w.eval("formatMoney(archCopTotal(JSON.parse(localStorage.getItem('crewAssist.archive') || '[]')) / 2)");
     R.eq(ctxAll.textContent, avgAll, 'the annual average = career COP over the two years on record (' + avgAll + ')');
@@ -328,6 +331,7 @@ const fs = require('fs');
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Remaining to earn', 'v1.45.17: the milestone label reads Remaining to earn (uppercased by the metalabel class)');
     const ctxM = d.getElementById('ca-arch-m-ctx');
     R.ok(ctxM.textContent.indexOf(fm(projLeft) + ' before end of month') !== -1 && ctxM.textContent.indexOf('On track for') === -1, 'v1.45.17: the milestone line carries the remainder before end of month, old layout gone');
+    await wait(900);
     R.ok(ctxM.innerHTML.indexOf('target') !== -1, 'on-track context uses the target icon');
     R.eq(d.querySelectorAll('.ca-arch-group').length, 1, 'v1.45.11: the list follows the scope - month shows the selected month');
     R.eq(d.querySelectorAll('.ca-arch-row').length, 2, 'v1.45.11: month scope lists just the selected month\u2019s rows (Sep = 2)');
@@ -339,6 +343,7 @@ const fs = require('fs');
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, '2026 YTD', 'year context label');
     const ctxY = d.getElementById('ca-arch-m-ctx');
     R.ok(ctxY.textContent.indexOf('+122.7% vs LY') !== -1, 'year YoY vs the whole of 2025');
+    await wait(900);
     R.ok(ctxY.innerHTML.indexOf('trending-up') !== -1, 'year context uses the up icon');
     d.getElementById('ca-arch-seg-year').click();
     await wait(50);
@@ -1182,6 +1187,10 @@ function todayYmd() {
       // the big number — read synchronously with the open, before any await
       R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0, 'v1.45.56: a fresh open of the earnings card rolls the big number');
       R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollstrip').length === d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length, 'every reel cell carries its aria-hidden strip');
+      // v1.45.57 (owner order, the v1.45.56 hotfix): the metric row below
+      // the divider rolls WITH the total — the whole gold card is one family
+      R.ok(d.getElementById('ca-arch-m-flights').querySelectorAll('.ca-rollc').length > 0 && d.getElementById('ca-arch-m-avg').querySelectorAll('.ca-rollc').length > 0, 'v1.45.57 hotfix: the FLIGHTS and AVG / FLIGHT quadrant cells roll on the fresh open');
+      R.ok(d.querySelectorAll('#ca-arch-meta-salary .ca-rollc').length === 0, 'v1.45.57 hotfix: the hidden salary quadrant never rolls while COP is showing');
       await wait(150);
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Total earnings', 'the card opens in COP Allowance as before');
       R.ok(!d.getElementById('ca-arch-salary-prompt') || d.getElementById('ca-arch-salary-prompt').classList.contains('hidden'), 'no salary prompt while COP mode is on');
@@ -1189,6 +1198,7 @@ function todayYmd() {
       R.eq(d.getElementById('ca-arch-total').textContent, '$3,000.00', 'the COP total is untouched in COP mode');
       d.querySelector('.ca-arch-seg[data-mode="salary"]').click();
       R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0, 'v1.45.56: a figure change rolls the big number (read in the taps own task)');
+      R.ok(d.getElementById('ca-arch-m-basic').querySelectorAll('.ca-rollc').length > 0 && d.getElementById('ca-arch-m-cop').querySelectorAll('.ca-rollc').length > 0, 'v1.45.57 hotfix: BASIC and COP roll with the lens change — every figure in the card');
       await wait(150);
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Net take-home', 'the label flips with the lens');
       // all-time: 3 tracked months. gross = 3x(2600+465) + 2x32 + 3000 = 12259;
@@ -1199,9 +1209,10 @@ function todayYmd() {
       // read the truth mid-roll, but children/innerHTML only settle once
       // the reels unwrap (worst restore ~840ms)
       await wait(1000);
+      R.ok(d.querySelectorAll('#ca-arch-meta-cop .ca-rollc').length === 0, 'v1.45.57 hotfix: the hidden COP quadrant never rolls — the walk reads only the visible grid, and the open\'s in-flight cells have all settled');
       const src19 = fs.readFileSync(APP, 'utf8');
       R.ok(src19.includes('ca-arch-numflip') === false && src19.includes('caArchNumFlip') === false, 'v1.45.56: the numflip cross-fade is retired — the departure-board roll owns the figure change');
-      R.ok(src19.includes('renderArchSummary._fv !== numEl.textContent') && src19.includes('caNumRoll(numEl)'), 'v1.45.56: the roll decision rides the displayed VALUE — a same-month recalculation rolls too');
+      R.ok(src19.includes('const fv = figs.map((f) => f.textContent).join(\'|\');') && src19.includes('renderArchSummary._fv !== fv') && src19.includes('figs.forEach(caNumRoll);'), 'v1.45.56 + the v1.45.57 hotfix: the roll decision rides the WHOLE CARD\'s fingerprint — any changed figure rolls the family together');
       R.ok(src19.includes('renderArchSummary._open = true; renderArch();'), 'v1.45.56: a fresh open of the page arms the next render to roll');
       const gl20 = d.getElementById('ca-arch-gross-line');
       R.ok(gl20.className.indexOf('mt-1.5') !== -1 && gl20.className.indexOf('w-full') !== -1 && gl20.className.indexOf('flex') === -1, 'v1.45.21: the subtext is the single never-wrapping Gross|CPF string - no column, no trailing row, in every scope');
@@ -1756,6 +1767,9 @@ function todayYmd() {
     ]));
     w.showArchiveOverlay(); await wait(150);
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Remaining to earn', 'the label element carries the new professional string (source title-case, CSS uppercases)');
+    // v1.45.57 hotfix: the ctx cell rolled on the open — the icon/shape
+    // read waits out the settle (~850ms); the text reads ride the truth
+    await wait(900);
     const ctx = d.getElementById('ca-arch-m-ctx');
     R.ok(ctx.innerHTML.indexOf('data-lucide="target"') !== -1 && ctx.innerHTML.indexOf('w-3.5 h-3.5 shrink-0') !== -1, 'the bullseye icon and its size classes survive untouched');
     R.ok(ctx.textContent.indexOf('$696.91 before end of month') !== -1, 'the owner format verbatim: remainder before end of month');

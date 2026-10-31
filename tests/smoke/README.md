@@ -550,6 +550,21 @@ a control that trades min-height for padding (the tab pills, 5px 13px)
 keeps its row level with a height-parity pin: |ΔoffsetHeight| ≤ 1
 between the paired controls, computed in the live DOM.
 
+## Whole-card rolls: the quadrant pins, and the widened shape waits (v1.45.57)
+
+v1.45.57 extends the roll to every figure in the earnings gold card
+(the metric quadrant row below the divider rolls with the big number),
+so the rig gained a quadrant read at the fresh open — at least two
+metric cells rolling AND every digit-bearing one already reading its
+truth, all before the settle sleep — plus a quadrant settle pin. Two
+pre-existing blocks tripped on the widened animation and teach the
+rule again: the milestone block's bullseye-icon read and the scope-
+change spans read both fired ~300ms after the triggering event, mid-
+roll, on cells whose inner markup the roll had just replaced with reel
+cells; both waits widened 300 → 1000ms. Text pins rode through the
+same window untouched — the roll never touches textContent, so the
+truth is readable at every instant; only SHAPE lies mid-roll.
+
 ## Roll pins read mid-roll in the click's own task; shape pins wait the settle (v1.45.56)
 
 The digit roll mounts its reel cells synchronously with the tap that

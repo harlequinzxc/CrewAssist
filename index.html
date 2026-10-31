@@ -3162,7 +3162,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.56'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.57'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3184,6 +3184,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.57', d: '2026-10-31', items: [
+                { c: 'imp', t: 'Every figure on the gold earnings card rolls now.' }
+            ] },
             { v: '1.45.56', d: '2026-10-31', items: [
                 { c: 'imp', t: 'Hero figures roll in like a departure board.' },
                 { c: 'imp', t: 'The meatless ethnic menu is labelled (Veg).' }
@@ -16730,17 +16733,24 @@ SLOT|Special Lve others`;
                 archEl('ca-arch-m-ctx-label').textContent = ctxLabel;
                 archEl('ca-arch-m-ctx').innerHTML = ctxHtml;
             }
-            // v1.45.56: the roll decision, after every branch has set the
-            // figures — a fresh open or a changed headline rolls the big
-            // number plus the visible sub-lines (the spec's scope; the
-            // metric row below the divider stays settled)
-            if (renderArchSummary._open || renderArchSummary._fv !== numEl.textContent) {
-                caNumRoll(numEl);
-                if (!grossEl.classList.contains('hidden')) caNumRoll(grossEl);
-                if (!afterEl.classList.contains('hidden')) caNumRoll(afterEl);
+            // v1.45.57 (owner order, the v1.45.56 hotfix): EVERY figure in
+            // the gold card rolls — the big number, its sub-lines, AND the
+            // metric row below the divider (the visible quadrant's value
+            // cells; the helper no-ops digit-free values like the em dash).
+            // The decision rides the whole card's fingerprint, so a change
+            // to ANY figure — even one the total alone wouldn't catch —
+            // rolls the card together.
+            const metas = Array.from(archEl('ca-arch-summary').querySelectorAll('.ca-arch-metagrid:not(.hidden) .ca-arch-metaval'));
+            const figs = [numEl];
+            if (!grossEl.classList.contains('hidden')) figs.push(grossEl);
+            if (!afterEl.classList.contains('hidden')) figs.push(afterEl);
+            metas.forEach((c) => figs.push(c));
+            const fv = figs.map((f) => f.textContent).join('|');
+            if (renderArchSummary._open || renderArchSummary._fv !== fv) {
+                figs.forEach(caNumRoll);
             }
             renderArchSummary._open = false;
-            renderArchSummary._fv = numEl.textContent;
+            renderArchSummary._fv = fv;
             refreshIcons();
         }
                 function statsLiFor(map, mk) {
