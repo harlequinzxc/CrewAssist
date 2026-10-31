@@ -1177,18 +1177,32 @@ function todayYmd() {
     // B) the card: COP default, then Monthly Salary with hand-checked math
     {
       const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
-      w.showArchiveOverlay(); await wait(150);
+      w.showArchiveOverlay();
+      // v1.45.56 (owner order, the departure-board roll): a fresh open ROLLS
+      // the big number — read synchronously with the open, before any await
+      R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0, 'v1.45.56: a fresh open of the earnings card rolls the big number');
+      R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollstrip').length === d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length, 'every reel cell carries its aria-hidden strip');
+      await wait(150);
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Total earnings', 'the card opens in COP Allowance as before');
       R.ok(!d.getElementById('ca-arch-salary-prompt') || d.getElementById('ca-arch-salary-prompt').classList.contains('hidden'), 'no salary prompt while COP mode is on');
       d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
       R.eq(d.getElementById('ca-arch-total').textContent, '$3,000.00', 'the COP total is untouched in COP mode');
-      d.querySelector('.ca-arch-seg[data-mode="salary"]').click(); await wait(150);
+      d.querySelector('.ca-arch-seg[data-mode="salary"]').click();
+      R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0, 'v1.45.56: a figure change rolls the big number (read in the taps own task)');
+      await wait(150);
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Net take-home', 'the label flips with the lens');
       // all-time: 3 tracked months. gross = 3x(2600+465) + 2x32 + 3000 = 12259;
       // cpf = .2x(3x2600 + 2500 + 64) = 2072.80; net = 10186.20
       R.eq(d.getElementById('ca-arch-total').textContent, '$10,186.20', 'all-time net = gross 12259 - CPF 2072.80');
       R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross $12,259.00') !== -1 && d.getElementById('ca-arch-gross-line').textContent.indexOf('CPF \u2212$2,072.80') !== -1, 'gross and CPF ride under the number');
+      // v1.45.56: DOM-shape pins wait out the roll — the text pins above
+      // read the truth mid-roll, but children/innerHTML only settle once
+      // the reels unwrap (worst restore ~840ms)
+      await wait(1000);
       const src19 = fs.readFileSync(APP, 'utf8');
+      R.ok(src19.includes('ca-arch-numflip') === false && src19.includes('caArchNumFlip') === false, 'v1.45.56: the numflip cross-fade is retired — the departure-board roll owns the figure change');
+      R.ok(src19.includes('renderArchSummary._fv !== numEl.textContent') && src19.includes('caNumRoll(numEl)'), 'v1.45.56: the roll decision rides the displayed VALUE — a same-month recalculation rolls too');
+      R.ok(src19.includes('renderArchSummary._open = true; renderArch();'), 'v1.45.56: a fresh open of the page arms the next render to roll');
       const gl20 = d.getElementById('ca-arch-gross-line');
       R.ok(gl20.className.indexOf('mt-1.5') !== -1 && gl20.className.indexOf('w-full') !== -1 && gl20.className.indexOf('flex') === -1, 'v1.45.21: the subtext is the single never-wrapping Gross|CPF string - no column, no trailing row, in every scope');
       R.ok(gl20.children.length === 1 && gl20.children[0].getAttribute('style').indexOf('white-space: nowrap') !== -1, 'the string carries the strict no-wrap security');

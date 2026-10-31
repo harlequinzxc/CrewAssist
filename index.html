@@ -735,6 +735,21 @@
         .ca-rc-pod-hval { font-weight: 700; font-size: 24px; line-height: 1.15; letter-spacing: -.025em; font-variant-numeric: tabular-nums; color: var(--ca-arch-ink-on-gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ca-rc-pod-hsub { font-size: 11px; line-height: 1.3; color: rgba(26,19,0,.55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ca-rc-pod-hcell.mini .ca-rc-pod-hval { font-size: 14px; }
+        /* v1.45.56 (owner order, the departure-board roll): hero figures
+           roll their DIGITS — each digit becomes a reel cell (overflow
+           hidden, one line tall) whose strip of ::before glyphs slides to
+           the target row. The base digit stays in the DOM as the cell's
+           text (transparent while rolling) so textContent — and every
+           screen reader — always reads the truth; the strip is
+           aria-hidden decoration. Static characters never move: they are
+           the anchors the digits roll against. The helper restores the
+           plain (or original) markup when the roll settles, and never
+           mounts under ca-reduced. */
+        .ca-rollc { position: relative; display: inline-block; overflow: hidden; vertical-align: top; color: transparent; }
+        .ca-rollstrip { position: absolute; left: 0; top: 0; }
+        .ca-rollr { display: block; text-align: left; }
+        .ca-rollr0::before { content: '0'; } .ca-rollr1::before { content: '1'; } .ca-rollr2::before { content: '2'; } .ca-rollr3::before { content: '3'; } .ca-rollr4::before { content: '4'; }
+        .ca-rollr5::before { content: '5'; } .ca-rollr6::before { content: '6'; } .ca-rollr7::before { content: '7'; } .ca-rollr8::before { content: '8'; } .ca-rollr9::before { content: '9'; }
         /* v1.45.55 (owner order, the chronology): five rows, two columns —
            the owner's exact order. Each row carries the vertical divider
            between its pair; the divider and the band rule read the on-gold
@@ -1015,10 +1030,9 @@
         .ca-arch-segtrack { display: inline-flex; background: var(--ca-arch-segtrack); border-radius: 999px; padding: 3px; gap: 2px; }
         .ca-arch-seg { border: none; background: transparent; color: var(--ca-arch-seg-ink); font-weight: 700; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; padding: 7px 14px; border-radius: 999px; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s ease, color .15s ease; }
         .ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }
-        /* the big number cross-fades when the lens flips (the standing
-           animation rule: nothing snaps) */
-        @keyframes caArchNumFlip { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .ca-arch-numflip { animation: caArchNumFlip .28s ease both; }
+        /* v1.45.56: the big number's numflip cross-fade is RETIRED — the
+           departure-board roll (see .ca-rollc above) owns the figure
+           change now */
         /* stacked salary bars: salary slice below, flying above */
         .ca-arch-bar.ca-arch-barstack { background: transparent !important; display: flex; flex-direction: column; justify-content: flex-end; }
         .ca-arch-barsal { width: 100%; background: rgba(146, 94, 14, 0.45); border-radius: 3px 3px 0 0; }
@@ -2369,7 +2383,7 @@
                              text baseline, hidden in Month/All-time and
                              whenever no prior year is on record -->
                         <div class="flex items-baseline flex-wrap">
-                            <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight ca-arch-numflip" id="ca-arch-total">$0.00</div>
+                            <div class="ca-arch-num font-bold text-4xl leading-tight tracking-tight" id="ca-arch-total">$0.00</div>
                             <span class="ca-arch-netyoy ml-3 hidden" id="ca-arch-netyoy"></span>
                         </div>
                         <!-- salary mode: gross and CPF ride under the number
@@ -3148,7 +3162,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.55'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.56'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3170,6 +3184,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.56', d: '2026-10-31', items: [
+                { c: 'imp', t: 'Hero figures roll in like a departure board.' },
+                { c: 'imp', t: 'The meatless ethnic menu is labelled (Veg).' }
+            ] },
             { v: '1.45.55', d: '2026-10-30', items: [
                 { c: 'imp', t: 'The hero card returns in the earnings gold; figures read espresso.' },
                 { c: 'imp', t: 'My Flight Stats: five ordered rows, and the page glides up.' }
@@ -6539,6 +6557,78 @@
         }
         // v1.45.52: the navy telemetry card — the big three, then the
         // flying story; every icon rides the render's own icon pass
+        // v1.45.56 (owner order, the departure-board roll): rolls every
+        // DIGIT of an element's text — a per-digit reel (a 30-row strip,
+        // landing one full copy past the start for the slot feel) with a
+        // left-to-right lock, ~600ms. Contract:
+        //   - textContent NEVER changes: the base digits stay as the reel
+        //     cells' text (transparent while rolling) and the strips draw
+        //     their glyphs through ::before content, so the DOM's text —
+        //     and every pin and screen reader — always reads the truth;
+        //   - static characters are never touched — the anchors;
+        //   - a roll in flight is replaced, never stacked (the pending
+        //     restore is cancelled and the element flattens to its truth
+        //     before the new capture — a restore can never revert a
+        //     later figure);
+        //   - ca-reduced stands down entirely (the text simply stays);
+        //   - the restore returns the element's own innerHTML, so styled
+        //     values (the Gross|CPF separators) survive the roll.
+        function caNumRoll(el) {
+            if (!el) return;
+            var txt = el.textContent;
+            if (!/\d/.test(txt)) return;      // nothing to roll — anchors only, or nothing at all
+            if (document.documentElement.classList.contains('ca-reduced')) return;
+            if (el._caRollT) { clearTimeout(el._caRollT); el._caRollT = null; }
+            // a roll still in flight flattens FIRST — the base text IS the
+            // truth (every render re-sets the value before rolling, so the
+            // capture below is always the CURRENT markup; restoring a
+            // first-roll capture would revert a later figure — the smoke
+            // rig caught exactly that)
+            if (el.querySelector('.ca-rollc')) el.textContent = el.textContent;
+            var savedHtml = el.innerHTML;
+            var cs = window.getComputedStyle(el);
+            var fs = parseFloat(cs.fontSize) || 14;
+            var lh = parseFloat(cs.lineHeight) || Math.round(fs * 1.2);   // jsdom reads 'normal' — the fallback keeps the math honest
+            var ink = cs.color || '';
+            var frag = document.createDocumentFragment();
+            var reels = [];
+            for (var i = 0; i < txt.length; i++) {
+                var ch = txt.charAt(i);
+                if (ch >= '0' && ch <= '9') {
+                    var cell = document.createElement('span');
+                    cell.className = 'ca-rollc';
+                    cell.style.height = lh + 'px';
+                    cell.appendChild(document.createTextNode(ch));
+                    var rows = '';
+                    for (var r = 0; r < 30; r++) rows += '<span class="ca-rollr ca-rollr' + (r % 10) + '" style="height:' + lh + 'px;line-height:' + lh + 'px"></span>';
+                    var strip = document.createElement('span');
+                    strip.className = 'ca-rollstrip';
+                    strip.setAttribute('aria-hidden', 'true');
+                    strip.style.color = ink;
+                    strip.innerHTML = rows;
+                    strip.style.transform = 'translateY(-' + (Math.floor(Math.random() * 10) * lh) + 'px)';
+                    cell.appendChild(strip);
+                    frag.appendChild(cell);
+                    reels.push({ s: strip, row: 10 + Number(ch) });
+                } else {
+                    frag.appendChild(document.createTextNode(ch));
+                }
+            }
+            el.innerHTML = '';
+            el.appendChild(frag);
+            void el.offsetWidth;    // commit the closed pose before the lift — the glide contract
+            var maxEnd = 0;
+            reels.forEach(function (t, j) {
+                var delay = Math.min(j, 6) * 45;    // the left-to-right lock, capped so long money never drags
+                t.s.style.transition = 'transform 480ms cubic-bezier(.22,.85,.3,1.08) ' + delay + 'ms';
+                t.s.style.transform = 'translateY(-' + (t.row * lh) + 'px)';
+                if (delay + 480 > maxEnd) maxEnd = delay + 480;
+            });
+            el._caRollT = setTimeout(function () {
+                el.innerHTML = savedHtml;
+                el._caRollT = null;
+            }, maxEnd + 90);
+        }
         function rcPodTelCell(label, icon, val, sub, mini) {
             return '<div class="ca-rc-pod-hcell' + (mini ? ' mini' : '') + '">'
                 + '<span class="ca-rc-pod-hlabel"><i data-lucide="' + icon + '"></i>' + label + '</span>'
@@ -6546,7 +6636,7 @@
                 + (sub ? '<span class="ca-rc-pod-hsub">' + sub + '</span>' : '')
                 + '</div>';
         }
-        function rcPodTelRender(st) {
+        function rcPodTelRender(st, roll) {
             const wrap = document.getElementById('ca-rc-pod-herowrap');
             if (!wrap) return;
             const h = (st && st.hero) || { legs: 0, ftMins: 0, loMins: 0, latest: '', longest: null, topAc: null, airports: 0, busiest: null };
@@ -6589,6 +6679,13 @@
                 + rcPodTelCell('Latest flight', 'history', latestTxt, '', true)
                 + '</div>'
                 + '</div></div>';
+            // v1.45.56 (owner order): a fresh open or a year-pill change
+            // ROLLS the hero's digits; every other re-render (tab swap,
+            // the stats overlay mounting over the page) applies settled —
+            // the accordion lesson. Values without digits no-op.
+            if (roll) {
+                wrap.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);
+            }
         }
         // v1.45.53 (owner order: the gateway opens ANOTHER overlay, not an
         // accordion): the All Flight Stats page rises over the passport —
@@ -6621,7 +6718,7 @@
             sheet.classList.add('translate-y-full');
             caSheetHideArm(wrap);
         }
-        function renderRcPod(stagger) {
+        function renderRcPod(stagger, rollHero) {
             const body = document.getElementById('ca-rc-pod-body');
             const tabsWrap = document.getElementById('ca-rc-pod-tabs-wrap');
             if (!body || !tabsWrap) return;
@@ -6641,7 +6738,7 @@
             // render, one icon pass, wherever the sections currently live
             rcPodYearsHtml('ca-rc-pod-years', rcPodYear, 'ca-rc-pod-year');
             rcPodYearsHtml('ca-rc-pod-listyears', rcPodListYear, 'ca-rc-pod-lyear');
-            rcPodTelRender(heroStats);
+            rcPodTelRender(heroStats, rollHero);
             const idx = Math.max(0, RC_POD_TABS.findIndex((t) => t[0] === rcPodTab));
             tabsWrap.innerHTML = rcPodTabsHtml(idx);
             const list = stats[rcPodTab] || [];
@@ -6707,7 +6804,7 @@
             // (The v1.45.46 lesson underneath it stands: display:none zeroes
             // clientHeight — never measure a hidden page.)
             wrap.classList.remove('hidden');
-            renderRcPod(true);         // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass
+            renderRcPod(true, true);    // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass. v1.45.56: a fresh open ROLLS the hero digits too
             caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
             caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
         }
@@ -9076,7 +9173,7 @@ SLOT|Special Lve others`;
                     // inner chip — one coherent page; the INNER chip (in the
                     // stats overlay) drives the records list alone
                     const yp = ev.target.closest('[data-ca-rc-pod-year]');
-                    if (yp) { rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(); return; }
+                    if (yp) { rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true); return; }   // v1.45.56: a year change ROLLS the hero
                     // v1.45.53 (owner order): the gateway opens the stats
                     // OVERLAY — no in-page accordion
                     if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }
@@ -16075,7 +16172,7 @@ SLOT|Special Lve others`;
             archEl('ca-arch-sub-sheet').classList.add('translate-y-full');
             caSheetHideArm(wrap);   // hotfix 14: the shared arm (was a bespoke archSubTimer)
         }
-        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close */
+        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArchSummary._open = true; renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close. v1.45.56: a fresh open ROLLS the figures */
         function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); caSheetGlideCancel(s); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm; round 20: cancel the pending glide */
 
         // v1.33.2: a fingerprint of which duties have landed — renderArch
@@ -16567,13 +16664,15 @@ SLOT|Special Lve others`;
             }
 
             const numEl = archEl('ca-arch-total');
-            const flipKey = archState.mode + '|' + archState.scope + '|' + archSelYr() + '|' + archSelMk() + '|' + archState.copScope;
-            if (renderArchSummary._fk !== flipKey) {
-                renderArchSummary._fk = flipKey;
-                numEl.classList.remove('ca-arch-numflip');
-                void numEl.offsetWidth;
-                numEl.classList.add('ca-arch-numflip');
-            }
+            // v1.45.56 (owner order, the departure-board roll): the
+            // numflip cross-fade RETIRES — the big number and its
+            // sub-lines roll their digits instead. The moment is a fresh
+            // open of the page (openArchOverlay arms the next render) or
+            // the displayed figure actually changing (a lens/scope/month
+            // tap, a recalculation or archive edit landing); background
+            // re-renders with the same figure apply settled. The decision
+            // rides the VALUE, not the lens key — a same-month recalc
+            // rolls too.
             const grossEl = archEl('ca-arch-gross-line');
             const afterEl = archEl('ca-arch-after-line');
             const yoyEl = archEl('ca-arch-netyoy');
@@ -16631,6 +16730,17 @@ SLOT|Special Lve others`;
                 archEl('ca-arch-m-ctx-label').textContent = ctxLabel;
                 archEl('ca-arch-m-ctx').innerHTML = ctxHtml;
             }
+            // v1.45.56: the roll decision, after every branch has set the
+            // figures — a fresh open or a changed headline rolls the big
+            // number plus the visible sub-lines (the spec's scope; the
+            // metric row below the divider stays settled)
+            if (renderArchSummary._open || renderArchSummary._fv !== numEl.textContent) {
+                caNumRoll(numEl);
+                if (!grossEl.classList.contains('hidden')) caNumRoll(grossEl);
+                if (!afterEl.classList.contains('hidden')) caNumRoll(afterEl);
+            }
+            renderArchSummary._open = false;
+            renderArchSummary._fv = numEl.textContent;
             refreshIcons();
         }
                 function statsLiFor(map, mk) {
@@ -19170,8 +19280,23 @@ SLOT|Special Lve others`;
                     culinaryOptions = firstMeal.selectionDetails.map((sel, idx) => {
                         let n = sel.name;
                         if (n && n.toLowerCase().includes('international')) n = 'International';
-                        else n = 'Ethnic';
-                        return { name: n, idx: idx };
+                        // v1.45.56 (owner order): a meatless/vegetarian
+                        // ethnic menu is ETHNIC (VEG) — two ethnic entries
+                        // on one flight were indistinguishable in the
+                        // dropdown (the raw header's own wording is the
+                        // signal). Always labelled, never only when
+                        // duplicated.
+                        else n = /meatless|vegetarian/i.test(n || '') ? 'Ethnic (Veg)' : 'Ethnic';
+                        return { name: n, idx: idx, raw: cleanMenuText(sel.name || '') };
+                    });
+                    // v1.45.56: the collision guard — never two identical
+                    // labels in one dropdown. If the shortened names still
+                    // collide (two meatless ethnics, say), the raw header
+                    // wins for every colliding option.
+                    const byName = {};
+                    culinaryOptions.forEach((o) => { (byName[o.name] = byName[o.name] || []).push(o); });
+                    Object.keys(byName).forEach((k) => {
+                        if (byName[k].length > 1) byName[k].forEach((o) => { if (o.raw) o.name = o.raw; });
                     });
                     culinaryOptions.sort((a, b) => {
                         if (a.name === 'International' && b.name !== 'International') return -1;

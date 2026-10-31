@@ -82,13 +82,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.55', 'APP_VERSION is 1.45.55');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.55' && e.d === '2026-10-30' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.55 entry with its two imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v286'), 'the service-worker cache name is bumped to v286 (the v1.45.55 color + chronology release)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.56', 'APP_VERSION is 1.45.56');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.56' && e.d === '2026-10-31' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.45.56 entry with its two imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v287'), 'the service-worker cache name is bumped to v287 (the v1.45.56 roll + veg label release)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.55'; }), 'the What\'s New sheet carries the v1.45.55 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.56'; }), 'the What\'s New sheet carries the v1.45.56 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -379,6 +379,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('ca-rc-shot').nextElementSibling === document.getElementById('ca-rc-pod') && !document.getElementById('ca-roster-cal').contains(document.getElementById('ca-rc-podwrap')) && document.body.contains(document.getElementById('ca-rc-podwrap'))), 'v1.45.38: the podium button ends the left cluster, and the records page is a direct child of <body> - never nested in the calendar sheet');
         ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod'); return b && !b.classList.contains('hidden') && !!(b.querySelector('i[data-lucide="book-user"]')); }), 'v1.45.38 + v1.45.51: the passport button is revealed carrying the book-user icon (the rig blocks the CDN, so the pin reads the stub - the glyph itself is verified in the lucide bundle)');
         await page.evaluate(() => document.getElementById('ca-rc-pod').click());
+        // v1.45.56 (owner order, the departure-board roll): read DURING the
+        // roll, before the settle sleep — the reels mount synchronously with
+        // the open, and the hero text already reads the truth (the base
+        // digits ARE the reel cells' text; the strips draw through ::before)
+        ok(await page.evaluate(() => { const vals = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval'); const strips = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollstrip'); return vals.length === 10 && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length > 0 && Array.from(strips).every((x) => x.getAttribute('aria-hidden') === 'true') && Array.from(vals).every((v) => !/\d/.test(v.textContent) || v.querySelector('.ca-rollc')); }), 'v1.45.56 (owner order): a fresh open ROLLS the hero digits — reel cells mounted, strips aria-hidden, and every digit-bearing value reads its truth mid-roll');
         await sleep(600);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-podwrap').classList.contains('hidden') && !document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: tapping the podium glides the records page up over the calendar');
         ok(await page.evaluate(() => document.querySelector('#ca-rc-pod-sheet h3').textContent === 'Passport' && document.getElementById('ca-rc-pod').getAttribute('aria-label') === 'Passport' && document.getElementById('ca-rc-pod').querySelector('i[data-lucide]').getAttribute('data-lucide') === 'book-user'), 'v1.45.51: the page titles itself Passport, and its button wears the book-user icon');
@@ -418,6 +423,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const rows = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hrow'); const labels = (r) => Array.from(r.querySelectorAll('.ca-rc-pod-hlabel')).map((l) => l.textContent.trim()).join('|'); return rows.length === 5 && labels(rows[0]) === 'Flights|Flight Time' && labels(rows[1]) === 'Airports|Regions' && labels(rows[2]) === 'Top rostered|Top aircraft' && labels(rows[3]) === 'Longest flight|Layover days' && labels(rows[4]) === 'First flight|Latest flight' && !!document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hrule') && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length === 10; }), 'v1.45.55 (owner order, strict): five rows of two in the owner\u2019s exact order — Flights|Flight Time large, the rule, then the story rows; ten cells, nothing lost, nothing renamed but Top rostered');
         ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const gate = document.getElementById('ca-rc-pod-gate'); const read = () => getComputedStyle(gate).backgroundColor + '|' + getComputedStyle(gate).color; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(50); const light = read(); h.classList.add('dark'); await sleep(50); const dark = read(); if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgb(17, 17, 17)|rgb(255, 255, 255)' && dark === 'rgb(246, 241, 232)|rgb(23, 29, 43)'; }), 'v1.45.54 (owner order: solid): the gate fills with the theme\u2019s ink pole - near-black with white text by day, cream with espresso text at night (the outline retires)');
         ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const track = document.getElementById('ca-rc-pod-years'); const on = track.querySelector('.ca-rc-pod-ypill.on'); const read = () => getComputedStyle(track).backgroundColor + '|' + getComputedStyle(on).backgroundColor + '|' + getComputedStyle(on).color; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(300); const light = read(); h.classList.add('dark'); await sleep(300); const dark = read(); if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgba(0, 0, 0, 0.08)|rgb(255, 255, 255)|rgb(45, 30, 15)' && dark === 'rgba(255, 255, 255, 0.08)|rgb(246, 241, 232)|rgb(23, 29, 43)'; }), 'v1.45.54 (owner order): the year pills ride the earnings segtrack - a hairline-washed track, the selected year a solid bright pill, theme-tuned twins');
+        // v1.45.56: the settle — the reels unwrap and the plain markup
+        // returns (worst restore ~840ms; the waits above plus this one
+        // clear it)
+        await sleep(600);
+        ok(await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length === 0 && Array.from(document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval')).map((v) => v.textContent).indexOf('4') === 0), 'v1.45.56 (owner order): the roll settles — reel cells unwrap, the plain hero markup returns, Flights still reads 4');
         await page.evaluate(() => document.getElementById('ca-rc-pod-gate').click());
         await sleep(450);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-statwrap').classList.contains('hidden') && !document.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full') && document.querySelector('#ca-rc-stat-sheet h3').textContent === 'My Flight Stats'), 'v1.45.53 (owner order): one tap on My Flight Stats raises the overlay — its own sheet, titled with its new name, glided up over the passport (no accordion)');
@@ -837,13 +847,20 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         await page.evaluate(() => showArchiveOverlay());
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        // v1.45.56 (owner order): a fresh open of the earnings card rolls
+        // the big number — and so does the lens change below. The numflip
+        // cross-fade is retired; the roll owns the figure change
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0), 'v1.45.56 (owner order): a fresh earnings open rolls the big number');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
         await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0), 'v1.45.56 (owner order): a lens change rolls the big number again');
         await sleep(400);
         // two tracked months: gross = 2x(2600+125+340) + 200 = 6330;
         // cpf = .2x(2x2600 + 200) = 1080; net = 5250
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'with a basic set the net computes: gross 6330 - CPF 1080 = 5250');
+        await sleep(600);
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length === 0 && document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'v1.45.56 (owner order): the earnings roll settles — reels unwrapped, the truth unchanged');
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
 
@@ -1465,7 +1482,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.mouse.move(2, 2);
         await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
-        await sleep(300);
+        // v1.45.56: the gross line just ROLLED — shape reads (children,
+        // styles) wait out the ~840ms restore; text reads above read the
+        // truth mid-roll
+        await sleep(1000);
         const gross20 = await page.evaluate(() => {
             const gl = document.getElementById('ca-arch-gross-line');
             const cs = getComputedStyle(gl);
@@ -1531,7 +1551,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         // ALL-TIME keeps the single row and hides the badge
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
-        await sleep(300);
+        await sleep(1000);
         const all20 = await page.evaluate(() => ({ kids: document.getElementById('ca-arch-gross-line').children.length, badgeHidden: document.getElementById('ca-arch-netyoy').classList.contains('hidden') }));
         ok(all20.kids === 1 && all20.badgeHidden, 'the ALL-TIME view keeps the single row and hides the badge - the comparison is a YEAR-only privilege');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="month"]').click());
