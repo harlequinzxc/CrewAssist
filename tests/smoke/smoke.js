@@ -74,6 +74,21 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— boot —');
         await page.evaluateOnNewDocument(() => { try { if (localStorage.getItem('__smokeFreshBoot')) return; localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Smoke', gender: 'Male', rank: 'FS' })); localStorage.setItem('crewAssist.wnSeen', '1.39.0'); localStorage.setItem('crewAssist.calcUi', 'manual'); } catch (e) {} });
+        // v1.45.58 rig fix: freeze the page clock at the seeded October. The
+        // calendar section is date-anchored (October cells, an unflown
+        // November leg), and the real clock flipped the default month to
+        // November at the 2026-11-01 midnight, breaking the section. The
+        // jsdom rigs pin now: the same discipline for the browser, at the
+        // same instant the suites pin — every in-page new Date() agrees.
+        await page.evaluateOnNewDocument(() => {
+            const FIXED = Date.parse('2026-10-26T12:00:00+08:00');
+            const RealDate = Date;
+            class FixedDate extends RealDate {
+                constructor(...args) { super(...(args.length ? args : [FIXED])); }
+                static now() { return FIXED; }
+            }
+            window.Date = FixedDate;
+        });
         await page.goto(BASE + '/', { waitUntil: 'networkidle2', timeout: 45000 });
         await page.waitForSelector('#chat-container', { timeout: 20000 });
         ok(true, 'the app boots to the chat view');
@@ -82,13 +97,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.57', 'APP_VERSION is 1.45.57');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.57' && e.d === '2026-10-31' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.45.57 hotfix entry with its single imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v288'), 'the service-worker cache name is bumped to v288 (the v1.45.57 whole-card roll hotfix)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.58', 'APP_VERSION is 1.45.58');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.58' && e.d === '2026-11-01' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.58 fix entry with its single fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v289'), 'the service-worker cache name is bumped to v289 (the v1.45.58 year-filter drawer fix)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.57'; }), 'the What\'s New sheet carries the v1.45.57 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.58'; }), 'the What\'s New sheet carries the v1.45.58 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -403,6 +418,50 @@ async function calcCard(page, { type, t1, t2, lma }) {
             // November leg is not flown yet — a passport counts landed legs
             return document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length === 10 && f && f.querySelector('.ca-rc-pod-hval').textContent === '4' && t && t.querySelector('.ca-rc-pod-hval').textContent === '18h 45m' && a && a.querySelector('.ca-rc-pod-hval').textContent === '2';
         }), 'v1.45.52: the hero computes the calendar seed — 4 landed legs, 18h 45m block time, 2 airports, ten metrics (the unflown November leg never counts)');
+        // v1.45.58 (owner report): the visit-log drawer honours the year
+        // filter. Seed a 2025 KUL visit beside the seeded 2026 one, open
+        // the stats overlay, and read the drawer both ways — all-time
+        // holds both years, the 2026 chip holds only 2026
+        await page.evaluate(() => {
+            const st = JSON.parse(localStorage.getItem('crewAssist.allFlights') || '{}');
+            st['2025-04'] = [
+                { fn: '104', dep: 'SIN', arr: 'KUL', ymd: '2025-04-10', std: '08:00', sta: '09:25', stdYmd: '2025-04-10', staYmd: '2025-04-10', ft: '01:25', ac: '7M8', rpt: '', pos: false },
+                { fn: '105', dep: 'KUL', arr: 'SIN', ymd: '2025-04-10', std: '10:25', sta: '11:50', stdYmd: '2025-04-10', staYmd: '2025-04-10', ft: '01:25', ac: '7M8', rpt: '', pos: false }
+            ];
+            localStorage.setItem('crewAssist.allFlights', JSON.stringify(st));
+            renderRcPod();
+        });
+        await sleep(400);
+        await page.evaluate(() => document.getElementById('ca-rc-pod-gate').click());
+        await sleep(600);
+        const drawerText = () => page.evaluate(() => { const el = document.querySelector('.ca-rc-pod-xp'); return el ? el.innerText.replace(/\s+/g, ' ') : ''; });
+        await page.evaluate(() => document.querySelector('[data-ca-rc-pod-station="KUL"]').click());
+        await sleep(500);
+        ok((await drawerText()).indexOf('2 VISITS') !== -1 && (await drawerText()).indexOf('2025') !== -1 && (await drawerText()).indexOf('12 Oct 2026') !== -1, 'v1.45.58 setup: all-time, the KUL flight history holds both years — the 2025 visit and the 2026 one');
+        await page.evaluate(() => document.querySelector('[data-ca-rc-pod-station="KUL"]').click());
+        await sleep(500);
+        await page.evaluate(() => { const y = Array.from(document.querySelectorAll('#ca-rc-pod-listyears .ca-rc-pod-ypill')).find((b) => b.textContent === '2026'); y.click(); });
+        await sleep(500);
+        await page.evaluate(() => document.querySelector('[data-ca-rc-pod-station="KUL"]').click());
+        await sleep(500);
+        const d58 = await drawerText();
+        ok(d58.indexOf('1 VISIT') !== -1 && d58.indexOf('12 Oct 2026') !== -1 && d58.indexOf('2025') === -1, 'v1.45.58 (owner report): the 2026 chip\'s flight history holds ONLY the 2026 visit — no other year\'s record leaks into the filtered drawer');
+        // restore the section's world exactly as this block found it: the
+        // 2025 legs leave the store, the chips return to All-Time (folding
+        // the open log with them), the hero re-renders settled on the
+        // original four-leg landscape, and the overlay closes — the pins
+        // downstream still expect the seed this section opened with
+        await page.evaluate(() => {
+            const st = JSON.parse(localStorage.getItem('crewAssist.allFlights') || '{}');
+            delete st['2025-04'];
+            localStorage.setItem('crewAssist.allFlights', JSON.stringify(st));
+            const all = Array.from(document.querySelectorAll('#ca-rc-pod-listyears .ca-rc-pod-ypill')).find((b) => b.textContent === 'All-Time');
+            if (all) all.click();
+            renderRcPod();
+        });
+        await sleep(600);
+        await page.evaluate(() => closeRcStat());
+        await sleep(600);
         ok(await page.evaluate(() => {
             // v1.45.55 (owner order, the color round): the card IS the
             // earnings GOLD card — FIXED in both themes. Force dark,
@@ -429,7 +488,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(600);
         ok(await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length === 0 && Array.from(document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval')).map((v) => v.textContent).indexOf('4') === 0), 'v1.45.56 (owner order): the roll settles — reel cells unwrap, the plain hero markup returns, Flights still reads 4');
         await page.evaluate(() => document.getElementById('ca-rc-pod-gate').click());
-        await sleep(450);
+        await sleep(1000);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-statwrap').classList.contains('hidden') && !document.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full') && document.querySelector('#ca-rc-stat-sheet h3').textContent === 'My Flight Stats'), 'v1.45.53 (owner order): one tap on My Flight Stats raises the overlay — its own sheet, titled with its new name, glided up over the passport (no accordion)');
         ok(await page.evaluate(() => document.getElementById('ca-rc-stat-subtitle').textContent === 'All-time \u00b7 since Oct 2026'), 'v1.45.53: the overlay carries its own subtitle — the list window, named');
         ok(await page.evaluate(() => { const tabs = document.querySelectorAll('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab]'); const dark = document.documentElement.classList.contains('dark'); const bg = dark ? 'rgb(246, 241, 232)' : 'rgb(255, 255, 255)'; const ink = dark ? 'rgb(23, 29, 43)' : 'rgb(45, 30, 15)'; return tabs.length === 3 && tabs[0].textContent === 'All Flights' && tabs[0].classList.contains('ca-rc-pod-tabon') && !document.querySelector('.ca-rc-pod-glider') && getComputedStyle(tabs[0]).backgroundColor === bg && getComputedStyle(tabs[0]).color === ink; }), 'v1.45.54 (owner order): the segtrack tab bar carries all three lists; the selected tab IS the bright pill — a solid ink-pole pill per theme (the gold glider retires)');
@@ -446,21 +505,21 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body .ca-rc-pod-xpon')), 'tapping it again folds the log away');
         await page.evaluate(() => document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero').click());
         await sleep(400);
-        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const el = document.querySelector('#ca-rc-pod-body .ca-rc-pod-xpon .ca-rc-pod-xld'); if (!el) return false; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(650); const light = getComputedStyle(el).color; h.classList.add('dark'); await sleep(650); const dark = getComputedStyle(el).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgb(17, 24, 39)' && dark === 'rgb(255, 255, 255)'; }), 'v1.45.43: the visit-log date rides the inherited theme ink - near-black on the light glass, WHITE on the dark glass (the navy-on-dark-glass report, computed both themes)');
+        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const el = document.querySelector('#ca-rc-pod-body .ca-rc-pod-xpon .ca-rc-pod-xld'); if (!el) return false; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(1000); const light = getComputedStyle(el).color; h.classList.add('dark'); await sleep(1000); const dark = getComputedStyle(el).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgb(17, 24, 39)' && dark === 'rgb(255, 255, 255)'; }), 'v1.45.43: the visit-log date rides the inherited theme ink - near-black on the light glass, WHITE on the dark glass (the navy-on-dark-glass report, computed both themes)');
         // v1.45.44 (owner orders, the grounding round): the anchor ring,
         // the recede, the drawer's name, and the tag-hue kind marks -
         // all computed, both themes, transition-aware (the 200ms recede
         // and the body's 300ms ink change are waited out before reads)
         ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod-body'); const hero = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero'); return b.classList.contains('ca-rc-pod-hasopen') && hero.classList.contains('ca-rc-pod-on') && getComputedStyle(hero).borderColor === 'rgba(201, 162, 39, 0.45)'; }), 'v1.45.44: the open station wears the gold ring - the strong gold line, computed (the anchor holds the view while its log is out)');
-        const recedeVals = await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const side = document.querySelector('#ca-rc-pod-body .ca-rc-pod-card:not(.ca-rc-pod-on)'); if (!side) return 'NO SIDE'; const wasDark = h.classList.contains('dark'); h.classList.add('dark'); await sleep(450); const darkOp = getComputedStyle(side).opacity; h.classList.remove('dark'); await sleep(450); const lightOp = getComputedStyle(side).opacity; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return 'dark=' + darkOp + ' light=' + lightOp; });
+        const recedeVals = await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const side = document.querySelector('#ca-rc-pod-body .ca-rc-pod-card:not(.ca-rc-pod-on)'); if (!side) return 'NO SIDE'; const wasDark = h.classList.contains('dark'); h.classList.add('dark'); await sleep(900); const darkOp = getComputedStyle(side).opacity; h.classList.remove('dark'); await sleep(900); const lightOp = getComputedStyle(side).opacity; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return 'dark=' + darkOp + ' light=' + lightOp; });
         ok(recedeVals === 'dark=0.25 light=0.4', 'v1.45.44: the sibling cards recede while the log is open - 25% on the dark glass, 40% on the light linen (theme-tuned, computed both themes) [got: ' + recedeVals + ']');
         ok(await page.evaluate(() => { const ph = document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp] .ca-rc-pod-xph'); return !!ph && ph.textContent.indexOf('FLIGHT HISTORY') >= 0 && ph.textContent.indexOf('KUL') >= 0 && ph.textContent.indexOf('1 VISIT') >= 0; }), 'v1.45.44: the drawer names its station and its count - the tag agrees with the \u00d71 the hero shows (singular)');
         ok(await page.evaluate(() => { const ph = document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp] .ca-rc-pod-xph'); return !!ph && getComputedStyle(ph).borderBottomStyle === 'dashed' && !!(ph.querySelector('.ca-rc-pod-xphl')) && !!(ph.querySelector('.ca-rc-pod-xphn')); }), 'v1.45.44: the drawer header parts from the visit lines on a dashed hairline (computed - the single-visit line itself is a :last-child and rightly carries NO border)');
-        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const k = document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp] .ca-rc-pod-xlk-ta'); if (!k) return false; const wasDark = h.classList.contains('dark'); h.classList.add('dark'); await sleep(450); const darkCol = getComputedStyle(k).color; h.classList.remove('dark'); await sleep(450); const lightCol = getComputedStyle(k).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return darkCol === 'rgb(134, 239, 172)' && lightCol === 'rgb(21, 128, 61)'; }), 'v1.45.44: the turnaround mark rides the calendar tag hue - green-300 on dark, the deep green on light (computed both themes, the owner order over the old stone)');
+        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const k = document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-xp] .ca-rc-pod-xlk-ta'); if (!k) return false; const wasDark = h.classList.contains('dark'); h.classList.add('dark'); await sleep(1000); const darkCol = getComputedStyle(k).color; h.classList.remove('dark'); await sleep(1000); const lightCol = getComputedStyle(k).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return darkCol === 'rgb(134, 239, 172)' && lightCol === 'rgb(21, 128, 61)'; }), 'v1.45.44: the turnaround mark rides the calendar tag hue - green-300 on dark, the deep green on light (computed both themes, the owner order over the old stone)');
         await page.evaluate(() => document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero').click());
         await sleep(400);
         ok(await page.evaluate(() => { const hero = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero'); return getComputedStyle(hero.querySelector('.ca-rc-pod-code')).fontSize === '20px'; }), 'v1.45.40: the hero code computes to 20px - the half-step scale-up, sized by the custom rule');
-        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const x = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero .ca-rc-pod-x'); if (!x || x.textContent !== '\u00d7') return false; const wasDark = h.classList.contains('dark'); h.classList.add('dark'); await sleep(450); const darkCol = getComputedStyle(x).color; h.classList.remove('dark'); await sleep(450); const lightCol = getComputedStyle(x).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return darkCol === 'rgb(168, 162, 158)' && lightCol === 'rgb(120, 113, 108)'; }), 'v1.45.40+1.45.45: the multiplier glyph stays stone ink - stone-400 on the dark glass, stone-500 in light (the accessibility bump, computed both themes) while the count stays bold');
+        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const x = document.querySelector('#ca-rc-pod-body .ca-rc-pod-hero .ca-rc-pod-x'); if (!x || x.textContent !== '\u00d7') return false; const wasDark = h.classList.contains('dark'); h.classList.add('dark'); await sleep(1000); const darkCol = getComputedStyle(x).color; h.classList.remove('dark'); await sleep(1000); const lightCol = getComputedStyle(x).color; if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return darkCol === 'rgb(168, 162, 158)' && lightCol === 'rgb(120, 113, 108)'; }), 'v1.45.40+1.45.45: the multiplier glyph stays stone ink - stone-400 on the dark glass, stone-500 in light (the accessibility bump, computed both themes) while the count stays bold');
         ok(await page.evaluate(() => !document.querySelector('#ca-rc-pod-body [data-ca-rc-pod-all]') && document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-lrow').length === 0), 'v1.45.39: no leaderboard rows and no View-all door when the list fits the podium');
         ok(await page.evaluate(() => { const tabs = () => document.querySelectorAll('#ca-rc-pod-tabs-wrap .ca-rc-pod-tab'); const before = tabs()[0].classList.contains('ca-rc-pod-tabon'); document.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click(); const after = tabs()[1].classList.contains('ca-rc-pod-tabon') && !tabs()[0].classList.contains('ca-rc-pod-tabon'); const cards = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card'); return before && after && cards.length === 1 && cards[0].classList.contains('ca-rc-pod-hero') && cards[0].textContent.indexOf('SYD') >= 0 && !cards[0].classList.contains('ca-rc-pod-d0'); }), 'v1.45.39: tapping Layovers moves the bright pill across and swaps the panel INSTANT - SYD alone lays over, and the stagger never replays on a swap');
         ok(await page.evaluate(() => { document.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="ta"]').click(); const cards = document.querySelectorAll('#ca-rc-pod-body .ca-rc-pod-card'); return cards.length === 1 && cards[0].textContent.indexOf('KUL') >= 0; }), 'v1.45.39: the Turnarounds tab carries the quick-ground list');
@@ -497,7 +556,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // the on-fill FADES IN (transition-colors): under a full run's load the
         // 300ms read can land mid-fade (alpha < 1) and false-negative. Let the
         // fade settle before reading the computed fill.
-        await sleep(450);
+        await sleep(1000);
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-rc-tag')).backgroundColor === 'rgb(201, 162, 39)'), 'hotfix: the toggle fills gold when on (computed — immune to the sticky touch hover)');
         ok(await page.evaluate(() => {
             const t9 = document.querySelector('.ca-rc-day[data-ymd="2026-10-09"] .ca-rc-tag');
