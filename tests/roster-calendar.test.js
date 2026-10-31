@@ -1472,8 +1472,35 @@ const synthItems = [].concat(
     await wait(600);
     R.ok(d.getElementById('ca-rc-podwrap').classList.contains('hidden') && d.getElementById('ca-rc-statwrap').classList.contains('hidden'), 'closing the passport closes the stats overlay with it — the overlay never outlives its page');
     w.eval('openRcPod()');
-    await wait(200);
+    // v1.45.56 (owner order, the departure-board roll): a fresh open ROLLS
+    // the hero's digits. The mid-roll reads are SYNCHRONOUS with the open —
+    // the roll mounts in the open's own task, and any await can stretch
+    // past the 570ms single-digit restore under box load (a lesson this
+    // rig paid for before it was written down).
     R.ok(mainPills()[0].classList.contains('on') && d.getElementById('ca-rc-statwrap').classList.contains('hidden'), 'a reopen resets to All-Time chips and a closed overlay — nothing persists');
+    {
+      const hv = (label) => { const all = Array.from(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell')); const el = all.find((c) => c.querySelector('.ca-rc-pod-hlabel').textContent.trim() === label); return el ? el.querySelector('.ca-rc-pod-hval') : null; };
+      R.eq(hv('Flights').textContent, '9', 'mid-roll, the hero text still reads the truth — the base digits ARE the reel cells text');
+      R.ok(hv('Flights').querySelectorAll('.ca-rollc').length === 1, 'the Flights digit rides a reel cell');
+      R.ok(hv('Flight Time').querySelectorAll('.ca-rollc').length === 3 && hv('Flight Time').querySelectorAll('.ca-rollstrip').length === 3, 'Flight Time rolls its three digits — 1d 16h, the letters hold still');
+      R.ok(Array.from(hv('Flight Time').querySelectorAll('.ca-rollstrip')).every((x) => x.getAttribute('aria-hidden') === 'true'), 'every strip is aria-hidden decoration');
+      R.ok(hv('Flight Time').querySelector('.ca-rollstrip').style.transition.indexOf('480ms') !== -1, 'the 480ms reel transition is armed');
+    }
+    await wait(1000);
+    R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length, 0, 'settled: the reel cells unwrap and the plain markup returns');
+    // a year change rolls again — read in the taps own task
+    d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2025"]').click();
+    R.eq(cell('Flights'), '7', 'the 2025 chip re-renders the hero synchronously');
+    R.ok(Array.from(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval')).some((v) => v.querySelectorAll('.ca-rollc').length > 0), 'the year change re-rolled the digits');
+    // a tab swap applies SETTLED — the accordion lesson, and so does the
+    // stats overlay mounting over the page
+    await wait(1000);
+    Array.from(d.querySelectorAll('#ca-rc-pod-tabs-wrap button')).find((b) => /Layovers/.test(b.textContent)).click();
+    await wait(150);
+    R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length, 0, 'a tab swap never rolls the hero — re-renders apply settled');
+    w.eval('openRcStat()');
+    await wait(150);
+    R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length, 0, 'the stats overlay mounting over the page leaves the hero settled');
     w.eval('closeRcPod()');
   }
   {
@@ -1803,7 +1830,7 @@ const synthItems = [].concat(
     // clientHeight read 0, and the fit fell to its no-layout fallback on
     // EVERY screen (7 rows, 10 entries, tall or short)
     const orp = src.slice(src.indexOf('function openRcPod'), src.indexOf('function closeRcPod'));
-    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true);'), 'v1.45.46 (re-pointed v1.45.51): openRcPod un-hides the wrap BEFORE the render, same synchronous task — the slide-in and the render never flash (the viewport fit the lesson rode on is scrapped; never measure a hidden page stands)');
+    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true, true);'), 'v1.45.46 (re-pointed v1.45.51): openRcPod un-hides the wrap BEFORE the render, same synchronous task — the slide-in and the render never flash (the viewport fit the lesson rode on is scrapped; never measure a hidden page stands)');
     R.ok(orp.indexOf('display:none zeroes') >= 0, 'the trap is recorded in-source where the next editor will read it');
     // v1.45.51 (owner orders): the records page is the PASSPORT — the
     // title and both aria-labels rename, the podium button wears the
@@ -1820,7 +1847,14 @@ const synthItems = [].concat(
     R.ok(src.includes('function rcPodFmtPair(mins)') && src.includes("Math.floor(n / 1440) + 'd '") && src.includes("Math.floor(n / 60) + 'h '") && src.includes("return n + 'm';"), 'v1.45.52: the largest-unit pair rule is the shipped formatter — days+hours, hours+minutes, minutes alone');
     R.ok(src.includes('function rcFtToMins(str)') && src.includes('\\d+)\\s*H\\s*(\\d+)\\s*M'), 'v1.45.52: the roster FT string parses to minutes (HH H MM M, the card HH:MM accepted)');
     R.ok(src.includes('if (yf && String(ld.depDate).slice(0, 4) !== yf) return;'), 'v1.45.52: a leg belongs to its DEPARTURE year — the year filter slices depDate, the earnings rule');
-    R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page');
+    R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page');
+    // v1.45.56 (owner order, the departure-board roll): the contract, by source
+    R.ok(src.includes('function caNumRoll(el)') && src.includes("if (!/\\d/.test(txt)) return;") && src.includes("el.innerHTML = savedHtml;"), 'v1.45.56: the shared roll helper — digits only, the original markup restored on settle');
+    R.ok(src.includes("if (document.documentElement.classList.contains('ca-reduced')) return;") && src.indexOf('ca-reduced', src.indexOf('function caNumRoll')) < src.indexOf('function rcPodTelCell'), 'v1.45.56: the roll stands down under ca-reduced before it ever mounts');
+    R.ok(src.includes('function rcPodTelRender(st, roll)') && src.includes('function renderRcPod(stagger, rollHero)') && src.includes('rcPodTelRender(heroStats, rollHero);'), 'v1.45.56: the roll flag rides the render chain — only the marked moments roll');
+    R.ok(src.includes('renderRcPod(true, true);') && src.includes('renderRcPod(false, true); return;'), 'v1.45.56: the two roll moments are the fresh open and the year-pill change');
+    R.ok(src.includes("wrap.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);"), 'v1.45.56: the hero walk rolls values and subs alike (digit-free strings no-op)');
+    R.ok(src.includes('.ca-rollr0::before') && src.includes('.ca-rollstrip { position: absolute'), 'v1.45.56: the reel draws through ::before content — the DOM text never changes');
     R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move');
     R.ok(src.includes('id="ca-rc-statwrap" class="fixed inset-0 z-[64] hidden"') && src.includes('function openRcStat()') && src.includes('function closeRcStat()') && src.includes("if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }") && !src.includes('ca-rc-pod-records'), 'v1.45.53 (owner order): All Flight Stats opens as its OWN overlay above the passport — the gate is a door, the in-page accordion is gone from the code');
     R.ok(src.includes('closeRcStat();   // v1.45.53') && src.includes("['ca-rc-statwrap', closeRcStat],   // v1.45.53"), 'v1.45.53: the stats overlay never outlives its passport — and Escape closes it before the pages beneath');

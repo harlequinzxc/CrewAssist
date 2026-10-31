@@ -639,6 +639,27 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   battery's ladder guard catches off-rung sizes (9px/10px labels and the
   banned 15px were caught and corrected in the same sitting).
 
+### Figures roll; the text never lies (v1.45.56)
+
+- A hero figure ROLLS its digits when it genuinely changes — a fresh
+  open, a lens or year or scope tap, a recalculation landing. The roll
+  is information, not decoration; background re-renders apply settled
+  (the accordion lesson), and `ca-reduced` skips it entirely.
+- Digits only. Letters, words and punctuation are the anchors the
+  digits roll against — `1d 16h` rolls three digits, `KUL ×2` rolls
+  one. A value without digits does not animate at all.
+- The DOM text is the truth, ALWAYS: the base digits stay as the reel
+  cells' text (transparent while rolling) and the animated strips draw
+  through ::before content — textContent never changes mid-roll, so
+  pins and screen readers read the settled figure even while the reels
+  spin. Animated decoration is aria-hidden; the value never is.
+- One animation owns one moment: the Earnings numflip cross-fade
+  retired when the roll took the figure change. Never stack two
+  animations on the same number.
+- A dropdown's labels must stay DISTINGUISHABLE: when shortened names
+  collide (two meatless ethnics), the raw headers win — never two
+  identical entries in one list.
+
 ### The hero wears the gold; rows tell the story (v1.45.55)
 
 - A HERO card is a highlight, not a neutral surface: the telemetry hero

@@ -558,11 +558,12 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.55';"), 'APP_VERSION stamped 1.45.55');
+    R.ok(src.includes("var APP_VERSION = '1.45.56';"), 'APP_VERSION stamped 1.45.56');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v286"), 'service-worker cache name bumped to v286 (the v1.45.55 color + chronology release)');
+    R.ok(sw.includes("crewassist-v287"), 'service-worker cache name bumped to v287 (the v1.45.56 roll + veg label release)');
+    R.ok(src.includes("/meatless|vegetarian/i.test(n || '') ? 'Ethnic (Veg)' : 'Ethnic'"), 'v1.45.56: the dropdown builder labels a meatless/vegetarian ethnic as Ethnic (Veg)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
     // run-all summary. The version mismatch that prompted this (1.40.0 vs
@@ -717,6 +718,49 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await wait(200);
     R.ok(dd().classList.contains('max-h-0') && dd().classList.contains('pointer-events-none'), 'v1.44.5 hotfix: the reopened sheet shows the dropdown closed (the owner report)');
     w.eval('closeMenuViewer()');
+  }
+
+  // --- v1.45.56 (owner order): the meatless ethnic menu is labelled (Veg) —
+  // two ethnic selections on one flight were indistinguishable in the
+  // dropdown. ALWAYS labelled (never only when duplicated), and a collision
+  // (two meatless ethnics) falls back to the raw headers — never two
+  // identical labels in one dropdown.
+  {
+    const multiPayload = (sels) => JSON.stringify({ timestamp: Date.now(), data: {
+      statusCode: 200,
+      legs: [{ flightDetails: {
+        departureAirportCode: 'SIN', arrivalAirportCode: 'NRT',
+        departureLocalDate: '2026-09-26 09:20:00', arrivalLocalDate: '2026-09-26 16:05:00',
+        departureUtcDate: '2026-09-26 01:20:00', arrivalUtcDate: '2026-09-26 08:05:00',
+        flightDuration: '6h 45m'
+      }, menu: { language: { EN_UK: { meals: [
+        { mealServiceName: 'Lunch', selectionDetails: sels }
+      ] } } }, beverage: { language: { EN_UK: { categories: [
+        { name: 'Wines', items: [{ name: 'Bordeaux' }] }
+      ] } } } }]
+    } });
+    const sel = (name) => ({ name: name, mealCourses: [{ items: [{ name: 'Plate ' + name }] }] });
+    const culinaryBtns = () => Array.from(d.querySelectorAll('#menu-culinary-list button'));
+    const openWith = async (payload) => {
+      w.localStorage.setItem(MENU_KEY, payload);
+      await w.eval(`currentMenuSearch.flightNumber='${FLIGHT}'; currentMenuSearch.date='${DATE}'; openMenuViewerForCabins('${FLIGHT}','${DATE}',['JCL'])`);
+      await wait(250);
+    };
+    await openWith(multiPayload([sel('International Selection'), sel('Ethnic'), sel('Ethnic (Meatless)')]));
+    R.eq(culinaryBtns().map((b) => b.textContent).join('|'), 'International|Ethnic|Ethnic (Veg)', 'v1.45.56: the meatless ethnic menu is ETHNIC (VEG) — the two ethnics are distinguishable at last');
+    R.eq(d.getElementById('menu-culinary-label').textContent, 'International', 'the closed gate label defaults to International');
+    culinaryBtns()[2].click();
+    R.eq(d.getElementById('menu-culinary-label').textContent, 'Ethnic (Veg)', 'tapping the veg option carries (Veg) onto the closed gate label');
+    R.ok(!d.querySelector('.culinary-section-2').classList.contains('hidden') && d.querySelector('.culinary-section-1').classList.contains('hidden'), 'the veg selection switched the rendered courses');
+    w.eval('closeMenuViewer()'); await wait(150);
+    // always labelled — a lone meatless ethnic keeps the suffix
+    await openWith(multiPayload([sel('International Selection'), sel('Ethnic (Meatless)')]));
+    R.eq(culinaryBtns().map((b) => b.textContent).join('|'), 'International|Ethnic (Veg)', 'v1.45.56: the (Veg) label is ALWAYS on a meatless ethnic — not only when a second ethnic forces it');
+    w.eval('closeMenuViewer()'); await wait(150);
+    // the collision guard
+    await openWith(multiPayload([sel('Ethnic (Meatless)'), sel('Ethnic (Vegetarian)')]));
+    R.eq(culinaryBtns().map((b) => b.textContent).join('|'), 'Ethnic (Meatless)|Ethnic (Vegetarian)', 'v1.45.56: the collision guard — two meatless ethnics fall back to their raw headers, never identical labels');
+    w.eval('closeMenuViewer()'); await wait(150);
   }
 
     process.exit(R.done() ? 1 : 0);

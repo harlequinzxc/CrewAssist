@@ -550,3 +550,18 @@ a control that trades min-height for padding (the tab pills, 5px 13px)
 keeps its row level with a height-parity pin: |ΔoffsetHeight| ≤ 1
 between the paired controls, computed in the live DOM.
 
+## Roll pins read mid-roll in the click's own task; shape pins wait the settle (v1.45.56)
+
+The digit roll mounts its reel cells synchronously with the tap that
+triggers it, so a "the reels are mounted" pin goes IMMEDIATELY after
+the click — no sleep, no waitFor — and reads structure (cells present,
+strips aria-hidden, textContent already the truth). The settle pin
+needs the restore's full budget: ~850ms from the LAST figure change,
+so `sleep(600)` after a `sleep(400)` read, not one bare 400. And any
+pin reading an animated element's CHILDREN or inner markup (the
+gross-line shape pins learned this) waits out the same window — text
+rides the truth mid-roll, shape does not. This rig's settle pin is
+also the one that catches stale-capture restores: jsdom re-renders
+re-set the text before every roll, so only a real browser ever shows a
+second roll reverting to the first's captured markup.
+
