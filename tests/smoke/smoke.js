@@ -97,13 +97,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.59', 'APP_VERSION is 1.45.59');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.59' && e.d === '2026-11-01' && e.items.length === 4 && e.items[0].c === 'fix' && e.items.slice(1).every((i) => i.c === 'imp'); }), 'the changelog carries the 1.45.59 entry — its fix pointer and three imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v290'), 'the service-worker cache name is bumped to v290 (the v1.45.59 roll-fix + shortcuts + ethnic-sheet round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.46.0', 'APP_VERSION is 1.46.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.0' && e.d === '2026-11-01' && e.items.length === 3 && e.items[0].c === 'new' && e.items[1].c === 'new' && e.items[2].c === 'imp'; }), 'the changelog carries the 1.46.0 entry — two new pointers and one imp');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v291'), 'the service-worker cache name is bumped to v291 (the v1.46.0 camera-capture round)');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
+        ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.59'; }), 'the What\'s New sheet carries the v1.45.59 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.46.0'; }), 'the What\'s New sheet carries the v1.46.0 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -503,6 +505,22 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // clear it)
         await sleep(600);
         ok(await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length === 0 && Array.from(document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval')).map((v) => v.textContent).indexOf('4') === 0), 'v1.45.56 (owner order): the roll settles — reel cells unwrap, the plain hero markup returns, Flights still reads 4');
+        // v1.46.0 (owner order): the passport camera — the REAL vendored
+        // painter photographs the hero card alone, the year pill's wording
+        // named above it, in the real browser with the real layout
+        await page.evaluate(() => { window.__caLastShot = null; document.getElementById('btn-rc-pod-cam').click(); });
+        await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 });
+        ok(await page.evaluate(() => window.__caLastShot.name === 'CrewAssist-Passport-All-Time.png' && window.__caLastShot.size > 2000), 'v1.46.0: the passport camera delivers a real PNG named app + all-time (the default pill the hero follows)');
+        ok(await page.evaluate(async () => {
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const data = x.getImageData(0, 0, c.width, c.height).data;
+            const seen = new Set();
+            for (let i = 0; i < data.length; i += 40) seen.add(data[i] + ',' + data[i + 1] + ',' + data[i + 2]);
+            return seen.size > 8 && bmp.width > 200 && bmp.height > 250 && bmp.height < 1200;
+        }), 'v1.46.0: the hero capture decodes hero-sized and richly painted — the ten-cell card, not a blank or a full-page crop');
+        ok(await page.evaluate(() => !!document.getElementById('ca-rc-pod-years') && document.getElementById('ca-rc-pod-years').querySelectorAll('.ca-rc-pod-ypill').length > 0 && document.documentElement.classList.contains('ca-reduced') === false), 'v1.46.0: the LIVE page never posed — the pill row is untouched and no roll guard lingers');
         await page.evaluate(() => document.getElementById('ca-rc-pod-gate').click());
         await sleep(1000);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-statwrap').classList.contains('hidden') && !document.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full') && document.querySelector('#ca-rc-stat-sheet h3').textContent === 'My Flight Stats'), 'v1.45.53 (owner order): one tap on My Flight Stats raises the overlay — its own sheet, titled with its new name, glided up over the passport (no accordion)');
@@ -942,6 +960,48 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.querySelectorAll('#ca-arch-summary .ca-rollwrap').length === 0), 'v1.45.59: the wrappers unwrap with the reels — the plain markup returns');
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
+
+        console.log('— v1.46.0: the earnings camera — year picker, pose, capture, restore —');
+        // The REAL vendored painter, live in Chromium: the camera opens the
+        // year picker (the archive's own sub-sheet), a pick poses the card
+        // to that year, the painter photographs the FULL scroll (header
+        // injected + exclusions stripped in the CLONE — the live page never
+        // shifts), and the user's own pills return.
+        await page.evaluate(() => {
+            localStorage.setItem('crewAssist.archive', JSON.stringify([
+                { id: 'cam0', savedAt: '2025-09-15T10:00:00Z', monthKey: '2025-09', sectorDate: '2025-09-15', stationDisplay: 'SIN/BKK', amount: 100, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 100, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 100, sectors: [], stations: [] } },
+                { id: 'cam1', savedAt: '2026-09-15T10:00:00Z', monthKey: '2026-09', sectorDate: '2026-09-15', stationDisplay: 'SIN/KUL', amount: 100, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 100, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 100, sectors: [], stations: [] } }
+            ]));
+            showArchiveOverlay();
+        });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await sleep(1400);   // the fresh open's roll settles before the camera taps
+        ok(await page.evaluate(() => !!document.getElementById('ca-arch-cam') && document.getElementById('ca-arch-cam').querySelector('i[data-lucide="camera"]')), 'v1.46.0: the camera button sits in the earnings header carrying the camera icon');
+        // a distinctive user state: All-time + Monthly Salary — the capture
+        // must return to exactly here
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
+        await sleep(300);
+        await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
+        await sleep(1200);
+        await page.evaluate(() => document.getElementById('ca-arch-cam').click());
+        await sleep(500);
+        ok(await page.evaluate(() => !document.getElementById('ca-arch-sub').classList.contains('hidden') && document.getElementById('ca-arch-sub-title').textContent === 'Capture earnings'), 'the camera opens the year picker in the archive\u2019s own sub-sheet');
+        ok(await page.evaluate(() => { const rows = Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow')); return rows.length === 2 && rows[0].getAttribute('data-yr') === '2026' && rows[1].getAttribute('data-yr') === '2025' && !rows.some((r) => /all/i.test(r.textContent)); }), 'the picker lists the years on record, newest first — NO all-time row (the owner\u2019s ruling)');
+        await page.evaluate(() => { window.__caLastShot = null; Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click(); });
+        await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 });
+        ok(await page.evaluate(() => window.__caLastShot.name === 'CrewAssist-Earnings-2025.png' && window.__caLastShot.size > 4000), 'v1.46.0: picking 2025 delivers a real PNG named app + year');
+        ok(await page.evaluate(async () => {
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const data = x.getImageData(0, 0, c.width, c.height).data;
+            const seen = new Set();
+            for (let i = 0; i < data.length; i += 40) seen.add(data[i] + ',' + data[i + 1] + ',' + data[i + 2]);
+            return seen.size > 8 && bmp.width > 200 && bmp.height > 700;
+        }), 'v1.46.0: the earnings capture decodes TALL and richly painted — the posed year card + chart + folded list, beyond the viewport (not a header-only crop)');
+        ok(await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon') && document.querySelector('.ca-arch-seg[data-mode="salary"]').classList.contains('ca-arch-segon') && document.querySelectorAll('#ca-arch-summary .ca-rollwrap').length === 0 && !document.documentElement.classList.contains('ca-reduced')), 'v1.46.0: the user\u2019s own pills return exactly — All-time + Monthly Salary, no roll guard, nothing stranded');
+        ok(await page.evaluate(() => !!document.getElementById('ca-arch-ins-toggle') && !!document.getElementById('ca-arch-pillrow-mode') && document.getElementById('ca-arch-sub').classList.contains('hidden')), 'the LIVE page kept its search bar, pills and insights toggle — the exclusions lived in the painter\u2019s clone alone');
+        await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); });
 
         console.log('— v1.45.12: the earnings card + list polish —');
         // The contrast maths runs where the pixels live: composited inks over

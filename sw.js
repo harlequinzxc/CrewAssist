@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v290';
+const CACHE_NAME = 'crewassist-v291';
 const ASSETS = [
     './',
     './index.html',
@@ -10,7 +10,8 @@ const ASSETS = [
     './icons/logo-512.png',
     './icons/app-icon-180.png',
     './icons/app-icon-192.png',
-    './icons/app-icon-512.png'
+    './icons/app-icon-512.png',
+    './vendor/html2canvas.min.js'
 ];
 // Third-party assets the app needs on first offline launch (pdf.js for roster
 // import, lucide icons, Google Fonts). The styles are the compiled, precached

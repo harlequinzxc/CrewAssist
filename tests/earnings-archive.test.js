@@ -193,7 +193,7 @@ const fs = require('fs');
     R.ok(d.querySelector('#ca-arch-sheet .w-\\[44px\\].h-\\[4px\\]'), 'iOS-style sheet handle pill');
     R.ok(d.querySelector('#ca-arch-sheet > div.max-w-xl.mx-auto.w-full.flex.items-center.justify-between'), 'v1.36.1: the earnings header joins the centered reading column (owner tier ruling)');
     R.ok(d.querySelector('#ca-arch-scroll.max-w-xl.mx-auto.w-full'), 'v1.36.1: the earnings content scrolls inside the reading column, so flight taps open a same-width summary');
-    R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 3, 'three header icon buttons (v1.41.0: export, trash, close — the import arrow moved to Settings → Restore backup)');
+    R.eq(d.querySelectorAll('.ca-arch-iconbtn').length, 4, 'four header icon buttons (v1.46.0: camera joins export, trash, close — the import arrow moved to Settings → Restore backup in v1.41.0)');
     R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').length, 3, 'three segmented scope buttons');
     R.eq(d.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-mode]').length, 2, 'v1.45.11: two view pills - COP Allowance / Monthly Salary');
     const segOf = (scope) => d.querySelector('#ca-arch-summary .ca-arch-seg[data-scope="' + scope + '"]');
@@ -1805,6 +1805,89 @@ function todayYmd() {
     R.ok(src.includes("if (typeof refreshIcons === 'function') refreshIcons();"), 'v1.45.59 src: the restore hands the reinstated lucide stubs straight back to refreshIcons — the icons always return with the figures');
     R.ok(src.includes("el.querySelectorAll('.ca-rollwrap')"), 'v1.45.59 src: an in-flight roll dismantles ITS OWN wrappers before the new capture \u2014 the element\u2019s other structure rides through');
     R.ok(src.indexOf('html:not(.dark) .ca-arch-search::placeholder') < src.indexOf('/* v1.29.0: two-tap armed state'), 'the placeholder rule rides the earnings CSS block');
+    void w;
+  }
+
+  // --- v1.45.60 (owner order): the earnings camera — pick a year, pose,
+  // capture, restore. jsdom has no layout, so the painter itself is stubbed;
+  // the pins hold the picker contract, the pose/restore state machine and
+  // the clone-side surgery (the live page never moves) ---
+  {
+    const NOWC = '2026-10-20T12:00:00+08:00';
+    const seedCam = (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: 2600 }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      const mk = (id, monthKey, date, route, amount, savedAt) => ({ id, savedAt, monthKey, sectorDate: date, flightType: 'Layover', stationDisplay: route, amount, detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
+      x.localStorage.setItem('crewAssist.archive', JSON.stringify([
+        mk('c1', '2025-06', '2025-06-28', 'SIN-PKX-SIN', 600, '2025-06-30T10:00:00Z'),
+        mk('c2', '2025-07', '2025-07-05', 'SIN-SYD-SIN', 900, '2025-07-10T10:00:00Z'),
+        mk('c3', '2026-02', '2026-02-13', 'SIN-CHC-SIN', 1200, '2026-02-20T10:00:00Z')
+      ]));
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2025-06': [{ fn: '265', dep: 'SIN', arr: 'BNE', ymd: '2025-06-16', std: '07:13', sta: '15:30', stdYmd: '2025-06-16', staYmd: '2025-06-17', ft: '08:02', rpt: '0510', pos: false }],
+        '2025-07': [{ fn: '266', dep: 'SIN', arr: 'SYD', ymd: '2025-07-05', std: '09:00', sta: '19:00', stdYmd: '2025-07-05', staYmd: '2025-07-05', ft: '10:00', rpt: '0700', pos: false }],
+        '2026-02': [{ fn: '298', dep: 'CHC', arr: 'SIN', ymd: '2026-02-13', std: '12:00', sta: '17:35', stdYmd: '2026-02-13', staYmd: '2026-02-13', ft: '09:35', rpt: '1015', pos: false }]
+      }));
+    };
+    const { w, d } = await boot(APP, { now: NOWC, seed: seedCam });
+    w.showArchiveOverlay();
+    await wait(1300);   // the fresh open's roll settles before the camera taps
+    R.ok(!!d.getElementById('ca-arch-cam'), 'v1.45.60: the camera button sits in the earnings header');
+    R.ok(d.getElementById('ca-arch-cam').nextElementSibling.classList.contains('ca-arch-headrule'), 'the camera rides behind its own headrule, left of export');
+    // the stub painter records the pose + drives the clone surgery
+    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, height: opts.height, scrollH: el.scrollHeight, windowHeight: opts.windowHeight, bg: opts.backgroundColor, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, liveOverflow: document.getElementById('ca-arch-scroll').style.overflow, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    // tap the camera → the picker rides the archive's own sub-sheet
+    d.getElementById('ca-arch-cam').click();
+    await wait(300);
+    R.ok(!d.getElementById('ca-arch-sub').classList.contains('hidden'), 'the camera opens the archive sub-sheet as its picker');
+    R.eq(d.getElementById('ca-arch-sub-title').textContent, 'Capture earnings', 'the picker names its purpose');
+    R.eq(d.getElementById('ca-arch-sub-subtitle').textContent, 'Choose the year to capture', 'the picker subtitle says what the crew are choosing');
+    const rows = Array.from(d.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'));
+    R.eq(rows.map((r) => r.getAttribute('data-yr')).join(','), '2026,2025', 'v1.45.60 (owner ruling): the years on record, NEWEST first — no all-time row');
+    R.ok(rows.every((r) => /\$\d/.test(r.textContent)), 'every row carries its quiet net figure beside the year');
+    // tap 2025 → the pose, the capture, the guaranteed restore
+    rows[1].click();
+    await wait(800);
+    R.eq(w.eval('window.__capRec.length'), 1, 'the painter fired exactly once');
+    R.eq(w.eval('window.__capRec[0].id'), 'ca-arch-scroll', 'the capture target is the FULL scroll — card, chart and list together');
+    R.ok(w.eval('window.__capRec[0].height === window.__capRec[0].scrollH && window.__capRec[0].windowHeight >= window.__capRec[0].height'), 'the shoot hands the painter the element\u2019s own full height + a window at least that tall (jsdom reads 0 — the real beyond-the-viewport proof decodes in the smoke)');
+    R.ok(w.eval('window.__capRec[0].salaryOn') === true && w.eval('window.__capRec[0].yearOn') === true, 'at capture time the card is posed to Monthly Salary + Year');
+    R.eq(w.eval('window.__capRec[0].label'), 'Net take-home', 'the posed card reads the salary headline');
+    R.eq(w.eval('window.__capRec[0].liveOverflow'), '', 'the live scroller is never touched — the overflow fix lives in the clone');
+    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-cap-head").textContent'), '2025 Earnings', 'the clone injects the owner\u2019s header above the card');
+    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").firstChild.id') === 'ca-cap-head', 'the header is the FIRST thing in the capture');
+    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-pillrow-mode")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-pillrow-scope")') === null, 'the clone strips both pill rows (the owner\u2019s exclusion)');
+    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-searchrow")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-ins-toggle")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-insights")') === null, 'the clone strips the search bar and the insights toggle + panel');
+    R.ok(!!w.eval('window.__capRec[0].clone.getElementById("ca-arch-trend")'), 'the chart rides along — the owner\u2019s year-scope ruling');
+    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").style.overflow'), 'visible', 'the clone\u2019s scroller lets the full content flow for the tall crop');
+    {
+      const src60 = fs.readFileSync(APP, 'utf8');
+      R.ok(src60.includes('const h = Math.max(el.scrollHeight || 0, rect.height);') && src60.includes('height: h,') && src60.includes('windowHeight: Math.max(h, window.innerHeight || 0),'), 'v1.45.60 src: the shoot crops at the element\u2019s FULL height — scrollHeight beyond the viewport — never the visible box alone');
+    }
+    R.ok(w.eval('Array.from(window.__capRec[0].clone.querySelectorAll(".ca-arch-group")).every((g) => g.classList.contains("ca-arch-collapsed"))'), 'every month group is folded in the capture');
+    // the live page was never surgically touched, and the user\u2019s state returned
+    R.ok(!!d.getElementById('ca-arch-ins-toggle') && !!d.getElementById('ca-arch-pillrow-mode'), 'the LIVE page keeps its pills, search and insights — nothing was removed for real');
+    R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon') && d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'the user\u2019s own pills return exactly — month + COP, where they were');
+    R.ok(!d.documentElement.classList.contains('ca-reduced'), 'the transient ca-reduced pose guard is gone again');
+    R.eq(w.eval('window.__caLastShot && window.__caLastShot.name'), 'CrewAssist-Earnings-2025.png', 'the deliver carries the app + year filename');
+    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Earnings screenshot saved') !== -1, 'the toast confirms the save');
+    // a re-tap captures again — the machinery is repeatable
+    d.getElementById('ca-arch-cam').click();
+    await wait(300);
+    Array.from(d.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[0].click();
+    await wait(800);
+    R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Earnings-2026.png', 'a second pick captures that year — 2026');
+    R.ok(w.eval('window.__capRec[1].clone.getElementById("ca-cap-head").textContent') === '2026 Earnings', 'the second capture names its own year');
+    // nothing saved yet → the honest refusal
+    w.eval('closeArchOverlay(); localStorage.setItem("crewAssist.archive", JSON.stringify([]))');
+    await wait(400);
+    w.showArchiveOverlay();
+    await wait(200);
+    d.getElementById('ca-arch-cam').click();
+    await wait(200);
+    R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'an empty archive never opens the picker');
+    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Nothing saved to capture yet') !== -1, 'the empty archive says so honestly');
     void w;
   }
 

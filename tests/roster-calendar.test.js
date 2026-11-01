@@ -1996,5 +1996,49 @@ const synthItems = [].concat(
     R.ok(!body.classList.contains('ca-rc-pod-hasopen') && !d.querySelector('#ca-rc-pod-body .ca-rc-pod-on'), 'tapping the station again folds its log — ring, wash and flag all clear');
   }
 
+  // --- v1.45.60 (owner order): the passport camera — the hero card exactly
+  // as the selected year pill has it, the year named above it. NO live pose:
+  // the label + the crop live in the painter's clone; jsdom pins the contract
+  // with a stub painter ---
+  {
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.tourOffered', '1');
+      const leg = (fn, dep, arr, ymd, ft) => ({ fn, dep, arr, ymd, std: '08:00', sta: '12:00', stdYmd: ymd, staYmd: ymd, ft, ac: '7M8', rpt: '06:30', pos: false });
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2025-03': [leg('9KUL', 'SIN', 'KUL', '2025-03-10', '01:00'), leg('8KUL', 'KUL', 'SIN', '2025-03-11', '01:00')],
+        '2024-06': [leg('9NRT', 'SIN', 'NRT', '2024-06-02', '07:00'), leg('8NRT', 'NRT', 'SIN', '2024-06-03', '07:00')]
+      }));
+    } });
+    // the delegated click wiring binds when the CALENDAR opens
+    w.eval('openRosterCalendar()');
+    await wait(300);
+    w.eval('openRcPod()');
+    await wait(1500);   // the hero's fresh-open roll settles
+    R.ok(!!d.getElementById('btn-rc-pod-cam'), 'v1.45.60: the camera button sits in the passport header, left of the close');
+    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    // default: All-Time — the pill's wording, named above the hero
+    d.getElementById('btn-rc-pod-cam').click();
+    await wait(500);
+    R.eq(w.eval('window.__capRec.length'), 1, 'the painter fired');
+    R.eq(w.eval('window.__capRec[0].id'), 'ca-rc-pod-herowrap', 'the capture target is the HERO card alone — not the pill row, not the gate');
+    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-cap-head").textContent'), 'All-Time', 'the clone names the year above the hero — the pill\u2019s own wording');
+    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-rc-pod-herowrap").firstChild.id') === 'ca-cap-head', 'the label is the FIRST thing in the capture');
+    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-rc-pod-years")') !== null && w.eval('window.__capRec[0].clone.getElementById("ca-rc-pod-gate")') !== null, 'the clone keeps the page intact — only the crop excludes them');
+    R.ok(!!d.getElementById('ca-rc-pod-years') && !!d.getElementById('ca-rc-pod-gate'), 'the LIVE page never moves — no live pose on the passport');
+    R.eq(w.eval('window.__caLastShot && window.__caLastShot.name'), 'CrewAssist-Passport-All-Time.png', 'the deliver carries the app + all-time filename');
+    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Passport screenshot saved') !== -1, 'the toast confirms the save');
+    // a year pill tap rolls the hero — the camera follows the selection
+    d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2025"]').click();
+    await wait(1300);   // the v1.45.56 hero roll settles before the camera taps
+    d.getElementById('btn-rc-pod-cam').click();
+    await wait(500);
+    R.eq(w.eval('window.__capRec[1].clone.getElementById("ca-cap-head").textContent'), '2025', 'the capture follows the SELECTED pill — 2025 named above');
+    R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-2025.png', 'the filename carries the year');
+    R.ok(w.eval('window.__capRec.length') === 2, 'exactly two captures — the camera is repeatable');
+    void d;
+  }
+
   process.exit(R.done() ? 1 : 0);
 })();
