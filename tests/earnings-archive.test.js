@@ -1767,6 +1767,15 @@ function todayYmd() {
     ]));
     w.showArchiveOverlay(); await wait(150);
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Remaining to earn', 'the label element carries the new professional string (source title-case, CSS uppercases)');
+    // v1.45.59 (owner report): mid-roll, the digits ride ONE wrapper run and
+    // the icon never leaves the flex cell — the gap-2 can never space the
+    // digits out, and nothing but the roll's own wrappers ever moves
+    {
+      const ctxMid = d.getElementById('ca-arch-m-ctx');
+      R.ok(ctxMid.querySelectorAll('.ca-rollc').length > 0 && ctxMid.querySelectorAll('.ca-rollwrap').length >= 1, 'v1.45.59: the rolled digits mount inside a .ca-rollwrap run — one flex item, not one per character');
+      R.ok(Array.from(ctxMid.children).every((c) => String(c.className).indexOf('ca-rollc') < 0), 'v1.45.59: no reel cell is a DIRECT child of the flex cell — the owner\u2019s mid-roll spacing report can never re-form');
+      R.ok(ctxMid.querySelector('i[data-lucide="target"]') !== null, 'v1.45.59: the context icon stays mounted through the roll — only the digit-bearing text runs wrap');
+    }
     // v1.45.57 hotfix: the ctx cell rolled on the open — the icon/shape
     // read waits out the settle (~850ms); the text reads ride the truth
     await wait(900);
@@ -1775,6 +1784,14 @@ function todayYmd() {
     R.ok(ctx.textContent.indexOf('$696.91 before end of month') !== -1, 'the owner format verbatim: remainder before end of month');
     R.ok(ctx.textContent.indexOf('left') === -1 && ctx.textContent.indexOf('On track for') === -1, 'the old two-part layout is gone completely');
     R.ok(ctx.className.indexOf('flex items-center gap-2') !== -1, 'the inline centre baseline with the icon stays (flex items-center gap-2)');
+    // v1.45.59 (owner report): a rapid re-roll while the first is in flight
+    // dismantles only the roll\u2019s own wrappers — the capture keeps the
+    // icon, and the restore hands any lucide stubs back to refreshIcons
+    w.eval('caNumRoll(document.getElementById("ca-arch-m-ctx"))');
+    await wait(1000);
+    R.ok(ctx.querySelectorAll('.ca-rollwrap').length === 0 && ctx.querySelectorAll('.ca-rollc').length === 0, 'the re-roll settles clean — no wrapper, no cells');
+    R.ok(ctx.innerHTML.indexOf('data-lucide="target"') !== -1, 'v1.45.59: after a rapid re-roll the restored markup still carries the icon — the icons come back with the figures');
+    R.ok(ctx.textContent.indexOf('$696.91 before end of month') !== -1, 'the milestone text reads its truth after the re-roll — the restore never reverts a figure');
     // the neighbouring states are untouched (roster-only needs the saved
     // future entry gone, or the milestone branch wins)
     w.eval("localStorage.setItem('crewAssist.archive', JSON.stringify([{ id: 'm1', savedAt: '2026-10-05T10:00:00Z', monthKey: '2026-10', sectorDate: '2026-10-05', stationDisplay: 'SIN/KUL', amount: 300 }])); localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '322', dep: 'SIN', arr: 'AMD', ymd: '2026-10-31', std: '07:00', sta: '10:00' }] }))");
@@ -1784,6 +1801,9 @@ function todayYmd() {
     // the daylight placeholder ink
     const src = fs.readFileSync(APP, 'utf8');
     R.ok(src.includes('html:not(.dark) .ca-arch-search::placeholder { color: #6B7280; opacity: 1; }'), 'v1.45.17: the daylight placeholder reads dark slate #6B7280 (opacity pinned across engines)');
+    R.ok(src.includes("wrap.className = 'ca-rollwrap';") && src.includes('.ca-rollwrap { display: inline; }'), 'v1.45.59 src: every rolled text run mounts inside ONE .ca-rollwrap — inline in block contexts, a single flex item in flex values');
+    R.ok(src.includes("if (typeof refreshIcons === 'function') refreshIcons();"), 'v1.45.59 src: the restore hands the reinstated lucide stubs straight back to refreshIcons — the icons always return with the figures');
+    R.ok(src.includes("el.querySelectorAll('.ca-rollwrap')"), 'v1.45.59 src: an in-flight roll dismantles ITS OWN wrappers before the new capture \u2014 the element\u2019s other structure rides through');
     R.ok(src.indexOf('html:not(.dark) .ca-arch-search::placeholder') < src.indexOf('/* v1.29.0: two-tap armed state'), 'the placeholder rule rides the earnings CSS block');
     void w;
   }

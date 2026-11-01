@@ -97,13 +97,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.45.58', 'APP_VERSION is 1.45.58');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.58' && e.d === '2026-11-01' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.45.58 fix entry with its single fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v289'), 'the service-worker cache name is bumped to v289 (the v1.45.58 year-filter drawer fix)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.45.59', 'APP_VERSION is 1.45.59');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.45.59' && e.d === '2026-11-01' && e.items.length === 4 && e.items[0].c === 'fix' && e.items.slice(1).every((i) => i.c === 'imp'); }), 'the changelog carries the 1.45.59 entry — its fix pointer and three imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v290'), 'the service-worker cache name is bumped to v290 (the v1.45.59 roll-fix + shortcuts + ethnic-sheet round)');
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.58'; }), 'the What\'s New sheet carries the v1.45.58 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads.length && heads[0].textContent === 'v1.45.59'; }), 'the What\'s New sheet carries the v1.45.59 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -129,9 +129,25 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const card = document.querySelector('[data-ca-help-card]');
             const rows = Array.from(card.querySelectorAll('[data-ca-help-cmd]'));
             const t = card.textContent.replace(/\s+/g, ' ');
-            return rows.length === 4 && rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(',') === 'menu,ifa,lma,cop'
+            return rows.length === 5 && rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(',') === 'menu,jcl menu,ifa,lma,cop'
                 && t.indexOf('Quick shortcuts') !== -1 && t.indexOf('Type or tap any command below') !== -1;
-        }), 'typing help answers with the structured card — four rows in order, title + subtitle');
+        }), 'typing help answers with the structured card — five rows in order, title + subtitle');
+        // v1.45.59 (owner order): both word orders ride every row as COMPLETE
+        // working pills, and the cabin row shows ONE example
+        ok(await page.evaluate(() => {
+            const rows = Array.from(document.querySelectorAll('[data-ca-help-card] [data-ca-help-cmd]'));
+            const toks = (r) => Array.from(r.querySelectorAll('.ca-help-token')).map((t) => t.textContent);
+            return toks(rows[0]).join('|') === 'sq802 4 oct|sq802 menu 4 oct'
+                && toks(rows[1]).join('|') === 'sq802 4 oct' && toks(rows[1]).length === 1
+                && toks(rows[4]).join('|') === 'sq802 4 oct sq807 5 oct|sq802 cop 4 oct sq807 5 oct'
+                && toks(rows[0]).every((x) => / \d{1,2} [a-z]{3,9}$/.test(x));
+        }), 'v1.45.59: every example pill is a complete command — both word orders on each row, one cabin example, nothing that does nothing');
+        ok(await page.evaluate(() => {
+            const a = parseNaturalCommand('jcl menu sq802 4 oct');
+            const b = parseNaturalCommand('sq802 menu 4 oct');
+            const c = parseNaturalCommand('sq802 lma 4 oct sq807 5 oct');
+            return a && a.mode === 'menu' && a.cabin === 'JCL' && b && b.mode === 'menu' && c && c.mode === 'lma' && c.pairs.length === 2;
+        }), 'v1.45.59: the travelling command words parse in the real page — cabin-class searches and flight-number-first phrasings');
         // The rig serves no CDN (lucide ships from unpkg — blocked by policy),
         // so icons stay <i data-lucide> stubs here. The contract this layer
         // can pin: every glyph the card declares is a named Lucide icon —
@@ -140,9 +156,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => {
             const card = document.querySelector('[data-ca-help-card]');
             const names = Array.from(card.querySelectorAll('i[data-lucide]')).map((i) => i.getAttribute('data-lucide'));
-            const need = ['lightbulb', 'utensils', 'calculator', 'sandwich', 'map', 'dot', 'dot', 'dot', 'arrow-right'];
-            return names.length === 9 && need.every((n) => names.indexOf(n) !== -1) && !/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{FE0F}]/u.test(card.textContent);
-        }), 'the card declares only Lucide glyphs — bulb, four category icons, three tip dots, the CTA arrow — and no emoji');
+            const need = ['lightbulb', 'utensils', 'armchair', 'calculator', 'sandwich', 'map', 'dot', 'dot', 'dot', 'arrow-right'];
+            return names.length === 10 && need.every((n) => names.indexOf(n) !== -1) && !/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{FE0F}]/u.test(card.textContent);
+        }), 'the card declares only Lucide glyphs — bulb, five category icons (armchair for the cabin row), three tip dots, the CTA arrow — and no emoji');
         // A real tap on a row: the keyword lands in the composer, focus
         // follows, and the row flashes gold (then the flash fades on its own).
         // Wait for idle first — while the chat is busy every chat button is
@@ -911,6 +927,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // cross-fade is retired; the roll owns the figure change
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0), 'v1.45.56 (owner order): a fresh earnings open rolls the big number');
         ok(await page.evaluate(() => { const metas = document.querySelectorAll('#ca-arch-summary .ca-arch-metagrid:not(.hidden) .ca-arch-metaval'); const rolling = Array.from(metas).filter((c) => c.querySelectorAll('.ca-rollc').length > 0).length; const truthy = Array.from(metas).every((c) => !/\d/.test(c.textContent) || c.querySelector('.ca-rollc')); return metas.length >= 2 && rolling >= 2 && truthy; }), 'v1.45.57 hotfix (owner order): the metric quadrant row rolls WITH the big number — every figure in the gold card, each already reading its truth mid-roll');
+        ok(await page.evaluate(() => { const cells = Array.from(document.querySelectorAll('#ca-arch-summary .ca-rollc')); const hosts = new Set(cells.map((c) => c.parentElement)); return cells.length > 0 && hosts.size > 0 && Array.from(hosts).every((h) => h.classList.contains('ca-rollwrap')); }), 'v1.45.59 (owner report): every reel cell rides inside its .ca-rollwrap run — one flex item per run, the digits never space out mid-roll');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
         await sleep(300);
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode="salary"]').click());
@@ -922,6 +939,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(600);
         ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length === 0 && document.getElementById('ca-arch-total').textContent === '$5,250.00'), 'v1.45.56 (owner order): the earnings roll settles — reels unwrapped, the truth unchanged');
         ok(await page.evaluate(() => document.querySelectorAll('#ca-arch-summary .ca-arch-metagrid:not(.hidden) .ca-arch-metaval .ca-rollc').length === 0), 'v1.45.57 hotfix: the quadrant row settles with the card — every reel unwrapped');
+        ok(await page.evaluate(() => document.querySelectorAll('#ca-arch-summary .ca-rollwrap').length === 0), 'v1.45.59: the wrappers unwrap with the reels — the plain markup returns');
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
 
@@ -1423,6 +1441,17 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         await page.mouse.move(2, 2);
+        // v1.45.59 (owner report): mid-roll on the Remaining-to-earn line —
+        // the digits ride ONE wrapper run beside the mounted icon; the flex
+        // cell can never gap its characters, and the icon never leaves
+        ok(await page.evaluate(() => {
+            const ctx = document.getElementById('ca-arch-m-ctx');
+            const cells = ctx.querySelectorAll('.ca-rollc');
+            const wraps = ctx.querySelectorAll('.ca-rollwrap');
+            const icon = ctx.querySelector('i[data-lucide=\"target\"]');
+            return cells.length > 0 && wraps.length >= 1 && !!icon
+                && Array.from(ctx.children).every((c) => String(c.className).indexOf('ca-rollc') < 0);
+        }), 'v1.45.59 (owner report): the milestone line rolls its digits inside ONE wrapper — the icon stays mounted, no cell is a direct flex child (no mid-roll spacing)');
         // v1.45.57 hotfix: the ctx cell rolls on the open — the icon/shape
         // read waits out the settle; the text reads ride the truth
         await sleep(1000);

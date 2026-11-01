@@ -1491,6 +1491,8 @@ const synthItems = [].concat(
       R.ok(hv('Flight Time').querySelectorAll('.ca-rollc').length === 3 && hv('Flight Time').querySelectorAll('.ca-rollstrip').length === 3, 'Flight Time rolls its three digits — 1d 16h, the letters hold still');
       R.ok(Array.from(hv('Flight Time').querySelectorAll('.ca-rollstrip')).every((x) => x.getAttribute('aria-hidden') === 'true'), 'every strip is aria-hidden decoration');
       R.ok(hv('Flight Time').querySelector('.ca-rollstrip').style.transition.indexOf('480ms') !== -1, 'the 480ms reel transition is armed');
+      R.ok(hv('Flight Time').querySelectorAll('.ca-rollwrap').length >= 1, 'v1.45.59: the hero digits ride wrapper runs \u2014 the hval cells can never gap their characters mid-roll');
+      R.ok(Array.from(hv('Flight Time').children).every((c) => String(c.className).indexOf('ca-rollc') < 0), 'v1.45.59: no reel cell is a direct child of the value \u2014 the run is one item, whatever container it sits in');
     }
     await wait(1000);
     R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length, 0, 'settled: the reel cells unwrap and the plain markup returns');

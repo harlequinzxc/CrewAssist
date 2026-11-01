@@ -138,6 +138,8 @@
 
 - **Validate the actual outcome.** A successful edit or passing isolated test does not automatically establish that the complete feature works.
 
+- **Verify the full lifecycle, including repeat firings.** For anything that mounts, animates and restores, test mount → animate → restore → fire again mid-flight: the second firing is where capture/restore bugs surface (a restore that reverts a later value, a re-capture that loses structure the first pass kept). A single fresh-run pass can look green while every repeat is broken.
+
 - **Never fabricate verification.** Report a check as passed only if it was actually run and its result supports that claim. Clearly distinguish passed, failed, blocked and unverified checks.
 
 ## 9. Documentation, Configuration & Compatibility
