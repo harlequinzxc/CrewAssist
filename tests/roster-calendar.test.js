@@ -104,7 +104,13 @@ const synthItems = [].concat(
     };
     const octItems = await readItems('Oct 2026.pdf');
     const novItems = await readItems('Nov 2026.pdf');
-    const { w, d } = await boot(APP, { seed: (x) => {
+    // v1.45.58 rig note: this block speaks fixed October dates (the real
+    // roster refresh) and reads TODAY for the reveal pins — the clock is
+    // PINNED to late October so the midnight into November can never move
+    // the default month out from under the seeded grid (the date-stability
+    // rule; the box crossed the boundary mid-hotfix and the 2 Oct cell
+    // fell out of the mounted November grid)
+    const { w, d } = await boot(APP, { now: '2026-10-26T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.tourDone', '1');
       x.localStorage.setItem('crewAssist.tourOffered', '1');
@@ -790,7 +796,7 @@ const synthItems = [].concat(
       return items;
     };
     const junItems = await readItems2('Jun 2025.pdf');
-    const { w, d } = await boot(APP, { seed: (x) => {
+    const { w, d } = await boot(APP, { now: '2025-06-30T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.tourDone', '1');
       x.localStorage.setItem('crewAssist.tourOffered', '1');
@@ -817,7 +823,7 @@ const synthItems = [].concat(
 
   // ---- synthetic: a layover run that wraps a week and crosses a month ----
   {
-    const { w, d } = await boot(APP, { seed: (x) => {
+    const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       // one long duty (the hotfix-5 shape): a single gold run that wraps a
       // week AND crosses a month, plus a lone untimed fly day
@@ -1202,7 +1208,7 @@ const synthItems = [].concat(
   // v1.44.0 (owner-approved): the arrow keys change the calendar's month
   // while it is the sheet in front — the same path a chevron tap takes
   {
-    const { w, d } = await boot(APP, { seed: (x) => {
+    const { w, d } = await boot(APP, { now: '2026-10-20T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.tourDone', '1');
       x.localStorage.setItem('crewAssist.tourOffered', '1');
@@ -1501,6 +1507,44 @@ const synthItems = [].concat(
     w.eval('openRcStat()');
     await wait(150);
     R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length, 0, 'the stats overlay mounting over the page leaves the hero settled');
+    w.eval('closeRcPod()');
+  }
+  // ---- v1.45.58 (owner report): the visit-log drawer honours the year
+  //      filter — the history a card opens must walk the SAME year the
+  //      list is showing. The drawer re-walked ALL-TIME, so a year chip
+  //      still showed other years' records in the flight history ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-11-01T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const legs = [
+        { fn: '976', dep: 'SIN', arr: 'KUL', ymd: '2023-11-02', std: '09:00', sta: '10:30', stdYmd: '2023-11-02', staYmd: '2023-11-02', ft: '01:30', ac: '7M8', rpt: '', pos: false },
+        { fn: '977', dep: 'KUL', arr: 'SIN', ymd: '2023-11-02', std: '11:30', sta: '15:00', stdYmd: '2023-11-02', staYmd: '2023-11-02', ft: '01:30', ac: '7M8', rpt: '', pos: false },
+        { fn: '106', dep: 'SIN', arr: 'KUL', ymd: '2024-03-10', std: '08:00', sta: '09:25', stdYmd: '2024-03-10', staYmd: '2024-03-10', ft: '01:25', ac: '7M8', rpt: '', pos: false },
+        { fn: '107', dep: 'KUL', arr: 'SIN', ymd: '2024-03-10', std: '10:25', sta: '11:50', stdYmd: '2024-03-10', staYmd: '2024-03-10', ft: '01:25', ac: '7M8', rpt: '', pos: false },
+        { fn: '108', dep: 'SIN', arr: 'KUL', ymd: '2025-05-05', std: '08:00', sta: '09:25', stdYmd: '2025-05-05', staYmd: '2025-05-05', ft: '01:25', ac: '7M8', rpt: '', pos: false },
+        { fn: '109', dep: 'KUL', arr: 'SIN', ymd: '2025-05-05', std: '10:25', sta: '11:50', stdYmd: '2025-05-05', staYmd: '2025-05-05', ft: '01:25', ac: '7M8', rpt: '', pos: false }
+      ];
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2023-11': legs.slice(0, 2), '2024-03': legs.slice(2, 4), '2025-05': legs.slice(4) }));
+    } });
+    // the delegated wiring binds when the calendar opens — the real path
+    w.eval('openRosterCalendar()'); await wait(300);
+    w.eval('openRcPod()'); await wait(150);
+    d.getElementById('ca-rc-pod-gate').click(); await wait(250);
+    const drawer = () => { const el = d.querySelector('.ca-rc-pod-xp'); return el ? el.textContent.replace(/\s+/g, ' ') : ''; };
+    // all-time first: the drawer holds every visit, every year
+    d.querySelector('[data-ca-rc-pod-station="KUL"]').click(); await wait(300);
+    R.ok(drawer().indexOf('3 VISITS') !== -1 && drawer().indexOf('2 Nov 2023') !== -1 && drawer().indexOf('10 Mar 2024') !== -1 && drawer().indexOf('5 May 2025') !== -1, 'all-time: the flight history holds all three years\u2019 visits');
+    // fold it, filter the list to 2024 — the drawer must hold ONLY that year
+    d.querySelector('[data-ca-rc-pod-station="KUL"]').click(); await wait(300);
+    d.querySelector('#ca-rc-pod-listyears [data-ca-rc-pod-lyear="2024"]').click(); await wait(150);
+    d.querySelector('[data-ca-rc-pod-station="KUL"]').click(); await wait(300);
+    R.ok(drawer().indexOf('1 VISIT') !== -1 && drawer().indexOf('10 Mar 2024') !== -1, 'v1.45.58: the 2024 chip\u2019s flight history holds only the 2024 visit');
+    R.ok(drawer().indexOf('2023') === -1 && drawer().indexOf('2025') === -1, 'v1.45.58: no other year\u2019s record leaks into the filtered history — the owner\u2019s report');
+    // the keyboard open rides the same filtered walk
+    d.querySelector('[data-ca-rc-pod-station="KUL"]').click(); await wait(300);
+    d.querySelector('[data-ca-rc-pod-station="KUL"]').dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    await wait(300);
+    R.ok(drawer().indexOf('1 VISIT') !== -1 && drawer().indexOf('2023') === -1 && drawer().indexOf('2025') === -1, 'v1.45.58: the keyboard open walks the same year — Enter on the card opens the filtered history');
     w.eval('closeRcPod()');
   }
   {
@@ -1856,6 +1900,7 @@ const synthItems = [].concat(
     R.ok(src.includes("wrap.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);"), 'v1.45.56: the hero walk rolls values and subs alike (digit-free strings no-op)');
     R.ok(src.includes('.ca-rollr0::before') && src.includes('.ca-rollstrip { position: absolute'), 'v1.45.56: the reel draws through ::before content — the DOM text never changes');
     R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move');
+    R.ok(src.includes("const entry = (rcPodStats(rcPodListYear)[rcPodTab] || []).filter((x) => x.code === code)[0];"), 'v1.45.58: the visit-log drawer walks the LIST\'S year — rcPodStats(rcPodListYear), never the bare all-time walk (the owner report: other years\' records under a year chip)');
     R.ok(src.includes('id="ca-rc-statwrap" class="fixed inset-0 z-[64] hidden"') && src.includes('function openRcStat()') && src.includes('function closeRcStat()') && src.includes("if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }") && !src.includes('ca-rc-pod-records'), 'v1.45.53 (owner order): All Flight Stats opens as its OWN overlay above the passport — the gate is a door, the in-page accordion is gone from the code');
     R.ok(src.includes('closeRcStat();   // v1.45.53') && src.includes("['ca-rc-statwrap', closeRcStat],   // v1.45.53"), 'v1.45.53: the stats overlay never outlives its passport — and Escape closes it before the pages beneath');
     R.ok(/<button[^>]*id="ca-rc-pod-gate"[^>]*><i data-lucide="chevron-up"/.test(src) && !/<button[^>]*id="ca-rc-pod-gate"[^>]*chevron-down/.test(src), 'v1.45.53: the gate wears the upward chevron — it raises a page');

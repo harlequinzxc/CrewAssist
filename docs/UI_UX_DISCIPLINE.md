@@ -668,6 +668,10 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 - A dropdown's labels must stay DISTINGUISHABLE: when shortened names
   collide (two meatless ethnics), the raw headers win — never two
   identical entries in one list.
+- A filtered view's DETAILS ride the same filter (v1.45.58): a drawer,
+  log or expansion opened from a filtered list walks the SAME dataset
+  the list is showing — never a wider re-derivation. The owner saw a
+  year chip's station history list every year he had ever flown.
 
 ### The hero wears the gold; rows tell the story (v1.45.55)
 

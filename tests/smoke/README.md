@@ -550,6 +550,23 @@ a control that trades min-height for padding (the tab pills, 5px 13px)
 keeps its row level with a height-parity pin: |ΔoffsetHeight| ≤ 1
 between the paired controls, computed in the live DOM.
 
+## The frozen page clock, and pins that restore the world they borrow (v1.45.58)
+
+The jsdom rigs pin `now:` at boot; the browser ran the real clock, and
+at the 2026-11-01 midnight the calendar section broke exactly the way
+the date-stability rule predicts — the default month moved past the
+seeded October. The rig now freezes the page Date at the seeded
+2026-10-26T12:00+08 via `evaluateOnNewDocument` (a Date subclass with
+a fixed `now()`; timers and transitions still run, only the wall clock
+stands still), which also defuses the unflown-14-Nov-leg date bomb for
+good. Two more disciplines from the same round: a pin block that
+reseeds shared data mid-section must RESTORE the world it borrowed
+(delete the seed legs, return the chips to All-Time, re-render, close
+the overlay) or every pin downstream fails on the changed landscape;
+and the visit-log theme-flip computed reads (450/650ms settles) flaked
+mid-transition under a heavier run — widened to 1000ms, the
+wait-out-every-transition doctrine applied to the rig's own reads.
+
 ## Whole-card rolls: the quadrant pins, and the widened shape waits (v1.45.57)
 
 v1.45.57 extends the roll to every figure in the earnings gold card
