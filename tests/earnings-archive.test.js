@@ -1835,8 +1835,10 @@ function todayYmd() {
     await wait(1300);   // the fresh open's roll settles before the camera taps
     R.ok(!!d.getElementById('ca-arch-cam'), 'v1.45.60: the camera button sits in the earnings header');
     R.ok(d.getElementById('ca-arch-cam').nextElementSibling.classList.contains('ca-arch-headrule'), 'the camera rides behind its own headrule, left of export');
-    // the stub painter records the pose + drives the clone surgery
-    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, height: opts.height, scrollH: el.scrollHeight, windowHeight: opts.windowHeight, bg: opts.backgroundColor, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, liveOverflow: document.getElementById('ca-arch-scroll').style.overflow, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    // the stub painter records the pose + drives the clone surgery; the
+    // font embed's fetch is stubbed so the clone carries real data URLs
+    w.eval("window.fetch = function (url) { return Promise.resolve({ ok: true, arrayBuffer: function () { return Promise.resolve(new ArrayBuffer(8)); } }); };");
+    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, height: opts.height, scrollH: el.scrollHeight, x: opts.x, y: opts.y, width: opts.width, windowWidth: opts.windowWidth, windowHeight: opts.windowHeight, bg: opts.backgroundColor, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, liveOverflow: document.getElementById('ca-arch-scroll').style.overflow, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
     // tap the camera → the picker rides the archive's own sub-sheet
     d.getElementById('ca-arch-cam').click();
     await wait(300);
@@ -1851,7 +1853,8 @@ function todayYmd() {
     await wait(800);
     R.eq(w.eval('window.__capRec.length'), 1, 'the painter fired exactly once');
     R.eq(w.eval('window.__capRec[0].id'), 'ca-arch-scroll', 'the capture target is the FULL scroll — card, chart and list together');
-    R.ok(w.eval('window.__capRec[0].height === window.__capRec[0].scrollH && window.__capRec[0].windowHeight >= window.__capRec[0].height'), 'the shoot hands the painter the element\u2019s own full height + a window at least that tall (jsdom reads 0 — the real beyond-the-viewport proof decodes in the smoke)');
+    R.ok(w.eval('window.__capRec[0].windowWidth === window.innerWidth && window.__capRec[0].windowHeight === window.innerHeight'), 'v1.45.60 hotfix (owner report): the clone lays out at the REAL viewport — windowWidth/windowHeight mirror the window exactly, never stretched for a tall crop (a stretched viewport reflows the fixed sheet: wrapping, clipped figures, an empty tail)');
+    R.ok(w.eval('window.__capRec[0].height === window.__capRec[0].scrollH && typeof window.__capRec[0].x === \"number\" && typeof window.__capRec[0].width === \"number\"'), 'the full-height crop passes its own x/y/width/height — the crop rides the element\u2019s rect + scrollHeight (jsdom reads 0 for layout; the real trimmed dimensions decode in the smoke)');
     R.ok(w.eval('window.__capRec[0].salaryOn') === true && w.eval('window.__capRec[0].yearOn') === true, 'at capture time the card is posed to Monthly Salary + Year');
     R.eq(w.eval('window.__capRec[0].label'), 'Net take-home', 'the posed card reads the salary headline');
     R.eq(w.eval('window.__capRec[0].liveOverflow'), '', 'the live scroller is never touched — the overflow fix lives in the clone');
@@ -1861,11 +1864,18 @@ function todayYmd() {
     R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-searchrow")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-ins-toggle")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-insights")') === null, 'the clone strips the search bar and the insights toggle + panel');
     R.ok(!!w.eval('window.__capRec[0].clone.getElementById("ca-arch-trend")'), 'the chart rides along — the owner\u2019s year-scope ruling');
     R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").style.overflow'), 'visible', 'the clone\u2019s scroller lets the full content flow for the tall crop');
+    R.ok(w.eval('["none", "0 0 auto"].indexOf(window.__capRec[0].clone.getElementById("ca-arch-scroll").style.flex) !== -1'), 'the clone\u2019s scroller drops its flex-grow — the box IS the content, nothing clipped at the viewport (flex: none serializes expanded as 0 0 auto in the CSSOM)');
+    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").style.height'), 'auto', 'the clone\u2019s scroller sizes to its content — the tall crop covers every row');
+    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-end")') === null, 'v1.45.60 hotfix (owner order): the End-of-records footer and the Showing-earnings-since line never ride the capture');
     {
       const src60 = fs.readFileSync(APP, 'utf8');
-      R.ok(src60.includes('const h = Math.max(el.scrollHeight || 0, rect.height);') && src60.includes('height: h,') && src60.includes('windowHeight: Math.max(h, window.innerHeight || 0),'), 'v1.45.60 src: the shoot crops at the element\u2019s FULL height — scrollHeight beyond the viewport — never the visible box alone');
+      R.ok(src60.includes('windowWidth: window.innerWidth,') && src60.includes('windowHeight: window.innerHeight,'), 'v1.45.60 hotfix src: the clone viewport mirrors the real window — the tall crop rides x/y/width/height, never a stretched windowHeight');
+      R.ok(src60.indexOf('function caCapTrim(') !== -1 && src60.includes('data:font/woff2;base64,') && src60.includes('box-shadow: none !important;'), 'v1.45.60 hotfix src: the pixel trim closes the canvas at the last painted row, the house font embeds as data URLs, and shadows strip inside the target');
+      R.ok(src60.includes('html.ca-reduced .ca-arch-bargrow .ca-arch-bar { animation: none; }'), 'v1.45.60 hotfix src: the bar grow is gated by ca-reduced — a posed capture can never photograph the chart at scaleY(0) (the owner\u2019s missing-2026-chart report)');
     }
     R.ok(w.eval('Array.from(window.__capRec[0].clone.querySelectorAll(".ca-arch-group")).every((g) => g.classList.contains("ca-arch-collapsed"))'), 'every month group is folded in the capture');
+    R.ok(w.eval('window.__capRec[0].clone.head.textContent.indexOf("@font-face{font-family:\'Plus Jakarta Sans\'") !== -1 && window.__capRec[0].clone.head.textContent.indexOf("data:font/woff2;base64,") !== -1'), 'v1.45.60 hotfix: the house font rides the clone as data URLs — the painter\u2019s iframe can never fall back to wrong metrics (the wrapping + clipped-descender report)');
+    R.ok(w.eval('window.__capRec[0].clone.head.textContent.indexOf("box-shadow: none !important") !== -1'), 'v1.45.60 hotfix: shadows strip inside the capture target — no coloured band at the crop edge');
     // the live page was never surgically touched, and the user\u2019s state returned
     R.ok(!!d.getElementById('ca-arch-ins-toggle') && !!d.getElementById('ca-arch-pillrow-mode'), 'the LIVE page keeps its pills, search and insights — nothing was removed for real');
     R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon') && d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'the user\u2019s own pills return exactly — month + COP, where they were');

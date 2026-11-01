@@ -14,6 +14,7 @@ http.createServer((req, res) => {
         : url === '/rates.json' ? path.join(repo, 'rates.json')
         : url === '/sw.js' ? path.join(repo, 'sw.js')
         : url === '/vendor/html2canvas.min.js' ? path.join(repo, 'vendor', 'html2canvas.min.js')
+        : /^\/vendor\/fonts\/[a-z0-9-]+\.woff2$/.test(url) ? path.join(repo, 'vendor', 'fonts', url.split('/').pop())
         : null;
     if (!file || !fs.existsSync(file)) { res.writeHead(404).end('nope'); return; }
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'text/plain' });

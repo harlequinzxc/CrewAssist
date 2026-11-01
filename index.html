@@ -1051,6 +1051,11 @@
         /* bars grow in once per shape change, not per keystroke */
         @keyframes caArchBarGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
         .ca-arch-bargrow .ca-arch-bar { transform-origin: bottom; animation: caArchBarGrow .4s ease both; }
+        /* v1.46.1 hotfix (owner report: the captured year had no chart):
+           the grow is an entrance — under the reduced-motion gate (which the
+           capture pose also rides) the bars stand at full height at once, so
+           a posed capture can never photograph them at scaleY(0) */
+        html.ca-reduced .ca-arch-bargrow .ca-arch-bar { animation: none; }
         /* the average line - complete months only */
         .ca-arch-avgline { position: absolute; left: 0; right: 0; border-top: 1px dashed rgba(146, 94, 14, 0.55); pointer-events: none; }
         html.dark .ca-arch-avgline { border-top-color: rgba(230, 194, 84, 0.62); }
@@ -2363,7 +2368,7 @@
             <div class="flex items-center justify-between px-6 pt-2 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <h3 class="text-xl font-bold">Earnings</h3>
                 <div class="flex items-center gap-1">
-                    <!-- v1.45.60 (owner order): the camera — a year of Monthly
+                    <!-- v1.46.1 (owner order): the camera — a year of Monthly
                          Salary as a shareable card. The picker rides the
                          archive's own sub-sheet; the capture poses the card
                          and photographs the full scroll in the painter's
@@ -2662,12 +2667,13 @@
                         <h3 class="text-xl font-bold truncate">Passport</h3>
                         <p id="ca-rc-pod-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
                     </div>
-                    <!-- v1.45.60 (owner order): the passport camera — the
-                         hero card exactly as the selected year pill has it,
-                         the year named above it. No live pose: the label and
-                         the crop live in the painter's clone. -->
-                    <button type="button" id="btn-rc-pod-cam" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Capture passport hero"><i data-lucide="camera" class="w-5 h-5"></i></button>
-                    <button type="button" id="btn-close-rc-pod" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close records"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    <!-- v1.46.1 hotfix (owner order): the camera rides in ONE
+                         right cluster with the close button — a title/subtitle
+                         change on the left can never shift either button -->
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" id="btn-rc-pod-cam" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Capture passport hero"><i data-lucide="camera" class="w-5 h-5"></i></button>
+                        <button type="button" id="btn-close-rc-pod" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close records"><i data-lucide="x" class="w-5 h-5"></i></button>
+                    </div>
                 </div>
                 <div class="flex-grow min-h-0 flex flex-col px-5 pb-8 max-w-2xl mx-auto w-full">
                     <!-- v1.45.52 (owner spec): the passport telemetry stack —
@@ -2687,6 +2693,27 @@
                          list and its own year pills. No in-page accordion. -->
                     <button type="button" id="ca-rc-pod-gate" class="flex-none ca-rc-pod-gate mt-3" aria-label="Open my flight stats"><i data-lucide="chevron-up" class="w-4 h-4"></i><span class="ca-micro uppercase tracking-wider font-bold">My Flight Stats</span><i data-lucide="chevron-up" class="w-4 h-4"></i></button>
                 </div>
+            </div>
+        </div>
+
+        <!-- v1.46.1 hotfix (owner order): the passport's year picker — the
+             camera opens it regardless of which chip the crew are on; a pick
+             poses the hero to that year, captures, and restores the crew's
+             own chips. The archive sub-sheet's own chrome species. -->
+        <div id="ca-rc-podcapwrap" class="fixed inset-0 z-[64] hidden">
+            <div class="ca-rc-pod-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-rc-podcap-close></div>
+            <div id="ca-rc-podcap-sheet" role="dialog" aria-modal="true" aria-label="Capture passport" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+                <div class="w-full flex justify-center py-3 shrink-0">
+                    <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+                </div>
+                <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-3 shrink-0 max-w-2xl mx-auto">
+                    <div class="min-w-0">
+                        <h3 class="text-xl font-bold truncate" id="ca-rc-podcap-title">Capture passport</h3>
+                        <p id="ca-rc-podcap-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">Choose the year to capture</p>
+                    </div>
+                    <button type="button" id="btn-close-rc-podcap" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close the year picker"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex-grow min-h-0 overflow-y-auto px-6 pb-8 max-w-2xl mx-auto w-full" id="ca-rc-podcap-body"></div>
             </div>
         </div>
 
@@ -3187,7 +3214,7 @@
             }
         }
 
-        var APP_VERSION = '1.46.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.46.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3209,6 +3236,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.46.1', d: '2026-11-01', items: [
+                { c: 'fix', t: 'Camera captures match the screen exactly \u2014 fonts, charts, edges.' },
+                { c: 'imp', t: 'The passport camera asks which year to capture.' },
+                { c: 'imp', t: 'Captures end at the last record, with no empty tail.' }
+            ] },
             { v: '1.46.0', d: '2026-11-01', items: [
                 { c: 'new', t: 'Earnings photographs any year as a shareable summary card.' },
                 { c: 'new', t: 'The passport hero captures with its year named above.' },
@@ -4182,6 +4214,8 @@
                 if (lbx && !lbx.classList.contains('hidden')) return; // its own handler closes it
                 const subx = document.getElementById('ca-arch-sub-sheet');
                 if (subx && !subx.classList.contains('translate-y-full')) { closeArchSub(); return; }
+                const podcapx = document.getElementById('ca-rc-podcap-sheet');   // v1.46.1 hotfix: the passport picker rides above its passport
+                if (podcapx && !podcapx.classList.contains('translate-y-full')) { closePodCapPicker(); return; }
                 const closers = [
                     ['whatsnew-backdrop', closeWhatsNew],
                     ['ca-changelog-sheet', closeChangelog],
@@ -6897,6 +6931,7 @@
             const sheet = document.getElementById('ca-rc-pod-sheet');
             if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
             closeRcStat();   // v1.45.53: the stats overlay never outlives its passport
+            closePodCapPicker();   // v1.46.1 hotfix: the year picker never outlives its passport either
             caSheetFocusOut(sheet);
             const shade = wrap.querySelector('.ca-rc-pod-shade');
             if (shade) shade.classList.add('opacity-0');
@@ -7056,7 +7091,7 @@
                 built.canvas.toBlob((blob) => { if (blob) rosterShotDeliver(blob, name); }, 'image/png');
             } catch (e) {}
         }
-        // v1.45.60 (owner order, the camera buttons): the shared element
+        // v1.46.1 (owner order, the camera buttons): the shared element
         // capture. A locally-vendored DOM re-painter (vendor/html2canvas.min
         // .js, lazy-loaded once and precached by the service worker, so the
         // cameras work offline) photographs a posed element at its FULL
@@ -7123,6 +7158,62 @@
             } catch (e) {}
             archToast(doneMsg);
         }
+        // v1.46.1 hotfix (owner reports — the captures must be EXACTLY what
+        // is on screen): the painter re-lays-out a CLONE of the page, and
+        // three lies crept in. (1) The clone's viewport was stretched to the
+        // crop height — a fixed sheet reflows in a taller viewport, so text
+        // wrapped, figures clipped and empty sheet filled the crop's tail;
+        // the viewport now always mirrors the REAL window. (2) The clone
+        // iframe re-loads its stylesheets and races its webfonts — a fallback
+        // metric wraps lines and clips descenders; the house font is now
+        // EMBEDDED into the clone as data URLs (vendor/fonts, fetched once
+        // through the service worker and memoised). (3) The painter's shadow
+        // approximation read as a coloured band at the crop edge — shadows
+        // are stripped inside the capture target. A pixel trim then closes
+        // the canvas at the last PAINTED row (plus air), so no padding or
+        // unstretched space can ever trail the capture.
+        async function caCapFontCss() {
+            if (caCapFontCss._p) return caCapFontCss._p;
+            caCapFontCss._p = (async () => {
+                const parts = [];
+                for (const w of [400, 500, 600, 700]) {
+                    try {
+                        const res = await fetch('vendor/fonts/plus-jakarta-sans-' + w + '.woff2');
+                        if (!res.ok) continue;
+                        const bytes = new Uint8Array(await res.arrayBuffer());
+                        let bin = '';
+                        for (let i = 0; i < bytes.length; i += 32768) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 32768));
+                        parts.push("@font-face{font-family:'Plus Jakarta Sans';font-style:normal;font-weight:" + w + ";src:url(data:font/woff2;base64," + btoa(bin) + ") format('woff2');}");
+                    } catch (e) {}
+                }
+                return parts.join('');
+            })().catch(() => '');
+            return caCapFontCss._p;
+        }
+        function caCapTrim(canvas, bg, scale) {
+            try {
+                const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(bg || ''));
+                if (!m || !canvas.width || !canvas.height) return canvas;
+                const br = parseInt(m[1], 16), bg2 = parseInt(m[2], 16), bb = parseInt(m[3], 16);
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, hh = canvas.height;
+                const data = ctx.getImageData(0, 0, w, hh).data;
+                let last = -1;
+                for (let y = hh - 1; y >= 0 && last < 0; y--) {
+                    for (let x = 0; x < w; x += 4) {
+                        const i = (y * w + x) * 4;
+                        if (Math.abs(data[i] - br) > 6 || Math.abs(data[i + 1] - bg2) > 6 || Math.abs(data[i + 2] - bb) > 6) { last = y; break; }
+                    }
+                }
+                const air = Math.max(2, Math.round(12 * (scale || 1)));
+                const newH = Math.min(hh, last + 1 + air);
+                if (last < 0 || newH >= hh) return canvas;
+                const c2 = document.createElement('canvas');
+                c2.width = w; c2.height = newH;
+                c2.getContext('2d').drawImage(canvas, 0, 0);
+                return c2;
+            } catch (e) { return canvas; }
+        }
         async function caCapShoot(el, opts) {
             const lib = await caCapLib();
             let scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
@@ -7132,26 +7223,98 @@
             const h = Math.max(el.scrollHeight || 0, rect.height);
             const area = (rect.width * scale) * (h * scale);
             if (area > 15000000) scale = Math.max(1, Math.round(scale * Math.sqrt(15000000 / area) * 100) / 100);
+            const fontCss = await caCapFontCss();
+            const userClone = (opts && opts.onclone) || null;
+            const elId = el.id ? el.id : '';
+            const bg = (opts && opts.bg) || caCapThemeBg();
+            const full = !!(opts && opts.fullHeight);
             const canvas = await lib(el, {
-                backgroundColor: (opts && opts.bg) || caCapThemeBg(),
+                backgroundColor: bg,
                 scale: scale,
                 useCORS: true,
                 logging: false,
-                height: h,
-                windowHeight: Math.max(h, window.innerHeight || 0),
-                onclone: (opts && opts.onclone) || null
+                // the clone lays out at the REAL viewport — never stretched
+                windowWidth: window.innerWidth,
+                windowHeight: window.innerHeight,
+                ...(full ? { x: rect.left, y: rect.top, width: rect.width, height: h } : {}),
+                onclone: (doc) => {
+                    try {
+                        // a tall crop can reach below the fixed sheet onto the
+                        // page's own background — the clone paints the flat
+                        // capture tone there instead, so the trim (and the
+                        // eye) never sees the sky leak into the card's tail
+                        doc.documentElement.style.background = bg;
+                        if (doc.body) doc.body.style.background = 'transparent';
+                    } catch (e) {}
+                    try {
+                        if (fontCss || elId) {
+                            const st = doc.createElement('style');
+                            st.textContent = (fontCss || '') + (elId ? '#' + elId + ', #' + elId + ' * { box-shadow: none !important; }' : '');
+                            (doc.head || doc.documentElement).appendChild(st);
+                        }
+                    } catch (e) {}
+                    if (userClone) userClone(doc);
+                }
             });
-            const blob = await new Promise((res) => { try { canvas.toBlob(res, 'image/png'); } catch (e) { res(null); } });
+            const fixed = caCapTrim(canvas, bg, scale);
+            const blob = await new Promise((res) => { try { fixed.toBlob(res, 'image/png'); } catch (e) { res(null); } });
             if (!blob) throw new Error('blob');
             caCapDeliver(blob, (opts && opts.name) || 'CrewAssist.png', (opts && opts.title) || 'CrewAssist', (opts && opts.toast) || 'Screenshot saved');
         }
-        // v1.45.60 (owner order): the passport camera — the hero card
-        // exactly as the selected year pill has it, the year named above.
-        // No live pose at all: the label and the crop live in the painter's
-        // clone, so the page never moves and nothing needs restoring.
-        async function rcPodCaptureHero() {
+        // v1.46.1 hotfix (owner orders): the passport camera opens the YEAR
+        // PICKER (its own sub-sheet, the archive picker's species) — the
+        // crew choose all-time or any year on record REGARDLESS of which chip
+        // the page is on; a pick poses the hero to that year, the painter
+        // photographs it with the owner's header wording, and the crew's own
+        // chips return in a finally.
+        function rcPodCapYears() {
+            const pills = Array.from(document.querySelectorAll('#ca-rc-pod-years [data-ca-rc-pod-year]'));
+            const yrs = pills.map((p) => p.getAttribute('data-ca-rc-pod-year')).filter(Boolean);
+            const years = yrs.filter((y) => y !== 'all').sort().reverse();   // newest first, the pill row's own order
+            return ['all'].concat(years);
+        }
+        function rcPodCapRows() {
+            return rcPodCapYears().map((yr) => {
+                let n = 0;
+                try { n = (rcPodStats(yr).flights || []).reduce((a, r) => a + (r.n || 0), 0); } catch (e) {}
+                return '<button type="button" class="ca-cap-yearrow w-full h-12 px-4 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-left" data-yr="' + yr + '">'
+                    + '<span class="font-bold text-sm">' + (yr === 'all' ? 'All-Time' : yr) + '</span>'
+                    + '<span class="ca-micro font-bold" style="color: var(--arch-muted)">' + n + (n === 1 ? ' flight' : ' flights') + '</span>'
+                    + '</button>';
+            }).join('');
+        }
+        function openPodCapPicker() {
+            const wrap = document.getElementById('ca-rc-podcapwrap');
+            const sheet = document.getElementById('ca-rc-podcap-sheet');
+            if (!wrap || !sheet) return;
+            caSheetHideCancel(wrap);   // hotfix 14: the shared cancel
+            document.getElementById('ca-rc-podcap-body').innerHTML = '<div class="flex flex-col gap-1">' + rcPodCapRows() + '</div>';
+            try { lucide.createIcons(); } catch (err) {}
+            wrap.classList.remove('hidden');
+            caSheetFocusIn(sheet);
+            caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
+            document.querySelectorAll('#ca-rc-podcap-body .ca-cap-yearrow').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const yr = b.getAttribute('data-yr');
+                    closePodCapPicker();
+                    rcPodCaptureYear(yr);
+                });
+            });
+        }
+        function closePodCapPicker() {
+            const wrap = document.getElementById('ca-rc-podcapwrap');
+            const sheet = document.getElementById('ca-rc-podcap-sheet');
+            if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
+            caSheetFocusOut(sheet);
+            const shade = wrap.querySelector('.ca-rc-pod-shade');
+            if (shade) shade.classList.add('opacity-0');
+            caSheetGlideCancel(sheet);
+            sheet.classList.add('translate-y-full');
+            caSheetHideArm(wrap);   // hotfix 14: arm, never a bare timer
+        }
+        async function rcPodCaptureYear(yr) {
             const hero = document.getElementById('ca-rc-pod-herowrap');
-            if (!hero || !hero.children.length) return;
+            if (!hero || !hero.children.length || !/^(all|\d{4})$/.test(String(yr || ''))) return;
             const btn = document.getElementById('btn-rc-pod-cam');
             if (btn) {
                 btn.classList.remove('ca-rc-flash');
@@ -7160,11 +7323,19 @@
                 setTimeout(() => { try { btn.classList.remove('ca-rc-flash'); } catch (e) {} }, 500);
             }
             try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
-            if (!(await caCapWaitSettled(hero, 1400))) return;
-            const label = rcPodYear === 'all' ? 'All-Time' : String(rcPodYear);
+            const keep = { y: rcPodYear, ly: rcPodListYear };
+            const wasReduced = document.documentElement.classList.contains('ca-reduced');
             try {
+                // ca-reduced stands the hero roll down for the pose AND the
+                // restore — the digits paint settled, no timer lands mid-capture
+                if (!wasReduced) document.documentElement.classList.add('ca-reduced');
+                rcPodYear = String(yr);
+                rcPodListYear = String(yr);
+                renderRcPod(false, true);
+                if (!(await caCapWaitSettled(hero, 1400))) return;
+                const label = yr === 'all' ? 'My All-Time Flight Records' : 'My Flight Records for ' + yr;
                 await caCapShoot(hero, {
-                    name: 'CrewAssist-Passport-' + (rcPodYear === 'all' ? 'All-Time' : rcPodYear) + '.png',
+                    name: 'CrewAssist-Passport-' + (yr === 'all' ? 'All-Time' : yr) + '.png',
                     title: 'CrewAssist passport',
                     toast: 'Passport screenshot saved',
                     onclone: (doc) => {
@@ -7179,6 +7350,11 @@
                 });
             } catch (e) {
                 archToast('Screenshot didn\u2019t capture \u2014 try again');
+            } finally {
+                rcPodYear = keep.y;
+                rcPodListYear = keep.ly;
+                renderRcPod(false, false);
+                if (!wasReduced) document.documentElement.classList.remove('ca-reduced');
             }
         }
         let rcViewYm = '';
@@ -9373,7 +9549,13 @@ SLOT|Special Lve others`;
                 // close all live inside the wrap).
                 on('ca-rc-pod', () => openRcPod());
                 on('btn-close-rc-pod', () => closeRcPod());
-                on('btn-rc-pod-cam', () => rcPodCaptureHero()); // v1.45.60: the hero capture
+                on('btn-rc-pod-cam', () => openPodCapPicker()); // v1.46.1 hotfix: the camera opens the year picker
+                on('btn-close-rc-podcap', () => closePodCapPicker());
+                const podCapWrapEl = document.getElementById('ca-rc-podcapwrap');
+                if (podCapWrapEl) podCapWrapEl.addEventListener('click', (ev) => {
+                    if (!ev.target || !ev.target.closest) return;
+                    if (ev.target.closest('[data-ca-rc-podcap-close]')) closePodCapPicker();
+                });
                 const podWrapEl = document.getElementById('ca-rc-podwrap');
                 if (podWrapEl) podWrapEl.addEventListener('click', (ev) => {
                     if (!ev.target || !ev.target.closest) return;
@@ -16419,7 +16601,7 @@ SLOT|Special Lve others`;
         }
         function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArchSummary._open = true; renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close. v1.45.56: a fresh open ROLLS the figures */
 
-        // v1.45.60 (owner order, the camera button): the earnings capture.
+        // v1.46.1 (owner order, the camera button): the earnings capture.
         // Monthly Salary is the LOCKED context; the crew pick the YEAR from
         // the archive's own sub-sheet (no all-time row — a year report stays
         // naturally bounded, ~12 month rows); the card poses to that year
@@ -16478,18 +16660,25 @@ SLOT|Special Lve others`;
                     name: 'CrewAssist-Earnings-' + yr + '.png',
                     title: 'CrewAssist earnings',
                     toast: 'Earnings screenshot saved',
+                    fullHeight: true,   // the crop covers the whole scroll; the pixel trim closes it at the last painted row
                     onclone: (doc) => {
                         const target = doc.getElementById('ca-arch-scroll');
                         if (!target) return;
                         // the full-height crop needs the scroller to let its
-                        // content flow in the clone — the live page never moves
+                        // content flow in the clone — the live page never
+                        // moves (flex none + height auto = the box IS the
+                        // content; the sheet never clips it)
                         target.style.overflow = 'visible';
+                        target.style.flex = 'none';
+                        target.style.height = 'auto';
+                        const sheet = doc.getElementById('ca-arch-sheet');
+                        if (sheet) sheet.style.overflow = 'visible';
                         const head = doc.createElement('div');
                         head.id = 'ca-cap-head';
                         head.className = 'text-lg font-bold mb-1';
                         head.textContent = yr + ' Earnings';
                         target.insertBefore(head, target.firstChild);
-                        ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights'].forEach((id) => {
+                        ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'].forEach((id) => {
                             const n = doc.getElementById(id);
                             if (n && n.parentNode) n.parentNode.removeChild(n);
                         });
@@ -16763,7 +16952,10 @@ SLOT|Special Lve others`;
             });
             // End of records
             const firstMk = Object.keys(statsAll).sort()[0];
-            html += '<div class="flex items-center gap-3 mt-6 mb-2">'
+            // v1.46.1 hotfix (owner order): the footer carries its id — the
+            // capture's clone strips it (the crew's shareable year card ends
+            // at the last record, never at "end of records" bookkeeping)
+            html += '<div id="ca-arch-end" class="flex items-center gap-3 mt-6 mb-2">'
                 + '<div class="ca-arch-footline"></div>'
                 + '<span class="ca-micro font-bold uppercase tracking-[0.08em] whitespace-nowrap" style="color: var(--arch-muted)">End of records</span>'
                 + '<div class="ca-arch-footline"></div></div>'
@@ -17741,7 +17933,7 @@ SLOT|Special Lve others`;
             archEl('ca-arch-close').addEventListener('click', closeArchOverlay);
             archEl('ca-arch-backdrop').addEventListener('click', closeArchOverlay);
             archEl('ca-arch-export').addEventListener('click', archExport); // v1.41.0: import moved to Settings → Restore backup
-            archEl('ca-arch-cam').addEventListener('click', archOpenCapPicker); // v1.45.60: the year-picker → the capture
+            archEl('ca-arch-cam').addEventListener('click', archOpenCapPicker); // v1.46.1: the year-picker → the capture
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
             document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').forEach((b) => b.addEventListener('click', () => {

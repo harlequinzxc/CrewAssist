@@ -757,12 +757,16 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   shift, nothing needs un-hiding, no restore can fail.
 - A transient header names what the crew captured, injected into the clone
   above the card in the page's own type voice ("2026 Earnings"; the
-  passport reads its pill's exact wording — "All-Time" / "2025"). The
-  label follows the CURRENT selection, not a default.
-- What the owner ruled for the earnings camera: Monthly Salary is the
-  locked context, the picker chooses ONLY the year (years on record,
-  newest first, no all-time — a year report stays naturally bounded), the
-  chart rides along, and the capture keeps whatever theme the crew are in.
+  passport reads the owner's wording — "My All-Time Flight Records" /
+  "My Flight Records for 2025"). The label follows the PICKED year, not
+  the page's chip.
+- What the owner ruled for the pickers: the EARNINGS camera keeps Monthly
+  Salary the locked context and chooses ONLY the year (years on record,
+  newest first, no all-time — a year report stays naturally bounded); the
+  PASSPORT camera's picker includes All-Time first (the all-time hero is
+  that page's default pose). The chart rides along, and both captures keep
+  whatever theme the crew are in. A camera that follows the page's
+  selection must still let the crew pick — the picker outranks the chip.
 - A live pose that must re-render state (the earnings card's year scope)
   rides a `try/finally` with a snapshot — the crew's own pills always
   return — and the roll guard (`ca-reduced`) stands for BOTH the pose and
@@ -771,7 +775,33 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   none: label and crop alone.
 - A capture never photographs a mid-flight animation: wait out the roll
   (or any in-place animation) first, bounded — a capture of half-settled
-  digits is a wrong number, which is worse than a late capture.
+  digits is a wrong number, which is worse than a late capture. The same
+  goes for entrances (the chart's bar-grow): the pose's reduced-motion
+  gate stands them down so the bars paint at full height (v1.46.1 — the
+  current year's chart went missing exactly this way).
+
+### Capture fidelity: the artifact is the screen (v1.46.1)
+
+- The acceptance bar for a capture is EXACTLY what is on screen — fonts,
+  layout, charts, edges, and where the content ends. The painter's clone
+  re-lays-out the page, and every place it can disagree with the live
+  render is a defect class: webfonts (embed the house font into the clone
+  as data URLs so metrics never fall back), the viewport (the clone lays
+  out at the REAL window size, never stretched to the crop — a fixed
+  sheet reflows in a taller viewport), shadows (strip them inside the
+  target; the painter's approximation reads as a stray border), and
+  entrances (see above).
+- A full-height crop can reach below a fixed sheet onto the page's own
+  background — the clone paints the capture's flat tone there instead,
+  and a pixel trim closes the canvas at the LAST PAINTED row plus a
+  pocket of air, so no empty tail can trail the content. The footer's
+  bookkeeping ("End of records", "Showing earnings since") is chrome: it
+  never rides in a shareable card.
+- A camera button lives in ONE right-pinned cluster with the sheet's
+  close button — text changes on the left must never shift either button.
+- The proof of a capture is decoding the PNG in the real browser: height
+  against the live element, paint where the content is, clean background
+  where it is not. The painter's own promise proves nothing.
 
 ### Empty-state copy: blame the truth, name the remedy (v1.45.50)
 
