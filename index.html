@@ -2363,6 +2363,13 @@
             <div class="flex items-center justify-between px-6 pt-2 pb-3 border-b ca-hairline shrink-0 max-w-xl mx-auto w-full">
                 <h3 class="text-xl font-bold">Earnings</h3>
                 <div class="flex items-center gap-1">
+                    <!-- v1.45.60 (owner order): the camera — a year of Monthly
+                         Salary as a shareable card. The picker rides the
+                         archive's own sub-sheet; the capture poses the card
+                         and photographs the full scroll in the painter's
+                         clone (never the live page). -->
+                    <button type="button" id="ca-arch-cam" class="ca-arch-iconbtn" aria-label="Capture earnings card"><i data-lucide="camera" class="w-5 h-5"></i></button>
+                    <span class="ca-arch-headrule" aria-hidden="true"></span>
                     <button type="button" id="ca-arch-export" class="ca-arch-iconbtn" aria-label="Export earnings"><i data-lucide="download" class="w-5 h-5"></i></button>
                     <span class="ca-arch-headrule" aria-hidden="true"></span>
                     <button type="button" id="ca-arch-trash" class="ca-arch-iconbtn" aria-label="Delete visible entries"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
@@ -2375,13 +2382,13 @@
                     <!-- v1.45.11: the view toggle (owner-approved placement) —
                          the "what" above the "when", both governing the number
                          below them. Same pill language as the scope track. -->
-                    <div class="flex justify-center mb-2.5">
+                    <div class="flex justify-center mb-2.5" id="ca-arch-pillrow-mode">
                         <div class="ca-arch-segtrack" role="tablist" aria-label="Earnings view">
                             <button type="button" class="ca-arch-seg" data-mode="cop">COP Allowance</button>
                             <button type="button" class="ca-arch-seg" data-mode="salary">Monthly Salary</button>
                         </div>
                     </div>
-                    <div class="flex justify-center">
+                    <div class="flex justify-center" id="ca-arch-pillrow-scope">
                         <div class="ca-arch-segtrack" role="tablist" aria-label="Earnings scope">
                             <button type="button" class="ca-arch-seg" data-scope="month">Month</button>
                             <button type="button" class="ca-arch-seg" data-scope="year" id="ca-arch-seg-year">Year</button>
@@ -2495,7 +2502,7 @@
                     </div>
                 </div>
                 <!-- 3. search -->
-                <div class="mt-3">
+                <div class="mt-3" id="ca-arch-searchrow">
                     <div class="relative">
                         <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
                         <input id="ca-arch-search" type="text" placeholder="Search flights…" aria-label="Search flights" class="ca-arch-search w-full h-11 rounded-full bg-black/5 dark:bg-[#141823] border border-black/10 dark:border-white/10 pl-10 pr-10 text-sm outline-none" />
@@ -2655,6 +2662,11 @@
                         <h3 class="text-xl font-bold truncate">Passport</h3>
                         <p id="ca-rc-pod-subtitle" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate"></p>
                     </div>
+                    <!-- v1.45.60 (owner order): the passport camera — the
+                         hero card exactly as the selected year pill has it,
+                         the year named above it. No live pose: the label and
+                         the crop live in the painter's clone. -->
+                    <button type="button" id="btn-rc-pod-cam" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Capture passport hero"><i data-lucide="camera" class="w-5 h-5"></i></button>
                     <button type="button" id="btn-close-rc-pod" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close records"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 <div class="flex-grow min-h-0 flex flex-col px-5 pb-8 max-w-2xl mx-auto w-full">
@@ -3175,7 +3187,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.59'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.46.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3197,6 +3209,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.46.0', d: '2026-11-01', items: [
+                { c: 'new', t: 'Earnings photographs any year as a shareable summary card.' },
+                { c: 'new', t: 'The passport hero captures with its year named above.' },
+                { c: 'imp', t: 'Screenshots work offline and keep your theme.' }
+            ] },
             { v: '1.45.59', d: '2026-11-01', items: [
                 { c: 'fix', t: 'Earnings figures keep their icons and spacing through the roll.' },
                 { c: 'imp', t: 'Chat shortcuts teach both word orders and cabin-class searches.' },
@@ -7039,6 +7056,131 @@
                 built.canvas.toBlob((blob) => { if (blob) rosterShotDeliver(blob, name); }, 'image/png');
             } catch (e) {}
         }
+        // v1.45.60 (owner order, the camera buttons): the shared element
+        // capture. A locally-vendored DOM re-painter (vendor/html2canvas.min
+        // .js, lazy-loaded once and precached by the service worker, so the
+        // cameras work offline) photographs a posed element at its FULL
+        // height — beyond the viewport when the content is taller — in
+        // whatever theme the user is in. Everything a capture must not show
+        // is removed from the painter's CLONE (onclone), never from the live
+        // page: no layout shift, nothing to restore. The deliver is the
+        // roster capture's own share-then-download path. (The foreignObject
+        // rasterizer ban above is untouched — this painter draws straight
+        // onto the 2D canvas, no SVG round-trip, so toBlob exports clean.)
+        let caCapLibP = null;
+        function caCapLib() {
+            if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
+            if (!caCapLibP) {
+                caCapLibP = new Promise((resolve, reject) => {
+                    const t = setTimeout(() => { caCapLibP = null; reject(new Error('timeout')); }, 12000);
+                    const sc = document.createElement('script');
+                    sc.src = 'vendor/html2canvas.min.js';
+                    sc.onload = () => { clearTimeout(t); if (typeof window.html2canvas === 'function') resolve(window.html2canvas); else { caCapLibP = null; reject(new Error('lib')); } };
+                    sc.onerror = () => { clearTimeout(t); caCapLibP = null; reject(new Error('net')); };
+                    document.head.appendChild(sc);
+                });
+            }
+            return caCapLibP;
+        }
+        // a capture never photographs a mid-flight roll — the base digits
+        // paint transparent while the strips slide. Bounded wait for the
+        // settle, exactly like every shape pin in the suites.
+        function caCapWaitSettled(root, ms) {
+            return new Promise((resolve) => {
+                const t0 = Date.now();
+                (function poll() {
+                    if (!root || !root.querySelector || !root.querySelector('.ca-rollc')) return resolve(true);
+                    if (Date.now() - t0 > (ms || 1400)) return resolve(false);
+                    setTimeout(poll, 60);
+                })();
+            });
+        }
+        // the surface tone behind transparent rows (the sheet's own glass,
+        // flattened) — the roster capture's hardcoded-theme precedent
+        function caCapThemeBg() {
+            return document.documentElement.classList.contains('dark') ? '#060911' : '#F7F3EC';
+        }
+        function caCapDeliver(blob, name, title, doneMsg) {
+            try { window.__caLastShot = { name: name, size: blob.size, blob: blob, title: title }; } catch (e) {}
+            let shared = false;
+            try {
+                const file = new File([blob], name, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+                    shared = true;
+                    navigator.share({ files: [file], title: title }).catch(() => {});
+                }
+            } catch (e) {}
+            if (shared) { archToast(doneMsg); return; }
+            // the download fallback is best-effort — an embedder that
+            // refuses anchor navigation (jsdom) must never turn a captured,
+            // delivered PNG into a "didn't capture" apology
+            try {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = name;
+                document.body.appendChild(a); a.click(); a.remove();
+                setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+            } catch (e) {}
+            archToast(doneMsg);
+        }
+        async function caCapShoot(el, opts) {
+            const lib = await caCapLib();
+            let scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+            // iOS keeps a hard ceiling on canvas area — a very tall capture
+            // trades a little sharpness rather than failing outright
+            const rect = el.getBoundingClientRect();
+            const h = Math.max(el.scrollHeight || 0, rect.height);
+            const area = (rect.width * scale) * (h * scale);
+            if (area > 15000000) scale = Math.max(1, Math.round(scale * Math.sqrt(15000000 / area) * 100) / 100);
+            const canvas = await lib(el, {
+                backgroundColor: (opts && opts.bg) || caCapThemeBg(),
+                scale: scale,
+                useCORS: true,
+                logging: false,
+                height: h,
+                windowHeight: Math.max(h, window.innerHeight || 0),
+                onclone: (opts && opts.onclone) || null
+            });
+            const blob = await new Promise((res) => { try { canvas.toBlob(res, 'image/png'); } catch (e) { res(null); } });
+            if (!blob) throw new Error('blob');
+            caCapDeliver(blob, (opts && opts.name) || 'CrewAssist.png', (opts && opts.title) || 'CrewAssist', (opts && opts.toast) || 'Screenshot saved');
+        }
+        // v1.45.60 (owner order): the passport camera — the hero card
+        // exactly as the selected year pill has it, the year named above.
+        // No live pose at all: the label and the crop live in the painter's
+        // clone, so the page never moves and nothing needs restoring.
+        async function rcPodCaptureHero() {
+            const hero = document.getElementById('ca-rc-pod-herowrap');
+            if (!hero || !hero.children.length) return;
+            const btn = document.getElementById('btn-rc-pod-cam');
+            if (btn) {
+                btn.classList.remove('ca-rc-flash');
+                void btn.offsetWidth;
+                btn.classList.add('ca-rc-flash');
+                setTimeout(() => { try { btn.classList.remove('ca-rc-flash'); } catch (e) {} }, 500);
+            }
+            try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+            if (!(await caCapWaitSettled(hero, 1400))) return;
+            const label = rcPodYear === 'all' ? 'All-Time' : String(rcPodYear);
+            try {
+                await caCapShoot(hero, {
+                    name: 'CrewAssist-Passport-' + (rcPodYear === 'all' ? 'All-Time' : rcPodYear) + '.png',
+                    title: 'CrewAssist passport',
+                    toast: 'Passport screenshot saved',
+                    onclone: (doc) => {
+                        const h = doc.getElementById('ca-rc-pod-herowrap');
+                        if (!h) return;
+                        const head = doc.createElement('div');
+                        head.id = 'ca-cap-head';
+                        head.className = 'text-lg font-bold mb-1';
+                        head.textContent = label;
+                        h.insertBefore(head, h.firstChild);
+                    }
+                });
+            } catch (e) {
+                archToast('Screenshot didn\u2019t capture \u2014 try again');
+            }
+        }
         let rcViewYm = '';
         let rcSelected = '';
         function rosterCalMonths() {
@@ -9231,6 +9373,7 @@ SLOT|Special Lve others`;
                 // close all live inside the wrap).
                 on('ca-rc-pod', () => openRcPod());
                 on('btn-close-rc-pod', () => closeRcPod());
+                on('btn-rc-pod-cam', () => rcPodCaptureHero()); // v1.45.60: the hero capture
                 const podWrapEl = document.getElementById('ca-rc-podwrap');
                 if (podWrapEl) podWrapEl.addEventListener('click', (ev) => {
                     if (!ev.target || !ev.target.closest) return;
@@ -16275,6 +16418,96 @@ SLOT|Special Lve others`;
             caSheetHideArm(wrap);   // hotfix 14: the shared arm (was a bespoke archSubTimer)
         }
         function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArchSummary._open = true; renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close. v1.45.56: a fresh open ROLLS the figures */
+
+        // v1.45.60 (owner order, the camera button): the earnings capture.
+        // Monthly Salary is the LOCKED context; the crew pick the YEAR from
+        // the archive's own sub-sheet (no all-time row — a year report stays
+        // naturally bounded, ~12 month rows); the card poses to that year
+        // with every month folded and the search cleared, the painter
+        // photographs the FULL scroll (the chart rides along in Year scope)
+        // with a "YYYY Earnings" header injected into the clone, and the
+        // pose restores in a finally — a failed capture never strands the
+        // crew on the wrong pills.
+        function archCapYearRows() {
+            const yrs = archArchiveYears().slice().reverse();   // newest first, the current year leading
+            if (!yrs.length) return '';
+            const all = loadArchive();
+            const map = archMonthsMap(all);
+            const hasBasic = salaryBasic() > 0;
+            return yrs.map((y) => {
+                const mks = Object.keys(map).filter((mk) => String(mk).slice(0, 4) === String(y)).sort();
+                const sal = (hasBasic && mks.length) ? archSalaryAgg(mks, all) : null;
+                return '<button type="button" class="ca-cap-yearrow w-full h-12 px-4 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center justify-between text-left" data-yr="' + y + '">'
+                    + '<span class="font-bold text-sm">' + y + '</span>'
+                    + '<span class="ca-micro font-bold" style="color: var(--arch-muted)">' + (sal ? formatMoney(sal.net) : '\u2014') + '</span>'
+                    + '</button>';
+            }).join('');
+        }
+        function archOpenCapPicker() {
+            if (!archArchiveYears().length) { archToast('Nothing saved to capture yet'); return; }
+            openArchSub('<div class="flex flex-col gap-1">' + archCapYearRows() + '</div>', 'Capture earnings', 'Choose the year to capture');
+            archEl('ca-arch-sub-body').querySelectorAll('.ca-cap-yearrow').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const yr = b.getAttribute('data-yr');
+                    closeArchSub();
+                    archCaptureYear(yr);
+                });
+            });
+        }
+        async function archCaptureYear(yr) {
+            const scrollEl = archEl('ca-arch-scroll');
+            if (!scrollEl || !/^\d{4}$/.test(String(yr || ''))) return;
+            try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+            if (!(await caCapWaitSettled(scrollEl, 1400))) return;
+            const keep = { scope: archState.scope, mode: archState.mode, yearSel: archState.yearSel, chartSel: archState.chartSel, search: archState.search, collapsed: JSON.parse(JSON.stringify(archState.collapsed || {})) };
+            const wasReduced = document.documentElement.classList.contains('ca-reduced');
+            try {
+                // ca-reduced stands the roll down for BOTH the pose and the
+                // restore — the digits paint settled, and no pending restore
+                // timer can land mid-capture (the v1.45.59 wrapper lesson)
+                if (!wasReduced) document.documentElement.classList.add('ca-reduced');
+                archState.mode = 'salary';
+                archState.scope = 'year';
+                archState.yearSel = String(yr);
+                archState.chartSel = null;
+                archState.search = '';
+                const map = archMonthsMap(loadArchive());
+                Object.keys(map).forEach((mk) => { if (String(mk).slice(0, 4) === String(yr)) archState.collapsed[mk] = true; });
+                renderArch();
+                await caCapShoot(scrollEl, {
+                    name: 'CrewAssist-Earnings-' + yr + '.png',
+                    title: 'CrewAssist earnings',
+                    toast: 'Earnings screenshot saved',
+                    onclone: (doc) => {
+                        const target = doc.getElementById('ca-arch-scroll');
+                        if (!target) return;
+                        // the full-height crop needs the scroller to let its
+                        // content flow in the clone — the live page never moves
+                        target.style.overflow = 'visible';
+                        const head = doc.createElement('div');
+                        head.id = 'ca-cap-head';
+                        head.className = 'text-lg font-bold mb-1';
+                        head.textContent = yr + ' Earnings';
+                        target.insertBefore(head, target.firstChild);
+                        ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights'].forEach((id) => {
+                            const n = doc.getElementById(id);
+                            if (n && n.parentNode) n.parentNode.removeChild(n);
+                        });
+                    }
+                });
+            } catch (e) {
+                archToast('Screenshot didn\u2019t capture \u2014 try again');
+            } finally {
+                archState.scope = keep.scope;
+                archState.mode = keep.mode;
+                archState.yearSel = keep.yearSel;
+                archState.chartSel = keep.chartSel;
+                archState.search = keep.search;
+                archState.collapsed = keep.collapsed;
+                renderArch();
+                if (!wasReduced) document.documentElement.classList.remove('ca-reduced');
+            }
+        }
         function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); caSheetGlideCancel(s); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm; round 20: cancel the pending glide */
 
         // v1.33.2: a fingerprint of which duties have landed — renderArch
@@ -17508,6 +17741,7 @@ SLOT|Special Lve others`;
             archEl('ca-arch-close').addEventListener('click', closeArchOverlay);
             archEl('ca-arch-backdrop').addEventListener('click', closeArchOverlay);
             archEl('ca-arch-export').addEventListener('click', archExport); // v1.41.0: import moved to Settings → Restore backup
+            archEl('ca-arch-cam').addEventListener('click', archOpenCapPicker); // v1.45.60: the year-picker → the capture
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
             document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').forEach((b) => b.addEventListener('click', () => {

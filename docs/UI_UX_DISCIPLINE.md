@@ -747,6 +747,32 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   anything render the departing element AGAIN after the tap? If yes, it
   can flash — cut it.
 
+### Capture surfaces: pose in the clone, never the live page (v1.46.0)
+
+- A capture (shareable screenshot of a live surface) photographs CONTENT,
+  never chrome: the controls that operate the surface — pill rows, search
+  bars, toggles, the page header, the camera button itself — are excluded
+  from the shot. The exclusion happens in the painter's CLONE (the
+  `onclone` document), never by hiding live elements: the page does not
+  shift, nothing needs un-hiding, no restore can fail.
+- A transient header names what the crew captured, injected into the clone
+  above the card in the page's own type voice ("2026 Earnings"; the
+  passport reads its pill's exact wording — "All-Time" / "2025"). The
+  label follows the CURRENT selection, not a default.
+- What the owner ruled for the earnings camera: Monthly Salary is the
+  locked context, the picker chooses ONLY the year (years on record,
+  newest first, no all-time — a year report stays naturally bounded), the
+  chart rides along, and the capture keeps whatever theme the crew are in.
+- A live pose that must re-render state (the earnings card's year scope)
+  rides a `try/finally` with a snapshot — the crew's own pills always
+  return — and the roll guard (`ca-reduced`) stands for BOTH the pose and
+  the restore renders, so no digit roll and no pending roll timer can land
+  mid-capture. A surface that needs no live pose (the passport hero) gets
+  none: label and crop alone.
+- A capture never photographs a mid-flight animation: wait out the roll
+  (or any in-place animation) first, bounded — a capture of half-settled
+  digits is a wrong number, which is worse than a late capture.
+
 ### Empty-state copy: blame the truth, name the remedy (v1.45.50)
 
 - When the app's OWN storage history is why data is missing, the empty-state
@@ -864,6 +890,7 @@ new patterns are established.
 | Celebration (new month)       | `party-popper`       |
 | Duty toggles (Direct US / Paxing / Shuttle) | `flag`, `armchair`, `repeat` |
 | Backup / restore              | `hard-drive-download` |
+| Cameras (earnings + passport) | `camera`              |
 | Best month                    | `trophy`             |
 | Route stats (the records page) | `podium`       |
 | Projection / goal             | `target`             |

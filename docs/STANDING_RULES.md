@@ -74,6 +74,8 @@
 
 - **Do not silently degrade.** If a requested change requires a trade-off or leaves an existing capability impaired, disclose it rather than presenting the result as fully successful.
 
+- **A deliver path never reports failure after the artifact was delivered (v1.46.0).** When a flow produces an artifact and then hands it off (share sheet, download anchor, export), the handoff is best-effort: an embedder or browser that refuses the handoff mechanism must never flip the flow into its failure branch — the user keeps the artifact and the honest success message. The failure message is reserved for failures that actually lost the artifact. Same discipline for any pose/restore pair around the deliver: the restore rides a `finally`, so a late throw can never strand the user in the posed state.
+
 ## 5. UI, UX & Accessibility
 
 - **Match before inventing.** Inspect existing interfaces and reuse the nearest appropriate design pattern, component and interaction treatment.
