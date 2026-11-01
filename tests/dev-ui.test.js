@@ -467,6 +467,13 @@ const mkUntil = (d) => async (cond, ms) => {
       // Mode's alone. v1.45.32 (owner order): the Storage panel's values
       // sit flush on one line (the rigid baseline flex + the no-wrap) and
       // the expense labels read their plurals. v1.45.33 (owner order): the
+      // v1.45.59 (owner order, the three-part round): the roll keeps
+      // its icons and spacing (runs wrap in place, refreshIcons at the
+      // restore), the chat shortcuts teach both word orders and the
+      // cabin-class search, and the compact sheet parts its ethnic
+      // variants with Japan keeping its signature course - takes the
+      // head with four pointers; 1.45.58 shifts down one; the 1.45.42
+      // pin leaves the window (floor 1.45.43).
       // v1.45.58 (owner report, the year-filter fix): the visit-log
       // drawer walks the LIST'S year — one fix pointer; 1.45.57 shifts
       // down one; the 1.45.41 pin leaves the window (floor 1.45.42).
@@ -621,67 +628,73 @@ const mkUntil = (d) => async (cond, ms) => {
       // symmetric - takes the head with three pointers. 1.45.36 shifts
       // down one; the 1.45.14 pin leaves the pinned window (floor
       // 1.45.15; its pointers stay in the feed).
-      R.eq(entries[0].v, '1.45.58', 'the 1.45.58 year-filter fix sits at the head of the changelog');
-      R.eq(entries[0].items.length, 1, 'the 1.45.58 entry carries its single fix pointer');
+      R.eq(entries[0].v, '1.45.59', 'the 1.45.59 roll-fix + shortcuts + ethnic-sheet release sits at the head of the changelog');
+      R.eq(entries[0].items.length, 4, 'the 1.45.59 entry carries its fix and three imp pointers');
+      R.ok(src.includes("c: 'fix', t: 'Earnings figures keep their icons and spacing through the roll.' }"), 'the roll-fix pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'Chat shortcuts teach both word orders and cabin-class searches.' }"), 'the shortcuts pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'Compact ethnic sheets part the meatless from the meat.' }"), 'the ethnic-parting pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'imp', t: 'Japanese ethnic sheets lead with their signature course.' }"), 'the Japan pointer reads as approved, inside the release it ships');
+      R.eq(entries[1].v, '1.45.58', 'the 1.45.58 year-filter fix sits second, newest first');
+      R.eq(entries[1].items.length, 1, 'the 1.45.58 entry carries its single fix pointer');
       R.ok(src.includes("c: 'fix', t: 'The flight stats page keeps a station\\u2019s history inside the year you chose.' }"), 'the year-filter fix pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.45.57', 'the 1.45.57 whole-card roll hotfix sits second, newest first');
-      R.eq(entries[1].items.length, 1, 'the 1.45.57 entry carries its single imp pointer');
+      R.eq(entries[2].v, '1.45.57', 'the 1.45.57 whole-card roll hotfix sits second, newest first');
+      R.eq(entries[2].items.length, 1, 'the 1.45.57 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'Every figure on the gold earnings card rolls now.' }"), 'the whole-card roll pointer reads as approved, inside the release it ships');
-      R.eq(entries[2].v, '1.45.56', 'the 1.45.56 roll + veg label release sits second, newest first');
-      R.eq(entries[2].items.length, 2, 'the 1.45.56 entry carries its two imp pointers');
+      R.eq(entries[3].v, '1.45.56', 'the 1.45.56 roll + veg label release sits second, newest first');
+      R.eq(entries[3].items.length, 2, 'the 1.45.56 entry carries its two imp pointers');
       R.ok(src.includes("c: 'imp', t: 'Hero figures roll in like a departure board.' }"), 'the roll pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The meatless ethnic menu is labelled (Veg).' }"), 'the veg pointer reads as approved, inside the release it ships');
-      R.eq(entries[3].v, '1.45.55', 'the 1.45.55 color + chronology release sits second, newest first');
-      R.eq(entries[3].items.length, 2, 'the 1.45.55 entry carries its two imp pointers');
+      R.eq(entries[4].v, '1.45.55', 'the 1.45.55 color + chronology release sits second, newest first');
+      R.eq(entries[4].items.length, 2, 'the 1.45.55 entry carries its two imp pointers');
       R.ok(src.includes("c: 'imp', t: 'The hero card returns in the earnings gold; figures read espresso.' }"), 'the gold-card pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'My Flight Stats: five ordered rows, and the page glides up.' }"), 'the chronology pointer reads as approved, inside the release it ships');
-      R.eq(entries[4].v, '1.45.54', 'the 1.45.54 re-skin release sits third, newest first');
-      R.eq(entries[4].items.length, 2, 'the 1.45.54 entry carries its two imp pointers');
+      R.eq(entries[5].v, '1.45.54', 'the 1.45.54 re-skin release sits third, newest first');
+      R.eq(entries[5].items.length, 2, 'the 1.45.54 entry carries its two imp pointers');
       R.ok(src.includes("c: 'imp', t: 'The passport wears the earnings page\\u2019s cards, day and night.' }"), 'the re-skin pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Year chips and list tabs ride one pill track; figures read ink.' }"), 'the segtrack pointer reads as approved, inside the release it ships');
-      R.eq(entries[5].v, '1.45.53', 'the 1.45.53 type + overlay release sits third, newest first');
-      R.eq(entries[5].items.length, 2, 'the 1.45.53 entry carries its two imp pointers');
+      R.eq(entries[6].v, '1.45.53', 'the 1.45.53 type + overlay release sits third, newest first');
+      R.eq(entries[6].items.length, 2, 'the 1.45.53 entry carries its two imp pointers');
       R.ok(src.includes("c: 'imp', t: 'Passport figures wear the earnings page\\u2019s bold, even-spaced type.' }"), 'the type pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'All Flight Stats opens as its own page above the passport.' }"), 'the overlay pointer reads as approved, inside the release it ships');
-      R.eq(entries[6].v, '1.45.52', 'the 1.45.52 telemetry release sits fourth, newest first');
-      R.eq(entries[6].items.length, 2, 'the 1.45.52 entry carries its two imp pointers');
+      R.eq(entries[7].v, '1.45.52', 'the 1.45.52 telemetry release sits fourth, newest first');
+      R.eq(entries[7].items.length, 2, 'the 1.45.52 entry carries its two imp pointers');
       R.ok(src.includes("c: 'imp', t: 'The passport gains year pills and a navy telemetry hero.' }"), 'the telemetry pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Ten flying metrics tell your story, foldable behind one button.' }"), 'the ten-metrics pointer reads as approved, inside the release it ships');
-      R.eq(entries[7].v, '1.45.51', 'the 1.45.51 passport release sits third, newest first');
-      R.eq(entries[7].items.length, 2, 'the 1.45.51 entry carries its imp and fix pointers');
+      R.eq(entries[8].v, '1.45.51', 'the 1.45.51 passport release sits third, newest first');
+      R.eq(entries[8].items.length, 2, 'the 1.45.51 entry carries its imp and fix pointers');
       R.ok(src.includes("c: 'imp', t: 'Your records page is now the Passport \u2014 top ten, every screen.' }"), 'the passport pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'fix', t: 'Tapping the tag icon off hides the marks at once \u2014 no flash on the way out.' }"), 'the hide-flash pointer reads as approved, inside the release it ships');
-      R.eq(entries[8].v, '1.45.50', 'the 1.45.50 storage-era release sits at the head of the changelog');
-      R.eq(entries[8].items.length, 1, 'the 1.45.50 entry carries its single pointer');
+      R.eq(entries[9].v, '1.45.50', 'the 1.45.50 storage-era release sits at the head of the changelog');
+      R.eq(entries[9].items.length, 1, 'the 1.45.50 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'Months saved before the calendar kept flight details now say how to rebuild them.' }"), 'the storage-era pointer reads as approved, inside the release it ships');
-      R.eq(entries[9].v, '1.45.49', 'the 1.45.49 legend release sits at the head of the changelog');
-      R.eq(entries[9].items.length, 1, 'the 1.45.49 entry carries its single pointer');
+      R.eq(entries[10].v, '1.45.49', 'the 1.45.49 legend release sits at the head of the changelog');
+      R.eq(entries[10].items.length, 1, 'the 1.45.49 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'Duty days carry their official code meanings now.' }"), 'the legend pointer reads as approved, inside the release it ships');
-      R.eq(entries[10].v, '1.45.48', 'the 1.45.48 icon-arrows release sits at the head of the changelog');
-      R.eq(entries[10].items.length, 1, 'the 1.45.48 entry carries its single pointer');
+      R.eq(entries[11].v, '1.45.48', 'the 1.45.48 icon-arrows release sits at the head of the changelog');
+      R.eq(entries[11].items.length, 1, 'the 1.45.48 entry carries its single pointer');
       R.ok(src.includes("c: 'imp', t: 'The calendar\u2019s month arrows are true icons now.' }"), 'the month-arrows pointer reads as approved, inside the release it ships');
-      R.eq(entries[11].v, '1.45.47', 'the 1.45.47 chevron release sits at the head of the changelog');
-      R.eq(entries[11].items.length, 2, 'the 1.45.47 entry carries its two pointers');
+      R.eq(entries[12].v, '1.45.47', 'the 1.45.47 chevron release sits at the head of the changelog');
+      R.eq(entries[12].items.length, 2, 'the 1.45.47 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Rows carry a quiet chevron that turns as their log opens.' }") && src.includes("c: 'fix', t: 'The highlighted row breathes at its edges, and a new tab folds every log and returns you to the top.' }"), 'the chevron pointer and the breathing-room pointer read as approved, inside the release they ship');
-      R.eq(entries[12].v, '1.45.46', 'the 1.45.46 visible-fit release sits at the head of the changelog');
-      R.eq(entries[12].items.length, 1, 'the 1.45.46 entry carries its single pointer');
+      R.eq(entries[13].v, '1.45.46', 'the 1.45.46 visible-fit release sits at the head of the changelog');
+      R.eq(entries[13].items.length, 1, 'the 1.45.46 entry carries its single pointer');
       R.ok(src.includes("c: 'fix', t: 'The records list fills the height your screen gives it.' }"), 'the fit pointer reads as approved, inside the release it ships');
-      R.eq(entries[13].v, '1.45.45', 'the 1.45.45 accessibility release sits at the head of the changelog');
-      R.eq(entries[13].items.length, 2, 'the 1.45.45 entry carries its two pointers');
+      R.eq(entries[14].v, '1.45.45', 'the 1.45.45 accessibility release sits at the head of the changelog');
+      R.eq(entries[14].items.length, 2, 'the 1.45.45 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'Light\u2019s quiet ink reads clearly now.' }"), 'the ink pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'fix', t: 'A long press on a record never selects its text.' }"), 'the select-lock pointer reads as approved, inside the release it ships');
       R.ok(src.includes('--ca-ink-stone: #78716C;') && (src.match(/--ca-ink-stone: #78716C;/g) || []).length === 1, 'v1.45.45: the LIGHT block deepens the muted ink to stone-500 — one override line, the shared stone-400 stays dark\u2019s value');
       R.ok(/html:not\(\.dark\)[\s\S]{0,900}--ca-ink-stone: #78716C;/.test(src), 'the stone-500 override rides inside the light block, not the shared token run');
-      R.eq(entries[14].v, '1.45.44', 'the 1.45.44 grounding release sits at the head of the changelog');
-      R.eq(entries[14].items.length, 2, 'the 1.45.44 entry carries its two pointers');
+      R.eq(entries[15].v, '1.45.44', 'the 1.45.44 grounding release sits at the head of the changelog');
+      R.eq(entries[15].items.length, 2, 'the 1.45.44 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'The open station wears its gold ring while the history is out.' }"), 'the anchor pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Visit logs name their station and count, with calendar-colored stays.' }"), 'the drawer pointer reads as approved, inside the release it ships');
-      R.eq(entries[15].v, '1.45.43', 'the 1.45.43 fold-correction release sits second, newest first');
-      R.eq(entries[15].items.length, 2, 'the 1.45.43 entry carries its two pointers');
+      R.eq(entries[16].v, '1.45.43', 'the 1.45.43 fold-correction release sits second, newest first');
+      R.eq(entries[16].items.length, 2, 'the 1.45.43 entry carries its two pointers');
       R.ok(src.includes("c: 'imp', t: 'A turnaround shuttle folds its hub, however long the return wait.' }"), 'the fold pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The visit log reads right in dark mode too.' }"), 'the dark-mode pointer reads as approved, inside the release it ships');
-      R.eq(entries[16].v, '1.45.42', 'the 1.45.42 visit-log release sits second, newest first');
-      R.eq(entries[16].items.length, 2, 'the 1.45.42 entry carries its two pointers');
+      // the 1.45.42 rung left the pinned window at 1.45.59 (floor 1.45.43);
+      // its pointers stay in the feed below
       R.ok(src.includes("c: 'imp', t: 'Tapping between lists never loses the crown again.' }"), 'the crown pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Tap a station to unfold every flight you’ve flown there.' }"), 'the visit-log pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'A quick shuttle back to the same station never counts twice.' }"), 'the shuttle-fold pointer reads as approved, inside the release it ships');
@@ -1274,6 +1287,18 @@ const mkUntil = (d) => async (cond, ms) => {
     const oct4Year = g.w.eval("(function(){ const t = todayLocalYMD(); return (t <= '2026-10-04') ? '2026' : '2027'; })()");
     R.eq(g.w.eval("parseNaturalCommand('cop sq 802 oct 4').pairs[0].ymd"), oct4Year + '-10-04', 'spaced flight and month-first dates both parse');
     R.eq(g.w.eval("!!parseNaturalCommand('what can you do')"), false, 'ordinary sentences never parse as commands');
+    // v1.45.59 (owner order): the command words travel — the mode may follow
+    // the first flight number, and a cabin class may sit anywhere it can
+    R.eq(g.w.eval("parseNaturalCommand('sq802 menu 4 oct').mode"), 'menu', 'flight-number-first phrasing: the mode may follow the first flight number');
+    R.eq(g.w.eval("parseNaturalCommand('sq802 ifa 4 oct').mode"), 'ifa', 'flight-first ifa parses');
+    R.eq(g.w.eval("parseNaturalCommand('sq802 lma 4 oct sq807 5 oct').mode"), 'lma', 'flight-first lma keeps its pair walk');
+    R.eq(g.w.eval("parseNaturalCommand('sq802 cop 4 oct sq807 5 oct').mode"), 'cop', 'flight-first cop parses');
+    R.eq(g.w.eval("parseNaturalCommand('jcl menu sq802 4 oct').cabin"), 'JCL', 'a cabin-class search parses to the uppercase cabin code');
+    R.eq(g.w.eval("parseNaturalCommand('sq802 jcl menu 4 oct').cabin"), 'JCL', 'the cabin may follow the first flight number too');
+    R.eq(g.w.eval("parseNaturalCommand('menu fcl sq802 4 oct').cabin"), 'FCL', 'the cabin may trail the mode word');
+    R.eq(g.w.eval("parseNaturalCommand('ycl sq802 4 oct').cabin"), 'YCL', 'a cabin with no mode word still parses — the chooser inherits it');
+    R.eq(g.w.eval("!!parseNaturalCommand('jcl fcl menu sq802 4 oct')"), false, 'one cabin at a time — a second cabin token never parses');
+    R.eq(g.w.eval("!!parseNaturalCommand('menu menu sq802 4 oct')"), false, 'one mode at a time — a repeated mode word never parses');
 
     // v1.44.0 hotfix (owner spec): the help card is a structured onboarding
     // surface — gold icon-tile header, four tappable command rows (Lucide
@@ -1291,14 +1316,22 @@ const mkUntil = (d) => async (cond, ms) => {
         R.ok(htxt.indexOf('Quick shortcuts') >= 0 && htxt.indexOf('Type or tap any command below') >= 0, 'the header pairs a bold title with a quiet subtitle');
         R.ok(!!card.querySelector('[data-lucide="lightbulb"]'), 'the header tile is Lucide lightbulb \u2014 icons only, never emoji');
         const rows = Array.from(card.querySelectorAll('[data-ca-help-cmd]'));
-        R.eq(rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(','), 'menu,ifa,lma,cop', 'four command rows \u2014 menu, ifa, lma, cop, in that order');
-        R.eq(rows.map((r) => r.querySelector('i[data-lucide]').getAttribute('data-lucide')).join(','), 'utensils,calculator,sandwich,map', 'each row carries its category glyph \u2014 utensils, calculator, sandwich, map');
+        R.eq(rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(','), 'menu,jcl menu,ifa,lma,cop', 'v1.45.59: five command rows \u2014 menu, jcl menu, ifa, lma, cop, in that order');
+        R.eq(rows.map((r) => r.querySelector('i[data-lucide]').getAttribute('data-lucide')).join(','), 'utensils,armchair,calculator,sandwich,map', 'each row carries its category glyph \u2014 utensils, armchair, calculator, sandwich, map');
         R.ok(rows.every((r) => r.tagName === 'BUTTON'), 'every row is a real button \u2014 tappable');
         const kw = rows[0].querySelector('span.font-mono');
         R.ok(!!kw && kw.textContent === 'menu' && kw.className.indexOf('text-sia-gold') >= 0 && kw.className.indexOf('text-sm') >= 0, 'the keyword is bold gold in the monospace face at the BODY rung');
         const tok = rows[1].querySelector('.ca-help-token');
-        R.ok(!!tok && tok.textContent === 'sq802 4 oct' && tok.className.indexOf('font-mono') >= 0, 'the example argument rides beside the keyword as a monospaced input-token pill, never em-dash prose');
+        R.ok(!!tok && tok.textContent === 'sq802 4 oct' && tok.className.indexOf('font-mono') >= 0, 'the cabin row\u2019s example rides beside its keyword as a monospaced input-token pill, never em-dash prose');
+        const toks = (r) => Array.from(rows[r].querySelectorAll('.ca-help-token')).map((t) => t.textContent);
+        R.eq(toks(0).join('|'), 'sq802 4 oct|sq802 menu 4 oct', 'the menu row teaches BOTH word orders \u2014 keyword-first and flight-number-first');
+        R.eq(toks(2).join('|'), 'sq802 4 oct|sq802 ifa 4 oct', 'the ifa row teaches both word orders too');
+        R.eq(toks(3).join('|'), 'sq802 4 oct sq807 5 oct|sq802 lma 4 oct sq807 5 oct', 'the lma row teaches both word orders across its two sectors');
+        R.eq(toks(4).join('|'), 'sq802 4 oct sq807 5 oct|sq802 cop 4 oct sq807 5 oct', 'the cop row teaches both word orders across its two sectors');
+        R.eq(toks(1).length, 1, 'the cabin row shows ONE example \u2014 the crew extrapolate scl, ycl and fcl themselves (owner ruling)');
+        R.ok(toks(0).every((t) => / \d{1,2} [a-z]{3,9}$/.test(t)) && toks(4).every((t) => / \d{1,2} [a-z]{3,9} sq\d+ \d{1,2} [a-z]{3,9}$/.test(t)), 'v1.45.59: every example pill is a COMPLETE working command \u2014 a flight AND its date, nothing that \u201cdoes nothing\u201d when typed');
         R.ok(htxt.indexOf('Open a flight\u2019s inflight menus') >= 0 && htxt.indexOf('Price a whole trip, both allowances') >= 0, 'each row keeps its one-phrase description on the line below');
+        R.ok(htxt.indexOf('One cabin\u2019s menu \u2014 jcl, scl, ycl or fcl') >= 0, 'the cabin row names the four cabin classes in its one-phrase description');
         R.eq(card.querySelectorAll('.ca-hairline').length, 2, 'two hairlines frame the command list');
         // tap: insert + focus + flash
         const inp = g.d.getElementById('chat-input');
@@ -1307,7 +1340,9 @@ const mkUntil = (d) => async (cond, ms) => {
         R.ok(g.d.activeElement === inp, 'the tap focuses the composer at the end');
         R.ok(rows[0].classList.contains('ca-help-flash'), 'the tapped row flashes gold');
         rows[1].click();
-        R.eq(inp.value, 'ifa ', 'a second row tap replaces the draft with its own keyword');
+        R.eq(inp.value, 'jcl menu ', 'the cabin row tap inserts its own keyword pair');
+        rows[2].click();
+        R.eq(inp.value, 'ifa ', 'a third row tap replaces the draft with its own keyword');
         await wait(500);
         R.ok(!rows[0].classList.contains('ca-help-flash'), 'the flash fades on its own \u2014 no stuck state');
         inp.value = '';

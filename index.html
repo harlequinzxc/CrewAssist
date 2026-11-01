@@ -747,6 +747,15 @@
            mounts under ca-reduced. */
         .ca-rollc { position: relative; display: inline-block; overflow: hidden; vertical-align: top; color: transparent; }
         .ca-rollstrip { position: absolute; left: 0; top: 0; }
+        /* v1.45.59 (owner report, the spacing half): each rolled text run
+           rides ONE inline wrapper — every digit cell of the run lives inside
+           it. Without the wrapper the cells become direct children of the
+           value element, and in a flex value (gap-2, like the context line)
+           every cell turned into its own flex item — the digits "spaced out
+           when in animation before coming together again". The wrapper is
+           the single flex item, so the run sits exactly where the resting
+           text sat. Inline stays inline in block contexts. */
+        .ca-rollwrap { display: inline; }
         .ca-rollr { display: block; text-align: left; }
         .ca-rollr0::before { content: '0'; } .ca-rollr1::before { content: '1'; } .ca-rollr2::before { content: '2'; } .ca-rollr3::before { content: '3'; } .ca-rollr4::before { content: '4'; }
         .ca-rollr5::before { content: '5'; } .ca-rollr6::before { content: '6'; } .ca-rollr7::before { content: '7'; } .ca-rollr8::before { content: '8'; } .ca-rollr9::before { content: '9'; }
@@ -1615,6 +1624,10 @@
         .pc-block { margin: 0; }
         .pc-block > .pc-course:last-of-type { margin-bottom: 0; }
         .pc-svc-rule { height: 1px; background: #000; margin: 0 0 0.7mm; }
+        /* v1.45.59 (owner order): the dashed parting between the ethnic
+           meal types — the meatless selection and the meat selection each
+           keep their courses; the dashed rule is the seam between them. */
+        .pc-eth-rule { height: 0; border-top: 1px dashed #000; margin: 0.6mm 0 0.7mm; }
         .pc-head { font-size: calc(6.8px * var(--print-type, 1)); font-weight: 800; letter-spacing: 0.02em; color: #000; line-height: 1.28; margin: 0 0 0.45mm; }
         .pc-block + .pc-block .pc-head { margin-top: 0.7mm; }
         .pc-course { width: 100%; border-collapse: collapse; font-size: calc(6.8px * var(--print-type, 1)); color: #000; margin: 0.12mm 0; }
@@ -3162,7 +3175,7 @@
             }
         }
 
-        var APP_VERSION = '1.45.58'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.45.59'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3184,6 +3197,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.45.59', d: '2026-11-01', items: [
+                { c: 'fix', t: 'Earnings figures keep their icons and spacing through the roll.' },
+                { c: 'imp', t: 'Chat shortcuts teach both word orders and cabin-class searches.' },
+                { c: 'imp', t: 'Compact ethnic sheets part the meatless from the meat.' },
+                { c: 'imp', t: 'Japanese ethnic sheets lead with their signature course.' }
+            ] },
             { v: '1.45.58', d: '2026-11-01', items: [
                 { c: 'fix', t: 'The flight stats page keeps a station\u2019s history inside the year you chose.' }
             ] },
@@ -6578,65 +6597,102 @@
         //     and every pin and screen reader — always reads the truth;
         //   - static characters are never touched — the anchors;
         //   - a roll in flight is replaced, never stacked (the pending
-        //     restore is cancelled and the element flattens to its truth
-        //     before the new capture — a restore can never revert a
-        //     later figure);
+        //     restore is cancelled and the roll's own wrappers fold back
+        //     to their truth before the new capture — a restore can never
+        //     revert a later figure);
         //   - ca-reduced stands down entirely (the text simply stays);
         //   - the restore returns the element's own innerHTML, so styled
-        //     values (the Gross|CPF separators) survive the roll.
+        //     values (the Gross|CPF separators) survive the roll, and the
+        //     reinstated lucide stubs go straight through refreshIcons
+        //     (v1.45.59: the icons always come back with the figures);
+        //   - child elements never move at all (v1.45.59) — only the
+        //     digit-bearing text runs get wrapped, so icons and separators
+        //     ride out the roll in place, and each run's cells sit inside
+        //     ONE wrapper so flex values never gap the digits mid-roll.
         function caNumRoll(el) {
             if (!el) return;
             var txt = el.textContent;
             if (!/\d/.test(txt)) return;      // nothing to roll — anchors only, or nothing at all
             if (document.documentElement.classList.contains('ca-reduced')) return;
             if (el._caRollT) { clearTimeout(el._caRollT); el._caRollT = null; }
-            // a roll still in flight flattens FIRST — the base text IS the
+            // a roll still in flight dismantles FIRST — the base text IS the
             // truth (every render re-sets the value before rolling, so the
             // capture below is always the CURRENT markup; restoring a
             // first-roll capture would revert a later figure — the smoke
-            // rig caught exactly that)
-            if (el.querySelector('.ca-rollc')) el.textContent = el.textContent;
+            // rig caught exactly that). v1.45.59: only the roll's own
+            // wrappers fold back to text — the element's other structure
+            // (the context line's icon, the gross line's separators) rides
+            // through a rapid re-roll untouched.
+            if (el.querySelector('.ca-rollwrap')) {
+                Array.prototype.forEach.call(el.querySelectorAll('.ca-rollwrap'), function (w) {
+                    if (w.parentNode) w.parentNode.replaceChild(document.createTextNode(w.textContent), w);
+                });
+            }
             var savedHtml = el.innerHTML;
             var cs = window.getComputedStyle(el);
             var fs = parseFloat(cs.fontSize) || 14;
             var lh = parseFloat(cs.lineHeight) || Math.round(fs * 1.2);   // jsdom reads 'normal' — the fallback keeps the math honest
             var ink = cs.color || '';
-            var frag = document.createDocumentFragment();
             var reels = [];
-            for (var i = 0; i < txt.length; i++) {
-                var ch = txt.charAt(i);
-                if (ch >= '0' && ch <= '9') {
-                    var cell = document.createElement('span');
-                    cell.className = 'ca-rollc';
-                    cell.style.height = lh + 'px';
-                    cell.appendChild(document.createTextNode(ch));
-                    var rows = '';
-                    for (var r = 0; r < 30; r++) rows += '<span class="ca-rollr ca-rollr' + (r % 10) + '" style="height:' + lh + 'px;line-height:' + lh + 'px"></span>';
-                    var strip = document.createElement('span');
-                    strip.className = 'ca-rollstrip';
-                    strip.setAttribute('aria-hidden', 'true');
-                    strip.style.color = ink;
-                    strip.innerHTML = rows;
-                    strip.style.transform = 'translateY(-' + (Math.floor(Math.random() * 10) * lh) + 'px)';
-                    cell.appendChild(strip);
-                    frag.appendChild(cell);
-                    reels.push({ s: strip, row: 10 + Number(ch) });
-                } else {
-                    frag.appendChild(document.createTextNode(ch));
+            var j = 0;   // the digit index across the WHOLE element — the left-to-right lock
+            // v1.45.59 (owner report): the roll wraps the digit-bearing TEXT
+            // RUNS where they sit instead of flattening the element to bare
+            // text. Child elements — icons, separators, spans — never move
+            // now, and each run's cells live inside ONE .ca-rollwrap so a
+            // flex value (gap-2, like the context line) never turns the
+            // cells into gapped flex items mid-roll.
+            var runs = [];
+            (function collect(node) {
+                Array.prototype.forEach.call(node.childNodes, function (n) {
+                    if (n.nodeType === 3) { if (/\d/.test(n.nodeValue)) runs.push(n); }
+                    else if (n.nodeType === 1) collect(n);
+                });
+            })(el);
+            runs.forEach(function (run) {
+                var frag = document.createDocumentFragment();
+                var s = String(run.nodeValue);
+                for (var i = 0; i < s.length; i++) {
+                    var ch = s.charAt(i);
+                    if (ch >= '0' && ch <= '9') {
+                        var cell = document.createElement('span');
+                        cell.className = 'ca-rollc';
+                        cell.style.height = lh + 'px';
+                        cell.appendChild(document.createTextNode(ch));
+                        var rows = '';
+                        for (var r = 0; r < 30; r++) rows += '<span class="ca-rollr ca-rollr' + (r % 10) + '" style="height:' + lh + 'px;line-height:' + lh + 'px"></span>';
+                        var strip = document.createElement('span');
+                        strip.className = 'ca-rollstrip';
+                        strip.setAttribute('aria-hidden', 'true');
+                        strip.style.color = ink;
+                        strip.innerHTML = rows;
+                        strip.style.transform = 'translateY(-' + (Math.floor(Math.random() * 10) * lh) + 'px)';
+                        cell.appendChild(strip);
+                        frag.appendChild(cell);
+                        reels.push({ s: strip, row: 10 + Number(ch), j: j });
+                        j++;
+                    } else {
+                        frag.appendChild(document.createTextNode(ch));
+                    }
                 }
-            }
-            el.innerHTML = '';
-            el.appendChild(frag);
+                var wrap = document.createElement('span');
+                wrap.className = 'ca-rollwrap';
+                wrap.appendChild(frag);
+                if (run.parentNode) run.parentNode.replaceChild(wrap, run);
+            });
             void el.offsetWidth;    // commit the closed pose before the lift — the glide contract
             var maxEnd = 0;
-            reels.forEach(function (t, j) {
-                var delay = Math.min(j, 6) * 45;    // the left-to-right lock, capped so long money never drags
+            reels.forEach(function (t) {
+                var delay = Math.min(t.j, 6) * 45;    // the left-to-right lock, capped so long money never drags
                 t.s.style.transition = 'transform 480ms cubic-bezier(.22,.85,.3,1.08) ' + delay + 'ms';
                 t.s.style.transform = 'translateY(-' + (t.row * lh) + 'px)';
                 if (delay + 480 > maxEnd) maxEnd = delay + 480;
             });
             el._caRollT = setTimeout(function () {
                 el.innerHTML = savedHtml;
+                // v1.45.59 (owner report): the captured markup predates the
+                // render's own icon pass, so any lucide stubs it carries
+                // convert HERE — the icons return with the figures.
+                if (typeof refreshIcons === 'function') refreshIcons();
                 el._caRollT = null;
             }, maxEnd + 90);
         }
@@ -10675,18 +10731,34 @@ SLOT|Special Lve others`;
         // ================= v1.39.0 (B7): natural calculator commands =================
         // "sq802 4 oct sq807 5 oct" (chooser), "ifa sq802 4 oct", "lma sq802 4 oct
         // sq807 5 oct", "cop ...", "menu sq802 4 oct". Grammar: an optional mode
-        // word, then one to four (flight, date) pairs. Anything that does not
-        // parse CLEANLY falls through to the old keyword engine — a typo never
-        // hijacks the chat. Route/times resolve from the attached roster first
-        // (offline-honest), then online via the menu API's schedule.
+        // word, then one to four (flight, date) pairs. v1.45.59: the words also
+        // travel — the mode may follow the first flight number ("sq802 menu 4
+        // oct"), and a cabin class (fcl/jcl/scl/ycl) may sit beside the mode
+        // ("jcl menu sq802 4 oct") to open that cabin's menu directly. Anything
+        // that does not parse CLEANLY falls through to the old keyword engine —
+        // a typo never hijacks the chat. Route/times resolve from the attached
+        // roster first (offline-honest), then online via the menu API's schedule.
         const NAT_MONTHS = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, sept:9, oct:10, nov:11, dec:12,
             january:1, february:2, march:3, april:4, june:6, july:7, august:8, september:9, october:10, november:11, december:12 };
         function parseNaturalCommand(text) {
             const t = String(text || '').toLowerCase().replace(/,/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
             if (!t.length) return null;
+            // v1.45.59 (owner order): the command words travel — a mode word
+            // and a cabin class (fcl/jcl/scl/ycl) may lead, or follow the
+            // FIRST flight number ("sq802 menu 4 oct", "sq802 jcl menu 4
+            // oct", "jcl menu sq802 4 oct"). One of each at most; only the
+            // menu family ever reads the cabin.
             let mode = '';
+            let cabin = '';
             let i = 0;
-            if (['menu', 'ifa', 'lma', 'cop'].indexOf(t[0]) >= 0) { mode = t[0]; i = 1; }
+            const NAT_MODES = ['menu', 'ifa', 'lma', 'cop'];
+            const NAT_CABINS = { fcl: 'FCL', jcl: 'JCL', scl: 'SCL', ycl: 'YCL' };
+            for (;;) {
+                if (i >= t.length) return null;    // words with no flight behind them never parse
+                if (!mode && NAT_MODES.indexOf(t[i]) >= 0) { mode = t[i]; i++; continue; }
+                if (!cabin && NAT_CABINS[t[i]]) { cabin = NAT_CABINS[t[i]]; i++; continue; }
+                break;
+            }
             const pairs = [];
             while (i < t.length) {
                 if (pairs.length >= 4) return null; // the card holds four sectors — longer pairings belong to the roster PDF
@@ -10697,6 +10769,14 @@ SLOT|Special Lve others`;
                 else if (/^\d{1,4}$/.test(tok)) fn = tok;
                 if (!fn) return null;
                 i++;
+                // the words may also sit right after the first flight number
+                if (!pairs.length) {
+                    for (;;) {
+                        if (!mode && NAT_MODES.indexOf(t[i]) >= 0) { mode = t[i]; i++; continue; }
+                        if (!cabin && NAT_CABINS[t[i]]) { cabin = NAT_CABINS[t[i]]; i++; continue; }
+                        break;
+                    }
+                }
                 let day = 0, mon = 0;
                 const a = t[i], b = t[i + 1];
                 if (a && /^\d{1,2}$/.test(a) && b && NAT_MONTHS[b]) { day = parseInt(a, 10); mon = NAT_MONTHS[b]; i += 2; }
@@ -10710,7 +10790,7 @@ SLOT|Special Lve others`;
                 pairs.push({ fn: String(parseInt(fn, 10)), ymd });
             }
             if (!pairs.length || i !== t.length) return null;
-            return { mode, pairs };
+            return { mode, cabin, pairs };
         }
         // The attached roster is the offline source of truth for a flight's
         // route and printed times. Raw store (not upcomingList): past duties
@@ -10825,8 +10905,8 @@ SLOT|Special Lve others`;
             }
             // --- menu: straight to the flight's menus ---
             if (cmd.mode === 'menu') {
-                if (cmd.pairs.length === 1) { openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd); return; }
-                natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd) })));
+                if (cmd.pairs.length === 1) { openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd, null, cmd.cabin); return; }
+                natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd, null, cmd.cabin) })));
                 return;
             }
             // --- calculator prefill ---
@@ -10842,31 +10922,41 @@ SLOT|Special Lve others`;
             // --- no mode word: the crew picks menus or the allowance ---
             natChooserBubble('<b>' + label + '</b> \u2014 what would you like?', [
                 { label: 'Menus', icon: 'utensils', gold: false, act: () => {
-                    if (cmd.pairs.length === 1) openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd);
-                    else natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd) })));
+                    if (cmd.pairs.length === 1) openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd, null, cmd.cabin);
+                    else natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd, null, cmd.cabin) })));
                 } },
                 { label: 'COP allowance', icon: 'calculator', gold: true, act: () => prefill('both') }
             ]);
         }
 
         // v1.44.0 hotfix (owner spec): the help card. A structured onboarding
-        // surface — header tile, hairline, four tappable command rows (bold
-        // gold keyword, monospaced input token pill, one-phrase description),
-        // a dimmer tips block, and ONE outlined CTA. Iconography is Lucide
-        // only (category glyphs, the header bulb, the tip dots, the CTA
-        // arrow); no emoji, no custom SVGs, no new accent colours — gold/dark
-        // only, green reserved for success states elsewhere. The staggered
-        // entrance rides the app's own chat-anim-in spring with per-row
-        // delays. Tapping a row inserts its keyword into the composer (bound
-        // by the delegated listener at boot) and flashes the row gold.
+        // surface — header tile, hairline, five tappable command rows (bold
+        // gold keyword, monospaced input token pills, one-phrase description),
+        // a dimmer tips block, and ONE outlined CTA. v1.45.59 (owner order):
+        // the menu row's example became a complete command (a flight AND a
+        // date), every row teaches BOTH word orders as pills, and the cabin
+        // row (jcl menu) sits under menu with ONE example. Iconography is
+        // Lucide only (category glyphs, the header bulb, the tip dots, the
+        // CTA arrow); no emoji, no custom SVGs, no new accent colours —
+        // gold/dark only, green reserved for success states elsewhere. The
+        // staggered entrance rides the app's own chat-anim-in spring with
+        // per-row delays. Tapping a row inserts its keyword into the
+        // composer (bound by the delegated listener at boot) and flashes the
+        // row gold.
         function helpCardHtml() {
-            const row = (cmd, icon, token, desc, delay) => `
+            // v1.45.59 (owner order): every command row now shows BOTH word
+            // orders — keyword-first and flight-number-first — as example
+            // pills, and ONE cabin-class row sits under menu (a single
+            // example; the crew extrapolate scl/ycl/fcl). Every pill is a
+            // COMPLETE, working command — nothing on the card is a dead
+            // example. Tapping the row still inserts its keyword.
+            const row = (cmd, icon, tokens, desc, delay) => `
                 <button type="button" data-ca-help-cmd="${cmd}" class="ca-help-row chat-anim-in w-full text-left flex items-start gap-3 rounded-xl px-2 py-2" style="animation-delay:${delay}ms">
                     <i data-lucide="${icon}" class="w-4 h-4 mt-1.5 text-gray-400 dark:text-gray-500 shrink-0"></i>
                     <span class="min-w-0 flex-1 block">
                         <span class="flex items-center gap-2 flex-wrap">
                             <span class="font-bold text-sia-gold font-mono text-sm leading-none">${cmd}</span>
-                            <span class="ca-help-token font-mono ca-micro leading-none px-1.5 py-1 rounded-md">${token}</span>
+                            ${tokens.map((token) => `<span class="ca-help-token font-mono ca-micro leading-none px-1.5 py-1 rounded-md">${token}</span>`).join('')}
                         </span>
                         <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">${desc}</span>
                     </span>
@@ -10887,18 +10977,19 @@ SLOT|Special Lve others`;
                     </div>
                     <div class="ca-hairline my-3"></div>
                     <div class="flex flex-col gap-0.5">
-                        ${row('menu', 'utensils', 'sq802', 'Open a flight\u2019s inflight menus', 40)}
-                        ${row('ifa', 'calculator', 'sq802 4 oct', 'Price an inflight allowance', 80)}
-                        ${row('lma', 'sandwich', 'sq802 4 oct sq807 5 oct', 'Price a layover meal allowance', 120)}
-                        ${row('cop', 'map', 'sq802 4 oct sq807 5 oct', 'Price a whole trip, both allowances', 160)}
+                        ${row('menu', 'utensils', ['sq802 4 oct', 'sq802 menu 4 oct'], 'Open a flight\u2019s inflight menus', 40)}
+                        ${row('jcl menu', 'armchair', ['sq802 4 oct'], 'One cabin\u2019s menu \u2014 jcl, scl, ycl or fcl', 80)}
+                        ${row('ifa', 'calculator', ['sq802 4 oct', 'sq802 ifa 4 oct'], 'Price an inflight allowance', 120)}
+                        ${row('lma', 'sandwich', ['sq802 4 oct sq807 5 oct', 'sq802 lma 4 oct sq807 5 oct'], 'Price a layover meal allowance', 160)}
+                        ${row('cop', 'map', ['sq802 4 oct sq807 5 oct', 'sq802 cop 4 oct sq807 5 oct'], 'Price a whole trip, both allowances', 200)}
                     </div>
                     <div class="ca-hairline my-3"></div>
                     <div class="flex flex-col gap-1.5">
-                        ${tip('Flights and dates write in plain English; \u201csq 802 4 october\u201d parses too.', 200)}
-                        ${tip('Up to four sectors per line. Upload your roster PDF for longer trips.', 230)}
-                        ${tip('Your attached roster answers first; the live schedule fills in when connected.', 260)}
+                        ${tip('Flights and dates write in plain English; \u201csq 802 4 october\u201d parses too.', 240)}
+                        ${tip('Up to four sectors per line. Upload your roster PDF for longer trips.', 270)}
+                        ${tip('Your attached roster answers first; the live schedule fills in when connected.', 300)}
                     </div>
-                    <button type="button" data-ca-help-tour class="chat-anim-in mt-3 w-full h-11 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 active:scale-95 transition-transform" style="animation-delay:290ms">
+                    <button type="button" data-ca-help-tour class="chat-anim-in mt-3 w-full h-11 rounded-full border border-sia-gold/60 text-sia-gold text-xs font-bold uppercase tracking-wider inline-flex items-center justify-center gap-2 active:scale-95 transition-transform" style="animation-delay:330ms">
                         Take the feature tour <i data-lucide="arrow-right" class="w-4 h-4"></i>
                     </button>
                 </div>`;
@@ -18182,7 +18273,7 @@ SLOT|Special Lve others`;
             if (html && (typeof lucide !== 'undefined')) { refreshIcons(); }
         }
 
-        function openMenuViewerForCabins(flightNumber, date, cabinClasses) {
+        function openMenuViewerForCabins(flightNumber, date, cabinClasses, wantCabin) {
             // v1.45.5 (owner order): the cycle button rides the header —
             // shown only when 2+ upcoming flights have saved menus; each
             // tap is a fresh open of the next one (wrap at the end).
@@ -18214,6 +18305,14 @@ SLOT|Special Lve others`;
 
             const cabinNames = menuCabinNames();
 
+            // v1.45.59 (owner order): a cabin-class search ("jcl menu sq802
+            // 4 oct") opens THAT cabin's sheet — the wanted cabin leads when
+            // the flight publishes it; anything else falls back to the first
+            // cabin with an honest note, never a blank guess.
+            const firstCabin = (wantCabin && cabinClasses.indexOf(wantCabin) >= 0) ? wantCabin : cabinClasses[0];
+            if (wantCabin && cabinClasses.indexOf(wantCabin) < 0) {
+                addBotMessage('SQ ' + rosterEsc(flightNumber) + ' doesn\u2019t publish a ' + String(wantCabin) + ' menu \u2014 showing ' + (cabinNames[firstCabin] || firstCabin) + ' instead.');
+            }
             if (cabinClasses.length > 1) {
                 cabinWrap.classList.remove('hidden');
                 cabinClasses.forEach(code => {
@@ -18228,14 +18327,14 @@ SLOT|Special Lve others`;
                     };
                     cabinList.appendChild(btn);
                 });
-                cabinLabel.textContent = cabinNames[cabinClasses[0]] || cabinClasses[0];
+                cabinLabel.textContent = cabinNames[firstCabin] || firstCabin;
             } else {
                 cabinWrap.classList.add('hidden');
             }
 
             menuViewState = { category: 'meals', mealTab: 0 };
             currentMealServices = [];
-            loadMenu(cabinClasses[0]);
+            loadMenu(firstCabin);
             caSheetHideCancel(backdrop);   // hotfix 14: a stale close-timer never hides a freshly opened sheet
             backdrop.classList.remove('hidden');
             caSheetGlideArm(sheet, backdrop);
@@ -18253,7 +18352,7 @@ SLOT|Special Lve others`;
         // viewer straight from the save (works offline, mid-flight). Not
         // cached + online → fetch every cabin, then open. Never pops the
         // flight-verification card — the roster already knows the flight.
-        function openNextFlightViewer(fn, ymd) {
+        function openNextFlightViewer(fn, ymd, wantCabin) {
             let saved = null;
             try { saved = readSavedCabinSchedule(fn, ymd); } catch (e) {}
             if (!saved || !Array.isArray(saved.cabinClasses) || !saved.cabinClasses.length) return false;
@@ -18269,12 +18368,12 @@ SLOT|Special Lve others`;
             currentMenuSearch.selectedSectors = [];
             currentMenuSearch.selectedSector = '';
             currentMenuSearch.aircraftType = saved.aircraftType || saved.aircraft || '';
-            openMenuViewerForCabins(fn, ymd, saved.cabinClasses);
+            openMenuViewerForCabins(fn, ymd, saved.cabinClasses, wantCabin);
             return true;
         }
-        async function openNextFlightMenus(fn, ymd, setBusy) {
+        async function openNextFlightMenus(fn, ymd, setBusy, wantCabin) {
             if (menusSavedFor(fn, ymd)) {
-                if (!openNextFlightViewer(fn, ymd)) addBotMessage('Menus were saved for <b>SQ ' + rosterEsc(fn) + '</b> but the schedule could not be read — try re-saving them with a connection.');
+                if (!openNextFlightViewer(fn, ymd, wantCabin)) addBotMessage('Menus were saved for <b>SQ ' + rosterEsc(fn) + '</b> but the schedule could not be read — try re-saving them with a connection.');
                 return;
             }
             if (!navigator.onLine) {
@@ -18296,7 +18395,7 @@ SLOT|Special Lve others`;
                     : 'I couldn\u2019t reach the menu service for <b>SQ ' + rosterEsc(fn) + '</b> — check your connection and tap again.');
                 return;
             }
-            openNextFlightViewer(fn, ymd);
+            openNextFlightViewer(fn, ymd, wantCabin);
         }
 
         // Inflight Menu Viewer Logic (Step 5)
@@ -20040,6 +20139,12 @@ SLOT|Special Lve others`;
                 const courses = [];
                 (meal.selectionDetails || []).forEach((sel, selIdx) => {
                     const culinary = shortenCulinaryName(sel.name);
+                    // v1.45.59: the RAW selection name rides every course —
+                    // shortenCulinaryName folds the meatless and meat ethnic
+                    // selections into the same 'Ethnic' label, and the sheet
+                    // needs the distinction back for the dashed parting.
+                    const selRaw = String(sel.name || '');
+                    const courseStart = courses.length;
                     (sel.mealCourses || []).forEach((course) => {
                         const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
                         if (!items.length) return;
@@ -20051,11 +20156,24 @@ SLOT|Special Lve others`;
                         courses.push({
                             label: label,
                             culinary: (meal.selectionDetails || []).length > 1 ? culinary : '',
+                            selRaw: selRaw,
                             items: items,
                             hiddenElegant: hideCourse,
                             hiddenCompact: hideCourse || printHideCompactByDefault(label) || printHideCompactScl(cabinCode, label)
                         });
                     });
+                    // v1.45.59 (owner order): a Japan ethnic selection — its
+                    // courses answer to mizugashi (FCL) / mizumono (JCL) —
+                    // keeps ONLY that signature course on the compact sheet
+                    // by default; the edit eyes still free the rest. SCL and
+                    // YCL are untouched (the owner named First and Business).
+                    if (/ethnic|regional|local/i.test(selRaw)) {
+                        const own = courses.slice(courseStart);
+                        const keep = cabinCode === 'FCL' ? /mizugashi/i : (cabinCode === 'JCL' ? /mizumono/i : null);
+                        if (keep && own.some((c) => /mizugashi|mizumono/i.test(c.label))) {
+                            own.forEach((c) => { c.hiddenCompact = !keep.test(c.label); });
+                        }
+                    }
                     const breads = (Array.isArray(sel.breadDetails) && sel.breadDetails.length)
                         ? sel.breadDetails
                         : ((selIdx === 0 && Array.isArray(meal.breadDetails)) ? meal.breadDetails : []);
@@ -20513,13 +20631,24 @@ SLOT|Special Lve others`;
 
         function renderCompactSheet(model, sector) {
             let html = '<div class="pc-inner">';
-            printVisible(sector.cabins).forEach((cabin) => {
+                printVisible(sector.cabins).forEach((cabin) => {
                 printVisible(cabin.services).forEach((svc) => {
                     const body = [];
+                    // v1.45.59 (owner order): the ethnic selection's variants
+                    // part ways — a dashed rule whenever the sheet crosses
+                    // from one ethnic selection into a DIFFERENT one (the
+                    // meatless into the meat). Only ethnic raws are tracked,
+                    // so any course between them never breaks the pairing.
+                    let prevEthRaw = '';
                     (svc.courses || []).forEach((course) => {
                         if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
+                        const raw = String(course.selRaw || '');
+                        if (/ethnic|regional|local/i.test(raw)) {
+                            if (raw && prevEthRaw && raw !== prevEthRaw) body.push('<div class="pc-eth-rule"></div>');
+                            prevEthRaw = raw;
+                        }
                         body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label), printIsMainCourse(course.label)));
                     });
                     if (!body.length) return;

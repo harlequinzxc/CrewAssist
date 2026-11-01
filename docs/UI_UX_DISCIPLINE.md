@@ -551,6 +551,7 @@ Establish and stick to a casing system. Recommended default for this app:
 6. Relative labels (Today, Tomorrow, "in Xh Ym") use the same abbreviation style everywhere.
 7. New acronyms must show their expansion the first time a user sees them in a flow.
 8. Never rephrase existing copy while working on something nearby. Copy changes are a separate, intentional act.
+9. Every example shown to a user is a COMPLETE WORKING COMMAND (v1.45.59): a help-card pill, a placeholder or a tip that "does nothing" when typed verbatim is a bug the owner will report. Examples teach both accepted word orders where the parser accepts them, and a family of variants (cabin classes) shows ONE example — the reader extrapolates.
 
 ---
 
@@ -672,6 +673,16 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   log or expansion opened from a filtered list walks the SAME dataset
   the list is showing — never a wider re-derivation. The owner saw a
   year chip's station history list every year he had ever flown.
+- A roll never dismantles its host (v1.45.59): only the digit-bearing
+  TEXT RUNS wrap — one `span.ca-rollwrap` per run, replaced in place.
+  Child elements (icons, separators, spans) never move, so a flex
+  value can never gap the digits mid-roll (one wrapper = one flex
+  item, never one per character), and a rapid re-roll dismantles only
+  the roll's own wrappers before re-capturing — the element's
+  structure rides through. The restore returns the captured innerHTML
+  AND hands any reinstated Lucide stubs back to `refreshIcons()` —
+  the icons always come back with the figures (the owner saw them
+  vanish; the rigs' no-op lucide stubs hid it).
 
 ### The hero wears the gold; rows tell the story (v1.45.55)
 

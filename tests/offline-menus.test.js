@@ -558,11 +558,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.45.58';"), 'APP_VERSION stamped 1.45.58');
+    R.ok(src.includes("var APP_VERSION = '1.45.59';"), 'APP_VERSION stamped 1.45.59');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v289"), 'service-worker cache name bumped to v289 (the v1.45.58 year-filter drawer fix)');
+    R.ok(sw.includes("crewassist-v290"), 'service-worker cache name bumped to v290 (the v1.45.59 roll-fix + shortcuts + ethnic-sheet round)');
     R.ok(src.includes("/meatless|vegetarian/i.test(n || '') ? 'Ethnic (Veg)' : 'Ethnic'"), 'v1.45.56: the dropdown builder labels a meatless/vegetarian ethnic as Ethnic (Veg)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
@@ -761,6 +761,75 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await openWith(multiPayload([sel('Ethnic (Meatless)'), sel('Ethnic (Vegetarian)')]));
     R.eq(culinaryBtns().map((b) => b.textContent).join('|'), 'Ethnic (Meatless)|Ethnic (Vegetarian)', 'v1.45.56: the collision guard — two meatless ethnics fall back to their raw headers, never identical labels');
     w.eval('closeMenuViewer()'); await wait(150);
+  }
+
+  // --- v1.45.59 (owner order): the cabin-class search opens that cabin's
+  // sheet, and the compact print sheet parts its ethnic variants ---
+  {
+    const D2 = '2026-12-26';
+    const CAB2 = `SQ${FLIGHT}:${D2}:CABINS`;
+    const legP = (sels) => ({ flightDetails: {
+        departureAirportCode: 'SIN', arrivalAirportCode: 'NRT',
+        departureLocalDate: '2026-12-26 09:20:00', arrivalLocalDate: '2026-12-26 16:05:00'
+    }, menu: { language: { EN_UK: { meals: [{ mealServiceName: 'Dinner', selectionDetails: sels }] } } } });
+    const selP = (name, cats) => ({ name: name, mealCourses: cats.map((c) => ({ category: c, items: [{ name: 'Dish of ' + c }] })) });
+    const menuFor = (sels) => JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, legs: [legP(sels)] } });
+
+    // the viewer preselects the wanted cabin when the flight publishes it
+    w.localStorage.setItem(CAB2, JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL', 'YCL'], legs: [{ flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'NRT' } }] } }));
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:JCL`, menuFor([selP('International', ['Main Course'])]));
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:YCL`, menuFor([selP('International', ['Main Course'])]));
+    await w.eval(`openMenuViewerForCabins('${FLIGHT}','${D2}',['JCL','YCL'],'YCL')`);
+    await wait(250);
+    R.eq(w.eval('currentMenuSearch.selectedCabin'), 'YCL', 'v1.45.59: a wanted cabin leads the sheet when the flight publishes it');
+    R.eq(d.getElementById('menu-cabin-label').textContent, 'Economy', 'the cabin gate label names the wanted cabin, not the first');
+    w.eval('closeMenuViewer()'); await wait(150);
+    // the natural command path carries the cabin end to end
+    await w.eval(`runNaturalCommand(parseNaturalCommand('ycl menu sq${FLIGHT} 26 dec'))`);
+    await wait(350);
+    R.eq(w.eval('currentMenuSearch.selectedCabin'), 'YCL', '"ycl menu sq322 26 dec" opens straight onto Economy');
+    w.eval('closeMenuViewer()'); await wait(150);
+    // honest fallback: a cabin the flight does not publish
+    await w.eval(`openMenuViewerForCabins('${FLIGHT}','${D2}',['JCL','YCL'],'FCL')`);
+    await wait(1800);   // the note rides the bot queue's own typing cadence
+    R.eq(w.eval('currentMenuSearch.selectedCabin'), 'JCL', 'an unpublished cabin falls back to the first cabin \u2014 never a blank sheet');
+    R.ok(d.getElementById('chat-container').textContent.indexOf('publish a FCL menu') >= 0, 'the fallback says so in the chat, honestly');
+    w.eval('closeMenuViewer()'); await wait(150);
+
+    // the compact sheet parts the ethnic variants with a dashed rule
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([
+        selP('Ethnic (Meatless)', ['Main Course']),
+        selP('Ethnic', ['Main Course']),
+        selP('International Selection', ['Main Course'])
+    ]));
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    const paper = () => d.getElementById('print-paper');
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 1, 'v1.45.59: ONE dashed rule parts the meatless ethnic from the meat ethnic');
+    R.eq(paper().querySelectorAll('.pc-course').length, 3, 'the ethnic mains themselves stay on the sheet \u2014 three course groups, one per selection');
+    R.ok(paper().querySelector('.pc-eth-rule').nextElementSibling && paper().querySelector('.pc-eth-rule').nextElementSibling.classList.contains('pc-course'), 'the rule stands BETWEEN the course groups \u2014 the meatless selection\u2019s group, then the rule, then the meat selection\u2019s');
+    // a single ethnic selection never draws the parting
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([selP('Ethnic', ['Main Course'])]));
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 0, 'a lone ethnic selection has nothing to part from \u2014 no rule');
+    // Japan ethnic: FCL keeps Mizugashi only, JCL keeps Mizumono only, SCL keeps everything
+    const jp = (cabin) => {
+      w.localStorage.setItem(`SQ${FLIGHT}:${D2}:${cabin}`, menuFor([selP('Ethnic', ['Main Course', 'Mizugashi', 'Dessert', 'Mizumono'])]));
+      return w.eval(`JSON.stringify(collectPrintMeals(JSON.parse(localStorage.getItem('SQ${FLIGHT}:${D2}:${cabin}')).data.legs[0], '${cabin}').services[0].courses.map(function (c) { return c.label + (c.hiddenCompact ? 'x' : 'o'); }))`);
+    };
+    R.eq(jp('FCL'), JSON.stringify(['Main Coursex', 'Mizugashio', 'Dessertx', 'Mizumonox']), 'Japan ethnic in FCL: only the Mizugashi course shows by default');
+    R.eq(jp('JCL'), JSON.stringify(['Main Coursex', 'Mizugashix', 'Dessertx', 'Mizumonoo']), 'Japan ethnic in JCL: only the Mizumono course shows by default');
+    R.eq(jp('SCL'), JSON.stringify(['Main Courseo', 'Mizugashio', 'Desserto', 'Mizumonoo']), 'SCL is untouched \u2014 the owner named First and Business only');
+    // the elegant sheet never inherits the Japan compact hides
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    R.ok(paper().textContent.indexOf('Dish of Main Course') >= 0 && paper().textContent.indexOf('Dish of Mizugashi') >= 0, 'the elegant view keeps every Japan course \u2014 the hides are compact-only');
+    w.eval('closeMenuPrinter(true)'); await wait(150);
   }
 
     process.exit(R.done() ? 1 : 0);
