@@ -1859,6 +1859,22 @@ function todayYmd() {
     R.ok(w.eval('window.__capRec[0].clone.body.children.length === 1 && window.__capRec[0].clone.body.children[0].id === \"ca-arch-scroll\"'), 'v1.46.2 THE FLATTEN: the clone\u2019s body carries ONLY the capture target at its live width — no fixed sheets, no flex, no scroll containers for the painter to mis-measure (the painter reads LIVE bounds against the real window and dropped everything past them — the viewport-independent cut)');
     R.ok(w.eval('[\"0\", \"0px\"].indexOf(window.__capRec[0].clone.body.style.margin) !== -1 && window.__capRec[0].clone.body.style.overflow === \"visible\"'), 'v1.46.2: the flattened body sits flush at the origin with no clipping of its own (jsdom may serialise a bare 0 as 0px)');
     R.ok(!!d.getElementById('ca-cap-fonts') && String(d.getElementById('ca-cap-fonts').textContent).indexOf('@font-face') !== -1, 'v1.46.2: the house font ARMS in the live head (#ca-cap-fonts) before the shot — the painter\u2019s clone inherits the faces from the start; injecting them inside onclone raced the clone\u2019s own fonts.ready and still fell back (the owner\u2019s real-device report)');
+    {
+      // v1.46.3 (owner retest): the icon-baseline fix. The vendored painter
+      // measures every font's baseline with a hidden probe — a plain body-level
+      // div (inline "visibility: hidden" + "nowrap") holding a text span and a
+      // 1x1 baseline-aligned img, read as img.offsetTop − span.offsetTop + 2.
+      // The Tailwind preflight (img{display:block}) drops that img below the
+      // span's line, so the probe returns ~lineHeight instead of ~ascent and
+      // every painted text lands a step low — at the 11px meta labels ~6px:
+      // the label rides under the icon line and its glyphs hit the label's
+      // own overflow:hidden edge ("half cut", the owner's report). The fix is
+      // two scoped app-CSS rules restoring the probe's assumed environment;
+      // the vendor file itself stays pristine.
+      const src63 = fs.readFileSync(APP, 'utf8');
+      R.ok(src63.includes('body > div[style*="visibility: hidden"][style*="nowrap"] { line-height: normal; }') && src63.includes('body > div[style*="visibility: hidden"][style*="nowrap"] > img { display: inline; }'), 'v1.46.3: the font probe\u2019s 1x1 img computes INLINE at a normal line-height — the two scoped rules that undo the Tailwind preflight\u2019s display:block inside the probe\u2019s footprint only (the measured baseline returns to ~ascent; text paints on its true baseline, level with its icon)');
+      R.ok(!/style\s*\.\s*visibility\s*=/.test(src63), 'v1.46.3: the app never assigns inline style.visibility — the probe-scoped selector can only ever match the painter\u2019s own probe div, never an app surface');
+    }
     R.ok(w.eval('window.__capRec[0].salaryOn') === true && w.eval('window.__capRec[0].yearOn') === true, 'at capture time the card is posed to Monthly Salary + Year');
     R.eq(w.eval('window.__capRec[0].label'), 'Net take-home', 'the posed card reads the salary headline');
     R.eq(w.eval('window.__capRec[0].liveOverflow'), '', 'the live scroller is never touched — the overflow fix lives in the clone');
