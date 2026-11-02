@@ -1096,18 +1096,25 @@ const synthItems = [].concat(
     w.URL.createObjectURL = () => 'blob:shot'; w.URL.revokeObjectURL = () => {};
     w.eval('window.__dl = 0; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === "a") { el.click = function () { window.__dl++; }; } return el; }; rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "CrewAssist-Roster-October-2026.png");');
     await wait(80);
-    R.eq(w.eval('window.__dl'), 1, 'without a share sheet the capture downloads');
+    R.ok(!d.getElementById('ca-cap-preview').classList.contains('hidden'), 'v1.46.5: the roster capture opens the shared PREVIEW sheet');
+    R.ok(d.getElementById('ca-cap-pv-share').classList.contains('hidden'), 'without a share API the Share button stays hidden \u2014 Save is the only door');
+    R.eq(w.eval('window.__dl'), 0, 'nothing downloads until the crew taps \u2014 delivery is a fresh gesture now');
     R.eq(w.eval('window.__rcLastShot && window.__rcLastShot.name'), 'CrewAssist-Roster-October-2026.png', 'the deliver records the shot');
-    R.ok(w.eval('window.__rcLastShot && window.__rcLastShot.blob instanceof Blob'), 'the deliver keeps the blob — the smoke decodes it to prove the raster');
+    R.ok(w.eval('window.__rcLastShot && window.__rcLastShot.blob instanceof Blob'), 'the deliver keeps the blob \u2014 the smoke decodes it to prove the raster');
+    d.getElementById('ca-cap-pv-save').click();
+    await wait(120);
+    R.eq(w.eval('window.__dl'), 1, 'the Save tap downloads \u2014 without a share sheet, Save is the capture\u2019s door');
     R.ok((d.getElementById('ca-arch-toast') || {}).textContent.indexOf('Roster screenshot saved') !== -1, 'the toast confirms the capture');
     w.eval('document.createElement = window.__mk;');
     // the share sheet, when the platform has one
     const canStub = w.eval("(function () { try { Object.defineProperty(navigator, 'canShare', { value: function (o) { return true; }, configurable: true }); Object.defineProperty(navigator, 'share', { value: function (o) { window.__shared = (window.__shared || 0) + 1; return Promise.resolve(); }, configurable: true }); return 'ok'; } catch (e) { return 'no'; } })()");
     if (canStub === 'ok') {
-      w.eval('rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "s.png")');
+      w.eval('window.__dl = 0; rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "s.png")');
       await wait(80);
-      R.eq(w.eval('window.__shared'), 1, 'with a share sheet the capture shares');
-      R.eq(w.eval('window.__dl'), 1, 'the share path never fires a download');
+      d.getElementById('ca-cap-pv-share').click();
+      await wait(120);
+      R.eq(w.eval('window.__shared'), 1, 'with a share sheet the Share tap shares \u2014 a fresh gesture, so the phone\u2019s sheet always opens');
+      R.eq(w.eval('window.__dl'), 0, 'the share path never fires a download');
     }
   }
 

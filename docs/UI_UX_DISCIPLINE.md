@@ -843,6 +843,17 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   crew's own dismissal falls through to the anchor download. Speed proofs
   run under the phone's emulation with the bad network simulated, and
   pixel identity is re-proven byte-identical after every such round.
+- v1.46.5 (owner report after v1.46.4): a capture flow must ANSWER its
+  tap instantly and never leave the crew staring at a frozen page — the
+  preview sheet opens before any painter work ("Rendering your card…"),
+  the image swaps in the moment the paint is trimmed, and the PNG encodes
+  behind it. Delivery is a fresh tap: Share is a new user gesture (the
+  phone's share sheet always opens, whatever the render took), Save is the
+  download, and only the crew's own dismissal stops at the toast. The
+  preview wears the house sub-sheet chrome (scrim, handle, title, close,
+  Escape owns it while it is up) and its buttons stay disabled until
+  there is something to deliver — an affordance that cannot work yet
+  must not look like it can.
 
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.

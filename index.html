@@ -2566,6 +2566,38 @@
                 <div id="ca-arch-sub-body" class="flex-grow overflow-y-auto overscroll-contain px-6 pb-8 max-w-xl mx-auto w-full space-y-3"></div>
             </div>
         </div>
+        <!-- v1.46.5 (owner report — "still taking awhile and the share pop
+             up is no longer there"): every capture now opens as a PREVIEW
+             sheet instead of racing the phone's share window. The painter's
+             output shows the moment it is trimmed; the PNG encode runs
+             behind the preview; and delivery rides a FRESH tap — the Share
+             button is a new user gesture, so the phone's share sheet opens
+             no matter how long the render took (a capture that outlived the
+             ~5s transient-activation window used to fall straight to a
+             silent download — the owner's vanished popup). -->
+        <div id="ca-cap-preview" class="fixed inset-0 z-[72] hidden">
+            <div class="ca-cap-pv-shade absolute inset-0 bg-black/60 opacity-0 transition-opacity duration-300" data-ca-cap-pv-close></div>
+            <div id="ca-cap-pv-sheet" role="dialog" aria-modal="true" aria-label="Capture preview" class="absolute inset-x-0 bottom-0 top-[calc(60px+env(safe-area-inset-top,20px))] glass-sheet rounded-t-3xl translate-y-full transition-transform duration-300 flex flex-col">
+                <div class="w-full flex justify-center py-3 shrink-0">
+                    <div class="w-8 h-1.5 rounded-full bg-gray-400 dark:bg-gray-600"></div>
+                </div>
+                <div class="w-full flex items-start justify-between gap-2 pl-6 pr-2 pb-2 shrink-0 max-w-xl mx-auto">
+                    <div class="min-w-0">
+                        <h3 id="ca-cap-pv-title" class="text-xl font-bold truncate">Capture ready</h3>
+                        <p id="ca-cap-pv-sub" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">Share it, or save it to your files</p>
+                    </div>
+                    <button type="button" id="btn-close-cap-pv" class="p-3.5 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0" aria-label="Close preview"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div id="ca-cap-pv-body" class="flex-grow overflow-y-auto overscroll-contain px-6 pb-4 max-w-xl mx-auto w-full flex flex-col items-center justify-center gap-3">
+                    <p id="ca-cap-pv-render" class="text-sm text-gray-500 dark:text-gray-400">Rendering your card…</p>
+                    <img id="ca-cap-pv-img" alt="Capture preview" class="hidden max-w-full max-h-[55vh] w-auto object-contain rounded-xl border border-black/10 dark:border-white/10 bg-white">
+                </div>
+                <div class="w-full shrink-0 px-6 pt-2 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] max-w-xl mx-auto flex gap-3">
+                    <button type="button" id="ca-cap-pv-share" class="flex-1 h-[42px] rounded-full bg-sia-gold text-black inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors disabled:opacity-45 disabled:pointer-events-none" aria-label="Share capture"><i data-lucide="share-2" class="w-4 h-4"></i>Share</button>
+                    <button type="button" id="ca-cap-pv-save" class="flex-1 h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors disabled:opacity-45 disabled:pointer-events-none" aria-label="Save capture"><i data-lucide="download" class="w-4 h-4"></i>Save</button>
+                </div>
+            </div>
+        </div>
         <!-- v1.39.0 (B6): the roster calendar — a month of duties at a glance.
              HOTFIX (owner report, still 1.39.0): this block was first inserted
              INSIDE #ca-arch-sub above — the calendar opened but stayed blind
@@ -3230,7 +3262,7 @@
             }
         }
 
-        var APP_VERSION = '1.46.4'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.46.5'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3252,6 +3284,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.46.5', d: '2026-11-02', items: [
+                { c: 'imp', t: 'Your capture opens ready \u2014 tap Share, and the sheet always opens.' }
+            ] },
             { v: '1.46.4', d: '2026-11-02', items: [
                 { c: 'imp', t: 'Captures finish in seconds \u2014 and the share sheet always opens.' }
             ] },
@@ -4238,6 +4273,8 @@
                 if (e.target && e.target.classList && e.target.classList.contains('ca-arch-amt-input')) return;
                 const lbx = document.getElementById('menu-lightbox');
                 if (lbx && !lbx.classList.contains('hidden')) return; // its own handler closes it
+                const capv = document.getElementById('ca-cap-preview');   // v1.46.5: the capture preview owns the key while it is up (its own handler closes it)
+                if (capv && !capv.classList.contains('hidden')) return;
                 const subx = document.getElementById('ca-arch-sub-sheet');
                 if (subx && !subx.classList.contains('translate-y-full')) { closeArchSub(); return; }
                 const podcapx = document.getElementById('ca-rc-podcap-sheet');   // v1.46.1 hotfix: the passport picker rides above its passport
@@ -7087,29 +7124,6 @@
                 ctx.restore();
             });
         }
-        async function rosterShotDeliver(blob, name) {
-            try { window.__rcLastShot = { name: name, size: blob.size, blob: blob }; } catch (e) {}
-            // v1.46.4: the same awaited-share fix as caCapDeliver — the
-            // roster camera shared the swallowed-rejection disease
-            try {
-                const file = new File([blob], name, { type: 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-                    try {
-                        await navigator.share({ files: [file], title: 'CrewAssist roster' });
-                        archToast('Roster screenshot saved');
-                        return;
-                    } catch (e) {
-                        if (e && e.name === 'AbortError') { archToast('Roster screenshot saved'); return; }
-                    }
-                }
-            } catch (e) {}
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = name;
-            document.body.appendChild(a); a.click(); a.remove();
-            setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
-            archToast('Roster screenshot saved');
-        }
         async function captureRosterShot() {
             const shotBtn = document.getElementById('ca-rc-shot');
             if (shotBtn) {
@@ -7125,13 +7139,19 @@
             // timeout). The arm loads exactly the faces this canvas paints
             // with, from vendored data URLs — no network at all.
             await caCapFontArm();
-            const built = buildRosterShotCanvas();
-            if (!built) return;
-            try { rosterShotPaintGrid(built.ctx, built.grid, 0, built.gy); } catch (e) { return; }
             const name = rosterShotFilename(rcViewYm);
+            // v1.46.5: the preview opens BEFORE the paint — the crew see
+            // "Rendering your roster…" the instant they tap, and the image
+            // swaps in the moment the grid is painted
+            const pv = caCapPreviewOpen({ name: name, title: 'CrewAssist roster', toast: 'Roster screenshot saved', pvTitle: 'Roster screenshot', rendering: 'Rendering your roster…' });
+            const built = buildRosterShotCanvas();
+            if (!built) { pv.fail(); return; }
+            try { rosterShotPaintGrid(built.ctx, built.grid, 0, built.gy); } catch (e) { pv.fail(); return; }
             try {
-                built.canvas.toBlob((blob) => { if (blob) rosterShotDeliver(blob, name); }, 'image/png');
-            } catch (e) {}
+                const blobP = new Promise((res) => { try { built.canvas.toBlob((blob) => res(blob), 'image/png'); } catch (e) { res(null); } });
+                blobP.then((blob) => { if (blob) { try { window.__rcLastShot = { name: name, size: blob.size, blob: blob }; } catch (e) {} } }).catch(() => {});
+                pv.ready(built.canvas, blobP);
+            } catch (e) { pv.fail(); }
         }
         // v1.46.1 (owner order, the camera buttons): the shared element
         // capture. A locally-vendored DOM re-painter (vendor/html2canvas.min
@@ -7186,31 +7206,159 @@
         // a genuine dismissal (AbortError — the crew closed the sheet)
         // stops at the toast; every other refusal falls through to the
         // anchor download, so the file always lands.
-        async function caCapDeliver(blob, name, title, doneMsg) {
-            try { window.__caLastShot = { name: name, size: blob.size, blob: blob, title: title }; } catch (e) {}
-            try {
-                const file = new File([blob], name, { type: 'image/png' });
-                if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
-                    try {
-                        await navigator.share({ files: [file], title: title });
-                        archToast(doneMsg);
-                        return;
-                    } catch (e) {
-                        if (e && e.name === 'AbortError') { archToast(doneMsg); return; }
-                    }
+        // v1.46.5 (owner report — "the share pop up is no longer there"):
+        // the delivery no longer races the phone's share window. The old
+        // flow called navigator.share the moment the PNG existed — but the
+        // phone only honours the share sheet within a few seconds of the
+        // last tap, and a capture that outlived that window was refused
+        // (NotAllowedError) and fell to the download: the share popup
+        // vanished exactly when the captures were at their slowest. The
+        // preview inverts the order — the image shows the moment the
+        // painter is done, the PNG encodes behind it, and delivery rides a
+        // FRESH tap: Share is a new user gesture, so the sheet ALWAYS
+        // opens; Save is the download; a genuine share refusal still
+        // anchors the file so the PNG always lands somewhere.
+        function caCapDl(blob, name) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
+        }
+        let caCapPvTimer = null;
+        function caCapPvClose() {
+            const wrap = document.getElementById('ca-cap-preview');
+            const sheet = document.getElementById('ca-cap-pv-sheet');
+            if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
+            try { caSheetFocusOut(sheet); } catch (e) {}
+            const shade = wrap.querySelector('.ca-cap-pv-shade');
+            if (shade) shade.classList.add('opacity-0');
+            try { caSheetGlideCancel(sheet); } catch (e) {}
+            sheet.classList.add('translate-y-full');
+            clearTimeout(caCapPvTimer);
+            caCapPvTimer = setTimeout(() => {
+                try { wrap.classList.add('hidden'); } catch (e) {}
+                const img = document.getElementById('ca-cap-pv-img');
+                if (img) {
+                    if (img.src && String(img.src).indexOf('blob:') === 0) { try { URL.revokeObjectURL(img.src); } catch (e) {} }
+                    img.removeAttribute('src'); img.classList.add('hidden');
                 }
-            } catch (e) {}
-            // the download fallback is best-effort — an embedder that
-            // refuses anchor navigation (jsdom) must never turn a captured,
-            // delivered PNG into a "didn't capture" apology
-            try {
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url; a.download = name;
-                document.body.appendChild(a); a.click(); a.remove();
-                setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 4000);
-            } catch (e) {}
-            archToast(doneMsg);
+                const r = document.getElementById('ca-cap-pv-render');
+                if (r) r.classList.remove('hidden');
+            }, 320);
+        }
+        function caCapPreviewOpen(opts) {
+            const o = opts || {};
+            const wrap = document.getElementById('ca-cap-preview');
+            const sheet = document.getElementById('ca-cap-pv-sheet');
+            const img = document.getElementById('ca-cap-pv-img');
+            const render = document.getElementById('ca-cap-pv-render');
+            const shareBtn = document.getElementById('ca-cap-pv-share');
+            const saveBtn = document.getElementById('ca-cap-pv-save');
+            if (!wrap || !sheet) return { ready: function () {}, fail: function () {} };
+            // a fresh open never inherits the last shot's image, timers or
+            // handlers (hotfix 14 discipline: cancel the pending hide
+            // BEFORE the un-hide, so a quick close-and-reopen can never
+            // drop the freshly opened sheet)
+            clearTimeout(caCapPvTimer);
+            if (img) {
+                if (img.src && String(img.src).indexOf('blob:') === 0) { try { URL.revokeObjectURL(img.src); } catch (e) {} }
+                img.removeAttribute('src'); img.classList.add('hidden');
+            }
+            if (render) { render.textContent = o.rendering || 'Rendering your card…'; render.classList.remove('hidden'); }
+            const tEl = document.getElementById('ca-cap-pv-title');
+            if (tEl) tEl.textContent = o.pvTitle || 'Capture ready';
+            const sEl = document.getElementById('ca-cap-pv-sub');
+            if (sEl) sEl.textContent = o.pvSub || 'Share it, or save it to your files';
+            const name = o.name || 'CrewAssist.png';
+            const shareTitle = o.title || 'CrewAssist';
+            const doneMsg = o.toast || 'Screenshot saved';
+            if (shareBtn) { shareBtn.classList.add('hidden'); shareBtn.disabled = true; shareBtn.onclick = null; }
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.onclick = null; }
+            const pv = {
+                closed: false,
+                ready: function (canvas, blobP) {
+                    if (pv.closed) return;
+                    const bp = blobP || Promise.resolve(null);
+                    bp.then(function (b) {
+                        if (!b || pv.closed) return;
+                        try { window.__caLastShot = { name: name, size: b.size, blob: b, title: shareTitle }; } catch (e) {}
+                    }).catch(function () {});
+                    // the preview image shows the moment the paint is done —
+                    // a quarter-scale JPEG of the canvas, never the PNG: the
+                    // encode keeps running behind the preview (the owner
+                    // sees the card while the file is still being built).
+                    // No-canvas environments (jsdom) fall back to the
+                    // blob's own URL once the encode lands.
+                    let armed = false;
+                    try {
+                        if (canvas && canvas.width && canvas.height && canvas.getContext) {
+                            const pw = Math.max(1, Math.round(canvas.width / 4)), ph = Math.max(1, Math.round(canvas.height / 4));
+                            const pc = document.createElement('canvas'); pc.width = pw; pc.height = ph;
+                            const px = pc.getContext('2d');
+                            if (px) {
+                                px.fillStyle = '#ffffff'; px.fillRect(0, 0, pw, ph);
+                                px.drawImage(canvas, 0, 0, pw, ph);
+                                const du = pc.toDataURL('image/jpeg', 0.85);
+                                if (du && String(du).indexOf('data:image') === 0 && img) { img.src = du; armed = true; }
+                            }
+                        }
+                    } catch (e) {}
+                    if (!armed && img) {
+                        bp.then(function (b) {
+                            if (!b || pv.closed || (img.src && String(img.src).indexOf('data:image') === 0)) return;
+                            try { img.src = URL.createObjectURL(b); } catch (e) {}
+                        }).catch(function () {});
+                    }
+                    if (img) img.classList.remove('hidden');
+                    if (render) render.classList.add('hidden');
+                    if (saveBtn) {
+                        saveBtn.disabled = false;
+                        saveBtn.onclick = function () {
+                            bp.then(function (b) {
+                                if (b) { try { caCapDl(b, name); } catch (e) {} }
+                                archToast(doneMsg);
+                                caCapPvClose();
+                            }).catch(function () { archToast(doneMsg); caCapPvClose(); });
+                        };
+                    }
+                    if (shareBtn) {
+                        shareBtn.disabled = false;
+                        if (navigator.share) shareBtn.classList.remove('hidden');
+                        shareBtn.onclick = function () {
+                            bp.then(function (b) {
+                                if (!b) { archToast(doneMsg); caCapPvClose(); return; }
+                                const file = new File([b], name, { type: 'image/png' });
+                                const p = (navigator.canShare && navigator.canShare({ files: [file] }))
+                                    ? navigator.share({ files: [file], title: shareTitle })
+                                        .then(function () { return 'ok'; })
+                                        .catch(function (e) { return (e && e.name === 'AbortError') ? 'ok' : 'refused'; })
+                                    : Promise.resolve('refused');
+                                return p.then(function (r) {
+                                    if (r === 'refused') { try { caCapDl(b, name); } catch (e) {} }
+                                    archToast(doneMsg);
+                                    caCapPvClose();
+                                });
+                            }).catch(function () { archToast(doneMsg); caCapPvClose(); });
+                        };
+                    }
+                },
+                fail: function () { pv.closed = true; try { caCapPvClose(); } catch (e) {} }
+            };
+            caSheetHideCancel(wrap);
+            wrap.classList.remove('hidden');
+            try { caSheetFocusIn(sheet); } catch (e) {}
+            caSheetGlideArm(sheet, wrap.querySelector('.ca-cap-pv-shade'), null);
+            return pv;
+        }
+        // v1.46.5: the roster camera shares the preview delivery — its
+        // canvas is painted by hand (no clone), but the contract is the
+        // same: the preview shows, the PNG encodes behind it, and the
+        // Share/Save taps are fresh gestures.
+        function rosterShotDeliver(blob, name) {
+            try { window.__rcLastShot = { name: name, size: blob.size, blob: blob }; } catch (e) {}
+            const pv = caCapPreviewOpen({ name: name, title: 'CrewAssist roster', toast: 'Roster screenshot saved', pvTitle: 'Roster screenshot', rendering: 'Rendering your roster…' });
+            pv.ready(null, Promise.resolve(blob));
         }
         // v1.46.1 hotfix (owner reports — the captures must be EXACTLY what
         // is on screen): the painter re-lays-out a CLONE of the page, and
@@ -7290,19 +7438,56 @@
                 const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(bg || ''));
                 if (!m || !canvas.width || !canvas.height) return canvas;
                 const br = parseInt(m[1], 16), bg2 = parseInt(m[2], 16), bb = parseInt(m[3], 16);
-                const ctx = canvas.getContext('2d');
                 const w = canvas.width, hh = canvas.height;
-                const data = ctx.getImageData(0, 0, w, hh).data;
+                // v1.46.5 (owner report — captures still slow on the phone):
+                // this scan used to getImageData over the WHOLE canvas — a
+                // synchronous readback of every pixel of a surface that
+                // reaches ~15MP (57MB of RGBA), which on a phone's
+                // GPU-backed canvas is seconds on its own, on top of the
+                // paint and the PNG encode: three full passes over every
+                // pixel, which is why a faster pipeline still felt slow.
+                // The scan now reads a QUARTER-scale copy (16x fewer
+                // pixels) to locate the neighbourhood of the last painted
+                // row, then a thin full-resolution band (the candidate row
+                // plus 264 rows of headroom) to pin the EXACT row with the
+                // original tolerance — downsampling can only smear content
+                // DOWNWARD (never hide it upward), so the band always
+                // contains the row the old full scan found, and the cut
+                // lands on the same pixel.
+                let cQuad = -1;
+                try {
+                    const qw = Math.max(1, Math.floor(w / 4)), qh = Math.max(1, Math.floor(hh / 4));
+                    const q = document.createElement('canvas'); q.width = qw; q.height = qh;
+                    const qctx = q.getContext('2d');
+                    if (qctx) {
+                        qctx.fillStyle = 'rgb(' + br + ',' + bg2 + ',' + bb + ')';
+                        qctx.fillRect(0, 0, qw, qh);
+                        qctx.drawImage(canvas, 0, 0, qw, qh);
+                        const qd = qctx.getImageData(0, 0, qw, qh).data;
+                        for (let y = qh - 1; y >= 0 && cQuad < 0; y--) {
+                            for (let x = 0; x < qw; x++) {
+                                const i = (y * qw + x) * 4;
+                                if (Math.abs(qd[i] - br) > 6 || Math.abs(qd[i + 1] - bg2) > 6 || Math.abs(qd[i + 2] - bb) > 6) { cQuad = y; break; }
+                            }
+                        }
+                    }
+                } catch (e) { cQuad = -1; }
+                if (cQuad < 0) return canvas;   // nothing painted beyond the tone — the old scan's last<0 branch
+                const cand = cQuad * 4 + 3;      // the last source row that can feed the flagged block
+                const lo = Math.max(0, cand - 264), hi = Math.min(hh - 1, cand + 8);
+                const ctx = canvas.getContext('2d');
+                const band = ctx.getImageData(0, lo, w, hi - lo + 1).data;
                 let last = -1;
-                for (let y = hh - 1; y >= 0 && last < 0; y--) {
+                for (let y = hi; y >= lo && last < 0; y--) {
                     for (let x = 0; x < w; x += 4) {
-                        const i = (y * w + x) * 4;
-                        if (Math.abs(data[i] - br) > 6 || Math.abs(data[i + 1] - bg2) > 6 || Math.abs(data[i + 2] - bb) > 6) { last = y; break; }
+                        const i = ((y - lo) * w + x) * 4;
+                        if (Math.abs(band[i] - br) > 6 || Math.abs(band[i + 1] - bg2) > 6 || Math.abs(band[i + 2] - bb) > 6) { last = y; break; }
                     }
                 }
+                if (last < 0) return canvas;     // the band found nothing the copy saw — refuse to cut
                 const air = Math.max(2, Math.round(12 * (scale || 1)));
                 const newH = Math.min(hh, last + 1 + air);
-                if (last < 0 || newH >= hh) return canvas;
+                if (newH >= hh) return canvas;
                 const c2 = document.createElement('canvas');
                 c2.width = w; c2.height = newH;
                 c2.getContext('2d').drawImage(canvas, 0, 0);
@@ -7357,6 +7542,12 @@
             return caCapPrewarm._p;
         }
         async function caCapShoot(el, opts) {
+            // v1.46.5 (owner report — "still taking awhile"): the preview
+            // opens BEFORE any painter work, so the tap answers instantly —
+            // "Rendering your card…" while the clone, the paint and the
+            // trim run, the image the moment they finish
+            const pv = caCapPreviewOpen(opts || {});
+            try {
             // v1.46.4: if the idle prewarm is mid-render, let it finish —
             // one painter on the thread at a time, so a capture never
             // queues behind a redundant throwaway render mid-flight
@@ -7443,9 +7634,13 @@
                 }
             });
             const fixed = caCapTrim(canvas, bg, scale);
-            const blob = await new Promise((res) => { try { fixed.toBlob(res, 'image/png'); } catch (e) { res(null); } });
-            if (!blob) throw new Error('blob');
-            caCapDeliver(blob, (opts && opts.name) || 'CrewAssist.png', (opts && opts.title) || 'CrewAssist', (opts && opts.toast) || 'Screenshot saved');
+            // v1.46.5: the encode runs BEHIND the preview — the crew see
+            // the card the moment the paint is trimmed, and the PNG file
+            // finishes while they look at it. Share and Save await the
+            // same promise; either way the file always lands.
+            const blobP = new Promise((res) => { try { fixed.toBlob(res, 'image/png'); } catch (e) { res(null); } });
+            pv.ready(fixed, blobP);
+            } catch (e) { pv.fail(); }
         }
         // v1.46.1 hotfix (owner orders): the passport camera opens the YEAR
         // PICKER (its own sub-sheet, the archive picker's species) — the
@@ -18124,6 +18319,17 @@ SLOT|Special Lve others`;
             archEl('ca-arch-backdrop').addEventListener('click', closeArchOverlay);
             archEl('ca-arch-export').addEventListener('click', archExport); // v1.41.0: import moved to Settings → Restore backup
             archEl('ca-arch-cam').addEventListener('click', archOpenCapPicker); // v1.46.1: the year-picker → the capture
+            // v1.46.5: the capture preview's doors — the scrim, the X and
+            // Escape close it (the menu-lightbox pattern: the preview owns
+            // the key while it is up, and the shared sheet handler stands
+            // down beneath it)
+            {
+                const pvWrap = document.getElementById('ca-cap-preview');
+                if (pvWrap) pvWrap.addEventListener('click', (e) => {
+                    if (e.target && e.target.closest && e.target.closest('[data-ca-cap-pv-close]')) caCapPvClose();
+                });
+                document.addEventListener('keydown', (e) => { if (e.key === 'Escape') caCapPvClose(); });
+            }
             archEl('ca-arch-trash').addEventListener('click', archTrash);
             archEl('ca-arch-search').addEventListener('input', (e) => { archState.search = e.target.value; renderArch(); });
             document.querySelectorAll('#ca-arch-summary .ca-arch-seg[data-scope]').forEach((b) => b.addEventListener('click', () => {
