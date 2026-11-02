@@ -829,6 +829,21 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   proof is ink-vs-icon offsets in the decoded capture (text ink +2/3px of
   the icon's, not +8/9), never a visual glance.
 
+- v1.46.4 (owner report after v1.46.3): a share image is judged on SPEED
+  and DELIVERY as much as on pixels — "seconds, not 15-20". A camera that
+  waits on the network (live cross-origin fonts, a clone iframe that
+  re-fetches them) is a defect on cellular and offline, and a share that
+  resolves to a toast without ever landing (a burned transient-activation
+  window with the fallback swallowed) is a broken camera even though the
+  PNG rendered perfectly. The round's discipline: capture paths wait only
+  on the vendored faces and only within a bounded race; the painter's
+  clone never touches the network (the diet runs at clone time, the only
+  pre-iframe hook in html2canvas 1.4.1); one-time painter costs prewarm at
+  boot behind a marked throwaway; and every share refusal that is not the
+  crew's own dismissal falls through to the anchor download. Speed proofs
+  run under the phone's emulation with the bad network simulated, and
+  pixel identity is re-proven byte-identical after every such round.
+
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.
   The Oct 2025 case: months imported before the never-pruned flight store

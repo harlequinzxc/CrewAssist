@@ -2019,7 +2019,7 @@ const synthItems = [].concat(
     w.eval('openRcPod()');
     await wait(1500);   // the hero's fresh-open roll settles
     R.ok(d.getElementById('btn-rc-pod-cam').parentElement === d.getElementById('btn-close-rc-pod').parentElement && d.getElementById('btn-rc-pod-cam').parentElement.classList.contains('shrink-0'), 'v1.45.60 hotfix (owner order): the camera rides ONE right cluster with the close button — a title change on the left can never shift it');
-    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, flights: (document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hval') || {}).textContent, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { if (el.id === 'ca-cap-prewarm') { window.__capPrewarms = (window.__capPrewarms || 0) + 1; return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); } const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, flights: (document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hval') || {}).textContent, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
     // the camera opens the PICKER now — All-Time leads, then the years newest-first
     d.getElementById('btn-rc-pod-cam').click();
     await wait(350);
@@ -2052,6 +2052,16 @@ const synthItems = [].concat(
     R.ok(d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').classList.contains('on'), 'the crew\u2019s own chip returns again — the pose never strands');
     R.ok(!d.documentElement.classList.contains('ca-reduced'), 'the transient roll guard is gone again');
     R.ok(w.eval('window.__capRec.length') === 2, 'exactly two captures — the machinery is repeatable');
+    // v1.46.4 (owner report — 15-20s captures): the passport camera is as
+    // network-free as the earnings one — the arm replaces the network-bound
+    // document.fonts.ready, and the boot prewarm never masquerades as a
+    // capture
+    {
+      const src64 = fs.readFileSync(APP, 'utf8');
+      const seg = src64.slice(src64.indexOf('async function rcPodCaptureYear'), src64.indexOf('async function rcPodCaptureYear') + 900);
+      R.ok(seg.indexOf('await caCapFontArm()') !== -1 && seg.indexOf('await document.fonts.ready') === -1, 'v1.46.4 src: the passport capture flow arms the vendored data-URL faces — never the network-bound document.fonts.ready that waits on the cross-origin Google faces too');
+      R.eq(w.eval("(window.__capPrewarms || 0) === 1 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.46.4: the idle prewarm painted exactly its one throwaway card while this suite ran, and the card is gone — no capture slot, no toast, no last-shot');
+    }
     // the picker closes three ways: its own button, its shade, and with its parent
     d.getElementById('btn-rc-pod-cam').click();
     await wait(350);
