@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.46.2', 'APP_VERSION is 1.46.2');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.2' && e.d === '2026-11-02' && e.items.length === 2 && e.items[0].c === 'fix' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.46.2 entry — its two fidelity fixes');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v293'), 'the service-worker cache name is bumped to v293 (the v1.46.2 real-font + full-extent round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.46.3', 'APP_VERSION is 1.46.3');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.3' && e.d === '2026-11-02' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.46.3 entry — its icon-baseline fix');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v294'), 'the service-worker cache name is bumped to v294 (the v1.46.3 icon-baseline round)');
         ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
         ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
@@ -127,10 +127,47 @@ async function calcCard(page, { type, t1, t2, lma }) {
             await document.fonts.ready;
             return document.fonts.check("700 16px 'PJS Probe'");
         }), 'v1.46.1: the data-URL @font-face mechanism resolves in this Chromium — the painter\u2019s clone gets true font metrics');
+        {
+            // v1.46.3 (owner retest): the icon-baseline fix, proven at the
+            // mechanism level in the real browser. The vendored painter
+            // measures every font's baseline with a hidden probe — a plain
+            // body-level div (inline "visibility: hidden" + "nowrap") holding
+            // a text span and a 1x1 baseline-aligned img, read as
+            // img.offsetTop − span.offsetTop + 2. The Tailwind preflight
+            // (img{display:block}) drops the img below the span's line, so
+            // the baseline comes out ~lineHeight instead of ~ascent and every
+            // painted text rides a step low (the owner's half-cut icon
+            // labels). Two scoped app-CSS rules restore the probe's assumed
+            // environment — this block rebuilds the EXACT vendored probe
+            // construction (span first, img second, plain div) and reads it.
+            const probe = await page.evaluate(() => {
+                const t = document.createElement('div');
+                const r = document.createElement('img');
+                const B = document.createElement('span');
+                t.style.visibility = 'hidden';
+                t.style.fontFamily = 'Plus Jakarta Sans, ui-sans-serif, system-ui, sans-serif';
+                t.style.fontSize = '11px';
+                t.style.margin = '0'; t.style.padding = '0'; t.style.whiteSpace = 'nowrap';
+                document.body.appendChild(t);
+                r.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+                r.width = 1; r.height = 1;
+                r.style.margin = '0'; r.style.padding = '0'; r.style.verticalAlign = 'baseline';
+                B.style.fontFamily = t.style.fontFamily; B.style.fontSize = '11px';
+                B.style.margin = '0'; B.style.padding = '0';
+                B.appendChild(document.createTextNode('Hidden Text'));
+                t.appendChild(B); t.appendChild(r);
+                const out = { disp: getComputedStyle(r).display, lh: getComputedStyle(t).lineHeight, baseline: (r.offsetTop - B.offsetTop) + 2 };
+                document.body.removeChild(t);
+                return out;
+            });
+            eq(probe.disp, 'inline', 'v1.46.3: the font probe\u2019s 1x1 img computes INLINE — the Tailwind preflight\u2019s display:block is overridden inside the probe\u2019s footprint only');
+            eq(probe.lh, 'normal', 'v1.46.3: the probe div measures at line-height normal — the span\u2019s box is the font box, not a 1.5 strut');
+            ok(probe.baseline >= 10 && probe.baseline <= 14, 'v1.46.3: the measured baseline for the 11px house font lands at ~12 (the pre-fix block-img geometry measured ~18 — every painted text rode a step low; the owner\u2019s half-cut icon labels)');
+        }
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.2'; }), 'the What\'s New sheet carries the v1.46.2 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.3'; }), 'the What\'s New sheet carries the v1.46.3 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');

@@ -817,6 +817,18 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 
 ### Empty-state copy: blame the truth, name the remedy (v1.45.50)
 
+- v1.46.3 (owner retest of v1.46.2): capture text must sit ON its true
+  baseline, level with any icon beside it. The vendored painter's
+  font-baseline probe silently skews under the Tailwind preflight (its 1x1
+  img turns block, the measured baseline reads ~lineHeight, every text
+  paints a step low — the half-cut icon labels). The fix is app CSS scoped
+  to the probe's own footprint (inline img, normal line-height); the
+  vendor file stays pristine. The rig lesson that found it: the smoke's
+  lucide stub made every rig blind to icon-adjacent geometry — the
+  reproduction needed the real library staged from npm, and the measured
+  proof is ink-vs-icon offsets in the decoded capture (text ink +2/3px of
+  the icon's, not +8/9), never a visual glance.
+
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.
   The Oct 2025 case: months imported before the never-pruned flight store
