@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.46.3', 'APP_VERSION is 1.46.3');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.3' && e.d === '2026-11-02' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.46.3 entry — its icon-baseline fix');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v294'), 'the service-worker cache name is bumped to v294 (the v1.46.3 icon-baseline round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.46.4', 'APP_VERSION is 1.46.4');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.4' && e.d === '2026-11-02' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.46.4 entry — its capture-speed round');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v295'), 'the service-worker cache name is bumped to v295 (the v1.46.4 capture-speed round)');
         ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
         ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
@@ -167,7 +167,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.3'; }), 'the What\'s New sheet carries the v1.46.3 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.4'; }), 'the What\'s New sheet carries the v1.46.4 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures finish in seconds — and the share sheet always opens.') !== -1), 'the What\'s New sheet carries the v1.46.4 capture-speed pointer');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -1039,6 +1040,38 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
 
+        console.log('— v1.46.4: the capture pipeline warm and network-free —');
+        // v1.46.4 (owner report — 15-20s captures): the idle prewarm absorbs
+        // the painter's one-time costs (the lazy vendor script, the armed
+        // faces, the clone-iframe machinery) at boot, so the first camera
+        // tap of a session starts warm
+        try { await page.waitForFunction(() => !!(window.caCapPrewarm && caCapPrewarm._p), { timeout: 20000 }); } catch (e) {}
+        ok(await page.evaluate(() => !!(window.caCapPrewarm && caCapPrewarm._p) && typeof window.html2canvas === 'function' && !!document.getElementById('ca-cap-fonts') && !document.querySelector('div[style*="left:-9999px"]')), 'v1.46.4: the idle prewarm ran — the vendor painter and the armed faces are warm and its throwaway card is gone before any camera tap');
+        // the clone diet, pinned at the predicate: the cross-origin font
+        // links and every non-target body child never enter the painter's
+        // clone (the vendor awaits the clone's fonts.ready, so a network
+        // stylesheet there is the owner's 15-20s); the target, its subtree,
+        // its ancestor chain and the head ride along
+        ok(await page.evaluate(() => {
+            const target = document.getElementById('ca-arch-scroll');
+            if (!target) return false;
+            const pred = caCapIgnore(target);
+            const g = document.createElement('link');
+            g.rel = 'stylesheet';
+            g.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans';
+            const g2 = document.createElement('link');
+            g2.rel = 'preconnect';
+            g2.href = 'https://fonts.gstatic.com';
+            const sibling = document.createElement('div');
+            document.body.appendChild(sibling);
+            const r = pred(g) === true && pred(g2) === true && pred(sibling) === true
+                && pred(target) === false && pred(target.firstElementChild) === false
+                && pred(document.getElementById('ca-arch-sheet')) === false
+                && pred(document.head) === false && pred(document.body) === false;
+            sibling.remove();
+            return r;
+        }), 'v1.46.4: the clone diet — cross-origin font links and non-target body children are dropped at clone time; the target, its chain and the head stay');
+
         console.log('— v1.46.0: the earnings camera — year picker, pose, capture, restore —');
         // The REAL vendored painter, live in Chromium: the camera opens the
         // year picker (the archive's own sub-sheet), a pick poses the card
@@ -1183,6 +1216,58 @@ async function calcCard(page, { type, t1, t2, lma }) {
             }
             return gold > 800;
         }), 'v1.46.1 (the owner\u2019s 2026 report): the current year\u2019s chart PAINTS — its gold bars ride the capture at full height (the bar-grow entrance stands down under the pose guard)');
+        // v1.46.4 (owner report — 15-20s captures): the capture flows must
+        // never await the network-bound document.fonts.ready — it waits on
+        // EVERY live face including the cross-origin Google ones. Hang it
+        // forever and the camera must still deliver inside the normal bound
+        {
+            await page.evaluate(() => {
+                window.__caLastShot = null;
+                try { Object.defineProperty(document.fonts, 'ready', { get: () => new Promise(() => {}) }); } catch (e) {}
+            });
+            await page.evaluate(() => { document.getElementById('ca-arch-cam').click(); });
+            await sleep(500);
+            await page.evaluate(() => { window.__caLastShot = null; Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[0].click(); });
+            let hungOk = true;
+            try { await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 }); } catch (e) { hungOk = false; }
+            ok(hungOk, 'v1.46.4: with document.fonts.ready hung forever, the camera still delivers — the arm (vendored data-URL faces) replaced the network-bound wait');
+            await page.evaluate(() => { try { delete document.fonts.ready; } catch (e) {} });
+        }
+        // v1.46.4 (owner report — "no popups to save image, only the
+        // toast"): the share is AWAITED now. The old code marked the share
+        // done the moment it was called and swallowed the rejection, so a
+        // capture that burned the ~5s transient-activation window left the
+        // crew with neither sheet nor download. A refusal that is not the
+        // crew's own dismissal must fall through to the anchor download.
+        {
+            const r = await page.evaluate(async () => {
+                const blob = window.__caLastShot && window.__caLastShot.blob;
+                if (!blob) return null;
+                const out = { lateRefusalAnchor: -1, dismissalAnchor: -1 };
+                const origCU = URL.createObjectURL;
+                const origCS = navigator.canShare, origS = navigator.share;
+                let anchors = 0;
+                URL.createObjectURL = function (b) { anchors++; return origCU.call(URL, b); };
+                try {
+                    navigator.canShare = () => true;
+                    navigator.share = () => Promise.reject(Object.assign(new Error('activation window lapsed'), { name: 'NotAllowedError' }));
+                    await caCapDeliver(blob, 'probe-a.png', 'CrewAssist', 'Saved A');
+                    out.lateRefusalAnchor = anchors;
+                    anchors = 0;
+                    navigator.share = () => Promise.reject(Object.assign(new Error('dismissed'), { name: 'AbortError' }));
+                    await caCapDeliver(blob, 'probe-b.png', 'CrewAssist', 'Saved B');
+                    out.dismissalAnchor = anchors;
+                } finally {
+                    URL.createObjectURL = origCU;
+                    try { delete navigator.canShare; delete navigator.share; } catch (e) { navigator.canShare = origCS; navigator.share = origS; }
+                }
+                out.toastA = (document.querySelector('#ca-arch-toast span') || {}).textContent || '';
+                return out;
+            });
+            ok(r && r.lateRefusalAnchor === 1, 'v1.46.4: a late share refusal falls through to the anchor download — the PNG always lands (was: swallowed, nothing saved)');
+            ok(r && r.dismissalAnchor === 0, 'v1.46.4: the crew\u2019s own dismissal (AbortError) stops at the toast — no stray download');
+            ok(r && r.toastA === 'Saved B', 'v1.46.4: both share outcomes end on the done toast');
+        }
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); });
 
         console.log('— v1.45.12: the earnings card + list polish —');

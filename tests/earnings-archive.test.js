@@ -1838,7 +1838,7 @@ function todayYmd() {
     // the stub painter records the pose + drives the clone surgery; the
     // font embed's fetch is stubbed so the clone carries real data URLs
     w.eval("window.fetch = function (url) { return Promise.resolve({ ok: true, arrayBuffer: function () { return Promise.resolve(new ArrayBuffer(8)); } }); };");
-    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, height: opts.height, scrollH: el.scrollHeight, x: opts.x, y: opts.y, width: opts.width, windowWidth: opts.windowWidth, windowHeight: opts.windowHeight, bg: opts.backgroundColor, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, liveOverflow: document.getElementById('ca-arch-scroll').style.overflow, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { if (el.id === 'ca-cap-prewarm') { window.__capPrewarms = (window.__capPrewarms || 0) + 1; return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); } const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, height: opts.height, scrollH: el.scrollHeight, x: opts.x, y: opts.y, width: opts.width, windowWidth: opts.windowWidth, windowHeight: opts.windowHeight, bg: opts.backgroundColor, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, liveOverflow: document.getElementById('ca-arch-scroll').style.overflow, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
     // tap the camera → the picker rides the archive's own sub-sheet
     d.getElementById('ca-arch-cam').click();
     await wait(300);
@@ -1918,6 +1918,31 @@ function todayYmd() {
     await wait(200);
     R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'an empty archive never opens the picker');
     R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Nothing saved to capture yet') !== -1, 'the empty archive says so honestly');
+
+    // ---- v1.46.4 (owner report — 15-20s captures): the network-free pipeline ----
+    {
+      const src64 = fs.readFileSync(APP, 'utf8');
+      R.ok(!/function archCaptureYear[\s\S]{0,400}await document\.fonts\.ready/.test(src64), 'v1.46.4 src: the earnings capture flow never awaits document.fonts.ready — it waited on EVERY live face, the cross-origin Google ones included, which on a slow network was the owner\u2019s 15-20s stall');
+      R.ok(/function archCaptureYear[\s\S]{0,400}await caCapFontArm\(\)/.test(src64), 'v1.46.4 src: the flow arms the vendored data-URL faces instead — offline-proof, no network');
+      R.ok(src64.indexOf('new Promise((resolve) => setTimeout(resolve, 900))') !== -1 && src64.indexOf('function caCapFontArm') < src64.indexOf('Promise.race(['), 'v1.46.4 src: the arm\u2019s fonts.load wait is RACED at 900ms — the Google stylesheet also declares Plus Jakarta Sans, so an unraced load would wait on the cross-origin twins');
+      R.ok(src64.includes("d.id = 'ca-cap-prewarm'") && src64.includes('function caCapPrewarm(') && src64.includes('const ignoreEl = caCapIgnore(el);') && src64.includes('ignoreElements: ignoreEl,'), 'v1.46.4 src: the painter carries the clone diet (ignoreElements) and the idle prewarm paints its marked throwaway card at boot');
+      R.ok(/function caCapIgnore\(el\)[\s\S]{0,700}fonts\\.googleapis\\.com/.test(src64), 'v1.46.4 src: the diet drops the cross-origin Google font links — the vendor awaits the clone\u2019s fonts.ready, so a network stylesheet in the iframe is a stall on every capture');
+      // the prewarm fired during this very suite (2.6s after the boot block)
+      // and never disturbed the archive
+      R.eq(w.eval("(window.__capPrewarms || 0) === 1 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.46.4: the prewarm painted exactly its one throwaway card while this suite ran, and the card is gone');
+      // the deliver: a share refusal that is not the crew\u2019s own dismissal
+      // falls through to the download; the dismissal stops at the toast
+      w.eval("window.__anchorN = 0; window.__origCU = URL.createObjectURL; URL.createObjectURL = function (b) { window.__anchorN++; return 'blob:probe'; }; navigator.canShare = function () { return true; }; navigator.share = function () { return Promise.reject(Object.assign(new Error('lapsed'), { name: 'NotAllowedError' })); };");
+      w.eval("caCapDeliver(new Blob(['x'], { type: 'image/png' }), 'probe.png', 'CrewAssist probe', 'Probe saved')");
+      await wait(400);
+      R.eq(w.eval('window.__anchorN'), 1, 'v1.46.4: a late share refusal (the activation window lapsed mid-capture) falls through to the anchor download \u2014 the PNG always lands (the owner\u2019s \u201cno popups to save image, only the toast\u201d)');
+      R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Probe saved') !== -1, 'v1.46.4: the refusal path still ends on the done toast');
+      w.eval("navigator.share = function () { return Promise.reject(Object.assign(new Error('dismissed'), { name: 'AbortError' })); }; window.__anchorN = 0;");
+      w.eval("caCapDeliver(new Blob(['x'], { type: 'image/png' }), 'probe2.png', 'CrewAssist probe', 'Probe two saved')");
+      await wait(400);
+      R.eq(w.eval('window.__anchorN'), 0, 'v1.46.4: the crew\u2019s own dismissal (AbortError) stops at the toast — no stray download');
+      w.eval("delete navigator.canShare; delete navigator.share; URL.createObjectURL = window.__origCU;");
+    }
     void w;
   }
 
