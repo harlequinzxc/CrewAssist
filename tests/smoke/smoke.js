@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.46.5', 'APP_VERSION is 1.46.5');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.5' && e.d === '2026-11-02' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.46.5 entry — its capture-preview round');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v296'), 'the service-worker cache name is bumped to v296 (the v1.46.5 capture-preview round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.46.6', 'APP_VERSION is 1.46.6');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.6' && e.d === '2026-11-03' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.46.6 entry — its direct-share round');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v297'), 'the service-worker cache name is bumped to v297 (the v1.46.6 direct-share round)');
         ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
         ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
@@ -167,8 +167,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.5'; }), 'the What\'s New sheet carries the v1.46.5 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Your capture opens ready — tap Share, and the sheet always opens.') !== -1), 'the What\'s New sheet carries the v1.46.5 capture-preview pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.6'; }), 'the What\'s New sheet carries the v1.46.6 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures share straight to your phone’s share sheet again — no detour.') !== -1), 'the What\'s New sheet carries the v1.46.6 direct-share pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Your capture opens ready — tap Share, and the sheet always opens.') !== -1), 'the v1.46.5 capture-preview pointer stays in the delta below');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures finish in seconds — and the share sheet always opens.') !== -1), 'the What\'s New sheet carries the v1.46.4 capture-speed pointer in the delta');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
@@ -601,11 +602,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return Math.abs(bmp.height - (hero.height + 34)) <= 26 && Math.abs(bmp.width - hero.width) <= 6;
         }), 'v1.46.1 (the owner\u2019s "exactly what is on screen"): the capture\u2019s dimensions match the live hero card — no reflow, no clipping, no empty tail');
         ok(await page.evaluate(() => { const on = document.querySelector('#ca-rc-pod-years .ca-rc-pod-ypill.on'); return !!on && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length === 0 && !document.documentElement.classList.contains('ca-reduced'); }), 'v1.46.1: the crew\u2019s own chip returns, the roll settles and no pose guard lingers');
-        // v1.46.5: the capture preview glides closed on demand - the
-        // passport page stands clear behind it
-        await page.evaluate(() => caCapPvClose());
-        await sleep(450);
-        ok(await page.evaluate(() => document.getElementById('ca-cap-preview').classList.contains('hidden')), 'v1.46.5: the preview closes cleanly after the passport capture - no lingering overlay over the records page');
+        // v1.46.6 (owner order — the native share sheet, directly): the
+        // preview experiment is gone; the capture delivers straight away
+        // (the anchor here — headless Chromium ships no share API) and
+        // the passport page stands clear behind nothing
+        ok(await page.evaluate(() => !document.getElementById('ca-cap-preview')), 'v1.46.6: no preview sheet exists after the passport capture — no lingering overlay over the records page');
         await page.evaluate(() => document.getElementById('ca-rc-pod-gate').click());
         await sleep(1000);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-statwrap').classList.contains('hidden') && !document.getElementById('ca-rc-stat-sheet').classList.contains('translate-y-full') && document.querySelector('#ca-rc-stat-sheet h3').textContent === 'My Flight Stats'), 'v1.45.53 (owner order): one tap on My Flight Stats raises the overlay — its own sheet, titled with its new name, glided up over the passport (no accordion)');
@@ -1239,57 +1240,50 @@ async function calcCard(page, { type, t1, t2, lma }) {
             ok(hungOk, 'v1.46.4: with document.fonts.ready hung forever, the camera still delivers — the arm (vendored data-URL faces) replaced the network-bound wait');
             await page.evaluate(() => { try { delete document.fonts.ready; } catch (e) {} });
         }
-        // v1.46.5 (owner report — "still taking awhile and the share pop
-        // up is no longer there"): the capture opens as a PREVIEW and
-        // delivery rides a FRESH tap — the Share button is a new user
-        // gesture, so the phone's share window is always live when it
-        // fires. A refusal that is not the crew's own dismissal still
-        // anchors the file; the dismissal never downloads.
+        // v1.46.6 (owner order — "when i mean share i mean the native ios
+        // and android web share pop up"): the capture hands its PNG
+        // straight to navigator.share the moment it exists. A refusal
+        // that is not the crew's own dismissal still anchors the file;
+        // the dismissal never downloads; without a share API the anchor
+        // is the door (desktop). Every path ends on its done toast.
         {
-            ok(await page.evaluate(() => !document.getElementById('ca-cap-preview').classList.contains('hidden') && String(document.getElementById('ca-cap-pv-img').src).indexOf('data:image') === 0), 'v1.46.5: the earnings capture stands open as a PREVIEW — the image rides a quarter-scale JPEG of the canvas, while the full PNG encodes behind it');
+            ok(await page.evaluate(() => !document.getElementById('ca-cap-preview')), 'v1.46.6: the earnings capture leaves no preview — the delivery ran straight off the paint');
             const r = await page.evaluate(async () => {
                 const blob = window.__caLastShot && window.__caLastShot.blob;
                 if (!blob) return null;
                 const out = {};
-                const shareBtn = document.getElementById('ca-cap-pv-share');
-                const saveBtn = document.getElementById('ca-cap-pv-save');
-                out.shareHidden = shareBtn.classList.contains('hidden');   // headless Chromium ships no navigator.share — Save is the only door here
-                out.saveLive = !saveBtn.disabled;
                 let anchors = 0;
                 const mk = document.createElement.bind(document);
                 document.createElement = function (t) { const el = mk(t); if (t === 'a') { el.click = function () { anchors++; }; } return el; };
                 try {
-                    saveBtn.click();
-                    await new Promise((res) => setTimeout(res, 300));
-                    out.saveAnchor = anchors;
                     navigator.canShare = () => true;
                     navigator.share = () => Promise.reject(Object.assign(new Error('activation window lapsed'), { name: 'NotAllowedError' }));
-                    caCapPreviewOpen({ name: 'probe-a.png', title: 'CrewAssist', toast: 'Saved A' }).ready(null, Promise.resolve(blob));
-                    await new Promise((res) => setTimeout(res, 200));
-                    document.getElementById('ca-cap-pv-share').click();
+                    await caCapDeliver(blob, 'probe-a.png', 'CrewAssist', 'Saved A');
                     await new Promise((res) => setTimeout(res, 300));
-                    out.lateRefusalAnchor = anchors - out.saveAnchor;
+                    out.lateRefusalAnchor = anchors;
+                    out.toastA = (document.querySelector('#ca-arch-toast span') || {}).textContent || '';
                     navigator.share = () => Promise.reject(Object.assign(new Error('dismissed'), { name: 'AbortError' }));
-                    caCapPreviewOpen({ name: 'probe-b.png', title: 'CrewAssist', toast: 'Saved B' }).ready(null, Promise.resolve(blob));
-                    await new Promise((res) => setTimeout(res, 200));
-                    document.getElementById('ca-cap-pv-share').click();
+                    await caCapDeliver(blob, 'probe-b.png', 'CrewAssist', 'Saved B');
                     await new Promise((res) => setTimeout(res, 300));
-                    out.dismissalAnchor = anchors - out.saveAnchor - out.lateRefusalAnchor;
+                    out.dismissalAnchor = anchors - out.lateRefusalAnchor;
                     out.toastB = (document.querySelector('#ca-arch-toast span') || {}).textContent || '';
-                    out.closedAfterDismissal = document.getElementById('ca-cap-pv-sheet').classList.contains('translate-y-full');
+                    delete navigator.canShare; delete navigator.share;
+                    await caCapDeliver(blob, 'probe-c.png', 'CrewAssist', 'Saved C');
+                    await new Promise((res) => setTimeout(res, 300));
+                    out.noApiAnchor = anchors - out.lateRefusalAnchor - out.dismissalAnchor;
+                    out.toastC = (document.querySelector('#ca-arch-toast span') || {}).textContent || '';
                 } finally {
                     document.createElement = mk;
                     try { delete navigator.canShare; delete navigator.share; } catch (e) {}
                 }
                 return out;
             });
-            ok(r && r.shareHidden === true, 'v1.46.5: without a share API the Share button stays hidden — Save is the door (desktop/headless)');
-            ok(r && r.saveLive === true, 'v1.46.5: Save is live in the preview the moment the paint is done');
-            ok(r && r.saveAnchor === 1, 'v1.46.5: the Save tap downloads exactly once');
-            ok(r && r.lateRefusalAnchor === 1, 'v1.46.5: a late share refusal (the activation window lapsed mid-capture) falls through to the anchor download — the PNG always lands (was: the owner’s vanished share popup)');
-            ok(r && r.dismissalAnchor === 0, 'v1.46.5: the crew’s own dismissal (AbortError) stops at the toast — no stray download');
-            ok(r && r.toastB === 'Saved B', 'v1.46.5: both share outcomes end on the done toast');
-            ok(r && r.closedAfterDismissal === true, 'v1.46.5: the preview glides closed after delivery');
+            ok(r && r.lateRefusalAnchor === 1, 'v1.46.6: a late share refusal (the activation window lapsed mid-capture) falls through to the anchor download — the PNG always lands');
+            ok(r && r.toastA === 'Saved A', 'v1.46.6: the refusal path ends on the done toast');
+            ok(r && r.dismissalAnchor === 0, 'v1.46.6: the crew’s own dismissal (AbortError) stops at the toast — no stray download');
+            ok(r && r.toastB === 'Saved B', 'v1.46.6: the dismissal ends on its toast');
+            ok(r && r.noApiAnchor === 1, 'v1.46.6: without a share API the delivery anchors the download exactly once — the desktop door');
+            ok(r && r.toastC === 'Saved C', 'v1.46.6: the anchor fallback ends on its toast too');
         }
 
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); });
