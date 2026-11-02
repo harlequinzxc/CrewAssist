@@ -102,12 +102,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.46.1', 'APP_VERSION is 1.46.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.1' && e.d === '2026-11-01' && e.items.length === 3 && e.items[0].c === 'fix' && e.items[1].c === 'imp' && e.items[2].c === 'imp'; }), 'the changelog carries the 1.46.1 entry — its fix and two imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v292'), 'the service-worker cache name is bumped to v292 (the v1.46.1 camera-fidelity round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.46.2', 'APP_VERSION is 1.46.2');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.2' && e.d === '2026-11-02' && e.items.length === 2 && e.items[0].c === 'fix' && e.items[1].c === 'fix'; }), 'the changelog carries the 1.46.2 entry — its two fidelity fixes');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v293'), 'the service-worker cache name is bumped to v293 (the v1.46.2 real-font + full-extent round)');
         ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
         ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
-        ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the painter\u2019s clone embeds them as data URLs (no fallback metrics, no wrapping, no clipped descenders)');
+        ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
             // the painter's clone embeds the house font as base64 data URLs —
             // prove the mechanism RESOLVES in this Chromium (the CDP
@@ -130,7 +130,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.1'; }), 'the What\'s New sheet carries the v1.46.1 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.2'; }), 'the What\'s New sheet carries the v1.46.2 header');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
@@ -1032,7 +1032,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(500);
         ok(await page.evaluate(() => !document.getElementById('ca-arch-sub').classList.contains('hidden') && document.getElementById('ca-arch-sub-title').textContent === 'Capture earnings'), 'the camera opens the year picker in the archive\u2019s own sub-sheet');
         ok(await page.evaluate(() => { const rows = Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow')); return rows.length === 2 && rows[0].getAttribute('data-yr') === '2026' && rows[1].getAttribute('data-yr') === '2025' && !rows.some((r) => /all/i.test(r.textContent)); }), 'the picker lists the years on record, newest first — NO all-time row (the owner\u2019s ruling)');
-        await page.evaluate(() => { window.__caLastShot = null; Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click(); });
+        await page.evaluate(() => { window.__caLastShot = null; window.__posedScrollH = 0; Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click(); });
+        // the capture POSES the page to the picked year before the painter
+        // fires — read the posed content's own height while the pose is live
+        await page.waitForFunction(() => { const yr = document.querySelector('.ca-arch-seg[data-scope="year"]'); return yr && yr.classList.contains('ca-arch-segon') && document.documentElement.classList.contains('ca-reduced'); }, { timeout: 8000 });
+        await page.evaluate(() => { const sc = document.getElementById('ca-arch-scroll'); const r = sc.getBoundingClientRect(); window.__posedScrollH = sc.scrollHeight; window.__posedLastHead = 0; sc.querySelectorAll('.ca-arch-group').forEach((g) => { const b = g.getBoundingClientRect(); if (b.bottom - r.top > window.__posedLastHead) window.__posedLastHead = b.bottom - r.top; }); });
         await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 });
         ok(await page.evaluate(() => window.__caLastShot.name === 'CrewAssist-Earnings-2025.png' && window.__caLastShot.size > 4000), 'v1.46.1: picking 2025 delivers a real PNG named app + year');
         ok(await page.evaluate(async () => {
@@ -1055,6 +1059,67 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const tailClean = !rowHasPaint(c.height - 2) && !rowHasPaint(c.height - 6) && lastPaint !== -1 && (c.height - lastPaint) <= 40;
             return seen.size > 8 && bmp.width > 200 && bmp.height > 700 && tailClean;
         }), 'v1.46.1: the earnings capture decodes TALL and richly painted with a clean trimmed tail — the posed year card + chart + folded list, ending at the last record (no header-only crop, no huge gap)');
+        // v1.46.2 (the owner's real-device report): the capture must run to
+        // the FULL extent of the requested view. The clone FLATTENS the
+        // target to the document's only child at the origin — the painter
+        // measures live geometry against the real window, and a target in a
+        // fixed sheet inside a scroll container loses everything past its
+        // live bounds (the defect was viewport-independent: 844..1657 all
+        // cut the same ~170px before the content's end)
+        ok(await page.evaluate(async () => {
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const r = document.getElementById('ca-arch-scroll').getBoundingClientRect();
+            // the flattened capture rides the target's LIVE width; its height
+            // must reach the POSED content's end (read while the pose was
+            // live): the clone sheds the stripped pill/search rows (~100px
+            // above the list) and adds the ~32px header + 12px air, so a
+            // healthy capture ends 20-150px above the posed last group head.
+            // The old defect (the painter reading live bounds against the
+            // real window) cut the canvas 170-390px BEFORE the content's
+            // end — outside this window by construction
+            const lastHead = window.__posedLastHead;
+            return Math.abs(bmp.width - r.width) <= 2 && lastHead > 0 && bmp.height >= lastHead - 150 && bmp.height <= lastHead - 20;
+        }), 'v1.46.2: the earnings capture covers the FULL posed content — the canvas ends where the content does, never ~200px before it (the flatten: no viewport-bounded cut)');
+        // v1.46.2 (the owner's real-device report): the capture must print
+        // in the app's OWN typeface. The faces arm in the LIVE head before
+        // the shot (caCapFontArm), the clone inherits them — and the proof
+        // compares the painted width of the injected header against a
+        // hidden twin of the same string in the live document: a fallback
+        // font would miss by many pixels
+        ok(await page.evaluate(() => {
+            const st = document.getElementById('ca-cap-fonts');
+            if (!st || st.textContent.indexOf('@font-face') === -1) return false;
+            return document.fonts.check('700 16px "Plus Jakarta Sans"') && document.fonts.check('400 16px "Plus Jakarta Sans"');
+        }), 'v1.46.2: the capture armed the house font in the live document — the data-URL faces resolve and the clone inherits true metrics');
+        ok(await page.evaluate(async () => {
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const data = x.getImageData(0, 0, c.width, c.height).data;
+            // the injected header sits at the very top: its painted width
+            // vs a hidden twin of the same string in the same classes
+            const sc = document.getElementById('ca-arch-scroll');
+            const twin = document.createElement('div');
+            twin.className = 'text-lg font-bold mb-1';
+            twin.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;';
+            twin.textContent = '2025 Earnings';
+            sc.appendChild(twin);
+            const tw = twin.getBoundingClientRect().width;
+            twin.remove();
+            let hMin = 1e9, hMax = -1;
+            for (let y = 0; y < Math.min(40, c.height); y++) {
+                const row = [];
+                for (let px = 0; px < c.width; px++) { const i = (y * c.width + px) * 4; row.push(data[i] + ',' + data[i + 1] + ',' + data[i + 2]); }
+                row.sort();
+                const med = row[Math.floor(row.length / 2)].split(',').map(Number);
+                for (let px = 8; px < c.width - 8; px++) {
+                    const i = (y * c.width + px) * 4;
+                    if (Math.abs(data[i] - med[0]) > 40 || Math.abs(data[i + 1] - med[1]) > 40 || Math.abs(data[i + 2] - med[2]) > 40) { if (px < hMin) hMin = px; if (px > hMax) hMax = px; }
+                }
+            }
+            const headW = (hMax >= hMin) ? hMax - hMin + 1 : -1;
+            return headW > 0 && Math.abs(headW - tw) <= 3;
+        }), 'v1.46.2: the capture prints in the house typeface — the injected header paints at its live-font width (a fallback would miss by pixels)');
         ok(await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon') && document.querySelector('.ca-arch-seg[data-mode="salary"]').classList.contains('ca-arch-segon') && document.querySelectorAll('#ca-arch-summary .ca-rollwrap').length === 0 && !document.documentElement.classList.contains('ca-reduced')), 'v1.46.1: the user\u2019s own pills return exactly — All-time + Monthly Salary, no roll guard, nothing stranded');
         ok(await page.evaluate(() => !!document.getElementById('ca-arch-ins-toggle') && !!document.getElementById('ca-arch-pillrow-mode') && document.getElementById('ca-arch-sub').classList.contains('hidden')), 'the LIVE page kept its search bar, pills and insights toggle — the exclusions lived in the painter\u2019s clone alone');
         // v1.46.1 (the owner's missing-chart report): the CURRENT year must

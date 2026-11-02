@@ -3214,7 +3214,7 @@
             }
         }
 
-        var APP_VERSION = '1.46.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.46.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3236,6 +3236,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.46.2', d: '2026-11-02', items: [
+                { c: 'fix', t: 'Captures print in the app\u2019s own typeface \u2014 figures stop clipping, icons sit on the line.' },
+                { c: 'fix', t: 'A tall capture runs to its last line \u2014 the whole card, not just the part on screen.' }
+            ] },
             { v: '1.46.1', d: '2026-11-01', items: [
                 { c: 'fix', t: 'Camera captures match the screen exactly \u2014 fonts, charts, edges.' },
                 { c: 'imp', t: 'The passport camera asks which year to capture.' },
@@ -7165,9 +7169,15 @@
         // wrapped, figures clipped and empty sheet filled the crop's tail;
         // the viewport now always mirrors the REAL window. (2) The clone
         // iframe re-loads its stylesheets and races its webfonts — a fallback
-        // metric wraps lines and clips descenders; the house font is now
-        // EMBEDDED into the clone as data URLs (vendor/fonts, fetched once
-        // through the service worker and memoised). (3) The painter's shadow
+        // metric wraps lines and clips descenders; the house font now rides
+        // a <style> IN THE LIVE DOCUMENT'S HEAD (data-URL faces from
+        // vendor/fonts, fetched once through the service worker) — the
+        // painter's clone INHERITS that style with the document, so the
+        // faces are loading when the painter awaits the clone's
+        // document.fonts.ready, and the clone lays out in true metrics.
+        // (The v1.46.1 lesson: injecting the faces inside onclone is TOO
+        // LATE — onclone runs AFTER that await, and a font load cannot
+        // finish inside a microtask.) (3) The painter's shadow
         // approximation read as a coloured band at the crop edge — shadows
         // are stripped inside the capture target. A pixel trim then closes
         // the canvas at the last PAINTED row (plus air), so no padding or
@@ -7189,6 +7199,29 @@
                 return parts.join('');
             })().catch(() => '');
             return caCapFontCss._p;
+        }
+        // v1.46.2: arm the vendored font faces in the LIVE document. The
+        // <style> is appended to the head ONCE (idempotent) and the faces
+        // are awaited here, so the live render settles before anything is
+        // measured — and the painter's clone carries the style from the
+        // start, before its internal fonts.ready wait.
+        async function caCapFontArm() {
+            if (caCapFontArm._p) return caCapFontArm._p;
+            caCapFontArm._p = (async () => {
+                const css = await caCapFontCss();
+                if (!css) return;
+                try {
+                    let st = document.getElementById('ca-cap-fonts');
+                    if (!st) {
+                        st = document.createElement('style');
+                        st.id = 'ca-cap-fonts';
+                        (document.head || document.documentElement).appendChild(st);
+                    }
+                    if (st.textContent !== css) st.textContent = css;
+                    await Promise.all([400, 500, 600, 700].map((w) => document.fonts.load(w + ' 16px \"Plus Jakarta Sans\"').catch(() => {})));
+                } catch (e) {}
+            })().catch(() => {});
+            return caCapFontArm._p;
         }
         function caCapTrim(canvas, bg, scale) {
             try {
@@ -7215,15 +7248,16 @@
             } catch (e) { return canvas; }
         }
         async function caCapShoot(el, opts) {
+            await caCapFontArm();   // the live render settles + the clone inherits the faces
             const lib = await caCapLib();
             let scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
             // iOS keeps a hard ceiling on canvas area — a very tall capture
             // trades a little sharpness rather than failing outright
             const rect = el.getBoundingClientRect();
+            const w = Math.max(1, Math.round(rect.width));
             const h = Math.max(el.scrollHeight || 0, rect.height);
-            const area = (rect.width * scale) * (h * scale);
+            const area = (w * scale) * (h * scale);
             if (area > 15000000) scale = Math.max(1, Math.round(scale * Math.sqrt(15000000 / area) * 100) / 100);
-            const fontCss = await caCapFontCss();
             const userClone = (opts && opts.onclone) || null;
             const elId = el.id ? el.id : '';
             const bg = (opts && opts.bg) || caCapThemeBg();
@@ -7233,27 +7267,44 @@
                 scale: scale,
                 useCORS: true,
                 logging: false,
-                // the clone lays out at the REAL viewport — never stretched
                 windowWidth: window.innerWidth,
                 windowHeight: window.innerHeight,
-                ...(full ? { x: rect.left, y: rect.top, width: rect.width, height: h } : {}),
+                ...(full ? { x: 0, y: 0, width: w, height: h } : {}),
                 onclone: (doc) => {
                     try {
-                        // a tall crop can reach below the fixed sheet onto the
-                        // page's own background — the clone paints the flat
-                        // capture tone there instead, so the trim (and the
-                        // eye) never sees the sky leak into the card's tail
+                        // the clone paints the flat capture tone everywhere —
+                        // the flattened body (below) has no sheet behind it,
+                        // and the trim reads this tone as background
                         doc.documentElement.style.background = bg;
                         if (doc.body) doc.body.style.background = 'transparent';
                     } catch (e) {}
                     try {
-                        if (fontCss || elId) {
+                        if (elId) {
                             const st = doc.createElement('style');
-                            st.textContent = (fontCss || '') + (elId ? '#' + elId + ', #' + elId + ' * { box-shadow: none !important; }' : '');
+                            st.textContent = '#' + elId + ', #' + elId + ' * { box-shadow: none !important; }';
                             (doc.head || doc.documentElement).appendChild(st);
                         }
                     } catch (e) {}
                     if (userClone) userClone(doc);
+                    // v1.46.2 THE FLATTEN: the painter measures the LIVE
+                    // element against the real window — a target inside a
+                    // fixed sheet with a scroll container loses whatever
+                    // sits past its live bounds (the whole tail of a tall
+                    // capture, empirically viewport-independent). So the
+                    // clone's body carries ONLY the target, at the origin,
+                    // at its live width — no fixed sheets, no flex, no
+                    // overflow: the plain in-flow document the painter
+                    // renders reliably, cropped from (0,0).
+                    try {
+                        const cel = elId ? doc.getElementById(elId) : null;
+                        if (cel && doc.body && cel !== doc.body) {
+                            cel.style.width = w + 'px';
+                            doc.body.innerHTML = '';
+                            doc.body.style.margin = '0';
+                            doc.body.style.overflow = 'visible';
+                            doc.body.appendChild(cel);
+                        }
+                    } catch (e) {}
                 }
             });
             const fixed = caCapTrim(canvas, bg, scale);
