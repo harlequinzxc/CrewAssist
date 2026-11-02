@@ -1,4 +1,4 @@
-const CACHE_NAME = 'crewassist-v298';
+const CACHE_NAME = 'crewassist-v299';
 const ASSETS = [
     './',
     './index.html',
@@ -11,7 +11,6 @@ const ASSETS = [
     './icons/app-icon-180.png',
     './icons/app-icon-192.png',
     './icons/app-icon-512.png',
-    './vendor/html2canvas.min.js',
     './vendor/fonts/plus-jakarta-sans-400.woff2',
     './vendor/fonts/plus-jakarta-sans-500.woff2',
     './vendor/fonts/plus-jakarta-sans-600.woff2',

@@ -102,11 +102,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.47.0', 'APP_VERSION is 1.47.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.47.0' && e.d === '2026-11-03' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.47.0 entry — its passport-repaint round');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v298'), 'the service-worker cache name is bumped to v298 (the v1.47.0 passport-repaint round)');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
-        ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.47.1', 'APP_VERSION is 1.47.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.47.1' && e.d === '2026-11-03' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.47.1 entry — its title + earnings round, two imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v299'), 'the service-worker cache name is bumped to v299 (the v1.47.1 title + earnings round)');
+        ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
             // the painter's clone embeds the house font as base64 data URLs —
@@ -167,9 +166,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.47.0'; }), 'the What\'s New sheet carries the v1.47.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The passport camera repaints your hero card directly — quicker and exact.') !== -1), 'the What\'s New sheet carries the v1.47.0 passport-repaint pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures share straight to your phone’s share sheet again — no detour.') !== -1), 'the v1.46.6 direct-share pointer stays in the delta below');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.47.1'; }), 'the What\'s New sheet carries the v1.47.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Passport captures carry their title — All-Time, or the year.') !== -1), 'the What\'s New sheet carries the v1.47.1 passport-title pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings camera joins the passport pattern — quick and exact.') !== -1), 'the What\'s New sheet carries the v1.47.1 earnings pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The passport camera repaints your hero card directly — quicker and exact.') !== -1), 'the v1.47.0 passport-repaint pointer stays in the delta below');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures finish in seconds — and the share sheet always opens.') !== -1), 'the What\'s New sheet carries the v1.46.4 capture-speed pointer in the delta');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
@@ -564,7 +564,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }), 'v1.45.55 (owner order): the hero card IS the gold card — the earnings gradient with espresso figures, computing IDENTICALLY in dark and light (gold is gold day and night)');
         ok(await page.evaluate(() => { const rows = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hrow'); const labels = (r) => Array.from(r.querySelectorAll('.ca-rc-pod-hlabel')).map((l) => l.textContent.trim()).join('|'); return rows.length === 5 && labels(rows[0]) === 'Flights|Flight Time' && labels(rows[1]) === 'Airports|Regions' && labels(rows[2]) === 'Top rostered|Top aircraft' && labels(rows[3]) === 'Longest flight|Layover days' && labels(rows[4]) === 'First flight|Latest flight' && !!document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hrule') && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell').length === 10; }), 'v1.45.55 (owner order, strict): five rows of two in the owner\u2019s exact order — Flights|Flight Time large, the rule, then the story rows; ten cells, nothing lost, nothing renamed but Top rostered');
         ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const gate = document.getElementById('ca-rc-pod-gate'); const read = () => getComputedStyle(gate).backgroundColor + '|' + getComputedStyle(gate).color; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(50); const light = read(); h.classList.add('dark'); await sleep(50); const dark = read(); if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgb(17, 17, 17)|rgb(255, 255, 255)' && dark === 'rgb(246, 241, 232)|rgb(23, 29, 43)'; }), 'v1.45.54 (owner order: solid): the gate fills with the theme\u2019s ink pole - near-black with white text by day, cream with espresso text at night (the outline retires)');
-        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const track = document.getElementById('ca-rc-pod-years'); const on = track.querySelector('.ca-rc-pod-ypill.on'); const read = () => getComputedStyle(track).backgroundColor + '|' + getComputedStyle(on).backgroundColor + '|' + getComputedStyle(on).color; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(300); const light = read(); h.classList.add('dark'); await sleep(300); const dark = read(); if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgba(0, 0, 0, 0.08)|rgb(255, 255, 255)|rgb(45, 30, 15)' && dark === 'rgba(255, 255, 255, 0.08)|rgb(246, 241, 232)|rgb(23, 29, 43)'; }), 'v1.45.54 (owner order): the year pills ride the earnings segtrack - a hairline-washed track, the selected year a solid bright pill, theme-tuned twins');
+        ok(await page.evaluate(async () => { const sleep = (ms) => new Promise((r) => setTimeout(r, ms)); const h = document.documentElement; const track = document.getElementById('ca-rc-pod-years'); const on = track.querySelector('.ca-rc-pod-ypill.on'); const read = () => getComputedStyle(track).backgroundColor + '|' + getComputedStyle(on).backgroundColor + '|' + getComputedStyle(on).color; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); await sleep(1000); const light = read(); h.classList.add('dark'); await sleep(1000); const dark = read(); if (wasDark) h.classList.add('dark'); else h.classList.remove('dark'); return light === 'rgba(0, 0, 0, 0.08)|rgb(255, 255, 255)|rgb(45, 30, 15)' && dark === 'rgba(255, 255, 255, 0.08)|rgb(246, 241, 232)|rgb(23, 29, 43)'; }), 'v1.45.54 (owner order): the year pills ride the earnings segtrack - a hairline-washed track, the selected year a solid bright pill, theme-tuned twins');
         // v1.45.56: the settle — the reels unwrap and the plain markup
         // returns (worst restore ~840ms; the waits above plus this one
         // clear it)
@@ -593,14 +593,41 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return seen.size > 8 && bmp.width > 200 && bmp.height > 250 && bmp.height < 1200;
         }), 'v1.46.1: the hero capture decodes hero-sized and richly painted — the ten-cell card, not a blank or a full-page crop');
         ok(await page.evaluate(async () => {
-            // v1.47.0 (the owner's scrap-and-restart order): the capture IS
-            // the hero card — same width, same height, EXACTLY. No injected
-            // header (the old +34px), no pills, no trim air, no painter
-            // library — the hand-painted canvas over the live DOM
+            // v1.47.1 (the owner's hotfix): the capture is the hero card
+            // PLUS its title band — the card itself at its exact live
+            // size, the 34px band above it, nothing else. No pills, no
+            // trim air, no painter library — the hand-painted canvas
+            // over the live DOM
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const hero = document.getElementById('ca-rc-pod-herowrap').getBoundingClientRect();
-            return Math.abs(bmp.height - hero.height) <= 2 && Math.abs(bmp.width - hero.width) <= 2;
-        }), 'v1.47.0 (the owner\u2019s "exactly what is on screen"): the capture\u2019s dimensions ARE the live hero card\u2019s — no header, no pills, no trim');
+            return Math.abs(bmp.height - hero.height - 34) <= 2 && Math.abs(bmp.width - hero.width) <= 2;
+        }), 'v1.47.1 (the owner\u2019s "exactly what is on screen" + the title order): the capture is the live hero card exactly, with its 34px title band above — no pills, no trim');
+        ok(await page.evaluate(async () => {
+            // v1.47.1 (owner hotfix — render the title): the band above the
+            // card carries "All-Time Flight Records", painted in the house
+            // typeface at its true width (a fallback font would miss by
+            // pixels) — the row-median ink scan, theme-proof
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const data = x.getImageData(0, 0, c.width, c.height).data;
+            let tMin = 1e9, tMax = -1;
+            for (let y = 4; y < Math.min(30, c.height); y++) {
+                const row = [];
+                for (let p = 0; p < c.width; p++) { const i = (y * c.width + p) * 4; row.push(data[i] + ',' + data[i + 1] + ',' + data[i + 2]); }
+                row.sort();
+                const med = row[Math.floor(row.length / 2)].split(',').map(Number);
+                for (let p = 6; p < c.width - 6; p++) {
+                    const i = (y * c.width + p) * 4;
+                    if (Math.abs(data[i] - med[0]) > 40 || Math.abs(data[i + 1] - med[1]) > 40 || Math.abs(data[i + 2] - med[2]) > 40) { if (p < tMin) tMin = p; if (p > tMax) tMax = p; }
+                }
+            }
+            const tw = document.createElement('canvas').getContext('2d');
+            tw.font = '700 18px "Plus Jakarta Sans", sans-serif';
+            const want = tw.measureText('All-Time Flight Records').width;
+            const headW = (tMax >= tMin) ? tMax - tMin + 1 : -1;
+            return headW > 0 && Math.abs(headW - want) <= 4;
+        }), 'v1.47.1 (owner order): the title band carries "All-Time Flight Records" — painted in the armed house typeface, centered over the card');
         ok(await page.evaluate(async () => {
             // the hand-paint's own proofs: the card's 135° gold gradient
             // surface (the far corners must differ) and the label band's
@@ -609,10 +636,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
             const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
             const px = (a, b) => Array.from(x.getImageData(a, b, 1, 1).data).slice(0, 3);
-            const tl = px(24, 24), br = px(c.width - 24, c.height - 24);
+            const tl = px(24, 58), br = px(c.width - 24, c.height - 24);
             const grad = Math.abs(tl[0] - br[0]) + Math.abs(tl[1] - br[1]) + Math.abs(tl[2] - br[2]) > 12;
-            const ref = px(Math.floor(c.width / 2), 6);
-            const band = x.getImageData(0, 14, c.width, 50).data;
+            const ref = px(Math.floor(c.width / 2), 40);
+            const band = x.getImageData(0, 48, c.width, 50).data;
             let ink = 0;
             for (let i = 0; i < band.length; i += 16) {
                 if (Math.abs(band[i] - ref[0]) + Math.abs(band[i + 1] - ref[1]) + Math.abs(band[i + 2] - ref[2]) > 60) ink++;
@@ -1065,44 +1092,21 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('ca-arch-avglab').textContent.indexOf('Avg $') === 0), 'the chart paints its average line label');
         await page.evaluate(() => { closeArchOverlay(); localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); });
 
-        console.log('— v1.46.4: the capture pipeline warm and network-free —');
-        // v1.46.4 (owner report — 15-20s captures): the idle prewarm absorbs
-        // the painter's one-time costs (the lazy vendor script, the armed
-        // faces, the clone-iframe machinery) at boot, so the first camera
-        // tap of a session starts warm
-        try { await page.waitForFunction(() => !!(window.caCapPrewarm && caCapPrewarm._p), { timeout: 20000 }); } catch (e) {}
-        ok(await page.evaluate(() => !!(window.caCapPrewarm && caCapPrewarm._p) && typeof window.html2canvas === 'function' && !!document.getElementById('ca-cap-fonts') && !document.querySelector('div[style*="left:-9999px"]')), 'v1.46.4: the idle prewarm ran — the vendor painter and the armed faces are warm and its throwaway card is gone before any camera tap');
-        // the clone diet, pinned at the predicate: the cross-origin font
-        // links and every non-target body child never enter the painter's
-        // clone (the vendor awaits the clone's fonts.ready, so a network
-        // stylesheet there is the owner's 15-20s); the target, its subtree,
-        // its ancestor chain and the head ride along
-        ok(await page.evaluate(() => {
-            const target = document.getElementById('ca-arch-scroll');
-            if (!target) return false;
-            const pred = caCapIgnore(target);
-            const g = document.createElement('link');
-            g.rel = 'stylesheet';
-            g.href = 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans';
-            const g2 = document.createElement('link');
-            g2.rel = 'preconnect';
-            g2.href = 'https://fonts.gstatic.com';
-            const sibling = document.createElement('div');
-            document.body.appendChild(sibling);
-            const r = pred(g) === true && pred(g2) === true && pred(sibling) === true
-                && pred(target) === false && pred(target.firstElementChild) === false
-                && pred(document.getElementById('ca-arch-sheet')) === false
-                && pred(document.head) === false && pred(document.body) === false;
-            sibling.remove();
-            return r;
-        }), 'v1.46.4: the clone diet — cross-origin font links and non-target body children are dropped at clone time; the target, its chain and the head stay');
+        console.log('— v1.47.1: the capture engine, hand-painted and network-free —');
+        // v1.47.1 (owner order — earnings on the passport pattern): the
+        // painter library is GONE whole — no vendor script, no boot
+        // prewarm, no clone-diet predicate. Both cameras hand-paint the
+        // live DOM; the only one-time cost left is the font arm, which
+        // rides the first capture itself
+        ok(await page.evaluate(() => typeof window.caCapPrewarm === 'undefined' && typeof window.caCapIgnore === 'undefined' && typeof window.html2canvas === 'undefined' && !document.querySelector('div[style*="left:-9999px"]')), 'v1.47.1: the painter engine is gone — no vendor script ever loaded, no prewarm throwaway, nothing offscreen (the print sheet’s own exporter stays lazy and untouched)');
 
         console.log('— v1.46.0: the earnings camera — year picker, pose, capture, restore —');
-        // The REAL vendored painter, live in Chromium: the camera opens the
-        // year picker (the archive's own sub-sheet), a pick poses the card
-        // to that year, the painter photographs the FULL scroll (header
-        // injected + exclusions stripped in the CLONE — the live page never
-        // shifts), and the user's own pills return.
+        // v1.47.1 (owner order — earnings on the passport pattern): the
+        // camera opens the year picker (the archive's own sub-sheet), a
+        // pick poses the card to that year, and the canvas HAND-PAINTS the
+        // FULL scroll — the roster walker over the live DOM, the diet rows
+        // hidden live for the measure + paint (restored in the finally),
+        // the title band painted above — and the user's own pills return.
         await page.evaluate(() => {
             localStorage.setItem('crewAssist.archive', JSON.stringify([
                 { id: 'cam0', savedAt: '2025-06-15T10:00:00Z', monthKey: '2025-06', sectorDate: '2025-06-15', stationDisplay: 'SIN/BKK', amount: 120, flightType: 'Turnaround', detail: { v: 1, type: 'both', ifaTotal: 120, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: 120, sectors: [], stations: [] } },
@@ -1127,13 +1131,24 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(500);
         ok(await page.evaluate(() => !document.getElementById('ca-arch-sub').classList.contains('hidden') && document.getElementById('ca-arch-sub-title').textContent === 'Capture earnings'), 'the camera opens the year picker in the archive\u2019s own sub-sheet');
         ok(await page.evaluate(() => { const rows = Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow')); return rows.length === 2 && rows[0].getAttribute('data-yr') === '2026' && rows[1].getAttribute('data-yr') === '2025' && !rows.some((r) => /all/i.test(r.textContent)); }), 'the picker lists the years on record, newest first — NO all-time row (the owner\u2019s ruling)');
-        await page.evaluate(() => { window.__caLastShot = null; window.__posedScrollH = 0; Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click(); });
-        // the capture POSES the page to the picked year before the painter
-        // fires — read the posed content's own height while the pose is live
-        await page.waitForFunction(() => { const yr = document.querySelector('.ca-arch-seg[data-scope="year"]'); return yr && yr.classList.contains('ca-arch-segon') && document.documentElement.classList.contains('ca-reduced'); }, { timeout: 8000 });
-        await page.evaluate(() => { const sc = document.getElementById('ca-arch-scroll'); const r = sc.getBoundingClientRect(); window.__posedScrollH = sc.scrollHeight; window.__posedLastHead = 0; sc.querySelectorAll('.ca-arch-group').forEach((g) => { const b = g.getBoundingClientRect(); if (b.bottom - r.top > window.__posedLastHead) window.__posedLastHead = b.bottom - r.top; }); });
+        await page.evaluate(() => {
+            // v1.47.1: the capture is fast enough that the whole pose-and-
+            // restore can complete inside one rAF poll — the pose is read
+            // from INSIDE a builder wrapper (synchronous, race-free): the
+            // posed scrollHeight, the diet rows' display, the roll guard
+            window.__caLastShot = null; window.__posedScrollH = 0; window.__posedDiet = null; window.__posedReduced = false;
+            window.__basc = buildArchShotCanvas;
+            buildArchShotCanvas = function (el) {
+                window.__posedScrollH = el.scrollHeight;
+                window.__posedReduced = document.documentElement.classList.contains('ca-reduced');
+                window.__posedDiet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'].map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; });
+                return window.__basc(el);
+            };
+            Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click();
+        });
         await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 });
         ok(await page.evaluate(() => window.__caLastShot.name === 'CrewAssist-Earnings-2025.png' && window.__caLastShot.size > 4000), 'v1.46.1: picking 2025 delivers a real PNG named app + year');
+        ok(await page.evaluate(() => window.__posedReduced === true && window.__posedDiet.every((v) => v === 'none')), 'v1.47.1: the pose read from inside the build — the roll guard on, all six diet rows hidden live (pills, search, insights, the end-of-records line)');
         ok(await page.evaluate(async () => {
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
@@ -1141,40 +1156,26 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const data = x.getImageData(0, 0, c.width, c.height).data;
             const seen = new Set();
             for (let i = 0; i < data.length; i += 40) seen.add(data[i] + ',' + data[i + 1] + ',' + data[i + 2]);
-            // the trim proof: the bottom rows are pure background (the air
-            // the trim leaves) and paint sits just above them — no huge tail
+            // v1.47.1: no trimmer exists — the canvas IS the posed
+            // scroll's own height, so the last painted row must sit near
+            // the bottom (the scroll's own padding), never a huge gap
             const bg = document.documentElement.classList.contains('dark') ? [6, 9, 17] : [247, 243, 236];
             const rowHasPaint = (y) => { for (let px = 0; px < c.width; px += 3) { const i = (y * c.width + px) * 4; if (Math.abs(data[i] - bg[0]) > 8 || Math.abs(data[i + 1] - bg[1]) > 8 || Math.abs(data[i + 2] - bg[2]) > 8) return true; } return false; };
-            // the trim leaves 12px of air: the very bottom is pure bg and the
-            // LAST painted row sits within 40px of it — a huge gap (the old
-            // defect: the crop running on to the sheet's bottom) would push
-            // the last paint far above the canvas edge
             let lastPaint = -1;
             for (let y = c.height - 1; y >= 0; y--) { if (rowHasPaint(y)) { lastPaint = y; break; } }
-            const tailClean = !rowHasPaint(c.height - 2) && !rowHasPaint(c.height - 6) && lastPaint !== -1 && (c.height - lastPaint) <= 40;
+            const tailClean = lastPaint !== -1 && (c.height - lastPaint) <= 60;
             return seen.size > 8 && bmp.width > 200 && bmp.height > 700 && tailClean;
-        }), 'v1.46.1: the earnings capture decodes TALL and richly painted with a clean trimmed tail — the posed year card + chart + folded list, ending at the last record (no header-only crop, no huge gap)');
-        // v1.46.2 (the owner's real-device report): the capture must run to
-        // the FULL extent of the requested view. The clone FLATTENS the
-        // target to the document's only child at the origin — the painter
-        // measures live geometry against the real window, and a target in a
-        // fixed sheet inside a scroll container loses everything past its
-        // live bounds (the defect was viewport-independent: 844..1657 all
-        // cut the same ~170px before the content's end)
+        }), 'v1.46.1: the earnings capture decodes TALL and richly painted, ending at the posed content\u2019s own bottom — the year card + chart + folded list (no header-only crop, no huge gap)');
+        // v1.47.1: the canvas IS the posed card — the full scroll's own
+        // height plus the 34px title band, at the scroll's live width. The
+        // old defect class (a clone mis-measuring live bounds, the canvas
+        // cut ~200px before the content's end) is structurally gone: the
+        // walker paints at live rects against the scroll's own origin
         ok(await page.evaluate(async () => {
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const r = document.getElementById('ca-arch-scroll').getBoundingClientRect();
-            // the flattened capture rides the target's LIVE width; its height
-            // must reach the POSED content's end (read while the pose was
-            // live): the clone sheds the stripped pill/search rows (~100px
-            // above the list) and adds the ~32px header + 12px air, so a
-            // healthy capture ends 20-150px above the posed last group head.
-            // The old defect (the painter reading live bounds against the
-            // real window) cut the canvas 170-390px BEFORE the content's
-            // end — outside this window by construction
-            const lastHead = window.__posedLastHead;
-            return Math.abs(bmp.width - r.width) <= 2 && lastHead > 0 && bmp.height >= lastHead - 150 && bmp.height <= lastHead - 20;
-        }), 'v1.46.2: the earnings capture covers the FULL posed content — the canvas ends where the content does, never ~200px before it (the flatten: no viewport-bounded cut)');
+            return Math.abs(bmp.width - r.width) <= 2 && Math.abs(bmp.height - (window.__posedScrollH + 34)) <= 4;
+        }), 'v1.47.1: the earnings capture IS the posed scroll — full height + the title band, exact width (no viewport-bounded cut, no trim air)');
         // v1.46.2 (the owner's real-device report): the capture must print
         // in the app's OWN typeface. The faces arm in the LIVE head before
         // the shot (caCapFontArm), the clone inherits them — and the proof
@@ -1187,36 +1188,34 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return document.fonts.check('700 16px "Plus Jakarta Sans"') && document.fonts.check('400 16px "Plus Jakarta Sans"');
         }), 'v1.46.2: the capture armed the house font in the live document — the data-URL faces resolve and the clone inherits true metrics');
         ok(await page.evaluate(async () => {
+            // v1.47.1 (owner order — include the header): the title band
+            // carries "Earnings for 2025", painted by caCapPaintTitle in
+            // the armed house typeface — the ink run's width vs a canvas
+            // measure of the same string (a fallback would miss by pixels)
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
             const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
             const data = x.getImageData(0, 0, c.width, c.height).data;
-            // the injected header sits at the very top: its painted width
-            // vs a hidden twin of the same string in the same classes
-            const sc = document.getElementById('ca-arch-scroll');
-            const twin = document.createElement('div');
-            twin.className = 'text-lg font-bold mb-1';
-            twin.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;';
-            twin.textContent = '2025 Earnings';
-            sc.appendChild(twin);
-            const tw = twin.getBoundingClientRect().width;
-            twin.remove();
             let hMin = 1e9, hMax = -1;
-            for (let y = 0; y < Math.min(40, c.height); y++) {
+            for (let y = 4; y < Math.min(30, c.height); y++) {
                 const row = [];
                 for (let px = 0; px < c.width; px++) { const i = (y * c.width + px) * 4; row.push(data[i] + ',' + data[i + 1] + ',' + data[i + 2]); }
                 row.sort();
                 const med = row[Math.floor(row.length / 2)].split(',').map(Number);
-                for (let px = 8; px < c.width - 8; px++) {
+                for (let px = 6; px < c.width - 6; px++) {
                     const i = (y * c.width + px) * 4;
                     if (Math.abs(data[i] - med[0]) > 40 || Math.abs(data[i + 1] - med[1]) > 40 || Math.abs(data[i + 2] - med[2]) > 40) { if (px < hMin) hMin = px; if (px > hMax) hMax = px; }
                 }
             }
+            const tw = document.createElement('canvas').getContext('2d');
+            tw.font = '700 18px "Plus Jakarta Sans", sans-serif';
+            const want = tw.measureText('Earnings for 2025').width;
             const headW = (hMax >= hMin) ? hMax - hMin + 1 : -1;
-            return headW > 0 && Math.abs(headW - tw) <= 3;
-        }), 'v1.46.2: the capture prints in the house typeface — the injected header paints at its live-font width (a fallback would miss by pixels)');
+            return headW > 0 && Math.abs(headW - want) <= 4;
+        }), 'v1.47.1 (owner order): the title band carries "Earnings for 2025" — painted in the armed house typeface, centered over the card');
         ok(await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').classList.contains('ca-arch-segon') && document.querySelector('.ca-arch-seg[data-mode="salary"]').classList.contains('ca-arch-segon') && document.querySelectorAll('#ca-arch-summary .ca-rollwrap').length === 0 && !document.documentElement.classList.contains('ca-reduced')), 'v1.46.1: the user\u2019s own pills return exactly — All-time + Monthly Salary, no roll guard, nothing stranded');
-        ok(await page.evaluate(() => !!document.getElementById('ca-arch-ins-toggle') && !!document.getElementById('ca-arch-pillrow-mode') && document.getElementById('ca-arch-sub').classList.contains('hidden')), 'the LIVE page kept its search bar, pills and insights toggle — the exclusions lived in the painter\u2019s clone alone');
+        ok(await page.evaluate(() => !!document.getElementById('ca-arch-ins-toggle') && !!document.getElementById('ca-arch-pillrow-mode') && document.getElementById('ca-arch-pillrow-mode').style.display !== 'none' && document.getElementById('ca-arch-sub').classList.contains('hidden')), 'the LIVE page kept its search bar, pills and insights toggle — the diet rows are back for real, not display:none');
+        ok(await page.evaluate(() => document.getElementById('ca-arch-scroll').scrollHeight >= window.__posedScrollH + 60), 'v1.47.1: the live scroll grows back past its captured height — the diet rows (pills, search, insights) were hidden for the paint and returned after it');
         // v1.46.1 (the owner's missing-chart report): the CURRENT year must
         // paint its chart — the pose re-render restarts the bar-grow
         // entrance, and ca-reduced now stands it down for the capture

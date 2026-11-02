@@ -884,6 +884,16 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   busy toast answering the tap. The camera's promise to the crew: what
   you see is what you share.
 
+- v1.47.1 (owner orders — the title hotfix + "proceed with earnings on
+  this exact pattern"): every capture renders its TITLE — the passport
+  carries "All-Time Flight Records" or "Flight Records for YYYY", the
+  earnings card carries "Earnings for YYYY" — a centered 34px band above
+  the card in the house typeface, the owner's exact wording. The earnings
+  camera is the passport's engine end to end: same hand-paint, same
+  direct share, same busy-toast answer, the diet rows (pills, search,
+  insights) hidden for the shot and returned after it. What you see is
+  what you share — titled.
+
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.
   The Oct 2025 case: months imported before the never-pruned flight store

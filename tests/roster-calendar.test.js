@@ -2039,7 +2039,7 @@ const synthItems = [].concat(
     // a wrapper records the pose at paint time, and a stubbed builder
     // carries the plumbing (paint → toBlob → deliver) end to end.
     R.eq(w.eval('buildPodHeroShotCanvas() === null'), true, 'v1.47.0: without a layout engine the builder steps aside (the roster guard)');
-    w.eval("window.__poseLog = []; window.__bphsc = buildPodHeroShotCanvas; buildPodHeroShotCanvas = function () { const on = document.querySelector('#ca-rc-pod-years .ca-rc-pod-ypill.on'); window.__poseLog.push({ flights: (document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hval') || {}).textContent, chip: on ? on.getAttribute('data-ca-rc-pod-year') : '' }); return { canvas: { toBlob: function (cb) { cb(new Blob(['png'], { type: 'image/png' })); } }, ctx: {}, w: 40, h: 30, wrap: document.getElementById('ca-rc-pod-herowrap') }; };");
+    w.eval("window.__poseLog = []; window.__bphsc = buildPodHeroShotCanvas; buildPodHeroShotCanvas = function () { const on = document.querySelector('#ca-rc-pod-years .ca-rc-pod-ypill.on'); window.__poseLog.push({ flights: (document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hval') || {}).textContent, chip: on ? on.getAttribute('data-ca-rc-pod-year') : '' }); return { canvas: { toBlob: function (cb) { cb(new Blob(['png'], { type: 'image/png' })); } }, ctx: { fillText: function (t) { window.__poseLog[window.__poseLog.length - 1].title = t; } }, w: 40, h: 30, wrap: document.getElementById('ca-rc-pod-herowrap'), ty: 34 }; };");
     // pick ALL-TIME while the page sits on 2026 — the pose, the paint, the restore
     d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').click();
     await wait(1300);
@@ -2049,6 +2049,7 @@ const synthItems = [].concat(
     R.eq(w.eval('window.__poseLog[0].flights'), '7', 'the hero is POSED to all-time at paint time — all seven legs, though the page chip sat on 2026');
     R.eq(w.eval('window.__poseLog[0].chip'), 'all', 'the pose reaches the DOM — the pill rides the picked year while the canvas paints');
     R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-All-Time.png', 'the deliver carries the app + all-time filename');
+    R.eq(w.eval('window.__poseLog[0].title'), 'All-Time Flight Records', 'v1.47.1 (owner hotfix): the title band renders the owner\u2019s exact wording \u2014 All-Time Flight Records');
     R.eq(w.eval('window.__capRec.length'), 0, 'v1.47.0: the painter library is OUT of the passport path entirely — html2canvas never fires');
     R.ok(d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').classList.contains('on'), 'the crew\u2019s own chip returns — still 2026, where they were');
     // pick 2025 from the 2026 page: the hero POSES to the picked year at paint time
@@ -2058,6 +2059,7 @@ const synthItems = [].concat(
     await wait(1500);
     R.eq(w.eval('window.__poseLog[1].flights'), '2', 'the hero is POSED to the picked year at paint time — 2025\u2019s two legs, not the page chip\u2019s three');
     R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-2025.png', 'the filename carries the picked year');
+    R.eq(w.eval('window.__poseLog[1].title'), 'Flight Records for 2025', 'v1.47.1: a year pick renders \u201cFlight Records for YYYY\u201d \u2014 the owner\u2019s exact wording');
     R.ok(d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').classList.contains('on'), 'the crew\u2019s own chip returns again — the pose never strands');
     R.ok(!d.documentElement.classList.contains('ca-reduced'), 'v1.47.0: the flow never needs the roll guard — the pose renders settled, the roll never mounts');
     w.eval('buildPodHeroShotCanvas = window.__bphsc;');
@@ -2065,18 +2067,19 @@ const synthItems = [].concat(
     // by hand, and carries no clone, no header, no guard class
     {
       const src64 = fs.readFileSync(APP, 'utf8');
-      const seg = src64.slice(src64.indexOf('async function rcPodCaptureYear'), src64.indexOf('async function rcPodCaptureYear') + 2000);
+      const seg = src64.slice(src64.indexOf('async function rcPodCaptureYear'), src64.indexOf('async function rcPodCaptureYear') + 2400);
       R.ok(seg.indexOf('await caCapFontArm()') !== -1 && seg.indexOf('await document.fonts.ready') === -1, 'v1.46.4 src: the passport capture flow arms the vendored data-URL faces — never the network-bound document.fonts.ready that waits on the cross-origin Google faces too');
-      R.ok(seg.indexOf('buildPodHeroShotCanvas()') !== -1 && seg.indexOf('rosterShotPaintGrid(built.ctx, built.wrap, 0, 0)') !== -1 && seg.indexOf('rosterShotPaintIcons(built.ctx, built.wrap, 0, 0)') !== -1, 'v1.47.0 src: the flow builds the hero canvas and paints it with the ROSTER walker + icon pass — the exact capture technique the calendar uses');
+      R.ok(seg.indexOf('buildPodHeroShotCanvas()') !== -1 && seg.indexOf("caCapPaintTitle(built.ctx, yr === 'all' ? 'All-Time Flight Records' : 'Flight Records for ' + yr") !== -1 && seg.indexOf('rosterShotPaintGrid(built.ctx, built.wrap, 0, built.ty)') !== -1 && seg.indexOf('rosterShotPaintIcons(built.ctx, built.wrap, 0, built.ty)') !== -1, 'v1.47.0/v1.47.1 src: the flow builds the hero canvas, paints the owner\u2019s title band, then the ROSTER walker + icon pass at the band\u2019s offset — the exact capture technique the calendar uses');
       R.ok(seg.indexOf('caCapShoot') === -1 && seg.indexOf('ca-cap-head') === -1 && seg.indexOf('ca-reduced') === -1, 'v1.47.0 src: no painter library, no injected header, no roll guard — scrapped and restarted, per the owner\u2019s order');
       R.ok(src64.indexOf('function rosterShotGrad(') !== -1 && src64.indexOf('linear-gradient') !== -1 && src64.indexOf('function rosterShotPaintIcons(') !== -1, 'v1.47.0 src: the shared painter gained the gradient surface and the currentColor icon pass');
+      R.ok(src64.indexOf('const CA_CAP_TITLE_H = 34;') !== -1 && src64.indexOf('function caCapPaintTitle(') !== -1, 'v1.47.1 src: the shared title painter — a centered 18px/700 band, 34px tall, the calendar capture\u2019s own title discipline');
       R.ok(/rosterShotPaintIcons\(built\.ctx, built\.grid, 0, built\.gy\)/.test(src64), 'v1.47.0 src: the roster capture awaits the same icon pass — one shared discipline (a no-op on the calendar)');
       R.ok(src64.indexOf("try { archToast('Capturing\\u2026', null, 6000); } catch (e) {}") !== -1, 'v1.47.0: the passport tap is answered at once with the busy toast');
     }
-    // the prewarm still fires for the EARNINGS engine (html2canvas stays
-    // there until its own restart round) — never as a passport capture
+    // v1.47.1: the earnings engine joined the passport pattern — the
+    // painter library is gone whole, so no prewarm ever fires anywhere
     {
-      R.eq(w.eval("(window.__capPrewarms || 0) === 1 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.46.4: the idle prewarm painted exactly its one throwaway card while this suite ran, and the card is gone — no capture slot, no toast, no last-shot');
+      R.eq(w.eval("(window.__capPrewarms || 0) === 0 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.47.1: the prewarm is gone with the engine — no throwaway card ever fires, no capture slot, no toast, no last-shot');
     }
     // the picker closes three ways: its own button, its shade, and with its parent
     d.getElementById('btn-rc-pod-cam').click();
