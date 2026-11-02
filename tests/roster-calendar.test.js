@@ -2038,6 +2038,7 @@ const synthItems = [].concat(
     R.eq(w.eval('window.__capRec[0].id'), 'ca-rc-pod-herowrap', 'the capture target is the hero card alone');
     R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-cap-head").textContent'), 'My All-Time Flight Records', 'v1.45.60 hotfix (owner order): the all-time header reads the owner\u2019s exact wording');
     R.eq(w.eval('window.__capRec[0].flights'), '7', 'the hero is POSED to all-time at capture time — all seven legs, though the page chip sat on 2026');
+    R.ok(w.eval('window.__capRec[0].clone.body.children.length === 1 && window.__capRec[0].clone.body.children[0].id === \"ca-rc-pod-herowrap\"'), 'v1.46.2 THE FLATTEN: the passport clone carries ONLY the hero at its live width — no fixed sheet, no scroll container, the painter cannot mis-measure it');
     R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-All-Time.png', 'the deliver carries the app + all-time filename');
     R.ok(d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').classList.contains('on'), 'the crew\u2019s own chip returns — still 2026, where they were');
     // pick 2025 from the 2026 page: the hero POSES to the picked year at capture time

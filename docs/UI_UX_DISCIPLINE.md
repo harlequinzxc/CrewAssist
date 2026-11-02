@@ -802,6 +802,18 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 - The proof of a capture is decoding the PNG in the real browser: height
   against the live element, paint where the content is, clean background
   where it is not. The painter's own promise proves nothing.
+- v1.46.2 hardening, both proven on the owner's real device first: the
+  house font ARMS IN THE LIVE HEAD before the shot (the clone inherits
+  the faces; onclone injection raced the clone's own fonts.ready and the
+  metrics fell back — clipped figures, icons drifting off the baseline),
+  and the clone's body carries ONLY the capture target, at the origin, at
+  its live width — the painter reads live bounds against the real window,
+  so a target inside a fixed sheet loses everything past its live bounds
+  (the missing bottom of a tall capture, viewport-independent). A tall
+  crop is origin-based (x/y 0,0); the passport renders by the flattened
+  element's own bounds. The font proof is a same-string twin: the painted
+  width of the injected header against a hidden live twin in the same
+  classes — a fallback font misses by pixels.
 
 ### Empty-state copy: blame the truth, name the remedy (v1.45.50)
 
