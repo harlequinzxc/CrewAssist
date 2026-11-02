@@ -3230,7 +3230,7 @@
             }
         }
 
-        var APP_VERSION = '1.46.6'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.47.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3252,6 +3252,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.47.0', d: '2026-11-03', items: [
+                { c: 'imp', t: 'The passport camera repaints your hero card directly \u2014 quicker and exact.' }
+            ] },
             { v: '1.46.6', d: '2026-11-03', items: [
                 { c: 'fix', t: 'Captures share straight to your phone\u2019s share sheet again \u2014 no detour.' }
             ] },
@@ -7021,18 +7024,44 @@
             ctx.fillText(String(header.textContent || '').trim(), w / 2, Math.max(10, hRect.height / 2));
             return { canvas: canvas, ctx: ctx, w: w, h: h, grid: grid, gy: gRect.top - y0 };
         }
+        function rosterShotGrad(ctx, x, y, w, h, img) {
+            // v1.47.0: the one background-image the captured surfaces carry
+            // — linear-gradient(<angle>deg, <color> <pct>, …). Computed
+            // style has already resolved the vars and normalised the
+            // colors, so the gradient rebuilds on the canvas with the CSS
+            // gradient-line math (through the box's center, length
+            // |w·sinθ| + |h·cosθ|). The calendar carries none of these —
+            // the passport hero card's surface is the reason it exists.
+            const m = /linear-gradient\(\s*(-?[\d.]+)deg\s*,([\s\S]+)\)\s*$/.exec(String(img || ''));
+            if (!m) return null;
+            const ang = ((parseFloat(m[1]) || 0) * Math.PI) / 180;
+            const dx = Math.sin(ang), dy = -Math.cos(ang);
+            const L = Math.abs(w * dx) + Math.abs(h * dy);
+            const cx = x + w / 2, cy = y + h / 2;
+            let g = null;
+            try { g = ctx.createLinearGradient(cx - (dx * L) / 2, cy - (dy * L) / 2, cx + (dx * L) / 2, cy + (dy * L) / 2); } catch (e) { return null; }
+            const stops = [];
+            const re = /(rgba?\([^)]*\)|#[0-9a-fA-F]+|[a-zA-Z]+)\s+([\d.]+)%/g;
+            let sm;
+            while ((sm = re.exec(m[2]))) stops.push({ c: sm[1], p: Math.min(1, Math.max(0, parseFloat(sm[2]) / 100)) });
+            if (stops.length < 2) return null;
+            stops.forEach((s) => { try { g.addColorStop(s.p, s.c); } catch (e) {} });
+            return g;
+        }
         function rosterShotPaintBox(ctx, x, y, w, h, st) {
             const bg = st.backgroundColor || '';
             const hasBg = !!bg && !/,\s*0\)$/.test(bg);
             const bwd = parseFloat(st.borderTopWidth) || 0;
             const bc = st.borderTopColor || '';
             const hasBorder = bwd > 0 && !!bc && !/,\s*0\)$/.test(bc);
-            if (!hasBg && !hasBorder) return;
+            const grad = rosterShotGrad(ctx, x, y, w, h, st.backgroundImage);
+            if (!hasBg && !hasBorder && !grad) return;
             const rd = String(st.borderRadius || '0').split(/\s+/).map(function (v) { return parseFloat(v) || 0; });
             const radii = rd.length === 1 ? [rd[0], rd[0], rd[0], rd[0]] : [rd[0] || 0, rd[1] || 0, rd[2] || 0, rd[3] || 0];
             ctx.beginPath();
             if (ctx.roundRect) ctx.roundRect(x, y, w, h, radii); else ctx.rect(x, y, w, h);
             if (hasBg) { ctx.fillStyle = bg; ctx.fill(); }
+            if (grad) { ctx.fillStyle = grad; ctx.fill(); }
             if (hasBorder) { ctx.lineWidth = bwd; ctx.strokeStyle = bc; ctx.stroke(); }
         }
         function rosterShotPaintTexts(ctx, el, st, toX, toY, local) {
@@ -7093,6 +7122,43 @@
                 ctx.restore();
             });
         }
+        function rosterShotPaintIcons(ctx, rootEl, ox, oy) {
+            // v1.47.0: lucide icons are inline <svg> strokes coloured by
+            // stroke="currentColor" — a keyword that does not resolve
+            // inside an <img>, so each icon is re-coloured from its own
+            // computed color and drawn at its live rect (data URL, no
+            // network). The rects and markup are read synchronously, so
+            // a later re-render of the live page can never race the draw.
+            // The calendar carries no icons — this is a no-op there; the
+            // passport hero's labels ride them.
+            const svgs = Array.prototype.slice.call(rootEl.querySelectorAll('svg'));
+            if (!svgs.length) return Promise.resolve();
+            const rootRect = rootEl.getBoundingClientRect();
+            return new Promise((resolve) => {
+                let pending = 0, settled = false;
+                const finish = () => { if (!settled) { settled = true; resolve(); } };
+                svgs.forEach((svg) => {
+                    const st = window.getComputedStyle(svg);
+                    if (st.display === 'none' || st.visibility === 'hidden') return;
+                    const r = svg.getBoundingClientRect();
+                    if (r.width < 1 || r.height < 1) return;
+                    let html = '';
+                    try { html = svg.outerHTML || ''; } catch (e) {}
+                    if (!html) return;
+                    html = html.replace(/currentColor/g, st.color || '#111827');
+                    const img = new Image();
+                    pending++;
+                    img.onload = img.onerror = () => {
+                        pending--;
+                        try { ctx.drawImage(img, ox + r.left - rootRect.left, oy + r.top - rootRect.top, r.width, r.height); } catch (e) {}
+                        if (pending <= 0) finish();
+                    };
+                    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(html);
+                });
+                setTimeout(finish, 1500);   // bounded — a stuck decode never hangs the capture
+                if (!pending) finish();
+            });
+        }
         async function captureRosterShot() {
             const shotBtn = document.getElementById('ca-rc-shot');
             if (shotBtn) {
@@ -7111,6 +7177,7 @@
             const built = buildRosterShotCanvas();
             if (!built) return;
             try { rosterShotPaintGrid(built.ctx, built.grid, 0, built.gy); } catch (e) { return; }
+            await rosterShotPaintIcons(built.ctx, built.grid, 0, built.gy);   // no icons on the calendar — one shared discipline
             const name = rosterShotFilename(rcViewYm);
             try {
                 built.canvas.toBlob((blob) => { if (blob) rosterShotDeliver(blob, name); }, 'image/png');
@@ -7506,9 +7573,9 @@
         // v1.46.1 hotfix (owner orders): the passport camera opens the YEAR
         // PICKER (its own sub-sheet, the archive picker's species) — the
         // crew choose all-time or any year on record REGARDLESS of which chip
-        // the page is on; a pick poses the hero to that year, the painter
-        // photographs it with the owner's header wording, and the crew's own
-        // chips return in a finally.
+        // the page is on; a pick poses the hero to that year, the canvas
+        // hand-paints it (v1.47.0 — no header, the card alone), and the
+        // crew's own chips return in a finally.
         function rcPodCapYears() {
             const pills = Array.from(document.querySelectorAll('#ca-rc-pod-years [data-ca-rc-pod-year]'));
             const yrs = pills.map((p) => p.getAttribute('data-ca-rc-pod-year')).filter(Boolean);
@@ -7554,6 +7621,31 @@
             sheet.classList.add('translate-y-full');
             caSheetHideArm(wrap);   // hotfix 14: arm, never a bare timer
         }
+        // v1.47.0 (owner order — scrap the painter and start again, one
+        // step at a time, passport first): the passport capture joins the
+        // ROSTER technique. The hero card is a fixed card always in the
+        // viewport, exactly the calendar's situation, so the capture
+        // hand-paints it from the live DOM — no painter library, no clone,
+        // no iframe, no network, nothing to trim. The canvas photographs
+        // ONLY the hero card itself: no pills (they live outside the wrap),
+        // and no injected header — the owner's order, the card speaks for
+        // itself.
+        function buildPodHeroShotCanvas() {
+            const wrap = document.getElementById('ca-rc-pod-herowrap');
+            if (!wrap || !wrap.children.length || wrap.classList.contains('hidden')) return null;
+            const r = wrap.getBoundingClientRect();
+            const w = Math.ceil(r.width), h = Math.ceil(r.height);
+            if (w < 80 || h < 80) return null;   // no layout engine (jsdom) — nothing to paint
+            const dpr = Math.max(1, (window.devicePixelRatio || 1));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+            const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+            if (!ctx) return null;
+            ctx.scale(dpr, dpr);
+            ctx.fillStyle = rosterShotTheme().bg;
+            ctx.fillRect(0, 0, w, h);
+            return { canvas: canvas, ctx: ctx, w: w, h: h, wrap: wrap };
+        }
         async function rcPodCaptureYear(yr) {
             const hero = document.getElementById('ca-rc-pod-herowrap');
             if (!hero || !hero.children.length || !/^(all|\d{4})$/.test(String(yr || ''))) return;
@@ -7564,41 +7656,34 @@
                 btn.classList.add('ca-rc-flash');
                 setTimeout(() => { try { btn.classList.remove('ca-rc-flash'); } catch (e) {} }, 500);
             }
-            // v1.46.4: same as the roster camera — the arm, never the
-            // network-bound document.fonts.ready
-            await caCapFontArm();
+            // v1.46.6: the tap is answered at once — the busy toast holds
+            // the screen honest while the pose and the paint run
+            try { archToast('Capturing\u2026', null, 6000); } catch (e) {}
             const keep = { y: rcPodYear, ly: rcPodListYear };
-            const wasReduced = document.documentElement.classList.contains('ca-reduced');
             try {
-                // ca-reduced stands the hero roll down for the pose AND the
-                // restore — the digits paint settled, no timer lands mid-capture
-                if (!wasReduced) document.documentElement.classList.add('ca-reduced');
+                // pose the page to the picked year, SETTLED — the capture
+                // wants the final digits, never a roll mid-flight, so the
+                // roll simply never mounts (no guard class needed)
                 rcPodYear = String(yr);
                 rcPodListYear = String(yr);
-                renderRcPod(false, true);
+                renderRcPod(false, false);
                 if (!(await caCapWaitSettled(hero, 1400))) return;
-                const label = yr === 'all' ? 'My All-Time Flight Records' : 'My Flight Records for ' + yr;
-                await caCapShoot(hero, {
-                    name: 'CrewAssist-Passport-' + (yr === 'all' ? 'All-Time' : yr) + '.png',
-                    title: 'CrewAssist passport',
-                    toast: 'Passport screenshot saved',
-                    onclone: (doc) => {
-                        const h = doc.getElementById('ca-rc-pod-herowrap');
-                        if (!h) return;
-                        const head = doc.createElement('div');
-                        head.id = 'ca-cap-head';
-                        head.className = 'text-lg font-bold mb-1';
-                        head.textContent = label;
-                        h.insertBefore(head, h.firstChild);
-                    }
-                });
+                // the arm, never the network-bound document.fonts.ready
+                await caCapFontArm();
+                const built = buildPodHeroShotCanvas();
+                if (!built) return;
+                rosterShotPaintGrid(built.ctx, built.wrap, 0, 0);
+                await rosterShotPaintIcons(built.ctx, built.wrap, 0, 0);
+                const name = 'CrewAssist-Passport-' + (yr === 'all' ? 'All-Time' : yr) + '.png';
+                try {
+                    built.canvas.toBlob((blob) => { if (blob) caCapDeliver(blob, name, 'CrewAssist passport', 'Passport screenshot saved'); }, 'image/png');
+                } catch (e) {}
             } catch (e) {
                 archToast('Screenshot didn\u2019t capture \u2014 try again');
             } finally {
                 rcPodYear = keep.y;
                 rcPodListYear = keep.ly;
                 renderRcPod(false, false);
-                if (!wasReduced) document.documentElement.classList.remove('ca-reduced');
             }
         }
         let rcViewYm = '';

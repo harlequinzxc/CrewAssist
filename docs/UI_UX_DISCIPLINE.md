@@ -875,6 +875,15 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   the 4090-device-pixel height ceiling) — a trade the crew are told
   about, never one slipped past them.
 
+- v1.47.0 (owner order — scrap both capture functions, start from scratch,
+  passport first): the passport capture keeps its button and year picker,
+  but the artifact is the hero card and NOTHING else — the exact roster
+  screenshot technique, hand-painted on a canvas at the card's own live
+  size (no header text the screen doesn't show, no pill row, no preview,
+  no trim air), delivered straight to the phone's share sheet with the
+  busy toast answering the tap. The camera's promise to the crew: what
+  you see is what you share.
+
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.
   The Oct 2025 case: months imported before the never-pruned flight store

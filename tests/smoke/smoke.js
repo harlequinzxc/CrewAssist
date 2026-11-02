@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.46.6', 'APP_VERSION is 1.46.6');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.46.6' && e.d === '2026-11-03' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.46.6 entry — its direct-share round');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v297'), 'the service-worker cache name is bumped to v297 (the v1.46.6 direct-share round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.47.0', 'APP_VERSION is 1.47.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.47.0' && e.d === '2026-11-03' && e.items.length === 1 && e.items[0].c === 'imp'; }), 'the changelog carries the 1.47.0 entry — its passport-repaint round');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v298'), 'the service-worker cache name is bumped to v298 (the v1.47.0 passport-repaint round)');
         ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('./vendor/html2canvas.min.js'), 'v1.46.0: the service worker precaches the vendored painter — the cameras work offline');
         ok((await page.evaluate(() => fetch('/vendor/html2canvas.min.js').then((r) => r.ok))), 'the vendored painter is served locally — no CDN, offline-first');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
@@ -167,9 +167,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.46.6'; }), 'the What\'s New sheet carries the v1.46.6 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures share straight to your phone’s share sheet again — no detour.') !== -1), 'the What\'s New sheet carries the v1.46.6 direct-share pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Your capture opens ready — tap Share, and the sheet always opens.') !== -1), 'the v1.46.5 capture-preview pointer stays in the delta below');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.47.0'; }), 'the What\'s New sheet carries the v1.47.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The passport camera repaints your hero card directly — quicker and exact.') !== -1), 'the What\'s New sheet carries the v1.47.0 passport-repaint pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures share straight to your phone’s share sheet again — no detour.') !== -1), 'the v1.46.6 direct-share pointer stays in the delta below');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures finish in seconds — and the share sheet always opens.') !== -1), 'the What\'s New sheet carries the v1.46.4 capture-speed pointer in the delta');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
@@ -572,8 +572,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length === 0 && Array.from(document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval')).map((v) => v.textContent).indexOf('4') === 0), 'v1.45.56 (owner order): the roll settles — reel cells unwrap, the plain hero markup returns, Flights still reads 4');
         // v1.46.1 (owner orders): the passport camera opens the YEAR PICKER
         // (its own sub-sheet), the crew pick all-time or any year — the
-        // hero poses to the pick, the painter photographs it with the
-        // owner's header wording, and the crew's own chip returns
+        // hero poses to the pick, and (v1.47.0) the canvas hand-paints it
+        // with the roster technique; the crew's own chip returns
         ok(await page.evaluate(() => document.getElementById('btn-rc-pod-cam').parentElement === document.getElementById('btn-close-rc-pod').parentElement), 'v1.46.1 (owner order): the camera rides one right cluster with the close button — title changes can never shift it');
         await page.evaluate(() => { window.__caLastShot = null; document.getElementById('btn-rc-pod-cam').click(); });
         await sleep(500);
@@ -593,14 +593,32 @@ async function calcCard(page, { type, t1, t2, lma }) {
             return seen.size > 8 && bmp.width > 200 && bmp.height > 250 && bmp.height < 1200;
         }), 'v1.46.1: the hero capture decodes hero-sized and richly painted — the ten-cell card, not a blank or a full-page crop');
         ok(await page.evaluate(async () => {
-            // the fidelity proof: the capture's height must sit within a
-            // stone's throw of the ON-SCREEN hero (header included) —
-            // wrapping or clipping moves it, and the trim leaves ~12px air
+            // v1.47.0 (the owner's scrap-and-restart order): the capture IS
+            // the hero card — same width, same height, EXACTLY. No injected
+            // header (the old +34px), no pills, no trim air, no painter
+            // library — the hand-painted canvas over the live DOM
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const hero = document.getElementById('ca-rc-pod-herowrap').getBoundingClientRect();
-            const head = document.getElementById('ca-cap-head');
-            return Math.abs(bmp.height - (hero.height + 34)) <= 26 && Math.abs(bmp.width - hero.width) <= 6;
-        }), 'v1.46.1 (the owner\u2019s "exactly what is on screen"): the capture\u2019s dimensions match the live hero card — no reflow, no clipping, no empty tail');
+            return Math.abs(bmp.height - hero.height) <= 2 && Math.abs(bmp.width - hero.width) <= 2;
+        }), 'v1.47.0 (the owner\u2019s "exactly what is on screen"): the capture\u2019s dimensions ARE the live hero card\u2019s — no header, no pills, no trim');
+        ok(await page.evaluate(async () => {
+            // the hand-paint's own proofs: the card's 135° gold gradient
+            // surface (the far corners must differ) and the label band's
+            // ink — the texts AND the 12px lucide icons beside them
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const px = (a, b) => Array.from(x.getImageData(a, b, 1, 1).data).slice(0, 3);
+            const tl = px(24, 24), br = px(c.width - 24, c.height - 24);
+            const grad = Math.abs(tl[0] - br[0]) + Math.abs(tl[1] - br[1]) + Math.abs(tl[2] - br[2]) > 12;
+            const ref = px(Math.floor(c.width / 2), 6);
+            const band = x.getImageData(0, 14, c.width, 50).data;
+            let ink = 0;
+            for (let i = 0; i < band.length; i += 16) {
+                if (Math.abs(band[i] - ref[0]) + Math.abs(band[i + 1] - ref[1]) + Math.abs(band[i + 2] - ref[2]) > 60) ink++;
+            }
+            return grad && ink > 40;
+        }), 'v1.47.0: the repaint carries the card\u2019s gradient surface and the label band\u2019s ink — texts and icons alike, no painter library involved');
         ok(await page.evaluate(() => { const on = document.querySelector('#ca-rc-pod-years .ca-rc-pod-ypill.on'); return !!on && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length === 0 && !document.documentElement.classList.contains('ca-reduced'); }), 'v1.46.1: the crew\u2019s own chip returns, the roll settles and no pose guard lingers');
         // v1.46.6 (owner order — the native share sheet, directly): the
         // preview experiment is gone; the capture delivers straight away
