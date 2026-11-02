@@ -3230,7 +3230,7 @@
             }
         }
 
-        var APP_VERSION = '1.47.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.47.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3252,6 +3252,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.47.1', d: '2026-11-03', items: [
+                { c: 'imp', t: 'Passport captures carry their title \u2014 All-Time, or the year.' },
+                { c: 'imp', t: 'The earnings camera joins the passport pattern \u2014 quick and exact.' }
+            ] },
             { v: '1.47.0', d: '2026-11-03', items: [
                 { c: 'imp', t: 'The passport camera repaints your hero card directly \u2014 quicker and exact.' }
             ] },
@@ -4306,11 +4310,6 @@
             // v1.37.0 (4.1): browser-tab users with saved earnings are told
             // once that installing protects their data (see maybeInstallHint).
             setTimeout(maybeInstallHint, 2500);
-
-            // v1.46.4: warm the capture painter at idle-after-load — the
-            // first camera tap of a session starts warm instead of paying
-            // the painter's one-time costs (see caCapPrewarm)
-            setTimeout(() => { try { caCapPrewarm(); } catch (e) {} }, 2600);
 
             // Register Service Worker
             if ('serviceWorker' in navigator) {
@@ -6991,6 +6990,20 @@
         function rosterShotTheme() {
             return document.documentElement.classList.contains('dark') ? { bg: '#080B14' } : { bg: '#F6F1E8' };
         }
+        // v1.47.1 (owner order — the hotfix): every capture renders its
+        // TITLE. The passport carries "All-Time Flight Records" or
+        // "Flight Records for YYYY"; the earnings card carries "Earnings
+        // for YYYY". A centered headline in the band above the card — the
+        // calendar capture's own title discipline (buildRosterShotCanvas
+        // paints the month the same way), in the target's live theme ink.
+        const CA_CAP_TITLE_H = 34;
+        function caCapPaintTitle(ctx, text, w, color) {
+            ctx.fillStyle = color || '#111827';
+            ctx.font = '700 18px "Plus Jakarta Sans", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(text || ''), w / 2, CA_CAP_TITLE_H / 2);
+        }
         function rosterShotFilename(ym) {
             const y = parseInt(String(ym).slice(0, 4), 10);
             const m = parseInt(String(ym).slice(5), 10) - 1;
@@ -7184,34 +7197,6 @@
             } catch (e) {}
         }
         // v1.46.1 (owner order, the camera buttons): the shared element
-        // capture. A locally-vendored DOM re-painter (vendor/html2canvas.min
-        // .js, lazy-loaded once and precached by the service worker, so the
-        // cameras work offline) photographs a posed element at its FULL
-        // height — beyond the viewport when the content is taller — in
-        // whatever theme the user is in. Everything a capture must not show
-        // is removed from the painter's CLONE (onclone), never from the live
-        // page: no layout shift, nothing to restore. The deliver is the
-        // roster capture's own share-then-download path. (The foreignObject
-        // rasterizer ban above is untouched — this painter draws straight
-        // onto the 2D canvas, no SVG round-trip, so toBlob exports clean.)
-        let caCapLibP = null;
-        function caCapLib() {
-            if (typeof window.html2canvas === 'function') return Promise.resolve(window.html2canvas);
-            if (!caCapLibP) {
-                caCapLibP = new Promise((resolve, reject) => {
-                    const t = setTimeout(() => { caCapLibP = null; reject(new Error('timeout')); }, 12000);
-                    const sc = document.createElement('script');
-                    sc.src = 'vendor/html2canvas.min.js';
-                    sc.onload = () => { clearTimeout(t); if (typeof window.html2canvas === 'function') resolve(window.html2canvas); else { caCapLibP = null; reject(new Error('lib')); } };
-                    sc.onerror = () => { clearTimeout(t); caCapLibP = null; reject(new Error('net')); };
-                    document.head.appendChild(sc);
-                });
-            }
-            return caCapLibP;
-        }
-        // a capture never photographs a mid-flight roll — the base digits
-        // paint transparent while the strips slide. Bounded wait for the
-        // settle, exactly like every shape pin in the suites.
         function caCapWaitSettled(root, ms) {
             return new Promise((resolve) => {
                 const t0 = Date.now();
@@ -7360,221 +7345,12 @@
             })().catch(() => {});
             return caCapFontArm._p;
         }
-        function caCapTrim(canvas, bg, scale) {
-            try {
-                const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(bg || ''));
-                if (!m || !canvas.width || !canvas.height) return canvas;
-                const br = parseInt(m[1], 16), bg2 = parseInt(m[2], 16), bb = parseInt(m[3], 16);
-                const w = canvas.width, hh = canvas.height;
-                // v1.46.5 (owner report — captures still slow on the phone):
-                // this scan used to getImageData over the WHOLE canvas — a
-                // synchronous readback of every pixel of a surface that
-                // reaches ~15MP (57MB of RGBA), which on a phone's
-                // GPU-backed canvas is seconds on its own, on top of the
-                // paint and the PNG encode: three full passes over every
-                // pixel, which is why a faster pipeline still felt slow.
-                // The scan now reads a QUARTER-scale copy (16x fewer
-                // pixels) to locate the neighbourhood of the last painted
-                // row, then a thin full-resolution band (the candidate row
-                // plus 264 rows of headroom) to pin the EXACT row with the
-                // original tolerance — downsampling can only smear content
-                // DOWNWARD (never hide it upward), so the band always
-                // contains the row the old full scan found, and the cut
-                // lands on the same pixel.
-                let cQuad = -1;
-                try {
-                    const qw = Math.max(1, Math.floor(w / 4)), qh = Math.max(1, Math.floor(hh / 4));
-                    const q = document.createElement('canvas'); q.width = qw; q.height = qh;
-                    const qctx = q.getContext('2d');
-                    if (qctx) {
-                        qctx.fillStyle = 'rgb(' + br + ',' + bg2 + ',' + bb + ')';
-                        qctx.fillRect(0, 0, qw, qh);
-                        qctx.drawImage(canvas, 0, 0, qw, qh);
-                        const qd = qctx.getImageData(0, 0, qw, qh).data;
-                        for (let y = qh - 1; y >= 0 && cQuad < 0; y--) {
-                            for (let x = 0; x < qw; x++) {
-                                const i = (y * qw + x) * 4;
-                                if (Math.abs(qd[i] - br) > 6 || Math.abs(qd[i + 1] - bg2) > 6 || Math.abs(qd[i + 2] - bb) > 6) { cQuad = y; break; }
-                            }
-                        }
-                    }
-                } catch (e) { cQuad = -1; }
-                if (cQuad < 0) return canvas;   // nothing painted beyond the tone — the old scan's last<0 branch
-                const cand = cQuad * 4 + 3;      // the last source row that can feed the flagged block
-                const lo = Math.max(0, cand - 264), hi = Math.min(hh - 1, cand + 8);
-                const ctx = canvas.getContext('2d');
-                const band = ctx.getImageData(0, lo, w, hi - lo + 1).data;
-                let last = -1;
-                for (let y = hi; y >= lo && last < 0; y--) {
-                    for (let x = 0; x < w; x += 4) {
-                        const i = ((y - lo) * w + x) * 4;
-                        if (Math.abs(band[i] - br) > 6 || Math.abs(band[i + 1] - bg2) > 6 || Math.abs(band[i + 2] - bb) > 6) { last = y; break; }
-                    }
-                }
-                if (last < 0) return canvas;     // the band found nothing the copy saw — refuse to cut
-                const air = Math.max(2, Math.round(12 * (scale || 1)));
-                const newH = Math.min(hh, last + 1 + air);
-                if (newH >= hh) return canvas;
-                const c2 = document.createElement('canvas');
-                c2.width = w; c2.height = newH;
-                c2.getContext('2d').drawImage(canvas, 0, 0);
-                return c2;
-            } catch (e) { return canvas; }
-        }
-        // v1.46.4: the shared clone diet — the predicate the vendor calls
-        // per element WHILE cloning (before its iframe exists). Kept: the
-        // target, its subtree, its whole ancestor chain (the sheet it lives
-        // in), and the document skeleton. Dropped: the cross-origin Google
-        // font links (the capture's faces are the vendored data-URL rules;
-        // the vendor awaits the clone's fonts.ready, so a network-bound
-        // stylesheet there is a 15-20s stall on a bad connection) and every
-        // other direct child of BODY (invisible to the capture — the
-        // onclone flatten already proved they never paint into it).
-        function caCapIgnore(el) {
-            return (node) => {
-                try {
-                    if (!node || node.nodeType !== 1) return false;
-                    if (node === el || el.contains(node) || node.contains(el)) return false;
-                    const tg = node.tagName;
-                    if (tg === 'HTML' || tg === 'HEAD' || tg === 'BODY') return false;
-                    if (tg === 'LINK' && /^https?:\/\/(fonts\.googleapis\.com|fonts\.gstatic\.com)/.test(node.href || '')) return true;
-                    if (node.parentElement === document.body) return true;
-                    return false;
-                } catch (e) { return false; }
-            };
-        }
-        // v1.46.4 (owner report — 15-20s captures): the painter's one-time
-        // costs — the lazy vendor script, the armed faces, the clone-iframe
-        // machinery, the vendor's one-shot SVG support probe — all landed
-        // on the FIRST camera tap of a session, stacking with the font
-        // waits into the owner's 15-20s. A tiny throwaway render at
-        // idle-after-load absorbs them before the crew ever opens a camera:
-        // an offscreen 20x20 card with one glyph, painted and discarded.
-        // It carries the same clone diet as the real cameras (never any
-        // network), touches no app state, no toasts, no last-shot slot,
-        // and fails silently — a prewarm that errors is a prewarm that
-        // wasn't needed.
-        function caCapPrewarm() {
-            if (caCapPrewarm._p) return caCapPrewarm._p;
-            caCapPrewarm._p = (async () => {
-                await caCapFontArm();
-                const lib = await caCapLib();
-                const d = document.createElement('div');
-                d.id = 'ca-cap-prewarm';
-                d.style.cssText = 'position:fixed;left:-9999px;top:0;width:20px;height:20px;background:#ffffff';
-                d.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1300" stroke-width="2"><path d="M5 12h14"/></svg>';
-                (document.body || document.documentElement).appendChild(d);
-                try { await lib(d, { scale: 1, logging: false, backgroundColor: '#ffffff', ignoreElements: caCapIgnore(d) }); } catch (e) {} finally { try { d.remove(); } catch (e) {} }
-            })().catch(() => {});
-            return caCapPrewarm._p;
-        }
-        async function caCapShoot(el, opts) {
-            // v1.46.6: the capture answers its tap at once — the busy toast
-            // holds the screen honest while the painter runs, and the result
-            // toast replaces it on delivery
-            try { archToast((opts && opts.busy) || 'Capturing…', null, 6000); } catch (e) {}
-            // v1.46.4: if the idle prewarm is mid-render, let it finish —
-            // one painter on the thread at a time, so a capture never
-            // queues behind a redundant throwaway render mid-flight
-            if (caCapPrewarm._p) { try { await caCapPrewarm._p; } catch (e) {} }
-            await caCapFontArm();   // the live render settles + the clone inherits the faces
-            const lib = await caCapLib();
-            let scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-            const rect = el.getBoundingClientRect();
-            const w = Math.max(1, Math.round(rect.width));
-            const h = Math.max(el.scrollHeight || 0, rect.height);
-            // v1.46.6 (owner report — captures still too slow on the phone):
-            // after the network waits died, the remaining cost is the paint
-            // and the PNG encode — BOTH proportional to the pixel count. A
-            // very tall capture now trades a little sharpness for speed: the
-            // canvas caps at ~4MP (the layout is identical at any scale; a
-            // phone-width share image stays crisp well under 2x), and it
-            // never paints taller than 4096 device pixels — the iOS height
-            // ceiling, over which Safari silently drops the canvas.
-            const area = (w * scale) * (h * scale);
-            if (area > 4000000) scale = Math.max(1, Math.round(scale * Math.sqrt(4000000 / area) * 100) / 100);
-            if (h * scale > 4090) scale = Math.max(1, Math.round((4090 / h) * 100) / 100);
-            const userClone = (opts && opts.onclone) || null;
-            const elId = el.id ? el.id : '';
-            const bg = (opts && opts.bg) || caCapThemeBg();
-            const full = !!(opts && opts.fullHeight);
-            // v1.46.4 (owner report — both cameras took 15-20s after the
-            // year pick): the painter's fixed cost was paying the network
-            // twice. (1) The vendor awaits the CLONE iframe's
-            // document.fonts.ready AFTER writing the serialized clone — the
-            // cross-origin Google Fonts <link> rides along and the iframe
-            // re-fetches the CSS (and the woff2 binaries behind it) on
-            // EVERY capture: slow cellular = seconds, a wiped SW cache
-            // after a version bump = the full download again, offline = a
-            // TCP timeout. The capture faces are the vendored data-URL PJS
-            // rules in #ca-cap-fonts — the Google link is dead weight the
-            // targets never use, so it never enters the clone. (2) The
-            // cloner adopted the ENTIRE app DOM (every overlay, the chat
-            // shell, every menu) and the iframe laid it all out before the
-            // onclone flatten threw it away — the same diet, applied at
-            // CLONE time via the vendor's own ignoreElements hook (it runs
-            // per element during cloning, BEFORE the iframe exists —
-            // unlike onclone, which the vendor runs after its font wait).
-            // The flatten's own proof covers the diet: the flattened body
-            // carried only the target and the capture was correct, so
-            // nothing outside the target's chain paints into it.
-            const ignoreEl = caCapIgnore(el);
-            const canvas = await lib(el, {
-                backgroundColor: bg,
-                scale: scale,
-                useCORS: true,
-                logging: false,
-                windowWidth: window.innerWidth,
-                windowHeight: window.innerHeight,
-                ignoreElements: ignoreEl,
-                ...(full ? { x: 0, y: 0, width: w, height: h } : {}),
-                onclone: (doc) => {
-                    try {
-                        // the clone paints the flat capture tone everywhere —
-                        // the flattened body (below) has no sheet behind it,
-                        // and the trim reads this tone as background
-                        doc.documentElement.style.background = bg;
-                        if (doc.body) doc.body.style.background = 'transparent';
-                    } catch (e) {}
-                    try {
-                        if (elId) {
-                            const st = doc.createElement('style');
-                            st.textContent = '#' + elId + ', #' + elId + ' * { box-shadow: none !important; }';
-                            (doc.head || doc.documentElement).appendChild(st);
-                        }
-                    } catch (e) {}
-                    if (userClone) userClone(doc);
-                    // v1.46.2 THE FLATTEN: the painter measures the LIVE
-                    // element against the real window — a target inside a
-                    // fixed sheet with a scroll container loses whatever
-                    // sits past its live bounds (the whole tail of a tall
-                    // capture, empirically viewport-independent). So the
-                    // clone's body carries ONLY the target, at the origin,
-                    // at its live width — no fixed sheets, no flex, no
-                    // overflow: the plain in-flow document the painter
-                    // renders reliably, cropped from (0,0).
-                    try {
-                        const cel = elId ? doc.getElementById(elId) : null;
-                        if (cel && doc.body && cel !== doc.body) {
-                            cel.style.width = w + 'px';
-                            doc.body.innerHTML = '';
-                            doc.body.style.margin = '0';
-                            doc.body.style.overflow = 'visible';
-                            doc.body.appendChild(cel);
-                        }
-                    } catch (e) {}
-                }
-            });
-            const fixed = caCapTrim(canvas, bg, scale);
-            const blob = await new Promise((res) => { try { fixed.toBlob(res, 'image/png'); } catch (e) { res(null); } });
-            if (!blob) throw new Error('blob');
-            caCapDeliver(blob, (opts && opts.name) || 'CrewAssist.png', (opts && opts.title) || 'CrewAssist', (opts && opts.toast) || 'Screenshot saved');
-        }
         // v1.46.1 hotfix (owner orders): the passport camera opens the YEAR
         // PICKER (its own sub-sheet, the archive picker's species) — the
         // crew choose all-time or any year on record REGARDLESS of which chip
         // the page is on; a pick poses the hero to that year, the canvas
-        // hand-paints it (v1.47.0 — no header, the card alone), and the
+        // hand-paints it (v1.47.0) with its title band above (v1.47.1 —
+        // "All-Time Flight Records" / "Flight Records for YYYY"), and the
         // crew's own chips return in a finally.
         function rcPodCapYears() {
             const pills = Array.from(document.querySelectorAll('#ca-rc-pod-years [data-ca-rc-pod-year]'));
@@ -7627,9 +7403,10 @@
         // viewport, exactly the calendar's situation, so the capture
         // hand-paints it from the live DOM — no painter library, no clone,
         // no iframe, no network, nothing to trim. The canvas photographs
-        // ONLY the hero card itself: no pills (they live outside the wrap),
-        // and no injected header — the owner's order, the card speaks for
-        // itself.
+        // ONLY the hero card itself: no pills (they live outside the wrap).
+        // v1.47.1 (owner hotfix): the title band rides ABOVE the card —
+        // "All-Time Flight Records" / "Flight Records for YYYY", painted
+        // by the shared caCapPaintTitle, never injected into the DOM.
         function buildPodHeroShotCanvas() {
             const wrap = document.getElementById('ca-rc-pod-herowrap');
             if (!wrap || !wrap.children.length || wrap.classList.contains('hidden')) return null;
@@ -7638,13 +7415,13 @@
             if (w < 80 || h < 80) return null;   // no layout engine (jsdom) — nothing to paint
             const dpr = Math.max(1, (window.devicePixelRatio || 1));
             const canvas = document.createElement('canvas');
-            canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+            canvas.width = Math.round(w * dpr); canvas.height = Math.round((h + CA_CAP_TITLE_H) * dpr);
             const ctx = canvas.getContext ? canvas.getContext('2d') : null;
             if (!ctx) return null;
             ctx.scale(dpr, dpr);
             ctx.fillStyle = rosterShotTheme().bg;
-            ctx.fillRect(0, 0, w, h);
-            return { canvas: canvas, ctx: ctx, w: w, h: h, wrap: wrap };
+            ctx.fillRect(0, 0, w, h + CA_CAP_TITLE_H);
+            return { canvas: canvas, ctx: ctx, w: w, h: h + CA_CAP_TITLE_H, wrap: wrap, ty: CA_CAP_TITLE_H };
         }
         async function rcPodCaptureYear(yr) {
             const hero = document.getElementById('ca-rc-pod-herowrap');
@@ -7672,8 +7449,9 @@
                 await caCapFontArm();
                 const built = buildPodHeroShotCanvas();
                 if (!built) return;
-                rosterShotPaintGrid(built.ctx, built.wrap, 0, 0);
-                await rosterShotPaintIcons(built.ctx, built.wrap, 0, 0);
+                caCapPaintTitle(built.ctx, yr === 'all' ? 'All-Time Flight Records' : 'Flight Records for ' + yr, built.w, window.getComputedStyle(hero).color || '#111827');
+                rosterShotPaintGrid(built.ctx, built.wrap, 0, built.ty);
+                await rosterShotPaintIcons(built.ctx, built.wrap, 0, built.ty);
                 const name = 'CrewAssist-Passport-' + (yr === 'all' ? 'All-Time' : yr) + '.png';
                 try {
                     built.canvas.toBlob((blob) => { if (blob) caCapDeliver(blob, name, 'CrewAssist passport', 'Passport screenshot saved'); }, 'image/png');
@@ -16965,15 +16743,48 @@ SLOT|Special Lve others`;
                 });
             });
         }
+        // v1.47.1 (owner order — "proceed with earnings on this exact
+        // pattern"): the earnings camera joins the passport's hand-paint.
+        // The posed card is a TALL scroll, so the canvas covers the FULL
+        // scrollHeight under the v1.46.6 pixel budget (the paint and the
+        // PNG encode both ride the pixel count), the roster walker paints
+        // the live DOM (boxes, gradients, texts), the icon pass draws the
+        // lucide glyphs, and the diet rows are hidden live for the
+        // measure + paint and restored in the finally — the layout
+        // reflows exactly as the old clone's removal did. No painter
+        // library, no clone, no iframe, no network, nothing to trim.
+        function buildArchShotCanvas(el) {
+            const r = el.getBoundingClientRect();
+            const w = Math.max(1, Math.round(r.width));
+            const h = Math.max(el.scrollHeight || 0, Math.round(r.height));
+            if (w < 80 || h < 80) return null;   // no layout engine (jsdom) — nothing to paint
+            let scale = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+            const area = (w * scale) * ((h + CA_CAP_TITLE_H) * scale);
+            if (area > 4000000) scale = Math.max(1, Math.round(scale * Math.sqrt(4000000 / area) * 100) / 100);
+            if ((h + CA_CAP_TITLE_H) * scale > 4090) scale = Math.max(1, Math.round((4090 / (h + CA_CAP_TITLE_H)) * 100) / 100);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(w * scale);
+            canvas.height = Math.round((h + CA_CAP_TITLE_H) * scale);
+            const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+            if (!ctx) return null;
+            ctx.scale(scale, scale);
+            ctx.fillStyle = caCapThemeBg();
+            ctx.fillRect(0, 0, w, h + CA_CAP_TITLE_H);
+            return { canvas: canvas, ctx: ctx, w: w, h: h + CA_CAP_TITLE_H, wrap: el, ty: CA_CAP_TITLE_H };
+        }
         async function archCaptureYear(yr) {
             const scrollEl = archEl('ca-arch-scroll');
             if (!scrollEl || !/^\d{4}$/.test(String(yr || ''))) return;
-            // v1.46.4: same as the roster camera — the arm, never the
-            // network-bound document.fonts.ready
-            await caCapFontArm();
-            if (!(await caCapWaitSettled(scrollEl, 1400))) return;
+            // v1.46.6/v1.47.1: the tap is answered at once — the busy toast
+            // holds the screen honest while the pose and the paint run
+            try { archToast('Capturing\u2026', null, 6000); } catch (e) {}
             const keep = { scope: archState.scope, mode: archState.mode, yearSel: archState.yearSel, chartSel: archState.chartSel, search: archState.search, collapsed: JSON.parse(JSON.stringify(archState.collapsed || {})) };
             const wasReduced = document.documentElement.classList.contains('ca-reduced');
+            // the diet, live now: the rows the capture must not show are
+            // hidden for the measure + paint and restored in the finally —
+            // the layout reflows exactly as the old clone's removal did
+            const diet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'];
+            const dietWas = {};
             try {
                 // ca-reduced stands the roll down for BOTH the pose and the
                 // restore — the digits paint settled, and no pending restore
@@ -16987,37 +16798,22 @@ SLOT|Special Lve others`;
                 const map = archMonthsMap(loadArchive());
                 Object.keys(map).forEach((mk) => { if (String(mk).slice(0, 4) === String(yr)) archState.collapsed[mk] = true; });
                 renderArch();
-                await caCapShoot(scrollEl, {
-                    name: 'CrewAssist-Earnings-' + yr + '.png',
-                    title: 'CrewAssist earnings',
-                    toast: 'Earnings screenshot saved',
-                    fullHeight: true,   // the crop covers the whole scroll; the pixel trim closes it at the last painted row
-                    onclone: (doc) => {
-                        const target = doc.getElementById('ca-arch-scroll');
-                        if (!target) return;
-                        // the full-height crop needs the scroller to let its
-                        // content flow in the clone — the live page never
-                        // moves (flex none + height auto = the box IS the
-                        // content; the sheet never clips it)
-                        target.style.overflow = 'visible';
-                        target.style.flex = 'none';
-                        target.style.height = 'auto';
-                        const sheet = doc.getElementById('ca-arch-sheet');
-                        if (sheet) sheet.style.overflow = 'visible';
-                        const head = doc.createElement('div');
-                        head.id = 'ca-cap-head';
-                        head.className = 'text-lg font-bold mb-1';
-                        head.textContent = yr + ' Earnings';
-                        target.insertBefore(head, target.firstChild);
-                        ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'].forEach((id) => {
-                            const n = doc.getElementById(id);
-                            if (n && n.parentNode) n.parentNode.removeChild(n);
-                        });
-                    }
-                });
+                diet.forEach((id) => { const n = document.getElementById(id); if (n) { dietWas[id] = n.style.display; n.style.display = 'none'; } });
+                if (!(await caCapWaitSettled(scrollEl, 1400))) return;
+                await caCapFontArm();   // v1.46.4: the arm, never the network-bound document.fonts.ready
+                scrollEl.scrollTop = 0;   // the full scroll paints from its top
+                const built = buildArchShotCanvas(scrollEl);
+                if (!built) return;
+                caCapPaintTitle(built.ctx, 'Earnings for ' + yr, built.w, window.getComputedStyle(scrollEl).color || '#111827');
+                rosterShotPaintGrid(built.ctx, built.wrap, 0, built.ty);
+                await rosterShotPaintIcons(built.ctx, built.wrap, 0, built.ty);
+                try {
+                    built.canvas.toBlob((blob) => { if (blob) caCapDeliver(blob, 'CrewAssist-Earnings-' + yr + '.png', 'CrewAssist earnings', 'Earnings screenshot saved'); }, 'image/png');
+                } catch (e) {}
             } catch (e) {
                 archToast('Screenshot didn\u2019t capture \u2014 try again');
             } finally {
+                diet.forEach((id) => { if (id in dietWas) { const n = document.getElementById(id); if (n) n.style.display = dietWas[id]; } });
                 archState.scope = keep.scope;
                 archState.mode = keep.mode;
                 archState.yearSel = keep.yearSel;

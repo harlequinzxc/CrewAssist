@@ -1838,10 +1838,16 @@ function todayYmd() {
     await wait(1300);   // the fresh open's roll settles before the camera taps
     R.ok(!!d.getElementById('ca-arch-cam'), 'v1.45.60: the camera button sits in the earnings header');
     R.ok(d.getElementById('ca-arch-cam').nextElementSibling.classList.contains('ca-arch-headrule'), 'the camera rides behind its own headrule, left of export');
-    // the stub painter records the pose + drives the clone surgery; the
-    // font embed's fetch is stubbed so the clone carries real data URLs
+    // the font embed's fetch is stubbed so the arm carries real data URLs
     w.eval("window.fetch = function (url) { return Promise.resolve({ ok: true, arrayBuffer: function () { return Promise.resolve(new ArrayBuffer(8)); } }); };");
-    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { if (el.id === 'ca-cap-prewarm') { window.__capPrewarms = (window.__capPrewarms || 0) + 1; return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); } const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, height: opts.height, scrollH: el.scrollHeight, x: opts.x, y: opts.y, width: opts.width, windowWidth: opts.windowWidth, windowHeight: opts.windowHeight, bg: opts.backgroundColor, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, liveOverflow: document.getElementById('ca-arch-scroll').style.overflow, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    // v1.47.1 (owner order — earnings on the passport pattern): the
+    // builder wrapper records the POSE at paint time (the diet rows, the
+    // segs, the scroll top, the title handed to the band painter) and
+    // returns a stub canvas that carries the plumbing — fake toBlob →
+    // caCapDeliver → __caLastShot — end to end. The painter library
+    // itself is gone from the app; nothing stubs it because nothing
+    // calls it
+    w.eval("window.__archCap = []; window.__basc = buildArchShotCanvas; buildArchShotCanvas = function (el) { const diet = ['ca-arch-pillrow-mode','ca-arch-pillrow-scope','ca-arch-searchrow','ca-arch-ins-toggle','ca-arch-insights','ca-arch-end']; window.__archCap.push({ el: el.id, scrollTop: el.scrollTop, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, collapsedAll: Array.from(document.querySelectorAll('.ca-arch-group')).every((g) => g.classList.contains('ca-arch-collapsed')), diet: diet.map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; }), reduced: document.documentElement.classList.contains('ca-reduced'), rollc: !!el.querySelector('.ca-rollc'), liveOverflow: el.style.overflow }); return { canvas: { toBlob: function (cb) { cb(new Blob(['png'], { type: 'image/png' })); } }, ctx: { fillText: function (t) { window.__archCap[window.__archCap.length - 1].title = t; } }, w: 40, h: 30, wrap: el, ty: 34 }; };");
     // tap the camera → the picker rides the archive's own sub-sheet
     d.getElementById('ca-arch-cam').click();
     await wait(300);
@@ -1854,13 +1860,10 @@ function todayYmd() {
     // tap 2025 → the pose, the capture, the guaranteed restore
     rows[1].click();
     await wait(800);
-    R.eq(w.eval('window.__capRec.length'), 1, 'the painter fired exactly once');
-    R.eq(w.eval('window.__capRec[0].id'), 'ca-arch-scroll', 'the capture target is the FULL scroll — card, chart and list together');
-    R.ok(w.eval('window.__capRec[0].windowWidth === window.innerWidth && window.__capRec[0].windowHeight === window.innerHeight'), 'v1.45.60 hotfix (owner report): the clone lays out at the REAL viewport — windowWidth/windowHeight mirror the window exactly, never stretched for a tall crop (a stretched viewport reflows the fixed sheet: wrapping, clipped figures, an empty tail)');
-    R.ok(w.eval('window.__capRec[0].height === window.__capRec[0].scrollH && typeof window.__capRec[0].x === \"number\" && typeof window.__capRec[0].width === \"number\"'), 'the full-height crop passes its own x/y/width/height — the crop rides the element\u2019s rect + scrollHeight (jsdom reads 0 for layout; the real trimmed dimensions decode in the smoke)');
-    R.ok(w.eval('window.__capRec[0].x === 0 && window.__capRec[0].y === 0'), 'v1.46.2: the tall crop is ORIGIN-based — x/y 0,0 with the width and height, because the clone flattens the target to the document\u2019s only child at (0,0)');
-    R.ok(w.eval('window.__capRec[0].clone.body.children.length === 1 && window.__capRec[0].clone.body.children[0].id === \"ca-arch-scroll\"'), 'v1.46.2 THE FLATTEN: the clone\u2019s body carries ONLY the capture target at its live width — no fixed sheets, no flex, no scroll containers for the painter to mis-measure (the painter reads LIVE bounds against the real window and dropped everything past them — the viewport-independent cut)');
-    R.ok(w.eval('[\"0\", \"0px\"].indexOf(window.__capRec[0].clone.body.style.margin) !== -1 && window.__capRec[0].clone.body.style.overflow === \"visible\"'), 'v1.46.2: the flattened body sits flush at the origin with no clipping of its own (jsdom may serialise a bare 0 as 0px)');
+    R.eq(w.eval('window.__archCap.length'), 1, 'the builder fired exactly once');
+    R.eq(w.eval('window.__archCap[0].el'), 'ca-arch-scroll', 'the capture target is the FULL scroll — card, chart and list together');
+    R.eq(w.eval('window.__archCap[0].scrollTop'), 0, 'v1.47.1: the full scroll paints from its TOP — a list the crew scrolled never crops its own head');
+    R.ok(w.eval('window.__archCap[0].reduced') === true && w.eval('window.__archCap[0].rollc') === false, 'the pose stands the roll down and waits for the settle — the digits paint settled, never mid-flight');
     R.ok(!!d.getElementById('ca-cap-fonts') && String(d.getElementById('ca-cap-fonts').textContent).indexOf('@font-face') !== -1, 'v1.46.2: the house font ARMS in the live head (#ca-cap-fonts) before the shot — the painter\u2019s clone inherits the faces from the start; injecting them inside onclone raced the clone\u2019s own fonts.ready and still fell back (the owner\u2019s real-device report)');
     {
       // v1.46.3 (owner retest): the icon-baseline fix. The vendored painter
@@ -1878,27 +1881,18 @@ function todayYmd() {
       R.ok(src63.includes('body > div[style*="visibility: hidden"][style*="nowrap"] { line-height: normal; }') && src63.includes('body > div[style*="visibility: hidden"][style*="nowrap"] > img { display: inline; }'), 'v1.46.3: the font probe\u2019s 1x1 img computes INLINE at a normal line-height — the two scoped rules that undo the Tailwind preflight\u2019s display:block inside the probe\u2019s footprint only (the measured baseline returns to ~ascent; text paints on its true baseline, level with its icon)');
       R.ok(!/style\s*\.\s*visibility\s*=/.test(src63), 'v1.46.3: the app never assigns inline style.visibility — the probe-scoped selector can only ever match the painter\u2019s own probe div, never an app surface');
     }
-    R.ok(w.eval('window.__capRec[0].salaryOn') === true && w.eval('window.__capRec[0].yearOn') === true, 'at capture time the card is posed to Monthly Salary + Year');
-    R.eq(w.eval('window.__capRec[0].label'), 'Net take-home', 'the posed card reads the salary headline');
-    R.eq(w.eval('window.__capRec[0].liveOverflow'), '', 'the live scroller is never touched — the overflow fix lives in the clone');
-    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-cap-head").textContent'), '2025 Earnings', 'the clone injects the owner\u2019s header above the card');
-    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").firstChild.id') === 'ca-cap-head', 'the header is the FIRST thing in the capture');
-    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-pillrow-mode")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-pillrow-scope")') === null, 'the clone strips both pill rows (the owner\u2019s exclusion)');
-    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-searchrow")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-ins-toggle")') === null && w.eval('window.__capRec[0].clone.getElementById("ca-arch-insights")') === null, 'the clone strips the search bar and the insights toggle + panel');
-    R.ok(!!w.eval('window.__capRec[0].clone.getElementById("ca-arch-trend")'), 'the chart rides along — the owner\u2019s year-scope ruling');
-    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").style.overflow'), 'visible', 'the clone\u2019s scroller lets the full content flow for the tall crop');
-    R.ok(w.eval('["none", "0 0 auto"].indexOf(window.__capRec[0].clone.getElementById("ca-arch-scroll").style.flex) !== -1'), 'the clone\u2019s scroller drops its flex-grow — the box IS the content, nothing clipped at the viewport (flex: none serializes expanded as 0 0 auto in the CSSOM)');
-    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-arch-scroll").style.height'), 'auto', 'the clone\u2019s scroller sizes to its content — the tall crop covers every row');
-    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-arch-end")') === null, 'v1.45.60 hotfix (owner order): the End-of-records footer and the Showing-earnings-since line never ride the capture');
+    R.ok(w.eval('window.__archCap[0].salaryOn') === true && w.eval('window.__archCap[0].yearOn') === true, 'at capture time the card is posed to Monthly Salary + Year');
+    R.eq(w.eval('window.__archCap[0].label'), 'Net take-home', 'the posed card reads the salary headline');
+    R.eq(w.eval('window.__archCap[0].liveOverflow'), '', 'the live scroller\u2019s overflow is never touched — the diet is display:none, restored in the finally');
+    R.eq(w.eval('window.__archCap[0].title'), 'Earnings for 2025', 'v1.47.1 (owner order — include the header): the title band renders “Earnings for YYYY”');
+    R.ok(w.eval('window.__archCap[0].diet.join(\"|\") === \"none|none|none|none|none|none\"'), 'the diet rows are hidden LIVE for the paint — both pill rows, the search bar, the insights toggle + panel, the end-of-records footer (the owner\u2019s exclusions)');
+    R.ok(w.eval('window.__archCap[0].collapsedAll') === true, 'every month group is folded in the capture');
+    R.ok(!!d.getElementById('ca-arch-trend'), 'the chart rides along — the owner\u2019s year-scope ruling (the trend canvas mounts under the year pose)');
     {
       const src60 = fs.readFileSync(APP, 'utf8');
-      R.ok(src60.includes('windowWidth: window.innerWidth,') && src60.includes('windowHeight: window.innerHeight,'), 'v1.45.60 hotfix src: the clone viewport mirrors the real window — the tall crop rides x/y/width/height, never a stretched windowHeight');
-      R.ok(src60.indexOf('function caCapTrim(') !== -1 && src60.includes('data:font/woff2;base64,') && src60.includes('box-shadow: none !important;'), 'v1.45.60 hotfix src: the pixel trim closes the canvas at the last painted row, the house font embeds as data URLs, and shadows strip inside the target');
       R.ok(src60.includes('html.ca-reduced .ca-arch-bargrow .ca-arch-bar { animation: none; }'), 'v1.45.60 hotfix src: the bar grow is gated by ca-reduced — a posed capture can never photograph the chart at scaleY(0) (the owner\u2019s missing-2026-chart report)');
+      R.ok(src60.includes('data:font/woff2;base64,'), 'v1.45.60 hotfix src: the house font embeds as data URLs — the arm carries the faces, the canvas paints in true metrics');
     }
-    R.ok(w.eval('Array.from(window.__capRec[0].clone.querySelectorAll(".ca-arch-group")).every((g) => g.classList.contains("ca-arch-collapsed"))'), 'every month group is folded in the capture');
-    R.ok(w.eval('window.__capRec[0].clone.head.textContent.indexOf("@font-face{font-family:\'Plus Jakarta Sans\'") !== -1 && window.__capRec[0].clone.head.textContent.indexOf("data:font/woff2;base64,") !== -1'), 'v1.45.60 hotfix: the house font rides the clone as data URLs — the painter\u2019s iframe can never fall back to wrong metrics (the wrapping + clipped-descender report)');
-    R.ok(w.eval('window.__capRec[0].clone.head.textContent.indexOf("box-shadow: none !important") !== -1'), 'v1.45.60 hotfix: shadows strip inside the capture target — no coloured band at the crop edge');
     // the live page was never surgically touched, and the user\u2019s state returned
     R.ok(!!d.getElementById('ca-arch-ins-toggle') && !!d.getElementById('ca-arch-pillrow-mode'), 'the LIVE page keeps its pills, search and insights — nothing was removed for real');
     R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon') && d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'the user\u2019s own pills return exactly — month + COP, where they were');
@@ -1912,7 +1906,7 @@ function todayYmd() {
     Array.from(d.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[0].click();
     await wait(800);
     R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Earnings-2026.png', 'a second pick captures that year — 2026');
-    R.ok(w.eval('window.__capRec[1].clone.getElementById("ca-cap-head").textContent') === '2026 Earnings', 'the second capture names its own year');
+    R.eq(w.eval('window.__archCap[1].title'), 'Earnings for 2026', 'the second capture names its own year in the title band');
     // nothing saved yet → the honest refusal
     w.eval('closeArchOverlay(); localStorage.setItem("crewAssist.archive", JSON.stringify([]))');
     await wait(400);
@@ -1923,17 +1917,19 @@ function todayYmd() {
     R.ok(d.getElementById('ca-arch-sub').classList.contains('hidden'), 'an empty archive never opens the picker');
     R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Nothing saved to capture yet') !== -1, 'the empty archive says so honestly');
 
-    // ---- v1.46.4 (owner report — 15-20s captures): the network-free pipeline ----
+    // ---- v1.46.4 + v1.47.1: the network-free pipeline, hand-painted ----
     {
       const src64 = fs.readFileSync(APP, 'utf8');
-      R.ok(!/function archCaptureYear[\s\S]{0,400}await document\.fonts\.ready/.test(src64), 'v1.46.4 src: the earnings capture flow never awaits document.fonts.ready — it waited on EVERY live face, the cross-origin Google ones included, which on a slow network was the owner\u2019s 15-20s stall');
-      R.ok(/function archCaptureYear[\s\S]{0,400}await caCapFontArm\(\)/.test(src64), 'v1.46.4 src: the flow arms the vendored data-URL faces instead — offline-proof, no network');
-      R.ok(src64.indexOf('new Promise((resolve) => setTimeout(resolve, 900))') !== -1 && src64.indexOf('function caCapFontArm') < src64.indexOf('Promise.race(['), 'v1.46.4 src: the arm\u2019s fonts.load wait is RACED at 900ms — the Google stylesheet also declares Plus Jakarta Sans, so an unraced load would wait on the cross-origin twins');
-      R.ok(src64.includes("d.id = 'ca-cap-prewarm'") && src64.includes('function caCapPrewarm(') && src64.includes('const ignoreEl = caCapIgnore(el);') && src64.includes('ignoreElements: ignoreEl,'), 'v1.46.4 src: the painter carries the clone diet (ignoreElements) and the idle prewarm paints its marked throwaway card at boot');
-      R.ok(/function caCapIgnore\(el\)[\s\S]{0,700}fonts\\.googleapis\\.com/.test(src64), 'v1.46.4 src: the diet drops the cross-origin Google font links — the vendor awaits the clone\u2019s fonts.ready, so a network stylesheet in the iframe is a stall on every capture');
-      // the prewarm fired during this very suite (2.6s after the boot block)
-      // and never disturbed the archive
-      R.eq(w.eval("(window.__capPrewarms || 0) === 1 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.46.4: the prewarm painted exactly its one throwaway card while this suite ran, and the card is gone');
+      const segA = src64.slice(src64.indexOf('async function archCaptureYear'), src64.indexOf('async function archCaptureYear') + 3800);
+      R.ok(segA.indexOf('await document.fonts.ready') === -1 && segA.indexOf('await caCapFontArm()') !== -1, 'v1.46.4 src: the earnings capture flow arms the vendored data-URL faces — never the network-bound document.fonts.ready that waited on the cross-origin Google ones too');
+      R.ok(src64.indexOf('new Promise((resolve) => setTimeout(resolve, 900))') !== -1 && src64.indexOf('function caCapFontArm') < src64.indexOf('Promise.race(['), 'v1.46.4 src: the arm\u2019s fonts.load wait is RACED at 900ms \u2014 the Google stylesheet also declares Plus Jakarta Sans, so an unraced load would wait on the cross-origin twins');
+      R.ok(segA.indexOf('scrollEl.scrollTop = 0') !== -1, 'v1.47.1 src: the full scroll paints from its top \u2014 a list the crew scrolled never crops its own head');
+      R.ok(segA.indexOf('buildArchShotCanvas(scrollEl)') !== -1 && segA.indexOf("caCapPaintTitle(built.ctx, 'Earnings for ' + yr") !== -1 && segA.indexOf('rosterShotPaintGrid(built.ctx, built.wrap, 0, built.ty)') !== -1 && segA.indexOf('rosterShotPaintIcons(built.ctx, built.wrap, 0, built.ty)') !== -1, 'v1.47.1 src: the flow builds the tall canvas, paints its title, then the ROSTER walker + icon pass \u2014 the passport\u2019s exact pattern');
+      R.ok(segA.indexOf("['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end']") !== -1, 'v1.47.1 src: the diet list survives whole \u2014 hidden live for the paint, restored in the finally');
+      R.ok(segA.indexOf('caCapShoot') === -1 && segA.indexOf('caCapLib') === -1 && segA.indexOf('onclone') === -1, 'v1.47.1 src: no painter library, no clone, no onclone \u2014 scrapped and restarted, per the owner\u2019s order');
+      R.ok(src64.indexOf('function buildArchShotCanvas(') !== -1 && src64.indexOf('area > 4000000') !== -1 && src64.indexOf('CA_CAP_TITLE_H) * scale > 4090') !== -1, 'v1.46.6/v1.47.1 src: the tall canvas keeps the pixel budget \u2014 ~4MP area, 4090 device px tall (paint + PNG encode both ride the pixel count)');
+      R.ok(src64.indexOf('function caCapShoot(') === -1 && src64.indexOf('function caCapTrim(') === -1 && src64.indexOf('function caCapPrewarm(') === -1 && src64.indexOf('function caCapLib(') === -1 && src64.indexOf('function caCapIgnore(') === -1 && src64.indexOf('ca-cap-prewarm') === -1 && src64.indexOf('vendor/html2canvas.min.js') === -1, 'v1.47.1 src: the old engine is GONE whole \u2014 shoot, trim, prewarm, the diet predicate, the vendored lib and its precache entry (the print sheet\u2019s own lazy CDN exporter is a separate machine, untouched)');
+      R.eq(w.eval("(window.__capPrewarms || 0) === 0 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.47.1: the prewarm is gone with the engine \u2014 no throwaway card ever fired while this suite ran');
       // v1.46.6 (owner order \u2014 \u201cwhen i mean share i mean the native ios and
       // android web share pop up\u201d): delivery is DIRECT. The capture calls
       // navigator.share itself the moment the PNG is ready \u2014 no preview
@@ -1943,8 +1939,7 @@ function todayYmd() {
       // the anchor count reads real <a> CLICKS \u2014 URL counting would lie.
       R.ok(src64.indexOf('function caCapPreviewOpen') === -1 && src64.indexOf('ca-cap-preview') === -1, 'v1.46.6 src: the preview sheet is gone from the app entirely \u2014 markup, opener and all');
       R.ok(/function caCapDeliver\(blob, name, title, doneMsg\)/.test(src64), 'v1.46.6 src: the deliver takes the blob, filename, title and done toast directly');
-      R.ok(src64.includes("archToast((opts && opts.busy) || 'Capturing\u2026', null, 6000)"), 'v1.46.6 src: the capture answers its tap at once with a busy toast \u2014 the wait is never a frozen screen');
-      R.ok(src64.includes('area > 4000000') && src64.includes('h * scale > 4090'), 'v1.46.6 src: the paint caps at ~4MP and 4090 device pixels tall \u2014 the phone\u2019s speed lever (paint + PNG encode both ride the pixel count)');
+      R.ok(src64.includes("try { archToast('Capturing\\u2026', null, 6000); } catch (e) {}"), 'v1.46.6/v1.47.1 src: the capture answers its tap at once with a busy toast \u2014 the wait is never a frozen screen');
       w.eval("window.__origCU = URL.createObjectURL; URL.createObjectURL = function (b) { return 'blob:probe'; }; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === 'a') { el.click = function () { window.__anchorN++; }; } return el; }; window.__anchorN = 0; window.__sharedN = 0; navigator.canShare = function () { return true; }; navigator.share = function () { window.__sharedN = (window.__sharedN || 0) + 1; return Promise.reject(Object.assign(new Error('lapsed'), { name: 'NotAllowedError' })); }; caCapDeliver(new Blob(['x'], { type: 'image/png' }), 'probe.png', 'CrewAssist probe', 'Probe saved');");
       await wait(400);
       R.eq(w.eval('window.__sharedN'), 1, 'v1.46.6: the DELIVERY fires the share exactly once \u2014 the native sheet opens straight off the capture, no detour');

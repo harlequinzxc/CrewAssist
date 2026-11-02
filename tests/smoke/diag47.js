@@ -1,10 +1,9 @@
-// v1.47.0 diag: the passport repaint's timing + exact-dims proof. The
-// owner scrapped both capture functions; this round the passport hero is
-// hand-painted with the roster technique (no painter library). The rig
-// quotes pick->PNG with the new flow in place (same --disable-gpu rig
-// class as the v1.46.4/5/6 probes, so the numbers compare across rounds)
-// and proves the capture's dimensions ARE the live hero card's — no
-// injected header, no pills, no trim air.
+// v1.47.1 diag: both cameras' timing + exact-dims proof on the hand-paint
+// pattern. The passport hero carries its title band above the card; the
+// earnings camera joins the same pattern over the FULL posed scroll. The
+// rig quotes pick->PNG for both (same --disable-gpu rig class as the
+// v1.46.4/5/6/v1.47.0 probes, so the numbers compare across rounds) and
+// proves the dimensions: title band + card, exactly.
 const puppeteer = require('puppeteer-core');
 process.env.LD_LIBRARY_PATH = ['/tmp/chr-libs/lib', process.env.LD_LIBRARY_PATH].filter(Boolean).join(':');
 const chromium = require('@sparticuz/chromium').default;
@@ -59,7 +58,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         await page.evaluate(() => { openRcPod(); });
         await page.waitForSelector('#ca-rc-pod-herowrap', { timeout: 8000 });
         await sleep(1600);
-        // three timed takes of the All-Time hero (pick -> PNG)
+        // three timed takes of the All-Time hero (pick -> PNG), title band included
         for (let i = 0; i < 3; i++) {
             await page.evaluate(() => { window.__caLastShot = null; document.getElementById('btn-rc-pod-cam').click(); });
             await sleep(500);
@@ -80,8 +79,31 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
                     dpr: window.devicePixelRatio || 1
                 };
             });
-            const dw = Math.abs(r.w - Math.ceil(r.live.w)), dh = Math.abs(r.h - Math.ceil(r.live.h));
-            console.log('take ' + (i + 1) + ': pick->PNG ' + r.dt + 'ms | ' + r.w + 'x' + r.h + ' vs live ' + r.live.w + 'x' + r.live.h + ' (d' + dw + '/d' + dh + ', dpr ' + r.dpr + ') | ' + (r.size / 1024).toFixed(0) + 'KB | ' + r.name);
+            const dw = Math.abs(r.w - Math.ceil(r.live.w)), dh = Math.abs(r.h - Math.ceil(r.live.h) - 34);
+            console.log('passport take ' + (i + 1) + ': pick->PNG ' + r.dt + 'ms | ' + r.w + 'x' + r.h + ' vs live+band ' + r.live.w + 'x' + (r.live.h + 34) + ' (d' + dw + '/d' + dh + ', dpr ' + r.dpr + ') | ' + (r.size / 1024).toFixed(0) + 'KB | ' + r.name);
+        }
+        // close the records page + calendar, open the archive, and time the
+        // EARNINGS camera on the same rig (2025, the taller card)
+        await page.evaluate(() => { closeRcPod(); closeRosterCalendar(); });
+        await sleep(700);
+        await page.evaluate(() => { showArchiveOverlay(); });
+        await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
+        await sleep(1400);
+        for (let i = 0; i < 3; i++) {
+            await page.evaluate(() => { window.__caLastShot = null; document.getElementById('ca-arch-cam').click(); });
+            await sleep(500);
+            await page.evaluate(() => {
+                window.__t0 = performance.now();
+                Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click();
+            });
+            await page.waitForFunction(() => !!window.__caLastShot, { timeout: 30000 });
+            const r = await page.evaluate(async () => {
+                const dt = performance.now() - window.__t0;
+                const bmp = await createImageBitmap(window.__caLastShot.blob);
+                const posedH = window.__posedScrollH || 0;
+                return { dt: Math.round(dt), size: window.__caLastShot.size, w: bmp.width, h: bmp.height, name: window.__caLastShot.name };
+            });
+            console.log('earnings take ' + (i + 1) + ': pick->PNG ' + r.dt + 'ms | ' + r.w + 'x' + r.h + ' | ' + (r.size / 1024).toFixed(0) + 'KB | ' + r.name);
         }
         console.log('done');
     } catch (e) { console.log('DIAG ERR', e && e.message); } finally { await browser.close(); }
