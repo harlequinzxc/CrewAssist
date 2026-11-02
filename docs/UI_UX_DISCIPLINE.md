@@ -853,7 +853,27 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   preview wears the house sub-sheet chrome (scrim, handle, title, close,
   Escape owns it while it is up) and its buttons stay disabled until
   there is something to deliver — an affordance that cannot work yet
+  must not look like it can.- v1.46.5 (owner report after v1.46.4): a capture flow must ANSWER its
+  tap instantly and never leave the crew staring at a frozen page — the
+  preview sheet opens before any painter work ("Rendering your card…"),
+  the image swaps in the moment the paint is trimmed, and the PNG encodes
+  behind it. Delivery is a fresh tap: Share is a new user gesture (the
+  phone's share sheet always opens, whatever the render took), Save is the
+  download, and only the crew's own dismissal stops at the toast. The
+  preview wears the house sub-sheet chrome (scrim, handle, title, close,
+  Escape owns it while it is up) and its buttons stay disabled until
+  there is something to deliver — an affordance that cannot work yet
   must not look like it can.
+- v1.46.6 (owner order after v1.46.5 — "when i mean share i mean the
+  native ios and android web share pop up"): a capture delivers DIRECTLY.
+  The moment the PNG exists it goes to navigator.share — no preview
+  sheet, no extra taps (the preview's second step is exactly what the
+  owner rejected, and its uncompiled classes had painted it as a broken
+  background besides). The tap answers at once with a busy toast so the
+  wait is never a frozen screen; the delivery toast replaces it. Tall
+  captures trade a little sharpness for speed (the ~4MP canvas cap and
+  the 4090-device-pixel height ceiling) — a trade the crew are told
+  about, never one slipped past them.
 
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.

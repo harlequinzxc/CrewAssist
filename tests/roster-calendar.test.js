@@ -1092,28 +1092,24 @@ const synthItems = [].concat(
     await wait(700);
     R.ok(!shotBtn.classList.contains('ca-rc-flash'), 'the flash fades');
     R.ok(w.eval('!window.__rcLastShot'), 'the jsdom guard stops the capture before any deliver');
-    // the deliver paths: download when there is no share sheet
+    // the deliver paths: DIRECT (v1.46.6, the owner\u2019s \u201cnative popup\u201d order)
+    // \u2014 the phone\u2019s share sheet straight off the capture, the anchor as
+    // the honest fallback when the platform has no share API
     w.URL.createObjectURL = () => 'blob:shot'; w.URL.revokeObjectURL = () => {};
     w.eval('window.__dl = 0; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === "a") { el.click = function () { window.__dl++; }; } return el; }; rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "CrewAssist-Roster-October-2026.png");');
-    await wait(80);
-    R.ok(!d.getElementById('ca-cap-preview').classList.contains('hidden'), 'v1.46.5: the roster capture opens the shared PREVIEW sheet');
-    R.ok(d.getElementById('ca-cap-pv-share').classList.contains('hidden'), 'without a share API the Share button stays hidden \u2014 Save is the only door');
-    R.eq(w.eval('window.__dl'), 0, 'nothing downloads until the crew taps \u2014 delivery is a fresh gesture now');
+    await wait(120);
+    R.ok(!d.getElementById('ca-cap-preview'), 'v1.46.6: no preview sheet exists \u2014 the roster capture delivers straight to the phone\u2019s share sheet');
+    R.eq(w.eval('window.__dl'), 1, 'without a share API the anchor downloads straight off the delivery \u2014 no extra tap, no detour (the desktop door)');
     R.eq(w.eval('window.__rcLastShot && window.__rcLastShot.name'), 'CrewAssist-Roster-October-2026.png', 'the deliver records the shot');
     R.ok(w.eval('window.__rcLastShot && window.__rcLastShot.blob instanceof Blob'), 'the deliver keeps the blob \u2014 the smoke decodes it to prove the raster');
-    d.getElementById('ca-cap-pv-save').click();
-    await wait(120);
-    R.eq(w.eval('window.__dl'), 1, 'the Save tap downloads \u2014 without a share sheet, Save is the capture\u2019s door');
     R.ok((d.getElementById('ca-arch-toast') || {}).textContent.indexOf('Roster screenshot saved') !== -1, 'the toast confirms the capture');
     w.eval('document.createElement = window.__mk;');
-    // the share sheet, when the platform has one
-    const canStub = w.eval("(function () { try { Object.defineProperty(navigator, 'canShare', { value: function (o) { return true; }, configurable: true }); Object.defineProperty(navigator, 'share', { value: function (o) { window.__shared = (window.__shared || 0) + 1; return Promise.resolve(); }, configurable: true }); return 'ok'; } catch (e) { return 'no'; } })()");
+    // the share sheet, when the platform has one (one self-contained eval:
+    // the stubs and the deliver leave no boundary for a stray timer to poison)
+    const canStub = w.eval("(function () { try { Object.defineProperty(navigator, 'canShare', { value: function (o) { return true; }, configurable: true }); Object.defineProperty(navigator, 'share', { value: function (o) { window.__shared = (window.__shared || 0) + 1; return Promise.resolve(); }, configurable: true }); window.__dl = 0; rosterShotDeliver(new Blob(['x'], { type: 'image/png' }), 's.png'); return 'ok'; } catch (e) { return 'no'; } })()");
     if (canStub === 'ok') {
-      w.eval('window.__dl = 0; rosterShotDeliver(new Blob(["x"], { type: "image/png" }), "s.png")');
-      await wait(80);
-      d.getElementById('ca-cap-pv-share').click();
       await wait(120);
-      R.eq(w.eval('window.__shared'), 1, 'with a share sheet the Share tap shares \u2014 a fresh gesture, so the phone\u2019s sheet always opens');
+      R.eq(w.eval('window.__shared'), 1, 'with a share sheet the DELIVERY shares straight off the capture \u2014 the native sheet, no detour');
       R.eq(w.eval('window.__dl'), 0, 'the share path never fires a download');
     }
   }

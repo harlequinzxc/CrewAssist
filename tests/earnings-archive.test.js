@@ -1904,13 +1904,8 @@ function todayYmd() {
     R.ok(d.querySelector('.ca-arch-seg[data-scope="month"]').classList.contains('ca-arch-segon') && d.querySelector('.ca-arch-seg[data-mode="cop"]').classList.contains('ca-arch-segon'), 'the user\u2019s own pills return exactly — month + COP, where they were');
     R.ok(!d.documentElement.classList.contains('ca-reduced'), 'the transient ca-reduced pose guard is gone again');
     R.eq(w.eval('window.__caLastShot && window.__caLastShot.name'), 'CrewAssist-Earnings-2025.png', 'the deliver carries the app + year filename');
-    R.ok(!d.getElementById('ca-cap-preview').classList.contains('hidden'), 'v1.46.5: the capture opens as a PREVIEW sheet \u2014 the image shows the moment the paint is done, the PNG encodes behind it');
-    R.ok(String(d.getElementById('ca-cap-pv-img').src).indexOf('blob:') === 0, 'the preview image is armed from the blob');
-    R.ok(!d.getElementById('ca-cap-pv-save').disabled, 'Save is live in the preview');
-    R.ok(d.getElementById('ca-cap-pv-render').classList.contains('hidden'), 'the rendering line stood down');
-    d.getElementById('ca-cap-pv-save').click();
-    await wait(400);
-    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Earnings screenshot saved') !== -1, 'the toast confirms the save \u2014 it fires on the Save tap, delivery is a fresh gesture');
+    R.ok(!d.getElementById('ca-cap-preview'), 'v1.46.6: there is no preview sheet at all \u2014 the capture delivers straight to the phone\u2019s own share sheet (the owner\u2019s \u201cnative popup\u201d order)');
+    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Earnings screenshot saved') !== -1, 'v1.46.6: the done toast fires on the DELIVERY itself \u2014 no extra tap, no detour (jsdom has no share API, so this path is the honest anchor fallback)');
     // a re-tap captures again — the machinery is repeatable
     d.getElementById('ca-arch-cam').click();
     await wait(300);
@@ -1939,37 +1934,31 @@ function todayYmd() {
       // the prewarm fired during this very suite (2.6s after the boot block)
       // and never disturbed the archive
       R.eq(w.eval("(window.__capPrewarms || 0) === 1 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.46.4: the prewarm painted exactly its one throwaway card while this suite ran, and the card is gone');
-      // v1.46.5 (owner report \u2014 "the share pop up is no longer there"):
-      // delivery rides the preview. Share is a FRESH tap, so the phone\u2019s
-      // share window is always live when it fires; a refusal that is not
-      // the crew\u2019s own dismissal still anchors the file, the dismissal
-      // never downloads, and a platform without a share API hides Share.
-      // the anchor count reads real <a> CLICKS now — the preview's own
-      // image arm also mints an object URL, so counting URLs would lie
-      w.eval("window.__anchorN = 0; window.__sharedN = 0; window.__origCU = URL.createObjectURL; URL.createObjectURL = function (b) { return 'blob:probe'; }; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === 'a') { el.click = function () { window.__anchorN++; }; } return el; }; navigator.canShare = function () { return true; }; navigator.share = function () { window.__sharedN = (window.__sharedN || 0) + 1; return Promise.reject(Object.assign(new Error('lapsed'), { name: 'NotAllowedError' })); };");
-      w.eval("caCapPreviewOpen({ name: 'probe.png', title: 'CrewAssist probe', toast: 'Probe saved' }).ready(null, Promise.resolve(new Blob(['x'], { type: 'image/png' })))");
-      await wait(300);
-      R.ok(!d.getElementById('ca-cap-preview').classList.contains('hidden'), 'v1.46.5: the preview opens for a ready capture');
-      R.ok(String(d.getElementById('ca-cap-pv-img').src).indexOf('blob:probe') === 0, 'the preview image rides the blob URL');
-      d.getElementById('ca-cap-pv-share').click();
+      // v1.46.6 (owner order \u2014 \u201cwhen i mean share i mean the native ios and
+      // android web share pop up\u201d): delivery is DIRECT. The capture calls
+      // navigator.share itself the moment the PNG is ready \u2014 no preview
+      // sheet, no second tap. A refusal that is not the crew\u2019s own
+      // dismissal still anchors the file, the dismissal never downloads,
+      // and a platform without a share API anchors straight away (desktop).
+      // the anchor count reads real <a> CLICKS \u2014 URL counting would lie.
+      R.ok(src64.indexOf('function caCapPreviewOpen') === -1 && src64.indexOf('ca-cap-preview') === -1, 'v1.46.6 src: the preview sheet is gone from the app entirely \u2014 markup, opener and all');
+      R.ok(/function caCapDeliver\(blob, name, title, doneMsg\)/.test(src64), 'v1.46.6 src: the deliver takes the blob, filename, title and done toast directly');
+      R.ok(src64.includes("archToast((opts && opts.busy) || 'Capturing\u2026', null, 6000)"), 'v1.46.6 src: the capture answers its tap at once with a busy toast \u2014 the wait is never a frozen screen');
+      R.ok(src64.includes('area > 4000000') && src64.includes('h * scale > 4090'), 'v1.46.6 src: the paint caps at ~4MP and 4090 device pixels tall \u2014 the phone\u2019s speed lever (paint + PNG encode both ride the pixel count)');
+      w.eval("window.__origCU = URL.createObjectURL; URL.createObjectURL = function (b) { return 'blob:probe'; }; window.__mk = document.createElement.bind(document); document.createElement = function (t) { const el = window.__mk(t); if (t === 'a') { el.click = function () { window.__anchorN++; }; } return el; }; window.__anchorN = 0; window.__sharedN = 0; navigator.canShare = function () { return true; }; navigator.share = function () { window.__sharedN = (window.__sharedN || 0) + 1; return Promise.reject(Object.assign(new Error('lapsed'), { name: 'NotAllowedError' })); }; caCapDeliver(new Blob(['x'], { type: 'image/png' }), 'probe.png', 'CrewAssist probe', 'Probe saved');");
       await wait(400);
-      R.eq(w.eval('window.__sharedN'), 1, 'v1.46.5: the Share tap fires the share exactly once \u2014 a fresh user gesture, so the phone\u2019s share sheet ALWAYS opens (a capture that outlived the activation window used to be refused and silently downloaded \u2014 the owner\u2019s vanished popup)');
-      R.eq(w.eval('window.__anchorN'), 1, 'v1.46.5: a share refusal that is not the crew\u2019s own dismissal still falls through to the anchor download \u2014 the PNG always lands');
-      R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Probe saved') !== -1, 'v1.46.5: the refusal path still ends on the done toast');
-      w.eval("navigator.share = function () { return Promise.reject(Object.assign(new Error('dismissed'), { name: 'AbortError' })); }; window.__anchorN = 0; window.__sharedN = 0;");
-      w.eval("caCapPreviewOpen({ name: 'probe2.png', toast: 'Probe two saved' }).ready(null, Promise.resolve(new Blob(['x'], { type: 'image/png' })))");
-      await wait(300);
-      d.getElementById('ca-cap-pv-share').click();
+      R.eq(w.eval('window.__sharedN'), 1, 'v1.46.6: the DELIVERY fires the share exactly once \u2014 the native sheet opens straight off the capture, no detour');
+      R.eq(w.eval('window.__anchorN'), 1, 'v1.46.6: a share refusal that is not the crew\u2019s own dismissal still falls through to the anchor download \u2014 the PNG always lands');
+      R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Probe saved') !== -1, 'v1.46.6: the refusal path still ends on the done toast');
+      w.eval("navigator.canShare = function () { return true; }; navigator.share = function () { window.__sharedN = (window.__sharedN || 0) + 1; return Promise.reject(Object.assign(new Error('dismissed'), { name: 'AbortError' })); }; window.__anchorN = 0; window.__sharedN = 0; caCapDeliver(new Blob(['x'], { type: 'image/png' }), 'probe2.png', 'CrewAssist probe', 'Probe two saved');");
       await wait(400);
-      R.eq(w.eval('window.__anchorN'), 0, 'v1.46.5: the crew\u2019s own dismissal (AbortError) stops at the toast \u2014 no stray download');
+      R.eq(w.eval('window.__sharedN'), 1, 'v1.46.6: the dismissed share still fired its sheet \u2014 the crew\u2019s own choice, not a failure');
+      R.eq(w.eval('window.__anchorN'), 0, 'v1.46.6: the crew\u2019s own dismissal (AbortError) stops at the toast \u2014 no stray download');
       R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Probe two saved') !== -1, 'the dismissal ends on its toast');
-      w.eval("delete navigator.canShare; delete navigator.share; window.__anchorN = 0;");
-      w.eval("caCapPreviewOpen({ name: 'probe3.png', toast: 'Probe three saved' }).ready(null, Promise.resolve(new Blob(['x'], { type: 'image/png' })))");
-      await wait(300);
-      R.ok(d.getElementById('ca-cap-pv-share').classList.contains('hidden'), 'v1.46.5: without a share API the Share button stays hidden \u2014 Save is the only door (desktop)');
-      d.getElementById('ca-cap-pv-save').click();
+      w.eval("delete navigator.canShare; delete navigator.share; window.__anchorN = 0; caCapDeliver(new Blob(['x'], { type: 'image/png' }), 'probe3.png', 'CrewAssist probe', 'Probe three saved');");
       await wait(400);
-      R.eq(w.eval('window.__anchorN'), 1, 'v1.46.5: the Save tap anchors the download exactly once');
+      R.eq(w.eval('window.__anchorN'), 1, 'v1.46.6: without a share API the delivery anchors the download exactly once \u2014 the desktop door');
+      R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Probe three saved') !== -1, 'the anchor fallback ends on its toast too');
       w.eval("document.createElement = window.__mk; URL.createObjectURL = window.__origCU;");
     }
     void w;
