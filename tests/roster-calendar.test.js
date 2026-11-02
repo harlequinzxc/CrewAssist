@@ -1996,10 +1996,11 @@ const synthItems = [].concat(
     R.ok(!body.classList.contains('ca-rc-pod-hasopen') && !d.querySelector('#ca-rc-pod-body .ca-rc-pod-on'), 'tapping the station again folds its log — ring, wash and flag all clear');
   }
 
-  // --- v1.45.60 (owner order): the passport camera — the hero card exactly
-  // as the selected year pill has it, the year named above it. NO live pose:
-  // the label + the crop live in the painter's clone; jsdom pins the contract
-  // with a stub painter ---
+  // --- v1.45.60 hotfix (owner orders): the passport camera — a year picker
+  // (the archive picker's species, its own sub-sheet over the pod), the
+  // owner's header wording, a live pose to the PICKED year regardless of the
+  // chip the crew are on, and the guaranteed chip restore. jsdom pins the
+  // contracts with a stub painter ---
   {
     const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
@@ -2007,8 +2008,9 @@ const synthItems = [].concat(
       x.localStorage.setItem('crewAssist.tourOffered', '1');
       const leg = (fn, dep, arr, ymd, ft) => ({ fn, dep, arr, ymd, std: '08:00', sta: '12:00', stdYmd: ymd, staYmd: ymd, ft, ac: '7M8', rpt: '06:30', pos: false });
       x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
-        '2025-03': [leg('9KUL', 'SIN', 'KUL', '2025-03-10', '01:00'), leg('8KUL', 'KUL', 'SIN', '2025-03-11', '01:00')],
-        '2024-06': [leg('9NRT', 'SIN', 'NRT', '2024-06-02', '07:00'), leg('8NRT', 'NRT', 'SIN', '2024-06-03', '07:00')]
+        '2026-03': [leg('9KUL', 'SIN', 'KUL', '2026-03-10', '01:00'), leg('8KUL', 'KUL', 'SIN', '2026-03-11', '01:00'), leg('7BWN', 'SIN', 'BWN', '2026-03-20', '02:00')],
+        '2025-06': [leg('9NRT', 'SIN', 'NRT', '2025-06-02', '07:00'), leg('8NRT', 'NRT', 'SIN', '2025-06-03', '07:00')],
+        '2024-06': [leg('9SYD', 'SIN', 'SYD', '2024-06-05', '08:00'), leg('8SYD', 'SYD', 'SIN', '2024-06-06', '08:00')]
       }));
     } });
     // the delegated click wiring binds when the CALENDAR opens
@@ -2016,28 +2018,57 @@ const synthItems = [].concat(
     await wait(300);
     w.eval('openRcPod()');
     await wait(1500);   // the hero's fresh-open roll settles
-    R.ok(!!d.getElementById('btn-rc-pod-cam'), 'v1.45.60: the camera button sits in the passport header, left of the close');
-    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
-    // default: All-Time — the pill's wording, named above the hero
+    R.ok(d.getElementById('btn-rc-pod-cam').parentElement === d.getElementById('btn-close-rc-pod').parentElement && d.getElementById('btn-rc-pod-cam').parentElement.classList.contains('shrink-0'), 'v1.45.60 hotfix (owner order): the camera rides ONE right cluster with the close button — a title change on the left can never shift it');
+    w.eval("window.__capRec = []; window.html2canvas = function (el, opts) { const doc = document.cloneNode(true); if (opts.onclone) opts.onclone(doc); window.__capRec.push({ id: el.id, flights: (document.querySelector('#ca-rc-pod-herowrap .ca-rc-pod-hval') || {}).textContent, clone: doc }); return Promise.resolve({ toBlob: (cb) => cb(new Blob(['png'], { type: 'image/png' })) }); };");
+    // the camera opens the PICKER now — All-Time leads, then the years newest-first
     d.getElementById('btn-rc-pod-cam').click();
-    await wait(500);
-    R.eq(w.eval('window.__capRec.length'), 1, 'the painter fired');
-    R.eq(w.eval('window.__capRec[0].id'), 'ca-rc-pod-herowrap', 'the capture target is the HERO card alone — not the pill row, not the gate');
-    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-cap-head").textContent'), 'All-Time', 'the clone names the year above the hero — the pill\u2019s own wording');
-    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-rc-pod-herowrap").firstChild.id') === 'ca-cap-head', 'the label is the FIRST thing in the capture');
-    R.ok(w.eval('window.__capRec[0].clone.getElementById("ca-rc-pod-years")') !== null && w.eval('window.__capRec[0].clone.getElementById("ca-rc-pod-gate")') !== null, 'the clone keeps the page intact — only the crop excludes them');
-    R.ok(!!d.getElementById('ca-rc-pod-years') && !!d.getElementById('ca-rc-pod-gate'), 'the LIVE page never moves — no live pose on the passport');
-    R.eq(w.eval('window.__caLastShot && window.__caLastShot.name'), 'CrewAssist-Passport-All-Time.png', 'the deliver carries the app + all-time filename');
-    R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Passport screenshot saved') !== -1, 'the toast confirms the save');
-    // a year pill tap rolls the hero — the camera follows the selection
-    d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2025"]').click();
-    await wait(1300);   // the v1.45.56 hero roll settles before the camera taps
+    await wait(350);
+    R.ok(!d.getElementById('ca-rc-podcapwrap').classList.contains('hidden') && !d.getElementById('ca-rc-podcap-sheet').classList.contains('translate-y-full'), 'the camera opens the year picker as its own sub-sheet over the passport');
+    R.eq(d.getElementById('ca-rc-podcap-title').textContent, 'Capture passport', 'the picker names its purpose');
+    R.eq(d.getElementById('ca-rc-podcap-subtitle').textContent, 'Choose the year to capture', 'the picker subtitle says what the crew are choosing');
+    const rows = Array.from(d.querySelectorAll('#ca-rc-podcap-body .ca-cap-yearrow'));
+    R.eq(rows.map((r) => r.getAttribute('data-yr')).join(','), 'all,2026,2025,2024', 'v1.45.60 hotfix (owner order): the picker offers ALL-TIME plus every year on record, newest first — regardless of which chip the page is on');
+    R.ok(rows.every((r) => /\d+ flights?/.test(r.textContent)), 'every row carries its quiet flight count');
+    // pick ALL-TIME while the page sits on 2026 — the wording + the pose + the restore
+    d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').click();
+    await wait(1300);
+    rows[0].click();
+    await wait(700);
+    R.eq(w.eval('window.__capRec.length'), 1, 'the painter fired exactly once');
+    R.eq(w.eval('window.__capRec[0].id'), 'ca-rc-pod-herowrap', 'the capture target is the hero card alone');
+    R.eq(w.eval('window.__capRec[0].clone.getElementById("ca-cap-head").textContent'), 'My All-Time Flight Records', 'v1.45.60 hotfix (owner order): the all-time header reads the owner\u2019s exact wording');
+    R.eq(w.eval('window.__capRec[0].flights'), '7', 'the hero is POSED to all-time at capture time — all seven legs, though the page chip sat on 2026');
+    R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-All-Time.png', 'the deliver carries the app + all-time filename');
+    R.ok(d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').classList.contains('on'), 'the crew\u2019s own chip returns — still 2026, where they were');
+    // pick 2025 from the 2026 page: the hero POSES to the picked year at capture time
     d.getElementById('btn-rc-pod-cam').click();
-    await wait(500);
-    R.eq(w.eval('window.__capRec[1].clone.getElementById("ca-cap-head").textContent'), '2025', 'the capture follows the SELECTED pill — 2025 named above');
-    R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-2025.png', 'the filename carries the year');
-    R.ok(w.eval('window.__capRec.length') === 2, 'exactly two captures — the camera is repeatable');
-    void d;
+    await wait(350);
+    Array.from(d.querySelectorAll('#ca-rc-podcap-body .ca-cap-yearrow')).find((r) => r.getAttribute('data-yr') === '2025').click();
+    await wait(700);
+    R.eq(w.eval('window.__capRec[1].clone.getElementById("ca-cap-head").textContent'), 'My Flight Records for 2025', 'v1.45.60 hotfix (owner order): the year header reads the owner\u2019s exact wording');
+    R.eq(w.eval('window.__capRec[1].flights'), '2', 'the hero is POSED to the picked year at capture time — 2025\u2019s two legs, not the page chip\u2019s three');
+    R.eq(w.eval('window.__caLastShot.name'), 'CrewAssist-Passport-2025.png', 'the filename carries the picked year');
+    R.ok(d.querySelector('#ca-rc-pod-years [data-ca-rc-pod-year="2026"]').classList.contains('on'), 'the crew\u2019s own chip returns again — the pose never strands');
+    R.ok(!d.documentElement.classList.contains('ca-reduced'), 'the transient roll guard is gone again');
+    R.ok(w.eval('window.__capRec.length') === 2, 'exactly two captures — the machinery is repeatable');
+    // the picker closes three ways: its own button, its shade, and with its parent
+    d.getElementById('btn-rc-pod-cam').click();
+    await wait(350);
+    R.ok(!d.getElementById('ca-rc-podcapwrap').classList.contains('hidden'), 'the picker opens again');
+    d.getElementById('btn-close-rc-podcap').click();
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-podcapwrap').classList.contains('hidden'), 'the picker\u2019s own close button closes it');
+    d.getElementById('btn-rc-pod-cam').click();
+    await wait(350);
+    d.querySelector('[data-ca-rc-podcap-close]').click();
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-podcapwrap').classList.contains('hidden'), 'tapping the shade closes the picker');
+    d.getElementById('btn-rc-pod-cam').click();
+    await wait(350);
+    w.eval('closeRcPod()');
+    await wait(600);
+    R.ok(d.getElementById('ca-rc-podcapwrap').classList.contains('hidden'), 'closing the passport closes its picker — a child never outlives its parent');
+    void w;
   }
 
   process.exit(R.done() ? 1 : 0);

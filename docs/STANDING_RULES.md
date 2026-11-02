@@ -74,6 +74,8 @@
 
 - **Do not silently degrade.** If a requested change requires a trade-off or leaves an existing capability impaired, disclose it rather than presenting the result as fully successful.
 
+- **A capture is judged against the screen it claims to reproduce (v1.46.1).** Fidelity — "exactly what is on screen" — is the acceptance bar for any screenshot/share artifact: fonts, layout, charts, colours, edges and where the content ends. Anything the artifact must NOT show (chrome, footers, bookkeeping) is a named exclusion the owner ordered, removed in the painter's clone — never an accident of the painter. Verify in the real browser by decoding the PNG, not by trusting the painter's promise.
+
 - **A deliver path never reports failure after the artifact was delivered (v1.46.0).** When a flow produces an artifact and then hands it off (share sheet, download anchor, export), the handoff is best-effort: an embedder or browser that refuses the handoff mechanism must never flip the flow into its failure branch — the user keeps the artifact and the honest success message. The failure message is reserved for failures that actually lost the artifact. Same discipline for any pose/restore pair around the deliver: the restore rides a `finally`, so a late throw can never strand the user in the posed state.
 
 ## 5. UI, UX & Accessibility
