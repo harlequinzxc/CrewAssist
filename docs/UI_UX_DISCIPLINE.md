@@ -894,6 +894,14 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   insights) hidden for the shot and returned after it. What you see is
   what you share — titled.
 
+- v1.47.2 (owner field report — "alot of the stations rendering in the
+  bottom month details"): the earnings share shows the card exactly as the
+  crew sees it — every month folded to its head line, and below the last
+  record only the card's own centered footer ("Showing earnings since…").
+  The stations inside a folded month are off the screen, so they are off
+  the canvas; the months the crew unfolds come back in the share, because
+  the share is the live card, not a reconstruction.
+
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.
   The Oct 2025 case: months imported before the never-pruned flight store
