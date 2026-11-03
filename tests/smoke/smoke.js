@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.48.0', 'APP_VERSION is 1.48.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.0' && e.d === '2026-11-03' && e.items.length === 5 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 3; }), 'the changelog carries the 1.48.0 entry — two fixes, three improvements');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v301'), 'the service-worker cache name is bumped to v301 (the v1.48.0 six-order round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.48.1', 'APP_VERSION is 1.48.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.1' && e.d === '2026-11-03' && e.items.length === 4 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.48.1 entry — two fixes, two improvements');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v302'), 'the service-worker cache name is bumped to v302 (the v1.48.1 four-fix round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,7 +166,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.0'; }), 'the What\'s New sheet carries the v1.48.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.1'; }), 'the What\'s New sheet carries the v1.48.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The compact sheet parts ethnic from International with a dashed rule.') !== -1), 'the What\'s New sheet carries the v1.48.1 parting pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A flat month wears a gold dash, never a green arrow.') !== -1), 'the What\'s New sheet carries the v1.48.1 flat-month pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The shortcuts card’s keywords ride inside the example bubbles.') !== -1), 'the What\'s New sheet carries the v1.48.1 shortcuts-keyword pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The chat’s chip rail scrolls home after every tap.') !== -1), 'the What\'s New sheet carries the v1.48.1 chip-rail pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Earnings shares end at the last record — the since line is gone.') !== -1), 'the What\'s New sheet carries the v1.48.0 since-line pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The satay course reads Canapé — viewer and both print sheets.') !== -1), 'the What\'s New sheet carries the v1.48.0 satay-course Canapé pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The ethnic parting and Japan course defaults fire on real menu names.') !== -1), 'the What\'s New sheet carries the v1.48.0 real-names pointer');
@@ -179,7 +183,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Captures finish in seconds — and the share sheet always opens.') !== -1), 'the What\'s New sheet carries the v1.46.4 capture-speed pointer in the delta');
         ok(await page.evaluate(() => !!document.querySelector('#cadate-prev [data-lucide="chevron-left"]') && !!document.querySelector('#cadate-next [data-lucide="chevron-right"]') && document.getElementById('cadate-prev').textContent.trim() === '' && document.getElementById('cadate-next').textContent.trim() === ''), 'v1.45.48: the calendar\u2019s month arrows carry true Lucide chevrons and no bare glyph text (markup pin - the rig\u2019s CDN stub keeps the stub element, so the structure is assertable even where the glyph itself is not)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings figure gets breathing room and a tidier stat grid.') !== -1), 'the What\'s New sheet carries the earnings-polish pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (fifth head now)');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Every remaining colour wash rides a named token — same look.') !== -1), 'the What\'s New sheet carries the 1.44.6 one-off retirement pointer (sixth head now)');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Reopening earnings, menus, and print always starts fresh.') !== -1), 'the What\'s New sheet carries the 1.44.5 reopen-resets pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swiping the date picker shows the months gliding under your finger.') !== -1), 'the What\'s New sheet carries the 1.44.3 swipe-visibility pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The date picker swipes and arrow-keys through months.') !== -1), 'the What\'s New sheet carries the 1.44.2 date-picker pointer in the delta');
@@ -211,11 +215,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => {
             const rows = Array.from(document.querySelectorAll('[data-ca-help-card] [data-ca-help-row]'));
             const toks = (r) => Array.from(r.querySelectorAll('.ca-help-token')).map((t) => t.textContent);
-            return toks(rows[0]).join('|') === 'sq802 17 oct|sq802 menu 17 oct'
-                && toks(rows[1]).join('|') === 'sq802 17 oct|jcl ycl menu sq802 17 oct'
-                && toks(rows[4]).join('|') === 'sq802 17 oct sq807 18 oct|sq802 cop 17 oct sq807 18 oct'
-                && toks(rows[0]).every((x) => / \d{1,2} [a-z]{3,9}$/.test(x));
-        }), 'v1.45.59 + v1.48.0: every example pill is a complete command — both word orders on each row, the cabin row teaches the multi-cabin search');
+            const gold = rows.some((r) => !!r.querySelector('.text-sia-gold'));
+            return toks(rows[0]).join('|') === 'menu sq802 17 oct|sq802 menu 17 oct'
+                && toks(rows[1]).join('|') === 'jcl menu sq802 17 oct|jcl ycl menu sq802 17 oct'
+                && toks(rows[4]).join('|') === 'cop sq802 17 oct sq807 18 oct|sq802 cop 17 oct sq807 18 oct'
+                && toks(rows[0]).every((x) => / \d{1,2} [a-z]{3,9}$/.test(x))
+                && !gold;
+        }), 'v1.48.1: every pill is a complete command with its keyword inside — both word orders on each row, and no gold word rides the read-only rows');
         ok(await page.evaluate(() => {
             const a = parseNaturalCommand('jcl menu sq802 4 oct');
             const b = parseNaturalCommand('sq802 menu 4 oct');
@@ -237,6 +243,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const need = ['lightbulb', 'utensils', 'armchair', 'calculator', 'sandwich', 'map', 'dot', 'dot', 'dot', 'arrow-right'];
             return names.length === 10 && need.every((n) => names.indexOf(n) !== -1) && !/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2190}-\u{21FF}\u{FE0F}]/u.test(card.textContent);
         }), 'the card declares only Lucide glyphs — bulb, five category icons (armchair for the cabin row), three tip dots, the CTA arrow — and no emoji');
+        ok(await page.evaluate(() => { const t = document.querySelector('[data-ca-help-card]').textContent; return t.indexOf('sq 802 17 october') !== -1 && t.indexOf('4 october') === -1; }), 'v1.48.1: the plain-English tip dates its example 17 october — the card\u2019s own teaching date');
         // A real tap on a row: the keyword lands in the composer, focus
         // follows, and the row flashes gold (then the flash fades on its own).
         // Wait for idle first — while the chat is busy every chat button is
@@ -266,6 +273,24 @@ async function calcCard(page, { type, t1, t2, lma }) {
         }), 'the composer\'s glass resolves to the panel white by day and the warm charcoal by night — the navy override is gone');
         await page.evaluate(() => { document.getElementById('chat-input').value = ''; });
 
+        console.log('— v1.48.1: the chip rail re-homes after a tap —');
+        await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
+        const railProbe = await page.evaluate(async () => {
+            const rail = document.getElementById('action-chips');
+            const keepW = rail.style.width;
+            rail.style.width = '220px';   // force the overflow deterministically at any viewport
+            rail.scrollLeft = 60;
+            let out = 'could not scroll the rail';
+            if (rail.scrollLeft > 0) {
+                document.querySelectorAll('.action-chip')[0].click();
+                await new Promise((r) => setTimeout(r, 900));   // the house glide settles
+                out = 'scrollLeft:' + rail.scrollLeft;
+            }
+            rail.style.width = keepW;
+            return out;
+        });
+        eq(railProbe, 'scrollLeft:0', 'v1.48.1: a tapped chip glides the rail back to its home position — a real overflow, a real smooth scroll, left back at 0');
+        await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
 
         console.log('— v1.40.0 behaviour in the real browser —');
         // 1. A KUL transit of exactly 180 minutes (arrival 10:00, report 13:00 for a 14:00 departure) — the inclusive boundary — earns lunch.

@@ -558,11 +558,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.48.0';"), 'APP_VERSION stamped 1.48.0');
+    R.ok(src.includes("var APP_VERSION = '1.48.1';"), 'APP_VERSION stamped 1.48.1');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v301"), 'service-worker cache name bumped to v301 (the v1.48.0 six-order round)');
+    R.ok(sw.includes("crewassist-v302"), 'service-worker cache name bumped to v302 (the v1.48.1 four-fix round)');
     R.ok(src.includes("/meatless|vegetarian/i.test(n || '') ? 'Ethnic (Veg)' : 'Ethnic'"), 'v1.45.56: the dropdown builder labels a meatless/vegetarian ethnic as Ethnic (Veg)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
@@ -807,9 +807,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     w.eval("printState.layout = 'compact'; renderPrintView();");
     await wait(150);
     const paper = () => d.getElementById('print-paper');
-    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 1, 'v1.45.59: ONE dashed rule parts the meatless ethnic from the meat ethnic');
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 2, 'v1.45.59 + v1.48.1: TWO dashed rules \u2014 the meatless ethnic parts from the meat ethnic, and the ethnic block parts from the International');
     R.eq(paper().querySelectorAll('.pc-course').length, 3, 'the ethnic mains themselves stay on the sheet \u2014 three course groups, one per selection');
-    R.ok(paper().querySelector('.pc-eth-rule').nextElementSibling && paper().querySelector('.pc-eth-rule').nextElementSibling.classList.contains('pc-course'), 'the rule stands BETWEEN the course groups \u2014 the meatless selection\u2019s group, then the rule, then the meat selection\u2019s');
+    const ethRules = paper().querySelectorAll('.pc-eth-rule');
+    R.ok(ethRules[0].nextElementSibling && ethRules[0].nextElementSibling.classList.contains('pc-course'), 'the FIRST rule stands BETWEEN the course groups \u2014 the meatless selection\u2019s group, then the rule, then the meat selection\u2019s');
+    R.ok(ethRules[1].nextElementSibling && ethRules[1].nextElementSibling.classList.contains('pc-course'), 'v1.48.1: the SECOND rule stands between the meat selection’s group and the International’s — ethnic dash ethnic dash International');
     // a single ethnic selection never draws the parting
     w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([selP('Ethnic', ['Main Course'])]));
     await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
@@ -911,6 +913,40 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(paper().textContent.indexOf('CANAP\u00c9') >= 0, 'the compact print sheet keys the satay course CANAP\u00c9');
     R.ok(paper().textContent.indexOf('APP') >= 0, 'the compact sheet still keys the appetiser course APP');
     w.eval('closeMenuPrinter(true)'); await wait(150);
+    // v1.48.1 (owner order): the parting crosses into the International too —
+    // a lone ethnic selection parts from the International that follows it
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([
+        selP('Ethnic', ['Main Course']),
+        selP('International Selection', ['Main Course'])
+    ]));
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 1, 'v1.48.1: a lone ethnic selection parts from the International that follows — one dashed rule at the crossing');
+    R.ok(paper().querySelector('.pc-eth-rule').nextElementSibling && paper().querySelector('.pc-eth-rule').nextElementSibling.classList.contains('pc-course'), 'v1.48.1: the crossing rule stands between the ethnic course group and the International’s');
+    // an International-only sheet never draws a rule — nothing to part
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([selP('International Selection', ['Main Course'])]));
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 0, 'v1.48.1: an International-only sheet carries no rule — nothing to part');
+    // the crossing RE-ARMS: ethnic, International, ethnic, International parts
+    // at every crossing (three rules), and the International sitting between
+    // two ethnic selections never breaks their own pairing
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([
+        selP('Meatless Asian Selection', ['Main Course']),
+        selP('International Selection', ['Main Course']),
+        selP('Japanese Selection', ['Main Course']),
+        selP('International Selection', ['Main Course'])
+    ]));
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    R.eq(paper().querySelectorAll('.pc-course').length, 4, 'the re-arm fixture keeps its four course groups on the sheet');
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 3, 'v1.48.1: the crossing re-arms after every ethnic selection — ethnic dash International dash ethnic dash International, three rules');
   }
 
     process.exit(R.done() ? 1 : 0);
