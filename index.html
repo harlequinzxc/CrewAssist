@@ -3230,7 +3230,7 @@
             }
         }
 
-        var APP_VERSION = '1.47.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.47.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3252,6 +3252,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.47.2', d: '2026-11-03', items: [
+                { c: 'fix', t: 'Folded months stay folded in the earnings capture \u2014 no ghost stations.' }
+            ] },
             { v: '1.47.1', d: '2026-11-03', items: [
                 { c: 'imp', t: 'Passport captures carry their title \u2014 All-Time, or the year.' },
                 { c: 'imp', t: 'The earnings camera joins the passport pattern \u2014 quick and exact.' }
@@ -7100,9 +7103,44 @@
                 } catch (e) {}
             });
         }
+        function rosterShotClippedAway(el, rootEl, r) {
+            // v1.47.2 (owner report — "a lot of the stations rendering in
+            // the bottom month details"): the archive folds a month with
+            // max-height 0 + overflow hidden + opacity 0, and folded rows
+            // still LAY OUT — live rects, real text — they are only
+            // clipped off the screen. A walker that trusts rects alone
+            // painted every hidden station into the earnings PNG. So
+            // "what is on screen is what lands in the PNG" now reads the
+            // ANCESTORS too: a subtree under an ancestor at opacity 0, or
+            // sitting entirely outside an ancestor's clip box, is not on
+            // screen and never paints. The capture root itself is exempt —
+            // its scrollbox clip is the fold we deliberately paint
+            // through, and partially-clipped boxes are left to the live
+            // geometry (only fully-clipped subtrees are skipped).
+            let a = el.parentElement;
+            while (a && a !== rootEl) {
+                const st = window.getComputedStyle(a);
+                const op = parseFloat(st.opacity);
+                if (isFinite(op) && op < 0.01) return true;
+                const ov = String(st.overflow || '') + ' ' + String(st.overflowY || '');
+                if (/(hidden|clip|auto|scroll)/.test(ov)) {
+                    const ar = a.getBoundingClientRect();
+                    const bl = parseFloat(st.borderLeftWidth) || 0, bt = parseFloat(st.borderTopWidth) || 0;
+                    // the padding box is the clip box — clientWidth/Height
+                    // already sit inside the border (and past the scrollbar)
+                    if (r.bottom <= ar.top + bt || r.top >= ar.top + bt + a.clientHeight
+                        || r.right <= ar.left + bl || r.left >= ar.left + bl + a.clientWidth) return true;
+                }
+                a = a.parentElement;
+            }
+            return false;
+        }
         function rosterShotPaintGrid(ctx, gridEl, ox, oy) {
             // every visible element, painted from its own computed style —
-            // what is on screen is what lands in the PNG
+            // what is on screen is what lands in the PNG (v1.47.2: an
+            // ancestor's clip box or 0 opacity takes a whole subtree off
+            // the screen — the archive's folded months own nothing in the
+            // shot, stations included)
             const gRect = gridEl.getBoundingClientRect();
             const walk = [gridEl].concat(Array.prototype.slice.call(gridEl.querySelectorAll('*')));
             walk.forEach(function (el) {
@@ -7110,6 +7148,7 @@
                 if (st.display === 'none' || st.visibility === 'hidden') return;
                 const r = el.getBoundingClientRect();
                 if (r.width < 1 || r.height < 1) return;
+                if (el !== gridEl && rosterShotClippedAway(el, gridEl, r)) return;
                 const alpha = parseFloat(st.opacity);
                 ctx.save();
                 if (isFinite(alpha) && alpha < 1) ctx.globalAlpha = Math.max(0, alpha);
@@ -7155,6 +7194,7 @@
                     if (st.display === 'none' || st.visibility === 'hidden') return;
                     const r = svg.getBoundingClientRect();
                     if (r.width < 1 || r.height < 1) return;
+                    if (rosterShotClippedAway(svg, rootEl, r)) return;   // v1.47.2: a folded month's glyphs are off the screen too
                     let html = '';
                     try { html = svg.outerHTML || ''; } catch (e) {}
                     if (!html) return;

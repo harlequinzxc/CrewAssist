@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.47.1', 'APP_VERSION is 1.47.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.47.1' && e.d === '2026-11-03' && e.items.length === 2 && e.items[0].c === 'imp' && e.items[1].c === 'imp'; }), 'the changelog carries the 1.47.1 entry — its title + earnings round, two imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v299'), 'the service-worker cache name is bumped to v299 (the v1.47.1 title + earnings round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.47.2', 'APP_VERSION is 1.47.2');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.47.2' && e.d === '2026-11-03' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.47.2 entry — its folded-months fix');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v300'), 'the service-worker cache name is bumped to v300 (the v1.47.2 folded-months round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,7 +166,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.47.1'; }), 'the What\'s New sheet carries the v1.47.1 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.47.2'; }), 'the What\'s New sheet carries the v1.47.2 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Folded months stay folded in the earnings capture — no ghost stations.') !== -1), 'the What\'s New sheet carries the v1.47.2 folded-months pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Passport captures carry their title — All-Time, or the year.') !== -1), 'the What\'s New sheet carries the v1.47.1 passport-title pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings camera joins the passport pattern — quick and exact.') !== -1), 'the What\'s New sheet carries the v1.47.1 earnings pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The passport camera repaints your hero card directly — quicker and exact.') !== -1), 'the v1.47.0 passport-repaint pointer stays in the delta below');
@@ -1136,12 +1137,38 @@ async function calcCard(page, { type, t1, t2, lma }) {
             // restore can complete inside one rAF poll — the pose is read
             // from INSIDE a builder wrapper (synchronous, race-free): the
             // posed scrollHeight, the diet rows' display, the roll guard
-            window.__caLastShot = null; window.__posedScrollH = 0; window.__posedDiet = null; window.__posedReduced = false;
+            window.__caLastShot = null; window.__posedScrollH = 0; window.__posedDiet = null; window.__posedReduced = false; window.__posedClip = null;
             window.__basc = buildArchShotCanvas;
             buildArchShotCanvas = function (el) {
                 window.__posedScrollH = el.scrollHeight;
                 window.__posedReduced = document.documentElement.classList.contains('ca-reduced');
                 window.__posedDiet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'].map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; });
+                // v1.47.2: the fold probes, read at build time — the owner
+                // saw "a lot of the stations rendering in the bottom month
+                // details": a folded month is max-height 0 + overflow
+                // hidden + opacity 0, a CLIP not a display none, so its
+                // rows still lay out with live rects. The walker must read
+                // them as off the screen; the heads must not.
+                const foldRow = el.querySelector('.ca-arch-collapsed .ca-arch-row');
+                const heads = Array.from(el.querySelectorAll('.ca-arch-group-head'));
+                const elTop = el.getBoundingClientRect().top;
+                window.__posedClip = {
+                    laidOut: el.querySelectorAll('.ca-arch-row').length,
+                    folded: el.querySelectorAll('.ca-arch-collapsed .ca-arch-row').length,
+                    foldedClip: foldRow ? rosterShotClippedAway(foldRow, el, foldRow.getBoundingClientRect()) : null,
+                    headClip: heads.length ? rosterShotClippedAway(heads[0], el, heads[0].getBoundingClientRect()) : null,
+                    lastHeadBottom: heads.length ? Math.max.apply(null, heads.map((h) => h.getBoundingClientRect().bottom)) - elTop : -1
+                };
+                // the walk's own paint set, recomputed with the walker's
+                // exact skips — how many station rows will actually paint
+                window.__posedWalkRows = Array.from(el.querySelectorAll('.ca-arch-row')).filter((n) => {
+                    const st = window.getComputedStyle(n);
+                    if (st.display === 'none' || st.visibility === 'hidden') return false;
+                    const r = n.getBoundingClientRect();
+                    if (r.width < 1 || r.height < 1) return false;
+                    if (rosterShotClippedAway(n, el, r)) return false;
+                    return true;
+                }).length;
                 return window.__basc(el);
             };
             Array.from(document.querySelectorAll('#ca-arch-sub-body .ca-cap-yearrow'))[1].click();
@@ -1149,6 +1176,34 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 });
         ok(await page.evaluate(() => window.__caLastShot.name === 'CrewAssist-Earnings-2025.png' && window.__caLastShot.size > 4000), 'v1.46.1: picking 2025 delivers a real PNG named app + year');
         ok(await page.evaluate(() => window.__posedReduced === true && window.__posedDiet.every((v) => v === 'none')), 'v1.47.1: the pose read from inside the build — the roll guard on, all six diet rows hidden live (pills, search, insights, the end-of-records line)');
+        // v1.47.2 (owner report — "alot of the stations rendering in the
+        // bottom month details"): the fold is a clip, not a display none —
+        // the folded rows still lay out, so the contract is the walker's
+        // ancestor test, read at build time
+        ok(await page.evaluate(() => window.__posedClip && window.__posedClip.folded > 0 && window.__posedClip.folded === window.__posedClip.laidOut && window.__posedClip.foldedClip === true && window.__posedClip.headClip === false && window.__posedWalkRows === 0), 'v1.47.2: every station row sits inside a folded month, reads CLIPPED AWAY at build time, and is absent from the walk—s own paint set — the month heads are not (the ghost stations are off the screen, so they are off the canvas)');
+        ok(await page.evaluate(async () => {
+            // v1.47.2: the raster side of the same report — below the last
+            // record the only ink is the card's own footer line ("Showing
+            // earnings since…"), a short centered micro line. A leaked
+            // folded row is a full-width band: route at the left wing,
+            // amount + delete glyph at the right. Text ink is >40 off the
+            // surface; the group boxes' wash never reaches it.
+            const bmp = await createImageBitmap(window.__caLastShot.blob);
+            const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+            const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+            const data = x.getImageData(0, 0, c.width, c.height).data;
+            const bg = document.documentElement.classList.contains('dark') ? [6, 9, 17] : [247, 243, 236];
+            const zoneTop = Math.round(window.__posedClip.lastHeadBottom) + 34 + 8;
+            for (let y = zoneTop; y < c.height - 6; y++) {
+                for (let px = 2; px < c.width - 2; px++) {
+                    if (px < Math.round(c.width * 0.2) || px > Math.round(c.width * 0.8)) {
+                        const i = (y * c.width + px) * 4;
+                        if (Math.abs(data[i] - bg[0]) > 40 || Math.abs(data[i + 1] - bg[1]) > 40 || Math.abs(data[i + 2] - bg[2]) > 40) return false;
+                    }
+                }
+            }
+            return c.height - 6 > zoneTop;
+        }), 'v1.47.2: below the last record the PNG’s only ink is the centered footer line — no full-width station bands in the wings (the folded months stay folded in the share, no ghost stations)');
         ok(await page.evaluate(async () => {
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;

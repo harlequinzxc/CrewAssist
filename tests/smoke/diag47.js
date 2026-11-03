@@ -89,6 +89,36 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
         await page.evaluate(() => { showArchiveOverlay(); });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         await sleep(1400);
+        // v1.47.2: the fold probes ride the same builder wrapper — the
+        // folded rows' clip verdict and the ink zone below the last head,
+        // read straight off each take
+        await page.evaluate(() => {
+            window.__basc = buildArchShotCanvas;
+            buildArchShotCanvas = function (el) {
+                const foldRow = el.querySelector('.ca-arch-collapsed .ca-arch-row');
+                const heads = Array.from(el.querySelectorAll('.ca-arch-group-head'));
+                const elTop = el.getBoundingClientRect().top;
+                window.__posedScrollH = el.scrollHeight;
+                window.__posedClip = {
+                    laidOut: el.querySelectorAll('.ca-arch-row').length,
+                    folded: el.querySelectorAll('.ca-arch-collapsed .ca-arch-row').length,
+                    foldedClip: foldRow ? rosterShotClippedAway(foldRow, el, foldRow.getBoundingClientRect()) : null,
+                    headClip: heads.length ? rosterShotClippedAway(heads[0], el, heads[0].getBoundingClientRect()) : null,
+                    lastHeadBottom: heads.length ? Math.max.apply(null, heads.map((h) => h.getBoundingClientRect().bottom)) - elTop : -1
+                };
+                // the walk's own paint set, recomputed with the walker's
+                // exact skips — how many station rows will actually paint
+                window.__posedWalkRows = Array.from(el.querySelectorAll('.ca-arch-row')).filter((n) => {
+                    const st = window.getComputedStyle(n);
+                    if (st.display === 'none' || st.visibility === 'hidden') return false;
+                    const r = n.getBoundingClientRect();
+                    if (r.width < 1 || r.height < 1) return false;
+                    if (rosterShotClippedAway(n, el, r)) return false;
+                    return true;
+                }).length;
+                return window.__basc(el);
+            };
+        });
         for (let i = 0; i < 3; i++) {
             await page.evaluate(() => { window.__caLastShot = null; document.getElementById('ca-arch-cam').click(); });
             await sleep(500);
@@ -100,10 +130,28 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
             const r = await page.evaluate(async () => {
                 const dt = performance.now() - window.__t0;
                 const bmp = await createImageBitmap(window.__caLastShot.blob);
-                const posedH = window.__posedScrollH || 0;
-                return { dt: Math.round(dt), size: window.__caLastShot.size, w: bmp.width, h: bmp.height, name: window.__caLastShot.name };
+                const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
+                const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
+                const data = x.getImageData(0, 0, c.width, c.height).data;
+                const bg = document.documentElement.classList.contains('dark') ? [6, 9, 17] : [247, 243, 236];
+                // wing ink below the last record: the card's own footer
+                // ("Showing earnings since...") is a short centered micro
+                // line; a leaked folded row is a full-width band — route at
+                // the left wing, amount + delete glyph at the right
+                const zoneTop = Math.round(window.__posedClip.lastHeadBottom) + 34 + 8;
+                let wingInk = 0;
+                for (let y = zoneTop; y < c.height - 6; y++) {
+                    for (let px = 2; px < c.width - 2; px++) {
+                        if (px < Math.round(c.width * 0.2) || px > Math.round(c.width * 0.8)) {
+                            const i = (y * c.width + px) * 4;
+                            if (Math.abs(data[i] - bg[0]) > 40 || Math.abs(data[i + 1] - bg[1]) > 40 || Math.abs(data[i + 2] - bg[2]) > 40) wingInk++;
+                        }
+                    }
+                }
+                const pc = window.__posedClip;
+                return { dt: Math.round(dt), size: window.__caLastShot.size, w: bmp.width, h: bmp.height, name: window.__caLastShot.name, wingInk: wingInk, walkRows: window.__posedWalkRows, clip: pc.folded + '/' + pc.laidOut + ' folded, rowClip ' + pc.foldedClip + ', headClip ' + pc.headClip };
             });
-            console.log('earnings take ' + (i + 1) + ': pick->PNG ' + r.dt + 'ms | ' + r.w + 'x' + r.h + ' | ' + (r.size / 1024).toFixed(0) + 'KB | ' + r.name);
+            console.log('earnings take ' + (i + 1) + ': pick->PNG ' + r.dt + 'ms | ' + r.w + 'x' + r.h + ' | ' + (r.size / 1024).toFixed(0) + 'KB | walk paints ' + r.walkRows + ' station rows | wing ink below last record: ' + r.wingInk + 'px | ' + r.clip + ' | ' + r.name);
         }
         console.log('done');
     } catch (e) { console.log('DIAG ERR', e && e.message); } finally { await browser.close(); }

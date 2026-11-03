@@ -1930,6 +1930,32 @@ function todayYmd() {
       R.ok(src64.indexOf('function buildArchShotCanvas(') !== -1 && src64.indexOf('area > 4000000') !== -1 && src64.indexOf('CA_CAP_TITLE_H) * scale > 4090') !== -1, 'v1.46.6/v1.47.1 src: the tall canvas keeps the pixel budget \u2014 ~4MP area, 4090 device px tall (paint + PNG encode both ride the pixel count)');
       R.ok(src64.indexOf('function caCapShoot(') === -1 && src64.indexOf('function caCapTrim(') === -1 && src64.indexOf('function caCapPrewarm(') === -1 && src64.indexOf('function caCapLib(') === -1 && src64.indexOf('function caCapIgnore(') === -1 && src64.indexOf('ca-cap-prewarm') === -1 && src64.indexOf('vendor/html2canvas.min.js') === -1, 'v1.47.1 src: the old engine is GONE whole \u2014 shoot, trim, prewarm, the diet predicate, the vendored lib and its precache entry (the print sheet\u2019s own lazy CDN exporter is a separate machine, untouched)');
       R.eq(w.eval("(window.__capPrewarms || 0) === 0 && !document.getElementById('ca-cap-prewarm')"), true, 'v1.47.1: the prewarm is gone with the engine \u2014 no throwaway card ever fired while this suite ran');
+      // ---- v1.47.2 (owner report \u2014 "alot of the stations rendering in
+      // the bottom month details"): the archive folds a month with
+      // max-height 0 + overflow hidden + opacity 0 \u2014 a CLIP, not a
+      // display none \u2014 so the folded rows still lay out with live
+      // rects, and a walker that trusts rects alone painted every hidden
+      // station into the PNG. The shared walker now reads the ANCESTORS
+      // before it paints ----
+      R.ok(src64.indexOf('.ca-arch-collapsed .ca-arch-group-body { max-height: 0; opacity: 0; }') !== -1, 'v1.47.2 src: the fold is a clip, not a display none \u2014 the walker alone decides what is on screen');
+      R.ok(src64.indexOf('function rosterShotClippedAway(') !== -1 && src64.indexOf('rosterShotClippedAway(el, gridEl, r)') !== -1 && src64.indexOf('rosterShotClippedAway(svg, rootEl, r)') !== -1, 'v1.47.2 src: the walker gained the ancestor test \u2014 a subtree at opacity 0, or entirely outside an ancestor\u2019s clip box, never paints \u2014 in the box walk AND the icon pass');
+      R.eq(w.eval(`(function () {
+          var root = document.createElement('div');
+          var fold = document.createElement('div'); fold.style.cssText = 'max-height:0;overflow:hidden;opacity:0';
+          var foldG = document.createElement('div'); foldG.style.cssText = 'max-height:0;overflow:hidden';
+          var open = document.createElement('div'); open.style.cssText = 'overflow:hidden';
+          var row = document.createElement('span'), rowG = document.createElement('span'), rowIn = document.createElement('span'), plain = document.createElement('span');
+          fold.appendChild(row); foldG.appendChild(rowG); open.appendChild(rowIn);
+          root.appendChild(fold); root.appendChild(foldG); root.appendChild(open); root.appendChild(plain);
+          document.body.appendChild(root);
+          var rect = function (el, t, b, l, r) { el.getBoundingClientRect = function () { return { top: t, bottom: b, left: l, right: r, width: r - l, height: b - t }; }; };
+          rect(fold, 100, 100, 8, 392); rect(foldG, 300, 300, 8, 392); rect(open, 400, 700, 8, 392);
+          Object.defineProperty(open, 'clientWidth', { value: 384 }); Object.defineProperty(open, 'clientHeight', { value: 300 });
+          rect(row, 100, 124, 16, 200); rect(rowG, 300, 324, 16, 200); rect(rowIn, 450, 474, 16, 200); rect(plain, 50, 74, 16, 200);
+          var out = { folded: rosterShotClippedAway(row, root, row.getBoundingClientRect()), foldedGeometry: rosterShotClippedAway(rowG, root, rowG.getBoundingClientRect()), insideOpen: rosterShotClippedAway(rowIn, root, rowIn.getBoundingClientRect()), plain: rosterShotClippedAway(plain, root, plain.getBoundingClientRect()) };
+          root.remove();
+          return JSON.stringify(out);
+      })()`), '{"folded":true,"foldedGeometry":true,"insideOpen":false,"plain":false}', 'v1.47.2: the ancestor test \u2014 a row under a folded body reads clipped away (by opacity 0, and by geometry alone), while a row inside an open clipped box and a plain row do not \u2014 the ghost stations are off the screen, so they are off the canvas');
       // v1.46.6 (owner order \u2014 \u201cwhen i mean share i mean the native ios and
       // android web share pop up\u201d): delivery is DIRECT. The capture calls
       // navigator.share itself the moment the PNG is ready \u2014 no preview
