@@ -1620,7 +1620,7 @@ function todayYmd() {
     w.eval("window.__csvText = null; const __RB = Blob; Blob = function (parts) { window.__csvText = parts.join(''); return {}; }; archShareOrDownload = function () {}; archDoExport('csv'); Blob = __RB;");
     await wait(50);
     const csvOff = await w.eval("window.__csvText");
-    R.ok(csvOff && csvOff.indexOf('route,date,type,amount\n') === 0 && csvOff.indexOf('expense') === -1, 'dev off: the CSV keeps its four clean columns');
+    R.ok(csvOff && csvOff.indexOf('route,date,type,amount,expense\n') === 0 && /,120\.00\n/.test(csvOff), 'v1.48.2 (owner order): dev off — the CSV STILL carries its fifth expense column; expenses are data, and every export door ships them (the v1.45.31 CSV gate is superseded; the on-screen surfaces stay dev\u2019s alone)');
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 120, 'dev off: the stored expense sits untouched - the gate is display-only');
     // ten taps on the brand - the only door - and every surface returns
     w.closeArchSub(); await wait(50);
@@ -1648,7 +1648,21 @@ function todayYmd() {
     w.eval("window.__csvText = null; const __RB2 = Blob; Blob = function (parts) { window.__csvText = parts.join(''); return {}; }; archDoExport('csv'); Blob = __RB2;");
     await wait(50);
     const csvOn = await w.eval("window.__csvText");
-    R.ok(csvOn && csvOn.indexOf('route,date,type,amount,expense\n') === 0 && /,120\.00\n/.test(csvOn), 'dev on: the CSV regains its fifth expense column');
+    R.ok(csvOn && csvOn.indexOf('route,date,type,amount,expense\n') === 0 && /,120\.00\n/.test(csvOn), 'dev on: the CSV\u2019s fifth expense column rides as always — now for every crew, not just dev');
+    // v1.48.2 (owner order): expenses ride EVERY export door. The JSON
+    // extract and the whole-device backup always carried them inside each
+    // entry\u2019s detail — pinned now so the question never reopens; the
+    // CSV column above was the one piece that used to hide behind the
+    // dev gate.
+    w.eval("window.__jsonText = null; const __RB3 = Blob; Blob = function (parts) { window.__jsonText = parts.join(''); return {}; }; archDoExport('json'); Blob = __RB3;");
+    await wait(50);
+    const jsonExp = JSON.parse(await w.eval("window.__jsonText"));
+    R.ok(!!jsonExp && Array.isArray(jsonExp) && jsonExp.find((e) => e.id === 'q1') && jsonExp.find((e) => e.id === 'q1').detail && jsonExp.find((e) => e.id === 'q1').detail.expense === 120, 'v1.48.2: the earnings JSON extract carries each trip\u2019s overseas expense inside its detail — the filter exports whole entries, never a slimmed shape');
+    const full = JSON.parse(await w.eval("JSON.stringify(buildFullBackup())"));
+    R.ok(!!full && full.data && Array.isArray(full.data['crewAssist.archive']) && full.data['crewAssist.archive'].find((e) => e.id === 'q1') && full.data['crewAssist.archive'].find((e) => e.id === 'q1').detail.expense === 120, 'v1.48.2: the whole-device backup (Settings \u2192 Data Management) carries the expenses too — it always did, inside crewAssist.archive\u2019s whole entries');
+    w.archExport(); await wait(50);
+    R.ok(((d.getElementById('ca-arch-sub-body') || {}).textContent || '').toLowerCase().indexOf('overseas expenses ride along') !== -1, 'v1.48.2: the export sheet says it out loud — every trip\u2019s overseas expenses ride along, so the crew never has to wonder what the file carries');
+    w.closeArchSub(); await wait(50);
     // toggled off again: the row hides once more, the figure still never budges
     for (let i = 0; i < 10; i++) d.getElementById('header-brand').click();
     await wait(150);
@@ -1776,7 +1790,7 @@ function todayYmd() {
     const src = fs.readFileSync(APP, 'utf8');
     R.ok(src.includes('@keyframes caArchLive { to { transform: rotate(1turn); } }'), 'the live icon spins a full turn');
     R.ok(src.includes('.ca-arch-liveico { animation: caArchLive 6s linear infinite; }'), 'the spin is the slowed 6s ambient loop');
-    R.ok(src.includes('html.ca-reduced .animate-bounce, html.ca-reduced .ca-arch-liveico {'), 'the ambient loop stops behind the ca-reduced gate');
+    R.ok(src.includes('html.ca-reduced .animate-bounce {') && !src.includes('ca-reduced .ca-arch-liveico'), 'v1.48.2 (owner order): the live icon LEFT the loops-stop list — it keeps its 6s ambient turn behind the ca-reduced gate, the departure-board roll\u2019s fellow exception, so motion-sensitive crew still see which month is live');
     R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg:not(.ca-arch-segon) { color: #2D1E0F; }'), 'v1.45.16: the daylight walnut rule EXCLUDES the active pill (the invisibility root cause)');
     R.ok(src.includes('html:not(.dark) #ca-arch-summary .ca-arch-seg.ca-arch-segon { background: #FFFFFF; color: #2D1E0F; }'), 'the daylight active pill is crisp white with walnut ink');
     R.ok(src.includes('.ca-arch-seg.ca-arch-segon { background: var(--ca-arch-ink-on-gold); color: var(--ca-arch-ink-gold); }'), 'the night active pill keeps its espresso fill and clean gold ink');

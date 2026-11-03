@@ -921,6 +921,26 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   carries over to lists ("doesn't publish a FCL menu — showing Economy
   instead.").
 
+- v1.48.2 (owner orders, the five-order round): **the teaching pills read at
+  full ink** — the shortcuts card's command bubbles carry the bubble's own
+  text colour undimmed in both themes; the pill's gray wash is all the
+  separation from the prose, and an opacity dim on teaching text mutes the
+  very thing the card exists to teach. **The chip rail sits with its
+  composer** — the quick-action chips keep a tight gap-1.5 to the typing
+  field, because the rail belongs to the composer's group, never a loose
+  band floating above it (the veil's seam stays on the chips' bottom edge —
+  the gap below the row never enters the geometry). **Nothing highlights,
+  anywhere** — a press-and-hold or a click-hold-drag selects no text
+  app-wide; selection is the typing fields' alone (inputs, textareas,
+  selects), and the iOS long-press callout goes with the ban — the app is
+  tapped, never lassoed. **Expenses ride every export** — the CSV's fifth
+  column is every crew's now, and the export sheet says the expenses ride
+  along; data doors never hide behind display gates. **The live month's
+  icon keeps turning under reduced motion** — the earnings header's
+  refresh-cw is the departure-board roll's fellow exception: ambient
+  signals that answer "which month is this?" stay legible even when the
+  decoration stops.
+
 - v1.48.1 (owner orders, the four-fix polish round): **a flat month reads a
   dash** — the comparison badge in the earnings month header wears the Lucide
   minus glyph and the month figure's own gold ink when the year-on-year reads

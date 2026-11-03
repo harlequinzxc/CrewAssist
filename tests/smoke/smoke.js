@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.48.1', 'APP_VERSION is 1.48.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.1' && e.d === '2026-11-03' && e.items.length === 4 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.48.1 entry — two fixes, two improvements');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v302'), 'the service-worker cache name is bumped to v302 (the v1.48.1 four-fix round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.48.2', 'APP_VERSION is 1.48.2');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.2' && e.d === '2026-11-03' && e.items.length === 5 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 3; }), 'the changelog carries the 1.48.2 entry — two fixes, three improvements');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v303'), 'the service-worker cache name is bumped to v303 (the v1.48.2 five-order round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,11 +166,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.1'; }), 'the What\'s New sheet carries the v1.48.1 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The compact sheet parts ethnic from International with a dashed rule.') !== -1), 'the What\'s New sheet carries the v1.48.1 parting pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A flat month wears a gold dash, never a green arrow.') !== -1), 'the What\'s New sheet carries the v1.48.1 flat-month pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The shortcuts card’s keywords ride inside the example bubbles.') !== -1), 'the What\'s New sheet carries the v1.48.1 shortcuts-keyword pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The chat’s chip rail scrolls home after every tap.') !== -1), 'the What\'s New sheet carries the v1.48.1 chip-rail pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.2'; }), 'the What\'s New sheet carries the v1.48.2 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The shortcuts card’s command bubbles read at full strength.') !== -1), 'the What\'s New sheet carries the v1.48.2 full-ink pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The chat’s chip rail sits closer to the typing field.') !== -1), 'the What\'s New sheet carries the v1.48.2 chip-spacing pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Overseas expenses ride every export — CSV included.') !== -1), 'the What\'s New sheet carries the v1.48.2 expenses-export pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Press-and-hold highlights nothing anywhere — the typing fields excepted.') !== -1), 'the What\'s New sheet carries the v1.48.2 selection-ban pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The live month’s icon keeps turning under reduced motion.') !== -1), 'the What\'s New sheet carries the v1.48.2 live-icon pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Earnings shares end at the last record — the since line is gone.') !== -1), 'the What\'s New sheet carries the v1.48.0 since-line pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The satay course reads Canapé — viewer and both print sheets.') !== -1), 'the What\'s New sheet carries the v1.48.0 satay-course Canapé pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The ethnic parting and Japan course defaults fire on real menu names.') !== -1), 'the What\'s New sheet carries the v1.48.0 real-names pointer');
@@ -222,6 +223,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
                 && toks(rows[0]).every((x) => / \d{1,2} [a-z]{3,9}$/.test(x))
                 && !gold;
         }), 'v1.48.1: every pill is a complete command with its keyword inside — both word orders on each row, and no gold word rides the read-only rows');
+        // v1.48.2 (owner order): the pills read at FULL ink — computed in the
+        // real browser, where the stylesheet actually resolves.
+        ok(await page.evaluate(() => {
+            const t = document.querySelector('[data-ca-help-card] .ca-help-token');
+            return !!t && getComputedStyle(t).opacity === '1';
+        }), 'v1.48.2: the command bubbles sit at opacity 1 — the muted .78 is gone, full ink in both themes');
         ok(await page.evaluate(() => {
             const a = parseNaturalCommand('jcl menu sq802 4 oct');
             const b = parseNaturalCommand('sq802 menu 4 oct');
@@ -408,6 +415,17 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('ca-cl-chips')); const m = cs.maskImage || cs.webkitMaskImage; return /linear-gradient\(to right, (?:rgba\(0, 0, 0, 0\)|transparent), (?:rgb\(0, 0, 0\)|black) 24px,/.test(m); }), 'v1.45.34: the chips rail fades at both edges - the 24px gradient mask paints on the scroll boundary, never on the hit targets (Chromium re-serializes the colors through the CSSOM)');
         ok(await page.evaluate(() => { const cs = getComputedStyle(document.getElementById('action-chips')); const m = cs.maskImage || cs.webkitMaskImage; return /linear-gradient\(to right, (?:rgba\(0, 0, 0, 0\)|transparent), (?:rgb\(0, 0, 0\)|black) 24px,/.test(m); }), 'v1.45.36: the chat\u2019s quick-action rail wears the SAME both-edge fade - one shared class, one visual language (computed in the real browser)');
         ok(await page.evaluate(() => { const v = document.querySelector('.ca-input-veil'); if (!v) return false; const cs = getComputedStyle(v); const wrap = v.parentElement.getBoundingClientRect(); const vr = v.getBoundingClientRect(); return cs.position === 'absolute' && cs.top === '92px' && Math.abs((vr.top - wrap.top) - 92) < 1 && cs.backgroundImage.indexOf('linear-gradient') === 0; }), 'v1.45.36: the veil is pinned at the chips\u2019 bottom edge (92px below the input wrapper\u2019s top) - the painted dark overlay no longer covers the chip zone, and the wrapper-growth math keeps the seam on the chips at every composer height');
+        // v1.48.2 (owner order): the chip rail sits slightly DOWN — closer to
+        // the typing field — and press-and-hold highlights nothing anywhere
+        // except the typing fields. Computed here because jsdom cannot
+        // resolve stylesheet-class styles.
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('action-chips').parentElement).rowGap === '6px'), 'v1.48.2: the chips sit 6px closer to the composer — gap-1.5, not gap-3 (computed rowGap on the input column)');
+        ok(await page.evaluate(() => {
+            const b = getComputedStyle(document.body);
+            const inp = getComputedStyle(document.getElementById('chat-input'));
+            const bubble = document.getElementById('chat-container');
+            return b.userSelect === 'none' && b.webkitUserSelect === 'none' && inp.userSelect === 'text' && (!bubble || getComputedStyle(bubble).userSelect === 'none');
+        }), 'v1.48.2: the body bans selection outright (user-select and -webkit-user-select none) while the chat input keeps its text — the typing fields are the one exception');
         ok(await page.evaluate(() => { const t = document.querySelector('#ca-changelog-list .ca-cl-tag-imp'); return !!t && t.textContent.trim() === 'POLISH'; }), 'v1.45.36: the imp badge reads POLISH in the rendered rows - chip, label and badge all speak the same token');
         await page.evaluate(() => document.getElementById('ca-changelog-close').click());
         await sleep(400);
@@ -439,8 +457,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForFunction(() => document.documentElement.classList.contains('ca-reduced'), { timeout: 5000 });
         ok(await page.evaluate(() => {
             const mk = (cls) => { const p = document.createElement('div'); p.className = cls; document.body.appendChild(p); const n = getComputedStyle(p).animationName; p.remove(); return n; };
-            return mk('chat-anim-in') === 'ca-reduce-fade' && mk('animate-pulse') === 'none';
-        }), 'OS reduce: entries collapse to ca-reduce-fade, loops stop');
+            return mk('chat-anim-in') === 'ca-reduce-fade' && mk('animate-pulse') === 'none' && mk('ca-arch-liveico') === 'caArchLive';
+        }), 'OS reduce: entries collapse to ca-reduce-fade, loops stop — and the live month\u2019s icon keeps its 6s turn (the v1.48.2 owner exception, computed)');
         ok(await page.evaluate(() => getComputedStyle(document.getElementById('settings-sheet')).transitionDuration === '0s'), 'OS reduce: sheets snap open (transition-transform gated)');
         ok(await page.evaluate(() => { showTypingIndicator(); return !document.getElementById('typing-indicator'); }), 'OS reduce: the typing bubble never appears (hotfix 1)');
         await page.evaluate(() => openSettings());
@@ -1853,17 +1871,24 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(state16.pastSub.indexOf('\u2022') === -1 && !state16.pastIco, 'v1.45.16: a past month carries no state asset and no status suffix (got ' + JSON.stringify(state16.pastSub) + ')');
         ok(state16.curSub.indexOf('\u2022 In progress') !== -1 && state16.curNext === 'refresh-cw', 'the live month counts then names its state, refresh-cw beside the title (' + state16.curSub + ')');
         ok(state16.nxtSub.indexOf('\u2022 Upcoming') !== -1 && state16.nxtNext === 'clock-arrow-up', 'the future month rides the owner format with clock-arrow-up (' + state16.nxtSub + ')');
-        // the ambient loop stops behind the ca-reduced gate
+        // v1.48.2 (owner order): the live month's icon KEEPS TURNING behind
+        // the ca-reduced gate — the departure-board roll's fellow exception.
+        // A control probe proves the gate itself is live (its loop stops)
+        // while the refresh-cw holds its animationName.
         const reducedSpin = await page.evaluate(() => {
             const h = document.documentElement;
             const ico = document.querySelector('.ca-arch-group-head i[data-lucide="refresh-cw"]');
+            const ctl = document.createElement('div'); ctl.className = 'animate-pulse'; document.body.appendChild(ctl);
             h.classList.add('ca-reduced');
             const name = getComputedStyle(ico).animationName;
+            const ctlName = getComputedStyle(ctl).animationName;
             h.classList.remove('ca-reduced');
-            return { stopped: name, back: getComputedStyle(ico).animationName };
+            ctl.remove();
+            return { live: name, ctl: ctlName, back: getComputedStyle(ico).animationName };
         });
-        eq(reducedSpin.stopped, 'none', 'the spin stops behind the ca-reduced gate');
-        eq(reducedSpin.back, 'caArchLive', 'and resumes when the gate lifts');
+        eq(reducedSpin.ctl, 'none', 'the control loop stops behind the ca-reduced gate (the gate is live)');
+        eq(reducedSpin.live, 'caArchLive', 'v1.48.2 (owner order): the live month\u2019s icon keeps turning behind the ca-reduced gate');
+        eq(reducedSpin.back, 'caArchLive', 'and it is the same ambient loop when the gate lifts');
         // an all-flown current month reads Completed, icon-free
         const doneWord = await page.evaluate(() => {
             const keep = localStorage.getItem('crewAssist.archive');
