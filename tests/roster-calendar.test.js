@@ -1514,6 +1514,45 @@ const synthItems = [].concat(
     R.eq(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length, 0, 'the stats overlay mounting over the page leaves the hero settled');
     w.eval('closeRcPod()');
   }
+  // ---- v1.48.3 (owner order): the My Flight Stats page rolls its COUNTS
+  //      and DATES the departure-board way — digits only (in "×5" the ×
+  //      never moves; in "27 Oct 2024" the month word never moves), never
+  //      the year pills, the 2nd/3rd ordinals, the row ranks or the
+  //      View-all count, and only once the sheet is fully up (the v1.48.0
+  //      arm pattern). Reduced motion never gates it — caNumRoll's inline
+  //      transitions answer to no ca-reduced rule (the owner's exception).
+  //      The spy reads the ENGINE's own call list, so the targeting is the
+  //      proof; jsdom cannot time the real glide. ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-11-01T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const leg = (fn, dep, arr, ymd) => ({ fn, dep, arr, ymd, std: '08:00', sta: '17:00', stdYmd: ymd, staYmd: ymd, ft: '09:00', ac: '7M8', rpt: '', pos: false });
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2026-01': [leg('601', 'SIN', 'KUL', '2026-01-05'), leg('602', 'KUL', 'SIN', '2026-01-06'), leg('603', 'SIN', 'KUL', '2026-01-20'), leg('604', 'KUL', 'SIN', '2026-01-21')],
+        '2026-02': [leg('701', 'SIN', 'ICN', '2026-02-10'), leg('702', 'ICN', 'SIN', '2026-02-11')]
+      }));
+    } });
+    w.eval('openRosterCalendar()'); await wait(300);
+    w.eval('openRcPod()'); await wait(500);   // the passport's own hero roll fires at ~360ms — let it pass BEFORE the spy goes in, so the spy sees the stats arm alone
+    w.eval('window.__rollSpy = []; window.__NR = caNumRoll; caNumRoll = function (el) { window.__rollSpy.push(String(el.className)); window.__NR(el); };');
+    d.getElementById('ca-rc-pod-gate').click(); await wait(60);
+    R.eq(await w.eval('window.__rollSpy.length'), 0, 'v1.48.3: the stats page mounts settled — the roll waits out the sheet\u2019s glide (the 360ms arm, the v1.48.0 pattern)');
+    await wait(450);
+    const calls = await w.eval('window.__rollSpy');
+    R.ok(calls.length > 0 && calls.every((c) => /ca-rc-pod-(count|lcount|ldate)/.test(c)), 'v1.48.3 (owner order): once the sheet is up, the COUNTS and DATES roll — and nothing else is ever passed to the engine');
+    R.ok(calls.every((c) => c.indexOf('ca-rc-pod-lrank') === -1 && c.indexOf('ca-rc-pod-ord') === -1 && c.indexOf('ca-rc-pod-years') === -1), 'the row ranks, the 2nd/3rd ordinals and the year pills never roll');
+    const cnt = d.querySelector('.ca-rc-pod-count, .ca-rc-pod-lcount');
+    R.ok(cnt && cnt.querySelectorAll('.ca-rollc').length > 0 && !!cnt.querySelector('.ca-rc-pod-x'), 'in the count the × glyph stands still beside the rolling digits');
+    const ldate = d.querySelector('.ca-rc-pod-ldate');
+    R.ok(ldate && ldate.querySelectorAll('.ca-rollc').length > 0 && /(Jan|Feb)/.test(ldate.textContent), 'the date rolls its digits while the month word stands still');
+    R.ok(d.querySelectorAll('#ca-rc-pod-listyears .ca-rollc').length === 0, 'the year pills never carry a reel cell');
+    // the close cancels a pending arm: reopen and close inside the window
+    w.eval('caNumRoll = window.__NR;');
+    w.eval('closeRcStat();'); await wait(150);
+    const src483 = require('fs').readFileSync(APP, 'utf8');
+    R.ok(src483.includes("w3.querySelectorAll('.ca-rc-pod-count, .ca-rc-pod-lcount, .ca-rc-pod-ldate').forEach(caNumRoll)") && src483.includes('var rcStatOpenRollT = null;') && /if \(rcStatOpenRollT\) \{ clearTimeout\(rcStatOpenRollT\); rcStatOpenRollT = null; \}/.test(src483), 'v1.48.3 src: the arm names ONLY the count and date elements, and a close cancels a pending arm');
+    w.eval('closeRcPod();');
+  }
   // ---- v1.45.58 (owner report): the visit-log drawer honours the year
   //      filter — the history a card opens must walk the SAME year the
   //      list is showing. The drawer re-walked ALL-TIME, so a year chip
