@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.48.3', 'APP_VERSION is 1.48.3');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.3' && e.d === '2026-11-03' && e.items.length === 3 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.48.3 entry — two fixes, one improvement');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v304'), 'the service-worker cache name is bumped to v304 (the v1.48.3 three-order round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.48.4', 'APP_VERSION is 1.48.4');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.4' && e.d === '2026-11-03' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.48.4 entry — one improvement');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v305'), 'the service-worker cache name is bumped to v305 (the v1.48.4 pill-roll round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,10 +166,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.3'; }), 'the What\'s New sheet carries the v1.48.3 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Restored expenses show on every device — the figures ride along.') !== -1), 'the What\'s New sheet carries the v1.48.3 restore-visibility pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The salary card’s Exp figure rides its own row.') !== -1), 'the What\'s New sheet carries the v1.48.3 exp-row pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Flight Stats counts and dates roll the departure-board way.') !== -1), 'the What\'s New sheet carries the v1.48.3 stats-roll pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.4'; }), 'the What\'s New sheet carries the v1.48.4 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The stats page rolls its numbers when the year changes.') !== -1), 'the What\'s New sheet carries the v1.48.4 pill-roll pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Earnings shares end at the last record — the since line is gone.') !== -1), 'the What\'s New sheet carries the v1.48.0 since-line pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The satay course reads Canapé — viewer and both print sheets.') !== -1), 'the What\'s New sheet carries the v1.48.0 satay-course Canapé pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The ethnic parting and Japan course defaults fire on real menu names.') !== -1), 'the What\'s New sheet carries the v1.48.0 real-names pointer');
@@ -2596,6 +2594,20 @@ async function calcCard(page, { type, t1, t2, lma }) {
                 xHolds: !!document.querySelector('#ca-rc-stat-sheet .ca-rc-pod-count .ca-rc-pod-x, #ca-rc-stat-sheet .ca-rc-pod-lcount .ca-rc-pod-x')
             };
         });
+        // v1.48.4 (owner order): a year-pill change rolls the numbers TOO —
+        // computed in the real browser, still under ca-reduced (the exception
+        // holds on the change roll as well)
+        const pillRoll = await page.evaluate(() => {
+            const y = Array.from(document.querySelectorAll('#ca-rc-pod-listyears .ca-rc-pod-ypill')).find((b) => b.textContent === '2026');
+            if (y) y.click();
+            return !!y;
+        });
+        await sleep(150);
+        const pillState = await page.evaluate(() => {
+            const q = (s) => document.querySelectorAll('#ca-rc-stat-sheet ' + s);
+            return { cnt: q('.ca-rc-pod-count .ca-rollc, .ca-rc-pod-lcount .ca-rollc').length, ldate: q('.ca-rc-pod-ldate .ca-rollc').length, pills: q('#ca-rc-pod-listyears .ca-rollc').length };
+        });
+        ok(pillRoll && pillState.cnt > 0 && pillState.ldate > 0 && pillState.pills === 0, 'v1.48.4 (owner order): a year-pill change ROLLS the counts and dates again \u2014 immediately, and the pills themselves never carry a reel');
         await page.evaluate(() => { document.documentElement.classList.remove('ca-reduced'); closeRcStat(); closeRcPod(); });
         await sleep(400);
         ok(rollEarly === 0, 'v1.48.3: the stats page mounts settled - the roll waits out the sheet\'s glide (the v1.48.0 arm pattern)');
