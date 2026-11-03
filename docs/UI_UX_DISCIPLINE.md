@@ -921,6 +921,22 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   carries over to lists ("doesn't publish a FCL menu — showing Economy
   instead.").
 
+- v1.48.1 (owner orders, the four-fix polish round): **a flat month reads a
+  dash** — the comparison badge in the earnings month header wears the Lucide
+  minus glyph and the month figure's own gold ink when the year-on-year reads
+  0.0%, because a green up-arrow on "no increase" claims movement that is not
+  there; the arrows belong to movement, the dash to standing still. **No gold
+  on untappable words** — the shortcuts card's command keywords ride INSIDE
+  the example bubbles as complete commands ("menu sq802 17 oct"), since gold
+  ink promises a tap and nothing on the card taps but the CTA; the tip's
+  example date matches the card's own teaching dates (17 october). **The
+  parting tells the whole selection story** — the compact sheet's dashed rule
+  parts the ethnic block from the International that follows it (ethnic,
+  dash, ethnic, dash, International), the same visual separation at every
+  selection crossing. **The chip rail comes home** — after every quick-action
+  tap the rail glides back to its start (the house smooth-scroll with the
+  hard-set fallback); a swiped rail never stays stranded mid-row.
+
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.
   The Oct 2025 case: months imported before the never-pruned flight store

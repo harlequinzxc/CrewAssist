@@ -1243,6 +1243,11 @@
         .ca-arch-inssub { font-size: 11px; margin-top: 2px; }
         .ca-arch-yoy-up { color: var(--ca-ok); font-weight: 700; }
         .ca-arch-yoy-down { color: var(--ca-danger-bright); font-weight: 700; }
+        /* v1.48.1 (owner order): a flat month — the comparison reads 0.0% —
+           wears a DASH, never a green up-arrow claiming an increase that is
+           not there; the ink is the month figure's own gold (the owner:
+           "the same gold as the text number color") */
+        .ca-arch-yoy-flat { color: var(--sia-gold-ink, #7d650f); font-weight: 700; }
         .ca-arch-dot { width: 5px; height: 5px; border-radius: 999px; background: var(--sia-gold, var(--ca-gold)); flex: none; }
         .ca-arch-footline { height: 1px; flex: 1 1 0; background: var(--arch-hairline); }
         .ca-arch-chev { transition: transform .3s ease; }
@@ -3229,7 +3234,7 @@
             }
         }
 
-        var APP_VERSION = '1.48.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.48.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3251,6 +3256,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.48.1', d: '2026-11-03', items: [
+                { c: 'imp', t: 'The compact sheet parts ethnic from International with a dashed rule.' },
+                { c: 'fix', t: 'A flat month wears a gold dash, never a green arrow.' },
+                { c: 'imp', t: 'The shortcuts card\u2019s keywords ride inside the example bubbles.' },
+                { c: 'fix', t: 'The chat\u2019s chip rail scrolls home after every tap.' }
+            ] },
             { v: '1.48.0', d: '2026-11-03', items: [
                 { c: 'fix', t: 'Earnings shares end at the last record \u2014 the since line is gone.' },
                 { c: 'imp', t: 'The satay course reads Canap\u00e9 \u2014 viewer and both print sheets.' },
@@ -4808,6 +4819,13 @@
                 chip.addEventListener('click', (e) => {
                     if (isChatBusy()) return;
                     processInput(e.currentTarget.innerText.trim());
+                    // v1.48.1 (owner order): the rail scrolls back to its
+                    // home position after every tap — a swiped rail never
+                    // stays stranded mid-row when the crew's next glance
+                    // lands on it. The house glide (smooth, with the hard
+                    // set as the fallback).
+                    const rail = document.getElementById('action-chips');
+                    if (rail) { try { rail.scrollTo({ left: 0, behavior: 'smooth' }); } catch (err) { rail.scrollLeft = 0; } }
                 });
             });
 
@@ -11440,14 +11458,18 @@ SLOT|Special Lve others`;
         }
 
         // v1.44.0 hotfix (owner spec): the help card. A structured onboarding
-        // surface — header tile, hairline, five command rows (bold gold
-        // keyword, monospaced input token pills, one-phrase description),
-        // a dimmer tips block, and ONE outlined CTA. v1.45.59 (owner order):
-        // the menu row's example became a complete command (a flight AND a
-        // date), every row teaches BOTH word orders as pills, and the cabin
-        // row (jcl menu) sits under menu. v1.48.0 (owner orders): the rows
-        // are READ-ONLY — no tap inserts anything, the helper text says so,
-        // and the cabin row teaches the MULTI-CABIN search (jcl ycl menu …).
+        // surface — header tile, hairline, five command rows (monospaced
+        // input token pills, one-phrase description), a dimmer tips block,
+        // and ONE outlined CTA. v1.45.59 (owner order): the menu row's
+        // example became a complete command (a flight AND a date), every row
+        // teaches BOTH word orders as pills, and the cabin row (jcl menu)
+        // sits under menu. v1.48.0 (owner orders): the rows are READ-ONLY —
+        // no tap inserts anything, the helper text says so, and the cabin
+        // row teaches the MULTI-CABIN search (jcl ycl menu …). v1.48.1
+        // (owner order): the command word rides INSIDE the first pill —
+        // the rows carry no gold keyword any more (gold reads as tappable,
+        // and nothing but the CTA taps), so each row is just its category
+        // glyph, two complete-command pills, and the description.
         // Iconography is Lucide only (category glyphs, the header bulb, the
         // tip dots, the CTA arrow); no emoji, no custom SVGs, no new accent
         // colours — gold/dark only, green reserved for success states
@@ -11460,13 +11482,14 @@ SLOT|Special Lve others`;
             // the rows are plain DIVs — read-only teaching, no tap inserts
             // (data-ca-help-row names them for the rig, nothing else), and
             // the cabin row's second pill teaches the multi-cabin search.
+            // v1.48.1 (owner order): the keyword lives in the pills — the
+            // first pill of each row is the keyword-first command in full.
             // Every pill stays a COMPLETE, working command.
             const row = (cmd, icon, tokens, desc, delay) => `
                 <div data-ca-help-row="${cmd}" class="ca-help-row chat-anim-in w-full text-left flex items-start gap-3 rounded-xl px-2 py-2" style="animation-delay:${delay}ms">
                     <i data-lucide="${icon}" class="w-4 h-4 mt-1.5 text-gray-400 dark:text-gray-500 shrink-0"></i>
                     <span class="min-w-0 flex-1 block">
                         <span class="flex items-center gap-2 flex-wrap">
-                            <span class="font-bold text-sia-gold font-mono text-sm leading-none">${cmd}</span>
                             ${tokens.map((token) => `<span class="ca-help-token font-mono ca-micro leading-none px-1.5 py-1 rounded-md">${token}</span>`).join('')}
                         </span>
                         <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">${desc}</span>
@@ -11488,15 +11511,15 @@ SLOT|Special Lve others`;
                     </div>
                     <div class="ca-hairline my-3"></div>
                     <div class="flex flex-col gap-0.5">
-                        ${row('menu', 'utensils', ['sq802 17 oct', 'sq802 menu 17 oct'], 'Open a flight\u2019s inflight menus', 40)}
-                        ${row('jcl menu', 'armchair', ['sq802 17 oct', 'jcl ycl menu sq802 17 oct'], 'One cabin or several \u2014 jcl, scl, ycl, fcl', 80)}
-                        ${row('ifa', 'calculator', ['sq802 17 oct', 'sq802 ifa 17 oct'], 'Price an inflight allowance', 120)}
-                        ${row('lma', 'sandwich', ['sq802 17 oct sq807 18 oct', 'sq802 lma 17 oct sq807 18 oct'], 'Price a layover meal allowance', 160)}
-                        ${row('cop', 'map', ['sq802 17 oct sq807 18 oct', 'sq802 cop 17 oct sq807 18 oct'], 'Price a whole trip, both allowances', 200)}
+                        ${row('menu', 'utensils', ['menu sq802 17 oct', 'sq802 menu 17 oct'], 'Open a flight\u2019s inflight menus', 40)}
+                        ${row('jcl menu', 'armchair', ['jcl menu sq802 17 oct', 'jcl ycl menu sq802 17 oct'], 'One cabin or several \u2014 jcl, scl, ycl, fcl', 80)}
+                        ${row('ifa', 'calculator', ['ifa sq802 17 oct', 'sq802 ifa 17 oct'], 'Price an inflight allowance', 120)}
+                        ${row('lma', 'sandwich', ['lma sq802 17 oct sq807 18 oct', 'sq802 lma 17 oct sq807 18 oct'], 'Price a layover meal allowance', 160)}
+                        ${row('cop', 'map', ['cop sq802 17 oct sq807 18 oct', 'sq802 cop 17 oct sq807 18 oct'], 'Price a whole trip, both allowances', 200)}
                     </div>
                     <div class="ca-hairline my-3"></div>
                     <div class="flex flex-col gap-1.5">
-                        ${tip('Flights and dates write in plain English; \u201csq 802 4 october\u201d parses too.', 240)}
+                        ${tip('Flights and dates write in plain English; \u201csq 802 17 october\u201d parses too.', 240)}
                         ${tip('Up to four sectors per line. Upload your roster PDF for longer trips.', 270)}
                         ${tip('Your attached roster answers first; the live schedule fills in when connected.', 300)}
                     </div>
@@ -17128,6 +17151,16 @@ SLOT|Special Lve others`;
                     amtHtml = formatMoney(sub) + (filtered ? ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of ' + formatMoney(full) + '</span>' : '');
                     amtCls = 'ca-arch-amt text-[17px] font-bold';
                 }
+                // v1.48.1 (owner order): a FLAT month — the comparison reads
+                // 0.0% — parts from the green-up/red-down pair: a dash icon
+                // and the month figure's own gold, so "no increase" never
+                // reads as an increase (archYoyPct rounds to one decimal, so
+                // yoy === 0 is exactly the set that displays 0.0%)
+                let yoyHtml = '';
+                if (yoy !== null) {
+                    const flat = yoy === 0;
+                    yoyHtml = ' <span class="ca-arch-yoy-' + (flat ? 'flat' : (yoy > 0 ? 'up' : 'down')) + ' text-xs whitespace-nowrap"><i data-lucide="' + (flat ? 'minus' : (yoy > 0 ? 'arrow-up' : 'arrow-down')) + '" class="w-3 h-3 inline"></i> ' + Math.abs(yoy).toFixed(1) + '%</span>';
+                }
                 html += '<div class="ca-arch-group' + (col ? ' ca-arch-collapsed' : '') + ' mb-2.5">'
                     + '<div class="flex flex-wrap items-center gap-2.5 py-3 px-3">'
                     + '<button type="button" class="ca-arch-group-head flex-1 min-w-0 flex items-center gap-1.5 text-left" data-mk="' + mk + '" aria-expanded="' + (!col) + '" data-count="' + rows.length + '">'
@@ -17135,7 +17168,7 @@ SLOT|Special Lve others`;
                     + '<span class="flex-1 min-w-0">'
                     + '<span class="flex items-center gap-1.5 flex-wrap"><span class="text-[17px] font-semibold leading-tight" style="color: var(--arch-fg)">' + archiveMonthLabel(mk) + '</span>' + stateIco + badges + '</span>'
                     + '<span class="block text-sm mt-0.5" style="color: var(--arch-muted)">' + rows.length + ' flight' + (rows.length === 1 ? '' : 's') + stateWord
-                    + (yoy !== null ? ' <span class="ca-arch-yoy-' + (yoy >= 0 ? 'up' : 'down') + ' text-xs whitespace-nowrap"><i data-lucide="' + (yoy >= 0 ? 'arrow-up' : 'arrow-down') + '" class="w-3 h-3 inline"></i> ' + Math.abs(yoy).toFixed(1) + '%</span>' : '')
+                    + yoyHtml
                     + '</span></span>'
                     + '</button>'
                     + (hasUnflown
@@ -21365,7 +21398,15 @@ SLOT|Special Lve others`;
                     // from one ethnic selection into a DIFFERENT one (the
                     // meatless into the meat). Only ethnic raws are tracked,
                     // so any course between them never breaks the pairing.
+                    // v1.48.1 (owner order): the parting also parts the
+                    // ethnic block from the International that follows it —
+                    // the sheet reads ethnic, dash, ethnic, dash, then
+                    // International. The crossing fires once (a re-arming
+                    // ethnic raw resets it), and only ethnic raws arm the
+                    // rule, so an International course sitting BETWEEN two
+                    // ethnic selections still never breaks their pairing.
                     let prevEthRaw = '';
+                    let intlParted = false;
                     (svc.courses || []).forEach((course) => {
                         if (printIsHidden(course)) return;
                         const visItems = printVisible(course.items);
@@ -21374,6 +21415,10 @@ SLOT|Special Lve others`;
                         if (printSelectionIsEthnic(raw)) {   // v1.48.0: the viewer's rule — not-International is the ethnic choice
                             if (raw && prevEthRaw && raw !== prevEthRaw) body.push('<div class="pc-eth-rule"></div>');
                             prevEthRaw = raw;
+                            intlParted = false;
+                        } else if (raw && prevEthRaw && !intlParted) {
+                            body.push('<div class="pc-eth-rule"></div>');
+                            intlParted = true;
                         }
                         body.push(printCompactItems(printCompactCourse(course.label), visItems, printIsLightBite(course.label), printIsMainCourse(course.label)));
                     });

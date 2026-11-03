@@ -31,6 +31,29 @@ const fs = require('fs');
     R.ok(sepG && !sepG.classList.contains('ca-arch-collapsed'), 'current real month (Sep) expanded');
     R.ok(octG && octG.classList.contains('ca-arch-collapsed'), 'future month (Oct) collapsed');
   }
+  // v1.48.1 (owner order): a FLAT month — the comparison reads 0.0% — wears
+  // a dash and the month figure's own gold on the month header, never a
+  // green up-arrow claiming an increase that is not there
+  {
+    const { w, d } = await boot(APP, { now: '2026-09-20T12:00:00+08:00' });
+    const ent = (id, sectorDate, st, amount) => ({ id: id, savedAt: sectorDate + 'T20:00:00Z', monthKey: sectorDate.slice(0, 7), sectorDate: sectorDate, stationDisplay: st, amount: amount, flightType: 'Layover' });
+    w.localStorage.setItem('crewAssist.archive', JSON.stringify([
+      ent('F1', '2025-08-10', 'NRT', 400),
+      ent('F2', '2026-08-12', 'KTM', 400)
+    ]));
+    w.showArchiveOverlay();
+    await wait(150);
+    d.querySelector('.ca-arch-seg[data-scope="all"]').click();
+    await wait(50);
+    const flat = d.querySelectorAll('.ca-arch-yoy-flat');
+    R.eq(flat.length, 1, 'v1.48.1: the flat month wears the flat badge — exactly one');
+    R.ok(flat[0].closest('.ca-arch-group-head').getAttribute('data-mk') === '2026-08', 'the flat badge sits on Aug 2026, the month that matched its year-ago total');
+    R.ok(flat[0].textContent.indexOf('0.0%') !== -1, 'the flat badge reads 0.0%');
+    R.ok(!!flat[0].querySelector('i[data-lucide="minus"]'), 'the flat badge leads with the DASH glyph — never an arrow');
+    R.eq(d.querySelectorAll('.ca-arch-yoy-up').length, 0, 'no green up-arrow anywhere — the flat month is not an increase');
+    R.eq(d.querySelectorAll('.ca-arch-yoy-down').length, 0, 'and not a decline either');
+    R.ok(fs.readFileSync(APP, 'utf8').includes('.ca-arch-yoy-flat { color: var(--sia-gold-ink, #7d650f); font-weight: 700; }'), 'v1.48.1: the flat badge inks in the month figure\u2019s own gold — the owner\u2019s \u201csame gold as the text number color\u201d');
+  }
 
   // delete confirmation: settings-style pop-up, OK deletes, Cancel keeps
   {
