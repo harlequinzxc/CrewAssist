@@ -1531,7 +1531,6 @@
         @media (hover:hover) {
             .ca-help-row:hover { background: var(--ca-line-gray-10); }
         }
-        .ca-help-row.ca-help-flash { background: var(--ca-gold-soft-15); }
         .ca-help-token { background: var(--ca-line-gray-13); color: inherit; opacity: .78; }
         /* the tips sit a tier dimmer than the rows — colour only; their size
            is the app's single sanctioned micro token (ca-micro) */
@@ -3230,7 +3229,7 @@
             }
         }
 
-        var APP_VERSION = '1.47.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.48.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3252,6 +3251,13 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.48.0', d: '2026-11-03', items: [
+                { c: 'fix', t: 'Earnings shares end at the last record \u2014 the since line is gone.' },
+                { c: 'imp', t: 'The satay course reads Canap\u00e9 \u2014 viewer and both print sheets.' },
+                { c: 'fix', t: 'The ethnic parting and Japan course defaults fire on real menu names.' },
+                { c: 'imp', t: 'Shortcuts card reads only, takes multiple cabins, opens from the top.' },
+                { c: 'imp', t: 'The figure roll always plays \u2014 and waits for the sheet.' }
+            ] },
             { v: '1.47.2', d: '2026-11-03', items: [
                 { c: 'fix', t: 'Folded months stay folded in the earnings capture \u2014 no ghost stations.' }
             ] },
@@ -4781,29 +4787,16 @@
                 }
             });
 
-            // v1.44.0 hotfix (owner spec): the help card's tappable rows and
-            // its CTA. Delegated at document level — the card re-renders per
-            // message, so per-row bindings would rot (the fv pattern). A row
-            // tap inserts keyword + trailing space into the composer, focuses
-            // it at the end, and flashes the row gold; the CTA starts the
-            // feature tour. While the chat is busy these are already inert
-            // (html.chat-busy #chat-container button), the guard is
+            // v1.44.0 hotfix (owner spec) → v1.48.0 (owner order): the help
+            // card's rows are READ-ONLY now — the commands teach, nothing
+            // inserts (the composer is the only way in, so the helper text
+            // says "Type any command below"). Only the CTA stays tappable:
+            // it starts the feature tour. Delegated at document level — the
+            // card re-renders per message, so per-CTA bindings would rot
+            // (the fv pattern). While the chat is busy the button is already
+            // inert (html.chat-busy #chat-container button), the guard is
             // belt-and-braces.
             document.addEventListener('click', (e) => {
-                const row = e.target.closest ? e.target.closest('[data-ca-help-cmd]') : null;
-                if (row) {
-                    if (isChatBusy()) return;
-                    const inp = document.getElementById('chat-input');
-                    inp.value = row.getAttribute('data-ca-help-cmd') + ' ';
-                    inp.focus();
-                    const L = inp.value.length;
-                    try { inp.setSelectionRange(L, L); } catch (err) {}
-                    row.classList.remove('ca-help-flash');
-                    void row.offsetWidth; // restart the fade for a re-tap
-                    row.classList.add('ca-help-flash');
-                    setTimeout(() => row.classList.remove('ca-help-flash'), 400);
-                    return;
-                }
                 const cta = e.target.closest ? e.target.closest('[data-ca-help-tour]') : null;
                 if (cta) {
                     if (isChatBusy()) return;
@@ -5513,7 +5506,10 @@
             // Interactive cards always top-align: even when one fits, top-aligned it
             // is still fully visible, and this is immune to iOS height-measurement
             // quirks. Text bubbles keep the taller-than-window rule.
-            const isCard = !!(el && el.querySelector && (el.querySelector('[data-calc-card]') || el.querySelector('[id^="fv-mode-"]')));
+            // v1.48.0 (owner order): the shortcuts card joins the always-top-
+            // align family — it runs taller than the viewport, and the crew
+            // reads it from the top down, never from the bottom up.
+            const isCard = !!(el && el.querySelector && (el.querySelector('[data-calc-card]') || el.querySelector('[id^="fv-mode-"]') || el.querySelector('[data-ca-help-card]')));
             let tries = 0;
             const tick = () => {
                 const hgt = el ? (el.offsetHeight || el.getBoundingClientRect().height) : 0;
@@ -6702,11 +6698,17 @@
         //     digit-bearing text runs get wrapped, so icons and separators
         //     ride out the roll in place, and each run's cells sit inside
         //     ONE wrapper so flex values never gap the digits mid-roll.
+        var caRollHold = false;   // the capture's settle switch — see archCaptureYear
         function caNumRoll(el) {
             if (!el) return;
             var txt = el.textContent;
             if (!/\d/.test(txt)) return;      // nothing to roll — anchors only, or nothing at all
-            if (document.documentElement.classList.contains('ca-reduced')) return;
+            // v1.48.0 (owner order): the departure-board roll animates
+            // REGARDLESS of reduced motion — the one exception to the
+            // everything-snaps rule, for now. Only a capture's pose holds
+            // it: the digits must paint settled into the PNG, never
+            // mid-reel.
+            if (caRollHold) return;
             if (el._caRollT) { clearTimeout(el._caRollT); el._caRollT = null; }
             // a roll still in flight dismantles FIRST — the base text IS the
             // truth (every render re-sets the value before rolling, so the
@@ -6789,6 +6791,24 @@
                 el._caRollT = null;
             }, maxEnd + 90);
         }
+        function caRollSettle(el) {
+            // v1.48.0 (the smoke rig's stale-restore catch): a render that
+            // rewrites a figure SETTLES it. A roll's restore timer carries
+            // markup captured before this render, so if it is still pending
+            // it is stale by construction — the v1.45.59 open render used to
+            // clear it by re-rolling on the spot; the entrance roll moved to
+            // the sheet-up timer, so the render clears it itself now. Clear
+            // the timer, fold any wrappers back to text: the figure reads
+            // its fresh truth, and no late restore can ever clobber it.
+            if (!el) return;
+            if (el._caRollT) { clearTimeout(el._caRollT); el._caRollT = null; }
+            if (el.querySelector && el.querySelector('.ca-rollwrap')) {
+                Array.prototype.forEach.call(el.querySelectorAll('.ca-rollwrap'), function (w) {
+                    if (w.parentNode) w.parentNode.replaceChild(document.createTextNode(w.textContent), w);
+                });
+            }
+        }
+
         function rcPodTelCell(label, icon, val, sub, mini) {
             return '<div class="ca-rc-pod-hcell' + (mini ? ' mini' : '') + '">'
                 + '<span class="ca-rc-pod-hlabel"><i data-lucide="' + icon + '"></i>' + label + '</span>'
@@ -6844,6 +6864,7 @@
             // the stats overlay mounting over the page) applies settled —
             // the accordion lesson. Values without digits no-op.
             if (roll) {
+                if (rcPodOpenRollT) { clearTimeout(rcPodOpenRollT); rcPodOpenRollT = null; }   // v1.48.0: a year change supersedes a pending entrance roll
                 wrap.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);
             }
         }
@@ -6945,6 +6966,7 @@
             // shared guarded helper; the opener's inline call is retired.
             refreshIcons();
         }
+        var rcPodOpenRollT = null;   // v1.48.0: the fresh-open roll's arm — fires once the sheet is fully up
         function openRcPod() {
             const wrap = document.getElementById('ca-rc-podwrap');
             const sheet = document.getElementById('ca-rc-pod-sheet');
@@ -6964,13 +6986,25 @@
             // (The v1.45.46 lesson underneath it stands: display:none zeroes
             // clientHeight — never measure a hidden page.)
             wrap.classList.remove('hidden');
-            renderRcPod(true, true);    // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass. v1.45.56: a fresh open ROLLS the hero digits too
+            // v1.48.0 (owner order): the fresh open renders settled and the
+            // hero digits ROLL once the sheet is fully up (~310ms of glide;
+            // the roll no longer answers to ca-reduced — the owner's one
+            // exception). A close or a reopen clears the arm.
+            renderRcPod(true, false);    // the staggered reveal is MOUNT-ONLY — tab swaps render instant; the render owns the icon pass
+            if (rcPodOpenRollT) clearTimeout(rcPodOpenRollT);
+            rcPodOpenRollT = setTimeout(() => {
+                rcPodOpenRollT = null;
+                const w2 = document.getElementById('ca-rc-podwrap');
+                if (!w2 || w2.classList.contains('hidden')) return;
+                w2.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);
+            }, 360);
             caSheetFocusIn(sheet);     // the sub-sheet traps too (M3)
             caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
         }
         function closeRcPod() {
             const wrap = document.getElementById('ca-rc-podwrap');
             const sheet = document.getElementById('ca-rc-pod-sheet');
+            if (rcPodOpenRollT) { clearTimeout(rcPodOpenRollT); rcPodOpenRollT = null; }
             if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
             closeRcStat();   // v1.45.53: the stats overlay never outlives its passport
             closePodCapPicker();   // v1.46.1 hotfix: the year picker never outlives its passport either
@@ -11218,17 +11252,21 @@ SLOT|Special Lve others`;
             // v1.45.59 (owner order): the command words travel — a mode word
             // and a cabin class (fcl/jcl/scl/ycl) may lead, or follow the
             // FIRST flight number ("sq802 menu 4 oct", "sq802 jcl menu 4
-            // oct", "jcl menu sq802 4 oct"). One of each at most; only the
-            // menu family ever reads the cabin.
+            // oct", "jcl menu sq802 4 oct"). One mode at most; only the
+            // menu family ever reads the cabins.
+            // v1.48.0 (owner order): the cabins travel as a LIST — "jcl ycl
+            // menu sq802 4 oct" views both cabins' menus (duplicates fold,
+            // order keeps the crew's own).
             let mode = '';
-            let cabin = '';
+            let cabins = [];
             let i = 0;
             const NAT_MODES = ['menu', 'ifa', 'lma', 'cop'];
             const NAT_CABINS = { fcl: 'FCL', jcl: 'JCL', scl: 'SCL', ycl: 'YCL' };
+            const takeCabin = (w) => { const c = NAT_CABINS[w]; if (c && cabins.indexOf(c) < 0) cabins.push(c); return !!c; };
             for (;;) {
                 if (i >= t.length) return null;    // words with no flight behind them never parse
                 if (!mode && NAT_MODES.indexOf(t[i]) >= 0) { mode = t[i]; i++; continue; }
-                if (!cabin && NAT_CABINS[t[i]]) { cabin = NAT_CABINS[t[i]]; i++; continue; }
+                if (takeCabin(t[i])) { i++; continue; }
                 break;
             }
             const pairs = [];
@@ -11245,7 +11283,7 @@ SLOT|Special Lve others`;
                 if (!pairs.length) {
                     for (;;) {
                         if (!mode && NAT_MODES.indexOf(t[i]) >= 0) { mode = t[i]; i++; continue; }
-                        if (!cabin && NAT_CABINS[t[i]]) { cabin = NAT_CABINS[t[i]]; i++; continue; }
+                        if (takeCabin(t[i])) { i++; continue; }
                         break;
                     }
                 }
@@ -11262,7 +11300,7 @@ SLOT|Special Lve others`;
                 pairs.push({ fn: String(parseInt(fn, 10)), ymd });
             }
             if (!pairs.length || i !== t.length) return null;
-            return { mode, cabin, pairs };
+            return { mode, cabins, pairs };
         }
         // The attached roster is the offline source of truth for a flight's
         // route and printed times. Raw store (not upcomingList): past duties
@@ -11377,8 +11415,8 @@ SLOT|Special Lve others`;
             }
             // --- menu: straight to the flight's menus ---
             if (cmd.mode === 'menu') {
-                if (cmd.pairs.length === 1) { openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd, null, cmd.cabin); return; }
-                natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd, null, cmd.cabin) })));
+                if (cmd.pairs.length === 1) { openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd, null, cmd.cabins); return; }
+                natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd, null, cmd.cabins) })));
                 return;
             }
             // --- calculator prefill ---
@@ -11394,36 +11432,37 @@ SLOT|Special Lve others`;
             // --- no mode word: the crew picks menus or the allowance ---
             natChooserBubble('<b>' + label + '</b> \u2014 what would you like?', [
                 { label: 'Menus', icon: 'utensils', gold: false, act: () => {
-                    if (cmd.pairs.length === 1) openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd, null, cmd.cabin);
-                    else natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd, null, cmd.cabin) })));
+                    if (cmd.pairs.length === 1) openNextFlightMenus(cmd.pairs[0].fn, cmd.pairs[0].ymd, null, cmd.cabins);
+                    else natChooserBubble('Which leg\u2019s menu?', cmd.pairs.map((p) => ({ label: natPairLabel(p), icon: 'utensils', gold: false, act: () => openNextFlightMenus(p.fn, p.ymd, null, cmd.cabins) })));
                 } },
                 { label: 'COP allowance', icon: 'calculator', gold: true, act: () => prefill('both') }
             ]);
         }
 
         // v1.44.0 hotfix (owner spec): the help card. A structured onboarding
-        // surface — header tile, hairline, five tappable command rows (bold
-        // gold keyword, monospaced input token pills, one-phrase description),
+        // surface — header tile, hairline, five command rows (bold gold
+        // keyword, monospaced input token pills, one-phrase description),
         // a dimmer tips block, and ONE outlined CTA. v1.45.59 (owner order):
         // the menu row's example became a complete command (a flight AND a
         // date), every row teaches BOTH word orders as pills, and the cabin
-        // row (jcl menu) sits under menu with ONE example. Iconography is
-        // Lucide only (category glyphs, the header bulb, the tip dots, the
-        // CTA arrow); no emoji, no custom SVGs, no new accent colours —
-        // gold/dark only, green reserved for success states elsewhere. The
-        // staggered entrance rides the app's own chat-anim-in spring with
-        // per-row delays. Tapping a row inserts its keyword into the
-        // composer (bound by the delegated listener at boot) and flashes the
-        // row gold.
+        // row (jcl menu) sits under menu. v1.48.0 (owner orders): the rows
+        // are READ-ONLY — no tap inserts anything, the helper text says so,
+        // and the cabin row teaches the MULTI-CABIN search (jcl ycl menu …).
+        // Iconography is Lucide only (category glyphs, the header bulb, the
+        // tip dots, the CTA arrow); no emoji, no custom SVGs, no new accent
+        // colours — gold/dark only, green reserved for success states
+        // elsewhere. The staggered entrance rides the app's own chat-anim-in
+        // spring with per-row delays.
         function helpCardHtml() {
-            // v1.45.59 (owner order): every command row now shows BOTH word
-            // orders — keyword-first and flight-number-first — as example
-            // pills, and ONE cabin-class row sits under menu (a single
-            // example; the crew extrapolate scl/ycl/fcl). Every pill is a
-            // COMPLETE, working command — nothing on the card is a dead
-            // example. Tapping the row still inserts its keyword.
+            // v1.45.59: every command row shows BOTH word orders —
+            // keyword-first and flight-number-first — as example pills, and
+            // the cabin-class row sits under menu. v1.48.0 (owner orders):
+            // the rows are plain DIVs — read-only teaching, no tap inserts
+            // (data-ca-help-row names them for the rig, nothing else), and
+            // the cabin row's second pill teaches the multi-cabin search.
+            // Every pill stays a COMPLETE, working command.
             const row = (cmd, icon, tokens, desc, delay) => `
-                <button type="button" data-ca-help-cmd="${cmd}" class="ca-help-row chat-anim-in w-full text-left flex items-start gap-3 rounded-xl px-2 py-2" style="animation-delay:${delay}ms">
+                <div data-ca-help-row="${cmd}" class="ca-help-row chat-anim-in w-full text-left flex items-start gap-3 rounded-xl px-2 py-2" style="animation-delay:${delay}ms">
                     <i data-lucide="${icon}" class="w-4 h-4 mt-1.5 text-gray-400 dark:text-gray-500 shrink-0"></i>
                     <span class="min-w-0 flex-1 block">
                         <span class="flex items-center gap-2 flex-wrap">
@@ -11432,7 +11471,7 @@ SLOT|Special Lve others`;
                         </span>
                         <span class="block text-xs mt-1 text-gray-700 dark:text-gray-300">${desc}</span>
                     </span>
-                </button>`;
+                </div>`;
             const tip = (txt, delay) => `
                 <span class="ca-help-tip ca-micro chat-anim-in flex items-start gap-2" style="animation-delay:${delay}ms">
                     <i data-lucide="dot" class="w-3.5 h-3.5 mt-0.5 shrink-0 text-sia-gold"></i>
@@ -11444,16 +11483,16 @@ SLOT|Special Lve others`;
                         <span class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 bg-sia-gold/15 border border-sia-gold/30 text-sia-gold"><i data-lucide="lightbulb" class="w-4 h-4"></i></span>
                         <span class="min-w-0 block">
                             <span class="block font-bold text-sm">Quick shortcuts</span>
-                            <span class="block text-xs text-gray-500 dark:text-gray-400">Type or tap any command below</span>
+                            <span class="block text-xs text-gray-500 dark:text-gray-400">Type any command below</span>
                         </span>
                     </div>
                     <div class="ca-hairline my-3"></div>
                     <div class="flex flex-col gap-0.5">
-                        ${row('menu', 'utensils', ['sq802 4 oct', 'sq802 menu 4 oct'], 'Open a flight\u2019s inflight menus', 40)}
-                        ${row('jcl menu', 'armchair', ['sq802 4 oct'], 'One cabin\u2019s menu \u2014 jcl, scl, ycl or fcl', 80)}
-                        ${row('ifa', 'calculator', ['sq802 4 oct', 'sq802 ifa 4 oct'], 'Price an inflight allowance', 120)}
-                        ${row('lma', 'sandwich', ['sq802 4 oct sq807 5 oct', 'sq802 lma 4 oct sq807 5 oct'], 'Price a layover meal allowance', 160)}
-                        ${row('cop', 'map', ['sq802 4 oct sq807 5 oct', 'sq802 cop 4 oct sq807 5 oct'], 'Price a whole trip, both allowances', 200)}
+                        ${row('menu', 'utensils', ['sq802 17 oct', 'sq802 menu 17 oct'], 'Open a flight\u2019s inflight menus', 40)}
+                        ${row('jcl menu', 'armchair', ['sq802 17 oct', 'jcl ycl menu sq802 17 oct'], 'One cabin or several \u2014 jcl, scl, ycl, fcl', 80)}
+                        ${row('ifa', 'calculator', ['sq802 17 oct', 'sq802 ifa 17 oct'], 'Price an inflight allowance', 120)}
+                        ${row('lma', 'sandwich', ['sq802 17 oct sq807 18 oct', 'sq802 lma 17 oct sq807 18 oct'], 'Price a layover meal allowance', 160)}
+                        ${row('cop', 'map', ['sq802 17 oct sq807 18 oct', 'sq802 cop 17 oct sq807 18 oct'], 'Price a whole trip, both allowances', 200)}
                     </div>
                     <div class="ca-hairline my-3"></div>
                     <div class="flex flex-col gap-1.5">
@@ -16746,7 +16785,22 @@ SLOT|Special Lve others`;
             archEl('ca-arch-sub-sheet').classList.add('translate-y-full');
             caSheetHideArm(wrap);   // hotfix 14: the shared arm (was a bespoke archSubTimer)
         }
-        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArchSummary._open = true; renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close. v1.45.56: a fresh open ROLLS the figures */
+        var archOpenRollT = null;
+        function archOpenRollArm() {
+            // v1.48.0 (owner order): the roll starts only when the overlay is
+            // FULLY UP — the sheet glides ~310ms (10ms arm + the 300ms
+            // transition; under ca-reduced the sheet still rides the same
+            // transition-transform), so the open roll arms just past it. A
+            // close or a reopen clears the arm; the roll itself no longer
+            // answers to ca-reduced (the owner's one exception).
+            if (archOpenRollT) clearTimeout(archOpenRollT);
+            archOpenRollT = setTimeout(() => {
+                archOpenRollT = null;
+                if (!archEl('ca-arch-backdrop') || archEl('ca-arch-backdrop').classList.contains('hidden')) return;
+                archSummaryFigs().forEach(caNumRoll);
+            }, 360);
+        }
+        function openArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetHideCancel(b); b.classList.remove('hidden'); renderArchSummary._open = true; renderArch(); caSheetFocusIn(s); caSheetGlideArm(s, b); archOpenRollArm(); } /* hotfix 13: shared glide; hotfix 14: cancel the pending hide; round 20: cancellable by a close. v1.45.56: a fresh open ROLLS the figures — v1.48.0: once the sheet is fully up */
 
         // v1.46.1 (owner order, the camera button): the earnings capture.
         // Monthly Salary is the LOCKED context; the crew pick the YEAR from
@@ -16822,13 +16876,19 @@ SLOT|Special Lve others`;
             const wasReduced = document.documentElement.classList.contains('ca-reduced');
             // the diet, live now: the rows the capture must not show are
             // hidden for the measure + paint and restored in the finally —
-            // the layout reflows exactly as the old clone's removal did
-            const diet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'];
+            // the layout reflows exactly as the old clone's removal did.
+            // v1.48.0 (owner order): the since-line joins it — the share
+            // ends at the last record, never at the bookkeeping
+            const diet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end', 'ca-arch-since'];
             const dietWas = {};
             try {
-                // ca-reduced stands the roll down for BOTH the pose and the
-                // restore — the digits paint settled, and no pending restore
-                // timer can land mid-capture (the v1.45.59 wrapper lesson)
+                // ca-reduced still stands the charts and the tips down for
+                // BOTH the pose and the restore, and v1.48.0 adds the roll
+                // HOLD — the roll no longer answers to ca-reduced (the
+                // owner's one exception), so the capture says so itself:
+                // the digits paint settled, and no pending restore timer
+                // can land mid-capture (the v1.45.59 wrapper lesson)
+                caRollHold = true;
                 if (!wasReduced) document.documentElement.classList.add('ca-reduced');
                 archState.mode = 'salary';
                 archState.scope = 'year';
@@ -16861,10 +16921,15 @@ SLOT|Special Lve others`;
                 archState.search = keep.search;
                 archState.collapsed = keep.collapsed;
                 renderArch();
+                // v1.48.0: the hold lifts only AFTER the restore render — the
+                // pose and its unwind are bookkeeping, never a figure moment,
+                // so the capture never leaves a roll behind (the roll no
+                // longer answers ca-reduced, so the hold owns this alone)
+                caRollHold = false;
                 if (!wasReduced) document.documentElement.classList.remove('ca-reduced');
             }
         }
-        function closeArchOverlay() { const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); caSheetGlideCancel(s); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm; round 20: cancel the pending glide */
+        function closeArchOverlay() { if (archOpenRollT) { clearTimeout(archOpenRollT); archOpenRollT = null; } const b = archEl('ca-arch-backdrop'), s = archEl('ca-arch-sheet'); caSheetFocusOut(s); b.classList.add('opacity-0'); caSheetGlideCancel(s); s.classList.add('translate-y-full'); archState.collapsed = {}; caSheetHideArm(b); } /* hotfix 14: shared arm; round 20: cancel the pending glide */
 
         // v1.33.2: a fingerprint of which duties have landed — renderArch
         // stamps it, the sweep compares it, and the earnings page only
@@ -17126,7 +17191,10 @@ SLOT|Special Lve others`;
                 + '<div class="ca-arch-footline"></div>'
                 + '<span class="ca-micro font-bold uppercase tracking-[0.08em] whitespace-nowrap" style="color: var(--arch-muted)">End of records</span>'
                 + '<div class="ca-arch-footline"></div></div>'
-                + '<div class="text-center ca-micro pb-2" style="color: var(--arch-muted)">Showing earnings since ' + archiveMonthLabel(firstMk) + '</div>';
+                // v1.48.0 (owner order): the since-line carries its id — the
+                // capture's diet hides it with the rest of the bookkeeping
+                // (the shareable year card ends at the last record)
+                + '<div id="ca-arch-since" class="text-center ca-micro pb-2" style="color: var(--arch-muted)">Showing earnings since ' + archiveMonthLabel(firstMk) + '</div>';
             list.innerHTML = html;
             refreshIcons();
             if (scroll) scroll.scrollTop = keep;
@@ -17230,6 +17298,19 @@ SLOT|Special Lve others`;
         // the card answers whichever lens is active - COP Allowance exactly
         // as before, or the Monthly Salary stack (net big, gross and CPF
         // beneath, the payslip-checkable breakdown in the meta row).
+        function archSummaryFigs() {
+            // v1.45.56/57 + v1.48.0: the gold card's WHOLE figure family —
+            // the big number, the gross and after-expenses lines when they
+            // ride, and the visible quadrant's value cells. The open roll
+            // and the change roll collect the same family through here.
+            const numEl = archEl('ca-arch-total'), grossEl = archEl('ca-arch-gross-line'), afterEl = archEl('ca-arch-after-line');
+            const metas = Array.from(archEl('ca-arch-summary').querySelectorAll('.ca-arch-metagrid:not(.hidden) .ca-arch-metaval'));
+            const figs = [numEl];
+            if (!grossEl.classList.contains('hidden')) figs.push(grossEl);
+            if (!afterEl.classList.contains('hidden')) figs.push(afterEl);
+            metas.forEach((c) => figs.push(c));
+            return figs;
+        }
         function renderArchSummary(all) {
             const map = archMonthsMap(all);
             const currentMk = archCurrentMk();
@@ -17431,13 +17512,15 @@ SLOT|Special Lve others`;
             // The decision rides the whole card's fingerprint, so a change
             // to ANY figure — even one the total alone wouldn't catch —
             // rolls the card together.
-            const metas = Array.from(archEl('ca-arch-summary').querySelectorAll('.ca-arch-metagrid:not(.hidden) .ca-arch-metaval'));
-            const figs = [numEl];
-            if (!grossEl.classList.contains('hidden')) figs.push(grossEl);
-            if (!afterEl.classList.contains('hidden')) figs.push(afterEl);
-            metas.forEach((c) => figs.push(c));
+            const figs = archSummaryFigs();
+            figs.forEach(caRollSettle);   // v1.48.0: the render settles its figures — no pending restore outlives it
             const fv = figs.map((f) => f.textContent).join('|');
-            if (renderArchSummary._open || renderArchSummary._fv !== fv) {
+            // v1.48.0 (owner order): the fresh open settles first — the
+            // open roll fires once the sheet is fully up (openArchOverlay
+            // arms it); a figure CHANGE while the sheet is already up rolls
+            // at once, as always.
+            if (!renderArchSummary._open && renderArchSummary._fv !== fv) {
+                if (archOpenRollT) { clearTimeout(archOpenRollT); archOpenRollT = null; }   // v1.48.0: a figure change supersedes a pending entrance roll
                 figs.forEach(caNumRoll);
             }
             renderArchSummary._open = false;
@@ -18866,7 +18949,7 @@ SLOT|Special Lve others`;
             if (html && (typeof lucide !== 'undefined')) { refreshIcons(); }
         }
 
-        function openMenuViewerForCabins(flightNumber, date, cabinClasses, wantCabin) {
+        function openMenuViewerForCabins(flightNumber, date, cabinClasses, wantCabins) {
             // v1.45.5 (owner order): the cycle button rides the header —
             // shown only when 2+ upcoming flights have saved menus; each
             // tap is a fresh open of the next one (wrap at the end).
@@ -18902,13 +18985,20 @@ SLOT|Special Lve others`;
             // 4 oct") opens THAT cabin's sheet — the wanted cabin leads when
             // the flight publishes it; anything else falls back to the first
             // cabin with an honest note, never a blank guess.
-            const firstCabin = (wantCabin && cabinClasses.indexOf(wantCabin) >= 0) ? wantCabin : cabinClasses[0];
-            if (wantCabin && cabinClasses.indexOf(wantCabin) < 0) {
-                addBotMessage('SQ ' + rosterEsc(flightNumber) + ' doesn\u2019t publish a ' + String(wantCabin) + ' menu \u2014 showing ' + (cabinNames[firstCabin] || firstCabin) + ' instead.');
+            // v1.48.0 (owner order): the wanted set is a LIST — "jcl ycl
+            // menu sq802 4 oct" shows exactly those cabins' menus (each one
+            // published), the first wanted leading; wanted cabins the flight
+            // does not publish drop out with the same honest note.
+            const wantList = (Array.isArray(wantCabins) ? wantCabins : (wantCabins ? [wantCabins] : [])).map((c) => String(c || '').toUpperCase()).filter(Boolean);
+            const shown = wantList.length ? cabinClasses.filter((c) => wantList.indexOf(c) >= 0) : cabinClasses;
+            const missing = wantList.filter((c) => cabinClasses.indexOf(c) < 0);
+            const firstCabin = shown.length ? shown[0] : cabinClasses[0];
+            if (missing.length) {
+                addBotMessage('SQ ' + rosterEsc(flightNumber) + ' doesn\u2019t publish ' + (missing.length > 1 ? missing.join(' or ') + ' menus' : 'a ' + missing[0] + ' menu') + ' \u2014 showing ' + (cabinNames[firstCabin] || firstCabin) + ' instead.');
             }
-            if (cabinClasses.length > 1) {
+            if (shown.length > 1) {
                 cabinWrap.classList.remove('hidden');
-                cabinClasses.forEach(code => {
+                shown.forEach(code => {
                     const btn = document.createElement('button');
                     btn.type = 'button';
                     btn.className = 'w-full text-left py-2 px-3 text-xs font-bold rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors';
@@ -18920,10 +19010,13 @@ SLOT|Special Lve others`;
                     };
                     cabinList.appendChild(btn);
                 });
-                cabinLabel.textContent = cabinNames[firstCabin] || firstCabin;
             } else {
                 cabinWrap.classList.add('hidden');
             }
+            // v1.48.0: the label names the LEADING cabin whatever the count
+            // (a one-cabin search leaves the switcher hidden but the label
+            // still reads the truth — never the previous sheet's leftover)
+            cabinLabel.textContent = cabinNames[firstCabin] || firstCabin;
 
             menuViewState = { category: 'meals', mealTab: 0 };
             currentMealServices = [];
@@ -18945,7 +19038,7 @@ SLOT|Special Lve others`;
         // viewer straight from the save (works offline, mid-flight). Not
         // cached + online → fetch every cabin, then open. Never pops the
         // flight-verification card — the roster already knows the flight.
-        function openNextFlightViewer(fn, ymd, wantCabin) {
+        function openNextFlightViewer(fn, ymd, wantCabins) {
             let saved = null;
             try { saved = readSavedCabinSchedule(fn, ymd); } catch (e) {}
             if (!saved || !Array.isArray(saved.cabinClasses) || !saved.cabinClasses.length) return false;
@@ -18961,12 +19054,12 @@ SLOT|Special Lve others`;
             currentMenuSearch.selectedSectors = [];
             currentMenuSearch.selectedSector = '';
             currentMenuSearch.aircraftType = saved.aircraftType || saved.aircraft || '';
-            openMenuViewerForCabins(fn, ymd, saved.cabinClasses, wantCabin);
+            openMenuViewerForCabins(fn, ymd, saved.cabinClasses, wantCabins);
             return true;
         }
-        async function openNextFlightMenus(fn, ymd, setBusy, wantCabin) {
+        async function openNextFlightMenus(fn, ymd, setBusy, wantCabins) {
             if (menusSavedFor(fn, ymd)) {
-                if (!openNextFlightViewer(fn, ymd, wantCabin)) addBotMessage('Menus were saved for <b>SQ ' + rosterEsc(fn) + '</b> but the schedule could not be read — try re-saving them with a connection.');
+                if (!openNextFlightViewer(fn, ymd, wantCabins)) addBotMessage('Menus were saved for <b>SQ ' + rosterEsc(fn) + '</b> but the schedule could not be read — try re-saving them with a connection.');
                 return;
             }
             if (!navigator.onLine) {
@@ -18988,7 +19081,7 @@ SLOT|Special Lve others`;
                     : 'I couldn\u2019t reach the menu service for <b>SQ ' + rosterEsc(fn) + '</b> — check your connection and tap again.');
                 return;
             }
-            openNextFlightViewer(fn, ymd, wantCabin);
+            openNextFlightViewer(fn, ymd, wantCabins);
         }
 
         // Inflight Menu Viewer Logic (Step 5)
@@ -20149,7 +20242,7 @@ SLOT|Special Lve others`;
                                     const choiceLine = dishCount >= 2
                                         ? `<div class="italic text-xs text-gray-500 dark:text-gray-400 text-center">Choose one of ${dishCount}</div>`
                                         : '';
-                                    let courseHtml = menuHairlineTitle(course.category, choiceLine);
+                                    let courseHtml = menuHairlineTitle(menuCourseDisplayName(course.category, course.items), choiceLine);
 
                                     if (course.items) {
                                         const dishParts = [];
@@ -20428,6 +20521,17 @@ SLOT|Special Lve others`;
         // one-table count pin) — delegates to caEsc like rosterEsc/ratesEsc.
         function escapePrintHtml(str) { return caEsc(str); }
 
+        function printSelectionIsEthnic(raw) {
+            // v1.48.0 (owner field report): the ethnic parting and the Japan
+            // course defaults never fired on REAL menu names — the gate
+            // keyed on the raw selection containing ethnic/regional/local,
+            // but the real names are the cuisines themselves (“Meatless
+            // Asian Selection”, “Japanese Selection”…). The viewer's own
+            // v1.45.56 rule is the truth: everything that is not
+            // International is the ethnic choice.
+            const n = String(raw || '').trim();
+            return !!n && !/international/i.test(n);
+        }
         function shortenCulinaryName(name) {
             if (!name) return '';
             const lower = name.toLowerCase();
@@ -20599,9 +20703,33 @@ SLOT|Special Lve others`;
             return { name: name, desc: [desc, footnote].filter(Boolean).join(' '), vintage: vintage, region: region, veg: veg };
         }
 
-        function printCourseLabel(raw) {
+        function menuCourseIsSatay(raw, items) {
+            // v1.48.0 (owner correction, same round): Canapé names ONE
+            // course — the chicken satay service. The promotion fires when
+            // the course's own name says satay, or when a pre-main course
+            // (the appetiser / starter / salad / canapé family) carries a
+            // satay dish; a main that merely cooks with satay keeps its own
+            // name.
+            const r = String(raw || '');
+            if (/satay/i.test(r)) return true;
+            if (!/appet|starter|salad|canap/i.test(r)) return false;
+            return (items || []).some((it) => /satay/i.test(String((it && (it.name || it.title)) || '')));
+        }
+        function menuCourseDisplayName(raw, items) {
+            // v1.48.0 (owner order, corrected the same round): the SATAY
+            // course reads as the house term — Canapé — wherever the crew
+            // meets it: the viewer's course title, the elegant sheet's
+            // label, the compact sheet's key. Every other course keeps its
+            // own name: appetiser stays appetiser, app stays app.
+            if (menuCourseIsSatay(raw, items)) return 'Canapé';
+            return raw;
+        }
+        function printCourseLabel(raw, items) {
             const l = String(raw || '').toLowerCase();
-            if (/appet|starter|salad|canap/.test(l)) return 'Appetizer';
+            // v1.48.0 (owner correction, same round): appetiser stays
+            // appetiser and app stays app — only the satay course is Canapé
+            if (menuCourseIsSatay(raw, items)) return 'Canapé';
+            if (/appet|starter|salad|canap/.test(l)) return cleanMenuText(raw || 'Course');
             if (/main|entr[eé]e|entree/.test(l)) return 'Main Course';
             if (/dessert|sweet|pudding/.test(l)) return 'Dessert';
             if (/baker|bread/.test(l)) return 'From The Bakery';
@@ -20612,6 +20740,7 @@ SLOT|Special Lve others`;
 
         function printCompactCourse(label) {
             const l = String(label || '').toLowerCase();
+            if (/canap/.test(l)) return 'CANAPÉ';
             if (/appet/.test(l)) return 'APP';
             if (/main/.test(l)) return 'MAIN';
             if (/dessert/.test(l)) return 'DESSERT';
@@ -20741,7 +20870,7 @@ SLOT|Special Lve others`;
                     (sel.mealCourses || []).forEach((course) => {
                         const items = (course.items || []).map(printItemFromRaw).filter(Boolean);
                         if (!items.length) return;
-                        const label = printCourseLabel(course.category);
+                        const label = printCourseLabel(course.category, course.items);
                         const hideCourse = printIsDelectable(svcName) && !printIsLightBite(label);
                         items.forEach((it) => {
                             if (printHideCompactScl(cabinCode, '', it.name)) it.hiddenCompact = true;
@@ -20760,7 +20889,11 @@ SLOT|Special Lve others`;
                     // keeps ONLY that signature course on the compact sheet
                     // by default; the edit eyes still free the rest. SCL and
                     // YCL are untouched (the owner named First and Business).
-                    if (/ethnic|regional|local/i.test(selRaw)) {
+                    // v1.48.0: the signature courses ARE the Japan signal —
+                    // the rule fires on their presence, never on the
+                    // selection's own wording (the real sheets never said
+                    // “ethnic”).
+                    {
                         const own = courses.slice(courseStart);
                         const keep = cabinCode === 'FCL' ? /mizugashi/i : (cabinCode === 'JCL' ? /mizumono/i : null);
                         if (keep && own.some((c) => /mizugashi|mizumono/i.test(c.label))) {
@@ -21238,7 +21371,7 @@ SLOT|Special Lve others`;
                         const visItems = printVisible(course.items);
                         if (!visItems.length) return;
                         const raw = String(course.selRaw || '');
-                        if (/ethnic|regional|local/i.test(raw)) {
+                        if (printSelectionIsEthnic(raw)) {   // v1.48.0: the viewer's rule — not-International is the ethnic choice
                             if (raw && prevEthRaw && raw !== prevEthRaw) body.push('<div class="pc-eth-rule"></div>');
                             prevEthRaw = raw;
                         }

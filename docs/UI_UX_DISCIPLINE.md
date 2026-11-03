@@ -896,11 +896,30 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
 
 - v1.47.2 (owner field report — "alot of the stations rendering in the
   bottom month details"): the earnings share shows the card exactly as the
-  crew sees it — every month folded to its head line, and below the last
-  record only the card's own centered footer ("Showing earnings since…").
-  The stations inside a folded month are off the screen, so they are off
-  the canvas; the months the crew unfolds come back in the share, because
-  the share is the live card, not a reconstruction.
+  crew sees it — every month folded to its head line. The stations inside a
+  folded month are off the screen, so they are off the canvas; the months
+  the crew unfolds come back in the share, because the share is the live
+  card, not a reconstruction. (The "centered footer below the last record"
+  clause was superseded one round later by the v1.48.0 since-line order —
+  the footer joined the capture's diet; the share ends at the last record.)
+
+- v1.48.0 (owner orders, the six-order round): **the shortcuts card reads
+  only** — the five command rows are plain DIVs (data-ca-help-row), the
+  helper text says "Type any command below", the tap-to-insert machinery
+  and its gold flash are retired whole, and the card top-aligns in the
+  chat (the tall-card rule: the crew reads it from the top down). **The
+  entrance roll waits for the sheet** — a fresh open renders settled and
+  rolls ~360ms later, once the glide is done (a roll under a moving sheet
+  reads as a stutter, not an entrance); a figure change supersedes the
+  pending entrance roll, and a close cancels it. **Canapé names the satay
+  course alone** (owner correction, same round): the chicken-satay service
+  reads "Canapé" on the viewer's course title, the elegant label and the
+  compact key (CANAPÉ); every other course keeps its own name — appetiser
+  stays appetiser, app stays app. **A multi-cabin search names its cabins
+  in the crew's own order** — "jcl ycl menu sq802 17 oct" opens both
+  sheets with the first wanted leading, and the honest fallback note
+  carries over to lists ("doesn't publish a FCL menu — showing Economy
+  instead.").
 
 - When the app's OWN storage history is why data is missing, the empty-state
   line must say so and point at the fix — never blame the crew's document.

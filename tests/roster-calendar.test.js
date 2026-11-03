@@ -1482,10 +1482,10 @@ const synthItems = [].concat(
     R.ok(d.getElementById('ca-rc-podwrap').classList.contains('hidden') && d.getElementById('ca-rc-statwrap').classList.contains('hidden'), 'closing the passport closes the stats overlay with it — the overlay never outlives its page');
     w.eval('openRcPod()');
     // v1.45.56 (owner order, the departure-board roll): a fresh open ROLLS
-    // the hero's digits. The mid-roll reads are SYNCHRONOUS with the open —
-    // the roll mounts in the open's own task, and any await can stretch
-    // past the 570ms single-digit restore under box load (a lesson this
-    // rig paid for before it was written down).
+    // the hero's digits. v1.48.0 (owner order): the roll WAITS OUT the
+    // sheet's glide (~310ms) — the mid-roll reads come at ~420ms, just
+    // past the armed open roll.
+    await wait(420);
     R.ok(mainPills()[0].classList.contains('on') && d.getElementById('ca-rc-statwrap').classList.contains('hidden'), 'a reopen resets to All-Time chips and a closed overlay — nothing persists');
     {
       const hv = (label) => { const all = Array.from(d.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hcell')); const el = all.find((c) => c.querySelector('.ca-rc-pod-hlabel').textContent.trim() === label); return el ? el.querySelector('.ca-rc-pod-hval') : null; };
@@ -1879,7 +1879,7 @@ const synthItems = [].concat(
     // clientHeight read 0, and the fit fell to its no-layout fallback on
     // EVERY screen (7 rows, 10 entries, tall or short)
     const orp = src.slice(src.indexOf('function openRcPod'), src.indexOf('function closeRcPod'));
-    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true, true);'), 'v1.45.46 (re-pointed v1.45.51): openRcPod un-hides the wrap BEFORE the render, same synchronous task — the slide-in and the render never flash (the viewport fit the lesson rode on is scrapped; never measure a hidden page stands)');
+    R.ok(orp.indexOf("wrap.classList.remove('hidden');") >= 0 && orp.indexOf("wrap.classList.remove('hidden');") < orp.indexOf('renderRcPod(true, false);'), 'v1.45.46 (re-pointed v1.45.51 + v1.48.0): openRcPod un-hides the wrap BEFORE the render, same synchronous task — the slide-in and the render never flash (the viewport fit the lesson rode on is scrapped; never measure a hidden page stands)');
     R.ok(orp.indexOf('display:none zeroes') >= 0, 'the trap is recorded in-source where the next editor will read it');
     // v1.45.51 (owner orders): the records page is the PASSPORT — the
     // title and both aria-labels rename, the podium button wears the
@@ -1899,9 +1899,9 @@ const synthItems = [].concat(
     R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page');
     // v1.45.56 (owner order, the departure-board roll): the contract, by source
     R.ok(src.includes('function caNumRoll(el)') && src.includes("if (!/\\d/.test(txt)) return;") && src.includes("el.innerHTML = savedHtml;"), 'v1.45.56: the shared roll helper — digits only, the original markup restored on settle');
-    R.ok(src.includes("if (document.documentElement.classList.contains('ca-reduced')) return;") && src.indexOf('ca-reduced', src.indexOf('function caNumRoll')) < src.indexOf('function rcPodTelCell'), 'v1.45.56: the roll stands down under ca-reduced before it ever mounts');
+    { const cnr = src.slice(src.indexOf('function caNumRoll'), src.indexOf('function rcPodTelCell') > 0 ? src.indexOf('function rcPodTelCell') : undefined); R.ok(cnr.includes('if (caRollHold) return;') && !cnr.includes('ca-reduced'), 'v1.48.0 (owner order): the roll plays REGARDLESS of ca-reduced — the one exception to the everything-snaps rule, and the guard is scoped to the roll helper alone; only a capture\u2019s pose holds it (the digits must paint settled)'); }
     R.ok(src.includes('function rcPodTelRender(st, roll)') && src.includes('function renderRcPod(stagger, rollHero)') && src.includes('rcPodTelRender(heroStats, rollHero);'), 'v1.45.56: the roll flag rides the render chain — only the marked moments roll');
-    R.ok(src.includes('renderRcPod(true, true);') && src.includes('renderRcPod(false, true); return;'), 'v1.45.56: the two roll moments are the fresh open and the year-pill change');
+    R.ok(src.includes('renderRcPod(false, true); return;') && src.includes('rcPodOpenRollT = setTimeout') && src.includes('ca-reduced?80:360ms') === false, 'v1.45.56 + v1.48.0: the two roll moments are the fresh open (armed past the glide, \u2014360ms) and the year-pill change');
     R.ok(src.includes("wrap.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);"), 'v1.45.56: the hero walk rolls values and subs alike (digit-free strings no-op)');
     R.ok(src.includes('.ca-rollr0::before') && src.includes('.ca-rollstrip { position: absolute'), 'v1.45.56: the reel draws through ::before content — the DOM text never changes');
     R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move');

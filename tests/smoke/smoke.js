@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.47.2', 'APP_VERSION is 1.47.2');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.47.2' && e.d === '2026-11-03' && e.items.length === 1 && e.items[0].c === 'fix'; }), 'the changelog carries the 1.47.2 entry — its folded-months fix');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v300'), 'the service-worker cache name is bumped to v300 (the v1.47.2 folded-months round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.48.0', 'APP_VERSION is 1.48.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.0' && e.d === '2026-11-03' && e.items.length === 5 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 3; }), 'the changelog carries the 1.48.0 entry — two fixes, three improvements');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v301'), 'the service-worker cache name is bumped to v301 (the v1.48.0 six-order round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,8 +166,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.47.2'; }), 'the What\'s New sheet carries the v1.47.2 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Folded months stay folded in the earnings capture — no ghost stations.') !== -1), 'the What\'s New sheet carries the v1.47.2 folded-months pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.0'; }), 'the What\'s New sheet carries the v1.48.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Earnings shares end at the last record — the since line is gone.') !== -1), 'the What\'s New sheet carries the v1.48.0 since-line pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The satay course reads Canapé — viewer and both print sheets.') !== -1), 'the What\'s New sheet carries the v1.48.0 satay-course Canapé pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The ethnic parting and Japan course defaults fire on real menu names.') !== -1), 'the What\'s New sheet carries the v1.48.0 real-names pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Shortcuts card reads only, takes multiple cabins, opens from the top.') !== -1), 'the What\'s New sheet carries the v1.48.0 shortcuts pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The figure roll always plays — and waits for the sheet.') !== -1), 'the What\'s New sheet carries the v1.48.0 roll pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Folded months stay folded in the earnings capture — no ghost stations.') !== -1), 'the What\'s New sheet carries the v1.47.2 folded-months pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Passport captures carry their title — All-Time, or the year.') !== -1), 'the What\'s New sheet carries the v1.47.1 passport-title pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The earnings camera joins the passport pattern — quick and exact.') !== -1), 'the What\'s New sheet carries the v1.47.1 earnings pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The passport camera repaints your hero card directly — quicker and exact.') !== -1), 'the v1.47.0 passport-repaint pointer stays in the delta below');
@@ -195,27 +200,32 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForSelector('[data-ca-help-card]', { timeout: 15000 });
         ok(await page.evaluate(() => {
             const card = document.querySelector('[data-ca-help-card]');
-            const rows = Array.from(card.querySelectorAll('[data-ca-help-cmd]'));
+            const rows = Array.from(card.querySelectorAll('[data-ca-help-row]'));
             const t = card.textContent.replace(/\s+/g, ' ');
-            return rows.length === 5 && rows.map((r) => r.getAttribute('data-ca-help-cmd')).join(',') === 'menu,jcl menu,ifa,lma,cop'
-                && t.indexOf('Quick shortcuts') !== -1 && t.indexOf('Type or tap any command below') !== -1;
-        }), 'typing help answers with the structured card — five rows in order, title + subtitle');
-        // v1.45.59 (owner order): both word orders ride every row as COMPLETE
-        // working pills, and the cabin row shows ONE example
+            return rows.length === 5 && rows.map((r) => r.getAttribute('data-ca-help-row')).join(',') === 'menu,jcl menu,ifa,lma,cop'
+                && rows.every((r) => r.tagName === 'DIV')
+                && t.indexOf('Quick shortcuts') !== -1 && t.indexOf('Type any command below') !== -1;
+        }), 'typing help answers with the structured card — five read-only rows in order, title + subtitle');
+        // v1.45.59 (owner order) + v1.48.0: both word orders ride every row as
+        // COMPLETE working pills, and the cabin row teaches the multi-cabin search
         ok(await page.evaluate(() => {
-            const rows = Array.from(document.querySelectorAll('[data-ca-help-card] [data-ca-help-cmd]'));
+            const rows = Array.from(document.querySelectorAll('[data-ca-help-card] [data-ca-help-row]'));
             const toks = (r) => Array.from(r.querySelectorAll('.ca-help-token')).map((t) => t.textContent);
-            return toks(rows[0]).join('|') === 'sq802 4 oct|sq802 menu 4 oct'
-                && toks(rows[1]).join('|') === 'sq802 4 oct' && toks(rows[1]).length === 1
-                && toks(rows[4]).join('|') === 'sq802 4 oct sq807 5 oct|sq802 cop 4 oct sq807 5 oct'
+            return toks(rows[0]).join('|') === 'sq802 17 oct|sq802 menu 17 oct'
+                && toks(rows[1]).join('|') === 'sq802 17 oct|jcl ycl menu sq802 17 oct'
+                && toks(rows[4]).join('|') === 'sq802 17 oct sq807 18 oct|sq802 cop 17 oct sq807 18 oct'
                 && toks(rows[0]).every((x) => / \d{1,2} [a-z]{3,9}$/.test(x));
-        }), 'v1.45.59: every example pill is a complete command — both word orders on each row, one cabin example, nothing that does nothing');
+        }), 'v1.45.59 + v1.48.0: every example pill is a complete command — both word orders on each row, the cabin row teaches the multi-cabin search');
         ok(await page.evaluate(() => {
             const a = parseNaturalCommand('jcl menu sq802 4 oct');
             const b = parseNaturalCommand('sq802 menu 4 oct');
             const c = parseNaturalCommand('sq802 lma 4 oct sq807 5 oct');
-            return a && a.mode === 'menu' && a.cabin === 'JCL' && b && b.mode === 'menu' && c && c.mode === 'lma' && c.pairs.length === 2;
+            return a && a.mode === 'menu' && a.cabins.join(',') === 'JCL' && b && b.mode === 'menu' && c && c.mode === 'lma' && c.pairs.length === 2;
         }), 'v1.45.59: the travelling command words parse in the real page — cabin-class searches and flight-number-first phrasings');
+        ok(await page.evaluate(() => {
+            const m = parseNaturalCommand('jcl ycl menu sq802 17 oct');
+            return m && m.mode === 'menu' && m.cabins.join(',') === 'JCL,YCL';
+        }), 'v1.48.0: a multi-cabin search parses in the real page — both cabins, in the crew\u2019s own order');
         // The rig serves no CDN (lucide ships from unpkg — blocked by policy),
         // so icons stay <i data-lucide> stubs here. The contract this layer
         // can pin: every glyph the card declares is a named Lucide icon —
@@ -232,15 +242,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // Wait for idle first — while the chat is busy every chat button is
         // pointer-inert (the anti-double-fire rule), so a mid-typing tap
         // would rightly be swallowed.
+        // v1.48.0 (owner order): the rows READ ONLY. A real tap on a row
+        // inserts nothing, focuses nothing, flashes nothing — the commands
+        // teach, the composer is the only way in.
         await page.waitForFunction(() => !isChatBusy(), { timeout: 20000 });
-        await page.click('[data-ca-help-cmd="menu"]');
-        ok(await page.evaluate(() => {
-            const row = document.querySelector('[data-ca-help-cmd="menu"]');
-            const inp = document.getElementById('chat-input');
-            return inp.value === 'menu ' && document.activeElement === inp && row.classList.contains('ca-help-flash');
-        }), 'a real tap inserts "menu " into the composer, focuses it, and flashes the row gold');
+        await page.click('[data-ca-help-row="menu"]');
         await new Promise((r) => setTimeout(r, 600));
-        ok(await page.evaluate(() => !document.querySelector('[data-ca-help-cmd="menu"]').classList.contains('ca-help-flash')), 'the gold flash fades on its own — no stuck state');
+        ok(await page.evaluate(() => {
+            const inp = document.getElementById('chat-input');
+            return inp.value === '' && document.activeElement !== inp;
+        }), 'a real tap on a row inserts nothing into the composer and never steals the focus — the card reads only');
         // The composer wears the warm charcoal family in night mode, never
         // navy: real var() resolution, both themes (a standing criterion).
         ok(await page.evaluate(() => {
@@ -478,11 +489,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('ca-rc-shot').nextElementSibling === document.getElementById('ca-rc-pod') && !document.getElementById('ca-roster-cal').contains(document.getElementById('ca-rc-podwrap')) && document.body.contains(document.getElementById('ca-rc-podwrap'))), 'v1.45.38: the podium button ends the left cluster, and the records page is a direct child of <body> - never nested in the calendar sheet');
         ok(await page.evaluate(() => { const b = document.getElementById('ca-rc-pod'); return b && !b.classList.contains('hidden') && !!(b.querySelector('i[data-lucide="book-user"]')); }), 'v1.45.38 + v1.45.51: the passport button is revealed carrying the book-user icon (the rig blocks the CDN, so the pin reads the stub - the glyph itself is verified in the lucide bundle)');
         await page.evaluate(() => document.getElementById('ca-rc-pod').click());
-        // v1.45.56 (owner order, the departure-board roll): read DURING the
-        // roll, before the settle sleep — the reels mount synchronously with
-        // the open, and the hero text already reads the truth (the base
-        // digits ARE the reel cells' text; the strips draw through ::before)
-        ok(await page.evaluate(() => { const vals = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval'); const strips = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollstrip'); return vals.length === 10 && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length > 0 && Array.from(strips).every((x) => x.getAttribute('aria-hidden') === 'true') && Array.from(vals).every((v) => !/\d/.test(v.textContent) || v.querySelector('.ca-rollc')); }), 'v1.45.56 (owner order): a fresh open ROLLS the hero digits — reel cells mounted, strips aria-hidden, and every digit-bearing value reads its truth mid-roll');
+        // v1.45.56 (owner order, the departure-board roll) + v1.48.0: the
+        // open roll WAITS OUT the sheet's glide (~360ms) — read at ~460ms,
+        // mid-roll. The hero text already reads the truth (the base digits
+        // ARE the reel cells' text; the strips draw through ::before)
+        await sleep(460);
+        ok(await page.evaluate(() => { const vals = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rc-pod-hval'); const strips = document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollstrip'); return vals.length === 10 && document.querySelectorAll('#ca-rc-pod-herowrap .ca-rollc').length > 0 && Array.from(strips).every((x) => x.getAttribute('aria-hidden') === 'true') && Array.from(vals).every((v) => !/\d/.test(v.textContent) || v.querySelector('.ca-rollc')); }), 'v1.45.56 + v1.48.0: a fresh open ROLLS the hero digits once the sheet is up — reel cells mounted, strips aria-hidden, and every digit-bearing value reads its truth mid-roll');
         await sleep(600);
         ok(await page.evaluate(() => !document.getElementById('ca-rc-podwrap').classList.contains('hidden') && !document.getElementById('ca-rc-pod-sheet').classList.contains('translate-y-full')), 'v1.45.38: tapping the podium glides the records page up over the calendar');
         ok(await page.evaluate(() => document.querySelector('#ca-rc-pod-sheet h3').textContent === 'Passport' && document.getElementById('ca-rc-pod').getAttribute('aria-label') === 'Passport' && document.getElementById('ca-rc-pod').querySelector('i[data-lucide]').getAttribute('data-lucide') === 'book-user'), 'v1.45.51: the page titles itself Passport, and its button wears the book-user icon');
@@ -1072,10 +1084,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await sleep(300);
         await page.evaluate(() => showArchiveOverlay());
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
-        // v1.45.56 (owner order): a fresh open of the earnings card rolls
-        // the big number — and so does the lens change below. The numflip
-        // cross-fade is retired; the roll owns the figure change
-        ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0), 'v1.45.56 (owner order): a fresh earnings open rolls the big number');
+        // v1.45.56 (owner order) + v1.48.0: a fresh open of the earnings card
+        // rolls the big number ONCE THE SHEET IS UP (~360ms) — and so does
+        // the lens change below. The numflip cross-fade is retired; the roll
+        // owns the figure change
+        await sleep(460);
+        ok(await page.evaluate(() => document.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0), 'v1.45.56 + v1.48.0: a fresh earnings open rolls the big number once the sheet is up');
         ok(await page.evaluate(() => { const metas = document.querySelectorAll('#ca-arch-summary .ca-arch-metagrid:not(.hidden) .ca-arch-metaval'); const rolling = Array.from(metas).filter((c) => c.querySelectorAll('.ca-rollc').length > 0).length; const truthy = Array.from(metas).every((c) => !/\d/.test(c.textContent) || c.querySelector('.ca-rollc')); return metas.length >= 2 && rolling >= 2 && truthy; }), 'v1.45.57 hotfix (owner order): the metric quadrant row rolls WITH the big number — every figure in the gold card, each already reading its truth mid-roll');
         ok(await page.evaluate(() => { const cells = Array.from(document.querySelectorAll('#ca-arch-summary .ca-rollc')); const hosts = new Set(cells.map((c) => c.parentElement)); return cells.length > 0 && hosts.size > 0 && Array.from(hosts).every((h) => h.classList.contains('ca-rollwrap')); }), 'v1.45.59 (owner report): every reel cell rides inside its .ca-rollwrap run — one flex item per run, the digits never space out mid-roll');
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-scope="all"]').click());
@@ -1142,7 +1156,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
             buildArchShotCanvas = function (el) {
                 window.__posedScrollH = el.scrollHeight;
                 window.__posedReduced = document.documentElement.classList.contains('ca-reduced');
-                window.__posedDiet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end'].map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; });
+                window.__posedDiet = ['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end', 'ca-arch-since'].map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; });
+                // v1.48.0: the roll no longer answers ca-reduced (the one
+                // exception) — the capture's own caRollHold stands the digits
+                // down, and the pose proves it: no reel cells at build time
+                window.__posedRollc = !!el.querySelector('.ca-rollc');
                 // v1.47.2: the fold probes, read at build time — the owner
                 // saw "a lot of the stations rendering in the bottom month
                 // details": a folded month is max-height 0 + overflow
@@ -1175,7 +1193,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await page.waitForFunction(() => !!window.__caLastShot, { timeout: 15000 });
         ok(await page.evaluate(() => window.__caLastShot.name === 'CrewAssist-Earnings-2025.png' && window.__caLastShot.size > 4000), 'v1.46.1: picking 2025 delivers a real PNG named app + year');
-        ok(await page.evaluate(() => window.__posedReduced === true && window.__posedDiet.every((v) => v === 'none')), 'v1.47.1: the pose read from inside the build — the roll guard on, all six diet rows hidden live (pills, search, insights, the end-of-records line)');
+        ok(await page.evaluate(() => window.__posedReduced === true && window.__posedDiet.every((v) => v === 'none')), 'v1.47.1 + v1.48.0: the pose read from inside the build — the reduced guard on, all seven diet rows hidden live (pills, search, insights, the end-of-records line, the since-line)');
+        ok(await page.evaluate(() => window.__posedRollc === false), 'v1.48.0: the digits paint SETTLED — the roll plays regardless of ca-reduced now, and the capture\'s own hold stands it down for the pose');
         // v1.47.2 (owner report — "alot of the stations rendering in the
         // bottom month details"): the fold is a clip, not a display none —
         // the folded rows still lay out, so the contract is the walker's
@@ -1183,11 +1202,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => window.__posedClip && window.__posedClip.folded > 0 && window.__posedClip.folded === window.__posedClip.laidOut && window.__posedClip.foldedClip === true && window.__posedClip.headClip === false && window.__posedWalkRows === 0), 'v1.47.2: every station row sits inside a folded month, reads CLIPPED AWAY at build time, and is absent from the walk—s own paint set — the month heads are not (the ghost stations are off the screen, so they are off the canvas)');
         ok(await page.evaluate(async () => {
             // v1.47.2: the raster side of the same report — below the last
-            // record the only ink is the card's own footer line ("Showing
-            // earnings since…"), a short centered micro line. A leaked
-            // folded row is a full-width band: route at the left wing,
-            // amount + delete glyph at the right. Text ink is >40 off the
-            // surface; the group boxes' wash never reaches it.
+            // record a leaked folded row is a full-width band: route at the
+            // left wing, amount + delete glyph at the right.
+            // v1.48.0 (owner order): the since-line ("Showing earnings
+            // since…") joined the diet — the share ends at the last record —
+            // so the zone below the last head carries NO ink at all, full
+            // width. Text ink is >40 off the surface; the group boxes' wash
+            // never reaches it.
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
             const x = c.getContext('2d'); x.drawImage(bmp, 0, 0);
@@ -1196,14 +1217,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const zoneTop = Math.round(window.__posedClip.lastHeadBottom) + 34 + 8;
             for (let y = zoneTop; y < c.height - 6; y++) {
                 for (let px = 2; px < c.width - 2; px++) {
-                    if (px < Math.round(c.width * 0.2) || px > Math.round(c.width * 0.8)) {
-                        const i = (y * c.width + px) * 4;
-                        if (Math.abs(data[i] - bg[0]) > 40 || Math.abs(data[i + 1] - bg[1]) > 40 || Math.abs(data[i + 2] - bg[2]) > 40) return false;
-                    }
+                    const i = (y * c.width + px) * 4;
+                    if (Math.abs(data[i] - bg[0]) > 40 || Math.abs(data[i + 1] - bg[1]) > 40 || Math.abs(data[i + 2] - bg[2]) > 40) return false;
                 }
             }
             return c.height - 6 > zoneTop;
-        }), 'v1.47.2: below the last record the PNG’s only ink is the centered footer line — no full-width station bands in the wings (the folded months stay folded in the share, no ghost stations)');
+        }), 'v1.47.2 + v1.48.0: below the last record the PNG is EMPTY — no station bands, and no since-line either (the share ends at the last record, and the folded months stay folded)');
         ok(await page.evaluate(async () => {
             const bmp = await createImageBitmap(window.__caLastShot.blob);
             const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
@@ -1858,9 +1877,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         });
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         await page.mouse.move(2, 2);
-        // v1.45.59 (owner report): mid-roll on the Remaining-to-earn line —
-        // the digits ride ONE wrapper run beside the mounted icon; the flex
-        // cell can never gap its characters, and the icon never leaves
+        // v1.45.59 (owner report) + v1.48.0: the open roll waits out the
+        // glide (~360ms) — read at ~460ms, mid-roll on the Remaining-to-earn
+        // line: the digits ride ONE wrapper run beside the mounted icon; the
+        // flex cell can never gap its characters, and the icon never leaves
+        await sleep(460);
         ok(await page.evaluate(() => {
             const ctx = document.getElementById('ca-arch-m-ctx');
             const cells = ctx.querySelectorAll('.ca-rollc');
@@ -1880,7 +1901,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
                 label: label ? label.textContent : '',
                 upper: cs ? cs.textTransform : '', track: cs ? cs.letterSpacing : '', size: cs ? cs.fontSize : '',
                 html: ctx ? ctx.innerHTML : '', text: ctx ? ctx.textContent.trim() : '',
-                cls: ctx ? ctx.className : ''
+                cls: ctx ? ctx.className : '',
+
             };
         });
         eq(milestone17.label, 'Remaining to earn', 'v1.45.17: the milestone label reads Remaining to earn');
