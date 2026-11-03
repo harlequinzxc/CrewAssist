@@ -558,11 +558,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.47.2';"), 'APP_VERSION stamped 1.47.2');
+    R.ok(src.includes("var APP_VERSION = '1.48.0';"), 'APP_VERSION stamped 1.48.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v300"), 'service-worker cache name bumped to v300 (the v1.47.2 folded-months round)');
+    R.ok(sw.includes("crewassist-v301"), 'service-worker cache name bumped to v301 (the v1.48.0 six-order round)');
     R.ok(src.includes("/meatless|vegetarian/i.test(n || '') ? 'Ethnic (Veg)' : 'Ethnic'"), 'v1.45.56: the dropdown builder labels a meatless/vegetarian ethnic as Ethnic (Veg)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
@@ -829,6 +829,87 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
     await wait(250);
     R.ok(paper().textContent.indexOf('Dish of Main Course') >= 0 && paper().textContent.indexOf('Dish of Mizugashi') >= 0, 'the elegant view keeps every Japan course \u2014 the hides are compact-only');
+
+    // ===== v1.48.0 (owner round): the real names, the cabin list, and Canap\u00e9 =====
+    // the parser collects a cabin LIST, both word orders, duplicates folding
+    R.eq(w.eval("JSON.stringify(parseNaturalCommand('jcl ycl menu sq" + FLIGHT + " 26 dec').cabins)"), '["JCL","YCL"]', 'v1.48.0: "jcl ycl menu sq322 26 dec" wants BOTH cabins — the parser returns the list');
+    R.eq(w.eval("JSON.stringify(parseNaturalCommand('sq" + FLIGHT + " jcl ycl menu 26 dec').cabins)"), '["JCL","YCL"]', 'the list travels in the flight-first word order too');
+    R.eq(w.eval("JSON.stringify(parseNaturalCommand('jcl jcl ycl menu sq" + FLIGHT + " 26 dec').cabins)"), '["JCL","YCL"]', 'a repeated cabin folds — the crew\u2019s own order keeps, duplicates never double');
+    R.eq(w.eval("JSON.stringify(parseNaturalCommand('jcl ycl ifa sq" + FLIGHT + " 26 dec').cabins)"), '["JCL","YCL"]', 'the ifa/lma/cop families parse the list fine — they just never read it');
+    // the multi-cabin search opens both sheets with the first wanted leading
+    await w.eval(`runNaturalCommand(parseNaturalCommand('jcl ycl menu sq${FLIGHT} 26 dec'))`);
+    await wait(350);
+    R.eq(w.eval('currentMenuSearch.selectedCabin'), 'JCL', '"jcl ycl menu sq322 26 dec" opens straight onto Business — the first wanted cabin leads');
+    R.eq(d.querySelectorAll('#menu-cabin-list button').length, 2, 'the cabin switcher carries exactly the two wanted cabins');
+    R.eq(d.getElementById('menu-cabin-label').textContent, 'Business', 'the gate label names the leading wanted cabin');
+    w.eval('closeMenuViewer()'); await wait(150);
+    // honest fallback with a list: the unpublished want drops out, the note says so
+    await w.eval(`runNaturalCommand(parseNaturalCommand('fcl ycl menu sq${FLIGHT} 26 dec'))`);
+    await wait(1800);   // the note rides the bot queue's own typing cadence
+    R.eq(w.eval('currentMenuSearch.selectedCabin'), 'YCL', 'an unpublished wanted cabin drops out of the list — the published one shows, never a blank sheet');
+    R.ok(d.getElementById('chat-container').textContent.indexOf('publish a FCL menu') >= 0, 'the honest note names the unpublished cabin');
+    w.eval('closeMenuViewer()'); await wait(150);
+
+    // the REAL selection names part with the dashed rule — the gate is
+    // not-International (the viewer\u2019s own rule), never the word "ethnic"
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([
+        selP('Meatless Asian Selection', ['Main Course']),
+        selP('Japanese Selection', ['Main Course'])
+    ]));
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    R.eq(paper().querySelectorAll('.pc-eth-rule').length, 1, 'v1.48.0: the REAL names part with the dashed rule — two different non-International selections');
+    R.eq(paper().querySelectorAll('.pc-course').length, 2, 'both real-name course groups stay on the sheet');
+    // Japan keeps fire on the REAL name too — the signature courses are the signal
+    const jpReal = (cabin) => {
+      w.localStorage.setItem(`SQ${FLIGHT}:${D2}:${cabin}`, menuFor([selP('Japanese Selection', ['Main Course', 'Mizugashi', 'Dessert', 'Mizumono'])]));
+      return w.eval(`JSON.stringify(collectPrintMeals(JSON.parse(localStorage.getItem('SQ${FLIGHT}:${D2}:${cabin}')).data.legs[0], '${cabin}').services[0].courses.map(function (c) { return c.label + (c.hiddenCompact ? 'x' : 'o'); }))`);
+    };
+    R.eq(jpReal('FCL'), JSON.stringify(['Main Coursex', 'Mizugashio', 'Dessertx', 'Mizumonox']), 'v1.48.0: a REAL Japan name keeps Mizugashi alone in FCL');
+    R.eq(jpReal('JCL'), JSON.stringify(['Main Coursex', 'Mizugashix', 'Dessertx', 'Mizumonoo']), 'v1.48.0: and Mizumono alone in JCL — the label-based rule, no "ethnic" wording needed');
+    w.eval('closeMenuPrinter(true)'); await wait(150);
+
+    // Canap\u00e9 (v1.48.0, corrected the same round): the house term names ONE
+    // course \u2014 the chicken satay service. Appetiser stays appetiser, app
+    // stays app; every surface the crew reads agrees: the viewer\u2019s course
+    // title, the elegant label, the compact key
+    R.eq(w.eval("menuCourseDisplayName('Appetiser and App', [{ name: 'Chicken satay with peanut sauce' }])"), 'Canap\u00e9', 'the SATAY course reads Canap\u00e9 \u2014 the verbatim "Appetiser and App" header never reaches the crew');
+    R.eq(w.eval("menuCourseDisplayName('Appetiser and App', [{ name: 'Garlic prawn' }])"), 'Appetiser and App', 'the same header WITHOUT a satay dish keeps its own name');
+    R.eq(w.eval("menuCourseDisplayName('Appetiser')"), 'Appetiser', 'appetiser stays appetiser \u2014 never renamed, never re-spelled');
+    R.eq(w.eval("menuCourseDisplayName('App')"), 'App', 'app stays app');
+    R.eq(w.eval("menuCourseDisplayName('Starter', [{ name: 'Chicken satay' }])"), 'Canap\u00e9', 'a satay dish promotes any pre-main course');
+    R.eq(w.eval("menuCourseDisplayName('Main Course', [{ name: 'Chicken satay rice' }])"), 'Main Course', 'a main that merely cooks with satay keeps its own name \u2014 the promotion is pre-main only');
+    R.eq(w.eval("menuCourseDisplayName('Satay')"), 'Canap\u00e9', 'a course that names itself satay promotes on its own');
+    R.eq(w.eval("printCourseLabel('Appetiser and App', [{ name: 'Chicken satay' }])"), 'Canap\u00e9', 'the elegant label maps the satay course to Canap\u00e9');
+    R.eq(w.eval("printCourseLabel('Appetiser')"), 'Appetiser', 'the elegant label keeps appetiser as appetiser');
+    R.eq(w.eval("printCourseLabel('App')"), 'App', 'and app as app');
+    R.eq(w.eval("printCompactCourse('Canap\u00e9')"), 'CANAP\u00c9', 'the compact key reads CANAP\u00c9 \u2014 the /canap/ branch answers first');
+    R.eq(w.eval("printCompactCourse('Appetiser')"), 'APP', 'an appetiser label still keys APP');
+    R.eq(w.eval("printCompactCourse('App')"), 'APP', 'and a bare App label keys APP through the uppercase default');
+    // the live surfaces: a satay course + a plain appetiser course side by side
+    w.localStorage.setItem(`SQ${FLIGHT}:${D2}:FCL`, menuFor([
+      { name: 'International Selection', mealCourses: [
+        { category: 'Appetiser and App', items: [{ name: 'Chicken satay with peanut sauce' }] },
+        { category: 'Appetiser', items: [{ name: 'Seared scallop salad' }] },
+        { category: 'Main Course', items: [{ name: 'Chicken rice' }] }
+      ] }
+    ]));
+    await w.eval(`openMenuViewerForCabins('${FLIGHT}','${D2}',['FCL'], null)`);
+    await wait(250);
+    R.ok(d.getElementById('menu-content').textContent.indexOf('Canap\u00e9') >= 0, 'the on-screen viewer titles the satay course Canap\u00e9');
+    R.ok(d.getElementById('menu-content').textContent.indexOf('Appetiser and App') < 0, 'the raw satay header is gone from the viewer completely');
+    R.ok(d.getElementById('menu-content').textContent.indexOf('Appetiser') >= 0, 'the plain appetiser course keeps its own name in the viewer');
+    w.eval('closeMenuViewer()'); await wait(150);
+    await w.eval(`openMenuPrinter('${FLIGHT}','${D2}',['FCL'])`);
+    await wait(250);
+    R.ok(paper().textContent.indexOf('Canap\u00e9') >= 0 && paper().textContent.indexOf('Appetiser and App') < 0, 'the elegant print sheet labels the satay course Canap\u00e9');
+    R.ok(paper().textContent.indexOf('Appetiser') >= 0, 'the elegant sheet keeps the appetiser course\u2019s own name');
+    w.eval("printState.layout = 'compact'; renderPrintView();");
+    await wait(150);
+    R.ok(paper().textContent.indexOf('CANAP\u00c9') >= 0, 'the compact print sheet keys the satay course CANAP\u00c9');
+    R.ok(paper().textContent.indexOf('APP') >= 0, 'the compact sheet still keys the appetiser course APP');
     w.eval('closeMenuPrinter(true)'); await wait(150);
   }
 

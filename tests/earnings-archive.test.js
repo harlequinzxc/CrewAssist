@@ -1183,15 +1183,16 @@ function todayYmd() {
     {
       const { w, d } = await boot(APP, { now: NOW, seed: (x) => seedAll(x, true) });
       w.showArchiveOverlay();
-      // v1.45.56 (owner order, the departure-board roll): a fresh open ROLLS
-      // the big number — read synchronously with the open, before any await
-      R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0, 'v1.45.56: a fresh open of the earnings card rolls the big number');
+      // v1.48.0 (owner order): the open roll WAITS OUT the sheet's glide
+      // (~310ms) — the read comes at ~460ms, mid-roll
+      await wait(460);
+      R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length > 0, 'v1.45.56 + v1.48.0: a fresh open of the earnings card rolls the big number once the sheet is up');
       R.ok(d.getElementById('ca-arch-total').querySelectorAll('.ca-rollstrip').length === d.getElementById('ca-arch-total').querySelectorAll('.ca-rollc').length, 'every reel cell carries its aria-hidden strip');
       // v1.45.57 (owner order, the v1.45.56 hotfix): the metric row below
       // the divider rolls WITH the total — the whole gold card is one family
       R.ok(d.getElementById('ca-arch-m-flights').querySelectorAll('.ca-rollc').length > 0 && d.getElementById('ca-arch-m-avg').querySelectorAll('.ca-rollc').length > 0, 'v1.45.57 hotfix: the FLIGHTS and AVG / FLIGHT quadrant cells roll on the fresh open');
       R.ok(d.querySelectorAll('#ca-arch-meta-salary .ca-rollc').length === 0, 'v1.45.57 hotfix: the hidden salary quadrant never rolls while COP is showing');
-      await wait(150);
+      await wait(150);   // (the roll is already in flight — text pins read the truth either way)
       R.eq(d.getElementById('ca-arch-total-label').textContent, 'Total earnings', 'the card opens in COP Allowance as before');
       R.ok(!d.getElementById('ca-arch-salary-prompt') || d.getElementById('ca-arch-salary-prompt').classList.contains('hidden'), 'no salary prompt while COP mode is on');
       d.querySelector('.ca-arch-seg[data-scope="all"]').click(); await wait(150);
@@ -1767,6 +1768,9 @@ function todayYmd() {
     ]));
     w.showArchiveOverlay(); await wait(150);
     R.eq(d.getElementById('ca-arch-m-ctx-label').textContent, 'Remaining to earn', 'the label element carries the new professional string (source title-case, CSS uppercases)');
+    // v1.48.0: the open roll is delayed past the glide (~360ms) — the
+    // mid-roll shape read waits for it to be in flight
+    await wait(350);
     // v1.45.59 (owner report): mid-roll, the digits ride ONE wrapper run and
     // the icon never leaves the flex cell — the gap-2 can never space the
     // digits out, and nothing but the roll's own wrappers ever moves
@@ -1847,7 +1851,7 @@ function todayYmd() {
     // caCapDeliver → __caLastShot — end to end. The painter library
     // itself is gone from the app; nothing stubs it because nothing
     // calls it
-    w.eval("window.__archCap = []; window.__basc = buildArchShotCanvas; buildArchShotCanvas = function (el) { const diet = ['ca-arch-pillrow-mode','ca-arch-pillrow-scope','ca-arch-searchrow','ca-arch-ins-toggle','ca-arch-insights','ca-arch-end']; window.__archCap.push({ el: el.id, scrollTop: el.scrollTop, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, collapsedAll: Array.from(document.querySelectorAll('.ca-arch-group')).every((g) => g.classList.contains('ca-arch-collapsed')), diet: diet.map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; }), reduced: document.documentElement.classList.contains('ca-reduced'), rollc: !!el.querySelector('.ca-rollc'), liveOverflow: el.style.overflow }); return { canvas: { toBlob: function (cb) { cb(new Blob(['png'], { type: 'image/png' })); } }, ctx: { fillText: function (t) { window.__archCap[window.__archCap.length - 1].title = t; } }, w: 40, h: 30, wrap: el, ty: 34 }; };");
+    w.eval("window.__archCap = []; window.__basc = buildArchShotCanvas; buildArchShotCanvas = function (el) { const diet = ['ca-arch-pillrow-mode','ca-arch-pillrow-scope','ca-arch-searchrow','ca-arch-ins-toggle','ca-arch-insights','ca-arch-end','ca-arch-since']; window.__archCap.push({ el: el.id, scrollTop: el.scrollTop, salaryOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-mode=\"salary\"]').classList.contains('ca-arch-segon'), yearOn: document.querySelector('#ca-arch-summary .ca-arch-seg[data-scope=\"year\"]').classList.contains('ca-arch-segon'), label: document.getElementById('ca-arch-total-label').textContent, collapsedAll: Array.from(document.querySelectorAll('.ca-arch-group')).every((g) => g.classList.contains('ca-arch-collapsed')), diet: diet.map((id) => { const n = document.getElementById(id); return n ? n.style.display : 'missing'; }), reduced: document.documentElement.classList.contains('ca-reduced'), rollc: !!el.querySelector('.ca-rollc'), liveOverflow: el.style.overflow }); return { canvas: { toBlob: function (cb) { cb(new Blob(['png'], { type: 'image/png' })); } }, ctx: { fillText: function (t) { window.__archCap[window.__archCap.length - 1].title = t; } }, w: 40, h: 30, wrap: el, ty: 34 }; };");
     // tap the camera → the picker rides the archive's own sub-sheet
     d.getElementById('ca-arch-cam').click();
     await wait(300);
@@ -1885,7 +1889,7 @@ function todayYmd() {
     R.eq(w.eval('window.__archCap[0].label'), 'Net take-home', 'the posed card reads the salary headline');
     R.eq(w.eval('window.__archCap[0].liveOverflow'), '', 'the live scroller\u2019s overflow is never touched — the diet is display:none, restored in the finally');
     R.eq(w.eval('window.__archCap[0].title'), 'Earnings for 2025', 'v1.47.1 (owner order — include the header): the title band renders “Earnings for YYYY”');
-    R.ok(w.eval('window.__archCap[0].diet.join(\"|\") === \"none|none|none|none|none|none\"'), 'the diet rows are hidden LIVE for the paint — both pill rows, the search bar, the insights toggle + panel, the end-of-records footer (the owner\u2019s exclusions)');
+    R.ok(w.eval('window.__archCap[0].diet.join(\"|\") === \"none|none|none|none|none|none|none\"'), 'the diet rows are hidden LIVE for the paint — both pill rows, the search bar, the insights toggle + panel, the end-of-records footer, the since-line (the owner\u2019s exclusions — v1.48.0: the share ends at the last record)');
     R.ok(w.eval('window.__archCap[0].collapsedAll') === true, 'every month group is folded in the capture');
     R.ok(!!d.getElementById('ca-arch-trend'), 'the chart rides along — the owner\u2019s year-scope ruling (the trend canvas mounts under the year pose)');
     {
@@ -1925,7 +1929,7 @@ function todayYmd() {
       R.ok(src64.indexOf('new Promise((resolve) => setTimeout(resolve, 900))') !== -1 && src64.indexOf('function caCapFontArm') < src64.indexOf('Promise.race(['), 'v1.46.4 src: the arm\u2019s fonts.load wait is RACED at 900ms \u2014 the Google stylesheet also declares Plus Jakarta Sans, so an unraced load would wait on the cross-origin twins');
       R.ok(segA.indexOf('scrollEl.scrollTop = 0') !== -1, 'v1.47.1 src: the full scroll paints from its top \u2014 a list the crew scrolled never crops its own head');
       R.ok(segA.indexOf('buildArchShotCanvas(scrollEl)') !== -1 && segA.indexOf("caCapPaintTitle(built.ctx, 'Earnings for ' + yr") !== -1 && segA.indexOf('rosterShotPaintGrid(built.ctx, built.wrap, 0, built.ty)') !== -1 && segA.indexOf('rosterShotPaintIcons(built.ctx, built.wrap, 0, built.ty)') !== -1, 'v1.47.1 src: the flow builds the tall canvas, paints its title, then the ROSTER walker + icon pass \u2014 the passport\u2019s exact pattern');
-      R.ok(segA.indexOf("['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end']") !== -1, 'v1.47.1 src: the diet list survives whole \u2014 hidden live for the paint, restored in the finally');
+      R.ok(segA.indexOf("['ca-arch-pillrow-mode', 'ca-arch-pillrow-scope', 'ca-arch-searchrow', 'ca-arch-ins-toggle', 'ca-arch-insights', 'ca-arch-end', 'ca-arch-since']") !== -1, 'v1.47.1 src: the diet list survives whole \u2014 hidden live for the paint, restored in the finally (v1.48.0: the since-line is the seventh row)');
       R.ok(segA.indexOf('caCapShoot') === -1 && segA.indexOf('caCapLib') === -1 && segA.indexOf('onclone') === -1, 'v1.47.1 src: no painter library, no clone, no onclone \u2014 scrapped and restarted, per the owner\u2019s order');
       R.ok(src64.indexOf('function buildArchShotCanvas(') !== -1 && src64.indexOf('area > 4000000') !== -1 && src64.indexOf('CA_CAP_TITLE_H) * scale > 4090') !== -1, 'v1.46.6/v1.47.1 src: the tall canvas keeps the pixel budget \u2014 ~4MP area, 4090 device px tall (paint + PNG encode both ride the pixel count)');
       R.ok(src64.indexOf('function caCapShoot(') === -1 && src64.indexOf('function caCapTrim(') === -1 && src64.indexOf('function caCapPrewarm(') === -1 && src64.indexOf('function caCapLib(') === -1 && src64.indexOf('function caCapIgnore(') === -1 && src64.indexOf('ca-cap-prewarm') === -1 && src64.indexOf('vendor/html2canvas.min.js') === -1, 'v1.47.1 src: the old engine is GONE whole \u2014 shoot, trim, prewarm, the diet predicate, the vendored lib and its precache entry (the print sheet\u2019s own lazy CDN exporter is a separate machine, untouched)');
