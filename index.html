@@ -2466,6 +2466,16 @@
                              (v1.45.21: a single never-wrapping string - the
                              year comparison moved up beside the figure) -->
                         <div class="ca-micro font-bold mt-1.5 hidden w-full" style="color: rgba(26,19,0,.8)" id="ca-arch-gross-line"></div>
+                        <!-- v1.48.3 (owner orders): the Exp figure rides its
+                             OWN row - as a third segment inside the Gross|CPF
+                             nowrap string it clipped out of the card on
+                             narrow phones (iPhone 11). And it shows whenever
+                             the scope holds expenses: v1.48.3 supersedes the
+                             v1.45.31 dev gate for DISPLAY (a restored
+                             expense must be visible on every device - dev
+                             mode is device-local and never rides a backup);
+                             only the keying field stays Developer Mode's. -->
+                        <div class="ca-micro font-bold mt-0.5 hidden w-full" style="color: rgba(26,19,0,.8)" id="ca-arch-exp-line"></div>
                         <!-- v1.45.22 (owner order, C): when the scope holds
                              overseas expenses, the quiet after-expenses line
                              rides under the Gross|CPF string - the net figure
@@ -3265,7 +3275,7 @@
             }
         }
 
-        var APP_VERSION = '1.48.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.48.3'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3287,6 +3297,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.48.3', d: '2026-11-03', items: [
+                { c: 'fix', t: 'Restored expenses show on every device \u2014 the figures ride along.' },
+                { c: 'fix', t: 'The salary card\u2019s Exp figure rides its own row.' },
+                { c: 'imp', t: 'Flight Stats counts and dates roll the departure-board way.' }
+            ] },
             { v: '1.48.2', d: '2026-11-03', items: [
                 { c: 'fix', t: 'The shortcuts card\u2019s command bubbles read at full strength.' },
                 { c: 'fix', t: 'The chat\u2019s chip rail sits closer to the typing field.' },
@@ -6928,6 +6943,7 @@
         // accordion): the All Flight Stats page rises over the passport —
         // the same sheet idiom (glide, shade, focus trap, hide-arm), its
         // own subtitle, and the records list with its own year pills.
+        var rcStatOpenRollT = null;   // v1.48.3: the stats page's roll arm — fires once the sheet is fully up
         function openRcStat() {
             const wrap = document.getElementById('ca-rc-statwrap');
             const sheet = document.getElementById('ca-rc-stat-sheet');
@@ -6941,6 +6957,23 @@
             // the same frame. The glide helper pins the closed pose with one
             // reflow ~10ms later, THEN lifts — the same contract every
             // other sheet rides.
+            // v1.48.3 (owner order): the COUNTS and DATES roll the
+            // departure-board way — but ONLY once the sheet is fully up
+            // (the v1.48.0 arm pattern), and the engine's digit-only nature
+            // is the spec: in "x5" the x never moves, in "27 Oct 2024" the
+            // month word never moves — only the digits reel. The year
+            // pills, the 2nd/3rd ordinals, the row ranks, the View-all
+            // count and the station codes never roll (the selector below
+            // names only the count and date elements). Like the passport
+            // hero's roll, it is a reduced-motion EXCEPTION — caNumRoll's
+            // inline transitions answer to no ca-reduced gate.
+            if (rcStatOpenRollT) clearTimeout(rcStatOpenRollT);
+            rcStatOpenRollT = setTimeout(() => {
+                rcStatOpenRollT = null;
+                const w3 = document.getElementById('ca-rc-statwrap');
+                if (!w3 || w3.classList.contains('hidden')) return;
+                w3.querySelectorAll('.ca-rc-pod-count, .ca-rc-pod-lcount, .ca-rc-pod-ldate').forEach(caNumRoll);
+            }, 360);
             caSheetFocusIn(sheet);
             caSheetGlideArm(sheet, wrap.querySelector('.ca-rc-pod-shade'), null);
         }
@@ -6948,6 +6981,7 @@
             const wrap = document.getElementById('ca-rc-statwrap');
             const sheet = document.getElementById('ca-rc-stat-sheet');
             if (!wrap || !sheet || wrap.classList.contains('hidden')) return;
+            if (rcStatOpenRollT) { clearTimeout(rcStatOpenRollT); rcStatOpenRollT = null; }   // v1.48.3: a close cancels a pending roll arm
             caSheetFocusOut(sheet);
             const shade = wrap.querySelector('.ca-rc-pod-shade');
             if (shade) shade.classList.add('opacity-0');
@@ -17177,10 +17211,11 @@ SLOT|Special Lve others`;
                     const val = (t, hook, big, muted) => '<span class="' + hook + ' ' + (big ? 'text-[17px] font-bold' : 'text-sm font-normal') + (muted ? ' ca-arch-mgmut' : '') + '">' + t + '</span>';
                     amtHtml = lbl('N', true, 'Net Earnings') + val(formatMoney(monthSal.net), 'ca-arch-amt-net', true, false)
                         + lbl('G', false, 'Gross Earnings') + val(formatMoney(monthSal.gross), 'ca-arch-amt-gross', false, true)
-                        // v1.45.31 (owner order, Option A): the after-expenses
-                        // surfaces are Developer Mode's alone - the stored
-                        // values persist either way, the gate is display-only
-                        + (appDevMode && mExp > 0.004 ? lbl('N\u2212', false, 'Net After Expenses') + val(formatMoney(monthSal.net - mExp), 'ca-arch-amt-after', false, true) : '');
+                        // v1.48.3: the v1.45.31 dev gate is superseded for
+                        // DISPLAY - a restored expense is visible on every
+                        // device (dev mode is device-local, never in a
+                        // backup); the keying field alone stays dev's.
+                        + (mExp > 0.004 ? lbl('N\u2212', false, 'Net After Expenses') + val(formatMoney(monthSal.net - mExp), 'ca-arch-amt-after', false, true) : '');
                     amtCls = 'ca-arch-amt ca-arch-moneygrid';
                 } else if (monthSal && filtered) {
                     amtHtml = formatMoney(sub) + ' <span class="text-xs font-normal" style="color: var(--arch-muted)">of net ' + formatMoney(monthSal.net) + '</span>';
@@ -17371,13 +17406,16 @@ SLOT|Special Lve others`;
         // beneath, the payslip-checkable breakdown in the meta row).
         function archSummaryFigs() {
             // v1.45.56/57 + v1.48.0: the gold card's WHOLE figure family —
-            // the big number, the gross and after-expenses lines when they
-            // ride, and the visible quadrant's value cells. The open roll
-            // and the change roll collect the same family through here.
-            const numEl = archEl('ca-arch-total'), grossEl = archEl('ca-arch-gross-line'), afterEl = archEl('ca-arch-after-line');
+            // the big number, the gross, Exp and after-expenses lines when
+            // they ride, and the visible quadrant's value cells. The open
+            // roll and the change roll collect the same family through
+            // here. v1.48.3: the Exp row (its own line since the iPhone 11
+            // clip fix) rolls with the family.
+            const numEl = archEl('ca-arch-total'), grossEl = archEl('ca-arch-gross-line'), expEl = archEl('ca-arch-exp-line'), afterEl = archEl('ca-arch-after-line');
             const metas = Array.from(archEl('ca-arch-summary').querySelectorAll('.ca-arch-metagrid:not(.hidden) .ca-arch-metaval'));
             const figs = [numEl];
             if (!grossEl.classList.contains('hidden')) figs.push(grossEl);
+            if (expEl && !expEl.classList.contains('hidden')) figs.push(expEl);
             if (!afterEl.classList.contains('hidden')) figs.push(afterEl);
             metas.forEach((c) => figs.push(c));
             return figs;
@@ -17520,6 +17558,7 @@ SLOT|Special Lve others`;
             // rides the VALUE, not the lens key — a same-month recalc
             // rolls too.
             const grossEl = archEl('ca-arch-gross-line');
+            const expEl = archEl('ca-arch-exp-line');
             const afterEl = archEl('ca-arch-after-line');
             const yoyEl = archEl('ca-arch-netyoy');
             if (isSalary && hasBasic && sal) {
@@ -17532,14 +17571,20 @@ SLOT|Special Lve others`;
                 // v1.45.22 (C): a scope with overseas expenses extends the
                 // same string with a third Exp segment, and the quiet line
                 // under it carries the after-expenses net.
-                grossEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf)
-                    // v1.45.31 (Option A): dev-only display
-                    + (appDevMode && expTotal > 0.004 ? ' <span class="ca-arch-gross-sep">|</span> Exp \u2212' + formatMoney(expTotal) : '') + '</span>';
+                grossEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Gross ' + formatMoney(sal.gross) + ' <span class="ca-arch-gross-sep">|</span> CPF \u2212' + formatMoney(sal.cpf) + '</span>';
                 grossEl.classList.remove('hidden');
-                if (appDevMode && expTotal > 0.004) {   // v1.45.31 (Option A): dev-only display
+                // v1.48.3 (owner orders): the Exp figure rides its OWN row
+                // under Gross|CPF (the third segment clipped out of the card
+                // on iPhone 11), and the v1.45.31 dev gate is superseded for
+                // DISPLAY — a restored expense is visible on every device;
+                // only the keying field (the receipt row's tap-to-edit)
+                // stays Developer Mode's alone.
+                if (expTotal > 0.004) {
+                    expEl.innerHTML = '<span class="min-w-0" style="white-space: nowrap">Exp \u2212' + formatMoney(expTotal) + '</span>';
+                    expEl.classList.remove('hidden');
                     afterEl.textContent = 'After expenses ' + formatMoney(sal.net - expTotal);
                     afterEl.classList.remove('hidden');
-                } else afterEl.classList.add('hidden');
+                } else { expEl.classList.add('hidden'); afterEl.classList.add('hidden'); }
                 // the badge: YEAR view only, and only when a prior year is
                 // on record - otherwise it stays hidden entirely
                 if (archState.scope === 'year' && netYoy !== null) {
@@ -17563,12 +17608,14 @@ SLOT|Special Lve others`;
                 archEl('ca-arch-total-label').textContent = 'Net take-home';
                 numEl.textContent = '\u2014';
                 grossEl.classList.add('hidden');
+                expEl.classList.add('hidden');
                 afterEl.classList.add('hidden');
                 yoyEl.classList.add('hidden');
             } else {
                 archEl('ca-arch-total-label').textContent = 'Total earnings';
                 numEl.textContent = formatMoney(total);
                 grossEl.classList.add('hidden');
+                expEl.classList.add('hidden');
                 afterEl.classList.add('hidden');
                 yoyEl.classList.add('hidden');
                 archEl('ca-arch-m-flights').textContent = String(count);
@@ -17909,26 +17956,49 @@ SLOT|Special Lve others`;
         // keyboard sits on it) to just under the Grand Total card and above
         // the Flight Overview — the sheet's upper zone, above the keyboard's
         // reach. No keyboard machinery involved; position IS the fix.
-        // v1.45.31 (owner order, Option A): the row renders ONLY in Developer
-        // Mode. The stored values persist in the archive either way — the
-        // gate is a display concern, never a data one: key expenses in dev
-        // mode, switch it off (values stay), switch it back on (every
-        // layover's row returns pre-filled). Turnarounds never see the row -
-        // a Singapore turnaround spends nothing overseas.
+        // v1.45.31 (owner order, Option A), superseded v1.48.3: the row used
+        // to render ONLY in Developer Mode. The stored values persist in the
+        // archive either way — the gate was a display concern, never a data
+        // one — but dev mode is device-local and never rides a backup, so a
+        // restored phone showed no expense anywhere and the restore read as
+        // a loss. v1.48.3: DISPLAY is every device's (a saved figure shows
+        // as a read-only statement outside dev mode); the keying FIELD —
+        // the Add Expenses empty state and the tap-to-edit — stays
+        // Developer Mode's alone. Turnarounds never see the row - a
+        // Singapore turnaround spends nothing overseas.
         function archExpenseRowHtml(e) {
-            if (!appDevMode) return '';
+            // v1.48.3 (owner order): a RESTORED expense is visible on every
+            // device — the v1.45.31 dev gate is superseded for DISPLAY (dev
+            // mode is device-local and never rides a backup, so a fresh
+            // phone used to show no expense anywhere and the restore read
+            // as a loss). The split: outside Developer Mode the row appears
+            // only when a figure exists and reads as a plain statement — no
+            // button, no tap-to-edit (the keying FIELD stays Developer
+            // Mode's alone, the v1.45.31 order's own subject); inside dev
+            // mode the row is the full editor as always (button, Add
+            // Expenses empty state, tap-to-edit). Turnarounds never see it.
             if (String(e.flightType || '') !== 'Layover') return '';
             const hasExp = archEntryExp(e) > 0.004;
-            return '<div class="mt-6 border-t ca-hairline pt-4">'
-                + '<button type="button" id="ca-arch-exp-btn" class="w-full flex items-center justify-between gap-2 p-3 rounded-xl ca-inset border ca-hairline text-left">'
-                + '<span class="flex items-center gap-2 min-w-0">'
+            if (!appDevMode && !hasExp) return '';
+            const label = '<span class="flex items-center gap-2 min-w-0">'
                 + '<i data-lucide="receipt" class="w-4 h-4 shrink-0 text-sia-gold"></i>'
                 + '<span class="text-sm font-bold">Overseas Expenses</span>'
-                + '</span>'
-                + '<span id="ca-arch-exp-val" class="ca-amt shrink-0 ' + (hasExp ? 'font-bold text-sm' : 'text-sm font-normal') + '"' + (hasExp ? '' : ' style="color: var(--arch-muted)"') + '>'
-                + (hasExp ? formatMoney(archEntryExp(e)) : 'Add Expenses')
-                + '</span>'
-                + '</button></div>';
+                + '</span>';
+            const valTxt = hasExp ? formatMoney(archEntryExp(e)) : 'Add Expenses';
+            const valCls = 'ca-amt shrink-0 ' + (hasExp ? 'font-bold text-sm' : 'text-sm font-normal');
+            const valStyle = hasExp ? '' : ' style="color: var(--arch-muted)"';
+            if (appDevMode) {
+                return '<div class="mt-6 border-t ca-hairline pt-4">'
+                    + '<button type="button" id="ca-arch-exp-btn" class="w-full flex items-center justify-between gap-2 p-3 rounded-xl ca-inset border ca-hairline text-left">'
+                    + label
+                    + '<span id="ca-arch-exp-val" class="' + valCls + '"' + valStyle + '>' + valTxt + '</span>'
+                    + '</button></div>';
+            }
+            return '<div class="mt-6 border-t ca-hairline pt-4">'
+                + '<div class="w-full flex items-center justify-between gap-2 p-3" data-ca-arch-exp-row="1">'
+                + label
+                + '<span class="' + valCls + '">' + valTxt + '</span>'
+                + '</div></div>';
         }
 
         // Tap a saved flight: reopen its whole summary — gold total, Flight

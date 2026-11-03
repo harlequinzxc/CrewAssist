@@ -1533,7 +1533,9 @@ function todayYmd() {
     // the card: the net headline itself never moves - the expense rides as
     // context (subtext Exp segment + the quiet after-expenses line)
     R.eq(d.getElementById('ca-arch-total').textContent, netE(), 'the net headline stays untouched by expenses');
-    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$120.00') !== -1, 'the subtext gains the Exp segment beside Gross|CPF');
+    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Gross ') !== -1 && d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp') === -1, 'v1.48.3: the gross line keeps only Gross|CPF \u2014 the Exp segment moved out of the nowrap string');
+    R.ok(d.getElementById('ca-arch-exp-line').textContent === 'Exp \u2212$120.00' && !d.getElementById('ca-arch-exp-line').classList.contains('hidden') && d.getElementById('ca-arch-gross-line').nextElementSibling === d.getElementById('ca-arch-exp-line'), 'v1.48.3 (owner order): the Exp figure rides its OWN row directly under the Gross|CPF line \u2014 as a third segment inside the nowrap string it clipped out of the card on iPhone 11');
+    R.ok((() => { try { return w.archSummaryFigs().indexOf(d.getElementById('ca-arch-exp-line')) !== -1; } catch (e) { return false; } })(), 'v1.48.3: the Exp line joins the gold card\u2019s figure family \u2014 it rolls with the card');
     const afterLine = d.getElementById('ca-arch-after-line');
     R.ok(!afterLine.classList.contains('hidden') && afterLine.textContent === 'After expenses ' + w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 120)"), 'the quiet after-expenses line carries net minus the month expenses');
     // the group head: the third quiet row, only because October has expenses
@@ -1544,7 +1546,7 @@ function todayYmd() {
     R.ok(headE.children[4].className.indexOf('ca-arch-mgmut') !== -1 && headE.children[5].className.indexOf('ca-arch-mgmut') !== -1, 'the after-expenses row rides the muted ink like the gross row');
     // COP lens: expenses are a salary-lens privilege - nothing shows
     d.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); await wait(150);
-    R.ok(afterLine.classList.contains('hidden') && d.getElementById('ca-arch-gross-line').classList.contains('hidden'), 'the COP lens shows no expense context - both salary lines step aside entirely');
+    R.ok(afterLine.classList.contains('hidden') && d.getElementById('ca-arch-gross-line').classList.contains('hidden') && d.getElementById('ca-arch-exp-line').classList.contains('hidden'), 'the COP lens shows no expense context - all three salary lines step aside, the Exp line included');
     d.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
     // the summary sheet: layovers carry the receipt row, turnarounds never
     d.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').click(); await wait(50);
@@ -1562,7 +1564,7 @@ function todayYmd() {
     await wait(100);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense, 250, 'Enter commits the expense to detail.expense');
     R.eq(d.getElementById('ca-arch-exp-val').textContent, '$250.00', 'the row paints the new figure');
-    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$250.00') !== -1 && d.getElementById('ca-arch-after-line').textContent === 'After expenses ' + w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 250)"), 'the card behind the sheet picks the new figure up live');
+    R.ok(d.getElementById('ca-arch-exp-line').textContent === 'Exp \u2212$250.00' && d.getElementById('ca-arch-after-line').textContent === 'After expenses ' + w.eval("formatMoney(archSalaryMonth('2026-10', loadArchive().filter((e) => e.monthKey === '2026-10')).net - 250)"), 'the card behind the sheet picks the new figure up live');
     R.ok(d.getElementById('ca-arch-toast').textContent.indexOf('Expense saved') !== -1, 'the commit toasts');
     // undo restores 120 everywhere
     d.getElementById('ca-arch-toast').querySelector('button').click(); await wait(100);
@@ -1597,7 +1599,7 @@ function todayYmd() {
     const { w: w2, d: d2 } = await boot(APP, { now: NOWE, seed: (x) => { seedE(x, false); x.localStorage.setItem('crewAssist.devMode', 'true'); } });
     w2.showArchiveOverlay(); await wait(150);
     d2.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click(); await wait(150);
-    R.ok(d2.getElementById('ca-arch-after-line').classList.contains('hidden') && d2.getElementById('ca-arch-total').textContent === '\u2014', 'without a basic the salary card still refuses to guess - no expense figure either');
+    R.ok(d2.getElementById('ca-arch-after-line').classList.contains('hidden') && d2.getElementById('ca-arch-exp-line').classList.contains('hidden') && d2.getElementById('ca-arch-total').textContent === '\u2014', 'without a basic the salary card still refuses to guess - no expense figure either');
     d2.querySelector('.ca-arch-group-head[data-mk=\"2026-10\"]').click(); await wait(50);
     d2.querySelector('.ca-arch-row[data-id=\"q2\"]').click(); await wait(100);
     R.ok(d2.getElementById('ca-arch-exp-btn'), 'the expense row still rides the summary sheet without a basic set');
@@ -1608,15 +1610,18 @@ function todayYmd() {
   // ---- developer's alone - a display gate, never a data concern ----
   {
     const { w, d } = await boot(APP, { now: NOWE, seed: (x) => seedE(x, true) });
-    // dev mode off (the default boot): every expense surface stays hidden
+    // dev mode off (the default boot): v1.48.3 (owner order) — the expense
+    // DISPLAY is every device's now (dev mode is device-local and never
+    // rides a backup, so the v1.45.31 gate made a restored phone show no
+    // expense anywhere); only the keying editor stays Developer Mode's.
     w.showArchiveOverlay(); await wait(150);
     d.querySelector('.ca-arch-seg[data-mode=salary]').click(); await wait(150);
-    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1 && d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'dev off: the salary card shows no expense context at all');
+    R.ok(d.getElementById('ca-arch-exp-line').textContent === 'Exp \u2212$120.00' && !d.getElementById('ca-arch-exp-line').classList.contains('hidden') && !d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'v1.48.3 (owner order): dev off \u2014 the salary card still SHOWS the expense: the Exp line (its own row) and the after line render on every device');
     const headG = d.querySelector('.ca-arch-group-head[data-mk=2026-10]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
-    R.ok(headG.children.length === 4 && !headG.querySelector('.ca-arch-amt-after'), 'dev off: the month head keeps its two rows - no N-minus token, no after figure');
+    R.ok(headG.children.length === 6 && !!headG.querySelector('.ca-arch-amt-after'), 'v1.48.3: dev off \u2014 the month head keeps its N-minus token and after figure: display, never dev territory');
     d.querySelector('.ca-arch-group-head[data-mk=2026-10]').click(); await wait(50);
     d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(100);
-    R.ok(!d.getElementById('ca-arch-exp-btn'), 'dev off: the layover summary carries no receipt row');
+    R.ok(!d.getElementById('ca-arch-exp-btn') && !!d.querySelector('[data-ca-arch-exp-row]') && d.querySelector('[data-ca-arch-exp-row]').textContent.indexOf('$120.00') !== -1, 'v1.48.3: dev off \u2014 the layover summary shows the expense as a READ-ONLY statement (no editor button outside dev mode; the keying field stays dev\u2019s alone)');
     w.eval("window.__csvText = null; const __RB = Blob; Blob = function (parts) { window.__csvText = parts.join(''); return {}; }; archShareOrDownload = function () {}; archDoExport('csv'); Blob = __RB;");
     await wait(50);
     const csvOff = await w.eval("window.__csvText");
@@ -1630,7 +1635,7 @@ function todayYmd() {
     R.ok(w.localStorage.getItem('crewAssist.devMode') === 'true' && !d.getElementById('settings-developer').classList.contains('hidden'), 'ten taps on the brand unlock Developer Mode - the settings pane appears');
     w.showArchiveOverlay(); await wait(150);
     d.querySelector('.ca-arch-seg[data-mode=salary]').click(); await wait(150);
-    R.ok(d.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$120.00') !== -1 && !d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'dev on: the Exp segment and the after line return');
+    R.ok(d.getElementById('ca-arch-exp-line').textContent === 'Exp \u2212$120.00' && !d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'dev on: the Exp line (its own row) and the after line return');
     const headH = d.querySelector('.ca-arch-group-head[data-mk=2026-10]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
     R.ok(headH.children.length === 6 && headH.children[4].textContent === 'N\u2212' && !!headH.querySelector('.ca-arch-amt-after'), 'dev on: the third grid row returns (six cells, the N-minus token back)');
     d.querySelector('.ca-arch-group-head[data-mk=2026-10]').click(); await wait(50);
@@ -1663,13 +1668,49 @@ function todayYmd() {
     w.archExport(); await wait(50);
     R.ok(((d.getElementById('ca-arch-sub-body') || {}).textContent || '').toLowerCase().indexOf('overseas expenses ride along') !== -1, 'v1.48.2: the export sheet says it out loud — every trip\u2019s overseas expenses ride along, so the crew never has to wonder what the file carries');
     w.closeArchSub(); await wait(50);
-    // toggled off again: the row hides once more, the figure still never budges
+    // toggled off again: the editor hides once more, the read-only statement stays, the figure never budges
     for (let i = 0; i < 10; i++) d.getElementById('header-brand').click();
     await wait(150);
     w.closeArchSub(); await wait(50);
     d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(100);
-    R.ok(!d.getElementById('ca-arch-exp-btn') && JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense === 120, 'toggled off again: the row hides, the stored figure stays - the cycle is lossless');
+    R.ok(!d.getElementById('ca-arch-exp-btn') && !!d.querySelector('[data-ca-arch-exp-row]') && d.querySelector('[data-ca-arch-exp-row]').textContent.indexOf('$120.00') !== -1 && JSON.parse(w.localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'q1').detail.expense === 120, 'toggled off again: the editor hides but the read-only statement stays, and the stored figure never budges - the cycle is lossless');
     void w; void d;
+  }
+
+  // ---- v1.48.3 (owner order): the owner's exact report, reproduced end ----
+  // ---- to end - "export backup from setting from first phone and restore
+  // ---- backup into a fresh second phone, everything is restored but
+  // ---- expenses doesnt get restored". The DATA always survived (the
+  // ---- backup carries whole entries); dev mode is device-local, and the
+  // ---- v1.45.31 gate hid every surface on the fresh phone. Display is
+  // ---- every device's now - the round-trip pins it so it can never
+  // ---- silently regress. ----
+  {
+    const p1 = await boot(APP, { now: NOWE, seed: (x) => { seedE(x, true); x.localStorage.setItem('crewAssist.devMode', 'true'); } });
+    const backupJson = await p1.w.eval('JSON.stringify(buildFullBackup())');
+    const p2 = await boot(APP, { now: NOWE, seed: (x) => { x.localStorage.setItem('crewAssist.tourOffered', '1'); x.localStorage.setItem('crewAssist.tourDone', '1'); } });
+    // the restore fires in one self-contained eval (the v1.46.6 lesson)
+    await p2.w.eval('appConfirm = function () { return Promise.resolve(true); }; backupRestoreRead("crewassist-backup.json", ' + JSON.stringify(backupJson) + ', {});');
+    await wait(300);
+    const stored = JSON.parse(await p2.w.eval('localStorage.getItem("crewAssist.archive")'));
+    R.ok(stored.find((e) => e.id === 'q1') && stored.find((e) => e.id === 'q1').detail.expense === 120, 'v1.48.3: the restore writes the whole entries - the expense DATA lands on phone two (it always did)');
+    R.ok(await p2.w.eval('localStorage.getItem("crewAssist.devMode")') === null, 'and dev mode never rides a backup - phone two stays a fresh, non-dev device (the root of the owner\u2019s report)');
+    // the post-reload state: a fresh boot over the restored storage
+    const dump = await p2.w.eval('JSON.stringify(Object.assign({}, localStorage))');
+    const p3 = await boot(APP, { now: NOWE, seed: (x) => { const o = JSON.parse(dump); Object.keys(o).forEach((k) => x.localStorage.setItem(k, o[k])); } });
+    p3.w.showArchiveOverlay(); await wait(150);
+    p3.d.querySelector('.ca-arch-seg[data-mode=salary]').click(); await wait(200);
+    R.ok(p3.d.getElementById('ca-arch-exp-line').textContent === 'Exp \u2212$120.00' && !p3.d.getElementById('ca-arch-exp-line').classList.contains('hidden') && !p3.d.getElementById('ca-arch-after-line').classList.contains('hidden'), 'v1.48.3 (owner order): phone two, dev OFF - the salary card SHOWS the restored expense: the Exp line and the after line render');
+    const headR = p3.d.querySelector('.ca-arch-group-head[data-mk=2026-10]').closest('.ca-arch-group').querySelector('.ca-arch-amt');
+    R.ok(headR.children.length === 6 && !!headR.querySelector('.ca-arch-amt-after'), 'v1.48.3: the month head keeps its N-minus row on the restored phone too');
+    p3.d.querySelector('.ca-arch-group-head[data-mk=2026-10]').click(); await wait(80);
+    p3.d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(150);
+    const roRow = p3.d.querySelector('[data-ca-arch-exp-row]');
+    R.ok(!!roRow && roRow.textContent.indexOf('$120.00') !== -1 && !p3.d.getElementById('ca-arch-exp-btn'), 'v1.48.3: the layover summary shows the restored expense as a read-only statement - no editor outside dev mode');
+    for (let i = 0; i < 10; i++) p3.d.getElementById('header-brand').click();
+    await wait(150); p3.w.closeArchSub(); await wait(80);
+    p3.d.querySelector('.ca-arch-row[data-id=q1]').click(); await wait(150);
+    R.ok(p3.d.getElementById('ca-arch-exp-btn') && p3.d.getElementById('ca-arch-exp-val').textContent === '$120.00', 'ten taps later the full editor returns pre-filled - display is every device\u2019s, keying stays Developer Mode\u2019s');
   }
 
   // ---- v1.45.14: the Month fallback never looks ahead of the calendar ----

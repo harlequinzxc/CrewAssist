@@ -921,6 +921,23 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   carries over to lists ("doesn't publish a FCL menu — showing Economy
   instead.").
 
+- v1.48.3 (owner orders, the three-order round): **a restored expense is
+  visible on every device** — the display gate fell with the diagnosis (the
+  data always survived the backup; the gate is what hid it): the salary
+  card's Exp line, the after-expenses line, the month head's N− row and the
+  layover summary's read-only statement render for every crew, and only the
+  keying door (the receipt row's tap-to-edit) stays Developer Mode's —
+  reading is everyone's, editing is dev's. **The Exp figure rides its own
+  row** — a nowrap string that outgrows its card clips at the phone's edge,
+  so the third figure steps down to its own full-width line under the
+  Gross|CPF string; and a render family hides and shows WHOLE — every lens
+  that steps the salary figures aside takes the Exp line with it. **The
+  stats page rolls like the departure board** — the Flight Stats counts and
+  dates reel on a fresh open, digits only (the × glyph beside a count and
+  the month word inside a date stand still), never the year pills, the
+  ordinals, the ranks or the View-all count; armed past the sheet's glide
+  and exempt from reduced motion like every roll the engine paints.
+
 - v1.48.2 (owner orders, the five-order round): **the teaching pills read at
   full ink** — the shortcuts card's command bubbles carry the bubble's own
   text colour undimmed in both themes; the pill's gray wash is all the

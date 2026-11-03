@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.48.2', 'APP_VERSION is 1.48.2');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.2' && e.d === '2026-11-03' && e.items.length === 5 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 3; }), 'the changelog carries the 1.48.2 entry — two fixes, three improvements');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v303'), 'the service-worker cache name is bumped to v303 (the v1.48.2 five-order round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.48.3', 'APP_VERSION is 1.48.3');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.48.3' && e.d === '2026-11-03' && e.items.length === 3 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.48.3 entry — two fixes, one improvement');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v304'), 'the service-worker cache name is bumped to v304 (the v1.48.3 three-order round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,12 +166,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.2'; }), 'the What\'s New sheet carries the v1.48.2 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The shortcuts card’s command bubbles read at full strength.') !== -1), 'the What\'s New sheet carries the v1.48.2 full-ink pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The chat’s chip rail sits closer to the typing field.') !== -1), 'the What\'s New sheet carries the v1.48.2 chip-spacing pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Overseas expenses ride every export — CSV included.') !== -1), 'the What\'s New sheet carries the v1.48.2 expenses-export pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Press-and-hold highlights nothing anywhere — the typing fields excepted.') !== -1), 'the What\'s New sheet carries the v1.48.2 selection-ban pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The live month’s icon keeps turning under reduced motion.') !== -1), 'the What\'s New sheet carries the v1.48.2 live-icon pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.48.3'; }), 'the What\'s New sheet carries the v1.48.3 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Restored expenses show on every device — the figures ride along.') !== -1), 'the What\'s New sheet carries the v1.48.3 restore-visibility pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The salary card’s Exp figure rides its own row.') !== -1), 'the What\'s New sheet carries the v1.48.3 exp-row pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Flight Stats counts and dates roll the departure-board way.') !== -1), 'the What\'s New sheet carries the v1.48.3 stats-roll pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Earnings shares end at the last record — the since line is gone.') !== -1), 'the What\'s New sheet carries the v1.48.0 since-line pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The satay course reads Canapé — viewer and both print sheets.') !== -1), 'the What\'s New sheet carries the v1.48.0 satay-course Canapé pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The ethnic parting and Japan course defaults fire on real menu names.') !== -1), 'the What\'s New sheet carries the v1.48.0 real-names pointer');
@@ -2213,18 +2211,21 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForSelector('#ca-arch-backdrop:not(.hidden)', { timeout: 8000 });
         await page.evaluate(() => document.querySelector('.ca-arch-seg[data-mode=\"salary\"]').click());
         await sleep(400);
-        // v1.45.31 (owner order, Option A): every expense surface renders
-        // only in Developer Mode. Dev off (the fresh boot): no Exp segment,
-        // no after line, no third grid row - and the layover summary shows
-        // no receipt row. Then the only door: ten taps on the brand.
+        // v1.48.3 (owner order): dev mode off - the expense DISPLAY renders on
+        // every device (the v1.45.31 display gate is superseded; only the
+        // keying editor stays dev's). The Exp figure sits on its OWN row -
+        // the iPhone 11 clip fix, proven in computed geometry.
         const gate31 = await page.evaluate(() => {
             const gl = document.getElementById('ca-arch-gross-line');
+            const el = document.getElementById('ca-arch-exp-line');
             const al = document.getElementById('ca-arch-after-line');
             const amt = document.querySelector('.ca-arch-group-head').closest('.ca-arch-group').querySelector('.ca-arch-amt');
-            return { expSeg: gl.textContent.indexOf('Exp ') !== -1, afterHidden: al.classList.contains('hidden'), cells: amt ? amt.children.length : 0, hasAfter: !!(amt && amt.querySelector('.ca-arch-amt-after')) };
+            return { expTxt: el.textContent, expHidden: el.classList.contains('hidden'), afterHidden: al.classList.contains('hidden'), cells: amt ? amt.children.length : 0, hasAfter: !!(amt && amt.querySelector('.ca-arch-amt-after')), ownRow: el.getBoundingClientRect().top >= gl.getBoundingClientRect().bottom - 1 };
         });
-        ok(gate31.expSeg === false && gate31.afterHidden && gate31.cells === 4 && gate31.hasAfter === false, 'v1.45.31: dev mode off - the card and the grid show no expense surface at all (Option A)');
-        ok(await page.evaluate(() => { openArchEntry('x1'); return !document.getElementById('ca-arch-exp-btn'); }), 'v1.45.31: dev mode off - the layover summary carries no receipt row');
+        ok(gate31.expTxt === 'Exp \u2212$120.00' && !gate31.expHidden && !gate31.afterHidden, 'v1.48.3 (owner order): dev mode off - the salary card still SHOWS the expense: the Exp line and the after line render on every device');
+        ok(gate31.ownRow, 'v1.48.3 (owner order): the Exp figure sits ON ITS OWN ROW below the Gross|CPF line - computed geometry, the narrow-phone clip is gone');
+        ok(gate31.cells === 6 && gate31.hasAfter, 'v1.48.3: the month head keeps its N-minus row with dev mode off');
+        ok(await page.evaluate(() => { openArchEntry('x1'); const ro = document.querySelector('[data-ca-arch-exp-row]'); return !!ro && ro.textContent.indexOf('$120.00') !== -1 && !document.getElementById('ca-arch-exp-btn'); }), 'v1.48.3: dev mode off - the layover summary shows the expense as a READ-ONLY statement, no editor button outside dev mode');
         await page.evaluate(() => { closeArchSub(); closeArchOverlay(); });
         await sleep(300);
         await page.evaluate(() => { for (let i = 0; i < 10; i++) document.getElementById('header-brand').click(); });
@@ -2237,15 +2238,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const sal = archSalaryMonth(mk, loadArchive().filter((e) => e.monthKey === mk));
             const fm = (v) => formatMoney(v);
             const gl = document.getElementById('ca-arch-gross-line');
+            const el = document.getElementById('ca-arch-exp-line');
             const al = document.getElementById('ca-arch-after-line');
             const head = document.querySelector('.ca-arch-group-head').closest('.ca-arch-group').querySelector('.ca-arch-amt');
             const netV = head.querySelector('.ca-arch-amt-net'), grossV = head.querySelector('.ca-arch-amt-gross'), afterV = head.querySelector('.ca-arch-amt-after');
-            return { mk, expSeg: gl.textContent.indexOf('Exp \u2212$120.00') !== -1, afterHidden: al.classList.contains('hidden'), afterTxt: al.textContent, afterWant: 'After expenses ' + fm(sal.net - 120),
+            return { mk, expSeg: el.textContent === 'Exp \u2212$120.00', grossClean: gl.textContent.indexOf('Exp') === -1, afterHidden: al.classList.contains('hidden'), afterTxt: al.textContent, afterWant: 'After expenses ' + fm(sal.net - 120),
                 rows: head.children.length, afterVal: afterV ? afterV.textContent : '', afterWantVal: fm(sal.net - 120),
                 edgeN: netV.getBoundingClientRect().right, edgeG: grossV.getBoundingClientRect().right, edgeA: afterV ? afterV.getBoundingClientRect().right : 0,
                 rowLbl: afterV ? afterV.previousElementSibling.textContent : '', rowMuted: afterV ? getComputedStyle(afterV).color === getComputedStyle(grossV).color && getComputedStyle(afterV.previousElementSibling).color === getComputedStyle(grossV.previousElementSibling).color : false };
         });
-        ok(exp22.expSeg, 'v1.45.22: the subtext gains the Exp segment beside Gross|CPF');
+        ok(exp22.expSeg && exp22.grossClean, 'v1.48.3: the Exp figure reads on its OWN line under a clean Gross|CPF string (the dev-on view matches the dev-off one)');
         ok(!exp22.afterHidden && exp22.afterTxt === exp22.afterWant, 'the quiet after-expenses line reads net minus the month\u2019s expenses (' + exp22.afterTxt + ')');
         ok(exp22.rows === 6 && exp22.afterVal === exp22.afterWantVal && exp22.rowLbl === 'N\u2212', 'the month head grows the third row - six grid cells, the N-minus token leading its figure');
         ok(Math.abs(exp22.edgeN - exp22.edgeG) <= 1.5 && Math.abs(exp22.edgeN - exp22.edgeA) <= 1.5, 'all three figures right-align to the same edge - the decimals track one vertical line');
@@ -2277,7 +2279,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         const edit22 = await page.evaluate(() => ({
             val: document.getElementById('ca-arch-exp-val').textContent,
             stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'x1').detail.expense,
-            seg: document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp \u2212$88.50') !== -1,
+            seg: document.getElementById('ca-arch-exp-line').textContent.indexOf('Exp \u2212$88.50') !== -1,
             toast: document.getElementById('ca-arch-toast').textContent.indexOf('Expense saved') !== -1
         }));
         ok(edit22.stored === 88.5 && edit22.val === '$88.50', 'typing a new expense commits to the stored figure and paints the row');
@@ -2304,7 +2306,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // COP lens: expenses are a salary-lens privilege
         await page.evaluate(() => { closeArchSub(); document.querySelector('.ca-arch-seg[data-mode=\"cop\"]').click(); });
         await sleep(400);
-        ok(await page.evaluate(() => document.getElementById('ca-arch-after-line').classList.contains('hidden') && document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') === -1), 'the COP lens shows no expense context');
+        ok(await page.evaluate(() => document.getElementById('ca-arch-after-line').classList.contains('hidden') && document.getElementById('ca-arch-exp-line').classList.contains('hidden') && document.getElementById('ca-arch-gross-line').classList.contains('hidden')), 'the COP lens shows no expense context - all three salary lines step aside, the Exp line included');
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); closeArchOverlay(); });
         await sleep(300);
 
@@ -2417,18 +2419,19 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(wide23.side && wide23.cells === 6 && wide23.noClip, 'at 430px the three-row grid shares the row, as it now does even at 375px - the wrap guardrail only fires when a value truly runs long');
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
-        // v1.45.31 (owner order, Option A): the gate is display-only - the
-        // stored figures never budge while hidden, and dev on brings every
-        // surface back pre-filled.
+        // v1.48.3: the display is every device's - dev off KEEPS the
+        // surfaces (only the editor leaves), and the stored figures never
+        // budge either way.
         await page.evaluate(() => { appDevMode = false; localStorage.setItem('crewAssist.devMode', 'false'); renderArch(); });
         await sleep(300);
         const hide31 = await page.evaluate(() => ({
             cells: (document.querySelector('.ca-arch-group .ca-arch-amt') || { children: [] }).children.length,
-            expSeg: document.getElementById('ca-arch-gross-line').textContent.indexOf('Exp ') !== -1,
+            expTxt: document.getElementById('ca-arch-exp-line').textContent,
+            expHidden: document.getElementById('ca-arch-exp-line').classList.contains('hidden'),
             stored: JSON.parse(localStorage.getItem('crewAssist.archive')).find((e) => e.id === 'g1').detail.expense
         }));
-        ok(hide31.cells === 4 && hide31.expSeg === false && hide31.stored === 120, 'v1.45.31: dev off again - the grid drops its third row and the card its Exp segment, while the stored figure sits untouched');
-        ok(await page.evaluate(() => { openArchEntry('g1'); return !document.getElementById('ca-arch-exp-btn'); }), 'v1.45.31: dev off again - the receipt row is gone from the summary');
+        ok(hide31.cells === 6 && hide31.expTxt === 'Exp \u2212$120.00' && !hide31.expHidden && hide31.stored === 120, 'v1.48.3: dev off again - the display STAYS (the grid keeps its third row, the card its Exp line on its own row) while the stored figure sits untouched');
+        ok(await page.evaluate(() => { openArchEntry('g1'); const ro = document.querySelector('[data-ca-arch-exp-row]'); return !!ro && ro.textContent.indexOf('$120.00') !== -1 && !document.getElementById('ca-arch-exp-btn'); }), 'v1.48.3: dev off again - the summary keeps the read-only statement, and the editor is gone');
         ok(await page.evaluate(() => { closeArchSub(); appDevMode = true; openArchEntry('g1'); return document.getElementById('ca-arch-exp-val') ? document.getElementById('ca-arch-exp-val').textContent : null; }) === '$120.00', 'v1.45.31: dev on - the receipt row returns pre-filled with the stored figure (Option A: display-only, never a data concern)');
         await page.evaluate(() => { localStorage.removeItem('crewAssist.archive'); localStorage.removeItem('crewAssist.archMode'); appDevMode = false; localStorage.setItem('crewAssist.devMode', 'false'); closeArchOverlay(); });
         await sleep(300);
@@ -2571,6 +2574,33 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(200);
         ok(tallRows === 7 && shortRows === 7, 'v1.45.51: the leaderboard depth is the fixed top ten - 7 rows (ranks four through ten) on the tall window AND the short one, no viewport math (' + shortRows + ' short vs ' + tallRows + ' tall)');
+
+        // v1.48.3 (owner order): the My Flight Stats page ROLLS its counts
+        // and dates the departure-board way - computed in the real browser,
+        // under ca-reduced at that (the owner's exception: the roll answers
+        // to no reduced-motion gate). The roll fires only once the sheet is
+        // fully up; digits only; the year pills, the 2nd/3rd ordinals, the
+        // row ranks and the View-all count never roll.
+        await page.evaluate(() => { document.documentElement.classList.add('ca-reduced'); openRcPod(); document.getElementById('ca-rc-pod-gate').click(); });
+        await sleep(100);
+        const rollEarly = await page.evaluate(() => document.querySelectorAll('#ca-rc-stat-sheet .ca-rollc').length);
+        await sleep(700);
+        const rollState = await page.evaluate(() => {
+            const q = (s) => document.querySelectorAll('#ca-rc-stat-sheet ' + s);
+            return {
+                cnt: q('.ca-rc-pod-count .ca-rollc, .ca-rc-pod-lcount .ca-rollc').length,
+                ldate: q('.ca-rc-pod-ldate .ca-rollc').length,
+                pills: q('#ca-rc-pod-listyears .ca-rollc').length,
+                ranks: q('.ca-rc-pod-lrank .ca-rollc, .ca-rc-pod-ord .ca-rollc').length,
+                all: q('.ca-rc-pod-all .ca-rollc').length,
+                xHolds: !!document.querySelector('#ca-rc-stat-sheet .ca-rc-pod-count .ca-rc-pod-x, #ca-rc-stat-sheet .ca-rc-pod-lcount .ca-rc-pod-x')
+            };
+        });
+        await page.evaluate(() => { document.documentElement.classList.remove('ca-reduced'); closeRcStat(); closeRcPod(); });
+        await sleep(400);
+        ok(rollEarly === 0, 'v1.48.3: the stats page mounts settled - the roll waits out the sheet\'s glide (the v1.48.0 arm pattern)');
+        ok(rollState.cnt > 0 && rollState.ldate > 0 && rollState.xHolds, 'v1.48.3 (owner order): once the sheet is up, the counts and dates reel - and in the count the \u00d7 glyph stands still beside the digits');
+        ok(rollState.pills === 0 && rollState.ranks === 0 && rollState.all === 0, 'v1.48.3: the year pills, the 2nd/3rd ordinals, the row ranks and the View-all count never roll');
 
         // v1.45.47 (owner green light, after six external specs): the
         // chevron affordance — rows only, turning down toward the log it
