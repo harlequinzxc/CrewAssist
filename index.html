@@ -3275,7 +3275,7 @@
             }
         }
 
-        var APP_VERSION = '1.48.3'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.48.4'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3297,6 +3297,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.48.4', d: '2026-11-03', items: [
+                { c: 'imp', t: 'The stats page rolls its numbers when the year changes.' }
+            ] },
             { v: '1.48.3', d: '2026-11-03', items: [
                 { c: 'fix', t: 'Restored expenses show on every device \u2014 the figures ride along.' },
                 { c: 'fix', t: 'The salary card\u2019s Exp figure rides its own row.' },
@@ -6989,7 +6992,7 @@
             sheet.classList.add('translate-y-full');
             caSheetHideArm(wrap);
         }
-        function renderRcPod(stagger, rollHero) {
+        function renderRcPod(stagger, rollHero, rollStats) {
             const body = document.getElementById('ca-rc-pod-body');
             const tabsWrap = document.getElementById('ca-rc-pod-tabs-wrap');
             if (!body || !tabsWrap) return;
@@ -7055,6 +7058,18 @@
             // stubs, because an unreplaced stub renders as nothing. The
             // shared guarded helper; the opener's inline call is retired.
             refreshIcons();
+            // v1.48.4 (owner order): a year-pill change rolls the stats
+            // page's COUNTS and DATES too — the same digit-only family the
+            // open arm rolls, fired immediately (the sheet is already up,
+            // no glide to wait out) and superseding any pending entrance
+            // arm. Guarded by the overlay showing, so a main-chip tap on
+            // the passport page behind never fires blind; the tabs and the
+            // View-all door are not pills and stay settled.
+            if (rollStats) {
+                if (rcStatOpenRollT) { clearTimeout(rcStatOpenRollT); rcStatOpenRollT = null; }
+                const sw = document.getElementById('ca-rc-statwrap');
+                if (sw && !sw.classList.contains('hidden')) sw.querySelectorAll('.ca-rc-pod-count, .ca-rc-pod-lcount, .ca-rc-pod-ldate').forEach(caNumRoll);
+            }
         }
         var rcPodOpenRollT = null;   // v1.48.0: the fresh-open roll's arm — fires once the sheet is fully up
         function openRcPod() {
@@ -9836,7 +9851,7 @@ SLOT|Special Lve others`;
                     // inner chip — one coherent page; the INNER chip (in the
                     // stats overlay) drives the records list alone
                     const yp = ev.target.closest('[data-ca-rc-pod-year]');
-                    if (yp) { rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true); return; }   // v1.45.56: a year change ROLLS the hero
+                    if (yp) { rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true, true); return; }   // v1.45.56: a year change ROLLS the hero — v1.48.4: and the stats page's numbers with it
                     // v1.45.53 (owner order): the gateway opens the stats
                     // OVERLAY — no in-page accordion
                     if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }
@@ -9849,7 +9864,7 @@ SLOT|Special Lve others`;
                     const closer = ev.target.closest('[data-ca-rc-stat-close]');
                     if (closer) { closeRcStat(); return; }
                     const ly = ev.target.closest('[data-ca-rc-pod-lyear]');
-                    if (ly) { rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return; }
+                    if (ly) { rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(false, false, true); return; }   // v1.48.4 (owner order): a pill change ROLLS the stats page's counts and dates
                     const stn = ev.target.closest('[data-ca-rc-pod-station]');
                     if (stn) { rcPodToggle(stn.getAttribute('data-ca-rc-pod-station')); return; }
                     const tab = ev.target.closest('[data-ca-rc-pod-tab]');

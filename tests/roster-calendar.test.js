@@ -1553,6 +1553,39 @@ const synthItems = [].concat(
     R.ok(src483.includes("w3.querySelectorAll('.ca-rc-pod-count, .ca-rc-pod-lcount, .ca-rc-pod-ldate').forEach(caNumRoll)") && src483.includes('var rcStatOpenRollT = null;') && /if \(rcStatOpenRollT\) \{ clearTimeout\(rcStatOpenRollT\); rcStatOpenRollT = null; \}/.test(src483), 'v1.48.3 src: the arm names ONLY the count and date elements, and a close cancels a pending arm');
     w.eval('closeRcPod();');
   }
+  // ---- v1.48.4 (owner order): when a year pill changes on the stats
+  //      page, the numbers roll TOO — the same digit-only family the open
+  //      arm rolls, fired immediately (the sheet is already up, no glide
+  //      to wait out). The tabs and the View-all door are not pills; they
+  //      keep rendering settled. ----
+  {
+    const { w, d } = await boot(APP, { now: '2026-11-01T12:00:00+08:00', seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
+      const leg = (fn, dep, arr, ymd) => ({ fn, dep, arr, ymd, std: '08:00', sta: '17:00', stdYmd: ymd, staYmd: ymd, ft: '09:00', ac: '7M8', rpt: '', pos: false });
+      x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
+        '2025-01': [leg('501', 'SIN', 'NRT', '2025-01-05'), leg('502', 'NRT', 'SIN', '2025-01-06')],
+        '2026-02': [leg('701', 'SIN', 'ICN', '2026-02-10'), leg('702', 'ICN', 'SIN', '2026-02-11'), leg('703', 'SIN', 'KUL', '2026-02-20')]
+      }));
+    } });
+    w.eval('openRosterCalendar()'); await wait(300);
+    w.eval('openRcPod()'); await wait(500);   // the passport's own hero-roll window passes BEFORE the spy goes in
+    w.eval('openRcStat()'); await wait(500);  // the stats open arm (360ms) fires and settles before the spy too
+    w.eval('window.__rollSpy = []; window.__NR = caNumRoll; caNumRoll = function (el) { window.__rollSpy.push(String(el.className)); window.__NR(el); };');
+    d.querySelector('#ca-rc-pod-listyears [data-ca-rc-pod-lyear="2025"]').click(); await wait(80);
+    const calls = await w.eval('window.__rollSpy');
+    R.ok(calls.length > 0 && calls.every((c) => /ca-rc-pod-(count|lcount|ldate)/.test(c)), 'v1.48.4 (owner order): a year-pill change ROLLS the stats page\u2019s counts and dates \u2014 immediately, no arm wait, and nothing outside the family is ever passed to the engine');
+    const cnt = d.querySelector('.ca-rc-pod-count, .ca-rc-pod-lcount');
+    R.ok(cnt && cnt.querySelectorAll('.ca-rollc').length > 0, 'after the pill change the count carries a reel cell');
+    R.ok(d.getElementById('ca-rc-pod-listyears').querySelectorAll('.ca-rollc').length === 0, 'the pills themselves still never carry a reel cell');
+    // the tabs are not pills: a tab swap keeps rendering settled
+    w.eval('window.__rollSpy = [];');
+    d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click(); await wait(120);
+    R.eq(await w.eval('window.__rollSpy.length'), 0, 'a tab swap is not a pill change \u2014 the re-render stays settled (the accordion lesson)');
+    w.eval('caNumRoll = window.__NR;');
+    const src484 = require('fs').readFileSync(APP, 'utf8');
+    R.ok(src484.includes('renderRcPod(false, false, true)') && src484.includes('renderRcPod(false, true, true)') && /if \(rollStats\) \{/.test(src484) && src484.indexOf('if (rollStats)') > src484.indexOf('function renderRcPod('), 'v1.48.4 src: both year-pill handlers pass the stats-roll flag, and the roll rides the flag inside renderRcPod');
+    w.eval('closeRcStat(); closeRcPod();');
+  }
   // ---- v1.45.58 (owner report): the visit-log drawer honours the year
   //      filter — the history a card opens must walk the SAME year the
   //      list is showing. The drawer re-walked ALL-TIME, so a year chip
@@ -1935,15 +1968,15 @@ const synthItems = [].concat(
     R.ok(src.includes('function rcPodFmtPair(mins)') && src.includes("Math.floor(n / 1440) + 'd '") && src.includes("Math.floor(n / 60) + 'h '") && src.includes("return n + 'm';"), 'v1.45.52: the largest-unit pair rule is the shipped formatter — days+hours, hours+minutes, minutes alone');
     R.ok(src.includes('function rcFtToMins(str)') && src.includes('\\d+)\\s*H\\s*(\\d+)\\s*M'), 'v1.45.52: the roster FT string parses to minutes (HH H MM M, the card HH:MM accepted)');
     R.ok(src.includes('if (yf && String(ld.depDate).slice(0, 4) !== yf) return;'), 'v1.45.52: a leg belongs to its DEPARTURE year — the year filter slices depDate, the earnings rule');
-    R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page');
+    R.ok(src.includes("rcPodYear = yp.getAttribute('data-ca-rc-pod-year'); rcPodListYear = rcPodYear; renderRcPod(false, true, true); return;"), 'v1.45.52: the MAIN chip filters the hero AND syncs the inner chip — one coherent page (v1.48.4: it also passes the stats-roll flag)');
     // v1.45.56 (owner order, the departure-board roll): the contract, by source
     R.ok(src.includes('function caNumRoll(el)') && src.includes("if (!/\\d/.test(txt)) return;") && src.includes("el.innerHTML = savedHtml;"), 'v1.45.56: the shared roll helper — digits only, the original markup restored on settle');
     { const cnr = src.slice(src.indexOf('function caNumRoll'), src.indexOf('function rcPodTelCell') > 0 ? src.indexOf('function rcPodTelCell') : undefined); R.ok(cnr.includes('if (caRollHold) return;') && !cnr.includes('ca-reduced'), 'v1.48.0 (owner order): the roll plays REGARDLESS of ca-reduced — the one exception to the everything-snaps rule, and the guard is scoped to the roll helper alone; only a capture\u2019s pose holds it (the digits must paint settled)'); }
-    R.ok(src.includes('function rcPodTelRender(st, roll)') && src.includes('function renderRcPod(stagger, rollHero)') && src.includes('rcPodTelRender(heroStats, rollHero);'), 'v1.45.56: the roll flag rides the render chain — only the marked moments roll');
-    R.ok(src.includes('renderRcPod(false, true); return;') && src.includes('rcPodOpenRollT = setTimeout') && src.includes('ca-reduced?80:360ms') === false, 'v1.45.56 + v1.48.0: the two roll moments are the fresh open (armed past the glide, \u2014360ms) and the year-pill change');
+    R.ok(src.includes('function rcPodTelRender(st, roll)') && src.includes('function renderRcPod(stagger, rollHero, rollStats)') && src.includes('rcPodTelRender(heroStats, rollHero);'), 'v1.45.56: the roll flag rides the render chain — only the marked moments roll (v1.48.4: the stats roll rides its own flag)');
+    R.ok(src.includes('renderRcPod(false, true, true); return;') && src.includes('rcPodOpenRollT = setTimeout') && src.includes('ca-reduced?80:360ms') === false, 'v1.45.56 + v1.48.0: the two roll moments are the fresh open (armed past the glide, \u2014360ms) and the year-pill change');
     R.ok(src.includes("wrap.querySelectorAll('.ca-rc-pod-hval, .ca-rc-pod-hsub').forEach(caNumRoll);"), 'v1.45.56: the hero walk rolls values and subs alike (digit-free strings no-op)');
     R.ok(src.includes('.ca-rollr0::before') && src.includes('.ca-rollstrip { position: absolute'), 'v1.45.56: the reel draws through ::before content — the DOM text never changes');
-    R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move');
+    R.ok(src.includes("rcPodListYear = ly.getAttribute('data-ca-rc-pod-lyear'); rcPodOpen = ''; renderRcPod(false, false, true); return;"), 'v1.45.52: the INNER chip drives the records list alone — the hero and the main chip never move (v1.48.4: a pill change rolls the list\u2019s numbers)');
     R.ok(src.includes("const entry = (rcPodStats(rcPodListYear)[rcPodTab] || []).filter((x) => x.code === code)[0];"), 'v1.45.58: the visit-log drawer walks the LIST\'S year — rcPodStats(rcPodListYear), never the bare all-time walk (the owner report: other years\' records under a year chip)');
     R.ok(src.includes('id="ca-rc-statwrap" class="fixed inset-0 z-[64] hidden"') && src.includes('function openRcStat()') && src.includes('function closeRcStat()') && src.includes("if (ev.target.closest('#ca-rc-pod-gate')) { openRcStat(); return; }") && !src.includes('ca-rc-pod-records'), 'v1.45.53 (owner order): All Flight Stats opens as its OWN overlay above the passport — the gate is a door, the in-page accordion is gone from the code');
     R.ok(src.includes('closeRcStat();   // v1.45.53') && src.includes("['ca-rc-statwrap', closeRcStat],   // v1.45.53"), 'v1.45.53: the stats overlay never outlives its passport — and Escape closes it before the pages beneath');
