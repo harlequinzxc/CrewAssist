@@ -938,8 +938,10 @@ Calculator and flight/menu cards always open top-aligned and hold that position 
   ordinals, the ranks or the View-all count; armed past the sheet's glide
   and exempt from reduced motion like every roll the engine paints. (v1.48.4:
   a year-pill change reels them again, immediately — the numbers animate on
-  every filter change, not just the arrival; the tabs and the View-all door
-  are not pills and stay settled.)
+  every filter change, not just the arrival. v1.48.5: the flights pills —
+  the All Flights / Layovers / Turnarounds tabs — ride the same roll, so
+  every pill on the page animates its numbers; only the View-all door is
+  not a pill and stays settled.)
 
 - v1.48.2 (owner orders, the five-order round): **the teaching pills read at
   full ink** — the shortcuts card's command bubbles carry the bubble's own

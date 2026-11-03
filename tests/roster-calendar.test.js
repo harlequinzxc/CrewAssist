@@ -1556,8 +1556,10 @@ const synthItems = [].concat(
   // ---- v1.48.4 (owner order): when a year pill changes on the stats
   //      page, the numbers roll TOO — the same digit-only family the open
   //      arm rolls, fired immediately (the sheet is already up, no glide
-  //      to wait out). The tabs and the View-all door are not pills; they
-  //      keep rendering settled. ----
+  //      to wait out). v1.48.5 (owner order): the flights pills — the
+  //      All Flights / Layovers / Turnarounds tabs — join the year pills
+  //      (the owner's order extends the roll to every pill on the page).
+  //      The View-all door is not a pill; it keeps rendering settled. ----
   {
     const { w, d } = await boot(APP, { now: '2026-11-01T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
@@ -1577,13 +1579,17 @@ const synthItems = [].concat(
     const cnt = d.querySelector('.ca-rc-pod-count, .ca-rc-pod-lcount');
     R.ok(cnt && cnt.querySelectorAll('.ca-rollc').length > 0, 'after the pill change the count carries a reel cell');
     R.ok(d.getElementById('ca-rc-pod-listyears').querySelectorAll('.ca-rollc').length === 0, 'the pills themselves still never carry a reel cell');
-    // the tabs are not pills: a tab swap keeps rendering settled
+    // v1.48.5 (owner order): the flights pills roll too — a tab change rides
+    // the SAME stats roll the year pills ride
     w.eval('window.__rollSpy = [];');
     d.querySelector('#ca-rc-pod-tabs-wrap [data-ca-rc-pod-tab="lo"]').click(); await wait(120);
-    R.eq(await w.eval('window.__rollSpy.length'), 0, 'a tab swap is not a pill change \u2014 the re-render stays settled (the accordion lesson)');
+    const tabCalls = await w.eval('window.__rollSpy');
+    R.ok(tabCalls.length > 0 && tabCalls.every((c) => /ca-rc-pod-(count|lcount|ldate)/.test(c)), 'v1.48.5 (owner order): the flights pills \u2014 the All Flights / Layovers / Turnarounds tabs \u2014 ROLL the numbers too, the same digit-only family');
+    const tabCnt = d.querySelector('.ca-rc-pod-count, .ca-rc-pod-lcount');
+    R.ok(tabCnt && tabCnt.querySelectorAll('.ca-rollc').length > 0, 'after the tab change the count carries a reel cell');
     w.eval('caNumRoll = window.__NR;');
     const src484 = require('fs').readFileSync(APP, 'utf8');
-    R.ok(src484.includes('renderRcPod(false, false, true)') && src484.includes('renderRcPod(false, true, true)') && /if \(rollStats\) \{/.test(src484) && src484.indexOf('if (rollStats)') > src484.indexOf('function renderRcPod('), 'v1.48.4 src: both year-pill handlers pass the stats-roll flag, and the roll rides the flag inside renderRcPod');
+    R.ok(src484.includes('renderRcPod(false, false, true)') && src484.includes('renderRcPod(false, true, true)') && src484.split('renderRcPod(false, false, true)').length - 1 >= 2 && /if \(rollStats\) \{/.test(src484) && src484.indexOf('if (rollStats)') > src484.indexOf('function renderRcPod('), 'v1.48.4 + v1.48.5 src: the year-pill handlers AND the tab handler pass the stats-roll flag, and the roll rides the flag inside renderRcPod');
     w.eval('closeRcStat(); closeRcPod();');
   }
   // ---- v1.45.58 (owner report): the visit-log drawer honours the year
@@ -2002,7 +2008,7 @@ const synthItems = [].concat(
     // built the house way: a CSS glyph, never a Lucide stub
     R.ok(src.includes(".ca-rc-pod-lrow::after { content: '\\203a'") && src.includes('.ca-rc-pod-lrow.ca-rc-pod-on::after { transform: rotate(90deg); }') && src.includes('html.ca-reduced .ca-rc-pod-lrow::after { transition: none; }'), 'v1.45.47: every leaderboard row carries the chevron — a CSS glyph at the right edge, turning down while its log is out (the archive chevron idiom), standing down under ca-reduced');
     R.ok(/\.ca-rc-pod-lrow \{[^}]*padding: 11px 8px/.test(src), 'v1.45.47 (owner report): the row breathes — 8px horizontal, so the rank digit never hugs the highlighted box\u2019s left edge (constant padding: a state-dependent one would jump the row on tap)');
-    R.ok(src.includes('// v1.45.47 (owner order): a new pill is a fresh') && src.indexOf("rcPodOpen = '';\n                        renderRcPod();") > 0 && src.includes('if (pb) pb.scrollTop = 0;'), 'v1.45.47 (owner order): the tab handler folds every log and scrolls the body home before the render');
+    R.ok(src.includes('// v1.45.47 (owner order): a new pill is a fresh') && src.indexOf("rcPodOpen = '';\n                        // v1.48.5 (owner order): the flights pills roll the") > 0 && src.includes("renderRcPod(false, false, true);\n                        const pb = document.getElementById('ca-rc-pod-body');") && src.includes('if (pb) pb.scrollTop = 0;'), 'v1.45.47 (owner order): the tab handler folds every log and scrolls the body home before the render (v1.48.5: the tab rides the stats roll)');
     // v1.45.48 (owner order, the glyph inventory): the month-nav buttons
     // carry true Lucide chevrons - no bare glyph children anywhere
     R.ok(src.includes('aria-label="Previous month"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>') && src.includes('aria-label="Next month"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>'), 'v1.45.48: the calendar\u2019s month arrows are true icons - chevron-left/right in the family idiom (w-5 h-5 in the w-9 target), verified in the lucide package before wiring');
