@@ -104,7 +104,7 @@ To publish new **rates** to everyone: change `rates.json` (or paste an Export), 
 | `icons/` | `logo-192/512` in-app dart; `app-icon-180/192/512` PWA; `favicon.png`. |
 | `tests/` | jsdom behaviour suite (`run-all.js` auto-globs `*.test.js`); contracts in `tests/README.md`. `npm install` inside `tests/` first — `node_modules` dies at sandbox turn boundaries. |
 | `app.html` | **Generated build artifact**, not source. `node tests/smoke/build-app.js` produces it (with a local `tw.css`) for the real-Chromium smoke rig. Gitignored (`tests/smoke/.gitignore`), not persisted across workspace restores — run the builder FIRST or the smoke server 404s 'nope'. Its byte size is recorded every round in these entries. |
-| `docs/TOUR-BREAKDOWN.md` | The feature tour's beat-by-beat script. Sync + commit after every tour change (owner references beats by number). |
+| `docs/FEATURE_TOUR.md` | The spotlight feature tour's contract: engine rules, firing doors, the eight walks' copy verbatim. Sync + commit after every tour change — reorders and additions go through it (replaced `docs/TOUR-BREAKDOWN.md`, deleted v1.49.0). |
 | `docs/CA_058_of_2025_Singapore_Airlines_Staff_Members_Agreement.pdf` | The full Staff Collective Agreement 2025–2027, uploaded by the owner (2026-10-07). **Only Clauses 34–36 concern this app** (COP/IFA/LMA) — the rest is reference. `docs/LOGIC.md` §0 maps every formula to those clauses. |
 | `docs/_reference_rosters/` | The owner's real monthly roster + menu PDFs (2024–2026) and `menu/sq_main_courses.json` — committed fixtures `roster-real`/`roster-calendar` read directly (renamed from `_inbox/`, owner order 2026-10-07). |
 | `README.md` | Human overview. |
@@ -132,10 +132,9 @@ The frontend has **no bundler and no build step**; behaviour tests live in `test
 | `crewAssist.calcUi` | Calculator interface mode: `default` (absent/unknown) \| `manual` \| `advanced` (developer mode only). |
 | `crewAssist.motion` | Motion preference (v1.45.0): `reduced` \| `full`; absent → follow the OS Reduce Motion switch (`prefers-reduced-motion`). |
 | `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
-| `crewAssist.tourOffered` | `'1'` once the first-run tour offer has been shown (never re-offered). |
 | `crewAssist.ratesCheckedAt` | Timestamp of the last successful network rates check (shown in the status popover; v1.26.0). |
 | `SQ<flight>:<date>:CABINS`, `SQ<flight>:<date>:<cabin>` | Saved SQ payloads: cabin schedule + per-cabin menus, `{timestamp, data}`. Menus cache with a 6 h freshness TTL but serve stale forever offline; pruned to the 5 recent flights (v1.26.0 formalised the CABINS key + prune). |
-| `crewAssist.tourDone` | `'1'` once the tour finished or was skipped (ends offers; the `tour` intent still works). |
+| `crewAssist.spotMainSeen` | `'1'` once the main spotlight tour finished, was skipped or escaped (v1.49.0 — it shows once; every tour replays forever from Settings → Feature tour; restoring from the welcome screen stamps it too). |
 | `crewAssist.lastBackupAt` | Timestamp of the last **full backup** export (v1.41.0: the earnings JSON extract no longer stamps it — only Settings → Data Management → Export backup does); read by the backup nudge. |
 | `crewAssist.backupNudgeSnoozedAt` | Timestamp of the last nudge snooze (2-week quiet period). |
 | `crewAssist.upcoming` | Roster-remembered upcoming flights `{ '<monthKey>': [{ fn, dep, arr, ymd, std }] }`, positioning excluded (v1.28.0). |
