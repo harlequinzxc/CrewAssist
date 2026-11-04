@@ -3275,7 +3275,7 @@
             }
         }
 
-        var APP_VERSION = '1.48.4'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.48.5'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3297,6 +3297,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.48.5', d: '2026-11-03', items: [
+                { c: 'imp', t: 'The stats tabs roll their numbers like the year pills.' }
+            ] },
             { v: '1.48.4', d: '2026-11-03', items: [
                 { c: 'imp', t: 'The stats page rolls its numbers when the year changes.' }
             ] },
@@ -9874,7 +9877,11 @@ SLOT|Special Lve others`;
                         // page — fold every log (the keep-where-it-lives
                         // rule is retired) and scroll back to the top
                         rcPodOpen = '';
-                        renderRcPod();
+                        // v1.48.5 (owner order): the flights pills roll the
+                        // numbers too — a tab change rides the same stats
+                        // roll the year pills ride (the owner's order
+                        // extends v1.48.4 from the year chips to the tabs)
+                        renderRcPod(false, false, true);
                         const pb = document.getElementById('ca-rc-pod-body');
                         if (pb) pb.scrollTop = 0;
                         return;
