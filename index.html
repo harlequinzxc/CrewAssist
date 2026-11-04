@@ -1361,31 +1361,22 @@
         }
         .ca-folded .ca-fold-body { max-height: 0; opacity: 0; }
 
-        /* Feature tour (v1.23.0): the gold ring that marks whatever the
-           narration names. The pulse is eased, never a snap, and the ring
-           borrows the element's own corner shape (box-shadow follows radius). */
-        @keyframes caTourPulse {
-            0%, 100% { box-shadow: 0 0 0 2px var(--ca-gold-glow-95), 0 0 0 7px var(--ca-gold-glow-22); }
-            50% { box-shadow: 0 0 0 3px var(--ca-gold), 0 0 0 11px var(--ca-gold-glow-42); }
-        }
-        .ca-tour-glow { position: relative; z-index: 5; animation: caTourPulse 1.4s ease-in-out infinite; }
-        /* While the tour runs, the chrome around the chat is hands-off:
-           Settings, the clear-chat reset and the quick action chips answer
-           neither taps nor scrolls — the crew reads and presses the tour
-           buttons. Programmatic .click() from the tour itself is unaffected. */
-        html.ca-tour-on #btn-settings,
-        html.ca-tour-on #btn-roster-cal,
-        html.ca-tour-on #btn-reset,
-        html.ca-tour-on #action-chips {
-            pointer-events: none !important;
-            touch-action: none !important;
-        }
-        /* The demo's attach card is a prop, not a control panel: its
-           buttons dim and answer no taps while the tour runs. */
-        html.ca-tour-on .ca-tour-inert button {
-            pointer-events: none !important;
-            opacity: 0.4 !important;
-        }
+        /* Feature tour v2 (v1.49.0, owner order): the SPOTLIGHT tour — a
+           modal veil with one lit target and a tooltip that can never clip
+           the viewport (the iPhone 11 lesson). The ring rides the huge-
+           box-shadow trick: a div sized to the target's rect whose shadow
+           paints the veil around the cut-out. The veil BLOCKS every tap —
+           highlighted buttons are shown, never pressed; the tooltip is the
+           only interactive surface (Next / Back / Skip). */
+        #ca-spot-veil { position: fixed; inset: 0; z-index: 95; visibility: hidden; }
+        #ca-spot-ring { position: fixed; z-index: 96; border-radius: 14px; pointer-events: none;
+            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .62);
+            transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease; }
+        #ca-spot-tip { position: fixed; z-index: 97; width: min(300px, calc(100vw - 24px)); }
+        html.ca-spot-on #ca-spot-veil { visibility: visible; }
+        #ca-spot-ring, #ca-spot-tip { visibility: hidden; }
+        html.ca-spot-on #ca-spot-ring, html.ca-spot-on #ca-spot-tip { visibility: visible; }
+        html.ca-reduced #ca-spot-ring, html.ca-reduced #ca-spot-tip { transition: none; }
         .ca-fold-toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ca-fold-icon { transition: transform 0.3s ease; }
         .ca-folded .ca-fold-icon { transform: rotate(-90deg); }
@@ -1896,7 +1887,7 @@
            its 6s ambient turn under ca-reduced so the live month stays
            marked for motion-sensitive crew too. */
         html.ca-reduced .ca-rc-flash, html.ca-reduced .ca-cl-badge-new,
-        html.ca-reduced .ca-tour-glow, html.ca-reduced .animate-float,
+        html.ca-reduced .animate-float,
         html.ca-reduced .animate-jump, html.ca-reduced .animate-pulse,
         html.ca-reduced .animate-bounce {
             animation: none;
@@ -2242,19 +2233,54 @@
 
                 <!-- v1.31.0: onboarding is perishable — the tour shouldn't be -->
                 <div>
-                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Learn the app</p>
-                    <!-- hotfix: both rows share one house box, hairline-split -->
-                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5">
-                        <div class="flex items-center justify-between">
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold">Feature tour</span>
-                                <span class="ca-micro text-gray-500">Placeholder</span>
-                            </div>
-                            <button type="button" id="btn-replay-tour" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                                <i data-lucide="play" class="w-3.5 h-3.5"></i> Replay
-                            </button>
-                        </div>
-                        <div class="border-t ca-hairline my-3"></div>
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feature tour</p>
+                    <!-- v1.49.0: the spotlight tours — eight rows, one per
+                         feature. A tap starts the tour at once; the app
+                         opens whatever overlay that tour walks (the docs
+                         contract lives in docs/FEATURE_TOUR.md). -->
+                    <div class="glass-panel rounded-2xl p-2 shadow-sm border dark:border-white/5 flex flex-col" id="ca-feature-tours">
+                        <button type="button" data-ca-spot="main" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="layout-dashboard" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Main screen</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="roster" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="file-up" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Roster import</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="manual" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="clipboard-pen" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Manual flight cards</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="menus" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="utensils" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Menus &amp; search</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="earnings" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="wallet" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Earnings</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="calendar" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="calendar-days" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Calendar</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="stats" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="trophy" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Flight Stats</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                        <button type="button" data-ca-spot="backup" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                            <i data-lucide="database-backup" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                            <span class="flex flex-col"><span class="text-sm font-bold">Backup &amp; restore</span></span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                        </button>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5 mt-3">
                         <!-- v1.35.0: the whole version history, newest first -->
                         <div class="flex items-center justify-between">
                             <div class="flex flex-col">
@@ -2335,7 +2361,7 @@
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
                     <!-- v1.42.0 (owner order): the buttons sit inside the house box,
                          so they run the same width as Storage's Clear saved menus. -->
-                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
+                    <div id="ca-dm-box" class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
                         <!-- v1.41.0: the one-shot backup — every piece of crew data
                              on this device in a single file, and one import door that
                              also reads the old earnings/rates exports. -->
@@ -3275,7 +3301,7 @@
             }
         }
 
-        var APP_VERSION = '1.48.5'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.49.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3297,6 +3323,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.49.0', d: '2026-11-04', items: [
+                { c: 'new', t: 'The tour is a spotlight now \u2014 short, sharp, skippable.' },
+                { c: 'new', t: 'Settings \u2192 Feature tour walks eight features, one tap each.' }
+            ] },
             { v: '1.48.5', d: '2026-11-03', items: [
                 { c: 'imp', t: 'The stats tabs roll their numbers like the year pills.' }
             ] },
@@ -4666,6 +4696,9 @@
                 const avatar2 = document.getElementById('settings-avatar');
                 if (avatar2) avatar2.textContent = (String(appProfile.name || 'C').trim().charAt(0) || 'C').toUpperCase();
 
+                // v1.49.0: fresh setup — the main spotlight tour follows the
+                // greeting once it settles (the startChat slot consumes this).
+                caSpotFresh = true;
                 showMain();
             });
 
@@ -4773,11 +4806,14 @@
                 showOnboarding();
             });
 
-            // v1.31.0: the tour is recoverable forever — a first-run offer
-            // alone leaves every later feature unexplained.
-            document.getElementById('btn-replay-tour').addEventListener('click', () => {
+            // v1.49.0: the spotlight tours — eight rows in Settings, one tap
+            // each. The row's data-ca-spot names the tour; the engine opens
+            // whatever overlay that tour walks (docs/FEATURE_TOUR.md).
+            document.getElementById('ca-feature-tours').addEventListener('click', (ev) => {
+                const row = ev.target && ev.target.closest ? ev.target.closest('[data-ca-spot]') : null;
+                if (!row) return;
                 closeSettings();
-                startCaTour(true);
+                if (typeof caSpotStart === 'function') caSpotStart(row.getAttribute('data-ca-spot'));
             });
 
             document.getElementById('btn-clear-data').addEventListener('click', () => {
@@ -4857,20 +4893,19 @@
                 }
             });
 
-            // v1.44.0 hotfix (owner spec) → v1.48.0 (owner order): the help
-            // card's rows are READ-ONLY now — the commands teach, nothing
-            // inserts (the composer is the only way in, so the helper text
-            // says "Type any command below"). Only the CTA stays tappable:
-            // it starts the feature tour. Delegated at document level — the
-            // card re-renders per message, so per-CTA bindings would rot
-            // (the fv pattern). While the chat is busy the button is already
-            // inert (html.chat-busy #chat-container button), the guard is
+            // v1.44.0 hotfix (owner spec) → v1.49.0: the help card's rows
+            // are READ-ONLY — the commands teach, nothing inserts (the
+            // composer is the only way in). Only the CTA stays tappable: it
+            // starts the MAIN spotlight tour (docs/FEATURE_TOUR.md).
+            // Delegated at document level — the card re-renders per message,
+            // so per-CTA bindings would rot (the fv pattern). While the chat
+            // is busy the button is already inert, the guard is
             // belt-and-braces.
             document.addEventListener('click', (e) => {
                 const cta = e.target.closest ? e.target.closest('[data-ca-help-tour]') : null;
                 if (cta) {
                     if (isChatBusy()) return;
-                    if (typeof startCaTour === 'function') startCaTour(true);
+                    if (typeof caSpotStart === 'function') caSpotStart('main');
                 }
             });
 
@@ -5020,8 +5055,16 @@
             // offer that follows it) begins only once the sheet is closed.
             const startChat = () => {
                 initChat();
-                // Feature tour: one first-run offer, after the greeting settles.
-                if (typeof maybeOfferTour === 'function') setTimeout(maybeOfferTour, 1200);
+                // v1.49.0: the spotlight tour, once per crew. The slot fires
+                // when caSpotFresh is armed — new crew get it at onboarding
+                // completion; returning crew get it from the What's-New close
+                // hook. Fresh test boots carry no wnSeen stamp, so they never
+                // arm it (docs/FEATURE_TOUR.md).
+                setTimeout(() => {
+                    if (!caSpotFresh) return;
+                    try { if (localStorage.getItem('crewAssist.spotMainSeen')) return; } catch (e) {}
+                    if (typeof caSpotStart === 'function') caSpotStart('main');
+                }, 1200);
             };
             if (whatsNewWillShow()) {
                 whatsNewOnClosed = startChat;
@@ -5048,6 +5091,10 @@
         }
 
         let whatsNewOnClosed = null;
+        // v1.49.0: the spotlight tour's arm flag — set by onboarding
+        // completion or the What's-New close hook; consumed (and never
+        // re-armed) by the startChat slot above.
+        let caSpotFresh = false;
 
         // v1.35.0: one renderer for both surfaces — the What's New delta
         // and the Settings changelog. Newest version first, a header above
@@ -5312,6 +5359,18 @@
             const cb = whatsNewOnClosed;
             whatsNewOnClosed = null;
             if (cb) cb();
+            // v1.49.0: returning crew meet the new release through this
+            // sheet — its close is the spotlight tour's second door. Only
+            // when the welcome chat was actually held (cb) AND the device
+            // already carried a What's-New stamp (read here, at close: a
+            // returning device's stamp predates this page load, while a
+            // fresh install or test boot that never stamped one stays
+            // quiet): arm the tour and let the greeting settle first.
+            // Devices with What's-New suppressed meet the tours in
+            // Settings only.
+            if (cb && !caSpotFresh) {
+                try { if (localStorage.getItem('crewAssist.wnSeen')) caSpotFresh = true; } catch (e) {}
+            }
         }
 
         // --- Chat Logic ---
@@ -5460,10 +5519,10 @@
         const CHAT_GAP_MS = 500;
         // v1.28.4 (owner ruling: universal, not returning-gated): normal chat
         // speaks briskly — short typing dots and a short gap between bubbles.
-        // The feature tour is EXEMPT: its hand-tuned pacing is locked, so
-        // while ca-tour-on is set the queue keeps the classic unhurried pace.
+        // v1.49.0: the old tour's pacing exemption retired with the tour
+        // itself — nothing holds the classic pace open any more, so the
+        // fast pace is simply the pace.
         const CHAT_FAST_GAP_MS = 250;
-        const caTourPace = () => document.documentElement.classList.contains('ca-tour-on');
         let chatLockGen = 0;
 
         function isChatBusy() {
@@ -5476,7 +5535,7 @@
 
         function noteBubbleShown() {
             lastBubbleReady = new Promise((resolve) => {
-                setTimeout(resolve, CHAT_ANIM_MS + (caTourPace() ? CHAT_GAP_MS : CHAT_FAST_GAP_MS));
+                setTimeout(resolve, CHAT_ANIM_MS + CHAT_FAST_GAP_MS);
             });
             return lastBubbleReady;
         }
@@ -5491,7 +5550,7 @@
                         try { fn(); } catch (err) { console.error(err); }
                         resolve();
                     });
-                }, caTourPace() ? 550 + Math.random() * 350 : 150 + Math.random() * 100);
+                }, 150 + Math.random() * 100);
             })).then(() => lastBubbleReady).then(() => {
                 if (gen === chatLockGen) setChatBusy(false);
             });
@@ -5607,9 +5666,6 @@
         function processInput(text) {
             if (isChatBusy()) return;
             if (!text || !String(text).trim()) return;
-            // Feature tour: typing mid-tour yields the floor — the tour pauses
-            // (unless their typing IS the demo, i.e. the interactive step).
-            if (typeof caTourInterrupt === 'function') caTourInterrupt(text);
             foldAllCards();
             setChatBusy(true);
             addMessage('user', text);
@@ -11635,9 +11691,9 @@ SLOT|Special Lve others`;
             if (/^\s*(help|\?)\s*$/.test(lowerText)) {
                 addBotMessage(helpCardHtml());
             }
-            // Tour: "tour" or "show me around" starts the feature tour.
+            // Tour: "tour" or "show me around" starts the main spotlight tour.
             else if (/\btour\b|show me around/.test(lowerText)) {
-                if (typeof startCaTour === 'function') startCaTour(true);
+                if (typeof caSpotStart === 'function') caSpotStart('main');
             }
             // v1.39.0 (B7): structured commands beat keywords — "ifa sq802 4
             // oct" must never fall into the generic "flight" bucket.
@@ -16214,18 +16270,12 @@ SLOT|Special Lve others`;
         // ---------- Allowances Archive (LOGIC.md 4.10-4.12, 5.4, 6.8) ----------
         const ARCHIVE_KEY = 'crewAssist.archive';
         function loadArchive() {
-            // Feature tour: the archive renders the demo month from a session
-            // store while the tour runs — the crew's real entries stay
-            // untouched and invisible until it ends.
-            if (window.caTourArchiveStore) return (window.caTourArchiveStore.entries || []).slice();
             try {
                 const a = JSON.parse(localStorage.getItem(ARCHIVE_KEY));
                 return Array.isArray(a) ? a : [];
             } catch (e) { return []; }
         }
         function persistArchive(arr) {
-            // Feature tour: demo saves land in the session store, never on disk.
-            if (window.caTourArchiveStore) { window.caTourArchiveStore.entries = Array.isArray(arr) ? arr : []; return true; }
             // v1.29.0: a refused write must not pass silently — the crew is
             // told honestly, and the caller knows not to claim "saved".
             try {
@@ -18198,9 +18248,10 @@ SLOT|Special Lve others`;
             const whenTxt = (when && !isNaN(when.getTime())) ? when.toLocaleDateString() : 'an unknown date';
             appConfirm('Full backup from ' + whenTxt + ' — ' + arch.length + ' earnings entries, ' + duty + ' months of roster duties' + (prof && prof.name ? ', profile ' + prof.name : '') + '. Restore? This replaces the CrewAssist data on this device.').then((ok) => {
                 if (!ok) return;
-                // v1.42.0 hotfix: someone restoring from the welcome screen is
-                // not a new user — retire the tour offer before the reload.
-                if (opts && opts.fromOnboarding) { try { localStorage.setItem('crewAssist.tourDone', '1'); } catch (e) {} }
+                // v1.42.0 hotfix → v1.49.0: someone restoring from the
+                // welcome screen is not a new user — stamp the spotlight
+                // tour as seen before the reload.
+                if (opts && opts.fromOnboarding) { try { localStorage.setItem('crewAssist.spotMainSeen', '1'); } catch (e) {} }
                 applyFullBackupData(d);
                 try { location.reload(); } catch (e) {}
             });
@@ -22544,966 +22595,454 @@ SLOT|Special Lve others`;
     </script>
     <script>
         // ==========================================
-        // FEATURE TOUR (v1.23.0)
-        // A five-step demonstrative walkthrough: greeting → roster showpiece
-        // (with the earnings thread woven in) → Default calculating → Manual
-        // calculating → menu + print, driven live by the crew.
+        // SPOTLIGHT FEATURE TOUR (v1.49.0)
+        // One lit target, one tooltip, one button at a time. The veil blocks
+        // every tap: targets are SHOWN, never pressed — the tooltip is the
+        // only interactive surface (Next / Back / Skip). The copy is the
+        // owner's, verbatim; docs/FEATURE_TOUR.md is the contract future
+        // reorders and additions go through.
         //
         // Design notes:
-        //  - The tour is DATA, not code: each step is a self-contained object
-        //    (narration, glow targets, demo action). Adding a future feature
-        //    to the tour means adding a step object, never editing a monolith.
-        //  - Defensive by contract: a step whose target has vanished from the
-        //    DOM (feature renamed or removed in a future version) skips itself
-        //    and the tour carries on.
-        //  - Nothing touches the crew's data: demo saves land in a session
-        //    store (window.caTourArchiveStore redirects loadArchive/
-        //    persistArchive), the demo month is synthetic, and the mode the
-        //    crew started on is restored when it ends.
-        //  - Typing mid-tour yields the floor; the tour then offers to resume.
-        //  - Everything the tour adds to the thread is marked .ca-tour-bubble
-        //    and folds away when it ends; the crew's own bubbles never are.
+        //  - The tour is DATA: CA_SPOT_TOURS maps an id to a label, a world
+        //    function and an ordered step list ({ sel, title, line, before }).
+        //    `sel` is a selector string or a function returning the element;
+        //    a vanished target (feature renamed or removed in a future
+        //    version) skips itself and the walk carries on.
+        //  - `world`/`before` set the WORLD, idempotently — every step runs
+        //    one before the ring is placed, so Back re-runs the prior
+        //    step's world and the stage is always right without diffing.
+        //  - The tooltip never clips the viewport: it flips above/below,
+        //    clamps to 12px margins, and its width is capped at 300px by
+        //    CSS (the real-Chromium geometry pin lives in the smoke suite).
+        //  - Escape ends the walk (a skip); Tab is trapped in the tooltip.
+        //  - Nothing saved is touched. Tours that need a prop build it
+        //    through the app's own real paths (the manual-cards tour leaves
+        //    one working calculator card in the thread); sheets the walk
+        //    opened stay open when it ends — the crew explores from there.
         // ==========================================
 
-        var caTour = { on: false, gen: 0, entries: [], stepIdx: -1, userMode: 'default', driving: false, parsed: null };
-        var CA_TOUR_STEPS = [];
+        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null };
+        var caSpotBusy = false;
 
-        function caTourWait(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-        async function caTourWaitFree() {
-            for (let i = 0; i < 80; i++) {
-                if (!isChatBusy() && !document.getElementById('typing-indicator')) return true;
-                await caTourWait(250);
-            }
-            return false;
+        function caSpotSeen() {
+            try { return localStorage.getItem('crewAssist.spotMainSeen') === '1'; } catch (e) { return false; }
+        }
+        function caSpotMarkSeen() {
+            try { localStorage.setItem('crewAssist.spotMainSeen', '1'); } catch (e) {}
         }
 
-        // Marking: bubbles the TOUR added get excised at the end. The crew's
-        // own words (justify-end, not tour-driven) never do.
-        function caTourMarkLast() {
-            const c = document.getElementById('chat-container');
-            if (c && c.lastElementChild) c.lastElementChild.classList.add('ca-tour-bubble');
-        }
-
-        var caTourObserver = null;
-        function caTourObserverConnect() {
-            if (caTourObserver || typeof MutationObserver === 'undefined') return;
-            const c = document.getElementById('chat-container');
-            if (!c) return;
-            caTourObserver = new MutationObserver((muts) => {
-                muts.forEach((m) => {
-                    Array.prototype.forEach.call(m.addedNodes, (n) => {
-                        if (n.nodeType !== 1) return;
-                        if (n.classList.contains('justify-end') && !caTour.driving) return;
-                        n.classList.add('ca-tour-bubble');
-                    });
-                });
-            });
-            caTourObserver.observe(c, { childList: true });
-        }
-        function caTourObserverDisconnect() {
-            if (caTourObserver) { caTourObserver.disconnect(); caTourObserver = null; }
-        }
-
-        // Drive the real flow the way a crew tap would (chip clicks run
-        // processInput); everything it adds is marked as tour content.
-        function caTourDrive(fn) {
-            const c = document.getElementById('chat-container');
-            const before = c ? c.children.length : 0;
-            caTour.driving = true;
-            try { fn(); } finally { caTour.driving = false; }
-            if (!c) return;
-            const kids = Array.prototype.slice.call(c.children);
-            for (let i = before; i < kids.length; i++) kids[i].classList.add('ca-tour-bubble');
-        }
-
-        function caTourClearGlow() {
-            document.querySelectorAll('.ca-tour-glow').forEach((el) => el.classList.remove('ca-tour-glow'));
-        }
-
-        // While the tour runs, the chat is a movie: the crew reads and taps
-        // the tour buttons, but never scrolls — the tour does the scrolling.
-        // Capture-phase wheel/touchmove blocks every scroller (chat, sheets,
-        // print preview) without touching programmatic scrolls.
-        var caTourScrollBlock = function (e) { e.preventDefault(); };
-        function caTourLockScroll(on) {
+        // --- target resolution -------------------------------------------
+        function caSpotEl(sel) {
             try {
-                if (on) {
-                    document.addEventListener('wheel', caTourScrollBlock, { capture: true, passive: false });
-                    document.addEventListener('touchmove', caTourScrollBlock, { capture: true, passive: false });
-                } else {
-                    document.removeEventListener('wheel', caTourScrollBlock, { capture: true });
-                    document.removeEventListener('touchmove', caTourScrollBlock, { capture: true });
-                }
-            } catch (e) {}
+                const el = (typeof sel === 'function') ? sel() : (sel ? document.querySelector(sel) : null);
+                return (el && el.nodeType === 1) ? el : null;
+            } catch (e) { return null; }
         }
-
-        // A deep-card field needs the field itself in view, not the card's
-        // top: slow-scroll the target to the middle of the window and let it
-        // settle. Scroll-only — the look of the guided beats, no ring.
-        async function caTourScrollHere(T, el) {
-            if (!el || !T.alive()) return null;
-            if (el.scrollIntoView) { try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {} }
-            await T.wait(800);
-            return el;
-        }
-
-        // The same glide, then the ring: for the deep-card beats that are
-        // typed into or pressed.
-        async function caTourGlowHere(T, el) {
-            const target = await caTourScrollHere(T, el);
-            if (!target || !T.alive()) return null;
-            caTourClearGlow();
-            el.classList.add('ca-tour-glow');
-            return el;
-        }
-
-        // Types text the way a person does: one character at a time, each
-        // keystroke a real input event the card's handlers react to.
-        async function caTourTypeInto(T, el, text) {
-            if (!el) return false;
-            for (let i = 1; i <= text.length; i++) {
-                el.value = text.slice(0, i);
-                el.dispatchEvent(new Event('input', { bubbles: true }));
-                if (!await T.wait(450)) return false;
+        // The `.hidden` walk: honest in jsdom (no layout there) and in the
+        // browser alike — anything hidden up the chain hides the target.
+        function caSpotShown(el) {
+            for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+                if (n.classList && n.classList.contains('hidden')) return false;
             }
             return true;
         }
-
-        // Mirrors rosterPrefillCard's setVal: value -> button label -> input
-        // -> change, so every existing handler runs as if the crew typed it.
-        function caTourSetVal(el, val) {
-            if (!el || val == null || val === '') return;
-            el.value = val;
-            const isDate = el.classList && el.classList.contains('ca-date-input');
-            if (isDate && typeof syncDateBtn === 'function') syncDateBtn(el);
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            if (isDate) el.dispatchEvent(new Event('change', { bubbles: true }));
+        function caSpotVis(sel) {
+            const el = caSpotEl(sel);
+            return (el && caSpotShown(el)) ? el : null;
         }
 
-        // The live calculator mode, read from the segmented control itself.
-        function caTourReadMode() {
+        // --- worlds (idempotent; every step re-runs one) ------------------
+        function caSpotMainWorld() {
+            if (typeof closeSettings === 'function') closeSettings();
+        }
+        function caSpotSettingsWorld() {
+            if (typeof openSettings === 'function') openSettings();
+        }
+        function caSpotEarningsWorld() {
+            caSpotMainWorld();
+            if (typeof showArchiveOverlay === 'function') showArchiveOverlay();
+        }
+        // tags: false → off, true → on, undefined → leave as it is
+        function caSpotCalWorld(tags) {
+            caSpotMainWorld();
+            const wrap = document.getElementById('ca-roster-cal');
+            if ((!wrap || wrap.classList.contains('hidden')) && typeof openRosterCalendar === 'function') openRosterCalendar();
+            if (tags === true || tags === false) {
+                const btn = document.getElementById('ca-rc-tag');
+                const on = !!(btn && btn.getAttribute('aria-pressed') === 'true');
+                if (btn && on !== tags) btn.click();   // the app's own toggle
+            }
+        }
+        function caSpotPodWorld() {
+            caSpotMainWorld();
+            const wrap = document.getElementById('ca-rc-podwrap');
+            if ((!wrap || wrap.classList.contains('hidden')) && typeof openRcPod === 'function') openRcPod();
+        }
+        // Menus: open the first SAVED menu when one exists — the cached
+        // path renders offline, straight from the save (v1.28.2). No saved
+        // menu and the steps fall back to the composer and the chip.
+        function caSpotMenuWorld() {
+            caSpotMainWorld();
             try {
-                const on = document.querySelector('#calcui-segmented .calcui-pill[aria-checked="true"]');
-                if (on && on.getAttribute('data-calcui')) return on.getAttribute('data-calcui');
-            } catch (e) {}
-            try {
-                const v = localStorage.getItem('crewAssist.calcUi');
-                if (v === 'default' || v === 'manual') return v;
-            } catch (e) {}
-            return 'default';
-        }
-
-        function caTourDemoDate(days) {
-            const d = new Date();
-            d.setDate(d.getDate() + (days == null ? 2 : days));
-            const off = d.getTimezoneOffset() * 60000;
-            return (new Date(d.getTime() - off)).toISOString().slice(0, 10);
-        }
-
-        // The per-step API handed to every run(): everything checks the run's
-        // generation so an interrupt cancels cleanly at the next await.
-        function caTourApi(myGen) {
-            const T = {};
-            T.alive = function () { return caTour.on && caTour.gen === myGen; };
-            T.wait = async function (ms) { await caTourWait(ms); return T.alive(); };
-            T.say = async function (text) {
-                if (!T.alive()) return;
-                await enqueueBot(() => { addMessage('bot', text); caTourMarkLast(); });
-            };
-            T.glow = function (sel) {
-                if (!T.alive()) return null;
-                const el = (typeof sel === 'string') ? document.querySelector(sel) : sel;
-                if (!el) { if (console && console.warn) console.warn('[tour] glow target missing:', sel); return null; }
-                caTourClearGlow();
-                // Scroll-then-glow: bring the target into view first (eased,
-                // per the scroll rules), then ring it.
-                const card = el.closest ? el.closest('.glass-bubble') : null;
-                const chat = document.getElementById('chat-container');
-                if (card && chat && chat.contains(card) && typeof scrollChatToBubble === 'function') scrollChatToBubble(card);
-                else if (el.scrollIntoView) { try { el.scrollIntoView({ block: 'center' }); } catch (e) {} }
-                el.classList.add('ca-tour-glow');
-                return el;
-            };
-            T.until = async function (cond, timeoutMs) {
-                const t0 = Date.now();
-                const limit = timeoutMs || 12000;
-                while (Date.now() - t0 < limit) {
-                    if (!T.alive()) return null;
-                    let v = null;
-                    try { v = cond(); } catch (e) { v = null; }
-                    if (v) return v;
-                    await caTourWait(250);
-                }
-                return null;
-            };
-            T.tap = function (el) { if (el && el.click) el.click(); };
-            T.next = function (label, withSkip) { return caTourNextButtons(myGen, label, withSkip); };
-            return T;
-        }
-
-        // The Next / Skip tour pair at the end of a step's bubble.
-        function caTourNextButtons(myGen, nextLabel, withSkip) {
-            return new Promise((resolve) => {
-                let done = false;
-                let iv = null;
-                const finish = (val) => { if (done) return; done = true; if (iv) clearInterval(iv); resolve(val); };
-                enqueueBot(() => {
-                    addMessage('bot',
-                        '<div class="flex flex-wrap gap-2 mt-2">'
-                        + '<button type="button" class="ca-tour-next flex-1 min-w-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="arrow-right" class="w-3.5 h-3.5 shrink-0"></i>' + (nextLabel || 'Next') + '</button>'
-                        + (withSkip === false ? '' : '<button type="button" class="ca-tour-skip flex-1 min-w-0 px-4 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Skip tour</button>')
-                        + '</div>');
-                    caTourMarkLast();
-                    const bubble = document.getElementById('chat-container').lastElementChild;
-                    const nb = bubble.querySelector('.ca-tour-next');
-                    const sb = bubble.querySelector('.ca-tour-skip');
-                    // Once either is pressed the pair goes inert — dimmed,
-                    // unclickable, nothing left looking pressable.
-                    const retire = () => {
-                        [nb, sb].forEach((b) => {
-                            if (!b) return;
-                            b.disabled = true;
-                            b.classList.add('opacity-40', 'pointer-events-none');
-                        });
-                    };
-                    nb.addEventListener('click', () => { retire(); finish('next'); });
-                    if (sb) sb.addEventListener('click', () => { retire(); finish('skip'); });
-                    iv = setInterval(() => { if (!caTour.on || caTour.gen !== myGen) finish('dead'); }, 250);
-                });
-            });
-        }
-
-        // A slow, guided pass down the whole summary page — top to bottom in
-        // gentle steps, so the crew sees every section before the save icon.
-        // Where the page fits (or in jsdom, which has no layout), it simply
-        // holds a beat instead of scrolling.
-        async function caTourScrollResults(T) {
-            const el = document.getElementById('results-content');
-            if (!el) { await T.wait(600); return; }
-            const max = Math.max(0, (el.scrollHeight || 0) - (el.clientHeight || 0));
-            if (max <= 0) { await T.wait(600); return; }
-            const glide = (y) => { try { el.scrollTo({ top: y, behavior: 'smooth' }); } catch (e) { el.scrollTop = y; } };
-            const steps = 40;
-            for (let i = 1; i <= steps; i++) {
-                glide(Math.round((max * i) / steps));
-                await T.wait(150);
-                if (!T.alive()) return;
-            }
-        }
-
-        // Save beat shared by every calculating step: glow the save icon, tap,
-        // acknowledge the dialog, let the one-shot tick play out, close.
-
-        // ---- the synthetic demo month ----
-        // Same geometry the parser test-suite uses (the real Crew Roster
-        // Report's rotated table), three approved demo trips, no real
-        // person's data: a Kathmandu layover with the split overnight +
-        // echo, a Phuket same-day turnaround, and a four-sector Penang
-        // shuttle day.
-        function caTourDemoRoster() {
-            const Y = { date: 25, day: 65, fn: 90, sector: 135, std: 359, sta: 389, ft: 421 };
-            const mk = (str, x, y, page) => ({ str: str, x: x, y: y, page: page || 1 });
-            const items = [];
-            const hdr = (p) => {
-                items.push(mk('Start', 150, 27, p), mk('Date', 161, 26.5, p));
-                items.push(mk('Day', 150, Y.day, p));
-                items.push(mk('Flight', 150, 94, p), mk('Number', 161, Y.fn, p));
-                items.push(mk('Sector', 150, 138, p));
-                items.push(mk('Duty', 150, 209, p));
-                items.push(mk('Rpt', 150, 330, p), mk('STD', 150, Y.std, p), mk('STA', 150, Y.sta, p));
-                items.push(mk('Flight', 150, Y.ft, p), mk('Time', 150, Y.ft + 0.3, p));
-            };
-            hdr(1);
-            // junk the parser must ignore: personal header line and From--To dates
-            items.push(mk('From', 62, 317), mk('01Jul26', 62, 365.5), mk('--', 62, 415), mk('31Jul26', 62, 430.5));
-            items.push(mk('Personal Details', 62, 60), mk('Roster Demo Crew', 80, 60), mk('350,737,777', 128, 130));
-            const rows = [
-                { date: '01Jul26', day: 'Wed' },
-                { fn: 'SQ 442', sector: 'SIN-KTM', std: '1914', sta: '2155', ft: '04:56' },
-                { date: '02Jul26', day: 'Thu' },
-                { fn: 'SQ 441', sector: 'KTM-SIN', std: '2259', ft: '05:15' },
-                { date: '03Jul26', day: 'Fri' },
-                { fn: 'SQ 441', sector: 'KTM-SIN', sta: '0629' },
-                { date: '04Jul26', day: 'Sat', duty: 'ATDO' },
-                { date: '22Jul26', day: 'Wed' },
-                { fn: 'SQ 740', sector: 'SIN-HKT', std: '1912', sta: '2000', ft: '01:48' },
-                { fn: 'SQ 739', sector: 'HKT-SIN', std: '2048', sta: '2340', ft: '01:52' },
-                { date: '24Jul26', day: 'Fri' },
-                { fn: 'SQ 134', sector: 'SIN-PEN', std: '0937', sta: '1102', ft: '01:25' },
-                { fn: 'SQ 133', sector: 'PEN-SIN', std: '1153', sta: '1321', ft: '01:28' },
-                { fn: 'SQ 138', sector: 'SIN-PEN', std: '1553', sta: '1719', ft: '01:26' },
-                { fn: 'SQ 137', sector: 'PEN-SIN', std: '1809', sta: '1946', ft: '01:37' }
-            ];
-            rows.forEach((r, i) => {
-                const x = 180 + i * 22;
-                if (r.date) items.push(mk(r.date, x, Y.date));
-                if (r.day) items.push(mk(r.day, x, Y.day));
-                if (r.fn) items.push(mk(r.fn, x, Y.fn));
-                if (r.sector) items.push(mk(r.sector, x, Y.sector));
-                if (r.std) items.push(mk(r.std, x, Y.std));
-                if (r.sta) items.push(mk(r.sta, x, Y.sta));
-                if (r.ft) items.push(mk(r.ft, x, Y.ft));
-                if (r.duty) items.push(mk(r.duty, x, 209.2));
-            });
-            return items;
-        }
-
-        function caTourParsedDemo() {
-            if (!caTour.parsed) caTour.parsed = rosterParse(caTourDemoRoster());
-            return caTour.parsed;
-        }
-
-        // The Manual step's trip: the same Kathmandu layover the roster demo
-        // carries, filled through the same event path hand-typing uses.
-
-        // The Default step's honest pivot when the schedule won't answer.
-        var CA_TOUR_FETCH_PIVOT = "No connection just now — that's the honest answer, never a made-up number. Online, Fetch fills it all in; offline, the manual way — next step — always works.";
-        // The closing line, said bare (unmarked) so it outlives the cleanup.
-        var CA_TOUR_CLOSING = "Thank you so much for your time. Type <b>\"tour\"</b> or <b>\"help\"</b> anytime if you would like me to run the feature tour again.";
-
-        // ---- the steps registry (data, not code) ----
-        CA_TOUR_STEPS = [
-            {
-                id: 'chat',
-                say: [
-                    "I am your personal assistant, ask me anything related to your flight in the chat box.",
-                    "<i>“How much is my allowance?”</i>",
-                    "<i>“What are we serving onboard?”</i>",
-                    "Or tap on a quick action chip below."
-                ],
-                run: async function (T) {
-                    const input = document.getElementById('chat-input');
-                    T.glow(input ? (input.closest('.glass-panel') || input) : null);
-                    await T.wait(2200);
-                    if (!T.alive()) return;
-                    T.glow(document.querySelector('.action-chip'));
-                    await T.wait(2000);
-                }
-            },
-            {
-                id: 'roster',
-                say: [],
-                run: async function (T) {
-                    // -- the paperclip: said first, lit next, unlit before
-                    // the instruction that follows --
-                    await T.say('See that paperclip down there?');
-                    T.glow('#btn-roster');
-                    await T.wait(1800);
-                    caTourClearGlow();
-                    if (!T.alive()) return;
-                    await T.say('Attach your downloaded <b>roster report/s</b> from <b>Crew App</b> and allow me to calculate your month/s allowance.');
-                    const gate1 = await T.next();
-                    if (gate1 === 'skip') return 'skip';
-                    // -- what the demo is about to attach --
-                    await T.say('In this demo, I will attach a fictitious roster — with three different flights: <b>SQ442/441</b> a Kathmandu layover, <b>SQ740/739</b> a Phuket turnaround, and <b>SQ 134/133/138/137</b> a four sector Penang shuttle.');
-                    const gate2 = await T.next();
-                    if (gate2 === 'skip') return 'skip';
-                    await enqueueBot(() => {
-                        renderRosterConfirm(caTourParsedDemo(), 'July 2026 - Demo.pdf', '');
-                        // The demo card's buttons read, they don't press,
-                        // while the tour runs — the demo does the driving.
-                        const cb = document.getElementById('chat-container').lastElementChild;
-                        if (cb) cb.classList.add('ca-tour-inert');
-                    });
-                    const all = await T.until(() => {
-                        const bs = document.querySelectorAll('.roster-calc-all-btn');
-                        for (let i = bs.length - 1; i >= 0; i--) if (!bs[i].disabled) return bs[i];
-                        return null;
-                    });
-                    if (!all) return;
-                    // -- the two ways forward, explained then gated --
-                    await T.say('Press <b>Build cards</b> to tweak your flight details (if any) or press <b>Calculate all</b> and let me compute your total allowance.');
-                    const gate3 = await T.next();
-                    if (gate3 === 'skip') return 'skip';
-                    await T.say('Once the calculations are complete after tapping <b>Calculate All</b>, a summary page will open — tap <b>Save</b> on the top right to archive your earnings.');
-                    const gate4 = await T.next();
-                    if (gate4 === 'skip') return 'skip';
-                    // -- only now does the demo press Calculate all --
-                    await T.wait(600);
-                    T.tap(all);
-                    const open = await T.until(() => {
-                        const b = document.getElementById('results-backdrop');
-                        return (b && !b.classList.contains('hidden')) ? b : null;
-                    }, 15000);
-                    if (!open) return;
-                    await T.wait(2050);
-                    // -- a slow, smooth pass down the whole page --
-                    await caTourScrollResults(T);
-                    await T.wait(500);
-                    // -- at the bottom: save, a longer breath at every beat --
-                    const ab = await T.until(() => {
-                        const b = document.getElementById('btn-results-action');
-                        return (b && !b.classList.contains('hidden') && !b.disabled) ? b : null;
-                    }, 6000);
-                    if (!ab) return;
-                    T.glow(ab);
-                    await T.wait(2000);
-                    caTourClearGlow();
-                    if (!T.alive()) return;
-                    T.tap(ab);
-                    // -- v1.30.0: nothing writes until the review is confirmed --
-                    const rev = await T.until(() => document.getElementById('ca-save-review'), 6000);
-                    if (!rev) return;
-                    await T.say('Before anything is written, the review shows what this save will do — every trip tagged <b>New</b>, <b>Updated</b> or <b>No change</b>.');
-                    await T.wait(2000);
-                    const cf = document.getElementById('ca-save-confirm');
-                    if (!cf) return;
-                    T.glow(cf);
-                    await T.wait(2000);
-                    caTourClearGlow();
-                    if (!T.alive()) return;
-                    T.tap(cf);
-                    // v1.31.0: the save lands as a quiet toast — no pop-up to
-                    // dismiss; the review already carried the confirmation.
-                    await T.wait(2200);
-                    await T.wait(1500);
-                    if (!T.alive()) return;
-                    await T.say('<b>Saved.</b> July 2026 is filed under your earnings.');
-                    await T.wait(500);
-                    const rb = document.getElementById('results-backdrop');
-                    const rclose = document.getElementById('btn-close-results');
-                    if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
-                    await T.wait(1200);
-                    // -- the earn chip: said, lit, unlit — never auto-tapped.
-                    // The crew drives this one through the gate --
-                    if (!T.alive()) return;
-                    const earn = await T.until(() => document.querySelector('.action-chip[data-intent="earn"]'));
-                    if (!earn) return;
-                    await T.say('Tap on the <b>"How much have I earned?"</b> quick action chip to view your archived earning/s.');
-                    T.glow(earn);
-                    await T.wait(2000);
-                    caTourClearGlow();
-                    // The page opens only after this next bubble is up and the
-                    // crew presses Next — never before.
-                    await T.say('Earnings are grouped by months. Tap on any flight and its whole summary reopens.');
-                    const gate5 = await T.next();
-                    if (gate5 === 'skip') return 'skip';
-                    // -- Next pressed, the earnings message up: the demo
-                    // drives the chip --
-                    await T.wait(1000);
-                    caTourDrive(() => earn.click());
-                    const list = await T.until(() => {
-                        const l = document.getElementById('ca-arch-list');
-                        return (l && l.querySelector('.ca-arch-row')) ? l : null;
-                    }, 10000);
-                    if (!list) return;
-                    await T.wait(2000);
-                    // -- a flight, lit then opened --
-                    T.glow(list.querySelector('.ca-arch-row'));
-                    await T.wait(1500);
-                    T.tap(list.querySelector('.ca-arch-row'));
-                    const sub = await T.until(() => {
-                        const w = document.getElementById('ca-arch-sub');
-                        return (w && !w.classList.contains('hidden')) ? w : null;
-                    }, 8000);
-                    if (!sub) return;
-                    await T.wait(2000);
-                    if (typeof closeArchSub === 'function') closeArchSub();
-                    await T.wait(2000);
-                    if (typeof closeArchOverlay === 'function') closeArchOverlay();
-                    await T.wait(1000);
-                }
-            },
-            {
-                id: 'default',
-                say: [
-                    "Now there are two ways of calculating allowances. In <b>Default</b> mode — just enter your flight number and date, and I will fetch the rest.",
-                    "Watch: the chip, the card, then Fetch — <b>SQ 632</b> out and <b>SQ 633</b> home, the day after."
-                ],
-                run: async function (T) {
-                    if (typeof setCalcUiMode === 'function' && caTourReadMode() !== 'default') setCalcUiMode('default', false);
-                    const chip = await T.until(() => document.querySelector('.action-chip[data-intent="total"]'));
-                    if (!chip) return;
-                    // let the Watch message land before anything lights up
-                    await T.wait(2500);
-                    T.glow(chip);
-                    await T.wait(2400);
-                    // The card renders inside the bot queue ~900ms after the
-                    // chip, so wait for a NEW card — not just the current last.
-                    const beforeCards = document.querySelectorAll('[data-calc-card]').length;
-                    caTourDrive(() => chip.click());
-                    const card = await T.until(() => {
-                        const cs = document.querySelectorAll('[data-calc-card]');
-                        return cs.length > beforeCards ? cs[cs.length - 1] : null;
-                    }, 8000);
-                    if (!card) return;
-                    // The calculator header to the top of the view, both
-                    // flight numbers pristine, before the demo touches anything.
-                    const cardBubble = card.closest('.glass-bubble');
-                    if (cardBubble && typeof scrollChatToBubble === 'function') scrollChatToBubble(cardBubble);
-                    const fn1 = await T.until(() => {
-                        const f = card.querySelector('input[id$="-ifa-fn1"]');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!fn1) return;
-                    const id = fn1.id.slice(0, -'-ifa-fn1'.length);
-                    const fn2 = await T.until(() => {
-                        const f = document.getElementById(id + '-ifa-fn2');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!fn2) return;
-                    // -- sector 1: lit, typed one digit at a time, unlit --
-                    T.glow(fn1);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, fn1, '632')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- sector 2: the same ritual --
-                    T.glow(fn2);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, fn2, '633')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // dates set quietly: SQ 632 two days out, SQ 633 the day after
-                    caTourSetVal(document.getElementById(id + '-ifa-d1'), caTourDemoDate(2));
-                    caTourSetVal(document.getElementById(id + '-ifa-d2'), caTourDemoDate(3));
-                    await T.wait(600);
-                    // -- fetch all: lit, explained, unlit, then pressed --
-                    const fetchAll = document.getElementById(id + '-ifa-fetch-all');
-                    if (!fetchAll) return;
-                    T.glow(fetchAll);
-                    await T.say('Fetch all — only works for flights from two days ago to six weeks out.');
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- a slow glide down to the button before the press --
-                    await caTourScrollHere(T, fetchAll);
-                    if (!T.alive()) return;
-                    T.tap(fetchAll);
-                    // online: both sectors fill and turn green; offline: the
-                    // honest pivot — never a made-up number.
-                    const outcome = await T.until(() => {
-                        const dlg = document.getElementById('app-dialog-backdrop');
-                        if (dlg && !dlg.classList.contains('hidden')) return 'dialog';
-                        const sectors = document.querySelectorAll('#' + id + '-ifa-sectors [data-ifa-state]');
-                        let done = 0, err = 0;
-                        sectors.forEach((s) => {
-                            const st = s.getAttribute('data-ifa-state') || '';
-                            if (st === 'done') done++;
-                            if (st === 'error') err++;
-                        });
-                        if (err) return 'offline';
-                        if (done >= 2) return 'green';
-                        return null;
-                    }, 20000);
-                    if (outcome !== 'green') {
-                        if (outcome === 'dialog') {
-                            await T.wait(800);
-                            T.tap(document.getElementById('app-dialog-ok'));
-                        }
-                        await T.say(CA_TOUR_FETCH_PIVOT);
-                        return;
-                    }
-                    // -- green: calculate; the app itself announces the total --
-                    await T.wait(1200);
-                    const calc = document.getElementById(id + '-btn-calc');
-                    if (!calc) return;
-                    T.glow(calc);
-                    await T.wait(1200);
-                    if (!T.alive()) return;
-                    T.tap(calc);
-                    const open = await T.until(() => {
-                        const b = document.getElementById('results-backdrop');
-                        return (b && !b.classList.contains('hidden')) ? b : null;
-                    }, 12000);
-                    if (!open) return;
-                    await T.wait(1500);
-                    // The app posts "Your total COP Allowance is $…" in chat on
-                    // its own; the tour only adds the save hint — no save demo.
-                    await T.say('Similarly you may tap the <b>save</b> icon to archive your earnings.');
-                    await T.wait(1200);
-                    const rb = document.getElementById('results-backdrop');
-                    const rclose = document.getElementById('btn-close-results');
-                    if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
-                    await T.wait(900);
-                }
-            },
-            {
-                id: 'manual',
-                say: [
-                    "Next is <b>Manual</b> mode — no fetching at all. You type the flight time, select the layover station IATA and the station's arrival and departure date and time yourself.",
-                    "The switch lives in Settings (top right of screen). Let me change the allowance calculator interface from <b>Default</b> to <b>Manual</b> mode."
-                ],
-                run: async function (T) {
-                    // The gate the owner asked for: right after the say lines,
-                    // before the Settings choreography plays.
-                    const leadGate = await T.next();
-                    if (leadGate === 'skip') return 'skip';
-                    const gear = document.getElementById('btn-settings');
-                    if (!gear) return;
-                    T.glow(gear);
-                    await T.wait(1600);
-                    T.tap(gear);
-                    await T.wait(800);
-                    if (!T.alive()) return;
-                    const pill = document.getElementById('calcui-pill-manual');
-                    if (!pill) return;
-                    T.glow(pill);
-                    await T.wait(1400);
-                    T.tap(pill);
-                    await T.wait(800);
-                    if (typeof closeSettings === 'function') closeSettings();
-                    await T.wait(600);
-                    if (!T.alive()) return;
-                    const chip = document.querySelector('.action-chip[data-intent="total"]');
-                    if (!chip) return;
-                    T.glow(chip);
-                    await T.wait(1400);
-                    const beforeCards = document.querySelectorAll('[data-calc-card]').length;
-                    caTourDrive(() => chip.click());
-                    caTourClearGlow();
-                    const card = await T.until(() => {
-                        const cs = document.querySelectorAll('[data-calc-card]');
-                        return cs.length > beforeCards ? cs[cs.length - 1] : null;
-                    }, 8000);
-                    if (!card) return;
-                    // The calculator header to the top, every hand-typed field
-                    // pristine — flight times, station, arrival and departure.
-                    const cardBubble = card.closest('.glass-bubble');
-                    if (cardBubble && typeof scrollChatToBubble === 'function') scrollChatToBubble(cardBubble);
-                    const ft1 = await T.until(() => {
-                        const f = card.querySelector('input[id$="-ifa-t1"]');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!ft1) return;
-                    const id = ft1.id.slice(0, -'-ifa-t1'.length);
-                    const ft2 = await T.until(() => {
-                        const f = document.getElementById(id + '-ifa-t2');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!ft2) return;
-                    const iata = await T.until(() => {
-                        const f = document.getElementById(id + '-lma-iata1');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!iata) return;
-                    const at = await T.until(() => {
-                        const f = document.getElementById(id + '-lma-at1');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!at) return;
-                    const dt = await T.until(() => {
-                        const f = document.getElementById(id + '-lma-dt1');
-                        return (f && f.value === '') ? f : null;
-                    }, 6000);
-                    if (!dt) return;
-                    // The layover dates arrive pre-filled; the demo selects the
-                    // overnight pairing the say line describes — arrival today,
-                    // departure tomorrow — the way a crew member would.
-                    const depDate = document.getElementById(id + '-lma-d1');
-                    if (depDate) caTourSetVal(depDate, caTourDemoDate(1));
-                    await T.wait(400);
-                    // -- sector 1 flight time: 4:56, digit by digit --
-                    T.glow(ft1);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, ft1, '456')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- sector 2 flight time: 5:15 --
-                    T.glow(ft2);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, ft2, '515')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- the layover station: scrolled to, then KTM by hand --
-                    await caTourGlowHere(T, iata);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, iata, 'ktm')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- arrival 21:55, scrolled into view first --
-                    await caTourGlowHere(T, at);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, at, '2155')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- departure 22:59, scrolled into view first --
-                    await caTourGlowHere(T, dt);
-                    await T.wait(1200);
-                    if (!await caTourTypeInto(T, dt, '2259')) return;
-                    await T.wait(900);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    // -- calculate; the summary speaks for itself, no save demo --
-                    const calc = await T.until(() => {
-                        const b = document.getElementById(id + '-btn-calc');
-                        return (b && !b.disabled) ? b : null;
-                    }, 8000);
-                    if (!calc) return;
-                    // -- calculate, scrolled into view, lit, pressed --
-                    await caTourGlowHere(T, calc);
-                    await T.wait(1200);
-                    if (!T.alive()) return;
-                    T.tap(calc);
-                    const open = await T.until(() => {
-                        const b = document.getElementById('results-backdrop');
-                        return (b && !b.classList.contains('hidden')) ? b : null;
-                    }, 12000);
-                    if (!open) return;
-                    await T.wait(2000);
-                    const rb = document.getElementById('results-backdrop');
-                    const rclose = document.getElementById('btn-close-results');
-                    if (rb && !rb.classList.contains('hidden') && rclose) T.tap(rclose);
-                    await T.wait(900);
-                    if (!T.alive()) return;
-                    if (typeof setCalcUiMode === 'function') setCalcUiMode(caTour.userMode, true);
-                    await T.say("That's <b>Manual</b> mode — I have reverted everything back to <b>default</b>.");
-                }
-            },
-            {
-                id: 'menu',
-                expectsInput: true,
-                say: [
-                    "Last functionality — and the most straightforward of them all..",
-                    "Type <b>\"menu\"</b> in the chat bar or tap on the <b>\"What's being served?\"</b> quick action chip — key in flight number and a date and I'll pull the inflight menu onboard."
-                ],
-                run: async function (T) {
-                    // Said first, then the two ways in — the chat bar and the
-                    // What's being served chip, lit alternately.
-                    const chip = document.querySelector('.action-chip[data-intent="menu"]');
-                    const input = document.getElementById('chat-input');
-                    const bar = input ? (input.closest('.glass-panel') || input) : null;
-                    await T.wait(600);
-                    T.glow(bar);
-                    await T.wait(1400);
-                    T.glow(chip);
-                    await T.wait(1400);
-                    T.glow(bar);
-                    await T.wait(1400);
-                    T.glow(chip);
-                    await T.wait(1400);
-                    caTourClearGlow();
-                    await T.wait(900);
-                    // The end is announced, then one way out — no skip at
-                    // the door.
-                    await T.say('With this, the feature tour has come to an end.');
-                    const r = await T.next('Finish', false);
-                    if (r === 'skip') return 'skip';
-                    if (r === 'dead') return null;
-                    caTourClearGlow();
-                    // Conclude: cleanup and locks released first, then the
-                    // entire chat cleared, and the farewell said bare on a
-                    // clean slate — tour's over, everything's tappable again.
-                    await finishCaTour(true, false);
-                    const chatEl = document.getElementById('chat-container');
-                    if (chatEl) Array.from(chatEl.children).forEach((n) => n.remove());
-                    await enqueueBot(() => addMessage('bot', CA_TOUR_CLOSING));
-                    await enqueueBot(() => addMessage('bot', 'Is there anything I can assist you with?'));
-                    return 'done';
-                }
-            }
-        ];
-
-        // ---- engine ----
-        async function caTourRun(fromIdx) {
-            let idx = fromIdx;
-            while (caTour.on) {
-                const myGen = ++caTour.gen;
-                const T = caTourApi(myGen);
-                let stopped = false, skipped = false, completed = false;
-                for (let i = idx; i < CA_TOUR_STEPS.length; i++) {
-                    caTour.stepIdx = i;
-                    const st = CA_TOUR_STEPS[i];
-                    if (st.expectsInput) caTourObserverDisconnect();
-                    else caTourObserverConnect();
-                    try {
-                        for (const line of (st.say || [])) { if (!T.alive()) break; await T.say(line); }
-                        if (T.alive() && st.run) {
-                            const r = await st.run(T);
-                            if (r === 'skip') { skipped = true; break; }
-                        }
-                    } catch (err) {
-                        // Defensive: a broken step (its target vanished with a
-                        // future feature change) skips itself; tour carries on.
-                        if (console && console.warn) console.warn('[tour] step skipped:', st.id, err);
-                    }
-                    // Skip the between-steps clear when the tour is already
-                    // over — nothing left to unlight, and a step may have
-                    // ended things its own way.
-                    if (caTour.on) caTourClearGlow();
-                    if (skipped) break;
-                    if (!T.alive()) { stopped = true; break; }
-                    if (i < CA_TOUR_STEPS.length - 1) {
-                        const r = await caTourNextButtons(myGen);
-                        if (r === 'skip') { skipped = true; break; }
-                        if (r === 'dead') { stopped = true; break; }
-                    } else {
-                        completed = true;
-                    }
-                }
-                if (skipped) { await finishCaTour(false, true); return; }
-                if (!caTour.on) return;
-                if (completed && caTour.gen === myGen) { await finishCaTour(true, false); return; }
-                // Interrupted: hand the floor to the crew's question, then
-                // offer to pick up where we left off.
-                caTourObserverDisconnect();
-                idx = Math.max(0, caTour.stepIdx);
-                await caTourWaitFree();
-                if (!caTour.on) return;
-                const resume = await caTourOfferResume();
-                if (!caTour.on) return;
-                if (!resume) { await finishCaTour(false, true); return; }
-                // the loop restarts the interrupted step fresh
-            }
-        }
-
-        async function caTourOfferResume() {
-            while (caTour.on) {
-                const myGen = caTour.gen;
-                const T = caTourApi(myGen);
-                await T.say('Of course — the tour can wait. Pick up where we left off?');
-                const r = await caTourNextButtons(myGen, 'Resume');
-                if (r === 'next') return true;
-                if (r === 'skip') return false;
-                // interrupted again while offering: let the answer land, re-offer
-                await caTourWaitFree();
-            }
-            return false;
-        }
-
-        function caTourCloseDemoOverlays() {
-            try {
-                const rb = document.getElementById('results-backdrop');
-                if (rb && !rb.classList.contains('hidden')) { const cb = document.getElementById('btn-close-results'); if (cb) cb.click(); }
-                const dlg = document.getElementById('app-dialog-backdrop');
-                if (dlg && !dlg.classList.contains('hidden')) { const ok = document.getElementById('app-dialog-ok'); if (ok) ok.click(); }
-                if (typeof closeArchSub === 'function') closeArchSub();
-                if (typeof closeArchOverlay === 'function') closeArchOverlay();
-                const sb = document.getElementById('settings-backdrop');
-                if (sb && !sb.classList.contains('hidden') && typeof closeSettings === 'function') closeSettings();
+                const list = (typeof menuCycleList === 'function') ? menuCycleList() : [];
+                const f = list && list[0];
+                if (f && f.fn && f.ymd && typeof openNextFlightViewer === 'function') openNextFlightViewer(f.fn, f.ymd);
             } catch (e) {}
         }
+        // Manual cards: one REAL calculator card through the app's own
+        // engine — a working prop the crew keeps (the moment the veil
+        // lifts, Calculate and Confirm are live).
+        function caSpotCardWorld() {
+            caSpotMainWorld();
+            if (caSpot.cardId && document.getElementById(caSpot.cardId)) return;
+            if (typeof renderCalculatorCard !== 'function') return;
+            renderCalculatorCard('both', (id) => { caSpot.cardId = id; });
+        }
+        // Card root lookup: the bubble itself carries no id — only its
+        // fields do — so an empty suffix resolves through the IFA wrap to
+        // the card's own glass bubble.
+        function caSpotCardEl(suffix) {
+            const id = caSpot.cardId;
+            if (!id) return null;
+            if (suffix) return document.getElementById(id + suffix);
+            const wrap = document.getElementById(id + '-ifa-wrap');
+            return (wrap && wrap.closest('.glass-bubble')) || wrap || null;
+        }
 
-        async function finishCaTour(completed, fromSkip) {
-            if (!caTour.on) return;
-            caTour.on = false;
-            caTourLockScroll(false);
-            document.documentElement.classList.remove('ca-tour-on');
-            caTour.gen++;
-            caTourObserverDisconnect();
-            caTourClearGlow();
-            delete window.caTourArchiveStore;
-            try { localStorage.setItem('crewAssist.tourDone', '1'); } catch (e) {}
-            // put the calculator back the way we found it
+        // --- the tours (the owner's copy, VERBATIM) ------------------------
+        var CA_SPOT_TOURS = {
+            main: {
+                label: 'Main screen',
+                world: caSpotMainWorld,
+                steps: [
+                    { sel: '#chat-input', title: 'Talk to me', line: 'Ask me anything about your flights — this is where we talk.' },
+                    { sel: '#btn-roster', title: 'Your roster goes here', line: 'Attach the Crew Roster PDF and I read every flight off it for you.' },
+                    { sel: '#action-chips', title: 'Shortcuts, one tap', line: 'The chips ask the common questions for you — allowance, earnings, menus, print.' },
+                    { sel: '#btn-roster-cal', title: 'Your flying calendar', line: 'Every flight lands on the calendar, with your records and stats behind it.' },
+                    { sel: '#btn-theme', title: 'Day or night', line: 'Tap any time to switch between light and dark.' },
+                    { sel: '#btn-settings', title: 'Everything lives here', line: 'Your profile, your data, and the deeper feature tours — all in Settings.' },
+                    { sel: '#btn-reset', title: 'Clean slate', line: 'Two taps clear the conversation — your saved data is never touched.' }
+                ]
+            },
+            roster: {
+                label: 'Roster import',
+                world: caSpotMainWorld,
+                steps: [
+                    { sel: '#btn-roster', title: 'Start with the PDF', line: 'The paperclip takes your Crew Roster Report exactly as the crew portal prints it.' },
+                    { sel: '#chat-container', title: 'I read every line', line: 'Flights, dates, sectors and report times — nothing typed by hand.' },
+                    { sel: '#btn-roster-cal', title: 'The app fills itself', line: 'The calendar, the trip bar, and the calculator all light up.' },
+                    { sel: '#btn-roster', title: 'Once a month', line: 'Re-attach each new roster drop and the newest flights take over.' },
+                    { sel: '#chat-container', title: 'Honest when unsure', line: 'If a page doesn\u2019t look like a roster, I say so — never a guess.' }
+                ]
+            },
+            manual: {
+                label: 'Manual flight cards',
+                world: caSpotSettingsWorld,
+                steps: [
+                    { sel: '#calcui-pill-manual', title: 'No roster? No problem', line: 'Add a card by hand when the trip isn\u2019t on a PDF.' },
+                    { sel: () => caSpotCardEl(''), title: 'Fill the flight', line: 'Route, date and times — the card matches the roster\u2019s own fields.', before: caSpotCardWorld },
+                    { sel: () => caSpotCardEl('-btn-calc'), title: 'One tap, priced', line: 'Calculate works the card out against your rank and rate.', before: caSpotCardWorld },
+                    { sel: () => { const b = document.querySelector('.roster-calc-all-btn'); return (b && caSpotShown(b)) ? b : caSpotCardEl(''); }, title: 'The whole batch', line: 'Calculate-all totals everything together, grouped by month.', before: caSpotCardWorld },
+                    { sel: () => caSpotCardEl('-ifa-trip-route') || caSpotCardEl('-ifa-wrap'), title: 'Allowances included', line: 'IFA and LMA price out beside the sectors in the trip bar.', before: caSpotCardWorld },
+                    { sel: () => caSpotCardEl(''), title: 'Save it or undo', line: 'Confirm files the trip into your earnings — undo takes it right back out.', before: caSpotCardWorld }
+                ]
+            },
+            menus: {
+                label: 'Menus & search',
+                world: caSpotMainWorld,
+                steps: [
+                    { sel: '#chat-input', title: 'Just ask', line: 'Type a flight and a date — sq802 menu 17 oct — and I fetch the menus.' },
+                    { sel: () => caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'The viewer', line: 'Courses in service order, exactly as the galley works them.', before: caSpotMenuWorld },
+                    { sel: () => caSpotVis('#menu-cabin-wrap') || caSpotVis('#menu-cabin-label') || caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Pick your cabin', line: 'The switcher jumps between the cabins on your flight.', before: caSpotMenuWorld },
+                    { sel: () => caSpotVis('#btn-menu-to-print') || caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Print-ready', line: 'Full sheet or compact — both lay out for the galley printer.', before: caSpotMenuWorld },
+                    { sel: () => caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Saved on your phone', line: 'Menus you\u2019ve opened stay readable offline, no signal needed.', before: caSpotMenuWorld },
+                    { sel: '#chat-input', title: 'Speak naturally', line: 'jcl ycl menu sq802 — name the cabins you want, in your order.' }
+                ]
+            },
+            earnings: {
+                label: 'Earnings',
+                world: caSpotEarningsWorld,
+                steps: [
+                    { sel: '#ca-arch-sheet', title: 'This is your money page', line: 'Every trip you save adds up here, month by month.' },
+                    { sel: () => caSpotVis('.ca-arch-group-head') || caSpotVis('#ca-arch-list'), title: 'One month, one card', line: 'Each card is a month\u2019s earnings — tap it to open the trips.' },
+                    { sel: () => caSpotVis('#ca-arch-summary .ca-arch-segtrack') || caSpotVis('#ca-arch-summary'), title: 'Two ways to read it', line: 'The lens switches between your salary take-home and your COP sectors.' },
+                    { sel: '#ca-arch-summary', title: 'The honest breakdown', line: 'Gross, CPF, your overseas expenses, and what actually lands.' },
+                    { sel: '#ca-arch-search', title: 'Find anything', line: 'Search by route, flight or month to surface old trips fast.' },
+                    { sel: '#ca-arch-export', title: 'Take it with you', line: 'Export the JSON or the CSV — your expenses ride along in both.' }
+                ]
+            },
+            calendar: {
+                label: 'Calendar',
+                world: function () { caSpotCalWorld(false); },
+                steps: [
+                    { sel: '#ca-rc-grid', title: 'Here\u2019s your roster', line: 'Every imported flight paints onto its day — duties, standby and all.', before: function () { caSpotCalWorld(false); } },
+                    { sel: '#ca-rc-tag', title: 'The tag button', line: 'Tap it and every flight day shows its station and arrival time.', before: function () { caSpotCalWorld(false); } },
+                    { sel: '#ca-rc-shot', title: 'The camera comes out', line: 'With the tags on, the camera appears — it turns the month into a picture, ready to share.', before: function () { caSpotCalWorld(true); } },
+                    { sel: '#ca-rc-prev', title: 'Walk the months', line: 'Swipe or tap the arrows to move between months.', before: function () { caSpotCalWorld(undefined); } },
+                    { sel: () => caSpotVis('.ca-rc-day.is-today') || (function () { const b = document.querySelector('.ca-rc-day .ca-rc-badge'); return b ? b.closest('.ca-rc-day') : null; })() || caSpotVis('.ca-rc-day'), title: 'Tap a day', line: 'The day opens its flights — times, sectors, and what it earns.', before: function () { caSpotCalWorld(undefined); } },
+                    { sel: () => caSpotVis('#ca-rc-pod') || caSpotVis('#ca-rc-grid'), title: 'The records door', line: 'Your passport and all-time stats live behind this gate.', before: function () { caSpotCalWorld(undefined); } }
+                ]
+            },
+            stats: {
+                label: 'Flight Stats',
+                world: caSpotPodWorld,
+                steps: [
+                    { sel: '#ca-rc-pod-sheet', title: 'Your passport', line: 'The records page tallies everything — flights, hours, stations.' },
+                    { sel: '#ca-rc-pod-herowrap', title: 'The hero card', line: 'Flight time, layover days, top station — your logbook in five rows.' },
+                    { sel: () => caSpotVis('.ca-rc-pod-grid') || caSpotVis('#ca-rc-pod-body'), title: 'The stats podium', line: 'Your most-visited stations and longest flights, ranked.' },
+                    { sel: () => caSpotVis('#ca-rc-pod-years') || caSpotVis('#ca-rc-pod-tabs-wrap') || caSpotVis('#ca-rc-pod-body'), title: 'Slice it your way', line: 'The year pills and duty tabs filter the podium to any slice.' },
+                    { sel: () => caSpotVis('.ca-rc-pod-card') || caSpotVis('.ca-rc-pod-lrow') || caSpotVis('#ca-rc-pod-body'), title: 'Every visit on record', line: 'Tap a station to open its full visit log.' }
+                ]
+            },
+            backup: {
+                label: 'Backup & restore',
+                world: caSpotSettingsWorld,
+                steps: [
+                    { sel: '#ca-dm-box', title: 'Your data, your file', line: 'One backup file carries everything — profile, rates, earnings, history.' },
+                    { sel: '#btn-backup-export', title: 'Export before you switch', line: 'Data Management \u2192 Export backup — the file lands in your downloads.' },
+                    { sel: '#btn-backup-restore', title: 'The new phone', line: 'Install the app, skip onboarding, and Restore backup from the same door.' },
+                    { sel: '#btn-backup-export', title: 'Expenses ride along', line: 'Overseas expenses are inside every backup — they show on any device.' },
+                    { sel: '#ca-dm-box', title: 'Keep it private', line: 'The file holds your pay data — keep it somewhere only you control.' }
+                ]
+            }
+        };
+
+        // --- engine --------------------------------------------------------
+        function caSpotDom() {
+            if (document.getElementById('ca-spot-veil')) return;
+            const veil = document.createElement('div');
+            veil.id = 'ca-spot-veil';
+            const ring = document.createElement('div');
+            ring.id = 'ca-spot-ring';
+            const tip = document.createElement('div');
+            tip.id = 'ca-spot-tip';
+            tip.setAttribute('role', 'dialog');
+            tip.setAttribute('aria-modal', 'true');
+            document.body.appendChild(veil);
+            document.body.appendChild(ring);
+            document.body.appendChild(tip);
+        }
+
+        // Sheets slide in ~300ms; the ring measures only after the world
+        // settles, or it glides to a moving target.
+        function caSpotSettle() { return new Promise((r) => setTimeout(r, 380)); }
+
+        function caSpotStart(id) {
+            const tour = CA_SPOT_TOURS[id];
+            if (!tour || !tour.steps || !tour.steps.length) return false;
+            if (caSpot.on) caSpotEnd();   // a tour never stacks on a tour
+            caSpot.on = true;
+            caSpot.id = id;
+            caSpot.tour = tour;
+            caSpot.idx = 0;
+            caSpot.cardId = null;
+            caSpot.gen++;
+            caSpotDom();
+            document.documentElement.classList.add('ca-spot-on');
+            caSpotGo(0);
+            return true;
+        }
+
+        async function caSpotGo(delta) {
+            if (!caSpot.on || caSpotBusy) return;
+            caSpotBusy = true;
+            const gen = caSpot.gen;
             try {
-                if (typeof setCalcUiMode === 'function' && caTourReadMode() !== caTour.userMode) setCalcUiMode(caTour.userMode, true);
-            } catch (e) {}
-            caTourCloseDemoOverlays();
-            // the demo month evaporates: entries were session-only
-            caTour.entries = [];
-            caTour.parsed = null;
-            await caTourWaitFree();
-            const c = document.getElementById('chat-container');
-            if (c) {
-                const marked = Array.prototype.slice.call(c.querySelectorAll('.ca-tour-bubble'));
-                if (marked.length) {
-                    try { await Promise.all(marked.map(animateChatRemove)); }
-                    catch (e) { marked.forEach((el) => el.remove()); }
+                const tour = caSpot.tour;
+                let idx = caSpot.idx + delta;
+                if (idx < 0) idx = 0;
+                if (idx >= tour.steps.length) { caSpotEnd(); return; }
+                caSpot.idx = idx;
+                const step = tour.steps[idx];
+                const tip = document.getElementById('ca-spot-tip');
+                if (tip) tip.innerHTML = '';   // the old card leaves while the world moves
+                const world = step.before || tour.world;
+                try { if (typeof world === 'function') await world(); } catch (e) {}
+                if (gen !== caSpot.gen || !caSpot.on) return;
+                await caSpotSettle();
+                if (gen !== caSpot.gen || !caSpot.on) return;
+                caSpotShow();
+            } finally {
+                if (gen === caSpot.gen) caSpotBusy = false;
+            }
+        }
+
+        function caSpotRingTo(rect) {
+            const ring = document.getElementById('ca-spot-ring');
+            if (!ring) return;
+            ring.style.left = Math.round(rect.left) + 'px';
+            ring.style.top = Math.round(rect.top) + 'px';
+            ring.style.width = Math.round(rect.width) + 'px';
+            ring.style.height = Math.round(rect.height) + 'px';
+        }
+
+        function caSpotShow() {
+            if (!caSpot.on) return;
+            const tour = caSpot.tour;
+            let idx = caSpot.idx;
+            let step = tour.steps[idx];
+            let el = caSpotVis(step.sel);
+            while (!el && idx + 1 < tour.steps.length) {
+                // A vanished target never breaks the walk — it skips.
+                idx += 1;
+                caSpot.idx = idx;
+                step = tour.steps[idx];
+                el = caSpotVis(step.sel);
+            }
+            if (!el) { caSpotEnd(); return; }   // nothing left to light
+            try { if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center' }); } catch (e) {}
+            el = caSpotVis(step.sel);           // re-read after the scroll
+            if (!el) { caSpotEnd(); return; }
+            const r = el.getBoundingClientRect();
+            const p = 6;                        // breathing room around the target
+            const rect = { left: r.left - p, top: r.top - p, width: r.width + p * 2, height: r.height + p * 2 };
+            caSpotRingTo(rect);
+            caSpotBuildTip(step, idx, tour.steps.length, rect);
+        }
+
+        // The card is built with DOM APIs and textContent — the owner's
+        // copy renders word-for-word, never as markup.
+        function caSpotBuildTip(step, idx, n, rect) {
+            const tip = document.getElementById('ca-spot-tip');
+            if (!tip) return;
+            tip.innerHTML = '';
+            tip.setAttribute('aria-label', step.title);
+            const card = document.createElement('div');
+            card.className = 'glass-panel rounded-2xl p-4 shadow-2xl border border-black/10 dark:border-white/10';
+
+            const head = document.createElement('div');
+            head.className = 'flex items-baseline justify-between gap-3 mb-1.5';
+            const title = document.createElement('span');
+            title.className = 'text-sm font-extrabold text-sia-gold';
+            title.textContent = step.title;
+            const count = document.createElement('span');
+            count.className = 'ca-micro text-gray-400 font-bold whitespace-nowrap';
+            count.textContent = (idx + 1) + ' of ' + n;
+            head.appendChild(title); head.appendChild(count);
+            card.appendChild(head);
+
+            const line = document.createElement('p');
+            line.className = 'text-sm leading-relaxed mb-3.5';
+            line.textContent = step.line;
+            card.appendChild(line);
+
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2';
+            const mkBtn = (txt, cls) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = cls;
+                b.textContent = txt;
+                return b;
+            };
+            const ghost = 'px-4 py-2 rounded-full text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors';
+            if (idx > 0) {
+                const back = mkBtn('Back', ghost);
+                back.id = 'ca-spot-back';
+                back.addEventListener('click', () => caSpotGo(-1));
+                row.appendChild(back);
+            }
+            const spacer = document.createElement('span');
+            spacer.className = 'flex-1';
+            row.appendChild(spacer);
+            const skip = mkBtn('Skip', ghost);
+            skip.id = 'ca-spot-skip';
+            skip.addEventListener('click', () => caSpotEnd());
+            row.appendChild(skip);
+            const next = mkBtn((idx === n - 1) ? 'Done' : 'Next', 'px-5 py-2 rounded-full text-xs font-extrabold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black');
+            next.id = 'ca-spot-next';
+            next.addEventListener('click', () => caSpotGo(1));
+            row.appendChild(next);
+            card.appendChild(row);
+
+            tip.appendChild(card);
+            caSpotPlace(tip, rect);
+            try { next.focus({ preventScroll: true }); } catch (e) { try { next.focus(); } catch (e2) {} }
+        }
+
+        // The never-clip contract: flip above/below, clamp to 12px margins.
+        // The width itself is capped at min(300px, 100vw - 24px) by CSS.
+        function caSpotPlace(tip, rect) {
+            const m = 12;
+            const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+            const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+            const tw = tip.offsetWidth || 0;
+            const th = tip.offsetHeight || 0;
+            let top;
+            if (rect.top + rect.height + th + 10 <= vh - m) top = rect.top + rect.height + 10;
+            else if (rect.top - th - 10 >= m) top = rect.top - th - 10;
+            else top = Math.max(m, Math.min((vh - th) / 2, vh - th - m));
+            let left = rect.left + (rect.width / 2) - (tw / 2);
+            if (left < m) left = m;
+            if (left + tw > vw - m) left = vw - tw - m;
+            if (left < m) left = m;
+            if (top + th > vh - m) top = vh - th - m;
+            if (top < m) top = m;
+            tip.style.left = Math.round(left) + 'px';
+            tip.style.top = Math.round(top) + 'px';
+        }
+
+        function caSpotEnd() {
+            if (!caSpot.on) return;
+            caSpot.on = false;
+            caSpot.gen++;
+            caSpotBusy = false;
+            document.documentElement.classList.remove('ca-spot-on');
+            const tip = document.getElementById('ca-spot-tip');
+            if (tip) tip.innerHTML = '';
+            // Done, Skip or Escape on the MAIN tour: it shows once. The
+            // feature replays in Settings forever either way.
+            if (caSpot.id === 'main') caSpotMarkSeen();
+            caSpot.id = null;
+            caSpot.tour = null;
+            caSpot.idx = -1;
+        }
+
+        // --- reposition: resize, scroll (capture — sheets scroll inside),
+        //     orientation. Re-places ring and tooltip; the world stands. ---
+        var caSpotReflowT = null;
+        function caSpotReflow() {
+            if (!caSpot.on) return;
+            if (caSpotReflowT) return;
+            caSpotReflowT = setTimeout(() => {
+                caSpotReflowT = null;
+                if (!caSpot.on || !caSpot.tour) return;
+                const step = caSpot.tour.steps[caSpot.idx];
+                if (!step) return;
+                const el = caSpotVis(step.sel);
+                if (!el) return;
+                const r = el.getBoundingClientRect();
+                const p = 6;
+                const rect = { left: r.left - p, top: r.top - p, width: r.width + p * 2, height: r.height + p * 2 };
+                caSpotRingTo(rect);
+                const tip = document.getElementById('ca-spot-tip');
+                if (tip && tip.firstChild) caSpotPlace(tip, rect);
+            }, 60);
+        }
+        window.addEventListener('resize', caSpotReflow);
+        window.addEventListener('orientationchange', caSpotReflow);
+        document.addEventListener('scroll', caSpotReflow, true);
+
+        // --- keyboard: Escape ends (a skip); Tab stays in the tooltip ---
+        document.addEventListener('keydown', (ev) => {
+            if (!caSpot.on) return;
+            if (ev.key === 'Escape') { ev.preventDefault(); caSpotEnd(); return; }
+            if (ev.key === 'Tab') {
+                const tip = document.getElementById('ca-spot-tip');
+                if (!tip) return;
+                const btns = Array.prototype.slice.call(tip.querySelectorAll('button'));
+                if (!btns.length) return;
+                const active = document.activeElement;
+                if (!active || !tip.contains(active)) {
+                    ev.preventDefault();
+                    try { btns[0].focus({ preventScroll: true }); } catch (e) {}
+                    return;
                 }
+                const i = btns.indexOf(active);
+                if (ev.shiftKey && i === 0) { ev.preventDefault(); btns[btns.length - 1].focus({ preventScroll: true }); }
+                else if (!ev.shiftKey && i === btns.length - 1) { ev.preventDefault(); btns[0].focus({ preventScroll: true }); }
             }
-            if (!completed) {
-                await enqueueBot(() => addMessage('bot', fromSkip
-                    ? 'No problem — type <b>tour</b> whenever you want it.'
-                    : 'Tour ended — type <b>tour</b> anytime to run it again.'));
-            }
-        }
-
-        function startCaTour(viaIntent) {
-            if (caTour.on) {
-                addBotMessage("We're already mid-tour — carry on with the Next button, or Skip tour to end it.");
-                return Promise.resolve();
-            }
-            caTour.on = true;
-            caTourLockScroll(true);
-            document.documentElement.classList.add('ca-tour-on');
-            caTour.gen++;
-            caTour.entries = [];
-            caTour.stepIdx = -1;
-            caTour.parsed = null;
-            caTour.userMode = caTourReadMode();
-            window.caTourArchiveStore = caTour;
-            try { localStorage.setItem('crewAssist.tourOffered', '1'); } catch (e) {}
-            if (typeof foldAllCards === 'function') foldAllCards();
-            caTourCloseDemoOverlays();
-            return caTourRun(0);
-        }
-
-        // processInput hook: typing mid-tour yields the floor (the interactive
-        // step's typing IS the demo, so it never counts as an interruption).
-        function caTourInterrupt() {
-            if (!caTour.on || caTour.driving) return;
-            const st = CA_TOUR_STEPS[caTour.stepIdx];
-            if (st && st.expectsInput) return;
-            caTour.gen++;
-            caTourClearGlow();
-            caTourObserverDisconnect();
-        }
-
-        // One-time first-run offer, after the greeting has settled.
-        function maybeOfferTour() {
-            if (caTour.on) return;
-            try {
-                if (localStorage.getItem('crewAssist.tourDone')) return;
-                if (localStorage.getItem('crewAssist.tourOffered')) return;
-            } catch (e) { return; }
-            const main = document.getElementById('main-view');
-            if (!main || main.classList.contains('hidden')) return;
-            const t0 = Date.now();
-            const go = () => {
-                try { localStorage.setItem('crewAssist.tourOffered', '1'); } catch (e) {}
-                // Two enqueued lines, so a typing bubble shows between them
-                // like every other exchange.
-                enqueueBot(() => {
-                    addMessage('bot', 'Before we start, allow me to show you around. <i data-lucide="sparkles" class="w-4 h-4 inline"></i>');
-                });
-                enqueueBot(() => {
-                    addMessage('bot', 'Two minutes of your time, that is all I ask for.'
-                        + '<div class="flex flex-wrap gap-2 mt-2">'
-                        + '<button type="button" class="ca-tour-offer-go flex-1 min-w-0 px-4 py-2.5 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black text-xs font-bold uppercase tracking-wide whitespace-nowrap shadow-md active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="play" class="w-3.5 h-3.5 shrink-0"></i>Let\'s go</button>'
-                        + '<button type="button" class="ca-tour-offer-skip flex-1 min-w-0 px-4 py-2.5 rounded-full border border-black/10 dark:border-white/15 text-xs font-bold uppercase tracking-wide whitespace-nowrap active:scale-95 transition-transform inline-flex items-center justify-center gap-1.5"><i data-lucide="x" class="w-3.5 h-3.5 shrink-0"></i>Not now</button>'
-                        + '</div>');
-                    const bubble = document.getElementById('chat-container').lastElementChild;
-                    const goBtn = bubble.querySelector('.ca-tour-offer-go');
-                    const skipBtn = bubble.querySelector('.ca-tour-offer-skip');
-                    // Either choice retires the pair — dimmed and inert,
-                    // same as the gates once pressed.
-                    const retire = () => {
-                        [goBtn, skipBtn].forEach((b) => {
-                            if (!b) return;
-                            b.disabled = true;
-                            b.classList.add('opacity-40', 'pointer-events-none');
-                        });
-                    };
-                    goBtn.addEventListener('click', () => { retire(); startCaTour(false); });
-                    skipBtn.addEventListener('click', () => {
-                        retire();
-                        try { localStorage.setItem('crewAssist.tourDone', '1'); } catch (e) {}
-                        addBotMessage('No worries — type <b>tour</b> whenever you want it.');
-                    });
-                });
-            };
-            const tick = () => {
-                if (caTour.on) return;
-                if ((isChatBusy() || document.getElementById('typing-indicator')) && Date.now() - t0 < 15000) { setTimeout(tick, 500); return; }
-                go();
-            };
-            setTimeout(tick, 2500);
-        }
+        });
     </script>
 </body>
 </html>

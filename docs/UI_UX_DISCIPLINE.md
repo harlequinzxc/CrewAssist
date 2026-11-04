@@ -489,7 +489,7 @@ element of the same weight.
 
 ### Chat cadence
 
-After every chat bubble (user or bot, including calculator and lookup cards) fully animates in, wait 250ms before showing another bubble or the typing indicator — the fast lane, default since v1.28.4 (`CHAT_FAST_GAP_MS`); the classic 500ms gap (`CHAT_GAP_MS`) is tour-only, locked in while `ca-tour-on` is set. Do not start typing until that gap has elapsed. Typing may be followed immediately by the next bot bubble once typing hides. Do not let the user send or press chat/chip/lookup buttons until on-screen bubbles have fully displayed.
+After every chat bubble (user or bot, including calculator and lookup cards) fully animates in, wait 250ms before showing another bubble or the typing indicator — the fast lane, default since v1.28.4 (`CHAT_FAST_GAP_MS`) — universal since v1.49.0 retired the old tour's pacing exemption (nothing holds the classic 500ms gap open any more). Do not start typing until that gap has elapsed. Typing may be followed immediately by the next bot bubble once typing hides. Do not let the user send or press chat/chip/lookup buttons until on-screen bubbles have fully displayed.
 
 ### Duration scale
 
@@ -514,7 +514,7 @@ The app honours `prefers-reduced-motion: reduce` **and** adds a binary Settings 
 
 - `crewAssist.motion` = `'reduced'` forces the marker on, `'full'` forces it off, and a missing key follows the OS — the toggle never guts the OS-following default. Before any tap, the toggle simply mirrors the resolved state and says so.
 - Entry animations collapse to one shared 150ms opacity fade (`ca-reduce-fade`); spring, pop, and slide keyframes do not run.
-- Loops stop: pulses, floats, jumps, bounces, the tour glow, the badge soft-pulse, sky twinkle, and shooting stars. The sky paints one still frame and repaints it on resize; when motion returns, the loop restarts.
+- Loops stop: pulses, floats, jumps, bounces, the badge soft-pulse, sky twinkle, and shooting stars (the old tour glow left with the tour; the spotlight's ring and tooltip are transitions, killed under reduced motion). The sky paints one still frame and repaints it on resize; when motion returns, the loop restarts.
 - Spinners stay — `ca-spin` and `animate-spin` encode progress, not decoration.
 - Position transitions snap: chevrons, the switch knob, calendar nav, date cells, the fetch face, and every Tailwind `transition-transform` surface (sheets open instantly instead of gliding). Colour transitions are not motion and may stay.
 - All rules are class-gated (`html.ca-reduced …`) in one copy in the `<style>` block — never a second `@media (prefers-reduced-motion)` variant; Tailwind overrides ride the `html .` specificity prefix as usual. The OS media query is read once in `applyMotionClass()`, which also listens for its `change` event.
@@ -1087,7 +1087,7 @@ new patterns are established.
 | Save to archive               | `save`               |
 | Export / import               | `upload`, `file-down` |
 | No results                    | `search-x`           |
-| Play / start tour             | `play`               |
+| Play / start tour             | `play` (the spotlight rows use per-feature glyphs: `layout-dashboard`, `file-up`, `clipboard-pen`, `utensils`, `wallet`, `calendar-days`, `trophy`, `database-backup`) |
 | Developer tools               | `terminal`, `bug`, `wrench` |
 | Sort / reorder                | `arrow-up-wide-narrow`, `arrow-down-wide-narrow`, `arrow-up`, `arrow-down` |
 | Advanced filters              | `sliders-horizontal` |

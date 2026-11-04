@@ -181,8 +181,8 @@ const EMDASH = '\u2014'; // —
     // black square invert opt-in; hidden proteins surface on non-mains too.
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.48.5';"), 'APP_VERSION stamped 1.48.5');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v306"), 'service-worker cache name bumped to v306 (the v1.48.5 flights-pills roll round)');
+    R.ok(src.includes("var APP_VERSION = '1.49.0';"), 'APP_VERSION stamped 1.49.0');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v307"), 'service-worker cache name bumped to v307 (the v1.49.0 spotlight-tour round)');
     R.ok(!fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes('html2canvas'), 'v1.47.1: no painter is precached at all — the cameras hand-paint, so captures are offline by construction');
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("'./vendor/fonts/plus-jakarta-sans-700.woff2'"), 'v1.46.1: the house font\u2019s weights are precached — the painter\u2019s clone embeds them as data URLs, offline');
   }
@@ -201,7 +201,7 @@ const EMDASH = '\u2014'; // —
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'FV', gender: 'Male', rank: 'FS' }));
       x.localStorage.setItem('crewAssist.wnSeen', '1.45.6');
-      x.localStorage.setItem('crewAssist.tourDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
       const t = new Date(), pad = (n) => String(n).padStart(2, '0');
       const today = t.getFullYear() + '-' + pad(t.getMonth() + 1) + '-' + pad(t.getDate());
       x.localStorage.setItem('SQ11:' + today + ':CABINS', JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, aircraftType: '787-10', cabinClasses: ['JCL', 'YCL'], legs: [{ flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'KUL' } }] } }));

@@ -95,6 +95,7 @@
 
 ## 5. UI, UX & Accessibility
 
+- **The feature tour is the spotlight (v1.49.0, owner order).** One lit target, one tooltip, one Next at a time; the veil shows targets without letting them be pressed; the tooltip never clips the viewport (12px margins, 300px cap — the iPhone 11 lesson). The eight walks' copy is the owner's pack, VERBATIM — tooltips render it word-for-word, never as markup. The main tour shows once per crew (`crewAssist.spotMainSeen`); every tour replays forever from Settings → Feature tour. Reorders, additions and removals go through `docs/FEATURE_TOUR.md` (the contract), never freehand.
 - **Match before inventing.** Inspect existing interfaces and reuse the nearest appropriate design pattern, component and interaction treatment.
 
 - **Respect the design system.** Use established tokens, typography, colours, spacing, shapes, elevation, icons and component variants instead of inventing local alternatives.
