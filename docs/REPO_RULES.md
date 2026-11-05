@@ -134,7 +134,7 @@ The frontend has **no bundler and no build step**; behaviour tests live in `test
 | `crewAssist.recentFlights` | Last 5 successful menu lookups `{ flight, date }`. |
 | `crewAssist.ratesCheckedAt` | Timestamp of the last successful network rates check (shown in the status popover; v1.26.0). |
 | `SQ<flight>:<date>:CABINS`, `SQ<flight>:<date>:<cabin>` | Saved SQ payloads: cabin schedule + per-cabin menus, `{timestamp, data}`. Menus cache with a 6 h freshness TTL but serve stale forever offline; pruned to the 5 recent flights (v1.26.0 formalised the CABINS key + prune). |
-| `crewAssist.spotMainSeen` | `'1'` once the main spotlight tour finished, was skipped or escaped (v1.49.0 — it shows once; every tour replays forever from Settings → Feature tour; restoring from the welcome screen stamps it too). |
+| `crewAssist.spotMainSeen` | `'1'` ONLY when the main spotlight tour was carried to its Done (v1.49.1 — Skip and Escape leave it unstamped and the walk returns next app open); the walk fires for every crew at the chat screen, before the What’s-New sheet; every tour replays forever from Settings → Feature tour; restoring from the welcome screen stamps it too. |
 | `crewAssist.lastBackupAt` | Timestamp of the last **full backup** export (v1.41.0: the earnings JSON extract no longer stamps it — only Settings → Data Management → Export backup does); read by the backup nudge. |
 | `crewAssist.backupNudgeSnoozedAt` | Timestamp of the last nudge snooze (2-week quiet period). |
 | `crewAssist.upcoming` | Roster-remembered upcoming flights `{ '<monthKey>': [{ fn, dep, arr, ymd, std }] }`, positioning excluded (v1.28.0). |

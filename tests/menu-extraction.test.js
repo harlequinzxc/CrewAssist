@@ -181,8 +181,8 @@ const EMDASH = '\u2014'; // —
     // black square invert opt-in; hidden proteins surface on non-mains too.
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.49.0';"), 'APP_VERSION stamped 1.49.0');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v307"), 'service-worker cache name bumped to v307 (the v1.49.0 spotlight-tour round)');
+    R.ok(src.includes("var APP_VERSION = '1.49.1';"), 'APP_VERSION stamped 1.49.1');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v308"), 'service-worker cache name bumped to v308 (the v1.49.1 firing-order round)');
     R.ok(!fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes('html2canvas'), 'v1.47.1: no painter is precached at all — the cameras hand-paint, so captures are offline by construction');
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("'./vendor/fonts/plus-jakarta-sans-700.woff2'"), 'v1.46.1: the house font\u2019s weights are precached — the painter\u2019s clone embeds them as data URLs, offline');
   }
