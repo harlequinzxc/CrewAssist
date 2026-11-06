@@ -517,6 +517,12 @@ const fs = require('fs');
       x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [{ fn: 'SQ106' }] }));
       x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '106', ymd: '2026-10-20', std: '0900' }] }));
       x.localStorage.setItem('crewAssist.devMode', 'true');
+      // v1.49.1: the harness pre-stamps spotMainSeen on every boot; this
+      // block pins the restore doors' own stamping, so it clears the
+      // pre-stamp (the every-crew spotlight then walks behind the block's
+      // synthetic clicks — harmless in jsdom, and it never stamps without
+      // a Done).
+      x.localStorage.removeItem('crewAssist.spotMainSeen');
     };
     const { w, d } = await boot(APP, { seed });
     // build: the manifest counts what matters and carries the crown jewels

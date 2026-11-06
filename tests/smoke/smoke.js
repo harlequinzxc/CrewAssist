@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.49.0', 'APP_VERSION is 1.49.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.49.0' && e.d === '2026-11-04' && e.items.length === 2 && e.items.filter((i) => i.c === 'new').length === 2; }), 'the changelog carries the 1.49.0 entry — two new pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v307'), 'the service-worker cache name is bumped to v307 (the v1.49.0 spotlight-tour round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.49.1', 'APP_VERSION is 1.49.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.49.1' && e.d === '2026-11-06' && e.items.length === 3 && e.items.filter((i) => i.c === 'fix').length === 2 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.49.1 entry — two fix and one imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v308'), 'the service-worker cache name is bumped to v308 (the v1.49.1 firing-order round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,9 +166,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.49.0'; }), 'the What\'s New sheet carries the v1.49.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The tour is a spotlight now — short, sharp, skippable.') !== -1), 'the What\'s New sheet carries the v1.49.0 spotlight pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings → Feature tour walks eight features, one tap each.') !== -1), 'the What\'s New sheet carries the v1.49.0 feature-tour door pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.49.1'; }), 'the What\'s New sheet carries the v1.49.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The spotlight fires before What\u2019s New — every crew gets the walk.') !== -1), 'the What\'s New sheet carries the v1.49.1 firing-order pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Only Done finishes it — a skipped walk returns next open.') !== -1), 'the What\'s New sheet carries the v1.49.1 done-only pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The spotlight veil darkens; the first two walks\u2019 copy sharpens.') !== -1), 'the What\'s New sheet carries the v1.49.1 veil + copy pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The tour is a spotlight now — short, sharp, skippable.') !== -1), 'the What\'s New sheet carries the v1.49.0 spotlight pointer in the delta');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings → Feature tour walks eight features, one tap each.') !== -1), 'the What\'s New sheet carries the v1.49.0 feature-tour door pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The stats tabs roll their numbers like the year pills.') !== -1), 'the What\'s New sheet carries the v1.48.5 flights-pills pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Earnings shares end at the last record — the since line is gone.') !== -1), 'the What\'s New sheet carries the v1.48.0 since-line pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The satay course reads Canapé — viewer and both print sheets.') !== -1), 'the What\'s New sheet carries the v1.48.0 satay-course Canapé pointer');
@@ -428,11 +431,37 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForFunction(() => document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('settings-backdrop').classList.contains('hidden')), 'the main-screen tour closes Settings first (the owner\u2019s order)');
         await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 5000 });
+        ok(await page.evaluate(() => { const b = document.querySelectorAll('#ca-spot-tip b'); return b.length === 2 && b[0].textContent === 'help' && b[1].textContent === '?'; }), 'the **bold** copy markers render as real bold words (help and ?) in the real browser');
         const geo = await page.evaluate(async () => {
             const steps = [];
             const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            // v1.49.1: wait for the step to actually BUILD (a skipped step
+            // costs a second settle), then let the ring's glide land —
+            // never measure a mid-transition tooltip.
+            const waitTip = () => new Promise((resolve) => {
+                const t0 = Date.now();
+                const iv = setInterval(() => {
+                    const tip = document.getElementById('ca-spot-tip');
+                    const on = document.documentElement.classList.contains('ca-spot-on');
+                    if (!on || (tip && /\d+ of \d/.test(tip.textContent))) { clearInterval(iv); resolve(on); }
+                    else if (Date.now() - t0 > 6000) { clearInterval(iv); resolve(false); }
+                }, 60);
+            });
             for (let i = 0; i < 7; i++) {
-                await sleep(650);
+                if (!await waitTip()) break;
+// v1.49.1: the ring GLIDES on main-thread layout transitions,
+                // which stall under a card's layout work — wait for the
+                // ring to stop moving (3 stable samples), never a fixed sleep.
+                await new Promise((resolve) => {
+                    let last = '', same = 0;
+                    const iv = setInterval(() => {
+                        const rr = document.getElementById('ca-spot-ring').getBoundingClientRect();
+                        const k = Math.round(rr.top) + ',' + Math.round(rr.left) + ',' + Math.round(rr.width) + ',' + Math.round(rr.height);
+                        if (k === last) { same++; if (same >= 3) { clearInterval(iv); resolve(); } }
+                        else { same = 0; last = k; }
+                    }, 80);
+                    setTimeout(() => { clearInterval(iv); resolve(); }, 2500);
+                });
                 const tip = document.getElementById('ca-spot-tip');
                 const tr = tip.getBoundingClientRect();
                 const rr = document.getElementById('ca-spot-ring').getBoundingClientRect();
@@ -441,10 +470,12 @@ async function calcCard(page, { type, t1, t2, lma }) {
                     counter: (tip.textContent.match(/\d+ of 7/) || [''])[0],
                     w: tr.width,
                     inView: tr.left >= 11.5 && tr.top >= 11.5 && tr.right <= window.innerWidth - 11.5 && tr.bottom <= window.innerHeight - 11.5,
+                    ringInView: rr.left >= 0.5 && rr.top >= 0.5 && rr.right <= window.innerWidth - 0.5 && rr.bottom <= window.innerHeight - 0.5,
+                    noCover: tr.top >= rr.bottom - 0.5 || tr.bottom <= rr.top + 0.5,
                     ringSize: rr.width > 0 && rr.height > 0
                 });
                 const next = document.getElementById('ca-spot-next');
-                if (next) next.click();
+                if (next) next.click(); else break;
             }
             return steps;
         });
@@ -453,20 +484,134 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(geo.every((s) => s.inView), 'the tooltip never clips the viewport at any step — 12px margins hold (the iPhone 11 lesson)');
         ok(geo.every((s) => s.w <= 300.5), 'the tooltip stays capped at 300px');
         ok(geo.every((s) => s.ringSize), 'the ring sizes to a real target at every step');
+        ok(geo.every((s) => s.ringInView), 'the lit target sits fully inside the viewport at every step (the owner\u2019s v1.49.1 order; header-flush targets may kiss the edge)');
+        ok(geo.every((s) => s.noCover), 'the tooltip never covers the lit target');
         ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'Done stands the tour down');
         ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainSeen') === '1'), 'Done on the main tour stamps the once-flag');
-        // the second door: a returning device meets the release through the
-        // What's-New sheet; its close arms the tour after the greeting settles
+
+        // v1.49.1 (owner order): ALL highlighted content fits the viewport —
+        // every step of every remaining walk carries the ring-in-view and
+        // the tooltip-covers-nothing pins, computed in real Chromium.
+        const walks = [['roster', 5], ['manual', 6], ['menus', 6], ['earnings', 6], ['calendar', 6], ['stats', 5], ['backup', 5]];
+        for (const w of walks) {
+            const tid = w[0], n = w[1];
+            // each walk starts from a CLEAN stage — the previous walk's sheet
+            // stays open by design, and it would sit over the Settings rows
+            await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+            await sleep(600);
+            await page.evaluate(() => openSettings());
+            await page.waitForFunction(() => !document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
+            await page.waitForFunction(() => !document.getElementById('settings-sheet').classList.contains('translate-y-full'), { timeout: 5000 });
+            await sleep(350);
+            await page.evaluate(() => { const b = document.getElementById('app-dialog-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('app-dialog-ok').click(); });
+            await sleep(250);
+            await page.evaluate((t) => document.querySelector('#ca-feature-tours [data-ca-spot="' + t + '"]').scrollIntoView({ block: 'center' }), tid);
+            await sleep(150);
+            await page.click('#ca-feature-tours [data-ca-spot="' + tid + '"]');
+            await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
+            const g = await page.evaluate(async (n) => {
+                const shown = [];
+                const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+                const waitTip = () => new Promise((resolve) => {
+                    const t0 = Date.now();
+                    const iv = setInterval(() => {
+                        const tip = document.getElementById('ca-spot-tip');
+                        const on = document.documentElement.classList.contains('ca-spot-on');
+                        if (!on || (tip && /\d+ of \d/.test(tip.textContent))) { clearInterval(iv); resolve(on); }
+                        else if (Date.now() - t0 > 6000) { clearInterval(iv); resolve(false); }
+                    }, 60);
+                });
+                for (let i = 0; i < n; i++) {
+                    if (!await waitTip()) break;
+                    // v1.49.1: the ring GLIDES on main-thread layout transitions,
+                    // which stall under a card's layout work — wait for the
+                    // ring to stop moving (3 stable samples), never a fixed sleep.
+                    await new Promise((resolve) => {
+                        let last = '', same = 0;
+                    const iv = setInterval(() => {
+                            const rr = document.getElementById('ca-spot-ring').getBoundingClientRect();
+                            const k = Math.round(rr.top) + ',' + Math.round(rr.left) + ',' + Math.round(rr.width) + ',' + Math.round(rr.height);
+                            if (k === last) { same++; if (same >= 3) { clearInterval(iv); resolve(); } }
+                            else { same = 0; last = k; }
+                        }, 80);
+                    setTimeout(() => { clearInterval(iv); resolve(); }, 2500);
+                });
+                    const tip = document.getElementById('ca-spot-tip');
+                    const tr = tip.getBoundingClientRect();
+                    const rr = document.getElementById('ca-spot-ring').getBoundingClientRect();
+                    const m = tip.textContent.match(new RegExp('(\\d+) of ' + n));
+                    shown.push({
+                        counter: m ? Number(m[1]) : 0,
+                        inView: tr.left >= 11.5 && tr.top >= 11.5 && tr.right <= window.innerWidth - 11.5 && tr.bottom <= window.innerHeight - 11.5,
+                        ringInView: rr.left >= 0.5 && rr.top >= 0.5 && rr.right <= window.innerWidth - 0.5 && rr.bottom <= window.innerHeight - 0.5,
+                        noCover: tr.top >= rr.bottom - 0.5 || tr.bottom <= rr.top + 0.5,
+                        ringSize: rr.width > 0 && rr.height > 0
+                    });
+                    const next = document.getElementById('ca-spot-next');
+                    if (next) next.click(); else break;
+                }
+                return shown;
+            }, n);
+            ok(g.length >= 1, 'the ' + tid + ' walk shows its steps in the real browser');
+            const cs = g.map((x) => x.counter);
+            ok(cs.every((c, i) => c >= 1 && c <= n && (i === 0 || c > cs[i - 1])), 'the ' + tid + ' counters advance within 1..' + n + ' (a vanished step skips itself, carrying its number) \u2014 saw [' + cs.join(',') + ']');
+            ok(g.every((x) => x.inView), 'the ' + tid + ' tooltip never clips the viewport at any step');
+            ok(g.every((x) => x.ringInView), 'the ' + tid + ' lit target sits fully inside the viewport at every step');
+            ok(g.every((x) => x.noCover), 'the ' + tid + ' tooltip never covers the lit target');
+            ok(g.every((x) => x.ringSize), 'the ' + tid + ' ring sizes to a real target at every step');
+            ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'the ' + tid + ' walk stands down at Done');
+        }
+
+        // v1.49.1 (owner order): the firing doors in the real browser — the
+        // walk fires at the chat screen BEFORE the What's-New sheet, for
+        // every crew; Skip/Escape never complete it (it returns next open);
+        // Done alone retires it; the sheet and the greeting wait behind.
         await page.evaluate(() => { localStorage.removeItem('crewAssist.spotMainSeen'); localStorage.removeItem('crewAssist.hideWhatsNew'); localStorage.setItem('crewAssist.wnSeen', '1.48.5'); });
         await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
+        ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'the walk fires BEFORE the What\u2019s-New sheet — the sheet waits behind the veil');
+        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'the spotlight opens on the chat bar for a returning crew');
+        ok(await page.evaluate(() => (document.getElementById('chat-container').innerText || '').trim() === ''), 'the greeting waits behind the walk too — the chat is still empty');
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainSeen') === null), 'Escape is not completion — the once-flag stays unstamped');
+        await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
+        ok(true, 'the walk\u2019s end hands the stage to the What\u2019s-New sheet');
+        await page.click('#whatsnew-close');
+        await page.waitForFunction(() => (document.getElementById('chat-container').innerText || '').trim().length > 0, { timeout: 20000 });
+        ok(true, 'the greeting types once the sheet closes');
+        // a skipped walk returns on the next open; carried to Done, it retires
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
+        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'the walk returns on the next open after a skip');
+        await page.evaluate(async () => {
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            for (let i = 0; i < 7; i++) {
+                const t0 = Date.now();
+                while (Date.now() - t0 < 6000) {
+                    if (!document.documentElement.classList.contains('ca-spot-on')) break;
+                    const tip = document.getElementById('ca-spot-tip');
+                    if (tip && /\d+ of \d/.test(tip.textContent)) break;
+                    await sleep(60);
+                }
+                const nx = document.getElementById('ca-spot-next');
+                if (nx) { nx.click(); await sleep(120); } else break;
+            }
+        });
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainSeen') === '1'), 'ONLY Done completes — the once-flag lands');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
         await page.click('#whatsnew-close');
-        await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
-        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'the What\u2019s-New close arms the main tour for returning crew');
-        await page.keyboard.press('Escape');
-        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on') && localStorage.getItem('crewAssist.spotMainSeen') === '1'), 'Escape ends the walk and stamps the once-flag');
+        await sleep(300);
+        // stamped now: the next open is quiet (the sheet still returns per the v1.35.0 ruling)
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await sleep(1500);
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'a completed walk never fires again on its own');
+        await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
+        await page.click('#whatsnew-close');
+        await sleep(300);
         // leave the device quiet for the sections below (the do-not-show door)
-        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.49.0'); localStorage.setItem('crewAssist.wnSeen', '1.49.0'); });
+        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.49.1'); localStorage.setItem('crewAssist.wnSeen', '1.49.1'); });
 
         // 7c. v1.45.34 (owner order): the changelog filter chips in the real
         // browser - the compact three-tier framework, and the painted fade.

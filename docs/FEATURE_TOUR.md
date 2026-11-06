@@ -1,16 +1,30 @@
 # Feature Tour — the spotlight contract
 
-> Owns the v1.49.0 spotlight tour: the engine's rules, the firing doors, and
-> the eight walks' copy **verbatim**. Future reorders, additions or removals
-> go through this file — change the walk here first, then mirror it in
-> `index.html`'s `CA_SPOT_TOURS` and `tests/tour.test.js`'s pins.
+> Owns the spotlight tour (born v1.49.0; firing order, completion rule,
+> veil opacity, viewport-fit and bold copy revised **v1.49.1**): the
+> engine's rules, the firing doors, and the eight walks **step by step** —
+> what is highlighted, what screen is open, and the exact text displayed.
+> Future reorders, additions or copy changes go through this file first,
+> then mirror in `index.html`'s `CA_SPOT_TOURS` and `tests/tour.test.js`'s
+> pins.
 >
 > This file replaced `docs/TOUR-BREAKDOWN.md` (the v1.23.0 five-step
-> demonstrative tour's log), which was deleted in the same round.
+> demonstrative tour's log), deleted in the v1.49.0 round.
 
 ---
 
-## The mechanic (owner-settled, 2026-11-04)
+## How to read the walk tables
+
+Each step row carries three things, so a change request can name exactly
+what to touch:
+
+- **Highlighted** — the element the gold ring frames (with its selector).
+- **Screen open** — the page / sheet / overlay on stage at that moment.
+- **Text displayed** — the tooltip's title and line, **word for word**.
+  `**bold**` marks render as bold text in the tooltip (v1.49.1); everything
+  else renders plain. The copy is the owner's, verbatim.
+
+## The mechanic
 
 One **lit target**, one **tooltip**, one **Next** button at a time.
 
@@ -18,20 +32,31 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   tour runs. Highlighted buttons are **shown, never pressed** — the tooltip
   (Next / Back / Skip) is the only interactive surface.
 - The **gold ring** (`#ca-spot-ring`) frames the target with breathing room
-  (6px); its huge box-shadow paints the dark scrim around the cut-out. The
-  ring glides between steps (`.24s ease`, killed under `ca-reduced`).
+  (6px); its huge box-shadow paints the dark scrim around the cut-out —
+  **rgba(4, 7, 15, .8)** since v1.49.1 (owner order: the lit target and the
+  tooltip must stand out hard). The ring **jumps instantly** to its target
+  (v1.49.1: the v1.49.0 `.24s` glide was main-thread-driven and could lag
+  behind the instantly-placed tooltip under a card's layout work — the
+  never-cover guarantee wins over the flourish).
+- **The lit target always fits the viewport** (v1.49.1, owner order): every
+  step scrolls its target fully into view first (centering, plus a nudge
+  when a clamped scroll container still leaves it at an edge), so the ring
+  never sits behind a screen edge — and the **tooltip never covers the
+  target** it explains (it flips above/below with a 10px gap). The tooltip
+  itself never clips the viewport either — the iPhone 11 lesson: flips
+  above/below, clamps to 12px margins, width capped at
+  `min(300px, 100vw - 24px)` by CSS.
 - The **tooltip** (`#ca-spot-tip`) carries the counter (`2 of 7`), the step
   title, the step line, and the buttons. **Back is hidden on step 1.** The
   last step's Next reads **Done**.
-- **The tooltip never clips the viewport** — the iPhone 11 lesson. It flips
-  above/below the target, clamps to 12px margins, and its width is capped at
-  `min(300px, 100vw - 24px)` by CSS. Pinned with real-Chromium geometry in
-  the smoke suite (every step of the main walk).
 - **Escape ends the walk** (a skip). **Tab is trapped** inside the tooltip.
   The ring and tooltip re-place on resize, orientation change and captured
   scrolls (sheets scroll inside their own containers).
 - Tapping a Settings row starts that tour **immediately**; the relevant
   overlay opens on its own (the `before`/`world` functions).
+- All three geometry promises — ring fully in view, tooltip fully in view,
+  tooltip never over the ring — are pinned **for every step of every walk**
+  in real Chromium (`tests/smoke/smoke.js`).
 
 ## The engine rules
 
@@ -44,39 +69,54 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   and the stage is always right without diffing. The engine waits ~380ms
   (sheet glide) before measuring.
 - **A vanished target never breaks the walk** — a step whose `sel` resolves
-  to nothing (or to a `.hidden` element, checked up the ancestor chain)
-  skips itself and the counter carries on. If nothing remains, the tour ends
-  cleanly.
+  to nothing skips itself and the counter carries on. If nothing remains,
+  the tour ends cleanly. Visibility is honest for the app's two hidden
+  states: `.hidden` **and** `translate-y-full` (the sheets close by
+  sliding off-screen without carrying `.hidden` — a closed sheet's innards
+  are not spotlightable), both checked up the ancestor chain.
 - **Nothing saved is touched.** Tours that need a prop build it through the
   app's own real paths: the manual-cards tour renders one real calculator
   card (a working prop the crew keeps — Calculate and Confirm go live the
   moment the veil lifts). Sheets a walk opened **stay open** when it ends —
   the crew explores from the last step's stage.
-- **Copy ships verbatim.** The tooltip renders title and line through
-  `textContent` — word for word, never as markup.
-- Visibility is the `.hidden` class walk (honest in jsdom, where nothing has
-  layout, and in the browser alike).
+- **Copy ships verbatim.** The tooltip builds the title and line through
+  DOM APIs — word for word, never as markup. Since v1.49.1 the line may
+  carry `**bold**` markers, which render as bold spans (still built by DOM
+  APIs, never raw HTML).
+- **The tour owns the stage** (v1.49.1): while `ca-spot-on` lights the
+  chrome, every chat scroll automation stands down — the autoscroll, the
+  typing-dots jump, and the card top-align ticker (its 2s of direct
+  scrollTop retries used to yank the lit target out from under the ring).
+  The engine's own scrolls are `behavior: 'instant'` (never a smooth
+  glide), and 350ms after a step shows, one deferred re-assert re-places
+  ring and tooltip from the target's FINAL rect — healing any placement
+  race in one stroke.
 
-## The firing doors (test-safe by design)
+## The firing doors (v1.49.1, owner order)
 
-The main tour shows **once**; every tour replays forever from Settings.
+The flow, exactly as the owner drew it:
 
-1. **New crew** — onboarding completion arms a session flag; after the
-   greeting settles (~1.2s), if `crewAssist.spotMainSeen` is unstamped, the
-   main tour starts.
-2. **Returning crew** — a device that already carried a `crewAssist.wnSeen`
-   stamp meets a new release through the What's-New sheet; when the sheet
-   closes (with the welcome chat held behind it), the main tour follows the
-   greeting. Devices with What's-New suppressed (`hideWhatsNew` stamped) meet
-   the tours **in Settings only**.
-3. **Restoring from the welcome screen is not a new user** — the restore
-   door stamps `crewAssist.spotMainSeen` before the reload.
+> app opens → onboarding (if new user) → else chat screen → **tour fires**
+> → tour ends → What's-New bubble → chat message starts firing (the greeting
+> and the how-can-I-help)
 
-Done, Skip or Escape on the **main** tour stamps `crewAssist.spotMainSeen`
-(the old `crewAssist.tourDone` key is gone). Fresh test boots carry no
-`wnSeen` stamp, so they never fire door 2 — deterministic suites by
-construction. The command `tour` and the help card's CTA both start the main
-tour.
+- **Every crew** — new and returning alike — whose `crewAssist.spotMainSeen`
+  is unstamped gets the main tour at the chat screen, **before** the
+  What's-New sheet and before the greeting. The walk's end hands the stage
+  to the sheet (if one is due); the greeting types only once it closes.
+- **Only Done completes the walk** (owner order). Done — the last step's
+  Next — stamps `crewAssist.spotMainSeen`. **Skip and Escape end the walk
+  without completing it: the once-flag stays unstamped and the main tour
+  fires again on the next app open.** The tour retires only when the crew
+  carries it to the end (or restores a backup through the welcome door,
+  which stamps the flag — a restoring user is not a new user).
+- **Every tour replays forever from Settings** → Feature tour, regardless
+  of the flag. The chat command `tour` and the help card's CTA also start
+  the main tour.
+- The old `crewAssist.tourDone` key is gone; `crewAssist.spotMainSeen` is
+  the spotlight's own once-flag. The test harness pre-stamps it on every
+  jsdom boot (test boots are "seen" devices); suites that pin the firing or
+  the restore doors clear it deliberately in their seeds.
 
 ## The eight walks (Settings order; 46 steps)
 
@@ -93,90 +133,145 @@ Settings → **Feature tour**, eight rows in one glass box, in this order:
 | Flight Stats | `stats` | 5 |
 | Backup & restore | `backup` | 5 |
 
-Walk-specific contracts:
+### Main screen (`main`, 7 steps)
 
-- **Main screen** closes Settings first (the other walks from Settings do
-  the same unless their stage is a sheet); the chat bar leads (step 1).
-- **Manual flight cards** opens Settings for the Manual pill (`calcui-pill-manual`),
-  then builds one real card; the Calculate-all step targets the roster
-  batch button and **skips itself** on a device that never imported a roster.
-- **Menus & search** opens the first **saved** menu when one exists (the
-  cached offline path — no network ever); otherwise its viewer steps fall
-  back to the menus chip. The offline step is kept by owner order.
-- **Earnings** opens the archive sheet; the month-card step falls back to
-  the list (an empty archive teaches honestly).
-- **Calendar** opens the roster calendar (every open starts clean); the
-  camera step turns the tags **ON** first — the camera appears only with
-  tags on (the owner's correction); the records-door step falls back to the
-  grid when no leg was ever imported (the door stays hidden without data).
-- **Flight Stats** opens the passport page; podium/pill/station steps fall
-  back to the page body on an empty logbook.
-- **Backup & restore** keeps Settings **open** — the spotlight moves within
-  the sheet; targets are the Data Management box and its two doors.
+Screen open: the **main chat screen** throughout (Settings closed; the chat
+thread sits empty when the walk fires on its own — the greeting waits
+behind it).
 
-## The copy (verbatim — the pack the owner approved, 2026-11-04)
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The chat bar — the typing field at the bottom (`#chat-input`) | Chat screen | **At your service** — Ask anything about your flights, or type **help** / **?** for quick commands. |
+| 2 | The paperclip — the roster-attach button beside the typing field (`#btn-roster`) | Chat screen | **Your roster goes here** — Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights. |
+| 3 | The one-tap shortcut chips row, under the typing field (`#action-chips`) | Chat screen | **One-tap shortcuts** — Instant answers for allowances, earnings, inflight menus, and menu prints. |
+| 4 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **Your flying calendar** — Access your full schedule, flight records, and personal crew stats in one place. |
+| 5 | The theme button in the top bar (`#btn-theme`) | Chat screen | **Theme switcher** — Tap anytime to switch seamlessly between light and dark theme. |
+| 6 | The settings button in the top bar (`#btn-settings`) | Chat screen | **Your settings and profile** — Access profile details, manage your saved data, or replay feature tours anytime. |
+| 7 | The reset button in the top bar's right corner (`#btn-reset`) | Chat screen | **Clean slate** — Double-tap to clear your screen. Your saved data remains untouched. |
 
-### Main screen (7)
-1. **Talk to me** — Ask me anything about your flights — this is where we talk.
-2. **Your roster goes here** — Attach the Crew Roster PDF and I read every flight off it for you.
-3. **Shortcuts, one tap** — The chips ask the common questions for you — allowance, earnings, menus, print.
-4. **Your flying calendar** — Every flight lands on the calendar, with your records and stats behind it.
-5. **Day or night** — Tap any time to switch between light and dark.
-6. **Everything lives here** — Your profile, your data, and the deeper feature tours — all in Settings.
-7. **Clean slate** — Two taps clear the conversation — your saved data is never touched.
+### Roster import (`roster`, 5 steps)
 
-### Roster import (5)
-1. **Start with the PDF** — The paperclip takes your Crew Roster Report exactly as the crew portal prints it.
-2. **I read every line** — Flights, dates, sectors and report times — nothing typed by hand.
-3. **The app fills itself** — The calendar, the trip bar, and the calculator all light up.
-4. **Once a month** — Re-attach each new roster drop and the newest flights take over.
-5. **Honest when unsure** — If a page doesn’t look like a roster, I say so — never a guess.
+Screen open: the **main chat screen** throughout. Per the owner's v1.49.1
+order, **steps 2 and 5 keep spotlighting the paperclip** (`#btn-roster`).
 
-### Manual flight cards (6)
-1. **No roster? No problem** — Add a card by hand when the trip isn’t on a PDF.
-2. **Fill the flight** — Route, date and times — the card matches the roster’s own fields.
-3. **One tap, priced** — Calculate works the card out against your rank and rate.
-4. **The whole batch** — Calculate-all totals everything together, grouped by month.
-5. **Allowances included** — IFA and LMA price out beside the sectors in the trip bar.
-6. **Save it or undo** — Confirm files the trip into your earnings — undo takes it right back out.
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The paperclip (`#btn-roster`) | Chat screen | **Start with your Roster Report** — The paperclip takes your PDF exactly as downloaded from your CrewApp. |
+| 2 | The paperclip again (`#btn-roster`) | Chat screen | **I read every line** — Flights, dates, sectors, and report times are extracted automatically with zero typing required. |
+| 3 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **The app fills itself** — Your calendar, trip bar, and allowance calculator all light up instantly with the data. |
+| 4 | The paperclip (`#btn-roster`) | Chat screen | **Monthly roster or changes** — Re-attach anytime your monthly roster or there are changes to your roster, and your schedule updates seamlessly. |
+| 5 | The paperclip (`#btn-roster`) | Chat screen | **Honest when unsure** — If a document isn’t recognized as a valid roster, I’ll let you know—never a guess. |
 
-### Menus & search (6)
-1. **Just ask** — Type a flight and a date — sq802 menu 17 oct — and I fetch the menus.
-2. **The viewer** — Courses in service order, exactly as the galley works them.
-3. **Pick your cabin** — The switcher jumps between the cabins on your flight.
-4. **Print-ready** — Full sheet or compact — both lay out for the galley printer.
-5. **Saved on your phone** — Menus you’ve opened stay readable offline, no signal needed.
-6. **Speak naturally** — jcl ycl menu sq802 — name the cabins you want, in your order.
+### Manual flight cards (`manual`, 6 steps)
 
-### Earnings (6)
-1. **This is your money page** — Every trip you save adds up here, month by month.
-2. **One month, one card** — Each card is a month’s earnings — tap it to open the trips.
-3. **Two ways to read it** — The lens switches between your salary take-home and your COP sectors.
-4. **The honest breakdown** — Gross, CPF, your overseas expenses, and what actually lands.
-5. **Find anything** — Search by route, flight or month to surface old trips fast.
-6. **Take it with you** — Export the JSON or the CSV — your expenses ride along in both.
+Step 1 lives inside **Settings**; every step after returns to the **chat
+screen** with one real calculator card the walk built in the thread (the
+card stays, working, after the walk ends).
 
-### Calendar (6)
-1. **Here’s your roster** — Every imported flight paints onto its day — duties, standby and all.
-2. **The tag button** — Tap it and every flight day shows its station and arrival time.
-3. **The camera comes out** — With the tags on, the camera appears — it turns the month into a picture, ready to share.
-4. **Walk the months** — Swipe or tap the arrows to move between months.
-5. **Tap a day** — The day opens its flights — times, sectors, and what it earns.
-6. **The records door** — Your passport and all-time stats live behind this gate.
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The Manual pill in Settings' calculator section (`#calcui-pill-manual`) | Settings sheet | **No roster? No problem** — Add a card by hand when the trip isn’t on a PDF. |
+| 2 | The route field on the card the walk built (the From input) | Chat screen, card in thread | **Fill the flight** — Route, date and times — the card matches the roster’s own fields. |
+| 3 | The card's Calculate button | Chat screen, card in thread | **One tap, priced** — Calculate works the card out against your rank and rate. |
+| 4 | The Calculate-all batch button (the step skips itself on a device that never imported a roster) | Chat screen, card in thread | **The whole batch** — Calculate-all totals everything together, grouped by month. |
+| 5 | The trip bar strip on the card (route + allowances) | Chat screen, card in thread | **Allowances included** — IFA and LMA price out beside the sectors in the trip bar. |
+| 6 | The card's masthead (its title row) | Chat screen, card in thread | **Save it or undo** — Confirm files the trip into your earnings — undo takes it right back out. |
 
-### Flight Stats (5)
-1. **Your passport** — The records page tallies everything — flights, hours, stations.
-2. **The hero card** — Flight time, layover days, top station — your logbook in five rows.
-3. **The stats podium** — Your most-visited stations and longest flights, ranked.
-4. **Slice it your way** — The year pills and duty tabs filter the podium to any slice.
-5. **Every visit on record** — Tap a station to open its full visit log.
+### Menus & search (`menus`, 6 steps)
 
-### Backup & restore (5)
-1. **Your data, your file** — One backup file carries everything — profile, rates, earnings, history.
-2. **Export before you switch** — Data Management → Export backup — the file lands in your downloads.
-3. **The new phone** — Install the app, skip onboarding, and Restore backup from the same door.
-4. **Expenses ride along** — Overseas expenses are inside every backup — they show on any device.
-5. **Keep it private** — The file holds your pay data — keep it somewhere only you control.
+Steps 2–5 run with the **menu viewer sheet open** — it opens the first
+**saved** menu when one exists (the cached offline path, no network ever);
+without one, those steps fall back to highlighting the menus chip on the
+chat screen. Steps 1 and 6 highlight the composer.
+
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The typing field (`#chat-input`) | Chat screen | **Just ask** — Type a flight and a date — sq802 menu 17 oct — and I fetch the menus. |
+| 2 | The menu hero — the flight banner at the top of the viewer (or the menus chip, no saved menu) | Menu viewer sheet | **The viewer** — Courses in service order, exactly as the galley works them. |
+| 3 | The cabin switcher inside the viewer (or the menus chip, no saved menu) | Menu viewer sheet | **Pick your cabin** — The switcher jumps between the cabins on your flight. |
+| 4 | The print button inside the viewer (or the menus chip, no saved menu) | Menu viewer sheet | **Print-ready** — Full sheet or compact — both lay out for the galley printer. |
+| 5 | The cycle button — it walks your saved menus (or the menus chip, no saved menu) | Menu viewer sheet | **Saved on your phone** — Menus you’ve opened stay readable offline, no signal needed. |
+| 6 | The typing field (`#chat-input`) | Chat screen | **Speak naturally** — jcl ycl menu sq802 — name the cabins you want, in your order. |
+
+### Earnings (`earnings`, 6 steps)
+
+Screen open: the **earnings archive sheet** (the money page) for all six
+steps — it opens itself when the walk starts.
+
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The Earnings title at the top of the money page | Earnings archive sheet | **This is your money page** — Every trip you save adds up here, month by month. |
+| 2 | A month card (falls back to the list on an empty archive) | Earnings archive sheet | **One month, one card** — Each card is a month’s earnings — tap it to open the trips. |
+| 3 | The lens switcher (salary take-home ↔ COP sectors) | Earnings archive sheet | **Two ways to read it** — The lens switches between your salary take-home and your COP sectors. |
+| 4 | The summary card (`#ca-arch-summary`) | Earnings archive sheet | **The honest breakdown** — Gross, CPF, your overseas expenses, and what actually lands. |
+| 5 | The search field (`#ca-arch-search`) | Earnings archive sheet | **Find anything** — Search by route, flight or month to surface old trips fast. |
+| 6 | The export button (`#ca-arch-export`) | Earnings archive sheet | **Take it with you** — Export the JSON or the CSV — your expenses ride along in both. |
+
+### Calendar (`calendar`, 6 steps)
+
+Screen open: the **roster calendar** for all six steps — it opens itself
+(fresh) when the walk starts. The tag button turns the tags **on** for the
+camera step (the camera appears only with tags on — the owner's v1.45.x
+correction) and back **off** for the steps around it.
+
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The month grid (`#ca-rc-grid`) | Roster calendar | **Here’s your roster** — Every imported flight paints onto its day — duties, standby and all. |
+| 2 | The tag button at the top of the calendar (`#ca-rc-tag`, tags off at this step) | Roster calendar | **The tag button** — Tap it and every flight day shows its station and arrival time. |
+| 3 | The camera button (`#ca-rc-shot` — visible only with the tags on, which this step turns on) | Roster calendar, tags on | **The camera comes out** — With the tags on, the camera appears — it turns the month into a picture, ready to share. |
+| 4 | The month arrows (`#ca-rc-prev`) | Roster calendar | **Walk the months** — Swipe or tap the arrows to move between months. |
+| 5 | A day cell (today, else the first flight day; falls back to any day) | Roster calendar | **Tap a day** — The day opens its flights — times, sectors, and what it earns. |
+| 6 | The records door (the passport gate; falls back to the grid when no leg was ever imported) | Roster calendar | **The records door** — Your passport and all-time stats live behind this gate. |
+
+### Flight Stats (`stats`, 5 steps)
+
+Screen open: the **Flight Stats passport page** for all five steps — it
+opens itself when the walk starts.
+
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The Passport title at the top of the records page | Flight Stats passport | **Your passport** — The records page tallies everything — flights, hours, stations. |
+| 2 | The hero card at the top (`#ca-rc-pod-herowrap`) | Flight Stats passport | **The hero card** — Flight time, layover days, top station — your logbook in five rows. |
+| 3 | The stats podium (falls back to the page body on an empty logbook) | Flight Stats passport | **The stats podium** — Your most-visited stations and longest flights, ranked. |
+| 4 | The year pills and duty tabs | Flight Stats passport | **Slice it your way** — The year pills and duty tabs filter the podium to any slice. |
+| 5 | A station row (falls back to the page body) | Flight Stats passport | **Every visit on record** — Tap a station to open its full visit log. |
+
+### Backup & restore (`backup`, 5 steps)
+
+Screen open: **Settings stays open** — the spotlight moves within the
+sheet (owner order). Targets are the Data Management box and its doors.
+
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The Data Management box (`#ca-dm-box`) | Settings sheet | **Your data, your file** — One backup file carries everything — profile, rates, earnings, history. |
+| 2 | The Export backup button (`#btn-backup-export`) | Settings sheet | **Export before you switch** — Data Management → Export backup — the file lands in your downloads. |
+| 3 | The Restore backup button (`#btn-backup-restore`) | Settings sheet | **The new phone** — Install the app, skip onboarding, and Restore backup from the same door. |
+| 4 | The Export backup button again (`#btn-backup-export`) | Settings sheet | **Expenses ride along** — Overseas expenses are inside every backup — they show on any device. |
+| 5 | The Data Management box (`#ca-dm-box`) | Settings sheet | **Keep it private** — The file holds your pay data — keep it somewhere only you control. |
+
+## The v1.49.1 round (owner orders, 2026-11-06)
+
+- **Firing order** — the walk fires at the chat screen, before the
+  What's-New sheet and the greeting, for every crew (the old
+  What's-New-close arm and the `caSpotFresh` flag are gone).
+- **Done is the only finish** — Skip and Escape leave the once-flag
+  unstamped; the walk returns on the next app open.
+- **The veil darkened** to rgba(4, 7, 15, .8) (owner: the spotlight and
+  tooltip must be more obvious).
+- **Viewport fit** — every lit target is scrolled fully into view
+  (instantly, centered) and the tooltip never covers it (owner order,
+  pinned per-step in the smoke). The geometry hardening that followed:
+  whole-sheet and whole-card rings retired (a ring frames a lit TARGET,
+  never the page — the Earnings/Passport steps light their titles, the
+  menus steps light the hero/cycle/cabin/print controls, the manual-card
+  steps light the route field, the Calculate button and the masthead);
+  closed-by-translation sheets read as closed; the chat's scroll
+  automation freezes under the veil; and a 350ms deferred re-assert
+  re-places ring and tooltip from the final rect after every step.
+- **Bold copy** — `**bold**` markers render as bold text in the tooltip.
+- **Copy pack part 1** — Main screen (all 7) and Roster import (all 5,
+  steps 2 and 5 re-targeted to the paperclip) rewritten verbatim from the
+  owner's pack. Part 2 (the other six walks) pending the owner's testing.
 
 ## The old tour's removal record (v1.49.0)
 
@@ -193,10 +288,15 @@ card's CTA and the `tour` command now start the main spotlight tour.
 ## Tests
 
 - `tests/tour.test.js` — the walk end-to-end in jsdom: registry, verbatim
-  copy, counter/Back/Done/Skip/Escape, the skip-a-vanished-step contract,
-  every walk's world, the three firing doors, and the old-tour absence pins.
-- `tests/smoke/smoke.js` — real Chromium: the eight Settings rows, the full
-  main walk with the never-clip geometry pin (every step, 12px margins,
-  300px cap), Done/Escape stamping, and the What's-New firing door.
+  copy (all of Main + Roster since v1.49.1), the bold-marker rendering,
+  counter/Back/Done/Skip/Escape, the Done-only stamping (skip returns),
+  the skip-a-vanished-step contract, every walk's world, the firing doors
+  (every-crew at the chat screen, before the sheet; onboarding; the
+  pre-stamp harness rule), and the old-tour absence pins.
+- `tests/smoke/smoke.js` — real Chromium: the eight Settings rows, the
+  full main walk with the bold pins, the geometry pins (ring fully in
+  view, tooltip never clips, tooltip never covers the ring — every step
+  of **every** walk), the Done/skip stamping, and the firing doors across
+  reloads (fires before the sheet, skip returns next open, Done retires).
 - `tests/dev-ui.test.js` — the Settings rows, the E6 changelog ladder, the
   help-CTA start.

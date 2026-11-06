@@ -1370,8 +1370,12 @@
            only interactive surface (Next / Back / Skip). */
         #ca-spot-veil { position: fixed; inset: 0; z-index: 95; visibility: hidden; }
         #ca-spot-ring { position: fixed; z-index: 96; border-radius: 14px; pointer-events: none;
-            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .62);
-            transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease; }
+            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .8); }
+        /* v1.49.1 (owner order): the scrim sits at .8 — the lit target and
+           the tooltip stand out hard against it. The ring JUMPS to its
+           target (no glide): a main-thread-lagged transition left the ring
+           mid-flight while the tooltip placed instantly — the never-cover
+           guarantee wins over the flourish. */
         #ca-spot-tip { position: fixed; z-index: 97; width: min(300px, calc(100vw - 24px)); }
         html.ca-spot-on #ca-spot-veil { visibility: visible; }
         #ca-spot-ring, #ca-spot-tip { visibility: hidden; }
@@ -3301,7 +3305,7 @@
             }
         }
 
-        var APP_VERSION = '1.49.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.49.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3323,6 +3327,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.49.1', d: '2026-11-06', items: [
+                { c: 'fix', t: 'The spotlight fires before What\u2019s New \u2014 every crew gets the walk.' },
+                { c: 'fix', t: 'Only Done finishes it \u2014 a skipped walk returns next open.' },
+                { c: 'imp', t: 'The spotlight veil darkens; the first two walks\u2019 copy sharpens.' }
+            ] },
             { v: '1.49.0', d: '2026-11-04', items: [
                 { c: 'new', t: 'The tour is a spotlight now \u2014 short, sharp, skippable.' },
                 { c: 'new', t: 'Settings \u2192 Feature tour walks eight features, one tap each.' }
@@ -4695,10 +4704,8 @@
                 document.getElementById('settings-profile-name').textContent = appProfile.name;
                 const avatar2 = document.getElementById('settings-avatar');
                 if (avatar2) avatar2.textContent = (String(appProfile.name || 'C').trim().charAt(0) || 'C').toUpperCase();
-
-                // v1.49.0: fresh setup — the main spotlight tour follows the
-                // greeting once it settles (the startChat slot consumes this).
-                caSpotFresh = true;
+                // v1.49.1: no arm flag — showMain itself walks the spotlight
+                // for every crew whose once-flag isn't stamped.
                 showMain();
             });
 
@@ -5050,27 +5057,27 @@
         function showMain() {
             elObView.classList.add('hidden');
             elMainView.classList.remove('hidden');
-            // When the what's-new sheet opens it owns the stage: the welcome
-            // chat must not type away behind it — the chat (and the tour
-            // offer that follows it) begins only once the sheet is closed.
-            const startChat = () => {
-                initChat();
-                // v1.49.0: the spotlight tour, once per crew. The slot fires
-                // when caSpotFresh is armed — new crew get it at onboarding
-                // completion; returning crew get it from the What's-New close
-                // hook. Fresh test boots carry no wnSeen stamp, so they never
-                // arm it (docs/FEATURE_TOUR.md).
-                setTimeout(() => {
-                    if (!caSpotFresh) return;
-                    try { if (localStorage.getItem('crewAssist.spotMainSeen')) return; } catch (e) {}
-                    if (typeof caSpotStart === 'function') caSpotStart('main');
-                }, 1200);
+            // v1.49.1 (owner order): the spotlight walks FIRST — before the
+            // What's-New sheet, before the greeting — and for EVERY crew,
+            // new and returning alike. Only a walk carried to its Done (or
+            // a welcome-restore) stamps the once-flag; a skipped walk
+            // returns on the next app open. When the walk ends, the
+            // What's-New sheet (if one is due) takes the stage, and the
+            // greeting types only once it closes (docs/FEATURE_TOUR.md).
+            const startChat = () => { initChat(); };
+            const afterTour = () => {
+                if (whatsNewWillShow()) {
+                    whatsNewOnClosed = startChat;
+                    maybeWhatsNewOverlay();
+                } else {
+                    startChat();
+                }
             };
-            if (whatsNewWillShow()) {
-                whatsNewOnClosed = startChat;
-                maybeWhatsNewOverlay();
+            if (typeof caSpotStart === 'function' && typeof caSpotOnEnded === 'function' && !caSpotSeen()) {
+                caSpotOnEnded(afterTour);
+                if (!caSpotStart('main')) { caSpotOnEnded(null); afterTour(); }
             } else {
-                startChat();
+                afterTour();
             }
         }
 
@@ -5091,10 +5098,6 @@
         }
 
         let whatsNewOnClosed = null;
-        // v1.49.0: the spotlight tour's arm flag — set by onboarding
-        // completion or the What's-New close hook; consumed (and never
-        // re-armed) by the startChat slot above.
-        let caSpotFresh = false;
 
         // v1.35.0: one renderer for both surfaces — the What's New delta
         // and the Settings changelog. Newest version first, a header above
@@ -5359,18 +5362,6 @@
             const cb = whatsNewOnClosed;
             whatsNewOnClosed = null;
             if (cb) cb();
-            // v1.49.0: returning crew meet the new release through this
-            // sheet — its close is the spotlight tour's second door. Only
-            // when the welcome chat was actually held (cb) AND the device
-            // already carried a What's-New stamp (read here, at close: a
-            // returning device's stamp predates this page load, while a
-            // fresh install or test boot that never stamped one stays
-            // quiet): arm the tour and let the greeting settle first.
-            // Devices with What's-New suppressed meet the tours in
-            // Settings only.
-            if (cb && !caSpotFresh) {
-                try { if (localStorage.getItem('crewAssist.wnSeen')) caSpotFresh = true; } catch (e) {}
-            }
         }
 
         // --- Chat Logic ---
@@ -5576,6 +5567,9 @@
         }
 
         function jumpChatToBottom() {
+            // v1.49.1 (owner order): while the spotlight runs, the tour owns
+            // the stage — no chat scroll automation may move under the veil.
+            if (document.documentElement.classList.contains('ca-spot-on')) return;
             const chatContainer = document.getElementById('chat-container');
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: 'smooth' });
         }
@@ -5583,6 +5577,10 @@
         function scrollToBottomNow(behavior, force) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer) return;
+            // v1.49.1 (owner order): while the spotlight runs, the tour owns
+            // the stage — the chat's autoscroll must not yank the thread
+            // (and the lit target) back to the bottom mid-walk.
+            if (document.documentElement.classList.contains('ca-spot-on')) return;
             if (!force && isChatScrollLocked()) return;
             chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: behavior || 'auto' });
             updateScrollBottomBtn();
@@ -5597,9 +5595,11 @@
         // Eased scroll driven by direct scrollTop writes. iOS Safari silently
         // cancels native scrollTo({behavior:'smooth'}) while layout/transform is
         // still settling, so we animate the value ourselves instead.
+        // v1.49.1: dead while the spotlight runs — the tour owns the stage.
         function easeChatScrollTo(top, dur) {
             const el = document.getElementById('chat-container');
             if (!el) return;
+            if (document.documentElement.classList.contains('ca-spot-on')) return;
             const start = el.scrollTop;
             const delta = top - start;
             if (Math.abs(delta) < 1) { el.scrollTop = top; updateScrollBottomBtn(); return; }
@@ -5614,9 +5614,11 @@
         }
 
         // One pass: put the top of `el` at the top of the chat area.
+        // v1.49.1: dead while the spotlight runs — the tour owns the stage.
         function scrollChatToElNow(el, behavior) {
             const chatContainer = document.getElementById('chat-container');
             if (!chatContainer || !el) return;
+            if (document.documentElement.classList.contains('ca-spot-on')) return;
             const cRect = chatContainer.getBoundingClientRect();
             const eRect = el.getBoundingClientRect();
             const top = Math.max(0, chatContainer.scrollTop + (eRect.top - cRect.top) - 12);
@@ -5648,6 +5650,10 @@
             const isCard = !!(el && el.querySelector && (el.querySelector('[data-calc-card]') || el.querySelector('[id^="fv-mode-"]') || el.querySelector('[data-ca-help-card]')));
             let tries = 0;
             const tick = () => {
+                // v1.49.1: the card top-align ticker stands down the moment
+                // the spotlight takes the stage (its 2s of retries used to
+                // yank the lit target out from under the ring).
+                if (document.documentElement.classList.contains('ca-spot-on')) return;
                 const hgt = el ? (el.offsetHeight || el.getBoundingClientRect().height) : 0;
                 const tall = isCard || (el && hgt > chatContainer.clientHeight);
                 // A typing indicator means the conversation has moved on:
@@ -22595,7 +22601,7 @@ SLOT|Special Lve others`;
     </script>
     <script>
         // ==========================================
-        // SPOTLIGHT FEATURE TOUR (v1.49.0)
+        // SPOTLIGHT FEATURE TOUR (v1.49.0; firing and completion v1.49.1)
         // One lit target, one tooltip, one button at a time. The veil blocks
         // every tap: targets are SHOWN, never pressed — the tooltip is the
         // only interactive surface (Next / Back / Skip). The copy is the
@@ -22611,9 +22617,18 @@ SLOT|Special Lve others`;
         //  - `world`/`before` set the WORLD, idempotently — every step runs
         //    one before the ring is placed, so Back re-runs the prior
         //    step's world and the stage is always right without diffing.
-        //  - The tooltip never clips the viewport: it flips above/below,
-        //    clamps to 12px margins, and its width is capped at 300px by
-        //    CSS (the real-Chromium geometry pin lives in the smoke suite).
+        //  - The lit target FITS the viewport (v1.49.1, owner order): it is
+        //    scrolled fully into view and never sits behind an edge, and the
+        //    tooltip never clips (flip above/below, 12px margins, 300px cap
+        //    by CSS) nor parks on top of the target. The real-Chromium
+        //    geometry pin lives in the smoke suite.
+        //  - The copy may carry **bold** markers; they render as bold spans
+        //    through DOM APIs — never raw markup (v1.49.1).
+        //  - Firing (v1.49.1, owner order): the main walk fires at the chat
+        //    screen for EVERY crew, before the What's-New sheet and the
+        //    greeting; its end hands the stage to the sheet. Only Done
+        //    completes it — Skip and Escape leave the once-flag unstamped
+        //    and the walk returns next app open. Settings replays forever.
         //  - Escape ends the walk (a skip); Tab is trapped in the tooltip.
         //  - Nothing saved is touched. Tours that need a prop build it
         //    through the app's own real paths (the manual-cards tour leaves
@@ -22621,7 +22636,7 @@ SLOT|Special Lve others`;
         //    opened stay open when it ends — the crew explores from there.
         // ==========================================
 
-        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null };
+        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, onEnd: null };
         var caSpotBusy = false;
 
         function caSpotSeen() {
@@ -22629,6 +22644,11 @@ SLOT|Special Lve others`;
         }
         function caSpotMarkSeen() {
             try { localStorage.setItem('crewAssist.spotMainSeen', '1'); } catch (e) {}
+        }
+        // v1.49.1: the boot flow (showMain) hands the stage here — the
+        // What's-New sheet and the greeting wait until the walk ends.
+        function caSpotOnEnded(fn) {
+            caSpot.onEnd = (typeof fn === 'function') ? fn : null;
         }
 
         // --- target resolution -------------------------------------------
@@ -22640,9 +22660,12 @@ SLOT|Special Lve others`;
         }
         // The `.hidden` walk: honest in jsdom (no layout there) and in the
         // browser alike — anything hidden up the chain hides the target.
+        // v1.49.1: the app's sheets close by TRANSLATING off-screen
+        // (translate-y-full) without carrying .hidden — a closed sheet's
+        // innards must not read as spotlightable.
         function caSpotShown(el) {
             for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
-                if (n.classList && n.classList.contains('hidden')) return false;
+                if (n.classList && (n.classList.contains('hidden') || n.classList.contains('translate-y-full'))) return false;
             }
             return true;
         }
@@ -22715,24 +22738,24 @@ SLOT|Special Lve others`;
                 label: 'Main screen',
                 world: caSpotMainWorld,
                 steps: [
-                    { sel: '#chat-input', title: 'Talk to me', line: 'Ask me anything about your flights — this is where we talk.' },
-                    { sel: '#btn-roster', title: 'Your roster goes here', line: 'Attach the Crew Roster PDF and I read every flight off it for you.' },
-                    { sel: '#action-chips', title: 'Shortcuts, one tap', line: 'The chips ask the common questions for you — allowance, earnings, menus, print.' },
-                    { sel: '#btn-roster-cal', title: 'Your flying calendar', line: 'Every flight lands on the calendar, with your records and stats behind it.' },
-                    { sel: '#btn-theme', title: 'Day or night', line: 'Tap any time to switch between light and dark.' },
-                    { sel: '#btn-settings', title: 'Everything lives here', line: 'Your profile, your data, and the deeper feature tours — all in Settings.' },
-                    { sel: '#btn-reset', title: 'Clean slate', line: 'Two taps clear the conversation — your saved data is never touched.' }
+                    { sel: '#chat-input', title: 'At your service', line: 'Ask anything about your flights, or type **help** / **?** for quick commands.' },
+                    { sel: '#btn-roster', title: 'Your roster goes here', line: 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.' },
+                    { sel: '#action-chips', title: 'One-tap shortcuts', line: 'Instant answers for allowances, earnings, inflight menus, and menu prints.' },
+                    { sel: '#btn-roster-cal', title: 'Your flying calendar', line: 'Access your full schedule, flight records, and personal crew stats in one place.' },
+                    { sel: '#btn-theme', title: 'Theme switcher', line: 'Tap anytime to switch seamlessly between light and dark theme.' },
+                    { sel: '#btn-settings', title: 'Your settings and profile', line: 'Access profile details, manage your saved data, or replay feature tours anytime.' },
+                    { sel: '#btn-reset', title: 'Clean slate', line: 'Double-tap to clear your screen. Your saved data remains untouched.' }
                 ]
             },
             roster: {
                 label: 'Roster import',
                 world: caSpotMainWorld,
                 steps: [
-                    { sel: '#btn-roster', title: 'Start with the PDF', line: 'The paperclip takes your Crew Roster Report exactly as the crew portal prints it.' },
-                    { sel: '#chat-container', title: 'I read every line', line: 'Flights, dates, sectors and report times — nothing typed by hand.' },
-                    { sel: '#btn-roster-cal', title: 'The app fills itself', line: 'The calendar, the trip bar, and the calculator all light up.' },
-                    { sel: '#btn-roster', title: 'Once a month', line: 'Re-attach each new roster drop and the newest flights take over.' },
-                    { sel: '#chat-container', title: 'Honest when unsure', line: 'If a page doesn\u2019t look like a roster, I say so — never a guess.' }
+                    { sel: '#btn-roster', title: 'Start with your Roster Report', line: 'The paperclip takes your PDF exactly as downloaded from your CrewApp.' },
+                    { sel: '#btn-roster', title: 'I read every line', line: 'Flights, dates, sectors, and report times are extracted automatically with zero typing required.' },
+                    { sel: '#btn-roster-cal', title: 'The app fills itself', line: 'Your calendar, trip bar, and allowance calculator all light up instantly with the data.' },
+                    { sel: '#btn-roster', title: 'Monthly roster or changes', line: 'Re-attach anytime your monthly roster or there are changes to your roster, and your schedule updates seamlessly.' },
+                    { sel: '#btn-roster', title: 'Honest when unsure', line: 'If a document isn\u2019t recognized as a valid roster, I\u2019ll let you know\u2014never a guess.' }
                 ]
             },
             manual: {
@@ -22740,11 +22763,14 @@ SLOT|Special Lve others`;
                 world: caSpotSettingsWorld,
                 steps: [
                     { sel: '#calcui-pill-manual', title: 'No roster? No problem', line: 'Add a card by hand when the trip isn\u2019t on a PDF.' },
-                    { sel: () => caSpotCardEl(''), title: 'Fill the flight', line: 'Route, date and times — the card matches the roster\u2019s own fields.', before: caSpotCardWorld },
+                    // v1.49.1: the whole-card rings retired — the ring frames
+                    // the lit PART of the card (the fields, the buttons, the
+                    // masthead), never the 700px bubble itself.
+                    { sel: () => caSpotCardEl('-ifa-fn1') || caSpotCardEl('-ifa-wrap'), title: 'Fill the flight', line: 'Route, date and times — the card matches the roster\u2019s own fields.', before: caSpotCardWorld },
                     { sel: () => caSpotCardEl('-btn-calc'), title: 'One tap, priced', line: 'Calculate works the card out against your rank and rate.', before: caSpotCardWorld },
-                    { sel: () => { const b = document.querySelector('.roster-calc-all-btn'); return (b && caSpotShown(b)) ? b : caSpotCardEl(''); }, title: 'The whole batch', line: 'Calculate-all totals everything together, grouped by month.', before: caSpotCardWorld },
+                    { sel: () => { const b = document.querySelector('.roster-calc-all-btn'); return (b && caSpotShown(b)) ? b : null; }, title: 'The whole batch', line: 'Calculate-all totals everything together, grouped by month.', before: caSpotCardWorld },
                     { sel: () => caSpotCardEl('-ifa-trip-route') || caSpotCardEl('-ifa-wrap'), title: 'Allowances included', line: 'IFA and LMA price out beside the sectors in the trip bar.', before: caSpotCardWorld },
-                    { sel: () => caSpotCardEl(''), title: 'Save it or undo', line: 'Confirm files the trip into your earnings — undo takes it right back out.', before: caSpotCardWorld }
+                    { sel: () => { const w = caSpotCardEl(''); return (w && w.querySelector('.ca-card-header')) || w; }, title: 'Save it or undo', line: 'Confirm files the trip into your earnings — undo takes it right back out.', before: caSpotCardWorld }
                 ]
             },
             menus: {
@@ -22752,10 +22778,14 @@ SLOT|Special Lve others`;
                 world: caSpotMainWorld,
                 steps: [
                     { sel: '#chat-input', title: 'Just ask', line: 'Type a flight and a date — sq802 menu 17 oct — and I fetch the menus.' },
-                    { sel: () => caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'The viewer', line: 'Courses in service order, exactly as the galley works them.', before: caSpotMenuWorld },
-                    { sel: () => caSpotVis('#menu-cabin-wrap') || caSpotVis('#menu-cabin-label') || caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Pick your cabin', line: 'The switcher jumps between the cabins on your flight.', before: caSpotMenuWorld },
-                    { sel: () => caSpotVis('#btn-menu-to-print') || caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Print-ready', line: 'Full sheet or compact — both lay out for the galley printer.', before: caSpotMenuWorld },
-                    { sel: () => caSpotVis('#menu-sheet') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Saved on your phone', line: 'Menus you\u2019ve opened stay readable offline, no signal needed.', before: caSpotMenuWorld },
+                    // v1.49.1: the whole-sheet targets retired (the ring must
+                    // frame a lit TARGET, not the page) — tight viewer
+                    // elements first, the menus chip as the honest fallback
+                    // on a device with no saved menu.
+                    { sel: () => caSpotVis('#menu-hero-content') || caSpotVis('#btn-menu-cycle') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'The viewer', line: 'Courses in service order, exactly as the galley works them.', before: caSpotMenuWorld },
+                    { sel: () => caSpotVis('#menu-cabin-wrap') || caSpotVis('#menu-cabin-label') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Pick your cabin', line: 'The switcher jumps between the cabins on your flight.', before: caSpotMenuWorld },
+                    { sel: () => caSpotVis('#btn-menu-to-print') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Print-ready', line: 'Full sheet or compact — both lay out for the galley printer.', before: caSpotMenuWorld },
+                    { sel: () => caSpotVis('#btn-menu-cycle') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Saved on your phone', line: 'Menus you\u2019ve opened stay readable offline, no signal needed.', before: caSpotMenuWorld },
                     { sel: '#chat-input', title: 'Speak naturally', line: 'jcl ycl menu sq802 — name the cabins you want, in your order.' }
                 ]
             },
@@ -22763,7 +22793,7 @@ SLOT|Special Lve others`;
                 label: 'Earnings',
                 world: caSpotEarningsWorld,
                 steps: [
-                    { sel: '#ca-arch-sheet', title: 'This is your money page', line: 'Every trip you save adds up here, month by month.' },
+                    { sel: () => caSpotVis('#ca-arch-sheet h3') || caSpotVis('#ca-arch-sheet'), title: 'This is your money page', line: 'Every trip you save adds up here, month by month.' },
                     { sel: () => caSpotVis('.ca-arch-group-head') || caSpotVis('#ca-arch-list'), title: 'One month, one card', line: 'Each card is a month\u2019s earnings — tap it to open the trips.' },
                     { sel: () => caSpotVis('#ca-arch-summary .ca-arch-segtrack') || caSpotVis('#ca-arch-summary'), title: 'Two ways to read it', line: 'The lens switches between your salary take-home and your COP sectors.' },
                     { sel: '#ca-arch-summary', title: 'The honest breakdown', line: 'Gross, CPF, your overseas expenses, and what actually lands.' },
@@ -22787,7 +22817,7 @@ SLOT|Special Lve others`;
                 label: 'Flight Stats',
                 world: caSpotPodWorld,
                 steps: [
-                    { sel: '#ca-rc-pod-sheet', title: 'Your passport', line: 'The records page tallies everything — flights, hours, stations.' },
+                    { sel: () => caSpotVis('#ca-rc-pod-sheet h3') || caSpotVis('#ca-rc-pod-sheet'), title: 'Your passport', line: 'The records page tallies everything — flights, hours, stations.' },
                     { sel: '#ca-rc-pod-herowrap', title: 'The hero card', line: 'Flight time, layover days, top station — your logbook in five rows.' },
                     { sel: () => caSpotVis('.ca-rc-pod-grid') || caSpotVis('#ca-rc-pod-body'), title: 'The stats podium', line: 'Your most-visited stations and longest flights, ranked.' },
                     { sel: () => caSpotVis('#ca-rc-pod-years') || caSpotVis('#ca-rc-pod-tabs-wrap') || caSpotVis('#ca-rc-pod-body'), title: 'Slice it your way', line: 'The year pills and duty tabs filter the podium to any slice.' },
@@ -22830,7 +22860,7 @@ SLOT|Special Lve others`;
         function caSpotStart(id) {
             const tour = CA_SPOT_TOURS[id];
             if (!tour || !tour.steps || !tour.steps.length) return false;
-            if (caSpot.on) caSpotEnd();   // a tour never stacks on a tour
+            if (caSpot.on) { caSpot.onEnd = null; caSpotEnd(); }   // a tour never stacks on a tour
             caSpot.on = true;
             caSpot.id = id;
             caSpot.tour = tour;
@@ -22851,7 +22881,10 @@ SLOT|Special Lve others`;
                 const tour = caSpot.tour;
                 let idx = caSpot.idx + delta;
                 if (idx < 0) idx = 0;
-                if (idx >= tour.steps.length) { caSpotEnd(); return; }
+                // v1.49.1 (owner order): Next on the last step reads Done —
+                // the ONLY way a walk completes. Skip and Escape end it
+                // without completing, so the main tour returns next open.
+                if (idx >= tour.steps.length) { caSpotEnd(true); return; }
                 caSpot.idx = idx;
                 const step = tour.steps[idx];
                 const tip = document.getElementById('ca-spot-tip');
@@ -22865,6 +22898,28 @@ SLOT|Special Lve others`;
             } finally {
                 if (gen === caSpot.gen) caSpotBusy = false;
             }
+        }
+
+        // Center the element in the viewport by scrolling the nearest
+        // scrollable ancestor (fallback: the page) — no-op when the target
+        // already clears both edges by CA_SPOT_EDGE px. Guarded: in jsdom
+        // there is no layout, so every rect is 0 and this never scrolls.
+        var CA_SPOT_EDGE = 10;
+        function caSpotFitViewport(el) {
+            const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+            if (!el || !vh) return;
+            const r = el.getBoundingClientRect();
+            // no layout (jsdom): every rect is 0x0 at 0,0 — nothing to fit
+            if (!r.width && !r.height) return;
+            if (r.top >= CA_SPOT_EDGE && r.bottom <= vh - CA_SPOT_EDGE) return;
+            const dy = Math.round((r.top + r.bottom) / 2 - vh / 2);
+            if (!dy) return;
+            let n = el.parentElement;
+            while (n && n.nodeType === 1 && n !== document.body) {
+                if (n.scrollHeight > n.clientHeight + 1) { n.scrollTop += dy; return; }
+                n = n.parentElement;
+            }
+            try { window.scrollBy(0, dy); } catch (e) {}
         }
 
         function caSpotRingTo(rect) {
@@ -22890,14 +22945,30 @@ SLOT|Special Lve others`;
                 el = caSpotVis(step.sel);
             }
             if (!el) { caSpotEnd(); return; }   // nothing left to light
-            try { if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center' }); } catch (e) {}
+            // 'instant': never a smooth glide — the ring must measure the
+            // target where it lands, not mid-flight (v1.49.1).
+            try { if (typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center', behavior: 'instant' }); } catch (e) {}
             el = caSpotVis(step.sel);           // re-read after the scroll
+            if (!el) { caSpotEnd(); return; }
+            // v1.49.1 (owner order): the lit target FITS the viewport —
+            // fully visible, never behind an edge and never covered by the
+            // tooltip. scrollIntoView centers what the scroll chain allows;
+            // when a clamped container still leaves the target at an edge,
+            // this nudge scrolls the nearest scrollable to center it.
+            try { caSpotFitViewport(el); } catch (e) {}
+            el = caSpotVis(step.sel);
             if (!el) { caSpotEnd(); return; }
             const r = el.getBoundingClientRect();
             const p = 6;                        // breathing room around the target
             const rect = { left: r.left - p, top: r.top - p, width: r.width + p * 2, height: r.height + p * 2 };
             caSpotRingTo(rect);
             caSpotBuildTip(step, idx, tour.steps.length, rect);
+            // v1.49.1: one deferred re-assert — after the ring's glide and
+            // any late scroll settle, re-place both from the target's FINAL
+            // rect. Heals every placement race in one stroke.
+            setTimeout(() => {
+                if (caSpot.on && caSpot.tour && caSpot.tour.steps[caSpot.idx] === step) caSpotReflow();
+            }, 350);
         }
 
         // The card is built with DOM APIs and textContent — the owner's
@@ -22923,7 +22994,21 @@ SLOT|Special Lve others`;
 
             const line = document.createElement('p');
             line.className = 'text-sm leading-relaxed mb-3.5';
-            line.textContent = step.line;
+            // v1.49.1: the owner's copy pack carries **bold** markers —
+            // they render as bold spans, still built by DOM APIs so the
+            // text renders word-for-word, never as markup.
+            String(step.line || '').split(/(\*\*[^*]+\*\*)/g).forEach((seg) => {
+                if (!seg) return;
+                const m = /^\*\*([^*]+)\*\*$/.exec(seg);
+                if (m) {
+                    const b = document.createElement('b');
+                    b.className = 'font-bold';
+                    b.textContent = m[1];
+                    line.appendChild(b);
+                } else {
+                    line.appendChild(document.createTextNode(seg));
+                }
+            });
             card.appendChild(line);
 
             const row = document.createElement('div');
@@ -22962,6 +23047,9 @@ SLOT|Special Lve others`;
 
         // The never-clip contract: flip above/below, clamp to 12px margins.
         // The width itself is capped at min(300px, 100vw - 24px) by CSS.
+        // v1.49.1: when neither side fully fits (a viewport shorter than
+        // target + tooltip), the tip takes the side with more room — it
+        // edges toward the target rather than parking on top of it.
         function caSpotPlace(tip, rect) {
             const m = 12;
             const vw = window.innerWidth || document.documentElement.clientWidth || 0;
@@ -22971,7 +23059,12 @@ SLOT|Special Lve others`;
             let top;
             if (rect.top + rect.height + th + 10 <= vh - m) top = rect.top + rect.height + 10;
             else if (rect.top - th - 10 >= m) top = rect.top - th - 10;
-            else top = Math.max(m, Math.min((vh - th) / 2, vh - th - m));
+            else {
+                const below = (vh - m) - (rect.top + rect.height);
+                const above = rect.top - m;
+                top = (below >= above) ? Math.max(m, rect.top + rect.height + 10) : (rect.top - th - 10);
+                top = Math.max(m, Math.min(top, vh - th - m));
+            }
             let left = rect.left + (rect.width / 2) - (tw / 2);
             if (left < m) left = m;
             if (left + tw > vw - m) left = vw - tw - m;
@@ -22982,7 +23075,7 @@ SLOT|Special Lve others`;
             tip.style.top = Math.round(top) + 'px';
         }
 
-        function caSpotEnd() {
+        function caSpotEnd(completed) {
             if (!caSpot.on) return;
             caSpot.on = false;
             caSpot.gen++;
@@ -22990,12 +23083,19 @@ SLOT|Special Lve others`;
             document.documentElement.classList.remove('ca-spot-on');
             const tip = document.getElementById('ca-spot-tip');
             if (tip) tip.innerHTML = '';
-            // Done, Skip or Escape on the MAIN tour: it shows once. The
-            // feature replays in Settings forever either way.
-            if (caSpot.id === 'main') caSpotMarkSeen();
+            // v1.49.1 (owner order): ONLY Done completes the walk. Skip and
+            // Escape leave the once-flag unstamped — the main tour fires
+            // again on the next app open until the crew carries it to the
+            // end. The feature replays in Settings forever either way.
+            if (caSpot.id === 'main' && completed === true) caSpotMarkSeen();
+            const cb = caSpot.onEnd || null;
+            caSpot.onEnd = null;
             caSpot.id = null;
             caSpot.tour = null;
             caSpot.idx = -1;
+            // The boot flow's handoff fires after teardown, off the critical
+            // path of the click that ended the walk.
+            if (cb) { try { cb(); } catch (e) {} }
         }
 
         // --- reposition: resize, scroll (capture — sheets scroll inside),
