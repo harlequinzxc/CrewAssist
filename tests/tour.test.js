@@ -52,7 +52,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     } });
     const pack = [
       // main + roster: the owner's v1.49.2 part-2 copy pack, ALL of it
-      ['main', 0, '**At your service**', 'Ask about your flight or type "help" / "?" for quick commands.'],
+      ['main', 0, '**At Your Service**', 'Ask about your flight or type "help" / "?" for quick commands.'],
       ['main', 1, '**Activate Your Dashboard**', 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.'],
       ['main', 2, '**Quick-Access Commands**', 'Instant answers for allowances, earnings, inflight menus, and menu prints.'],
       ['main', 3, '**Track Your Flights**', 'Access your full schedule, flight records, and personal crew stats in one place.'],
@@ -101,21 +101,26 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(d.documentElement.classList.contains('ca-spot-on'), 'ca-spot-on lights the chrome class');
     R.ok(d.getElementById('ca-spot-veil') && d.getElementById('ca-spot-ring') && d.getElementById('ca-spot-tip'), 'veil, ring and tooltip exist');
     await wait(600);
-    R.ok(tipText(d).indexOf('At your service') !== -1, 'step 1 titles the chat bar');
+    R.ok(tipText(d).indexOf('At Your Service') !== -1, 'step 1 titles the chat bar (title case, v1.49.3)');
     // v1.49.2: the **bold** markers ride the TITLE now (the owner's part-2
     // pack bolds its titles) — they render as bold spans, never raw text
     const bolds = d.querySelectorAll('#ca-spot-tip b');
     R.eq(bolds.length, 1, 'step 1\u2019s title carries one bold phrase');
-    R.eq(bolds[0].textContent, 'At your service', 'the title renders bold');
+    R.eq(bolds[0].textContent, 'At Your Service', 'the title renders bold');
     R.ok(tipText(d).indexOf('Ask about your flight or type "help" / "?" for quick commands.') !== -1, 'the line reads word-for-word');
     R.ok(tipText(d).indexOf('**') === -1, 'no marker asterisks leak into the rendered copy');
     R.ok(tipText(d).indexOf('1 of 7') !== -1, 'the counter reads 1 of 7');
     R.ok(!d.getElementById('ca-spot-back'), 'Back is hidden on step 1');
     R.ok(d.getElementById('ca-spot-next') && d.getElementById('ca-spot-skip'), 'Next and Skip ride every step');
+    R.eq([...d.querySelectorAll('#ca-spot-tip button')].map((b) => b.id).join(','), 'ca-spot-skip,ca-spot-next', 'step 1 orders the buttons Skip, Next \u2014 with the spacer between, Skip never hugs Next');
     d.getElementById('ca-spot-next').click();
     await wait(600);
     R.ok(tipText(d).indexOf('2 of 7') !== -1, 'Next advances to 2 of 7');
     R.ok(!!d.getElementById('ca-spot-back'), 'Back shows from step 2 on');
+    // v1.49.3 (owner order): Skip sits FAR from Next — the row reads
+    // Skip | spacer | Back, Next (Back only past step 1)
+    const rowBtns = () => [...d.querySelectorAll('#ca-spot-tip button')].map((b) => b.id);
+    R.eq(rowBtns().join(','), 'ca-spot-skip,ca-spot-back,ca-spot-next', 'step 2+ orders the buttons Skip, Back, Next \u2014 the destructive exit is pinned left');
     d.getElementById('ca-spot-back').click();
     await wait(600);
     R.ok(tipText(d).indexOf('1 of 7') !== -1, 'Back re-runs the prior step\u2019s world');
@@ -343,7 +348,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(src.indexOf('function caSpotOnEnded') >= 0, 'the boot flow hands the stage through onEnd');
     R.ok(/function showMain\(\) \{[\s\S]{0,1200}caSpotOnEnded\(afterTour\)/.test(src), 'showMain wires the sheet/greeting handoff to the walk\u2019s end');
     R.ok(src.indexOf('caSpotFitViewport') >= 0 && src.indexOf('CA_SPOT_EDGE = 10') >= 0, 'the lit target is nudged fully into view (the owner\u2019s viewport-fit order)');
-    R.ok(src.indexOf('rgba(4, 7, 15, .8)') >= 0, 'the scrim darkens to .8');
+    R.ok(src.indexOf('rgba(4, 7, 15, .85)') >= 0, 'the scrim darkens to .85 (v1.49.3, owner order: a little more)');
     R.ok(src.indexOf('split(/(\\*\\*[^*]+\\*\\*)/g)') >= 0, 'the copy pack\u2019s **bold** markers render as bold spans');
   }
 

@@ -1370,15 +1370,16 @@
            only interactive surface (Next / Back / Skip). */
         #ca-spot-veil { position: fixed; inset: 0; z-index: 95; visibility: hidden; }
         #ca-spot-ring { position: fixed; z-index: 96; border-radius: 14px; pointer-events: none;
-            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .8);
+            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .85);
             transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease; }
-        /* v1.49.1 (owner order): the scrim sits at .8 — the lit target and
-           the tooltip stand out hard against it. v1.49.2 (owner order):
-           the ring GLIDES again on every Next — the v1.49.1 jump was a
-           rig workaround the owner never asked for; the smoke now waits
-           for the ring to ARRIVE (rendered rect == inline style) before
-           it measures, so the flourish and the never-cover guarantee
-           both hold. */
+        /* v1.49.1: the scrim sits dark (owner order: the lit target and the
+           tooltip must stand out hard); v1.49.3 nudges it darker still
+           (.8 → .85, owner order: a little more, so the spotlight reads
+           even more obvious). v1.49.2 (owner order): the ring GLIDES again
+           on every Next — the v1.49.1 jump was a rig workaround the owner
+           never asked for; the smoke now waits for the ring to ARRIVE
+           (rendered rect == inline style) before it measures, so the
+           flourish and the never-cover guarantee both hold. */
         #ca-spot-tip { position: fixed; z-index: 97; width: min(300px, calc(100vw - 24px)); }
         html.ca-spot-on #ca-spot-veil { visibility: visible; }
         #ca-spot-ring, #ca-spot-tip { visibility: hidden; }
@@ -3312,7 +3313,7 @@
             }
         }
 
-        var APP_VERSION = '1.49.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.49.3'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3334,6 +3335,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.49.3', d: '2026-11-06', items: [
+                { c: 'fix', t: 'Skip moves away from Next \u2014 no accidental taps end the walk.' },
+                { c: 'imp', t: 'The spotlight veil darkens a little more \u2014 it reads harder.' },
+                { c: 'imp', t: 'The tour\u2019s first title reads At Your Service.' }
+            ] },
             { v: '1.49.2', d: '2026-11-06', items: [
                 { c: 'fix', t: 'The walk returns for existing crew \u2014 the stale once-flag is wiped.' },
                 { c: 'imp', t: 'The gold ring glides between steps \u2014 even with reduced motion on.' },
@@ -22773,7 +22779,7 @@ SLOT|Special Lve others`;
                 label: 'Main screen',
                 world: caSpotMainWorld,
                 steps: [
-                    { sel: '#chat-input', title: '**At your service**', line: 'Ask about your flight or type "help" / "?" for quick commands.' },
+                    { sel: '#chat-input', title: '**At Your Service**', line: 'Ask about your flight or type "help" / "?" for quick commands.' },
                     { sel: '#btn-roster', title: '**Activate Your Dashboard**', line: 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.' },
                     { sel: '#action-chips', title: '**Quick-Access Commands**', line: 'Instant answers for allowances, earnings, inflight menus, and menu prints.' },
                     { sel: '#btn-roster-cal', title: '**Track Your Flights**', line: 'Access your full schedule, flight records, and personal crew stats in one place.' },
@@ -23074,19 +23080,24 @@ SLOT|Special Lve others`;
                 return b;
             };
             const ghost = 'px-4 py-2 rounded-full text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors';
+            // v1.49.3 (owner order): Skip sits FAR from Next — it led the
+            // right side once and an accidental thumb could end the walk.
+            // The order is Skip | spacer | Back, Next (Back only past
+            // step 1): the destructive exit is pinned to the far left,
+            // the safe pair rides the right.
+            const skip = mkBtn('Skip', ghost);
+            skip.id = 'ca-spot-skip';
+            skip.addEventListener('click', () => caSpotEnd());
+            row.appendChild(skip);
+            const spacer = document.createElement('span');
+            spacer.className = 'flex-1';
+            row.appendChild(spacer);
             if (idx > 0) {
                 const back = mkBtn('Back', ghost);
                 back.id = 'ca-spot-back';
                 back.addEventListener('click', () => caSpotGo(-1));
                 row.appendChild(back);
             }
-            const spacer = document.createElement('span');
-            spacer.className = 'flex-1';
-            row.appendChild(spacer);
-            const skip = mkBtn('Skip', ghost);
-            skip.id = 'ca-spot-skip';
-            skip.addEventListener('click', () => caSpotEnd());
-            row.appendChild(skip);
             const next = mkBtn((idx === n - 1) ? 'Done' : 'Next', 'px-5 py-2 rounded-full text-xs font-extrabold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black');
             next.id = 'ca-spot-next';
             next.addEventListener('click', () => caSpotGo(1));

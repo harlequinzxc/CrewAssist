@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.49.2', 'APP_VERSION is 1.49.2');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.49.2' && e.d === '2026-11-06' && e.items.length === 4 && e.items.filter((i) => i.c === 'fix').length === 1 && e.items.filter((i) => i.c === 'imp').length === 3; }), 'the changelog carries the 1.49.2 entry — one fix and three imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v309'), 'the service-worker cache name is bumped to v309 (the v1.49.2 tour round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.49.3', 'APP_VERSION is 1.49.3');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.49.3' && e.d === '2026-11-06' && e.items.length === 3 && e.items.filter((i) => i.c === 'fix').length === 1 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.49.3 entry — one fix and two imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v310'), 'the service-worker cache name is bumped to v310 (the v1.49.3 tooltip-polish round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,10 +166,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.49.2'; }), 'the What\'s New sheet carries the v1.49.2 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The walk returns for existing crew — the stale once-flag is wiped.') !== -1), 'the What\'s New sheet carries the v1.49.2 stale-flag pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The gold ring glides between steps — even with reduced motion on.') !== -1), 'the What\'s New sheet carries the v1.49.2 ring-glide pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The chat reverts after the walk — no tutorial cards left behind.') !== -1), 'the What\'s New sheet carries the v1.49.2 chat-revert pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.49.3'; }), 'the What\'s New sheet carries the v1.49.3 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Skip moves away from Next — no accidental taps end the walk.') !== -1), 'the What\'s New sheet carries the v1.49.3 button-order pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The spotlight veil darkens a little more — it reads harder.') !== -1), 'the What\'s New sheet carries the v1.49.3 veil pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The tour\u2019s first title reads At Your Service.') !== -1), 'the What\'s New sheet carries the v1.49.3 title-case pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The tour is a spotlight now — short, sharp, skippable.') !== -1), 'the What\'s New sheet carries the v1.49.0 spotlight pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings → Feature tour walks eight features, one tap each.') !== -1), 'the What\'s New sheet carries the v1.49.0 feature-tour door pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The stats tabs roll their numbers like the year pills.') !== -1), 'the What\'s New sheet carries the v1.48.5 flights-pills pointer in the delta');
@@ -431,7 +431,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForFunction(() => document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('settings-backdrop').classList.contains('hidden')), 'the main-screen tour closes Settings first (the owner\u2019s order)');
         await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 5000 });
-        ok(await page.evaluate(() => { const b = document.querySelectorAll('#ca-spot-tip b'); return b.length === 1 && b[0].textContent === 'At your service'; }), 'v1.49.2: the bold marker rides the TITLE now — one bold phrase, rendered bold in the real browser');
+        ok(await page.evaluate(() => { const b = document.querySelectorAll('#ca-spot-tip b'); return b.length === 1 && b[0].textContent === 'At Your Service'; }), 'v1.49.2: the bold marker rides the TITLE now (title case since v1.49.3) — one bold phrase, rendered bold in the real browser');
         // v1.49.2: the ring GLIDES again (owner order) — its inline style IS
         // its destination. Every wait is CDP-polled from the rig
         // (waitForFunction), never an in-page interval: this deep into the
@@ -618,7 +618,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.click('#whatsnew-close');
         await sleep(300);
         // leave the device quiet for the sections below (the do-not-show door)
-        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.49.2'); localStorage.setItem('crewAssist.wnSeen', '1.49.2'); });
+        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.49.3'); localStorage.setItem('crewAssist.wnSeen', '1.49.3'); });
 
         // 7c. v1.45.34 (owner order): the changelog filter chips in the real
         // browser - the compact three-tier framework, and the painted fade.
