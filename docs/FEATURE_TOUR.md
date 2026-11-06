@@ -86,13 +86,21 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
 - **Nothing saved is touched.** Tours that need a prop build it through the
   app's own real paths: the manual-cards tour renders one real calculator
   card (a working prop while the veil is up — Calculate and Confirm go
-  live mid-walk). Sheets a walk opened **stay open** when it ends — the
-  crew explores from the last step's stage.
-- **The chat reverts when the walk ends** (v1.49.2, owner order). The walk
-  snapshots the thread's children and scroll at start; on every end — Done,
-  Skip, Escape, supersede — children it added (the manual tour's calculator
-  card) are removed and the scroll restores. **The chat is never left
-  holding tutorial cards.** Sheets are untouched by this rule.
+  live mid-walk).
+- **The stage reverts when the walk ends** (v1.50.0, owner order — it
+  extends the v1.49.2 chat revert to everything the walk touched). The walk
+  snapshots at start: the chat thread's children and scroll, every sheet's
+  open state (Settings, the earnings archive, the roster calendar, the
+  records pod, the menu viewer) and the calendar's tag chip. On every end —
+  Done, Skip, Escape, supersede — the snapshot restores through the app's
+  own open/close functions: sheets a walk opened close behind it, the tag
+  chip sits as it sat, children the walk added to the thread leave with
+  the veil, and the scroll restores. **The app reads exactly as it did
+  before the walk.** Only Settings can be open at a walk's start (the
+  rows live in it), so a walk launched from a row hands Settings back
+  open; the menu viewer restores closed only (its opener needs a flight,
+  unreachable at walk-start). This supersedes the v1.49.0 "sheets stay
+  open" design.
 - **Copy ships verbatim.** The tooltip builds the title and line through
   DOM APIs — word for word, never as markup. Since v1.49.1 the line may
   carry `**bold**` markers, which render as bold spans (still built by DOM
@@ -108,26 +116,57 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   ring and tooltip from the target's FINAL rect — healing any placement
   race in one stroke.
 
-## The firing doors (v1.49.1, owner order)
+## The invitation (v1.50.0, owner order)
+
+Before the auto-fired main walk, a **prompt card** asks — the invitation
+never ambushes:
+
+- The card (`renderTourPromptModal(onAccept, onSkip)`) renders at the chat
+  screen over the shared scrim token (`--ca-spot-scrim`): a gold **compass**
+  (inline Lucide SVG — circle + polygon `16.24 7.76 14.12 14.12 7.76
+  16.24 9.88 9.88 16.24 7.76`, no icon-loader dependency), the headline
+  **Let’s take a quick tour**, the secondary line **Seven quick steps in
+  under a minute**, a full-width gold **Next**, and a plain-text **Skip**.
+- **Next** walks the main tour (`caSpotStart('main')` + the usual
+  What's-New/greeting handoff). **Skip declines permanently** —
+  `crewAssist.spotMainDeclined = '1'`, separate from completion, surviving
+  content bumps — and the stage moves on (the sheet if due, else the
+  greeting). The tour stays one tap away in Settings either way.
+- **Escape is Skip. Tab is trapped** between the two buttons. **Next takes
+  focus** on open. Teardown removes the nodes AND the document key
+  listener, and is idempotent (an old `#ca-spot-prompt-backdrop` never
+  stacks).
+- The card **fades/scales in and fades out** (opacity .28s; the card
+  springs on `cubic-bezier(.34, 1.56, .64, 1)`) — and these animations are
+  **exempt from reduced motion** like every tour animation (the owner's
+  2026-11-06 order; the ring's glide since v1.49.2).
+- The prompt gates **only** the auto path. Settings rows, the `tour`
+  command and the help card's CTA bypass it and start the walk directly.
+
+## The firing doors (v1.49.1; prompt-first since v1.50.0)
 
 The flow, exactly as the owner drew it:
 
-> app opens → onboarding (if new user) → else chat screen → **tour fires**
-> → tour ends → What's-New bubble → chat message starts firing (the greeting
+> app opens → onboarding (if new user) → else chat screen → **the
+> invitation renders** → Next: the tour fires / Skip: quiet forever →
+> tour ends → What's-New bubble → chat message starts firing (the greeting
 > and the how-can-I-help)
 
-- **Every crew** — new and returning alike — whose `crewAssist.spotMainDone`
-  is unstamped gets the main tour at the chat screen, **before** the
-  What's-New sheet and before the greeting. The walk's end hands the stage
-  to the sheet (if one is due); the greeting types only once it closes.
+- **Every crew** — new and returning alike — whose main walk is neither
+  done (at its current content) nor declined gets the invitation at the
+  chat screen, **before** the What's-New sheet and before the greeting.
+  The walk's end (or the prompt's Skip) hands the stage to the sheet (if
+  one is due); the greeting types only once it closes.
 - **Only Done completes the walk** (owner order). Done — the last step's
-  Next — stamps `crewAssist.spotMainDone`. **Skip and Escape end the walk
-  without completing it: the once-flag stays unstamped and the main tour
-  fires again on the next app open.** The tour retires only when the crew
-  carries it to the end (or restores a backup through the welcome door,
-  which stamps the flag — a restoring user is not a new user).
+  Next — stamps the walk in the per-walk store (below); main also keeps
+  its legacy mirror `crewAssist.spotMainDone` (the earnings-archive pin
+  and the welcome-restore door read it). **Skip and Escape end the walk
+  without completing it: nothing is stamped and the invitation returns on
+  the next app open.** The tour retires only when the crew carries it to
+  the end (or restores a backup through the welcome door, which stamps
+  both keys — a restoring user is not a new user).
 - **Every tour replays forever from Settings** → Feature tour, regardless
-  of the flag. The chat command `tour` and the help card's CTA also start
+  of any key. The chat command `tour` and the help card's CTA also start
   the main tour.
 - **The once-key is `crewAssist.spotMainDone` (v1.49.2).** The
   v1.49.0/1.49.1 key `crewAssist.spotMainSeen` is RETIRED and wiped at
@@ -139,6 +178,32 @@ The flow, exactly as the owner drew it:
   writes the new key. The test harness pre-stamps `spotMainDone` on every
   jsdom boot (test boots are "done" devices); suites that pin the firing
   or the restore doors clear it deliberately in their seeds.
+
+## The per-walk store (v1.50.0, owner order: FULL tracking)
+
+- **`crewAssist.spotDone`** holds a JSON map `{ <id>: <cv> }` — one entry
+  per walk carried to its Done, stamped at the walk's **content version**
+  (the `cv` field on every `CA_SPOT_TOURS` entry: main `1.49.3`, roster
+  `1.49.2`, the rest `1.49.0`). A row reads done when its stored cv
+  **matches** the walk's current cv.
+- **Bump a walk's `cv` by hand when its copy or steps change.** The check
+  retires honestly (the content the crew finished is no longer the content
+  on offer), and for the main walk the invitation re-fires once for
+  everyone — including crew who finished the old version.
+- **The legacy `spotMainDone` migrates on first read**: a device with the
+  mirror and no store entry materializes `main` at the current cv (written
+  at that first read, which lands after any seeded storage at
+  DOMContentLoaded). Existing completions stay quiet — only people who
+  never finished see the invitation. `caSpotMarkDone('main')` writes both
+  keys (the earnings-archive pin and the welcome-restore door read the
+  mirror); every other walk writes the store only.
+- **The Settings rows wear their state** (the trailing slot, where the
+  chevron sat): a gold **circle-check** when the walk is done at its
+  current cv, a quiet hollow **circle** otherwise. `caSpotSyncRowIcons()`
+  rebuilds the slot fresh (lucide replaces the `<i>` with an `<svg>`, so
+  the element is rebuilt, never edited) and runs at every boot and at
+  every walk's end. The declined state shows no icon difference — the row
+  reads not-done, honestly.
 
 ## The eight walks (Settings order; 47 steps)
 
@@ -273,6 +338,26 @@ sheet (owner order). Targets are the Data Management box and its doors.
 | 3 | The Restore backup button (`#btn-backup-restore`) | Settings sheet | **The new phone** — Install the app, skip onboarding, and Restore backup from the same door. |
 | 4 | The Export backup button again (`#btn-backup-export`) | Settings sheet | **Expenses ride along** — Overseas expenses are inside every backup — they show on any device. |
 | 5 | The Data Management box (`#ca-dm-box`) | Settings sheet | **Keep it private** — The file holds your pay data — keep it somewhere only you control. |
+
+## The v1.50.0 round (owner orders, 2026-11-06)
+
+- **The invitation** — a prompt card precedes the auto-fired main walk:
+  the compass, “Let’s take a quick tour”, “Seven quick steps in under a
+  minute”, a full-width gold Next and a plain-text Skip. Next walks; Skip
+  declines **permanently** (`crewAssist.spotMainDeclined` — separate from
+  completion, surviving content bumps); Escape is Skip; Tab is trapped;
+  the tour stays one tap away in Settings regardless.
+- **Per-walk completion, full** — `crewAssist.spotDone` maps each walk to
+  the content version it was finished at; the Settings rows wear a gold
+  circle-check (done) or a hollow circle (not done); a cv bump retires the
+  check and re-invites for main; the legacy `spotMainDone` materializes
+  into the store on first read, so existing completions stay quiet.
+- **The stage reverts at every tour end** — sheets, the calendar's tag
+  chip and the chat all return to their pre-walk state (extends the
+  v1.49.2 chat revert; supersedes the v1.49.0 “sheets stay open” design).
+- **Tour animations are exempt from reduced motion** (owner order) — the
+  ring's glide (since v1.49.2) and now the prompt's fade/scale in and
+  fade out all run regardless of `ca-reduced`.
 
 ## The v1.49.3 round (owner orders, 2026-11-06)
 

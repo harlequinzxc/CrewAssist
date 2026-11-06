@@ -1369,8 +1369,11 @@
            highlighted buttons are shown, never pressed; the tooltip is the
            only interactive surface (Next / Back / Skip). */
         #ca-spot-veil { position: fixed; inset: 0; z-index: 95; visibility: hidden; }
+        /* v1.50.0: one scrim token shared by the ring's 9999px veil and the
+           tour prompt's backdrop — they can never drift apart. */
+        :root { --ca-spot-scrim: rgba(4, 7, 15, .85); }
         #ca-spot-ring { position: fixed; z-index: 96; border-radius: 14px; pointer-events: none;
-            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .85);
+            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px var(--ca-spot-scrim);
             transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease; }
         /* v1.49.1: the scrim sits dark (owner order: the lit target and the
            tooltip must stand out hard); v1.49.3 nudges it darker still
@@ -1385,6 +1388,18 @@
         #ca-spot-ring, #ca-spot-tip { visibility: hidden; }
         html.ca-spot-on #ca-spot-ring, html.ca-spot-on #ca-spot-tip { visibility: visible; }
         html.ca-reduced #ca-spot-tip { transition: none; }
+        /* v1.50.0 (owner order): the TOUR PROMPT — the invitation card that
+           precedes the auto-fired main walk. Fade/scale in, fade out —
+           and NOT gated on ca-reduced: per the owner's 2026-11-06 order,
+           tour animations are EXEMPT from reduced motion (the ring's
+           glide since v1.49.2, the prompt's fade/scale now). */
+        #ca-spot-prompt-backdrop { position: fixed; inset: 0; z-index: 95; display: flex; align-items: center; justify-content: center; padding: 24px;
+            background: var(--ca-spot-scrim); opacity: 0; transition: opacity .28s ease; }
+        #ca-spot-prompt-card { transform: scale(.92); transition: transform .28s cubic-bezier(.34, 1.56, .64, 1); }
+        #ca-spot-prompt-backdrop.ca-prompt-in { opacity: 1; }
+        #ca-spot-prompt-backdrop.ca-prompt-in #ca-spot-prompt-card { transform: scale(1); }
+        #ca-spot-prompt-backdrop.ca-prompt-out { opacity: 0; }
+        #ca-spot-prompt-backdrop.ca-prompt-out #ca-spot-prompt-card { transform: scale(.96); }
         /* v1.49.2 (owner order): the spotlight ring is the ONE reduced-
            motion exception — it glides even under ca-reduced. The tooltip
            carries no transition of its own, so the rule above stays as
@@ -2254,42 +2269,42 @@
                         <button type="button" data-ca-spot="main" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="layout-dashboard" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Main screen</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="roster" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="file-up" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Roster import</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="manual" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="clipboard-pen" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Manual flight cards</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="menus" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="utensils" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Menus &amp; search</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="earnings" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="wallet" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Earnings</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="calendar" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="calendar-days" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Calendar</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="stats" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="trophy" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Flight Stats</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                         <button type="button" data-ca-spot="backup" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
                             <i data-lucide="database-backup" class="w-4 h-4 text-sia-gold shrink-0"></i>
                             <span class="flex flex-col"><span class="text-sm font-bold">Backup &amp; restore</span></span>
-                            <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 ml-auto shrink-0"></i>
+                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                         </button>
                     </div>
                     <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5 mt-3">
@@ -3313,7 +3328,7 @@
             }
         }
 
-        var APP_VERSION = '1.49.3'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.50.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3335,6 +3350,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.50.0', d: '2026-11-06', items: [
+                { c: 'new', t: 'A gentle invitation opens the tour \u2014 Next walks, Skip stays quiet.' },
+                { c: 'new', t: 'Feature tour rows show a check when a walk is completed.' },
+                { c: 'imp', t: 'A walk\u2019s stage reverts when it ends \u2014 sheets, tags and all.' },
+                { c: 'imp', t: 'Tour animations run even with reduced motion on.' }
+            ] },
             { v: '1.49.3', d: '2026-11-06', items: [
                 { c: 'fix', t: 'Skip moves away from Next \u2014 no accidental taps end the walk.' },
                 { c: 'imp', t: 'The spotlight veil darkens a little more \u2014 it reads harder.' },
@@ -4838,8 +4859,13 @@
             document.getElementById('ca-feature-tours').addEventListener('click', (ev) => {
                 const row = ev.target && ev.target.closest ? ev.target.closest('[data-ca-spot]') : null;
                 if (!row) return;
+                // v1.50.0 (owner order: the stage reverts to PRE-TOUR state):
+                // the stage is snapshotted BEFORE this handler closes
+                // Settings, so a walk launched from a row hands the sheet
+                // back open at its end — the crew lands where they tapped.
+                const preStage = (typeof caSpotStageSnap === 'function') ? caSpotStageSnap() : null;
                 closeSettings();
-                if (typeof caSpotStart === 'function') caSpotStart(row.getAttribute('data-ca-spot'));
+                if (typeof caSpotStart === 'function') caSpotStart(row.getAttribute('data-ca-spot'), preStage);
             });
 
             document.getElementById('btn-clear-data').addEventListener('click', () => {
@@ -5076,6 +5102,12 @@
         function showMain() {
             elObView.classList.add('hidden');
             elMainView.classList.remove('hidden');
+            // v1.50.0 (owner order): the Settings rows wear their completion
+            // state — a gold circle-check for a walk done at its current
+            // content, a quiet hollow circle for one not yet carried to its
+            // Done. Synced here on every boot (after any seeded storage has
+            // settled) and again at every walk's end.
+            try { if (typeof caSpotSyncRowIcons === 'function') caSpotSyncRowIcons(); } catch (e) {}
             // v1.49.1 (owner order): the spotlight walks FIRST — before the
             // What's-New sheet, before the greeting — and for EVERY crew,
             // new and returning alike. Only a walk carried to its Done (or
@@ -5083,6 +5115,11 @@
             // returns on the next app open. When the walk ends, the
             // What's-New sheet (if one is due) takes the stage, and the
             // greeting types only once it closes (docs/FEATURE_TOUR.md).
+            // v1.50.0 (owner order): the INVITATION comes first — the
+            // prompt card asks; Next walks, Skip stays quiet forever (the
+            // tour remains one tap away in Settings). It shows only for
+            // crew who never finished this content of the main walk, and
+            // never again once declined.
             const startChat = () => { initChat(); };
             const afterTour = () => {
                 if (whatsNewWillShow()) {
@@ -5092,9 +5129,13 @@
                     startChat();
                 }
             };
-            if (typeof caSpotStart === 'function' && typeof caSpotOnEnded === 'function' && !caSpotSeen()) {
+            const acceptTour = () => {
                 caSpotOnEnded(afterTour);
                 if (!caSpotStart('main')) { caSpotOnEnded(null); afterTour(); }
+            };
+            if (typeof caSpotStart === 'function' && typeof caSpotOnEnded === 'function' && typeof renderTourPromptModal === 'function'
+                && !caSpotWalkDone('main') && !caSpotDeclined()) {
+                renderTourPromptModal(acceptTour, () => { caSpotDecline(); afterTour(); });
             } else {
                 afterTour();
             }
@@ -18275,8 +18316,13 @@ SLOT|Special Lve others`;
                 if (!ok) return;
                 // v1.42.0 hotfix → v1.49.2: someone restoring from the
                 // welcome screen is not a new user — stamp the spotlight
-                // tour as done before the reload.
-                if (opts && opts.fromOnboarding) { try { localStorage.setItem('crewAssist.spotMainDone', '1'); } catch (e) {} }
+                // tour as done before the reload. v1.50.0: the per-walk
+                // store joins the legacy mirror (main reads done at the
+                // walk's current content version).
+                if (opts && opts.fromOnboarding) {
+                    try { localStorage.setItem('crewAssist.spotMainDone', '1'); } catch (e) {}
+                    if (typeof caSpotMarkDone === 'function') { try { caSpotMarkDone('main'); } catch (e2) {} }
+                }
                 applyFullBackupData(d);
                 try { location.reload(); } catch (e) {}
             });
@@ -22667,14 +22713,46 @@ SLOT|Special Lve others`;
         //    opened stay open when it ends — the crew explores from there.
         // ==========================================
 
-        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, onEnd: null, chatKids: null, chatScroll: 0 };
+        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, onEnd: null, chatKids: null, chatScroll: 0, stage: null };
         var caSpotBusy = false;
 
-        function caSpotSeen() {
-            try { return localStorage.getItem('crewAssist.spotMainDone') === '1'; } catch (e) { return false; }
+        // --- per-walk completion (v1.50.0, owner order: FULL tracking) ---
+        // Every walk carried to its Done stamps crewAssist.spotDone =
+        // { <id>: <cv> }, where cv is the walk's CONTENT version (the `cv`
+        // field on the tour — bumped by hand when that walk's copy or
+        // steps change). A row reads done when its stored cv MATCHES the
+        // walk's current cv, so a content change retires the check and,
+        // for the main walk, re-fires the invitation once for everyone.
+        // The legacy spotMainDone key (Done-only since v1.49.1) reads as
+        // done-at-current-cv and materializes into the store on first
+        // read — existing completions stay quiet, per the owner's
+        // "only people who never finished" order.
+        function caSpotDoneStore() {
+            try { return JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}') || {}; } catch (e) { return {}; }
         }
-        function caSpotMarkSeen() {
-            try { localStorage.setItem('crewAssist.spotMainDone', '1'); } catch (e) {}
+        function caSpotWalkDone(id) {
+            const tour = CA_SPOT_TOURS[id];
+            if (!tour || !tour.cv) return false;
+            const st = caSpotDoneStore();
+            if (st[id]) return st[id] === tour.cv;
+            if (id === 'main') {
+                try {
+                    if (localStorage.getItem('crewAssist.spotMainDone') === '1') {
+                        st.main = tour.cv;   // materialize once; later cv bumps de-done honestly
+                        localStorage.setItem('crewAssist.spotDone', JSON.stringify(st));
+                        return true;
+                    }
+                } catch (e) {}
+            }
+            return false;
+        }
+        function caSpotMarkDone(id) {
+            const tour = CA_SPOT_TOURS[id];
+            if (!tour || !tour.cv) return;
+            const st = caSpotDoneStore();
+            st[id] = tour.cv;
+            try { localStorage.setItem('crewAssist.spotDone', JSON.stringify(st)); } catch (e) {}
+            if (id === 'main') { try { localStorage.setItem('crewAssist.spotMainDone', '1'); } catch (e) {} }   // the legacy mirror
         }
         // v1.49.2: the once-key is spotMainDone. The v1.49.0/1.49.1 key
         // spotMainSeen is RETIRED — v1.49.0 stamped it on ANY end (Skip and
@@ -22685,6 +22763,161 @@ SLOT|Special Lve others`;
         // handoff, so every existing crew meets the walk once more; only
         // Done (or a welcome-restore) writes the new key.
         try { localStorage.removeItem('crewAssist.spotMainSeen'); } catch (e) {}
+        // v1.50.0 (owner order): declining the invitation is permanent —
+        // the prompt never asks again; the tour stays one tap away in
+        // Settings, and the main row simply reads not-done.
+        function caSpotDeclined() {
+            try { return localStorage.getItem('crewAssist.spotMainDeclined') === '1'; } catch (e) { return false; }
+        }
+        function caSpotDecline() {
+            try { localStorage.setItem('crewAssist.spotMainDeclined', '1'); } catch (e) {}
+        }
+
+        // --- the tour prompt (v1.50.0, owner order): the invitation card
+        // that precedes the auto-fired main walk. Isolated by design: it
+        // builds its own DOM, injects at the body's end, and tears itself
+        // down — nodes AND the document-level key listener — on any
+        // interaction. The compass is an inline Lucide SVG (no icon-loader
+        // dependency: offline by construction, honest in jsdom). Its
+        // fade/scale runs even under reduced motion (owner order: tour
+        // animations are exempt). ---
+        function renderTourPromptModal(onAccept, onSkip) {
+            const old = document.getElementById('ca-spot-prompt-backdrop');
+            if (old) old.remove();   // never two prompts
+            const bd = document.createElement('div');
+            bd.id = 'ca-spot-prompt-backdrop';
+            const card = document.createElement('div');
+            card.id = 'ca-spot-prompt-card';
+            card.className = 'glass-panel rounded-2xl p-4 shadow-2xl border border-black/10 dark:border-white/10 w-full max-w-sm text-center';
+            card.setAttribute('role', 'dialog');
+            card.setAttribute('aria-modal', 'true');
+            card.setAttribute('aria-label', 'Let\u2019s take a quick tour');
+            const iconWrap = document.createElement('div');
+            iconWrap.className = 'flex justify-center mb-3';
+            const iconHost = document.createElement('div');
+            iconHost.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-10 h-10 text-sia-gold" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>';
+            iconWrap.appendChild(iconHost.firstChild);
+            card.appendChild(iconWrap);
+            const headline = document.createElement('h2');
+            headline.className = 'text-lg font-extrabold';
+            headline.textContent = 'Let\u2019s take a quick tour';
+            card.appendChild(headline);
+            const sub = document.createElement('p');
+            sub.className = 'text-xs text-gray-500 font-bold mt-1 mb-4';
+            sub.textContent = 'Seven quick steps in under a minute';
+            card.appendChild(sub);
+            const next = document.createElement('button');
+            next.type = 'button';
+            next.id = 'ca-spot-prompt-next';
+            next.className = 'w-full min-h-[48px] rounded-full text-sm font-extrabold bg-gradient-to-r from-sia-goldlt to-sia-gold text-black transition-transform active:scale-95';
+            next.textContent = 'Next';
+            const skip = document.createElement('button');
+            skip.type = 'button';
+            skip.id = 'ca-spot-prompt-skip';
+            skip.className = 'block mx-auto mt-3 px-4 py-2 rounded-full text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors';
+            skip.textContent = 'Skip';
+            card.appendChild(next);
+            card.appendChild(skip);
+            bd.appendChild(card);
+            document.body.appendChild(bd);
+            // fade/scale in on the next frame (NOT gated on ca-reduced —
+            // the owner's tour-animation exemption)
+            const raf = (typeof requestAnimationFrame === 'function') ? requestAnimationFrame : ((f) => setTimeout(f, 16));
+            raf(() => bd.classList.add('ca-prompt-in'));
+            let ended = false;
+            const done = (which) => {
+                if (ended) return;
+                ended = true;
+                document.removeEventListener('keydown', key, true);
+                bd.classList.add('ca-prompt-out');
+                bd.style.pointerEvents = 'none';
+                setTimeout(() => bd.remove(), 300);
+                const cb = (which === next) ? onAccept : onSkip;
+                if (typeof cb === 'function') { try { cb(); } catch (e) {} }
+            };
+            const key = (ev) => {
+                // The prompt owns the key while it is up. stopPropagation is
+                // load-bearing in the real browser: the decline path opens
+                // the What's-New sheet SYNCHRONOUSLY inside this capture
+                // listener, and the document's bubble-phase sheet-closer
+                // (v1.37.0: Escape closes whichever sheet is on top) would
+                // otherwise close the very sheet this keypress summoned —
+                // the event must die here, in the capture phase.
+                if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); done(skip); return; }
+                if (ev.key === 'Tab') {
+                    ev.preventDefault();   // trapped: the two buttons cycle
+                    ev.stopPropagation();
+                    try { (document.activeElement === skip) ? next.focus({ preventScroll: true }) : skip.focus({ preventScroll: true }); } catch (e) {}
+                }
+            };
+            document.addEventListener('keydown', key, true);
+            next.addEventListener('click', () => done(next));
+            skip.addEventListener('click', () => done(skip));
+            try { next.focus({ preventScroll: true }); } catch (e) { try { next.focus(); } catch (e2) {} }
+        }
+
+        // --- the stage revert (v1.50.0, owner order): a walk leaves the
+        // app EXACTLY as it found it — not just the chat (v1.49.2) but
+        // every sheet and toggle it touched. Snapshot at start; restore on
+        // every end (Done, Skip, Escape, supersede). Only Settings can be
+        // open at a walk's start (the rows live there), so restore-open
+        // only ever reopens Settings — the rest restore-close. ---
+        function caSpotSheetOpen(backdropId, sheetId) {
+            const b = document.getElementById(backdropId);
+            if (!b || b.classList.contains('hidden')) return false;
+            if (sheetId) {
+                const sh = document.getElementById(sheetId);
+                if (sh && sh.classList.contains('translate-y-full')) return false;
+            }
+            return true;
+        }
+        function caSpotStageSnap() {
+            const tag = document.getElementById('ca-rc-tag');
+            return {
+                settings: caSpotSheetOpen('settings-backdrop', 'settings-sheet'),
+                arch: caSpotSheetOpen('ca-arch-backdrop', 'ca-arch-sheet'),
+                cal: caSpotSheetOpen('ca-roster-cal', null),
+                pod: caSpotSheetOpen('ca-rc-podwrap', null),
+                menu: caSpotSheetOpen('menu-backdrop', 'menu-sheet'),
+                tags: tag ? (tag.getAttribute('aria-pressed') === 'true') : null
+            };
+        }
+        function caSpotStageRestore(st) {
+            const now = caSpotStageSnap();
+            const set = (want, isNow, openFn, closeFn) => {
+                if (want === isNow) return;
+                try { if (want) { if (typeof openFn === 'function') openFn(); } else { if (typeof closeFn === 'function') closeFn(); } } catch (e) {}
+            };
+            set(st.settings, now.settings, (typeof openSettings === 'function' ? openSettings : null), (typeof closeSettings === 'function' ? closeSettings : null));
+            set(st.arch, now.arch, (typeof openArchOverlay === 'function' ? openArchOverlay : null), (typeof closeArchOverlay === 'function' ? closeArchOverlay : null));
+            set(st.cal, now.cal, (typeof openRosterCalendar === 'function' ? openRosterCalendar : null), (typeof closeRosterCalendar === 'function' ? closeRosterCalendar : null));
+            set(st.pod, now.pod, (typeof openRcPod === 'function' ? openRcPod : null), (typeof closeRcPod === 'function' ? closeRcPod : null));
+            set(st.menu, now.menu, null, (typeof closeMenuViewer === 'function' ? closeMenuViewer : null));   // the viewer cannot be open at walk-start — restore-close only
+            // the calendar's tag chip rides the app's own toggle
+            const tag = document.getElementById('ca-rc-tag');
+            if (tag && st.tags !== null && (tag.getAttribute('aria-pressed') === 'true') !== st.tags) {
+                try { tag.click(); } catch (e) {}
+            }
+        }
+
+        // --- the Settings rows' status icons (v1.50.0, owner order): a
+        // gold circle-check when this walk's current content is done, a
+        // quiet hollow circle when not. Rebuilt fresh each sync (lucide
+        // replaces <i data-lucide> with <svg>, so the slot is rebuilt and
+        // refreshIcons re-runs). ---
+        function caSpotSyncRowIcons() {
+            document.querySelectorAll('#ca-feature-tours [data-ca-spot]').forEach((row) => {
+                const id = row.getAttribute('data-ca-spot');
+                const done = (typeof caSpotWalkDone === 'function') && caSpotWalkDone(id);
+                const old = row.querySelector('.ca-spot-row-status');
+                if (old) old.remove();
+                const i = document.createElement('i');
+                i.setAttribute('data-lucide', done ? 'circle-check' : 'circle');
+                i.className = 'ca-spot-row-status w-4 h-4 shrink-0 ml-auto ' + (done ? 'text-sia-gold' : 'text-gray-400 dark:text-gray-500');
+                row.appendChild(i);
+            });
+            try { if (typeof refreshIcons === 'function') refreshIcons(); } catch (e) {}
+        }
         // v1.49.1: the boot flow (showMain) hands the stage here — the
         // What's-New sheet and the greeting wait until the walk ends.
         function caSpotOnEnded(fn) {
@@ -22777,6 +23010,7 @@ SLOT|Special Lve others`;
         var CA_SPOT_TOURS = {
             main: {
                 label: 'Main screen',
+                cv: '1.49.3',   // v1.50.0: content version — bump when this walk's copy/steps change
                 world: caSpotMainWorld,
                 steps: [
                     { sel: '#chat-input', title: '**At Your Service**', line: 'Ask about your flight or type "help" / "?" for quick commands.' },
@@ -22790,6 +23024,7 @@ SLOT|Special Lve others`;
             },
             roster: {
                 label: 'Roster import',
+                cv: '1.49.2',
                 world: caSpotMainWorld,
                 steps: [
                     { sel: '#btn-roster', title: '**First, your Roster Report**', line: 'Upload your Roster Report PDF directly from CrewApp using the paperclip icon.' },
@@ -22805,6 +23040,7 @@ SLOT|Special Lve others`;
             },
             manual: {
                 label: 'Manual flight cards',
+                cv: '1.49.0',
                 world: caSpotSettingsWorld,
                 steps: [
                     { sel: '#calcui-pill-manual', title: 'No roster? No problem', line: 'Add a card by hand when the trip isn\u2019t on a PDF.' },
@@ -22820,6 +23056,7 @@ SLOT|Special Lve others`;
             },
             menus: {
                 label: 'Menus & search',
+                cv: '1.49.0',
                 world: caSpotMainWorld,
                 steps: [
                     { sel: '#chat-input', title: 'Just ask', line: 'Type a flight and a date — sq802 menu 17 oct — and I fetch the menus.' },
@@ -22836,6 +23073,7 @@ SLOT|Special Lve others`;
             },
             earnings: {
                 label: 'Earnings',
+                cv: '1.49.0',
                 world: caSpotEarningsWorld,
                 steps: [
                     { sel: () => caSpotVis('#ca-arch-sheet h3') || caSpotVis('#ca-arch-sheet'), title: 'This is your money page', line: 'Every trip you save adds up here, month by month.' },
@@ -22848,6 +23086,7 @@ SLOT|Special Lve others`;
             },
             calendar: {
                 label: 'Calendar',
+                cv: '1.49.0',
                 world: function () { caSpotCalWorld(false); },
                 steps: [
                     { sel: '#ca-rc-grid', title: 'Here\u2019s your roster', line: 'Every imported flight paints onto its day — duties, standby and all.', before: function () { caSpotCalWorld(false); } },
@@ -22860,6 +23099,7 @@ SLOT|Special Lve others`;
             },
             stats: {
                 label: 'Flight Stats',
+                cv: '1.49.0',
                 world: caSpotPodWorld,
                 steps: [
                     { sel: () => caSpotVis('#ca-rc-pod-sheet h3') || caSpotVis('#ca-rc-pod-sheet'), title: 'Your passport', line: 'The records page tallies everything — flights, hours, stations.' },
@@ -22871,6 +23111,7 @@ SLOT|Special Lve others`;
             },
             backup: {
                 label: 'Backup & restore',
+                cv: '1.49.0',
                 world: caSpotSettingsWorld,
                 steps: [
                     { sel: '#ca-dm-box', title: 'Your data, your file', line: 'One backup file carries everything — profile, rates, earnings, history.' },
@@ -22902,7 +23143,7 @@ SLOT|Special Lve others`;
         // settles, or it glides to a moving target.
         function caSpotSettle() { return new Promise((r) => setTimeout(r, 380)); }
 
-        function caSpotStart(id) {
+        function caSpotStart(id, stageOverride) {
             const tour = CA_SPOT_TOURS[id];
             if (!tour || !tour.steps || !tour.steps.length) return false;
             if (caSpot.on) { caSpot.onEnd = null; caSpotEnd(); }   // a tour never stacks on a tour
@@ -22915,6 +23156,13 @@ SLOT|Special Lve others`;
                 caSpot.chatKids = cc ? Array.prototype.slice.call(cc.children) : [];
                 caSpot.chatScroll = cc ? cc.scrollTop : 0;
             } catch (e) { caSpot.chatKids = null; }
+            // v1.50.0 (owner order): the whole STAGE is snapshotted the same
+            // way — every sheet and toggle a walk could touch, so the end
+            // can hand the screen back exactly as it found it (sheets, tags
+            // and all). A row-tap passes its PRE-TAP snapshot in (the row
+            // handler closes Settings before starting the walk — the crew
+            // tapped inside that sheet, so it reopens at the end).
+            try { caSpot.stage = (stageOverride !== undefined && stageOverride) ? stageOverride : caSpotStageSnap(); } catch (e) { caSpot.stage = null; }
             caSpot.on = true;
             caSpot.id = id;
             caSpot.tour = tour;
@@ -23165,11 +23413,23 @@ SLOT|Special Lve others`;
             } catch (e) {}
             caSpot.chatKids = null;
             caSpot.cardId = null;
+            // v1.50.0 (owner order): the STAGE reverts with the chat —
+            // sheets slide back, the calendar's tag chip sits as it sat.
+            // Runs on EVERY end (Done, Skip, Escape, supersede) and BEFORE
+            // the handoff, so the What's-New sheet that follows opens onto
+            // a clean stage. Only Settings can be open at walk-start, so
+            // restore-open only ever reopens Settings.
+            try { if (caSpot.stage) caSpotStageRestore(caSpot.stage); } catch (e) {}
+            caSpot.stage = null;
             // v1.49.1 (owner order): ONLY Done completes the walk. Skip and
-            // Escape leave the once-flag unstamped — the main tour fires
-            // again on the next app open until the crew carries it to the
-            // end. The feature replays in Settings forever either way.
-            if (caSpot.id === 'main' && completed === true) caSpotMarkSeen();
+            // Escape leave the completion unstamped — the invitation returns
+            // on the next app open until the crew carries the walk to the
+            // end. v1.50.0: the stamp is per-walk now (crewAssist.spotDone,
+            // at each walk's content version); main keeps its legacy mirror
+            // (the earnings-archive pin and the welcome-restore door read
+            // it). The Settings rows refresh their checks to match.
+            if (caSpot.id && completed === true) caSpotMarkDone(caSpot.id);
+            try { caSpotSyncRowIcons(); } catch (e) {}
             const cb = caSpot.onEnd || null;
             caSpot.onEnd = null;
             caSpot.id = null;

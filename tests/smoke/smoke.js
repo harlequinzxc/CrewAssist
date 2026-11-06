@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.49.3', 'APP_VERSION is 1.49.3');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.49.3' && e.d === '2026-11-06' && e.items.length === 3 && e.items.filter((i) => i.c === 'fix').length === 1 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.49.3 entry — one fix and two imp pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v310'), 'the service-worker cache name is bumped to v310 (the v1.49.3 tooltip-polish round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.50.0', 'APP_VERSION is 1.50.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.50.0' && e.d === '2026-11-06' && e.items.length === 4 && e.items.filter((i) => i.c === 'new').length === 2 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.50.0 entry — two new and two imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v311'), 'the service-worker cache name is bumped to v311 (the v1.50.0 tour-invitation round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,7 +166,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.49.3'; }), 'the What\'s New sheet carries the v1.49.3 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.50.0'; }), 'the What\'s New sheet carries the v1.50.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A gentle invitation opens the tour — Next walks, Skip stays quiet.') !== -1), 'the What\'s New sheet carries the v1.50.0 invitation pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Feature tour rows show a check when a walk is completed.') !== -1), 'the What\'s New sheet carries the v1.50.0 row-check pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A walk\u2019s stage reverts when it ends — sheets, tags and all.') !== -1), 'the What\'s New sheet carries the v1.50.0 stage-revert pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Tour animations run even with reduced motion on.') !== -1), 'the What\'s New sheet carries the v1.50.0 reduced-motion pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Skip moves away from Next — no accidental taps end the walk.') !== -1), 'the What\'s New sheet carries the v1.49.3 button-order pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The spotlight veil darkens a little more — it reads harder.') !== -1), 'the What\'s New sheet carries the v1.49.3 veil pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The tour\u2019s first title reads At Your Service.') !== -1), 'the What\'s New sheet carries the v1.49.3 title-case pointer');
@@ -379,7 +383,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const duty = JSON.parse(localStorage.getItem('crewAssist.dutyDays') || '{}');
             return arch.length === 1 && arch[0].amount === 88 && prof && prof.name === 'Welcome Wo' && duty['2026-10'] && duty['2026-10'].length === 1;
         }), 'the restored phone carries the earnings, profile and duty days');
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'hotfix: a restoring user is not offered the tour');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.49.3'), 'hotfix: a restoring user is not offered the tour — the legacy mirror AND the per-walk store both land (v1.50.0)');
         // owner ruling 2026-10-08 (round 11): leave the What's New re-offer
         // as is — it returns on every launch until the crew ticks
         // "Do not show again"; closing alone never counts as seen
@@ -418,7 +422,13 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.waitForFunction(() => !document.getElementById('settings-sheet').classList.contains('translate-y-full'), { timeout: 5000 });
         await sleep(350);
         ok(await page.evaluate(() => [...document.querySelectorAll('#ca-feature-tours [data-ca-spot]')].map((r) => r.getAttribute('data-ca-spot')).join(',') === 'main,roster,manual,menus,earnings,calendar,stats,backup'), 'Settings carries the eight Feature Tour rows in the owner\u2019s order');
-        await page.evaluate(() => localStorage.removeItem('crewAssist.spotMainDone'));
+        // v1.50.0: wipe the FULL completion state (the store, the legacy
+        // mirror, the decline) — the rows must read hollow before the walk
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.spotMainDone'); localStorage.removeItem('crewAssist.spotDone'); localStorage.removeItem('crewAssist.spotMainDeclined'); });
+        // the rows sync at boot and at every walk's end — re-sync explicitly
+        // after clearing, exactly as the next boot would read the store
+        await page.evaluate(() => caSpotSyncRowIcons());
+        ok(await page.evaluate(() => [...document.querySelectorAll('#ca-feature-tours [data-ca-spot]')].every((r) => r.querySelector('.ca-spot-row-status') && r.querySelector('.ca-spot-row-status').getAttribute('data-lucide') === 'circle')), 'v1.50.0: with nothing done, all eight rows read hollow circles (the rig\'s icon stub keeps the element, so the intent is assertable)');
         // the one-time PWA install hint can sit over a returning device —
         // a real user reads it, taps OK, then tours
         await page.evaluate(() => { const b = document.getElementById('app-dialog-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('app-dialog-ok').click(); });
@@ -487,7 +497,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(geo.every((s) => s.ringInView), 'the lit target sits fully inside the viewport at every step (the owner\u2019s v1.49.1 order; header-flush targets may kiss the edge)');
         ok(geo.every((s) => s.noCover), 'the tooltip never covers the lit target');
         ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'Done stands the tour down');
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'Done on the main tour stamps the once-flag');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'Done on the main tour keeps the legacy mirror stamped');
+        ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.49.3'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv');
+        ok(await page.evaluate(() => { const i = document.querySelector('#ca-feature-tours [data-ca-spot="main"] .ca-spot-row-status'); return i && i.getAttribute('data-lucide') === 'circle-check' && i.className.indexOf('text-sia-gold') !== -1; }), 'v1.50.0: the main row flips to the gold circle-check at Done');
 
         // v1.49.1 (owner order): ALL highlighted content fits the viewport —
         // every step of every remaining walk carries the ring-in-view and
@@ -496,8 +508,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         const walks = [['roster', 6], ['manual', 6], ['menus', 6], ['earnings', 6], ['calendar', 6], ['stats', 5], ['backup', 5]];
         for (const w of walks) {
             const tid = w[0], n = w[1];
-            // each walk starts from a CLEAN stage — the previous walk's sheet
-            // stays open by design, and it would sit over the Settings rows
+            // each walk starts from a CLEAN stage — v1.50.0 reverts every
+            // walk's stage at its end, and the reload belts-and-braces it
             await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
             await sleep(600);
             await page.evaluate(() => openSettings());
@@ -562,30 +574,84 @@ async function calcCard(page, { type, t1, t2, lma }) {
             ok(g.every((x) => x.noCover), 'the ' + tid + ' tooltip never covers the lit target');
             ok(g.every((x) => x.ringSize), 'the ' + tid + ' ring sizes to a real target at every step');
             ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'the ' + tid + ' walk stands down at Done');
+            // v1.50.0 (owner order): the walk's stage reverts — the sheet it
+            // opened closes behind it, and Settings (open at every row-start)
+            // restores open
+            await page.waitForFunction(() => document.getElementById('ca-arch-backdrop').classList.contains('hidden') && document.getElementById('ca-roster-cal').classList.contains('hidden') && document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('menu-backdrop').classList.contains('hidden'), { timeout: 5000 }).catch(() => {});
+            ok(await page.evaluate(() => document.getElementById('ca-arch-backdrop').classList.contains('hidden') && document.getElementById('ca-roster-cal').classList.contains('hidden') && document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('menu-backdrop').classList.contains('hidden')), 'v1.50.0: the ' + tid + ' walk\u2019s own sheet closes behind it — the stage reverts');
+            ok(await page.evaluate(() => !document.getElementById('settings-backdrop').classList.contains('hidden')), 'v1.50.0: Settings restores OPEN after the ' + tid + ' walk — it was open at the row-tap');
             if (tid === 'manual') ok(await page.evaluate(() => !document.querySelector('#chat-container [id^="calc-"]')), 'v1.49.2 (owner order): the manual walk\u2019s calculator card leaves with the veil — the chat reverts to its pre-tour state');
         }
 
-        // v1.49.1 (owner order): the firing doors in the real browser — the
-        // walk fires at the chat screen BEFORE the What's-New sheet, for
-        // every crew; Skip/Escape never complete it (it returns next open);
-        // Done alone retires it; the sheet and the greeting wait behind.
-        await page.evaluate(() => { localStorage.removeItem('crewAssist.spotMainDone'); localStorage.removeItem('crewAssist.hideWhatsNew'); localStorage.setItem('crewAssist.wnSeen', '1.48.5'); });
+        // v1.49.1 (owner order, v1.50.0 prompt-first): the firing doors in
+        // the real browser — the INVITATION renders at the chat screen
+        // BEFORE the What's-New sheet, for every crew who never finished
+        // this content of the main walk; Next walks, Skip (or Escape)
+        // declines forever; Done alone retires it; the sheet and the
+        // greeting wait behind.
+        await page.evaluate(() => { localStorage.removeItem('crewAssist.spotMainDone'); localStorage.removeItem('crewAssist.spotDone'); localStorage.removeItem('crewAssist.spotMainDeclined'); localStorage.removeItem('crewAssist.hideWhatsNew'); localStorage.setItem('crewAssist.wnSeen', '1.48.5'); });
         await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
-        await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
-        ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'the walk fires BEFORE the What\u2019s-New sheet — the sheet waits behind the veil');
-        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'the spotlight opens on the chat bar for a returning crew');
-        ok(await page.evaluate(() => (document.getElementById('chat-container').innerText || '').trim() === ''), 'the greeting waits behind the walk too — the chat is still empty');
+        await page.waitForFunction(() => !!document.getElementById('ca-spot-prompt-backdrop'), { timeout: 20000 });
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'the invitation gates the walk — the veil stays down until Next');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'the invitation renders BEFORE the What\u2019s-New sheet — the sheet waits behind it');
+        ok(await page.evaluate(() => (document.getElementById('chat-container').innerText || '').trim() === ''), 'the greeting waits behind the invitation too — the chat is still empty');
+        // the card itself: copy verbatim, the compass, the focus, the trap
+        ok(await page.evaluate(() => document.getElementById('ca-spot-prompt-backdrop').textContent.indexOf('Let\u2019s take a quick tour') !== -1 && document.getElementById('ca-spot-prompt-card').textContent.indexOf('Seven quick steps in under a minute') !== -1), 'v1.50.0: the invitation reads its copy verbatim — headline and secondary');
+        ok(await page.evaluate(() => { const p = document.querySelector('#ca-spot-prompt-card svg polygon'); return !!p && p.getAttribute('points') === '16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76'; }), 'v1.50.0: the invitation carries the Lucide compass, polygon exact');
+        ok(await page.evaluate(() => document.getElementById('ca-spot-prompt-next').textContent === 'Next' && document.getElementById('ca-spot-prompt-skip').textContent === 'Skip'), 'the invitation buttons read Next and Skip');
+        ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'ca-spot-prompt-next'), 'Next takes focus when the invitation opens');
+        await page.keyboard.press('Tab');
+        ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'ca-spot-prompt-skip'), 'Tab moves focus to Skip — trapped inside the card');
+        await page.keyboard.press('Tab');
+        ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'ca-spot-prompt-next'), 'Tab cycles back to Next — the trap holds');
+        // the fade-in runs (and reduced motion never gates it — the owner's
+        // tour-animation exemption)
+        await page.waitForFunction(() => document.getElementById('ca-spot-prompt-backdrop').classList.contains('ca-prompt-in'), { timeout: 5000 });
+        ok(await page.evaluate(() => { const bd = document.getElementById('ca-spot-prompt-backdrop'); const cs = getComputedStyle(bd); return cs.opacity === '1' && cs.transitionDuration === '0.28s'; }), 'v1.50.0: the invitation fades in over .28s — and no ca-reduced rule gates it');
+        // Escape declines: permanent, no completion, the stage moves on
         await page.keyboard.press('Escape');
-        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === null), 'Escape is not completion — the once-flag stays unstamped');
+        // the teardown's synchronous marks land with the keypress; the node
+        // itself leaves after the 300ms fade — a page timer this deep into
+        // the suite can crawl, so the wait takes the marks OR the absence
+        await page.waitForFunction(() => { const b = document.getElementById('ca-spot-prompt-backdrop'); return !b || (b.classList.contains('ca-prompt-out') && b.style.pointerEvents === 'none'); }, { timeout: 5000 });
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDeclined') === '1' && localStorage.getItem('crewAssist.spotDone') === null), 'Escape declines the invitation — permanently, completing nothing');
+        await page.waitForFunction(() => !document.getElementById('ca-spot-prompt-backdrop'), { timeout: 15000 });
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(true, 'the walk\u2019s end hands the stage to the What\u2019s-New sheet');
+        ok(true, 'the decline hands the stage to the What\u2019s-New sheet');
         await page.click('#whatsnew-close');
         await page.waitForFunction(() => (document.getElementById('chat-container').innerText || '').trim().length > 0, { timeout: 20000 });
         ok(true, 'the greeting types once the sheet closes');
-        // a skipped walk returns on the next open; carried to Done, it retires
+        // a declined device never sees the invitation again — the row stays
+        // one tap away, and the walk itself never auto-fires
         await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await sleep(1500);
+        ok(await page.evaluate(() => !document.getElementById('ca-spot-prompt-backdrop') && !document.documentElement.classList.contains('ca-spot-on')), 'a declined device never sees the invitation again — and no walk fires');
+        await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
+        await page.click('#whatsnew-close');
+        await sleep(300);
+        // un-decline: the invitation returns, and Next walks
+        await page.evaluate(() => localStorage.removeItem('crewAssist.spotMainDeclined'));
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await page.waitForFunction(() => !!document.getElementById('ca-spot-prompt-backdrop'), { timeout: 20000 });
+        await page.click('#ca-spot-prompt-next');
         await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
+        await page.waitForFunction(() => !document.getElementById('ca-spot-prompt-backdrop'), { timeout: 15000 }).catch(() => {});
+        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'Next starts the walk — the spotlight opens on the chat bar');
+        ok(await page.evaluate(() => (document.getElementById('chat-container').innerText || '').trim() === ''), 'the greeting still waits behind the walk');
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === null && localStorage.getItem('crewAssist.spotDone') === null && localStorage.getItem('crewAssist.spotMainDeclined') === null), 'Escape on the WALK is neither completion nor decline — all three keys stay unstamped');
+        await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
+        await page.click('#whatsnew-close');
+        await sleep(300);
+        // a skipped walk returns on the next open (the invitation re-fires);
+        // carried to Done, it retires
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await page.waitForFunction(() => !!document.getElementById('ca-spot-prompt-backdrop'), { timeout: 20000 });
+        ok(true, 'the invitation returns on the next open after a skipped walk');
+        await page.click('#ca-spot-prompt-next');
+        await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
+        await page.waitForFunction(() => !document.getElementById('ca-spot-prompt-backdrop'), { timeout: 15000 }).catch(() => {});
         ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'the walk returns on the next open after a skip');
         // v1.49.2: CDP-driven stepping (in-page timer waits can throttle to
         // a crawl deep into the suite — same lesson as the geo loops)
@@ -606,19 +672,19 @@ async function calcCard(page, { type, t1, t2, lma }) {
             await sleep(150);
         }
         await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'ONLY Done completes — the once-flag lands');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.49.3'), 'ONLY Done completes — the mirror and the per-walk store both land');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
         await page.click('#whatsnew-close');
         await sleep(300);
         // stamped now: the next open is quiet (the sheet still returns per the v1.35.0 ruling)
         await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
         await sleep(1500);
-        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'a completed walk never fires again on its own');
+        ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on') && !document.getElementById('ca-spot-prompt-backdrop')), 'a completed walk never fires again on its own — the invitation stays down too (the store reads done)');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
         await page.click('#whatsnew-close');
         await sleep(300);
         // leave the device quiet for the sections below (the do-not-show door)
-        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.49.3'); localStorage.setItem('crewAssist.wnSeen', '1.49.3'); });
+        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.50.0'); localStorage.setItem('crewAssist.wnSeen', '1.50.0'); });
 
         // 7c. v1.45.34 (owner order): the changelog filter chips in the real
         // browser - the compact three-tier framework, and the painted fade.
