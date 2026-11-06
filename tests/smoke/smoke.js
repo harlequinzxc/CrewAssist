@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.53.0', 'APP_VERSION is 1.53.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.53.0' && e.d === '2026-11-06' && e.items.length === 2 && e.items.filter((i) => i.c === 'new').length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.53.0 entry — one new and one imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v314'), 'the service-worker cache name is bumped to v314 (the v1.53.0 settings-fold round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.53.1', 'APP_VERSION is 1.53.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.53.1' && e.d === '2026-11-07' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.53.1 entry — one imp pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v315'), 'the service-worker cache name is bumped to v315 (the v1.53.1 fold-default round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,7 +166,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.53.0'; }), 'the What\'s New sheet carries the v1.53.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.53.1'; }), 'the What\'s New sheet carries the v1.53.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The quieter Settings sections start folded — one tap opens them.') !== -1), 'the What\'s New sheet carries the v1.53.1 fold-default pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings folds its quieter sections — tap a header to open one.') !== -1), 'the What\'s New sheet carries the v1.53.0 settings-fold pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The main walk ends pointing at the tours — eight steps now.') !== -1), 'the What\'s New sheet carries the v1.53.0 eighth-step pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The calendar, flight stats and backup walks read anew — sharper copy.') !== -1), 'the What\'s New sheet carries the v1.52.0 walk-overhaul pointer');
@@ -439,6 +440,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // a real user reads it, taps OK, then tours
         await page.evaluate(() => { const b = document.getElementById('app-dialog-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('app-dialog-ok').click(); });
         await sleep(350);
+        // v1.53.1: the fold sections start CLOSED — open the Feature
+        // tour fold the way the crew would, then tap its row
+        await page.click('[data-accordion-target="ca-acc-ft"]');
+        await sleep(450);
         await page.evaluate(() => document.querySelector('#ca-feature-tours [data-ca-spot="main"]').scrollIntoView({ block: 'center' }));
         await sleep(150);
         await page.click('#ca-feature-tours [data-ca-spot="main"]');
@@ -507,57 +512,59 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv (bumped with the eighth step)');
         ok(await page.evaluate(() => { const i = document.querySelector('#ca-feature-tours [data-ca-spot="main"] .ca-spot-row-status'); return i && i.getAttribute('data-lucide') === 'circle-check' && i.className.indexOf('text-sia-gold') !== -1; }), 'v1.50.0: the main row flips to the gold circle-check at Done');
 
-        // v1.53.0: the Settings accordions — the four quieter sections
-        // (Feature tour, Developer Mode, Storage, Data Management) fold
-        // behind their headers. Computed geometry in real Chromium: the
-        // grid-rows ride collapses the body to zero height, the chevron
-        // rotates, the fold state never touches localStorage — and a
-        // walk's Settings world opens the folds while the stage revert
-        // hands the crew's own fold state home.
+        // v1.53.0 + v1.53.1 (owner order): the Settings accordions — the
+        // four quieter sections (Feature tour, Developer Mode, Storage,
+        // Data Management) fold behind their headers and START FOLDED.
+        // Computed geometry in real Chromium: the grid-rows ride lays the
+        // body at real pixel height when open and 0px when folded, the
+        // chevron rotates, the fold state never touches localStorage —
+        // and a walk's Settings world opens the folds while the stage
+        // revert hands the crew's own fold state home.
         await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
         await sleep(600);
         await page.evaluate(() => openSettings());
         await page.waitForFunction(() => !document.getElementById('settings-sheet').classList.contains('translate-y-full'), { timeout: 5000 });
         await sleep(350);
         ok(await page.evaluate(() => document.querySelectorAll('.ca-acc').length === 4 && document.querySelectorAll('[data-accordion-target]').length === 4), 'v1.53.0: exactly four fold sections, four data-accordion-target heads');
-        ok(await page.evaluate(() => [...document.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'true')), 'every fold starts OPEN, announced through aria-expanded');
+        ok(await page.evaluate(() => [...document.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'false')), 'v1.53.1 (owner order): every fold starts CLOSED, announced through aria-expanded');
+        ok(await page.evaluate(() => [...document.querySelectorAll('.ca-acc')].every((el) => el.classList.contains('ca-acc-closed'))), 'v1.53.1: every fold section carries the closed class at rest');
+        const foldRest = await page.evaluate(() => ({
+            rows: getComputedStyle(document.getElementById('ca-acc-ft')).gridTemplateRows,
+            bodyH: document.getElementById('ca-acc-ft').getBoundingClientRect().height,
+            secH: document.getElementById('ca-ft-section').getBoundingClientRect().height,
+            chev: getComputedStyle(document.querySelector('#ca-ft-section .ca-acc-chev')).transform,
+            keys: Object.keys(localStorage).length
+        }));
+        ok(foldRest.rows === '0px', 'the resting fold rides grid-template-rows at 0px — the smooth height fold, computed');
+        ok(foldRest.bodyH < 1, 'the resting BODY collapses to zero height');
+        ok(foldRest.secH > 10 && foldRest.secH < 80, 'the resting section is just its label row — the head stays tappable');
+        ok(foldRest.chev === 'matrix(0, -1, 1, 0, 0, 0)', 'the resting chevron sits rotated -90deg');
+        await page.click('[data-accordion-target="ca-acc-ft"]');
+        await sleep(450);   // past the .28s fold ride
         const foldOpen = await page.evaluate(() => ({
             rows: getComputedStyle(document.getElementById('ca-acc-ft')).gridTemplateRows,
             chev: getComputedStyle(document.querySelector('#ca-ft-section .ca-acc-chev')).transform,
+            aria: document.querySelector('[data-accordion-target="ca-acc-ft"]').getAttribute('aria-expanded'),
             keys: Object.keys(localStorage).length
         }));
-        ok(parseFloat(foldOpen.rows) > 100, 'the open fold lays its body at full height — computed grid-template-rows resolves to real pixels');
-        ok(foldOpen.chev === 'none' || foldOpen.chev === 'matrix(1, 0, 0, 1, 0, 0)', 'the open chevron sits unrotated');
-        await page.click('[data-accordion-target=\"ca-acc-ft\"]');
-        await sleep(450);   // past the .28s fold ride
-        const foldClosed = await page.evaluate(() => ({
-            rows: getComputedStyle(document.getElementById('ca-acc-ft')).gridTemplateRows,
-            h: document.getElementById('ca-acc-ft').getBoundingClientRect().height,
-            chev: getComputedStyle(document.querySelector('#ca-ft-section .ca-acc-chev')).transform,
-            aria: document.querySelector('[data-accordion-target=\"ca-acc-ft\"]').getAttribute('aria-expanded'),
-            keys: Object.keys(localStorage).length
-        }));
-        ok(foldClosed.rows === '0px', 'the folded body rides grid-template-rows to 0px — the smooth height fold, computed');
-        ok(foldClosed.h < 1, 'the folded body collapses to zero height');
-        ok(foldClosed.chev === 'matrix(0, -1, 1, 0, 0, 0)', 'the chevron rotates -90deg on the fold');
-        ok(foldClosed.aria === 'false', 'the head announces the fold through aria-expanded');
-        ok(foldClosed.keys === foldOpen.keys, 'the fold state never touches localStorage — in memory only, a reload opens everything');
-        await page.click('[data-accordion-target=\"ca-acc-ft\"]');
-        await sleep(450);
-        // the world and the stage revert: fold the DM section, tap the
-        // backup row — the walk's Settings world opens the fold to light
-        // it, and Skip hands the crew's own fold state home
-        await page.click('[data-accordion-target=\"ca-acc-dm\"]');
-        await sleep(450);
-        ok(await page.evaluate(() => document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'the DM section sits folded before the tap');
-        await page.evaluate(() => { document.querySelector('#ca-feature-tours [data-ca-spot=\"backup\"]').scrollIntoView({ block: 'center' }); });
+        ok(parseFloat(foldOpen.rows) > 100, 'one tap lays the body at full height — computed grid-template-rows resolves to real pixels');
+        ok(foldOpen.chev === 'none' || foldOpen.chev === 'matrix(1, 0, 0, 1, 0, 0)', 'the opened chevron sits unrotated');
+        ok(foldOpen.aria === 'true', 'the head announces the open through aria-expanded');
+        ok(foldOpen.keys === foldRest.keys, 'the fold state never touches localStorage — in memory only, a reload folds everything again');
+        // the world and the stage revert: the DM section sits folded (the
+        // v1.53.1 default), the crew taps the backup row from the OPEN
+        // Feature tour fold — the walk's Settings world opens the DM fold
+        // to light it, and Skip hands the crew's own fold state home
+        ok(await page.evaluate(() => document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'the DM section sits folded before the tap (the default)');
+        await page.evaluate(() => { document.querySelector('#ca-feature-tours [data-ca-spot="backup"]').scrollIntoView({ block: 'center' }); });
         await sleep(150);
-        await page.click('#ca-feature-tours [data-ca-spot=\"backup\"]');
+        await page.click('#ca-feature-tours [data-ca-spot="backup"]');
         await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('Your Data, Your File') !== -1, { timeout: 8000 });
         ok(await page.evaluate(() => !document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'v1.53.0: the walk\u2019s Settings world OPENED the fold to light it — a fold can never hide a lit target');
         await page.click('#ca-spot-skip');
         await sleep(500);
-        ok(await page.evaluate(() => document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'v1.53.0: the stage revert re-folds the section the crew had folded');
+        ok(await page.evaluate(() => document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'v1.53.0: the stage revert re-folds the section the crew had folded (the default state)');
+        ok(await page.evaluate(() => !document.getElementById('ca-ft-section').classList.contains('ca-acc-closed')), 'the fold the crew tapped open rides home open');
         ok(await page.evaluate(() => !document.getElementById('settings-backdrop').classList.contains('hidden')), 'the pre-tap stage holds — Settings stays open after the skip');
         await page.evaluate(() => { caAccOpenAll(); closeSettings(); });
         await sleep(500);
@@ -591,6 +598,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
             await sleep(350);
             await page.evaluate(() => { const b = document.getElementById('app-dialog-backdrop'); if (b && !b.classList.contains('hidden')) document.getElementById('app-dialog-ok').click(); });
             await sleep(250);
+            // v1.53.1: the fold starts closed — open it before the row tap
+            await page.click('[data-accordion-target="ca-acc-ft"]');
+            await sleep(450);
             await page.evaluate((t) => document.querySelector('#ca-feature-tours [data-ca-spot="' + t + '"]').scrollIntoView({ block: 'center' }), tid);
             await sleep(150);
             await page.click('#ca-feature-tours [data-ca-spot="' + tid + '"]');

@@ -450,9 +450,10 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
 
   // ---- v1.53.0: the Settings accordions — the four quieter sections
   // (Feature tour, Developer Mode, Storage, Data Management) fold behind
-  // their headers. Dependency-free and data-attribute-bound; default open,
-  // in memory only; a fold hides its target; the worlds unfold; the stage
-  // revert folds the crew's own state home ----
+  // their headers. Dependency-free and data-attribute-bound; v1.53.1
+  // (owner order): they START FOLDED — one tap opens; in memory only;
+  // a fold hides its target; the worlds unfold; the stage revert folds
+  // the crew's own state home ----
   {
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
@@ -463,44 +464,51 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.eq(typeof w.caAccRestore, 'function', 'caAccRestore is global — the stage revert drives it');
     R.eq([...d.querySelectorAll('.ca-acc')].map((el) => el.getAttribute('data-ca-acc')).join(','), 'ft,dev,storage,dm', 'exactly four accordion sections: Feature tour, Developer Mode, Storage, Data Management');
     R.eq(d.querySelectorAll('[data-accordion-target]').length, 4, 'four heads, every one bound through data-accordion-target');
-    R.ok([...d.querySelectorAll('.ca-acc')].every((el) => !el.classList.contains('ca-acc-closed')), 'every section starts OPEN');
-    R.ok([...d.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'true'), 'the heads announce themselves expanded (aria)');
-    // a plain click folds; a second click re-opens — no framework, one delegated listener
+    // v1.53.1 (owner order): the folds start CLOSED
+    R.ok([...d.querySelectorAll('.ca-acc')].every((el) => el.classList.contains('ca-acc-closed')), 'every section starts FOLDED (v1.53.1, owner order)');
+    R.ok([...d.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'false'), 'the heads announce themselves folded (aria)');
+    // a plain click opens; a second click folds — no framework, one delegated listener
     const keysBefore = JSON.stringify(Object.keys(w.localStorage).sort());
     d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
-    R.ok(d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'a head click folds its section');
-    R.eq(d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').getAttribute('aria-expanded'), 'false', 'the head announces the fold');
-    R.ok(d.getElementById('ca-ft-section').querySelector('.ca-acc-body') !== null, 'the folded body sits in the DOM (the grid-rows ride does the height)');
+    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'a head tap opens its section');
+    R.eq(d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').getAttribute('aria-expanded'), 'true', 'the head announces the open');
+    R.ok(d.getElementById('ca-ft-section').querySelector('.ca-acc-body') !== null, 'the body sits in the DOM (the grid-rows ride does the height)');
     d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
-    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'a second click re-opens it');
+    R.ok(d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'a second tap folds it again');
     // caAccOpenAll + state + restore round-trip
+    R.eq(w.caAccState().ft, false, 'caAccState reads the fold');
     d.querySelector('[data-accordion-target=\"ca-acc-dm\"]').click();
-    R.eq(w.caAccState().dm, false, 'caAccState reads the fold');
+    R.eq(w.caAccState().dm, true, 'caAccState reads the open');
     w.caAccOpenAll();
     R.ok(Object.values(w.caAccState()).every((v) => v === true), 'caAccOpenAll opens every fold');
-    R.eq(JSON.stringify(Object.keys(w.localStorage).sort()), keysBefore, 'the fold state never touches localStorage — in memory only, a reload opens everything');
+    R.eq(JSON.stringify(Object.keys(w.localStorage).sort()), keysBefore, 'the fold state never touches localStorage — in memory only, a reload folds everything again');
     // the worlds unfold before they light, and the stage revert folds the
     // crew's own state home: fold TWO sections, walk, end — both re-folded
     w.openSettings();
     await wait(450);
-    // the engine's shown-check: with the sheet open, a fold hides the
-    // panel exactly like a vanished target would
-    R.eq(!!w.eval('caSpotVis(\"#ca-feature-tours\")'), true, 'an open fold shows its panel');
+    // the round-trip left every fold open — set the crew's state by hand
+    // through the app's own door: everything folded, then the crew taps
+    // the Feature tour fold open
+    w.caAccRestore({ ft: false, dev: false, storage: false, dm: false });
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    // the engine's shown-check: the open fold shows its panel; folded, it
+    // hides the panel exactly like a vanished target would
+    R.eq(!!w.eval('caSpotVis(\"#ca-feature-tours\")'), true, 'the tapped-open fold shows its panel');
     d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
     R.eq(!!w.eval('caSpotVis(\"#ca-feature-tours\")'), false, 'v1.53.0: a closed fold reads as a VANISHED target — the shown-check walks the ca-acc-closed ancestors');
-    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
-    // fold TWO sections — the stage revert must fold both home again
-    d.querySelector('[data-accordion-target=\"ca-acc-dm\"]').click();
-    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();   // the crew leaves it open
+    // the crew's state: FT open (tapped), the rest folded — the walk's
+    // world opens every fold it needs, and the revert hands the crew's
+    // own state home
     w.caSpotStart('backup');
     await wait(600);
     R.ok(tipText(d).indexOf('Your Data, Your File') !== -1, 'the backup walk lights a section that sat folded — the Settings world opened the fold first');
-    R.ok(!d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'the lit DM section sits open mid-walk');
+    R.ok(!d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'the lit DM section sits open mid-walk — the world unfolded the default');
     d.getElementById('ca-spot-skip').click();
     await wait(500);
-    R.ok(d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'v1.53.0: the stage revert re-folds the section the crew had folded');
-    R.ok(d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'the Feature tour fold rides home too');
-    R.ok(!d.querySelector('[data-ca-acc=\"storage\"]').classList.contains('ca-acc-closed'), 'an untouched section stays open through the revert');
+    R.ok(d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'v1.53.0: the stage revert re-folds the section the crew had folded (the default state)');
+    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'the section the crew had tapped open rides home open');
+    R.ok(d.querySelector('[data-ca-acc=\"storage\"]').classList.contains('ca-acc-closed'), 'an untouched section stays folded through the revert');
     w.caAccOpenAll();
     w.closeSettings();
     await wait(500);
