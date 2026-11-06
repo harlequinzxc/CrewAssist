@@ -517,12 +517,12 @@ const fs = require('fs');
       x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({ '2026-10': [{ fn: 'SQ106' }] }));
       x.localStorage.setItem('crewAssist.upcoming', JSON.stringify({ '2026-10': [{ fn: '106', ymd: '2026-10-20', std: '0900' }] }));
       x.localStorage.setItem('crewAssist.devMode', 'true');
-      // v1.49.1: the harness pre-stamps spotMainSeen on every boot; this
+      // v1.49.1: the harness pre-stamps spotMainDone on every boot; this
       // block pins the restore doors' own stamping, so it clears the
       // pre-stamp (the every-crew spotlight then walks behind the block's
       // synthetic clicks — harmless in jsdom, and it never stamps without
       // a Done).
-      x.localStorage.removeItem('crewAssist.spotMainSeen');
+      x.localStorage.removeItem('crewAssist.spotMainDone');
     };
     const { w, d } = await boot(APP, { seed });
     // build: the manifest counts what matters and carries the crown jewels
@@ -576,7 +576,7 @@ const fs = require('fs');
     d.getElementById('app-dialog-cancel').click();
     await wait(80);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 2, 'cancel leaves the device untouched');
-    R.ok(!w.localStorage.getItem('crewAssist.spotMainSeen'), 'the Settings door leaves the tour flag alone');
+    R.ok(!w.localStorage.getItem('crewAssist.spotMainDone'), 'the Settings door leaves the tour flag alone');
     // the v1.42.0 welcome-screen door: partial exports redirect, full backups land
     w.eval('backupRestoreRead("e.json", ' + legacy + ', { fromOnboarding: true })');
     await wait(80);
@@ -597,7 +597,7 @@ const fs = require('fs');
     await wait(120);
     R.eq(JSON.parse(w.localStorage.getItem('crewAssist.archive')).length, 1, 'the welcome door applies the full backup wholesale');
     R.ok(JSON.parse(w.localStorage.getItem('crewAssist.profile')).name === 'Backup Bo', 'the profile comes home through the welcome door');
-    R.eq(w.localStorage.getItem('crewAssist.spotMainSeen'), '1', 'hotfix: the welcome door retires the tour — a restoring user is not a new user');
+    R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'hotfix: the welcome door retires the tour — a restoring user is not a new user');
     // the earnings header: the import arrow is gone, the export stays
     w.showArchiveOverlay();
     await wait(100);
@@ -1174,8 +1174,8 @@ function todayYmd() {
     const NOW = '2026-10-20T12:00:00+08:00';
     const seedAll = (x, basic) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
       const mk = (id, monthKey, date, route, amount, ifa, lma, savedAt) => ({ id, savedAt, monthKey, sectorDate: date, flightType: 'Layover', stationDisplay: route, amount, detail: { v: 1, type: 'both', ifaTotal: ifa, lmaTotal: lma, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
       x.localStorage.setItem('crewAssist.archive', JSON.stringify([
         mk('a1', '2025-06', '2025-06-28', 'SIN-PKX-SIN', 600, 500, 100, '2025-06-30T10:00:00Z'),
@@ -1402,8 +1402,8 @@ function todayYmd() {
     const NOW2 = '2026-10-20T12:00:00+08:00';
     const seed2 = (x, basic) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
       const mk = (id, monthKey, date, amount) => ({ id, savedAt: date + 'T10:00:00Z', monthKey, sectorDate: date, flightType: 'Turnaround', stationDisplay: 'SIN/KUL', amount, detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
       x.localStorage.setItem('crewAssist.archive', JSON.stringify([
         mk('p1', '2026-10', '2026-10-28', 100),  // still to fly - In progress
@@ -1518,8 +1518,8 @@ function todayYmd() {
   const NOWE = '2026-10-20T12:00:00+08:00';
   const seedE = (x, basic) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: basic ? 2600 : 0 }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
       const mk = (id, date, route, amount, type, exp) => {
         const det = { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] };
         if (exp) det.expense = exp;
@@ -1694,7 +1694,7 @@ function todayYmd() {
   {
     const p1 = await boot(APP, { now: NOWE, seed: (x) => { seedE(x, true); x.localStorage.setItem('crewAssist.devMode', 'true'); } });
     const backupJson = await p1.w.eval('JSON.stringify(buildFullBackup())');
-    const p2 = await boot(APP, { now: NOWE, seed: (x) => { x.localStorage.setItem('crewAssist.spotMainSeen', '1'); } });
+    const p2 = await boot(APP, { now: NOWE, seed: (x) => { x.localStorage.setItem('crewAssist.spotMainDone', '1'); } });
     // the restore fires in one self-contained eval (the v1.46.6 lesson)
     await p2.w.eval('appConfirm = function () { return Promise.resolve(true); }; backupRestoreRead("crewassist-backup.json", ' + JSON.stringify(backupJson) + ', {});');
     await wait(300);
@@ -1904,8 +1904,8 @@ function todayYmd() {
     const NOWC = '2026-10-20T12:00:00+08:00';
     const seedCam = (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'T', gender: 'M', rank: 'FS', firstSoloYMD: '2020-01-01', basicSalary: 2600 }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
       const mk = (id, monthKey, date, route, amount, savedAt) => ({ id, savedAt, monthKey, sectorDate: date, flightType: 'Layover', stationDisplay: route, amount, detail: { v: 1, type: 'both', ifaTotal: amount, lmaTotal: 0, bonusCount: 0, bonusAmount: 0, grandTotal: amount, sectors: [], stations: [] } });
       x.localStorage.setItem('crewAssist.archive', JSON.stringify([
         mk('c1', '2025-06', '2025-06-28', 'SIN-PKX-SIN', 600, '2025-06-30T10:00:00Z'),

@@ -27,7 +27,7 @@ const menuPayload = JSON.stringify({ timestamp: Date.now(), data: JSON.parse(men
 const seedProfile = (w) => {
   // a settled returning device: onboarded, tour already offered/done
   w.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
-  w.localStorage.setItem('crewAssist.spotMainSeen', '1');
+  w.localStorage.setItem('crewAssist.spotMainDone', '1');
 };
 const waitChatIdle = async (w, cap) => {
   const end = Date.now() + (cap || 12000);

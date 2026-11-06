@@ -83,7 +83,7 @@ async function boot(appPath, opts) {
     // v1.37.0: the app's one-time in-app nudges (install hint, roster-import
     // hint, Manual-mode hint) are pre-suppressed so suites stay deterministic;
     // a test that verifies a nudge clears its flag in its own seed below.
-    // v1.49.1: spotMainSeen joins them — the spotlight now fires for EVERY
+    // v1.49.1: spotMainDone joins them — the spotlight now fires for EVERY
     // crew at the chat screen, so every test boot must be a "seen" device
     // (this runs after the scripts eval but before DOMContentLoaded, so the
     // showMain check reads it). tour.test.js removes it deliberately.
@@ -91,7 +91,7 @@ async function boot(appPath, opts) {
         w.localStorage.setItem('crewAssist.installHintDone', '1');
         w.localStorage.setItem('crewAssist.nudgedRoster', '1');
         w.localStorage.setItem('crewAssist.nudgedCalcUi', '1');
-        w.localStorage.setItem('crewAssist.spotMainSeen', '1');
+        w.localStorage.setItem('crewAssist.spotMainDone', '1');
     } catch (e) {}
     // Seed hook: run before the app's DOMContentLoaded (which fires during the
     // wait below) so a suite can pre-load localStorage — profiles, rosters,

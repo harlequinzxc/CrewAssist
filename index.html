@@ -1370,17 +1370,24 @@
            only interactive surface (Next / Back / Skip). */
         #ca-spot-veil { position: fixed; inset: 0; z-index: 95; visibility: hidden; }
         #ca-spot-ring { position: fixed; z-index: 96; border-radius: 14px; pointer-events: none;
-            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .8); }
+            box-shadow: 0 0 0 2px var(--ca-gold), 0 0 0 6px var(--ca-gold-glow-22), 0 0 0 9999px rgba(4, 7, 15, .8);
+            transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease; }
         /* v1.49.1 (owner order): the scrim sits at .8 — the lit target and
-           the tooltip stand out hard against it. The ring JUMPS to its
-           target (no glide): a main-thread-lagged transition left the ring
-           mid-flight while the tooltip placed instantly — the never-cover
-           guarantee wins over the flourish. */
+           the tooltip stand out hard against it. v1.49.2 (owner order):
+           the ring GLIDES again on every Next — the v1.49.1 jump was a
+           rig workaround the owner never asked for; the smoke now waits
+           for the ring to ARRIVE (rendered rect == inline style) before
+           it measures, so the flourish and the never-cover guarantee
+           both hold. */
         #ca-spot-tip { position: fixed; z-index: 97; width: min(300px, calc(100vw - 24px)); }
         html.ca-spot-on #ca-spot-veil { visibility: visible; }
         #ca-spot-ring, #ca-spot-tip { visibility: hidden; }
         html.ca-spot-on #ca-spot-ring, html.ca-spot-on #ca-spot-tip { visibility: visible; }
-        html.ca-reduced #ca-spot-ring, html.ca-reduced #ca-spot-tip { transition: none; }
+        html.ca-reduced #ca-spot-tip { transition: none; }
+        /* v1.49.2 (owner order): the spotlight ring is the ONE reduced-
+           motion exception — it glides even under ca-reduced. The tooltip
+           carries no transition of its own, so the rule above stays as
+           belt-and-braces only. */
         .ca-fold-toggle { cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .ca-fold-icon { transition: transform 0.3s ease; }
         .ca-folded .ca-fold-icon { transform: rotate(-90deg); }
@@ -3305,7 +3312,7 @@
             }
         }
 
-        var APP_VERSION = '1.49.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.49.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3327,6 +3334,12 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.49.2', d: '2026-11-06', items: [
+                { c: 'fix', t: 'The walk returns for existing crew \u2014 the stale once-flag is wiped.' },
+                { c: 'imp', t: 'The gold ring glides between steps \u2014 even with reduced motion on.' },
+                { c: 'imp', t: 'The first two walks read sharper; the roster gains an earnings step.' },
+                { c: 'imp', t: 'The chat reverts after the walk \u2014 no tutorial cards left behind.' }
+            ] },
             { v: '1.49.1', d: '2026-11-06', items: [
                 { c: 'fix', t: 'The spotlight fires before What\u2019s New \u2014 every crew gets the walk.' },
                 { c: 'fix', t: 'Only Done finishes it \u2014 a skipped walk returns next open.' },
@@ -18254,10 +18267,10 @@ SLOT|Special Lve others`;
             const whenTxt = (when && !isNaN(when.getTime())) ? when.toLocaleDateString() : 'an unknown date';
             appConfirm('Full backup from ' + whenTxt + ' — ' + arch.length + ' earnings entries, ' + duty + ' months of roster duties' + (prof && prof.name ? ', profile ' + prof.name : '') + '. Restore? This replaces the CrewAssist data on this device.').then((ok) => {
                 if (!ok) return;
-                // v1.42.0 hotfix → v1.49.0: someone restoring from the
+                // v1.42.0 hotfix → v1.49.2: someone restoring from the
                 // welcome screen is not a new user — stamp the spotlight
-                // tour as seen before the reload.
-                if (opts && opts.fromOnboarding) { try { localStorage.setItem('crewAssist.spotMainSeen', '1'); } catch (e) {} }
+                // tour as done before the reload.
+                if (opts && opts.fromOnboarding) { try { localStorage.setItem('crewAssist.spotMainDone', '1'); } catch (e) {} }
                 applyFullBackupData(d);
                 try { location.reload(); } catch (e) {}
             });
@@ -22623,12 +22636,24 @@ SLOT|Special Lve others`;
         //    by CSS) nor parks on top of the target. The real-Chromium
         //    geometry pin lives in the smoke suite.
         //  - The copy may carry **bold** markers; they render as bold spans
-        //    through DOM APIs — never raw markup (v1.49.1).
+        //    through DOM APIs — never raw markup (v1.49.1; titles too since
+        //    v1.49.2).
         //  - Firing (v1.49.1, owner order): the main walk fires at the chat
         //    screen for EVERY crew, before the What's-New sheet and the
         //    greeting; its end hands the stage to the sheet. Only Done
         //    completes it — Skip and Escape leave the once-flag unstamped
         //    and the walk returns next app open. Settings replays forever.
+        //    v1.49.2: the once-key is spotMainDone; the v1.49.0/1.49.1
+        //    spotMainSeen key (stamped on ANY end back then) is wiped on
+        //    load, so every existing crew walks once more.
+        //  - The ring GLIDES between steps (v1.49.2, owner order — restored
+        //    from v1.49.0), even under reduced motion: the one ca-reduced
+        //    exception. The tooltip places instantly; the ring's inline
+        //    style IS its destination, so anything measuring it waits for
+        //    the rendered rect to arrive there.
+        //  - The chat REVERTS on the walk's end (v1.49.2, owner order):
+        //    children the walk added — the manual tour's calculator card —
+        //    leave with the veil; the thread never keeps tutorial cards.
         //  - Escape ends the walk (a skip); Tab is trapped in the tooltip.
         //  - Nothing saved is touched. Tours that need a prop build it
         //    through the app's own real paths (the manual-cards tour leaves
@@ -22636,15 +22661,24 @@ SLOT|Special Lve others`;
         //    opened stay open when it ends — the crew explores from there.
         // ==========================================
 
-        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, onEnd: null };
+        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, onEnd: null, chatKids: null, chatScroll: 0 };
         var caSpotBusy = false;
 
         function caSpotSeen() {
-            try { return localStorage.getItem('crewAssist.spotMainSeen') === '1'; } catch (e) { return false; }
+            try { return localStorage.getItem('crewAssist.spotMainDone') === '1'; } catch (e) { return false; }
         }
         function caSpotMarkSeen() {
-            try { localStorage.setItem('crewAssist.spotMainSeen', '1'); } catch (e) {}
+            try { localStorage.setItem('crewAssist.spotMainDone', '1'); } catch (e) {}
         }
+        // v1.49.2: the once-key is spotMainDone. The v1.49.0/1.49.1 key
+        // spotMainSeen is RETIRED — v1.49.0 stamped it on ANY end (Skip and
+        // Escape included), so every device that lived through those builds
+        // carries a stale flag and would never walk again (the owner saw the
+        // What's-New sheet fire first precisely because of it). The old key
+        // is wiped here at script-eval time, BEFORE any DOMContentLoaded
+        // handoff, so every existing crew meets the walk once more; only
+        // Done (or a welcome-restore) writes the new key.
+        try { localStorage.removeItem('crewAssist.spotMainSeen'); } catch (e) {}
         // v1.49.1: the boot flow (showMain) hands the stage here — the
         // What's-New sheet and the greeting wait until the walk ends.
         function caSpotOnEnded(fn) {
@@ -22713,8 +22747,9 @@ SLOT|Special Lve others`;
             } catch (e) {}
         }
         // Manual cards: one REAL calculator card through the app's own
-        // engine — a working prop the crew keeps (the moment the veil
-        // lifts, Calculate and Confirm are live).
+        // engine — a working prop while the veil is up (Calculate and
+        // Confirm are live mid-walk); when the walk ends the chat reverts
+        // and the card leaves with it (v1.49.2, owner order).
         function caSpotCardWorld() {
             caSpotMainWorld();
             if (caSpot.cardId && document.getElementById(caSpot.cardId)) return;
@@ -22738,24 +22773,28 @@ SLOT|Special Lve others`;
                 label: 'Main screen',
                 world: caSpotMainWorld,
                 steps: [
-                    { sel: '#chat-input', title: 'At your service', line: 'Ask anything about your flights, or type **help** / **?** for quick commands.' },
-                    { sel: '#btn-roster', title: 'Your roster goes here', line: 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.' },
-                    { sel: '#action-chips', title: 'One-tap shortcuts', line: 'Instant answers for allowances, earnings, inflight menus, and menu prints.' },
-                    { sel: '#btn-roster-cal', title: 'Your flying calendar', line: 'Access your full schedule, flight records, and personal crew stats in one place.' },
-                    { sel: '#btn-theme', title: 'Theme switcher', line: 'Tap anytime to switch seamlessly between light and dark theme.' },
-                    { sel: '#btn-settings', title: 'Your settings and profile', line: 'Access profile details, manage your saved data, or replay feature tours anytime.' },
-                    { sel: '#btn-reset', title: 'Clean slate', line: 'Double-tap to clear your screen. Your saved data remains untouched.' }
+                    { sel: '#chat-input', title: '**At your service**', line: 'Ask about your flight or type "help" / "?" for quick commands.' },
+                    { sel: '#btn-roster', title: '**Activate Your Dashboard**', line: 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.' },
+                    { sel: '#action-chips', title: '**Quick-Access Commands**', line: 'Instant answers for allowances, earnings, inflight menus, and menu prints.' },
+                    { sel: '#btn-roster-cal', title: '**Track Your Flights**', line: 'Access your full schedule, flight records, and personal crew stats in one place.' },
+                    { sel: '#btn-theme', title: '**Theme Toggle**', line: 'Tap anytime to switch seamlessly between light and dark theme.' },
+                    { sel: '#btn-settings', title: '**Account & Preferences**', line: 'Update your profile details, manage your saved data, or replay feature tours whenever you need.' },
+                    { sel: '#btn-reset', title: '**Clear Screen**', line: 'Double-tap to clear your screen. Your saved data remains untouched.' }
                 ]
             },
             roster: {
                 label: 'Roster import',
                 world: caSpotMainWorld,
                 steps: [
-                    { sel: '#btn-roster', title: 'Start with your Roster Report', line: 'The paperclip takes your PDF exactly as downloaded from your CrewApp.' },
-                    { sel: '#btn-roster', title: 'I read every line', line: 'Flights, dates, sectors, and report times are extracted automatically with zero typing required.' },
-                    { sel: '#btn-roster-cal', title: 'The app fills itself', line: 'Your calendar, trip bar, and allowance calculator all light up instantly with the data.' },
-                    { sel: '#btn-roster', title: 'Monthly roster or changes', line: 'Re-attach anytime your monthly roster or there are changes to your roster, and your schedule updates seamlessly.' },
-                    { sel: '#btn-roster', title: 'Honest when unsure', line: 'If a document isn\u2019t recognized as a valid roster, I\u2019ll let you know\u2014never a guess.' }
+                    { sel: '#btn-roster', title: '**First, your Roster Report**', line: 'Upload your Roster Report PDF directly from CrewApp using the paperclip icon.' },
+                    { sel: '#btn-roster', title: '**Hands-Free Import**', line: 'Every line is analyzed automatically. All flights, dates, sectors, and reporting times are extracted instantly without you typing a thing.' },
+                    { sel: '#btn-roster-cal', title: '**Seamless Integration**', line: 'Your calendar fills up instantly with your imported data.' },
+                    // v1.49.2 (owner order): a new step between 3 and 4 —
+                    // the earnings chip rides right after the calendar one
+                    // ("as well as the allowances").
+                    { sel: '#action-chips .action-chip[data-intent="earn"]', title: '**Seamless Integration**', line: 'As well as the allowances from your flights.' },
+                    { sel: '#btn-roster', title: '**Stay updated**', line: 'Re-upload your pdf whenever you get a new monthly roster or schedule changes. Your calendar and allowances update seamlessly.' },
+                    { sel: '#btn-roster', title: '**No Guesswork**', line: 'If your uploaded file isn\'t recognized as a valid roster, I will let you know immediately rather than guessing your data.' }
                 ]
             },
             manual: {
@@ -22861,6 +22900,15 @@ SLOT|Special Lve others`;
             const tour = CA_SPOT_TOURS[id];
             if (!tour || !tour.steps || !tour.steps.length) return false;
             if (caSpot.on) { caSpot.onEnd = null; caSpotEnd(); }   // a tour never stacks on a tour
+            // v1.49.2 (owner order): the chat reverts to its pre-tour state
+            // when the walk ends — snapshot the thread's children (by
+            // identity) and its scroll, so tour-built cards and bubbles
+            // leave with the veil and the screen reads as it did before.
+            try {
+                const cc = document.getElementById('chat-container');
+                caSpot.chatKids = cc ? Array.prototype.slice.call(cc.children) : [];
+                caSpot.chatScroll = cc ? cc.scrollTop : 0;
+            } catch (e) { caSpot.chatKids = null; }
             caSpot.on = true;
             caSpot.id = id;
             caSpot.tour = tour;
@@ -22972,12 +23020,28 @@ SLOT|Special Lve others`;
         }
 
         // The card is built with DOM APIs and textContent — the owner's
-        // copy renders word-for-word, never as markup.
+        // copy renders word-for-word, never as markup. v1.49.2: the TITLE
+        // walks the same **bold** road as the line (the owner's pack marks
+        // bold titles now); the aria-label carries the plain text.
+        function caSpotAppendRich(parent, str) {
+            String(str || '').split(/(\*\*[^*]+\*\*)/g).forEach((seg) => {
+                if (!seg) return;
+                const m = /^\*\*([^*]+)\*\*$/.exec(seg);
+                if (m) {
+                    const b = document.createElement('b');
+                    b.className = 'font-bold';
+                    b.textContent = m[1];
+                    parent.appendChild(b);
+                } else {
+                    parent.appendChild(document.createTextNode(seg));
+                }
+            });
+        }
         function caSpotBuildTip(step, idx, n, rect) {
             const tip = document.getElementById('ca-spot-tip');
             if (!tip) return;
             tip.innerHTML = '';
-            tip.setAttribute('aria-label', step.title);
+            tip.setAttribute('aria-label', String(step.title || '').replace(/\*\*/g, ''));
             const card = document.createElement('div');
             card.className = 'glass-panel rounded-2xl p-4 shadow-2xl border border-black/10 dark:border-white/10';
 
@@ -22985,7 +23049,7 @@ SLOT|Special Lve others`;
             head.className = 'flex items-baseline justify-between gap-3 mb-1.5';
             const title = document.createElement('span');
             title.className = 'text-sm font-extrabold text-sia-gold';
-            title.textContent = step.title;
+            caSpotAppendRich(title, step.title);
             const count = document.createElement('span');
             count.className = 'ca-micro text-gray-400 font-bold whitespace-nowrap';
             count.textContent = (idx + 1) + ' of ' + n;
@@ -22997,18 +23061,7 @@ SLOT|Special Lve others`;
             // v1.49.1: the owner's copy pack carries **bold** markers —
             // they render as bold spans, still built by DOM APIs so the
             // text renders word-for-word, never as markup.
-            String(step.line || '').split(/(\*\*[^*]+\*\*)/g).forEach((seg) => {
-                if (!seg) return;
-                const m = /^\*\*([^*]+)\*\*$/.exec(seg);
-                if (m) {
-                    const b = document.createElement('b');
-                    b.className = 'font-bold';
-                    b.textContent = m[1];
-                    line.appendChild(b);
-                } else {
-                    line.appendChild(document.createTextNode(seg));
-                }
-            });
+            caSpotAppendRich(line, step.line);
             card.appendChild(line);
 
             const row = document.createElement('div');
@@ -23083,6 +23136,24 @@ SLOT|Special Lve others`;
             document.documentElement.classList.remove('ca-spot-on');
             const tip = document.getElementById('ca-spot-tip');
             if (tip) tip.innerHTML = '';
+            // v1.49.2 (owner order): the chat REVERTS to its pre-tour state —
+            // every child the walk added (the manual tour's calculator card,
+            // demo bubbles) leaves with the veil, and the thread scrolls
+            // back to where it stood. Runs on every end: Done, Skip, Escape
+            // and supersede alike — the chat is never left holding tutorial
+            // cards. Existing children are untouched, so their listeners
+            // survive; a tour-built card is self-contained in the DOM.
+            try {
+                const cc = document.getElementById('chat-container');
+                if (cc && caSpot.chatKids) {
+                    Array.prototype.slice.call(cc.children).forEach((kid) => {
+                        if (caSpot.chatKids.indexOf(kid) === -1) kid.remove();
+                    });
+                    cc.scrollTop = caSpot.chatScroll;
+                }
+            } catch (e) {}
+            caSpot.chatKids = null;
+            caSpot.cardId = null;
             // v1.49.1 (owner order): ONLY Done completes the walk. Skip and
             // Escape leave the once-flag unstamped — the main tour fires
             // again on the next app open until the crew carries it to the

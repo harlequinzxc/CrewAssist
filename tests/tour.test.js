@@ -1,9 +1,11 @@
-// The spotlight feature tour (v1.49.0; firing/completion/bold v1.49.1):
-// one lit target, one tooltip, one Next at a time. The veil blocks every
-// tap; the copy is the owner's, verbatim (with **bold** markers since
-// v1.49.1); the walk is data (docs/FEATURE_TOUR.md is the contract). This
-// suite walks every tour end-to-end in jsdom — the network is offline,
-// which is exactly what the menus tour's honest chip fallback is built for.
+// The spotlight feature tour (v1.49.0; firing/completion/bold v1.49.1;
+// copy pack part 2 + the chat revert v1.49.2): one lit target, one
+// tooltip, one Next at a time. The veil blocks every tap; the copy is the
+// owner's, verbatim (with **bold** markers since v1.49.1, in titles too
+// since v1.49.2); the walk is data (docs/FEATURE_TOUR.md is the contract).
+// This suite walks every tour end-to-end in jsdom — the network is
+// offline, which is exactly what the menus tour's honest chip fallback is
+// built for.
 const H = require('./_harness');
 const { R, boot, wait, APP } = H;
 const fs = require('fs');
@@ -29,16 +31,16 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
   {
     const { w } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     R.eq(typeof w.caSpotStart, 'function', 'caSpotStart is global (Settings rows and the tour command reach it)');
     R.eq(Object.keys(w.CA_SPOT_TOURS).join(','), 'main,roster,manual,menus,earnings,calendar,stats,backup', 'eight tours, the owner\u2019s Settings order (menus below the manual cards)');
     const labels = Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].label).join(',');
     R.eq(labels, 'Main screen,Roster import,Manual flight cards,Menus & search,Earnings,Calendar,Flight Stats,Backup & restore', 'labels read as the Settings rows do');
     const counts = Object.keys(w.CA_SPOT_TOURS).map((k) => k + ':' + w.CA_SPOT_TOURS[k].steps.length).join(' ');
-    R.eq(counts, 'main:7 roster:5 manual:6 menus:6 earnings:6 calendar:6 stats:5 backup:5', 'step counts: the chat bar leads the main tour, the calendar walks six, Flight Stats slimmed to five');
+    R.eq(counts, 'main:7 roster:6 manual:6 menus:6 earnings:6 calendar:6 stats:5 backup:5', 'step counts: the chat bar leads the main tour, the roster walk gains the earnings step (v1.49.2), the calendar walks six, Flight Stats slimmed to five');
     const allSteps = Object.keys(w.CA_SPOT_TOURS).reduce((a, k) => a.concat(w.CA_SPOT_TOURS[k].steps), []);
-    R.eq(allSteps.length, 46, 'forty-six steps in all');
+    R.eq(allSteps.length, 47, 'forty-seven steps in all');
     R.ok(allSteps.every((s) => s && s.sel && s.title && s.line), 'every step carries a target, a title and a line');
   }
 
@@ -46,22 +48,23 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
   {
     const { w } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     const pack = [
-      // main + roster: the owner's v1.49.1 part-1 copy pack, ALL of it
-      ['main', 0, 'At your service', 'Ask anything about your flights, or type **help** / **?** for quick commands.'],
-      ['main', 1, 'Your roster goes here', 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.'],
-      ['main', 2, 'One-tap shortcuts', 'Instant answers for allowances, earnings, inflight menus, and menu prints.'],
-      ['main', 3, 'Your flying calendar', 'Access your full schedule, flight records, and personal crew stats in one place.'],
-      ['main', 4, 'Theme switcher', 'Tap anytime to switch seamlessly between light and dark theme.'],
-      ['main', 5, 'Your settings and profile', 'Access profile details, manage your saved data, or replay feature tours anytime.'],
-      ['main', 6, 'Clean slate', 'Double-tap to clear your screen. Your saved data remains untouched.'],
-      ['roster', 0, 'Start with your Roster Report', 'The paperclip takes your PDF exactly as downloaded from your CrewApp.'],
-      ['roster', 1, 'I read every line', 'Flights, dates, sectors, and report times are extracted automatically with zero typing required.'],
-      ['roster', 2, 'The app fills itself', 'Your calendar, trip bar, and allowance calculator all light up instantly with the data.'],
-      ['roster', 3, 'Monthly roster or changes', 'Re-attach anytime your monthly roster or there are changes to your roster, and your schedule updates seamlessly.'],
-      ['roster', 4, 'Honest when unsure', 'If a document isn\u2019t recognized as a valid roster, I\u2019ll let you know\u2014never a guess.'],
+      // main + roster: the owner's v1.49.2 part-2 copy pack, ALL of it
+      ['main', 0, '**At your service**', 'Ask about your flight or type "help" / "?" for quick commands.'],
+      ['main', 1, '**Activate Your Dashboard**', 'Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights.'],
+      ['main', 2, '**Quick-Access Commands**', 'Instant answers for allowances, earnings, inflight menus, and menu prints.'],
+      ['main', 3, '**Track Your Flights**', 'Access your full schedule, flight records, and personal crew stats in one place.'],
+      ['main', 4, '**Theme Toggle**', 'Tap anytime to switch seamlessly between light and dark theme.'],
+      ['main', 5, '**Account & Preferences**', 'Update your profile details, manage your saved data, or replay feature tours whenever you need.'],
+      ['main', 6, '**Clear Screen**', 'Double-tap to clear your screen. Your saved data remains untouched.'],
+      ['roster', 0, '**First, your Roster Report**', 'Upload your Roster Report PDF directly from CrewApp using the paperclip icon.'],
+      ['roster', 1, '**Hands-Free Import**', 'Every line is analyzed automatically. All flights, dates, sectors, and reporting times are extracted instantly without you typing a thing.'],
+      ['roster', 2, '**Seamless Integration**', 'Your calendar fills up instantly with your imported data.'],
+      ['roster', 3, '**Seamless Integration**', 'As well as the allowances from your flights.'],
+      ['roster', 4, '**Stay updated**', 'Re-upload your pdf whenever you get a new monthly roster or schedule changes. Your calendar and allowances update seamlessly.'],
+      ['roster', 5, '**No Guesswork**', 'If your uploaded file isn\'t recognized as a valid roster, I will let you know immediately rather than guessing your data.'],
       ['manual', 0, 'No roster? No problem', 'Add a card by hand when the trip isn\u2019t on a PDF.'],
       ['manual', 3, 'The whole batch', 'Calculate-all totals everything together, grouped by month.'],
       ['menus', 0, 'Just ask', 'Type a flight and a date \u2014 sq802 menu 17 oct \u2014 and I fetch the menus.'],
@@ -81,28 +84,30 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
       R.eq(step.title, title, id + ' step ' + (i + 1) + ' title ships verbatim');
       R.eq(step.line, line, id + ' step ' + (i + 1) + ' line ships verbatim');
     });
-    // v1.49.1 (owner order): roster steps 2 and 5 stay on the paperclip
+    // v1.49.1 (owner order): roster steps 2 and 6 stay on the paperclip
     R.eq(w.CA_SPOT_TOURS.roster.steps[1].sel, '#btn-roster', 'roster step 2 spotlights the paperclip button');
-    R.eq(w.CA_SPOT_TOURS.roster.steps[4].sel, '#btn-roster', 'roster step 5 stays on the paperclip too');
+    R.eq(w.CA_SPOT_TOURS.roster.steps[5].sel, '#btn-roster', 'roster step 6 stays on the paperclip too');
+    // v1.49.2 (owner order): the NEW step between 3 and 4 — the earnings chip
+    R.eq(w.CA_SPOT_TOURS.roster.steps[3].sel, '#action-chips .action-chip[data-intent="earn"]', 'roster step 4 spotlights the how-much-have-I-earned chip (v1.49.2)');
   }
 
   // ---- the walk: counter, Back, Next, Done, the once-stamp ----
   {
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
-      x.localStorage.removeItem('crewAssist.spotMainSeen');
+      x.localStorage.removeItem('crewAssist.spotMainDone');
     } });
     R.eq(w.caSpotStart('main'), true, 'the main tour starts');
     R.ok(d.documentElement.classList.contains('ca-spot-on'), 'ca-spot-on lights the chrome class');
     R.ok(d.getElementById('ca-spot-veil') && d.getElementById('ca-spot-ring') && d.getElementById('ca-spot-tip'), 'veil, ring and tooltip exist');
     await wait(600);
     R.ok(tipText(d).indexOf('At your service') !== -1, 'step 1 titles the chat bar');
-    // v1.49.1: the **bold** markers render as bold spans, never raw text
+    // v1.49.2: the **bold** markers ride the TITLE now (the owner's part-2
+    // pack bolds its titles) — they render as bold spans, never raw text
     const bolds = d.querySelectorAll('#ca-spot-tip b');
-    R.eq(bolds.length, 2, 'step 1\u2019s line carries two bold words');
-    R.eq(bolds[0].textContent, 'help', 'help renders bold');
-    R.eq(bolds[1].textContent, '?', 'the ? command renders bold');
-    R.ok(tipText(d).indexOf('Ask anything about your flights, or type help / ? for quick commands.') !== -1, 'the line reads word-for-word, markers stripped');
+    R.eq(bolds.length, 1, 'step 1\u2019s title carries one bold phrase');
+    R.eq(bolds[0].textContent, 'At your service', 'the title renders bold');
+    R.ok(tipText(d).indexOf('Ask about your flight or type "help" / "?" for quick commands.') !== -1, 'the line reads word-for-word');
     R.ok(tipText(d).indexOf('**') === -1, 'no marker asterisks leak into the rendered copy');
     R.ok(tipText(d).indexOf('1 of 7') !== -1, 'the counter reads 1 of 7');
     R.ok(!d.getElementById('ca-spot-back'), 'Back is hidden on step 1');
@@ -116,20 +121,20 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(tipText(d).indexOf('1 of 7') !== -1, 'Back re-runs the prior step\u2019s world');
     for (let i = 0; i < 7; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
     R.ok(!d.documentElement.classList.contains('ca-spot-on'), 'Done stands the tour down');
-    R.eq(w.localStorage.getItem('crewAssist.spotMainSeen'), '1', 'Done on the main tour stamps spotMainSeen \u2014 ONLY Done completes (v1.49.1)');
+    R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'Done on the main tour stamps spotMainDone \u2014 ONLY Done completes (v1.49.1)');
   }
 
   // ---- Skip and Escape end it too; the veil never outstays ----
   {
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     w.caSpotStart('roster');
     await wait(600);
     d.getElementById('ca-spot-skip').click();
     R.ok(!d.documentElement.classList.contains('ca-spot-on'), 'Skip ends the walk');
-    R.eq(w.localStorage.getItem('crewAssist.spotMainSeen'), '1', 'a non-main tour never stamps the main seen flag');
+    R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'a non-main tour never stamps the main seen flag');
     w.caSpotStart('menus');
     await wait(600);
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -138,16 +143,16 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
 
     // v1.49.1 (owner order): a skipped MAIN walk never completes — the
     // flag stays unstamped and the walk returns on the next app open.
-    w.eval('localStorage.removeItem("crewAssist.spotMainSeen")');
+    w.eval('localStorage.removeItem("crewAssist.spotMainDone")');
     R.eq(w.caSpotStart('main'), true, 'the main walk starts');
     await wait(600);
     d.getElementById('ca-spot-skip').click();
     R.ok(!w.caSpot.on, 'the main walk stands down on Skip');
-    R.eq(w.localStorage.getItem('crewAssist.spotMainSeen'), null, 'Skip is not completion — no stamp lands');
+    R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), null, 'Skip is not completion — no stamp lands');
     R.eq(w.caSpotStart('main'), true, 'the walk returns after a skip');
     await wait(600);
     d.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
-    R.eq(w.localStorage.getItem('crewAssist.spotMainSeen'), null, 'Escape is not completion either');
+    R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), null, 'Escape is not completion either');
     w.caSpotEnd();
   }
 
@@ -155,7 +160,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
   {
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     w.caSpotStart('main');
     await wait(600);
@@ -166,7 +171,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     d.getElementById('ca-spot-next').click();
     await wait(520);
     R.ok(tipText(d).indexOf('6 of 7') !== -1, 'the vanished theme step skips itself \u2014 the counter carries on to 6');
-    R.ok(tipText(d).indexOf('Your settings and profile') !== -1, 'the walk lands on the step after the gap');
+    R.ok(tipText(d).indexOf('Account & Preferences') !== -1, 'the walk lands on the step after the gap');
     w.caSpotEnd();
   }
 
@@ -174,7 +179,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
   {
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     // earnings: the archive sheet opens itself
     w.caSpotStart('earnings');
@@ -217,6 +222,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     w.caSpotEnd();
 
     // manual: the tour builds one real calculator card through the app\u2019s own engine
+    const chatKidsBefore = d.getElementById('chat-container').children.length;
     w.caSpotStart('manual');
     await wait(600);
     R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'the manual tour opens Settings for the Manual pill');
@@ -224,12 +230,17 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(tipText(d).indexOf('Fill the flight') !== -1, 'manual step 2 shows');
     R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'the card steps return to the main screen');
     R.ok(!!w.caSpot.cardId && !!d.getElementById(w.caSpot.cardId + '-btn-calc'), 'the prop is a real calculator card with a Calculate button');
+    R.ok(d.getElementById('chat-container').children.length > chatKidsBefore, 'the card lives in the thread while the veil is up');
     w.caSpotEnd();
-    R.ok(!!d.querySelector('.glass-bubble [id$="-btn-calc"]'), 'the card stays in the thread \u2014 a working prop, never cleaned away');
+    // v1.49.2 (owner order): the chat REVERTS — no tutorial cards left behind
+    R.ok(!d.querySelector('.glass-bubble [id$="-btn-calc"]'), 'the tour-built card leaves with the veil');
+    R.ok(!d.querySelector('#chat-container [id^="calc-"]'), 'no calculator remnants stay in the thread');
+    R.eq(d.getElementById('chat-container').children.length, chatKidsBefore, 'the thread reads exactly as it did before the walk');
+    R.eq(w.caSpot.cardId, null, 'the card reference clears with the walk');
   }
 
   // ---- the firing doors (v1.49.1, owner order) ----
-  // The harness pre-stamps spotMainSeen on every boot: the every-crew door
+  // The harness pre-stamps spotMainDone on every boot: the every-crew door
   // fires at the chat screen, so plain test boots must be seen devices to
   // stay deterministic. A boot that leaves the stamp never fires.
   {
@@ -248,7 +259,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
       x.localStorage.setItem('crewAssist.wnSeen', '1.48.5');
-      x.localStorage.removeItem('crewAssist.spotMainSeen');
+      x.localStorage.removeItem('crewAssist.spotMainDone');
     } });
     const until = mkUntil(d);
     R.ok(await until(() => w.caSpot.on, 20000), 'the tour fires for a returning crew at the chat screen');
@@ -257,7 +268,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok((d.getElementById('chat-container').textContent || '').trim().length === 0, 'the greeting waits too — the chat is still empty');
     d.getElementById('ca-spot-skip').click();
     R.ok(await until(() => !w.caSpot.on, 5000), 'Skip ends the walk');
-    R.eq(w.localStorage.getItem('crewAssist.spotMainSeen'), null, 'a skipped walk never stamps — it returns next open');
+    R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), null, 'a skipped walk never stamps — it returns next open');
     R.ok(await until(() => !d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 10000), 'the walk\u2019s end hands the stage to the What\u2019s-New sheet');
     const wn = d.getElementById('whatsnew-close');
     if (wn) wn.click();
@@ -268,7 +279,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
   // the sheet and the greeting wait. Carried to Done, the walk completes.
   {
     const { w, d } = await boot(APP, { seed: (x) => {
-      x.localStorage.removeItem('crewAssist.spotMainSeen');
+      x.localStorage.removeItem('crewAssist.spotMainDone');
     } });
     const until = mkUntil(d);
     const name = d.getElementById('ob-name');
@@ -287,7 +298,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(await until(() => tipText(d).indexOf('1 of 7') !== -1, 10000), 'the first spotlight is the chat bar');
     for (let i = 0; i < 7; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
     R.ok(!w.caSpot.on, 'Done stands the walk down');
-    R.ok(await until(() => w.localStorage.getItem('crewAssist.spotMainSeen') === '1', 5000), 'ONLY Done completes — the once-flag lands');
+    R.ok(await until(() => w.localStorage.getItem('crewAssist.spotMainDone') === '1', 5000), 'ONLY Done completes — the once-flag lands');
     R.ok(await until(() => !d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 10000), 'the sheet takes the stage after Done');
     const wn = d.getElementById('whatsnew-close');
     if (wn) wn.click();
@@ -300,7 +311,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
   // Restoring from the welcome screen is not a new user: the restore door
   // stamps the once-flag (pinned end-to-end in earnings-archive).
   {
-    R.ok(src.indexOf("opts.fromOnboarding) { try { localStorage.setItem('crewAssist.spotMainSeen', '1'); }") >= 0, 'the welcome-restore door stamps spotMainSeen');
+    R.ok(src.indexOf("opts.fromOnboarding) { try { localStorage.setItem('crewAssist.spotMainDone', '1'); }") >= 0, 'the welcome-restore door stamps spotMainDone');
   }
 
   // ---- the engine\u2019s own contract (src pins) ----
@@ -311,7 +322,20 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(/function caSpotPlace\([\s\S]{0,600}const m = 12;/.test(src), 'placement clamps to a 12px margin');
     R.ok(src.indexOf('document.addEventListener(\'scroll\', caSpotReflow, true);') >= 0, 'the ring re-places on captured scrolls (sheets scroll inside)');
     R.ok(src.indexOf("window.addEventListener('orientationchange', caSpotReflow);") >= 0, 'the ring re-places on orientation change');
-    R.ok(src.indexOf('html.ca-reduced #ca-spot-ring, html.ca-reduced #ca-spot-tip { transition: none; }') >= 0, 'reduced motion kills the glide');
+    // v1.49.2 (owner order): the ring GLIDES again — even under reduced
+    // motion (the one ca-reduced exception); only the tooltip stays
+    // transition-less, and that as belt-and-braces.
+    R.ok(src.indexOf('transition: top .24s ease, left .24s ease, width .24s ease, height .24s ease;') >= 0, 'the ring\u2019s glide is restored (the owner missed it)');
+    R.ok(src.indexOf('html.ca-reduced #ca-spot-tip { transition: none; }') >= 0, 'the reduced-motion rule keeps only the tooltip');
+    R.ok(src.indexOf('html.ca-reduced #ca-spot-ring') === -1, 'reduced motion no longer kills the ring\u2019s glide \u2014 the owner\u2019s one exception');
+    // v1.49.2: the once-key migrated — the v1.49.0 key (stamped on ANY end)
+    // is wiped on load so every existing crew walks once more
+    R.ok(src.indexOf("localStorage.removeItem('crewAssist.spotMainSeen')") >= 0, 'the retired v1.49.0 once-key is wiped at script-eval time');
+    R.ok(src.indexOf("localStorage.getItem('crewAssist.spotMainDone')") >= 0, 'the once-key is spotMainDone now');
+    // v1.49.2 (owner order): the chat reverts at the walk\u2019s end
+    R.ok(src.indexOf('caSpot.chatKids = cc ? Array.prototype.slice.call(cc.children) : [];') >= 0, 'the walk snapshots the thread\u2019s children at start');
+    R.ok(src.indexOf('if (caSpot.chatKids.indexOf(kid) === -1) kid.remove();') >= 0, 'walk-built children leave with the veil \u2014 no tutorial cards');
+    R.ok(src.indexOf('caSpotAppendRich(title, step.title)') >= 0, 'titles render the **bold** markers too (v1.49.2)');
     R.ok(src.indexOf('ev.key === \'Escape\'') >= 0, 'Escape ends the walk');
     // v1.49.1 pins
     R.ok(src.indexOf('caSpotEnd(true)') >= 0, 'Next past the last step (Done) is the only completing end');
@@ -328,7 +352,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     ['startCaTour', 'finishCaTour', 'maybeOfferTour', 'caTourInterrupt', 'caTourPace', 'caTourArchiveStore', 'CA_TOUR_STEPS', 'tourDone', 'ca-tour-on', 'ca-tour-glow', 'caTourPulse', 'btn-replay-tour', 'ca-tour-bubble', 'ca-tour-offer', 'caSpotFresh'].forEach((dead) => {
       R.ok(src.indexOf(dead) === -1, 'no trace of ' + dead + ' remains');
     });
-    R.ok(src.indexOf('crewAssist.spotMainSeen') >= 0, 'the once-flag is the spotlight\u2019s own');
+    R.ok(src.indexOf('crewAssist.spotMainDone') >= 0, 'the once-flag is the spotlight\u2019s own');
     // the chat queue kept its fast pace; the tour exemption retired with it
     R.ok(src.indexOf('CHAT_ANIM_MS + CHAT_FAST_GAP_MS') >= 0, 'noteBubbleShown runs the universal fast pace');
     R.ok(src.indexOf('150 + Math.random() * 100') >= 0, 'enqueueBot types at the universal fast pace');
