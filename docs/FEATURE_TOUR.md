@@ -55,7 +55,9 @@ right without diffing:
 | World | What it ensures |
 |---|---|
 | `caSpotMainWorld` | The main chat screen (sheets closed). |
-| `caSpotSettingsWorld` | The Settings sheet open. |
+| `caSpotSettingsWorld` | The Settings sheet open, the four fold sections
+  (Feature tour, Developer Mode, Storage, Data Management) handed back open —
+  a fold can never hide a lit target. |
 | `caSpotEarningsWorld` | The earnings archive overlay open. |
 | `caSpotCalWorld(tags)` | The roster calendar open; the tag chip forced on or off per the step. |
 | `caSpotPodWorld` | The Flight Passport sheet open. |
@@ -70,7 +72,7 @@ needs the network waits for it honestly; if it never lands, the step skips.
 ## The invitation
 
 The auto-fired main walk is preceded by an invitation card: a compass icon,
-"Let's take a quick tour", "Seven quick steps in under a minute", a full-width
+"Let's take a quick tour", "Eight quick steps in under a minute", a full-width
 gold **Next** and a plain-text **Skip**.
 
 - It renders for every crew who has not completed (or declined) the main walk
@@ -121,15 +123,18 @@ Done, Skip, Escape and supersede alike:
 - **Toggles** revert: the calendar's tag chip sits as it sat.
 - **Scrolls** revert: the chat's chip rail and the Settings sheet's own
   scroll ride home — a walk never leaves either scrolled away.
+- **Folds** revert (v1.53.0): the Settings fold sections sit as the crew
+  left them — a walk that opens a fold to light it re-folds it at its end,
+  and an untouched section never moves.
 - **Storage** reverts: a prop's fetch writes what a real search writes (the
   recent-flights list, the cabin and menu caches) — the stage carries those
   keys and puts them back. A tour saves nothing.
 
-## The eight walks (Settings order; 40 steps)
+## The eight walks (Settings order; 41 steps)
 
 | Walk | Id | Steps |
 |---|---|---|
-| Main screen | `main` | 7 |
+| Main screen | `main` | 8 |
 | Roster import | `roster` | 6 |
 | Manual flight cards | `manual` | 4 |
 | Menus & search | `menus` | 4 |
@@ -138,9 +143,10 @@ Done, Skip, Escape and supersede alike:
 | Flight Stats | `stats` | 4 |
 | Backup & restore | `backup` | 4 |
 
-### Main screen (`main`, 7 steps)
+### Main screen (`main`, 8 steps)
 
-Runs on the main chat screen.
+Runs on the main chat screen; step 8 opens Settings and lights the Feature tour
+section itself.
 
 | # | Target | Title | Line |
 |---|---|---|---|
@@ -151,6 +157,14 @@ Runs on the main chat screen.
 | 5 | `#btn-theme` | **Theme Toggle** | Tap anytime to switch seamlessly between light and dark theme. |
 | 6 | `#btn-settings` | **Account & Preferences** | Update your profile details, manage your saved data, or replay feature tours whenever you need. |
 | 7 | `#btn-reset` | **Clear Screen** | Double-tap to clear your screen. Your saved data remains untouched. |
+| 8 | `#ca-ft-section` | **You’re All Set** | Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features. |
+
+Step 8 rides the Settings world — its target is the Feature tour section
+(the tours’ own front door, sitting directly below Motion since the v1.53.0
+Settings reorder), and the world unfolds it first. The section folds behind its
+header like the three other quiet sections (Developer Mode, Storage, Data
+Management); a tap on the header opens it again, and the fold state lives in
+memory only — a reload opens everything.
 
 ### Roster import (`roster`, 6 steps)
 
@@ -241,7 +255,8 @@ the All Flight Stats page over it.
 ### Backup & restore (`backup`, 4 steps)
 
 Runs in Settings (the Data Management section), which stays open throughout —
-the crew tapped inside it.
+the crew tapped inside it. The section folds like its neighbours; the walk's
+world opens it first.
 
 | # | Target | Title | Line |
 |---|---|---|---|
@@ -262,4 +277,5 @@ the crew tapped inside it.
   geometry pins, the prompt-first firing doors, and the stage-revert
   (sheets, scrolls and storage) after each walk.
 - `tests/dev-ui.test.js` — the E6 changelog ladder that carries each round's
-  What's-New pointers.
+  What's-New pointers, plus the Settings fold anatomy (the four sections, the
+  reorder, the grid-rows body).

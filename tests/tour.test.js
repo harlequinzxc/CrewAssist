@@ -33,7 +33,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
 (async () => {
   const src = fs.readFileSync(APP, 'utf8');
 
-  // ---- the registry is data: eight tours, the owner's order, 46 steps ----
+  // ---- the registry is data: eight tours, the owner's order, 41 steps ----
   {
     const { w } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
@@ -45,14 +45,14 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     const labels = Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].label).join(',');
     R.eq(labels, 'Main screen,Roster import,Manual flight cards,Menus & search,Earnings,Calendar,Flight Stats,Backup & restore', 'labels read as the Settings rows do');
     const counts = Object.keys(w.CA_SPOT_TOURS).map((k) => k + ':' + w.CA_SPOT_TOURS[k].steps.length).join(' ');
-R.eq(counts, 'main:7 roster:6 manual:4 menus:4 earnings:5 calendar:6 stats:4 backup:4', 'step counts (v1.52.0): the menus walk splits its form and button steps, the stats and backup walks trim to four');
+R.eq(counts, 'main:8 roster:6 manual:4 menus:4 earnings:5 calendar:6 stats:4 backup:4', 'step counts (v1.53.0): the main walk gains its eighth step — the tours\u2019 front door');
     const allSteps = Object.keys(w.CA_SPOT_TOURS).reduce((a, k) => a.concat(w.CA_SPOT_TOURS[k].steps), []);
-R.eq(allSteps.length, 40, 'forty steps in all (v1.52.0: menus 3\u21924, stats 5\u21924, backup 5\u21924)');
+R.eq(allSteps.length, 41, 'forty-one steps in all (v1.53.0: main 7\u21928 — the walk ends at the Feature tour section)');
     R.ok(allSteps.every((s) => s && s.sel && s.title && s.line), 'every step carries a target, a title and a line');
     // v1.50.0: every walk carries a CONTENT version — the store stamps at
     // it, and bumping one retires its check (and re-invites for main)
     R.ok(Object.keys(w.CA_SPOT_TOURS).every((k) => typeof w.CA_SPOT_TOURS[k].cv === 'string' && w.CA_SPOT_TOURS[k].cv), 'every walk carries a cv (its content version)');
-R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '1.49.3,1.49.2,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0', 'cvs: main 1.49.3, roster 1.49.2, the six rewritten walks bump to 1.52.0');
+R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '1.53.0,1.49.2,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0', 'cvs: main bumps to 1.53.0 with its eighth step (everyone re-invited), roster 1.49.2, the six rewritten walks hold 1.52.0');
   }
 
   // ---- the copy ships verbatim: every step's title and line, word for word ----
@@ -70,6 +70,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
       ['main', 4, '**Theme Toggle**', 'Tap anytime to switch seamlessly between light and dark theme.'],
       ['main', 5, '**Account & Preferences**', 'Update your profile details, manage your saved data, or replay feature tours whenever you need.'],
       ['main', 6, '**Clear Screen**', 'Double-tap to clear your screen. Your saved data remains untouched.'],
+      ['main', 7, '**You\u2019re All Set**', 'Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features.'],
       ['roster', 0, '**First, your Roster Report**', 'Upload your Roster Report PDF directly from CrewApp using the paperclip icon.'],
       ['roster', 1, '**Hands-Free Import**', 'Every line is analyzed automatically. All flights, dates, sectors, and reporting times are extracted instantly without you typing a thing.'],
       ['roster', 2, '**Seamless Integration**', 'Your calendar fills up instantly with your imported data.'],
@@ -125,6 +126,9 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.eq(w.CA_SPOT_TOURS.backup.steps[3].sel, '#btn-clear-data', 'backup step 4 lights the clear-all-data door');
     R.eq(w.CA_SPOT_TOURS.stats.steps[2].sel, '#ca-rc-pod-gate', 'stats step 3 lights the My Flight Stats gate');
     R.eq(w.CA_SPOT_TOURS.menus.steps[3].sel && w.CA_SPOT_TOURS.menus.steps[3].before, w.CA_SPOT_TOURS.menus.steps[3].before, 'menus step 4 rides its own fill-the-card world');
+    // v1.53.0: the closer — the walk ends at the tours' own front door
+    R.eq(w.CA_SPOT_TOURS.main.steps[7].sel, '#ca-ft-section', 'v1.53.0: main step 8 lights the Feature tour section itself');
+    R.ok(typeof w.CA_SPOT_TOURS.main.steps[7].before === 'function', 'v1.53.0: main step 8 rides the Settings world — the folds open first');
   }
 
   // ---- the walk: counter, Back, Next, Done, the per-walk stamp ----
@@ -145,13 +149,13 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.eq(bolds[0].textContent, 'At Your Service', 'the title renders bold');
     R.ok(tipText(d).indexOf('Ask about your flight or type "help" / "?" for quick commands.') !== -1, 'the line reads word-for-word');
     R.ok(tipText(d).indexOf('**') === -1, 'no marker asterisks leak into the rendered copy');
-    R.ok(tipText(d).indexOf('1 of 7') !== -1, 'the counter reads 1 of 7');
+    R.ok(tipText(d).indexOf('1 of 8') !== -1, 'the counter reads 1 of 8');
     R.ok(!d.getElementById('ca-spot-back'), 'Back is hidden on step 1');
     R.ok(d.getElementById('ca-spot-next') && d.getElementById('ca-spot-skip'), 'Next and Skip ride every step');
     R.eq([...d.querySelectorAll('#ca-spot-tip button')].map((b) => b.id).join(','), 'ca-spot-skip,ca-spot-next', 'step 1 orders the buttons Skip, Next \u2014 with the spacer between, Skip never hugs Next');
     d.getElementById('ca-spot-next').click();
     await wait(600);
-    R.ok(tipText(d).indexOf('2 of 7') !== -1, 'Next advances to 2 of 7');
+    R.ok(tipText(d).indexOf('2 of 8') !== -1, 'Next advances to 2 of 8');
     R.ok(!!d.getElementById('ca-spot-back'), 'Back shows from step 2 on');
     // v1.49.3 (owner order): Skip sits FAR from Next — the row reads
     // Skip | spacer | Back, Next (Back only past step 1)
@@ -159,14 +163,24 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.eq(rowBtns().join(','), 'ca-spot-skip,ca-spot-back,ca-spot-next', 'step 2+ orders the buttons Skip, Back, Next \u2014 the destructive exit is pinned left');
     d.getElementById('ca-spot-back').click();
     await wait(600);
-    R.ok(tipText(d).indexOf('1 of 7') !== -1, 'Back re-runs the prior step\u2019s world');
-    for (let i = 0; i < 7; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
+    R.ok(tipText(d).indexOf('1 of 8') !== -1, 'Back re-runs the prior step\u2019s world');
+    for (let i = 0; i < 6; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
+    R.ok(tipText(d).indexOf('7 of 8') !== -1, 'seven steps in, the counter reads 7 of 8');
+    d.getElementById('ca-spot-next').click();
+    await wait(600);
+    R.ok(tipText(d).indexOf('8 of 8') !== -1 && tipText(d).indexOf('You\u2019re All Set') !== -1, 'v1.53.0: step 8 titles the closer \u2014 the copy VERBATIM');
+    R.ok(tipText(d).indexOf('Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features.') !== -1, 'the eighth line reads word-for-word');
+    R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.53.0: the eighth step lights inside Settings \u2014 its world opened the sheet');
+    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'the lit Feature tour section sits OPEN \u2014 the world unfolded it first');
+    d.getElementById('ca-spot-next').click();
+    await wait(520);
     R.ok(!d.documentElement.classList.contains('ca-spot-on'), 'Done stands the tour down');
+    R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.53.0: the stage revert closes Settings behind the Done');
     // v1.50.0: completion is per-walk now — the store stamps at the walk's
     // cv, and main keeps its legacy mirror (the archive pin + the
     // welcome-restore door read it)
     R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'Done on the main tour keeps the legacy spotMainDone mirror');
-    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.49.3' }), 'Done stamps the per-walk store at main\u2019s current cv');
+    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.0' }), 'Done stamps the per-walk store at main\u2019s current cv');
   }
 
   // ---- Skip and Escape end it too; the veil never outstays ----
@@ -213,10 +227,10 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     // step 5 (Theme switcher) targets the theme button — retire it mid-walk
     d.getElementById('btn-theme').remove();
     for (let i = 0; i < 3; i++) { d.getElementById('ca-spot-next').click(); await wait(520); }
-    R.ok(tipText(d).indexOf('4 of 7') !== -1, 'the walk reaches step 4');
+    R.ok(tipText(d).indexOf('4 of 8') !== -1, 'the walk reaches step 4');
     d.getElementById('ca-spot-next').click();
     await wait(520);
-    R.ok(tipText(d).indexOf('6 of 7') !== -1, 'the vanished theme step skips itself \u2014 the counter carries on to 6');
+    R.ok(tipText(d).indexOf('6 of 8') !== -1, 'the vanished theme step skips itself \u2014 the counter carries on to 6');
     R.ok(tipText(d).indexOf('Account & Preferences') !== -1, 'the walk lands on the step after the gap');
     w.caSpotEnd();
   }
@@ -394,7 +408,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.eq(d.getElementById('chat-container').children.length, chatKidsBeforeMenus, 'the thread reads exactly as it did before the menus walk');
     R.eq(w.localStorage.getItem('crewAssist.recentFlights'), RECENTS_SEED, 'v1.52.0: the recents list the fetch wrote rides home with the stage \u2014 a tour saves nothing');
     R.ok(!!w.localStorage.getItem('SQ802:' + todayYMD + ':CABINS'), 'the seeded cabin schedule survives \u2014 nothing pruned away');
-    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.49.3', menus: '1.52.0' }), 'the menus Done stamps at its 1.52.0 content (main sits there from the legacy materialization)');
+    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.0', menus: '1.52.0' }), 'the menus Done stamps at its 1.52.0 content (main sits there from the legacy materialization)');
 
     // supersede: a tour never stacks on a tour — the first walk\u2019s stage is
     // restored (its sheet closed) before the second walk snapshots
@@ -432,6 +446,73 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.50.0: the roster walk hands Settings back open \u2014 the pre-tap stage, not the post-close one');
     w.closeSettings();
     await wait(500);
+  }
+
+  // ---- v1.53.0: the Settings accordions — the four quieter sections
+  // (Feature tour, Developer Mode, Storage, Data Management) fold behind
+  // their headers. Dependency-free and data-attribute-bound; default open,
+  // in memory only; a fold hides its target; the worlds unfold; the stage
+  // revert folds the crew's own state home ----
+  {
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', PROFILE);
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+    } });
+    R.eq(typeof w.caAccOpenAll, 'function', 'caAccOpenAll is global — the Settings worlds reach it');
+    R.eq(typeof w.caAccState, 'function', 'caAccState is global — the stage snapshot reads it');
+    R.eq(typeof w.caAccRestore, 'function', 'caAccRestore is global — the stage revert drives it');
+    R.eq([...d.querySelectorAll('.ca-acc')].map((el) => el.getAttribute('data-ca-acc')).join(','), 'ft,dev,storage,dm', 'exactly four accordion sections: Feature tour, Developer Mode, Storage, Data Management');
+    R.eq(d.querySelectorAll('[data-accordion-target]').length, 4, 'four heads, every one bound through data-accordion-target');
+    R.ok([...d.querySelectorAll('.ca-acc')].every((el) => !el.classList.contains('ca-acc-closed')), 'every section starts OPEN');
+    R.ok([...d.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'true'), 'the heads announce themselves expanded (aria)');
+    // a plain click folds; a second click re-opens — no framework, one delegated listener
+    const keysBefore = JSON.stringify(Object.keys(w.localStorage).sort());
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    R.ok(d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'a head click folds its section');
+    R.eq(d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').getAttribute('aria-expanded'), 'false', 'the head announces the fold');
+    R.ok(d.getElementById('ca-ft-section').querySelector('.ca-acc-body') !== null, 'the folded body sits in the DOM (the grid-rows ride does the height)');
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'a second click re-opens it');
+    // caAccOpenAll + state + restore round-trip
+    d.querySelector('[data-accordion-target=\"ca-acc-dm\"]').click();
+    R.eq(w.caAccState().dm, false, 'caAccState reads the fold');
+    w.caAccOpenAll();
+    R.ok(Object.values(w.caAccState()).every((v) => v === true), 'caAccOpenAll opens every fold');
+    R.eq(JSON.stringify(Object.keys(w.localStorage).sort()), keysBefore, 'the fold state never touches localStorage — in memory only, a reload opens everything');
+    // the worlds unfold before they light, and the stage revert folds the
+    // crew's own state home: fold TWO sections, walk, end — both re-folded
+    w.openSettings();
+    await wait(450);
+    // the engine's shown-check: with the sheet open, a fold hides the
+    // panel exactly like a vanished target would
+    R.eq(!!w.eval('caSpotVis(\"#ca-feature-tours\")'), true, 'an open fold shows its panel');
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    R.eq(!!w.eval('caSpotVis(\"#ca-feature-tours\")'), false, 'v1.53.0: a closed fold reads as a VANISHED target — the shown-check walks the ca-acc-closed ancestors');
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    // fold TWO sections — the stage revert must fold both home again
+    d.querySelector('[data-accordion-target=\"ca-acc-dm\"]').click();
+    d.querySelector('[data-accordion-target=\"ca-acc-ft\"]').click();
+    w.caSpotStart('backup');
+    await wait(600);
+    R.ok(tipText(d).indexOf('Your Data, Your File') !== -1, 'the backup walk lights a section that sat folded — the Settings world opened the fold first');
+    R.ok(!d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'the lit DM section sits open mid-walk');
+    d.getElementById('ca-spot-skip').click();
+    await wait(500);
+    R.ok(d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'v1.53.0: the stage revert re-folds the section the crew had folded');
+    R.ok(d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'the Feature tour fold rides home too');
+    R.ok(!d.querySelector('[data-ca-acc=\"storage\"]').classList.contains('ca-acc-closed'), 'an untouched section stays open through the revert');
+    w.caAccOpenAll();
+    w.closeSettings();
+    await wait(500);
+    // the src contract: delegated binding, grid-rows fold, reduced-motion kill
+    R.ok(src.indexOf('e.target.closest && e.target.closest(\'[data-accordion-target]\')') >= 0, 'the toggle binds through the data attribute — one delegated document listener');
+    R.ok(src.indexOf('.ca-acc.ca-acc-closed .ca-acc-body { grid-template-rows: 0fr; opacity: 0; }') >= 0, 'the fold rides grid-template-rows 1fr→0fr — zero JS measuring');
+    R.ok(src.indexOf('html.ca-reduced .ca-acc-body, html.ca-reduced .ca-acc-head .ca-acc-chev { transition: none; }') >= 0, 'reduced motion folds instantly');
+    // v1.53.0's engine lesson: a near-viewport-tall lit target clamps the
+    // tooltip onto the ring's edge — the tip-aware scroll pass shifts the
+    // nearest scrollable just enough for a clean fit (pinned end-to-end by
+    // the smoke rig's never-covers geometry in real Chromium)
+    R.ok(src.indexOf('function caSpotFitTip(el, rect)') >= 0 && src.indexOf('if (caSpotFitTip(el, rect))') >= 0, 'the tip-aware scroll pass rides every placement — the ring glides, so the fit reads the placement rect, never the transitioning box');
   }
 
   // ---- v1.50.0: the Settings rows wear their completion state —
@@ -483,7 +564,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
       x.localStorage.setItem('crewAssist.spotMainDone', '1');
       x.localStorage.removeItem('crewAssist.spotDone');
     } });
-    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.49.3' }), 'the legacy flag materializes into the store at main\u2019s current cv');
+    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.0' }), 'the legacy flag materializes into the store at main\u2019s current cv');
     R.eq(w.caSpotWalkDone('main'), true, 'the materialized state reads done');
 
     // a stale cv (content changed since the walk was done) reads NOT done —
@@ -537,7 +618,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(!!card, 'the prompt is a card');
     R.eq(card.getAttribute('role'), 'dialog', 'the card announces itself as a dialog');
     R.eq((d.getElementById('ca-spot-prompt-backdrop').textContent || '').indexOf('Let\u2019s take a quick tour') !== -1, true, 'the headline reads verbatim');
-    R.eq(card.textContent.indexOf('Seven quick steps in under a minute') !== -1, true, 'the secondary line reads verbatim');
+    R.eq(card.textContent.indexOf('Eight quick steps in under a minute') !== -1, true, 'the secondary line reads verbatim (v1.53.0: the walk grew one)');
     const poly = card.querySelector('svg polygon');
     R.ok(!!poly, 'the prompt carries the compass icon');
     R.eq(poly.getAttribute('points'), '16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76', 'the compass is the exact Lucide polygon');
@@ -556,7 +637,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     // Next accepts: the card tears down and the walk begins
     next.click();
     R.ok(await until(() => w.caSpot.on, 5000), 'Next starts the main walk');
-    R.ok(await until(() => tipText(d).indexOf('1 of 7') !== -1, 10000), 'the first spotlight is the chat bar');
+    R.ok(await until(() => tipText(d).indexOf('1 of 8') !== -1, 10000), 'the first spotlight is the chat bar');
     await wait(450);
     R.ok(!d.getElementById('ca-spot-prompt-backdrop'), 'the prompt tears its nodes down');
     d.getElementById('ca-spot-skip').click();
@@ -652,7 +733,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(await until3(() => d3.getElementById('ca-spot-prompt-backdrop'), 20000), 'the prompt returns for a crew that skipped the walk');
     d3.getElementById('ca-spot-prompt-next').click();
     R.ok(await until3(() => w3.caSpot.on, 5000), 'Next walks');
-    R.ok(await until3(() => d3.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, 10000), 'the first spotlight is the chat bar');
+    R.ok(await until3(() => d3.getElementById('ca-spot-tip').textContent.indexOf('1 of 8') !== -1, 10000), 'the first spotlight is the chat bar');
     d3.getElementById('ca-spot-skip').click();
     R.ok(await until3(() => !w3.caSpot.on, 5000), 'the walk skips');
     R.eq(w3.localStorage.getItem('crewAssist.spotMainDeclined'), null, 'skipping the walk is not declining the invitation');
@@ -679,10 +760,10 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(await until(() => d.getElementById('ca-spot-prompt-backdrop'), 25000), 'onboarding completion renders the invitation');
     R.ok(d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 'for new crew too, the sheet waits behind the prompt');
     d.getElementById('ca-spot-prompt-next').click();
-    R.ok(await until(() => tipText(d).indexOf('1 of 7') !== -1, 10000), 'the first spotlight is the chat bar');
-    for (let i = 0; i < 7; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
+    R.ok(await until(() => tipText(d).indexOf('1 of 8') !== -1, 10000), 'the first spotlight is the chat bar');
+    for (let i = 0; i < 8; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
     R.ok(!w.caSpot.on, 'Done stands the walk down');
-    R.ok(await until(() => w.localStorage.getItem('crewAssist.spotDone') === JSON.stringify({ main: '1.49.3' }), 5000), 'ONLY Done completes — the store lands at main\u2019s cv');
+    R.ok(await until(() => w.localStorage.getItem('crewAssist.spotDone') === JSON.stringify({ main: '1.53.0' }), 5000), 'ONLY Done completes — the store lands at main\u2019s cv');
     R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'the legacy mirror lands with it');
     R.ok(await until(() => !d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 10000), 'the sheet takes the stage after Done');
     const wn = d.getElementById('whatsnew-close');
