@@ -100,7 +100,11 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   rows live in it), so a walk launched from a row hands Settings back
   open; the menu viewer restores closed only (its opener needs a flight,
   unreachable at walk-start). This supersedes the v1.49.0 "sheets stay
-  open" design.
+  open" design. v1.51.0 (owner report — the roster walk's chip step left
+  the rail scrolled right): the snapshot also carries the **chip rail's
+  scroll** and the **Settings sheet's own scroll**, both restored with
+  instant sets at the end — the same never-stranded rule as the v1.48.1
+  chip-tap glide.
 - **Copy ships verbatim.** The tooltip builds the title and line through
   DOM APIs — word for word, never as markup. Since v1.49.1 the line may
   carry `**bold**` markers, which render as bold spans (still built by DOM
@@ -205,7 +209,7 @@ The flow, exactly as the owner drew it:
   every walk's end. The declined state shows no icon difference — the row
   reads not-done, honestly.
 
-## The eight walks (Settings order; 47 steps)
+## The eight walks (Settings order; 41 steps — v1.51.0)
 
 Settings → **Feature tour**, eight rows in one glass box, in this order:
 
@@ -213,9 +217,9 @@ Settings → **Feature tour**, eight rows in one glass box, in this order:
 |---|---|---|
 | Main screen | `main` | 7 |
 | Roster import | `roster` | 6 |
-| Manual flight cards | `manual` | 6 |
-| Menus & search | `menus` | 6 |
-| Earnings | `earnings` | 6 |
+| Manual flight cards | `manual` | 4 |
+| Menus & search | `menus` | 3 |
+| Earnings | `earnings` | 5 |
 | Calendar | `calendar` | 6 |
 | Flight Stats | `stats` | 5 |
 | Backup & restore | `backup` | 5 |
@@ -251,51 +255,58 @@ per the v1.49.2 order, **step 4 spotlights the earnings chip**.
 | 5 | The paperclip (`#btn-roster`) | Chat screen | **Stay updated** — Re-upload your pdf whenever you get a new monthly roster or schedule changes. Your calendar and allowances update seamlessly. |
 | 6 | The paperclip (`#btn-roster`) | Chat screen | **No Guesswork** — If your uploaded file isn't recognized as a valid roster, I will let you know immediately rather than guessing your data. |
 
-### Manual flight cards (`manual`, 6 steps)
+### Manual flight cards (`manual`, 4 steps — the v1.51.0 overhaul)
 
-Step 1 lives inside **Settings**; every step after returns to the **chat
-screen** with one real calculator card the walk built in the thread. The
-card works while the veil is up; when the walk ends the chat reverts and
-the card leaves with it (v1.49.2, owner order — no tutorial cards).
-
-| # | Highlighted | Screen open | Text displayed |
-|---|---|---|---|
-| 1 | The Manual pill in Settings' calculator section (`#calcui-pill-manual`) | Settings sheet | **No roster? No problem** — Add a card by hand when the trip isn’t on a PDF. |
-| 2 | The route field on the card the walk built (the From input) | Chat screen, card in thread | **Fill the flight** — Route, date and times — the card matches the roster’s own fields. |
-| 3 | The card's Calculate button | Chat screen, card in thread | **One tap, priced** — Calculate works the card out against your rank and rate. |
-| 4 | The Calculate-all batch button (the step skips itself on a device that never imported a roster) | Chat screen, card in thread | **The whole batch** — Calculate-all totals everything together, grouped by month. |
-| 5 | The trip bar strip on the card (route + allowances) | Chat screen, card in thread | **Allowances included** — IFA and LMA price out beside the sectors in the trip bar. |
-| 6 | The card's masthead (its title row) | Chat screen, card in thread | **Save it or undo** — Confirm files the trip into your earnings — undo takes it right back out. |
-
-### Menus & search (`menus`, 6 steps)
-
-Steps 2–5 run with the **menu viewer sheet open** — it opens the first
-**saved** menu when one exists (the cached offline path, no network ever);
-without one, those steps fall back to highlighting the menus chip on the
-chat screen. Steps 1 and 6 highlight the composer.
+The walk teaches the four doors to a hand-built card: the chat command,
+the chip, the Settings interface, then the card's own Calculate button.
+Step 3 lives inside **Settings**; every other step runs on the **chat
+screen**. The card at step 4 is one real calculator card the walk built
+in the thread — it works while the veil is up, and when the walk ends
+the chat reverts and the card leaves with it (v1.49.2, owner order — no
+tutorial cards).
 
 | # | Highlighted | Screen open | Text displayed |
 |---|---|---|---|
-| 1 | The typing field (`#chat-input`) | Chat screen | **Just ask** — Type a flight and a date — sq802 menu 17 oct — and I fetch the menus. |
-| 2 | The menu hero — the flight banner at the top of the viewer (or the menus chip, no saved menu) | Menu viewer sheet | **The viewer** — Courses in service order, exactly as the galley works them. |
-| 3 | The cabin switcher inside the viewer (or the menus chip, no saved menu) | Menu viewer sheet | **Pick your cabin** — The switcher jumps between the cabins on your flight. |
-| 4 | The print button inside the viewer (or the menus chip, no saved menu) | Menu viewer sheet | **Print-ready** — Full sheet or compact — both lay out for the galley printer. |
-| 5 | The cycle button — it walks your saved menus (or the menus chip, no saved menu) | Menu viewer sheet | **Saved on your phone** — Menus you’ve opened stay readable offline, no signal needed. |
-| 6 | The typing field (`#chat-input`) | Chat screen | **Speak naturally** — jcl ycl menu sq802 — name the cabins you want, in your order. |
+| 1 | The typing field (`#chat-input`) | Chat screen | **Just Ask** — Type your flights and dates like "cop sq802 17 oct sq807 18 oct" to calculate your allowance instantly. |
+| 2 | The Calculate my allowance. chip (`data-intent="total"`) | Chat screen | **Manual Flight Entry** — Add a flight by hand if it is missing from your PDF or if you just need to calculate its allowance. |
+| 3 | The whole Allowance calculator interface section in Settings (the Default/Manual/Advanced box) | Settings sheet | **Smart vs Manual Search** — **Default**: Enter the flight number and date to fill in all the details automatically. (new line) **Manual**: Key in every detail by hand for full control with zero automation. |
+| 4 | The card's Calculate button | Chat screen, card in thread | **One-Tap Calculation** — "Calculate" checks your flight details directly against your rank and rate. |
 
-### Earnings (`earnings`, 6 steps)
+The step-3 line is the owner's two-part line — the `(new line)` marker
+renders as a real line break (the engine splits any step line on `\n`).
 
-Screen open: the **earnings archive sheet** (the money page) for all six
-steps — it opens itself when the walk starts.
+### Menus & search (`menus`, 3 steps — the v1.51.0 overhaul)
+
+The walk teaches the three doors to a menu: the chat command, the chip,
+then the **Inflight Menu card** the app renders for manual entry (flight
+number, departure date, cabin class, the gold **Fetch menu** button).
+The card is built through the app's own engine (`caSpotFvWorld`) like
+the manual walk's calculator card, and leaves with the veil at the end.
+The old viewer steps (courses, cabin switcher, print, the offline save)
+left with this round.
 
 | # | Highlighted | Screen open | Text displayed |
 |---|---|---|---|
-| 1 | The Earnings title at the top of the money page | Earnings archive sheet | **This is your money page** — Every trip you save adds up here, month by month. |
-| 2 | A month card (falls back to the list on an empty archive) | Earnings archive sheet | **One month, one card** — Each card is a month’s earnings — tap it to open the trips. |
-| 3 | The lens switcher (salary take-home ↔ COP sectors) | Earnings archive sheet | **Two ways to read it** — The lens switches between your salary take-home and your COP sectors. |
-| 4 | The summary card (`#ca-arch-summary`) | Earnings archive sheet | **The honest breakdown** — Gross, CPF, your overseas expenses, and what actually lands. |
-| 5 | The search field (`#ca-arch-search`) | Earnings archive sheet | **Find anything** — Search by route, flight or month to surface old trips fast. |
-| 6 | The export button (`#ca-arch-export`) | Earnings archive sheet | **Take it with you** — Export the JSON or the CSV — your expenses ride along in both. |
+| 1 | The typing field (`#chat-input`) | Chat screen | **Just Ask** — Type a flight and date like "sq802 menu 17 oct" to fetch your menus instantly. |
+| 2 | The What's being served? chip (`data-intent="menu"`) | Chat screen | **Manual Flight Entry** — Or add a flight by hand to view its menu. |
+| 3 | The Inflight Menu card's form (flight number, departure date, cabins, Fetch menu) | Chat screen, card in thread | **Manual Flight Entry** — Enter your flight number, select your departure date and cabin class, then tap "Fetch Menu" to bring up the menu. |
+
+### Earnings (`earnings`, 5 steps — the v1.51.0 overhaul)
+
+Screen open: the **earnings archive sheet** (the money page) for all
+five steps — it opens itself when the walk starts.
+
+| # | Highlighted | Screen open | Text displayed |
+|---|---|---|---|
+| 1 | The Earnings title at the top of the money page | Earnings archive sheet | **Track Your Earnings** — This dashboard displays your total earnings from every flight month by month. |
+| 2 | A month card (falls back to the list on an empty archive) | Earnings archive sheet | **Monthly View** — Each card summarizes your earnings for a single month. Tap it to expand and view the full flight list. |
+| 3 | The two pills — the COP Allowance / Monthly Salary lens | Earnings archive sheet | **COP vs Salary** — Switch between the two pills to alternate between your COP allowance and your calculated take-home salary. |
+| 4 | The summary card (`#ca-arch-summary`) | Earnings archive sheet | **Earnings Breakdown** — Track every dollar from your gross pay and CPF down to your overseas expenses (if any) and final net earnings. |
+| 5 | The search field (`#ca-arch-search`) | Earnings archive sheet | **Search History** — Easily look up your past trips by filtering for specific routes or flight numbers. |
+
+The step-3 title was blank in the owner's pack and reads **COP vs
+Salary** after the pills' own labels — proposed, awaiting the owner's
+veto.
 
 ### Calendar (`calendar`, 6 steps)
 
@@ -338,6 +349,27 @@ sheet (owner order). Targets are the Data Management box and its doors.
 | 3 | The Restore backup button (`#btn-backup-restore`) | Settings sheet | **The new phone** — Install the app, skip onboarding, and Restore backup from the same door. |
 | 4 | The Export backup button again (`#btn-backup-export`) | Settings sheet | **Expenses ride along** — Overseas expenses are inside every backup — they show on any device. |
 | 5 | The Data Management box (`#ca-dm-box`) | Settings sheet | **Keep it private** — The file holds your pay data — keep it somewhere only you control. |
+
+## The v1.51.0 round (owner orders, 2026-11-06)
+
+- **Three walks overhauled** (copy VERBATIM from the owner's pack): the
+  manual walk teaches its four doors (chat command → calculate chip →
+  the Settings interface → the card's Calculate button; 6 steps → 4),
+  the menus walk its three (chat command → menu chip → the Inflight
+  Menu card with its Fetch menu button; 6 → 3, the viewer steps
+  retired), the earnings walk its five (6 → 5, the export step
+  retired). 47 steps → 41. The step-3 title of the earnings walk read
+  blank in the pack and ships as **COP vs Salary** (after the pills'
+  own labels) pending the owner's veto.
+- **The two-part line** — the owner's `(new line)` marker in the
+  Smart vs Manual Search step renders as a real line break (the engine
+  splits any step line on `\n`).
+- **The scroll rides home** — the stage revert now carries the chip
+  rail's scroll and the Settings sheet's scroll, closing the gap the
+  owner reported (the roster walk's chip step left the rail scrolled
+  right).
+- The three overhauled walks' cv bump to 1.51.0 — their row checks
+  retire honestly until re-walked.
 
 ## The v1.50.0 round (owner orders, 2026-11-06)
 
