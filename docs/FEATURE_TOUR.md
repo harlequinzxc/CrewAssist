@@ -160,11 +160,13 @@ section itself.
 | 8 | `#ca-ft-section` | **You’re All Set** | Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features. |
 
 Step 8 rides the Settings world — its target is the Feature tour section
-(the tours’ own front door, sitting directly below Motion since the v1.53.0
-Settings reorder), and the world unfolds it first. The section folds behind its
-header like the three other quiet sections (Developer Mode, Storage, Data
-Management); a tap on the header opens it again, and the fold state lives in
-memory only — a reload opens everything.
+(the tours’ own front door, sitting directly below Motion since the Settings
+reorder), and the world unfolds it first. The four quiet sections (Feature
+tour, Developer Mode, Storage, Data Management) sit FOLDED until their header
+is tapped — one tap opens, and the fold state lives in memory only: a reload
+folds them again, and nothing is ever saved. A fold can never hide a lit
+target: every walk that lights inside Settings opens the folds it needs and
+hands the crew’s own fold state back at its end.
 
 ### Roster import (`roster`, 6 steps)
 
