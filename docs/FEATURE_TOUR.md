@@ -36,8 +36,9 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   (Next / Back / Skip) is the only interactive surface.
 - The **gold ring** (`#ca-spot-ring`) frames the target with breathing room
   (6px); its huge box-shadow paints the dark scrim around the cut-out —
-  **rgba(4, 7, 15, .8)** since v1.49.1 (owner order: the lit target and the
-  tooltip must stand out hard). The ring **glides** to its target
+  **rgba(4, 7, 15, .85)** (v1.49.1 .8 → v1.49.3 .85, owner order: the lit
+  target and the tooltip must stand out hard — a little harder still). The
+  ring **glides** to its target
   (`.24s ease` on top/left/width/height — restored v1.49.2 by owner order;
   the owner missed the v1.49.0 flourish, and it now runs **even under
   reduced motion**, the one `ca-reduced` exception). The tooltip places
@@ -52,7 +53,10 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   above/below, clamps to 12px margins, width capped at
   `min(300px, 100vw - 24px)` by CSS.
 - The **tooltip** (`#ca-spot-tip`) carries the counter (`2 of 7`), the step
-  title, the step line, and the buttons. **Back is hidden on step 1.** The
+  title, the step line, and the buttons. **Back is hidden on step 1** and
+  the row reads **Skip | spacer | Back, Next** (v1.49.3, owner order: Skip
+  led the right side once and sat next to Next — an accidental thumb ended
+  the walk; the destructive exit is pinned to the far left now). The
   last step's Next reads **Done**.
 - **Escape ends the walk** (a skip). **Tab is trapped** inside the tooltip.
   The ring and tooltip re-place on resize, orientation change and captured
@@ -159,7 +163,7 @@ behind it).
 
 | # | Highlighted | Screen open | Text displayed |
 |---|---|---|---|
-| 1 | The chat bar — the typing field at the bottom (`#chat-input`) | Chat screen | **At your service** — Ask about your flight or type "help" / "?" for quick commands. |
+| 1 | The chat bar — the typing field at the bottom (`#chat-input`) | Chat screen | **At Your Service** — Ask about your flight or type "help" / "?" for quick commands. |
 | 2 | The paperclip — the roster-attach button beside the typing field (`#btn-roster`) | Chat screen | **Activate Your Dashboard** — Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights. |
 | 3 | The one-tap shortcut chips row, under the typing field (`#action-chips`) | Chat screen | **Quick-Access Commands** — Instant answers for allowances, earnings, inflight menus, and menu prints. |
 | 4 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **Track Your Flights** — Access your full schedule, flight records, and personal crew stats in one place. |
@@ -269,6 +273,17 @@ sheet (owner order). Targets are the Data Management box and its doors.
 | 3 | The Restore backup button (`#btn-backup-restore`) | Settings sheet | **The new phone** — Install the app, skip onboarding, and Restore backup from the same door. |
 | 4 | The Export backup button again (`#btn-backup-export`) | Settings sheet | **Expenses ride along** — Overseas expenses are inside every backup — they show on any device. |
 | 5 | The Data Management box (`#ca-dm-box`) | Settings sheet | **Keep it private** — The file holds your pay data — keep it somewhere only you control. |
+
+## The v1.49.3 round (owner orders, 2026-11-06)
+
+- **The veil darker still** — the scrim rgba(4, 7, 15, .8 → **.85**)
+  (owner: a little more, so the tooltip and the spotlight read more
+  obvious).
+- **Skip moved away from Next** — the button row was Back | Skip | Next
+  (Skip hugging Next, one accidental tap from ending the walk); it is now
+  **Skip | spacer | Back, Next** — the destructive exit pinned to the far
+  left, the safe pair on the right (Back still hidden on step 1).
+- **Title case** — the main walk's first title reads **At Your Service**.
 
 ## The v1.49.2 round (owner orders, 2026-11-06)
 
