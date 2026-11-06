@@ -112,8 +112,8 @@ const synthItems = [].concat(
     // fell out of the mounted November grid)
     const { w, d } = await boot(APP, { now: '2026-10-26T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     w.eval('window.__oct = rosterParse(' + JSON.stringify(octItems) + ')');
     R.eq(w.eval('window.__oct.flights.length'), 23, 'the real October roster parses its 23 flights (owner refresh 2026-10-24)');
@@ -737,8 +737,8 @@ const synthItems = [].concat(
     const febItems = await readItems('Feb 2026.pdf');
     const { w, d } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     w.eval('window.__feb = rosterParse(' + JSON.stringify(febItems) + ')');
     const febFlights = w.eval('window.__feb.flights');
@@ -798,8 +798,8 @@ const synthItems = [].concat(
     const junItems = await readItems2('Jun 2025.pdf');
     const { w, d } = await boot(APP, { now: '2025-06-30T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
     } });
     w.eval('window.__jun = rosterParse(' + JSON.stringify(junItems) + ')');
     const p810 = w.eval('window.__jun.flights').find(f => f.fn === '810');
@@ -1213,8 +1213,8 @@ const synthItems = [].concat(
   {
     const { w, d } = await boot(APP, { now: '2026-10-20T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
       x.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({
         '2026-10': [{ ymd: '2026-10-05', kind: 'fly', code: '', loc: '', fns: ['106', '105'], dkey: 'k1' }],
         '2026-11': [{ ymd: '2026-11-14', kind: 'fly', code: '', loc: '', fns: ['118'], dkey: 'k2' }]
@@ -2085,8 +2085,8 @@ const synthItems = [].concat(
   {
     const { w, d } = await boot(APP, { now: '2026-10-28T12:00:00+08:00', seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', JSON.stringify({ name: 'Test Tan', gender: 'M', rank: 'FS' }));
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
-      x.localStorage.setItem('crewAssist.spotMainSeen', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
       const leg = (fn, dep, arr, ymd, ft) => ({ fn, dep, arr, ymd, std: '08:00', sta: '12:00', stdYmd: ymd, staYmd: ymd, ft, ac: '7M8', rpt: '06:30', pos: false });
       x.localStorage.setItem('crewAssist.allFlights', JSON.stringify({
         '2026-03': [leg('9KUL', 'SIN', 'KUL', '2026-03-10', '01:00'), leg('8KUL', 'KUL', 'SIN', '2026-03-11', '01:00'), leg('7BWN', 'SIN', 'BWN', '2026-03-20', '02:00')],

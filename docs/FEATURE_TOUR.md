@@ -1,7 +1,9 @@
 # Feature Tour — the spotlight contract
 
 > Owns the spotlight tour (born v1.49.0; firing order, completion rule,
-> veil opacity, viewport-fit and bold copy revised **v1.49.1**): the
+> veil opacity, viewport-fit and bold copy revised **v1.49.1**; ring glide
+> restored, once-key migrated, chat revert and copy pack part 2
+> **v1.49.2**): the
 > engine's rules, the firing doors, and the eight walks **step by step** —
 > what is highlighted, what screen is open, and the exact text displayed.
 > Future reorders, additions or copy changes go through this file first,
@@ -21,8 +23,9 @@ what to touch:
 - **Highlighted** — the element the gold ring frames (with its selector).
 - **Screen open** — the page / sheet / overlay on stage at that moment.
 - **Text displayed** — the tooltip's title and line, **word for word**.
-  `**bold**` marks render as bold text in the tooltip (v1.49.1); everything
-  else renders plain. The copy is the owner's, verbatim.
+  `**bold**` marks render as bold text in the tooltip — in the line since
+  v1.49.1 and in the title since v1.49.2; everything else renders plain.
+  The copy is the owner's, verbatim.
 
 ## The mechanic
 
@@ -34,10 +37,12 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
 - The **gold ring** (`#ca-spot-ring`) frames the target with breathing room
   (6px); its huge box-shadow paints the dark scrim around the cut-out —
   **rgba(4, 7, 15, .8)** since v1.49.1 (owner order: the lit target and the
-  tooltip must stand out hard). The ring **jumps instantly** to its target
-  (v1.49.1: the v1.49.0 `.24s` glide was main-thread-driven and could lag
-  behind the instantly-placed tooltip under a card's layout work — the
-  never-cover guarantee wins over the flourish).
+  tooltip must stand out hard). The ring **glides** to its target
+  (`.24s ease` on top/left/width/height — restored v1.49.2 by owner order;
+  the owner missed the v1.49.0 flourish, and it now runs **even under
+  reduced motion**, the one `ca-reduced` exception). The tooltip places
+  instantly; the ring's inline style IS its destination, so anything
+  measuring it (the smoke) waits for the rendered rect to arrive there.
 - **The lit target always fits the viewport** (v1.49.1, owner order): every
   step scrolls its target fully into view first (centering, plus a nudge
   when a clamped scroll container still leaves it at an edge), so the ring
@@ -76,13 +81,20 @@ One **lit target**, one **tooltip**, one **Next** button at a time.
   are not spotlightable), both checked up the ancestor chain.
 - **Nothing saved is touched.** Tours that need a prop build it through the
   app's own real paths: the manual-cards tour renders one real calculator
-  card (a working prop the crew keeps — Calculate and Confirm go live the
-  moment the veil lifts). Sheets a walk opened **stay open** when it ends —
-  the crew explores from the last step's stage.
+  card (a working prop while the veil is up — Calculate and Confirm go
+  live mid-walk). Sheets a walk opened **stay open** when it ends — the
+  crew explores from the last step's stage.
+- **The chat reverts when the walk ends** (v1.49.2, owner order). The walk
+  snapshots the thread's children and scroll at start; on every end — Done,
+  Skip, Escape, supersede — children it added (the manual tour's calculator
+  card) are removed and the scroll restores. **The chat is never left
+  holding tutorial cards.** Sheets are untouched by this rule.
 - **Copy ships verbatim.** The tooltip builds the title and line through
   DOM APIs — word for word, never as markup. Since v1.49.1 the line may
   carry `**bold**` markers, which render as bold spans (still built by DOM
-  APIs, never raw HTML).
+  APIs, never raw HTML); since v1.49.2 the title walks the same road (the
+  owner's part-2 pack bolds its titles). The aria-label carries the plain
+  text, markers stripped.
 - **The tour owns the stage** (v1.49.1): while `ca-spot-on` lights the
   chrome, every chat scroll automation stands down — the autoscroll, the
   typing-dots jump, and the card top-align ticker (its 2s of direct
@@ -100,12 +112,12 @@ The flow, exactly as the owner drew it:
 > → tour ends → What's-New bubble → chat message starts firing (the greeting
 > and the how-can-I-help)
 
-- **Every crew** — new and returning alike — whose `crewAssist.spotMainSeen`
+- **Every crew** — new and returning alike — whose `crewAssist.spotMainDone`
   is unstamped gets the main tour at the chat screen, **before** the
   What's-New sheet and before the greeting. The walk's end hands the stage
   to the sheet (if one is due); the greeting types only once it closes.
 - **Only Done completes the walk** (owner order). Done — the last step's
-  Next — stamps `crewAssist.spotMainSeen`. **Skip and Escape end the walk
+  Next — stamps `crewAssist.spotMainDone`. **Skip and Escape end the walk
   without completing it: the once-flag stays unstamped and the main tour
   fires again on the next app open.** The tour retires only when the crew
   carries it to the end (or restores a backup through the welcome door,
@@ -113,19 +125,25 @@ The flow, exactly as the owner drew it:
 - **Every tour replays forever from Settings** → Feature tour, regardless
   of the flag. The chat command `tour` and the help card's CTA also start
   the main tour.
-- The old `crewAssist.tourDone` key is gone; `crewAssist.spotMainSeen` is
-  the spotlight's own once-flag. The test harness pre-stamps it on every
-  jsdom boot (test boots are "seen" devices); suites that pin the firing or
-  the restore doors clear it deliberately in their seeds.
+- **The once-key is `crewAssist.spotMainDone` (v1.49.2).** The
+  v1.49.0/1.49.1 key `crewAssist.spotMainSeen` is RETIRED and wiped at
+  script-eval time on every load: v1.49.0 stamped it on ANY end (Skip and
+  Escape included), so every device that lived through those builds
+  carried a stale flag and never walked again — the owner's
+  What's-New-before-tour report was exactly that. The wipe means every
+  existing crew meets the walk once more; only Done (or a welcome-restore)
+  writes the new key. The test harness pre-stamps `spotMainDone` on every
+  jsdom boot (test boots are "done" devices); suites that pin the firing
+  or the restore doors clear it deliberately in their seeds.
 
-## The eight walks (Settings order; 46 steps)
+## The eight walks (Settings order; 47 steps)
 
 Settings → **Feature tour**, eight rows in one glass box, in this order:
 
 | Row | id | Steps |
 |---|---|---|
 | Main screen | `main` | 7 |
-| Roster import | `roster` | 5 |
+| Roster import | `roster` | 6 |
 | Manual flight cards | `manual` | 6 |
 | Menus & search | `menus` | 6 |
 | Earnings | `earnings` | 6 |
@@ -141,32 +159,35 @@ behind it).
 
 | # | Highlighted | Screen open | Text displayed |
 |---|---|---|---|
-| 1 | The chat bar — the typing field at the bottom (`#chat-input`) | Chat screen | **At your service** — Ask anything about your flights, or type **help** / **?** for quick commands. |
-| 2 | The paperclip — the roster-attach button beside the typing field (`#btn-roster`) | Chat screen | **Your roster goes here** — Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights. |
-| 3 | The one-tap shortcut chips row, under the typing field (`#action-chips`) | Chat screen | **One-tap shortcuts** — Instant answers for allowances, earnings, inflight menus, and menu prints. |
-| 4 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **Your flying calendar** — Access your full schedule, flight records, and personal crew stats in one place. |
-| 5 | The theme button in the top bar (`#btn-theme`) | Chat screen | **Theme switcher** — Tap anytime to switch seamlessly between light and dark theme. |
-| 6 | The settings button in the top bar (`#btn-settings`) | Chat screen | **Your settings and profile** — Access profile details, manage your saved data, or replay feature tours anytime. |
-| 7 | The reset button in the top bar's right corner (`#btn-reset`) | Chat screen | **Clean slate** — Double-tap to clear your screen. Your saved data remains untouched. |
+| 1 | The chat bar — the typing field at the bottom (`#chat-input`) | Chat screen | **At your service** — Ask about your flight or type "help" / "?" for quick commands. |
+| 2 | The paperclip — the roster-attach button beside the typing field (`#btn-roster`) | Chat screen | **Activate Your Dashboard** — Attach your roster report to unlock your flight calendar, calculated allowances, and flight insights. |
+| 3 | The one-tap shortcut chips row, under the typing field (`#action-chips`) | Chat screen | **Quick-Access Commands** — Instant answers for allowances, earnings, inflight menus, and menu prints. |
+| 4 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **Track Your Flights** — Access your full schedule, flight records, and personal crew stats in one place. |
+| 5 | The theme button in the top bar (`#btn-theme`) | Chat screen | **Theme Toggle** — Tap anytime to switch seamlessly between light and dark theme. |
+| 6 | The settings button in the top bar (`#btn-settings`) | Chat screen | **Account & Preferences** — Update your profile details, manage your saved data, or replay feature tours whenever you need. |
+| 7 | The reset button in the top bar's right corner (`#btn-reset`) | Chat screen | **Clear Screen** — Double-tap to clear your screen. Your saved data remains untouched. |
 
-### Roster import (`roster`, 5 steps)
+### Roster import (`roster`, 6 steps)
 
 Screen open: the **main chat screen** throughout. Per the owner's v1.49.1
-order, **steps 2 and 5 keep spotlighting the paperclip** (`#btn-roster`).
+order, **steps 2 and 6 keep spotlighting the paperclip** (`#btn-roster`);
+per the v1.49.2 order, **step 4 spotlights the earnings chip**.
 
 | # | Highlighted | Screen open | Text displayed |
 |---|---|---|---|
-| 1 | The paperclip (`#btn-roster`) | Chat screen | **Start with your Roster Report** — The paperclip takes your PDF exactly as downloaded from your CrewApp. |
-| 2 | The paperclip again (`#btn-roster`) | Chat screen | **I read every line** — Flights, dates, sectors, and report times are extracted automatically with zero typing required. |
-| 3 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **The app fills itself** — Your calendar, trip bar, and allowance calculator all light up instantly with the data. |
-| 4 | The paperclip (`#btn-roster`) | Chat screen | **Monthly roster or changes** — Re-attach anytime your monthly roster or there are changes to your roster, and your schedule updates seamlessly. |
-| 5 | The paperclip (`#btn-roster`) | Chat screen | **Honest when unsure** — If a document isn’t recognized as a valid roster, I’ll let you know—never a guess. |
+| 1 | The paperclip (`#btn-roster`) | Chat screen | **First, your Roster Report** — Upload your Roster Report PDF directly from CrewApp using the paperclip icon. |
+| 2 | The paperclip again (`#btn-roster`) | Chat screen | **Hands-Free Import** — Every line is analyzed automatically. All flights, dates, sectors, and reporting times are extracted instantly without you typing a thing. |
+| 3 | The calendar button in the top bar (`#btn-roster-cal`) | Chat screen | **Seamless Integration** — Your calendar fills up instantly with your imported data. |
+| 4 | The "How much have I earned?" chip in the shortcuts row (`#action-chips .action-chip[data-intent="earn"]`) | Chat screen | **Seamless Integration** — As well as the allowances from your flights. |
+| 5 | The paperclip (`#btn-roster`) | Chat screen | **Stay updated** — Re-upload your pdf whenever you get a new monthly roster or schedule changes. Your calendar and allowances update seamlessly. |
+| 6 | The paperclip (`#btn-roster`) | Chat screen | **No Guesswork** — If your uploaded file isn't recognized as a valid roster, I will let you know immediately rather than guessing your data. |
 
 ### Manual flight cards (`manual`, 6 steps)
 
 Step 1 lives inside **Settings**; every step after returns to the **chat
-screen** with one real calculator card the walk built in the thread (the
-card stays, working, after the walk ends).
+screen** with one real calculator card the walk built in the thread. The
+card works while the veil is up; when the walk ends the chat reverts and
+the card leaves with it (v1.49.2, owner order — no tutorial cards).
 
 | # | Highlighted | Screen open | Text displayed |
 |---|---|---|---|
@@ -249,6 +270,28 @@ sheet (owner order). Targets are the Data Management box and its doors.
 | 4 | The Export backup button again (`#btn-backup-export`) | Settings sheet | **Expenses ride along** — Overseas expenses are inside every backup — they show on any device. |
 | 5 | The Data Management box (`#ca-dm-box`) | Settings sheet | **Keep it private** — The file holds your pay data — keep it somewhere only you control. |
 
+## The v1.49.2 round (owner orders, 2026-11-06)
+
+- **The stale once-flag wiped** — What's-New still fired before the tour
+  for existing crew because v1.49.0 had stamped `spotMainSeen` on ANY end
+  (Skip and Escape included); every device off those builds read as
+  "already walked". The key is retired and wiped on load
+  (`spotMainDone` replaces it), so every existing crew meets the walk
+  once more.
+- **The ring glides again** — the `.24s` transition is back on the ring
+  (the owner missed it), and it runs **even under reduced motion** (the
+  one `ca-reduced` exception; only the tooltip keeps the kill rule, as
+  belt-and-braces). The v1.49.1 "jump" was a rig workaround; the smoke
+  now waits for the ring to arrive at its inline-style rect before
+  measuring, so the glide and the never-cover guarantee both hold.
+- **Copy pack part 2** — Main screen (all 7) and Roster import (all 6,
+  with a NEW step 4 spotlighting the "How much have I earned?" chip)
+  rewritten verbatim from the owner's pack, bold titles included. Part 3
+  (the other six walks) pending the owner's testing.
+- **The chat reverts** — when a walk ends, children it added to the thread
+  (the manual tour's calculator card) are removed and the scroll
+  restores. The chat is never left holding tutorial cards.
+
 ## The v1.49.1 round (owner orders, 2026-11-06)
 
 - **Firing order** — the walk fires at the chat screen, before the
@@ -288,11 +331,13 @@ card's CTA and the `tour` command now start the main spotlight tour.
 ## Tests
 
 - `tests/tour.test.js` — the walk end-to-end in jsdom: registry, verbatim
-  copy (all of Main + Roster since v1.49.1), the bold-marker rendering,
-  counter/Back/Done/Skip/Escape, the Done-only stamping (skip returns),
-  the skip-a-vanished-step contract, every walk's world, the firing doors
+  copy (all of Main + Roster — part 1 in v1.49.1, part 2 in v1.49.2), the
+  bold-marker rendering (line and title), counter/Back/Done/Skip/Escape,
+  the Done-only stamping (skip returns), the skip-a-vanished-step
+  contract, every walk's world, the chat revert, the firing doors
   (every-crew at the chat screen, before the sheet; onboarding; the
-  pre-stamp harness rule), and the old-tour absence pins.
+  pre-stamp harness rule), the once-key migration pins, and the old-tour
+  absence pins.
 - `tests/smoke/smoke.js` — real Chromium: the eight Settings rows, the
   full main walk with the bold pins, the geometry pins (ring fully in
   view, tooltip never clips, tooltip never covers the ring — every step
