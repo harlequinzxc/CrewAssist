@@ -1361,6 +1361,20 @@
         }
         .ca-folded .ca-fold-body { max-height: 0; opacity: 0; }
 
+        /* v1.53.0 (owner order): the Settings accordions — the four
+           quieter sections (Feature tour, Developer Mode, Storage, Data
+           Management) fold behind their headers. The grid-rows 1fr→0fr
+           ride gives the smooth height fold with zero JS measuring; the
+           inner clip keeps the panels' own margins honest. Reduced motion
+           folds instantly — this is app UI, not tour animation. */
+        .ca-acc-head { cursor: pointer; }
+        .ca-acc-head .ca-acc-chev { transition: transform .28s ease; }
+        .ca-acc-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows .28s ease, opacity .28s ease; }
+        .ca-acc-inner { min-height: 0; overflow: hidden; }
+        .ca-acc.ca-acc-closed .ca-acc-body { grid-template-rows: 0fr; opacity: 0; }
+        .ca-acc.ca-acc-closed .ca-acc-chev { transform: rotate(-90deg); }
+        html.ca-reduced .ca-acc-body, html.ca-reduced .ca-acc-head .ca-acc-chev { transition: none; }
+
         /* Feature tour v2 (v1.49.0, owner order): the SPOTLIGHT tour — a
            modal veil with one lit target and a tooltip that can never clip
            the viewport (the iPhone 11 lesson). The ring rides the huge-
@@ -2258,69 +2272,6 @@
                     </div>
                 </div>
 
-                <!-- v1.31.0: onboarding is perishable — the tour shouldn't be -->
-                <div>
-                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feature tour</p>
-                    <!-- v1.49.0: the spotlight tours — eight rows, one per
-                         feature. A tap starts the tour at once; the app
-                         opens whatever overlay that tour walks (the docs
-                         contract lives in docs/FEATURE_TOUR.md). -->
-                    <div class="glass-panel rounded-2xl p-2 shadow-sm border dark:border-white/5 flex flex-col" id="ca-feature-tours">
-                        <button type="button" data-ca-spot="main" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="layout-dashboard" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Main screen</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="roster" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="file-up" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Roster import</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="manual" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="clipboard-pen" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Manual flight cards</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="menus" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="utensils" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Menus &amp; search</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="earnings" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="wallet" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Earnings</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="calendar" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="calendar-days" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Calendar</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="stats" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="trophy" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Flight Stats</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                        <button type="button" data-ca-spot="backup" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
-                            <i data-lucide="database-backup" class="w-4 h-4 text-sia-gold shrink-0"></i>
-                            <span class="flex flex-col"><span class="text-sm font-bold">Backup &amp; restore</span></span>
-                            <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
-                        </button>
-                    </div>
-                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5 mt-3">
-                        <!-- v1.35.0: the whole version history, newest first -->
-                        <div class="flex items-center justify-between">
-                            <div class="flex flex-col">
-                                <span class="text-sm font-bold">Changelog</span>
-                                <span class="ca-micro text-gray-500">Features, fixes and improvements</span>
-                            </div>
-                            <button type="button" id="btn-changelog" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                                <i data-lucide="history" class="w-3.5 h-3.5"></i> View
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Allowance Calculator Interface -->
                 <div>
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Allowance calculator interface</p>
@@ -2355,51 +2306,142 @@
                     </div>
                 </div>
 
-                <!-- Developer Section -->
-                <div id="settings-developer" class="hidden">
-                    <p class="ca-micro text-[color:var(--ca-danger-dev)] font-bold uppercase tracking-widest mb-2 px-1 flex items-center gap-1">
-                        <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
-                    </p>
-                    <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
-                        <div>
-                            <span class="text-sm font-bold inline-flex items-center gap-2">IFA &amp; LMA rates <span id="dev-dirty-dot" class="hidden w-[7px] h-[7px] rounded-full bg-sia-gold inline-block"></span></span>
-                            <span id="dev-dirty-label" class="hidden ca-micro font-bold text-sia-gold tracking-wider mt-0.5">UNSAVED EDITS</span>
+                <!-- v1.31.0: onboarding is perishable — the tour shouldn't be -->
+                <div id="ca-ft-section" class="ca-acc" data-ca-acc="ft">
+                    <button type="button" class="ca-acc-head w-full flex items-center justify-between gap-2 px-1 mb-2 text-left" data-accordion-target="ca-acc-ft" aria-controls="ca-acc-ft" aria-expanded="true">
+                        <span class="ca-micro text-gray-500 font-bold uppercase tracking-widest">Feature tour</span>
+                        <i data-lucide="chevron-down" class="ca-acc-chev w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0"></i>
+                    </button>
+                    <div class="ca-acc-body" id="ca-acc-ft">
+                        <div class="ca-acc-inner">
+                            <!-- v1.49.0: the spotlight tours — eight rows, one per
+                                 feature. A tap starts the tour at once; the app
+                                 opens whatever overlay that tour walks (the docs
+                                 contract lives in docs/FEATURE_TOUR.md). -->
+                            <div class="glass-panel rounded-2xl p-2 shadow-sm border dark:border-white/5 flex flex-col" id="ca-feature-tours">
+                                <button type="button" data-ca-spot="main" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="layout-dashboard" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Main screen</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="roster" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="file-up" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Roster import</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="manual" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="clipboard-pen" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Manual flight cards</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="menus" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="utensils" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Menus &amp; search</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="earnings" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="wallet" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Earnings</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="calendar" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="calendar-days" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Calendar</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="stats" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="trophy" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Flight Stats</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                                <button type="button" data-ca-spot="backup" class="ca-tour-row flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                    <i data-lucide="database-backup" class="w-4 h-4 text-sia-gold shrink-0"></i>
+                                    <span class="flex flex-col"><span class="text-sm font-bold">Backup &amp; restore</span></span>
+                                    <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
+                                </button>
+                            </div>
+                            <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5 mt-3">
+                                <!-- v1.35.0: the whole version history, newest first -->
+                                <div class="flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold">Changelog</span>
+                                        <span class="ca-micro text-gray-500">Features, fixes and improvements</span>
+                                    </div>
+                                    <button type="button" id="btn-changelog" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                                        <i data-lucide="history" class="w-3.5 h-3.5"></i> View
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div id="dev-rates-root" class="flex flex-col gap-4"></div>
-                        <!-- v1.42.0 + hotfix round: the dev buttons wear the Data
-                             Management uniform — Save rates and Export rates.json in
-                             gold, Reset rates to default in the red destructive. -->
-                        <div class="flex flex-col gap-2">
-                            <button type="button" id="btn-dev-save" class="dev-save w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
-                            <button type="button" id="btn-dev-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export rates.json"><i data-lucide="download" class="w-4 h-4"></i>Export rates.json</button>
-                            <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to default"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to default</button>
+                    </div>
+                </div>
+
+                <!-- Developer Section -->
+                <div id="settings-developer" class="ca-acc hidden" data-ca-acc="dev">
+                    <button type="button" class="ca-acc-head w-full flex items-center justify-between gap-2 px-1 mb-2 text-left" data-accordion-target="ca-acc-dev" aria-controls="ca-acc-dev" aria-expanded="true">
+                        <span class="ca-micro text-[color:var(--ca-danger-dev)] font-bold uppercase tracking-widest flex items-center gap-1">
+                            <i data-lucide="terminal" class="w-3 h-3"></i> Developer Mode
+                        </span>
+                        <i data-lucide="chevron-down" class="ca-acc-chev w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0"></i>
+                    </button>
+                    <div class="ca-acc-body" id="ca-acc-dev">
+                        <div class="ca-acc-inner">
+                            <div class="glass-panel rounded-2xl p-4 flex flex-col gap-3 shadow-sm border dark:border-white/5">
+                                <div>
+                                    <span class="text-sm font-bold inline-flex items-center gap-2">IFA &amp; LMA rates <span id="dev-dirty-dot" class="hidden w-[7px] h-[7px] rounded-full bg-sia-gold inline-block"></span></span>
+                                    <span id="dev-dirty-label" class="hidden ca-micro font-bold text-sia-gold tracking-wider mt-0.5">UNSAVED EDITS</span>
+                                </div>
+                                <div id="dev-rates-root" class="flex flex-col gap-4"></div>
+                                <!-- v1.42.0 + hotfix round: the dev buttons wear the Data
+                                     Management uniform — Save rates and Export rates.json in
+                                     gold, Reset rates to default in the red destructive. -->
+                                <div class="flex flex-col gap-2">
+                                    <button type="button" id="btn-dev-save" class="dev-save w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Save rates"><i data-lucide="save" class="w-4 h-4"></i><span>Save rates</span></button>
+                                    <button type="button" id="btn-dev-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export rates.json"><i data-lucide="download" class="w-4 h-4"></i>Export rates.json</button>
+                                    <button type="button" id="btn-dev-reset" class="dev-reset-pill hidden w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Reset rates to default"><i data-lucide="rotate-ccw" class="w-4 h-4"></i>Reset rates to default</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- v1.38.0 (B9): honest storage numbers + menu-cache hygiene -->
-                <div>
-                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Storage</p>
-                    <div id="settings-storage" class="flex flex-col gap-2"></div>
+                <div class="ca-acc" data-ca-acc="storage">
+                    <button type="button" class="ca-acc-head w-full flex items-center justify-between gap-2 px-1 mb-2 text-left" data-accordion-target="ca-acc-storage" aria-controls="ca-acc-storage" aria-expanded="true">
+                        <span class="ca-micro text-gray-500 font-bold uppercase tracking-widest">Storage</span>
+                        <i data-lucide="chevron-down" class="ca-acc-chev w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0"></i>
+                    </button>
+                    <div class="ca-acc-body" id="ca-acc-storage">
+                        <div class="ca-acc-inner">
+                            <div id="settings-storage" class="flex flex-col gap-2"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Data -->
                 <!-- v1.52.0: the whole section (label + house box) carries
                      its own id — the backup walk's first step lights all of
                      it, not just the buttons. -->
-                <div id="ca-dm-section">
-                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
-                    <!-- v1.42.0 (owner order): the buttons sit inside the house box,
-                         so they run the same width as Storage's Clear saved menus. -->
-                    <div id="ca-dm-box" class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
-                        <!-- v1.41.0: the one-shot backup — every piece of crew data
-                             on this device in a single file, and one import door that
-                             also reads the old earnings/rates exports. -->
-                        <button type="button" id="btn-backup-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export everything as one backup file"><i data-lucide="download" class="w-4 h-4"></i>Export backup</button>
-                        <button type="button" id="btn-backup-restore" class="relative overflow-hidden w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Restore from a backup file"><i data-lucide="upload" class="w-4 h-4"></i>Restore backup<input type="file" id="backup-file-restore" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
-                        <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
-                        </button>
+                <div id="ca-dm-section" class="ca-acc" data-ca-acc="dm">
+                    <button type="button" class="ca-acc-head w-full flex items-center justify-between gap-2 px-1 mb-2 text-left" data-accordion-target="ca-acc-dm" aria-controls="ca-acc-dm" aria-expanded="true">
+                        <span class="ca-micro text-gray-500 font-bold uppercase tracking-widest">Data Management</span>
+                        <i data-lucide="chevron-down" class="ca-acc-chev w-4 h-4 text-gray-400 dark:text-gray-500 shrink-0"></i>
+                    </button>
+                    <div class="ca-acc-body" id="ca-acc-dm">
+                        <div class="ca-acc-inner">
+                            <!-- v1.42.0 (owner order): the buttons sit inside the house box,
+                                 so they run the same width as Storage's Clear saved menus. -->
+                            <div id="ca-dm-box" class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
+                                <!-- v1.41.0: the one-shot backup — every piece of crew data
+                                     on this device in a single file, and one import door that
+                                     also reads the old earnings/rates exports. -->
+                                <button type="button" id="btn-backup-export" class="w-full h-[42px] rounded-full bg-transparent text-sia-gold border border-sia-gold/70 hover:bg-sia-gold/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors" aria-label="Export everything as one backup file"><i data-lucide="download" class="w-4 h-4"></i>Export backup</button>
+                                <button type="button" id="btn-backup-restore" class="relative overflow-hidden w-full h-[42px] rounded-full ca-inset text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/15 inline-flex items-center justify-center gap-2 text-xs font-bold" aria-label="Restore from a backup file"><i data-lucide="upload" class="w-4 h-4"></i>Restore backup<input type="file" id="backup-file-restore" class="absolute inset-0 opacity-0 cursor-pointer" accept=".json,.txt,application/json,text/plain"></button>
+                                <button id="btn-clear-data" class="w-full h-[42px] rounded-full bg-transparent text-[color:var(--ca-danger-strong)] border border-[color:var(--ca-danger-strong-line)] hover:bg-red-500/10 inline-flex items-center justify-center gap-2 text-xs font-bold transition-colors">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i> Clear All Data
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -3334,7 +3376,7 @@
             }
         }
 
-        var APP_VERSION = '1.52.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.53.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3356,6 +3398,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.53.0', d: '2026-11-06', items: [
+                { c: 'new', t: 'Settings folds its quieter sections — tap a header to open one.' },
+                { c: 'imp', t: 'The main walk ends pointing at the tours — eight steps now.' }
+            ] },
             { v: '1.52.0', d: '2026-11-06', items: [
                 { c: 'imp', t: 'The calendar, flight stats and backup walks read anew — sharper copy.' },
                 { c: 'fix', t: 'A tour never leaves your recent searches or saved menus touched.' }
@@ -11970,6 +12016,47 @@ SLOT|Special Lve others`;
 
             caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
         }
+
+        // ==========================================
+        // SETTINGS ACCORDIONS (v1.53.0, owner order)
+        // The four quieter Settings sections (Feature tour, Developer
+        // Mode, Storage, Data Management) fold behind their headers. One
+        // delegated listener, bound through data-accordion-target, zero
+        // dependencies — fully isolated, jsdom-battery compatible (plain
+        // clicks drive it). The fold state lives in memory only: a reload
+        // hands the sections back open, and nothing is ever saved. The
+        // three door functions below are the app's own API for flows that
+        // need a section guaranteed open (the spotlight's Settings worlds)
+        // or a state handed back exactly as it stood (the stage revert).
+        // ==========================================
+        (function () {
+            function setAcc(head, open) {
+                const sec = head.closest('.ca-acc');
+                head.setAttribute('aria-expanded', open ? 'true' : 'false');
+                if (sec) sec.classList.toggle('ca-acc-closed', !open);
+            }
+            document.addEventListener('click', function (e) {
+                const head = e.target.closest && e.target.closest('[data-accordion-target]');
+                if (!head) return;
+                setAcc(head, head.getAttribute('aria-expanded') !== 'true');
+            });
+            window.caAccOpenAll = function () {
+                document.querySelectorAll('[data-accordion-target]').forEach((head) => setAcc(head, true));
+            };
+            window.caAccState = function () {
+                const st = {};
+                document.querySelectorAll('.ca-acc').forEach((sec) => { st[sec.getAttribute('data-ca-acc')] = !sec.classList.contains('ca-acc-closed'); });
+                return st;
+            };
+            window.caAccRestore = function (st) {
+                if (!st) return;
+                document.querySelectorAll('.ca-acc').forEach((sec) => {
+                    const want = st[sec.getAttribute('data-ca-acc')];
+                    const head = sec.querySelector('[data-accordion-target]');
+                    if (head && typeof want === 'boolean') setAcc(head, want);
+                });
+            };
+        })();
 
         // ==========================================
         // ALLOWANCE CALCULATOR INTERFACE MODE
@@ -22684,7 +22771,8 @@ SLOT|Special Lve others`;
         // v1.50.0: the invitation prompt, per-walk completion and the stage
         // revert; v1.51.0: the walk overhauls and the scroll-home stage;
         // v1.52.0: union targets, the filled Fetch-menu prop and the
-        // storage-safe stage)
+        // storage-safe stage; v1.53.0: the eighth main step and the
+        // Settings-fold-aware worlds)
         // One lit target, one tooltip, one button at a time. The veil blocks
         // every tap: targets are SHOWN, never pressed — the tooltip is the
         // only interactive surface (Next / Back / Skip). The copy is the
@@ -22827,7 +22915,7 @@ SLOT|Special Lve others`;
             card.appendChild(headline);
             const sub = document.createElement('p');
             sub.className = 'text-xs text-gray-500 font-bold mt-1 mb-4';
-            sub.textContent = 'Seven quick steps in under a minute';
+            sub.textContent = 'Eight quick steps in under a minute';
             card.appendChild(sub);
             const next = document.createElement('button');
             next.type = 'button';
@@ -22929,7 +23017,10 @@ SLOT|Special Lve others`;
                 chips: rail ? rail.scrollLeft : null,
                 settingsScroll: sscroll ? sscroll.scrollTop : null,
                 recentFlights: recent,
-                sqKeys: sq
+                sqKeys: sq,
+                // v1.53.0: the Settings folds — a walk that opens them
+                // hands the crew's own fold state back at its end.
+                acc: (typeof caAccState === 'function') ? caAccState() : null
             };
         }
         function caSpotStageRestore(st) {
@@ -22983,6 +23074,8 @@ SLOT|Special Lve others`;
                 drop.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
                 Object.keys(keep).forEach((k) => { if (localStorage.getItem(k) !== keep[k]) { try { localStorage.setItem(k, keep[k]); } catch (e) {} } });
             } catch (e) {}
+            // v1.53.0: the Settings folds ride home with the stage
+            try { if (st.acc && typeof caAccRestore === 'function') caAccRestore(st.acc); } catch (e) {}
         }
 
         // --- the Settings rows' status icons (v1.50.0, owner order): a
@@ -23035,6 +23128,11 @@ SLOT|Special Lve others`;
         function caSpotShown(el) {
             for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
                 if (n.classList && (n.classList.contains('hidden') || n.classList.contains('translate-y-full'))) return false;
+                // v1.53.0: a folded Settings section hides its innards —
+                // a closed accordion reads as a vanished target for
+                // DESCENDANTS (the section's own head stays lit-able; the
+                // Settings worlds open the folds before they light).
+                if (n !== el && n.classList && n.classList.contains('ca-acc') && n.classList.contains('ca-acc-closed')) return false;
             }
             return true;
         }
@@ -23049,6 +23147,10 @@ SLOT|Special Lve others`;
         }
         function caSpotSettingsWorld() {
             if (typeof openSettings === 'function') openSettings();
+            // v1.53.0: a fold can never hide a lit target — the Settings
+            // worlds hand the four accordion sections back open, and the
+            // stage revert folds the crew's own state home again.
+            if (typeof caAccOpenAll === 'function') { try { caAccOpenAll(); } catch (e) {} }
         }
         function caSpotEarningsWorld() {
             caSpotMainWorld();
@@ -23182,7 +23284,7 @@ SLOT|Special Lve others`;
         var CA_SPOT_TOURS = {
             main: {
                 label: 'Main screen',
-                cv: '1.49.3',   // v1.50.0: content version — bump when this walk's copy/steps change
+                cv: '1.53.0',   // v1.53.0: the walk gains its eighth step — where the tours live — and re-invites everyone
                 world: caSpotMainWorld,
                 steps: [
                     { sel: '#chat-input', title: '**At Your Service**', line: 'Ask about your flight or type "help" / "?" for quick commands.' },
@@ -23191,7 +23293,11 @@ SLOT|Special Lve others`;
                     { sel: '#btn-roster-cal', title: '**Track Your Flights**', line: 'Access your full schedule, flight records, and personal crew stats in one place.' },
                     { sel: '#btn-theme', title: '**Theme Toggle**', line: 'Tap anytime to switch seamlessly between light and dark theme.' },
                     { sel: '#btn-settings', title: '**Account & Preferences**', line: 'Update your profile details, manage your saved data, or replay feature tours whenever you need.' },
-                    { sel: '#btn-reset', title: '**Clear Screen**', line: 'Double-tap to clear your screen. Your saved data remains untouched.' }
+                    { sel: '#btn-reset', title: '**Clear Screen**', line: 'Double-tap to clear your screen. Your saved data remains untouched.' },
+                    // v1.53.0 (owner order, copy VERBATIM): the closer — the
+                    // walk ends by pointing at the tours' own front door in
+                    // Settings, so the crew always knows the way back.
+                    { sel: '#ca-ft-section', title: '**You\u2019re All Set**', line: 'Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features.', before: caSpotSettingsWorld }
                 ]
             },
             roster: {
@@ -23406,6 +23512,45 @@ SLOT|Special Lve others`;
             try { window.scrollBy(0, dy); } catch (e) {}
         }
 
+        // v1.53.0 (the eighth step's lesson): a lit target nearly as tall
+        // as its scrollport clamps the tooltip onto the ring's edge — the
+        // centered scroll leaves no clean room on either side. One
+        // tip-aware pass: when the placed tooltip kisses the lit target,
+        // shift the nearest scrollable JUST enough for a clean fit (the
+        // side that needs less), then the caller re-places ring and tip.
+        // No layout (jsdom) or no overlap: a no-op — every other step
+        // never feels this.
+        function caSpotFitTip(el, rect) {
+            const tip = document.getElementById('ca-spot-tip');
+            if (!tip || !el || !rect) return false;
+            const th = tip.offsetHeight || 0;
+            const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+            if (!th || !vh) return false;
+            // the ring GLIDES to rect (.24s) — its live box still sits at
+            // the prior step mid-flight, so the fit reads the placement
+            // rect, never the transitioning element
+            const rr = { top: rect.top, bottom: rect.top + rect.height };
+            const tr = tip.getBoundingClientRect();
+            if (!rect.height || !tr.height) return false;
+            if (tr.bottom <= rr.top + 0.5 || tr.top >= rr.bottom - 0.5) return false;
+            const m = 12, gap = 10;
+            const needAbove = (m + th + gap) - rr.top;              // ring must move down by this
+            const needBelow = (rr.bottom + th + gap) - (vh - m);    // ring must move up by this
+            if (needAbove <= 0 || needBelow <= 0) return false;
+            const move = (needAbove <= needBelow) ? needAbove : -needBelow;
+            let n = el.parentElement;
+            while (n && n.nodeType === 1 && n !== document.body) {
+                if (n.scrollHeight > n.clientHeight + 1) {
+                    const max = n.scrollHeight - n.clientHeight;
+                    n.scrollTop = Math.max(0, Math.min(max, n.scrollTop - move));
+                    return true;
+                }
+                n = n.parentElement;
+            }
+            try { window.scrollBy(0, -move); } catch (e) {}
+            return true;
+        }
+
         function caSpotRingTo(rect) {
             const ring = document.getElementById('ca-spot-ring');
             if (!ring) return;
@@ -23447,6 +23592,19 @@ SLOT|Special Lve others`;
             const rect = { left: r.left - p, top: r.top - p, width: r.width + p * 2, height: r.height + p * 2 };
             caSpotRingTo(rect);
             caSpotBuildTip(step, idx, tour.steps.length, rect);
+            // v1.53.0: if the placed tooltip kisses the lit target (a
+            // near-viewport-tall section), shift the scroll just enough
+            // for a clean fit and re-place ring and tip from the final
+            // rect — one synchronous pass, no flicker.
+            try {
+                if (caSpotFitTip(el, rect)) {
+                    const r2 = caSpotStepRect(el, step);
+                    const rect2 = { left: r2.left - p, top: r2.top - p, width: r2.width + p * 2, height: r2.height + p * 2 };
+                    caSpotRingTo(rect2);
+                    const tipEl = document.getElementById('ca-spot-tip');
+                    if (tipEl && tipEl.firstChild) caSpotPlace(tipEl, rect2);
+                }
+            } catch (e) {}
             // v1.49.1: one deferred re-assert — after the ring's glide and
             // any late scroll settle, re-place both from the target's FINAL
             // rect. Heals every placement race in one stroke.

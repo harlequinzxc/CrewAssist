@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.52.0', 'APP_VERSION is 1.52.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.52.0' && e.d === '2026-11-06' && e.items.length === 2 && e.items.filter((i) => i.c === 'imp').length === 1 && e.items.filter((i) => i.c === 'fix').length === 1; }), 'the changelog carries the 1.52.0 entry — one imp and one fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v313'), 'the service-worker cache name is bumped to v313 (the v1.52.0 walk-overhaul round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.53.0', 'APP_VERSION is 1.53.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.53.0' && e.d === '2026-11-06' && e.items.length === 2 && e.items.filter((i) => i.c === 'new').length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.53.0 entry — one new and one imp pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v314'), 'the service-worker cache name is bumped to v314 (the v1.53.0 settings-fold round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,7 +166,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.52.0'; }), 'the What\'s New sheet carries the v1.52.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.53.0'; }), 'the What\'s New sheet carries the v1.53.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings folds its quieter sections — tap a header to open one.') !== -1), 'the What\'s New sheet carries the v1.53.0 settings-fold pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The main walk ends pointing at the tours — eight steps now.') !== -1), 'the What\'s New sheet carries the v1.53.0 eighth-step pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The calendar, flight stats and backup walks read anew — sharper copy.') !== -1), 'the What\'s New sheet carries the v1.52.0 walk-overhaul pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A tour never leaves your recent searches or saved menus touched.') !== -1), 'the What\'s New sheet carries the v1.52.0 storage-safe pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The manual, menus and earnings walks read anew — sharper copy.') !== -1), 'the What\'s New sheet carries the v1.51.0 walk-overhaul pointer in the delta');
@@ -387,7 +389,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const duty = JSON.parse(localStorage.getItem('crewAssist.dutyDays') || '{}');
             return arch.length === 1 && arch[0].amount === 88 && prof && prof.name === 'Welcome Wo' && duty['2026-10'] && duty['2026-10'].length === 1;
         }), 'the restored phone carries the earnings, profile and duty days');
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.49.3'), 'hotfix: a restoring user is not offered the tour — the legacy mirror AND the per-walk store both land (v1.50.0)');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'hotfix: a restoring user is not offered the tour — the legacy mirror AND the per-walk store both land (v1.50.0; the store rides main\u2019s current cv, 1.53.0 since the eighth step)');
         // owner ruling 2026-10-08 (round 11): leave the What's New re-offer
         // as is — it returns on every launch until the crew ticks
         // "Do not show again"; closing alone never counts as seen
@@ -444,7 +446,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // closeSettings arms the backdrop's 300ms hide — wait it out
         await page.waitForFunction(() => document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 });
         ok(await page.evaluate(() => document.getElementById('settings-backdrop').classList.contains('hidden')), 'the main-screen tour closes Settings first (the owner\u2019s order)');
-        await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 5000 });
+        await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 8') !== -1, { timeout: 5000 });
         ok(await page.evaluate(() => { const b = document.querySelectorAll('#ca-spot-tip b'); return b.length === 1 && b[0].textContent === 'At Your Service'; }), 'v1.49.2: the bold marker rides the TITLE now (title case since v1.49.3) — one bold phrase, rendered bold in the real browser');
         // v1.49.2: the ring GLIDES again (owner order) — its inline style IS
         // its destination. Every wait is CDP-polled from the rig
@@ -453,7 +455,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // in-page interval cap can never fire to release its own wait (the
         // 180s protocol hang this round taught it).
         const geo = [];
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 8; i++) {
             const ready = await page.waitForFunction(() => {
                 const tip = document.getElementById('ca-spot-tip');
                 const on = document.documentElement.classList.contains('ca-spot-on');
@@ -480,7 +482,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
                 const tr = tip.getBoundingClientRect();
                 const rr = document.getElementById('ca-spot-ring').getBoundingClientRect();
                 return {
-                    counter: (tip.textContent.match(/\d+ of 7/) || [''])[0],
+                    counter: (tip.textContent.match(/\d+ of 8/) || [''])[0],
                     w: tr.width,
                     inView: tr.left >= 11.5 && tr.top >= 11.5 && tr.right <= window.innerWidth - 11.5 && tr.bottom <= window.innerHeight - 11.5,
                     ringInView: rr.left >= 0.5 && rr.top >= 0.5 && rr.right <= window.innerWidth - 0.5 && rr.bottom <= window.innerHeight - 0.5,
@@ -493,8 +495,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const clicked = await page.evaluate(() => { const n = document.getElementById('ca-spot-next'); if (n) n.click(); return !!n; });
             if (!clicked) break;
         }
-        ok(geo.length === 7, 'the walk covers all seven steps');
-        ok(geo.every((s) => s.counter === (s.i + 1) + ' of 7'), 'the counter advances 1..7 of 7 in the real browser');
+        ok(geo.length === 8, 'the walk covers all eight steps (v1.53.0: the closer lights the Feature tour section)');
+        ok(geo.every((s) => s.counter === (s.i + 1) + ' of 8'), 'the counter advances 1..8 of 8 in the real browser');
         ok(geo.every((s) => s.inView), 'the tooltip never clips the viewport at any step — 12px margins hold (the iPhone 11 lesson)');
         ok(geo.every((s) => s.w <= 300.5), 'the tooltip stays capped at 300px');
         ok(geo.every((s) => s.ringSize), 'the ring sizes to a real target at every step');
@@ -502,8 +504,63 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(geo.every((s) => s.noCover), 'the tooltip never covers the lit target');
         ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'Done stands the tour down');
         ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'Done on the main tour keeps the legacy mirror stamped');
-        ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.49.3'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv');
+        ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv (bumped with the eighth step)');
         ok(await page.evaluate(() => { const i = document.querySelector('#ca-feature-tours [data-ca-spot="main"] .ca-spot-row-status'); return i && i.getAttribute('data-lucide') === 'circle-check' && i.className.indexOf('text-sia-gold') !== -1; }), 'v1.50.0: the main row flips to the gold circle-check at Done');
+
+        // v1.53.0: the Settings accordions — the four quieter sections
+        // (Feature tour, Developer Mode, Storage, Data Management) fold
+        // behind their headers. Computed geometry in real Chromium: the
+        // grid-rows ride collapses the body to zero height, the chevron
+        // rotates, the fold state never touches localStorage — and a
+        // walk's Settings world opens the folds while the stage revert
+        // hands the crew's own fold state home.
+        await page.reload({ waitUntil: 'networkidle2', timeout: 45000 });
+        await sleep(600);
+        await page.evaluate(() => openSettings());
+        await page.waitForFunction(() => !document.getElementById('settings-sheet').classList.contains('translate-y-full'), { timeout: 5000 });
+        await sleep(350);
+        ok(await page.evaluate(() => document.querySelectorAll('.ca-acc').length === 4 && document.querySelectorAll('[data-accordion-target]').length === 4), 'v1.53.0: exactly four fold sections, four data-accordion-target heads');
+        ok(await page.evaluate(() => [...document.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'true')), 'every fold starts OPEN, announced through aria-expanded');
+        const foldOpen = await page.evaluate(() => ({
+            rows: getComputedStyle(document.getElementById('ca-acc-ft')).gridTemplateRows,
+            chev: getComputedStyle(document.querySelector('#ca-ft-section .ca-acc-chev')).transform,
+            keys: Object.keys(localStorage).length
+        }));
+        ok(parseFloat(foldOpen.rows) > 100, 'the open fold lays its body at full height — computed grid-template-rows resolves to real pixels');
+        ok(foldOpen.chev === 'none' || foldOpen.chev === 'matrix(1, 0, 0, 1, 0, 0)', 'the open chevron sits unrotated');
+        await page.click('[data-accordion-target=\"ca-acc-ft\"]');
+        await sleep(450);   // past the .28s fold ride
+        const foldClosed = await page.evaluate(() => ({
+            rows: getComputedStyle(document.getElementById('ca-acc-ft')).gridTemplateRows,
+            h: document.getElementById('ca-acc-ft').getBoundingClientRect().height,
+            chev: getComputedStyle(document.querySelector('#ca-ft-section .ca-acc-chev')).transform,
+            aria: document.querySelector('[data-accordion-target=\"ca-acc-ft\"]').getAttribute('aria-expanded'),
+            keys: Object.keys(localStorage).length
+        }));
+        ok(foldClosed.rows === '0px', 'the folded body rides grid-template-rows to 0px — the smooth height fold, computed');
+        ok(foldClosed.h < 1, 'the folded body collapses to zero height');
+        ok(foldClosed.chev === 'matrix(0, -1, 1, 0, 0, 0)', 'the chevron rotates -90deg on the fold');
+        ok(foldClosed.aria === 'false', 'the head announces the fold through aria-expanded');
+        ok(foldClosed.keys === foldOpen.keys, 'the fold state never touches localStorage — in memory only, a reload opens everything');
+        await page.click('[data-accordion-target=\"ca-acc-ft\"]');
+        await sleep(450);
+        // the world and the stage revert: fold the DM section, tap the
+        // backup row — the walk's Settings world opens the fold to light
+        // it, and Skip hands the crew's own fold state home
+        await page.click('[data-accordion-target=\"ca-acc-dm\"]');
+        await sleep(450);
+        ok(await page.evaluate(() => document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'the DM section sits folded before the tap');
+        await page.evaluate(() => { document.querySelector('#ca-feature-tours [data-ca-spot=\"backup\"]').scrollIntoView({ block: 'center' }); });
+        await sleep(150);
+        await page.click('#ca-feature-tours [data-ca-spot=\"backup\"]');
+        await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('Your Data, Your File') !== -1, { timeout: 8000 });
+        ok(await page.evaluate(() => !document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'v1.53.0: the walk\u2019s Settings world OPENED the fold to light it — a fold can never hide a lit target');
+        await page.click('#ca-spot-skip');
+        await sleep(500);
+        ok(await page.evaluate(() => document.getElementById('ca-dm-section').classList.contains('ca-acc-closed')), 'v1.53.0: the stage revert re-folds the section the crew had folded');
+        ok(await page.evaluate(() => !document.getElementById('settings-backdrop').classList.contains('hidden')), 'the pre-tap stage holds — Settings stays open after the skip');
+        await page.evaluate(() => { caAccOpenAll(); closeSettings(); });
+        await sleep(500);
 
         // v1.49.1 (owner order): ALL highlighted content fits the viewport —
         // every step of every remaining walk carries the ring-in-view and
@@ -626,7 +683,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('whatsnew-backdrop').classList.contains('hidden')), 'the invitation renders BEFORE the What\u2019s-New sheet — the sheet waits behind it');
         ok(await page.evaluate(() => (document.getElementById('chat-container').innerText || '').trim() === ''), 'the greeting waits behind the invitation too — the chat is still empty');
         // the card itself: copy verbatim, the compass, the focus, the trap
-        ok(await page.evaluate(() => document.getElementById('ca-spot-prompt-backdrop').textContent.indexOf('Let\u2019s take a quick tour') !== -1 && document.getElementById('ca-spot-prompt-card').textContent.indexOf('Seven quick steps in under a minute') !== -1), 'v1.50.0: the invitation reads its copy verbatim — headline and secondary');
+        ok(await page.evaluate(() => document.getElementById('ca-spot-prompt-backdrop').textContent.indexOf('Let\u2019s take a quick tour') !== -1 && document.getElementById('ca-spot-prompt-card').textContent.indexOf('Eight quick steps in under a minute') !== -1), 'v1.50.0: the invitation reads its copy verbatim — headline and secondary (v1.53.0: eight)');
         ok(await page.evaluate(() => { const p = document.querySelector('#ca-spot-prompt-card svg polygon'); return !!p && p.getAttribute('points') === '16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76'; }), 'v1.50.0: the invitation carries the Lucide compass, polygon exact');
         ok(await page.evaluate(() => document.getElementById('ca-spot-prompt-next').textContent === 'Next' && document.getElementById('ca-spot-prompt-skip').textContent === 'Skip'), 'the invitation buttons read Next and Skip');
         ok(await page.evaluate(() => document.activeElement && document.activeElement.id === 'ca-spot-prompt-next'), 'Next takes focus when the invitation opens');
@@ -666,7 +723,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.click('#ca-spot-prompt-next');
         await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
         await page.waitForFunction(() => !document.getElementById('ca-spot-prompt-backdrop'), { timeout: 15000 }).catch(() => {});
-        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'Next starts the walk — the spotlight opens on the chat bar');
+        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 8') !== -1, { timeout: 10000 }), 'Next starts the walk — the spotlight opens on the chat bar');
         ok(await page.evaluate(() => (document.getElementById('chat-container').innerText || '').trim() === ''), 'the greeting still waits behind the walk');
         await page.keyboard.press('Escape');
         await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
@@ -682,10 +739,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.click('#ca-spot-prompt-next');
         await page.waitForFunction(() => document.documentElement.classList.contains('ca-spot-on'), { timeout: 20000 });
         await page.waitForFunction(() => !document.getElementById('ca-spot-prompt-backdrop'), { timeout: 15000 }).catch(() => {});
-        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 7') !== -1, { timeout: 10000 }), 'the walk returns on the next open after a skip');
+        ok(await page.waitForFunction(() => document.getElementById('ca-spot-tip').textContent.indexOf('1 of 8') !== -1, { timeout: 10000 }), 'the walk returns on the next open after a skip');
         // v1.49.2: CDP-driven stepping (in-page timer waits can throttle to
         // a crawl deep into the suite — same lesson as the geo loops)
-        for (let i = 0; i < 7; i++) {
+        for (let i = 0; i < 8; i++) {
             await page.waitForFunction(() => {
                 const on = document.documentElement.classList.contains('ca-spot-on');
                 const tip = document.getElementById('ca-spot-tip');
@@ -702,7 +759,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             await sleep(150);
         }
         await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.49.3'), 'ONLY Done completes — the mirror and the per-walk store both land');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'ONLY Done completes — the mirror and the per-walk store both land');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
         await page.click('#whatsnew-close');
         await sleep(300);
