@@ -52,7 +52,7 @@ R.eq(allSteps.length, 41, 'forty-one steps in all (v1.53.0: main 7\u21928 — th
     // v1.50.0: every walk carries a CONTENT version — the store stamps at
     // it, and bumping one retires its check (and re-invites for main)
     R.ok(Object.keys(w.CA_SPOT_TOURS).every((k) => typeof w.CA_SPOT_TOURS[k].cv === 'string' && w.CA_SPOT_TOURS[k].cv), 'every walk carries a cv (its content version)');
-R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '1.53.0,1.49.2,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0', 'cvs: main bumps to 1.53.0 with its eighth step (everyone re-invited), roster 1.49.2, the six rewritten walks hold 1.52.0');
+R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '1.53.2,1.49.2,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0,1.52.0', 'cvs: main bumps to 1.53.2 with its rewritten closer (the check retires, the invitation returns), roster 1.49.2, the six rewritten walks hold 1.52.0');
   }
 
   // ---- the copy ships verbatim: every step's title and line, word for word ----
@@ -70,7 +70,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
       ['main', 4, '**Theme Toggle**', 'Tap anytime to switch seamlessly between light and dark theme.'],
       ['main', 5, '**Account & Preferences**', 'Update your profile details, manage your saved data, or replay feature tours whenever you need.'],
       ['main', 6, '**Clear Screen**', 'Double-tap to clear your screen. Your saved data remains untouched.'],
-      ['main', 7, '**You\u2019re All Set**', 'Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features.'],
+      ['main', 7, '**You\u2019re All Set**', 'Feel free to replay this guide anytime right here in Settings, or jump into walkthroughs for other in-app features.'],
       ['roster', 0, '**First, your Roster Report**', 'Upload your Roster Report PDF directly from CrewApp using the paperclip icon.'],
       ['roster', 1, '**Hands-Free Import**', 'Every line is analyzed automatically. All flights, dates, sectors, and reporting times are extracted instantly without you typing a thing.'],
       ['roster', 2, '**Seamless Integration**', 'Your calendar fills up instantly with your imported data.'],
@@ -169,7 +169,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     d.getElementById('ca-spot-next').click();
     await wait(600);
     R.ok(tipText(d).indexOf('8 of 8') !== -1 && tipText(d).indexOf('You\u2019re All Set') !== -1, 'v1.53.0: step 8 titles the closer \u2014 the copy VERBATIM');
-    R.ok(tipText(d).indexOf('Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features.') !== -1, 'the eighth line reads word-for-word');
+    R.ok(tipText(d).indexOf('Feel free to replay this guide anytime right here in Settings, or jump into walkthroughs for other in-app features.') !== -1, 'the eighth line reads word-for-word (v1.53.2: the rewritten closer)');
     R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.53.0: the eighth step lights inside Settings \u2014 its world opened the sheet');
     R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'the lit Feature tour section sits OPEN \u2014 the world unfolded it first');
     d.getElementById('ca-spot-next').click();
@@ -180,7 +180,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     // cv, and main keeps its legacy mirror (the archive pin + the
     // welcome-restore door read it)
     R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'Done on the main tour keeps the legacy spotMainDone mirror');
-    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.0' }), 'Done stamps the per-walk store at main\u2019s current cv');
+    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.2' }), 'Done stamps the per-walk store at main\u2019s current cv');
   }
 
   // ---- Skip and Escape end it too; the veil never outstays ----
@@ -408,7 +408,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.eq(d.getElementById('chat-container').children.length, chatKidsBeforeMenus, 'the thread reads exactly as it did before the menus walk');
     R.eq(w.localStorage.getItem('crewAssist.recentFlights'), RECENTS_SEED, 'v1.52.0: the recents list the fetch wrote rides home with the stage \u2014 a tour saves nothing');
     R.ok(!!w.localStorage.getItem('SQ802:' + todayYMD + ':CABINS'), 'the seeded cabin schedule survives \u2014 nothing pruned away');
-    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.0', menus: '1.52.0' }), 'the menus Done stamps at its 1.52.0 content (main sits there from the legacy materialization)');
+    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.2', menus: '1.52.0' }), 'the menus Done stamps at its 1.52.0 content (main sits there from the legacy materialization)');
 
     // supersede: a tour never stacks on a tour — the first walk\u2019s stage is
     // restored (its sheet closed) before the second walk snapshots
@@ -572,7 +572,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
       x.localStorage.setItem('crewAssist.spotMainDone', '1');
       x.localStorage.removeItem('crewAssist.spotDone');
     } });
-    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.0' }), 'the legacy flag materializes into the store at main\u2019s current cv');
+    R.eq(w.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ main: '1.53.2' }), 'the legacy flag materializes into the store at main\u2019s current cv');
     R.eq(w.caSpotWalkDone('main'), true, 'the materialized state reads done');
 
     // a stale cv (content changed since the walk was done) reads NOT done —
@@ -771,7 +771,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(await until(() => tipText(d).indexOf('1 of 8') !== -1, 10000), 'the first spotlight is the chat bar');
     for (let i = 0; i < 8; i++) { const n = d.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
     R.ok(!w.caSpot.on, 'Done stands the walk down');
-    R.ok(await until(() => w.localStorage.getItem('crewAssist.spotDone') === JSON.stringify({ main: '1.53.0' }), 5000), 'ONLY Done completes — the store lands at main\u2019s cv');
+    R.ok(await until(() => w.localStorage.getItem('crewAssist.spotDone') === JSON.stringify({ main: '1.53.2' }), 5000), 'ONLY Done completes — the store lands at main\u2019s cv');
     R.eq(w.localStorage.getItem('crewAssist.spotMainDone'), '1', 'the legacy mirror lands with it');
     R.ok(await until(() => !d.getElementById('whatsnew-backdrop').classList.contains('hidden'), 10000), 'the sheet takes the stage after Done');
     const wn = d.getElementById('whatsnew-close');

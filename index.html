@@ -2259,9 +2259,12 @@
                     </div>
                 </div>
 
-                <!-- Feedback and Support -->
-                <div>
-                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Feedback and Support</p>
+                <!-- Support & Updates (v1.53.2, owner order: the header reads
+                     Support & Updates and the changelog panel moved here from
+                     the Feature tour section — the main walk's closer points
+                     at the tours alone) -->
+                <div id="ca-support-section">
+                    <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Support &amp; Updates</p>
                     <div class="glass-panel rounded-2xl p-4 flex items-center justify-between shadow-sm border dark:border-white/5">
                         <div class="flex flex-col">
                             <span class="text-sm font-bold">Chat with the developer</span>
@@ -2270,6 +2273,18 @@
                         <a href="https://t.me/harlequinzxc" target="_blank" rel="noopener noreferrer" class="w-32 justify-center px-5 py-1.5 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
                             <i data-lucide="send" class="w-3.5 h-3.5"></i> Telegram
                         </a>
+                    </div>
+                    <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5 mt-3">
+                        <!-- v1.35.0: the whole version history, newest first -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold">Changelog</span>
+                                <span class="ca-micro text-gray-500">Features, fixes and improvements</span>
+                            </div>
+                            <button type="button" id="btn-changelog" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
+                                <i data-lucide="history" class="w-3.5 h-3.5"></i> View
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -2360,18 +2375,6 @@
                                     <span class="flex flex-col"><span class="text-sm font-bold">Backup &amp; restore</span></span>
                                     <i data-lucide="circle" class="ca-spot-row-status w-4 h-4 text-gray-400 dark:text-gray-500 ml-auto shrink-0"></i>
                                 </button>
-                            </div>
-                            <div class="glass-panel rounded-2xl p-4 shadow-sm border dark:border-white/5 mt-3">
-                                <!-- v1.35.0: the whole version history, newest first -->
-                                <div class="flex items-center justify-between">
-                                    <div class="flex flex-col">
-                                        <span class="text-sm font-bold">Changelog</span>
-                                        <span class="ca-micro text-gray-500">Features, fixes and improvements</span>
-                                    </div>
-                                    <button type="button" id="btn-changelog" class="w-32 justify-center px-5 py-2 rounded-full text-xs font-bold border border-sia-gold text-sia-gold hover:bg-sia-gold/10 transition-colors flex items-center gap-1.5 shrink-0">
-                                        <i data-lucide="history" class="w-3.5 h-3.5"></i> View
-                                    </button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -3377,7 +3380,7 @@
             }
         }
 
-        var APP_VERSION = '1.53.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.53.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3399,6 +3402,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.53.2', d: '2026-11-07', items: [
+                { c: 'imp', t: 'The main walk’s closer reads anew and lights the tours alone.' },
+                { c: 'imp', t: 'Support & Updates carries the changelog now.' }
+            ] },
             { v: '1.53.1', d: '2026-11-07', items: [
                 { c: 'imp', t: 'The quieter Settings sections start folded — one tap opens them.' }
             ] },
@@ -23289,7 +23296,7 @@ SLOT|Special Lve others`;
         var CA_SPOT_TOURS = {
             main: {
                 label: 'Main screen',
-                cv: '1.53.0',   // v1.53.0: the walk gains its eighth step — where the tours live — and re-invites everyone
+                cv: '1.53.2',   // v1.53.2: the closer's copy changed (and the changelog left the section) — the check retires, the invitation returns
                 world: caSpotMainWorld,
                 steps: [
                     { sel: '#chat-input', title: '**At Your Service**', line: 'Ask about your flight or type "help" / "?" for quick commands.' },
@@ -23302,7 +23309,7 @@ SLOT|Special Lve others`;
                     // v1.53.0 (owner order, copy VERBATIM): the closer — the
                     // walk ends by pointing at the tours' own front door in
                     // Settings, so the crew always knows the way back.
-                    { sel: '#ca-ft-section', title: '**You\u2019re All Set**', line: 'Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features.', before: caSpotSettingsWorld }
+                    { sel: '#ca-ft-section', title: '**You\u2019re All Set**', line: 'Feel free to replay this guide anytime right here in Settings, or jump into walkthroughs for other in-app features.', before: caSpotSettingsWorld }
                 ]
             },
             roster: {
