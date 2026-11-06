@@ -43,14 +43,14 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     const labels = Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].label).join(',');
     R.eq(labels, 'Main screen,Roster import,Manual flight cards,Menus & search,Earnings,Calendar,Flight Stats,Backup & restore', 'labels read as the Settings rows do');
     const counts = Object.keys(w.CA_SPOT_TOURS).map((k) => k + ':' + w.CA_SPOT_TOURS[k].steps.length).join(' ');
-    R.eq(counts, 'main:7 roster:6 manual:6 menus:6 earnings:6 calendar:6 stats:5 backup:5', 'step counts: the chat bar leads the main tour, the roster walk gains the earnings step (v1.49.2), the calendar walks six, Flight Stats slimmed to five');
+    R.eq(counts, 'main:7 roster:6 manual:4 menus:3 earnings:5 calendar:6 stats:5 backup:5', 'step counts (v1.51.0): the manual walk teaches its four doors, the menus walk its three, the earnings walk five');
     const allSteps = Object.keys(w.CA_SPOT_TOURS).reduce((a, k) => a.concat(w.CA_SPOT_TOURS[k].steps), []);
-    R.eq(allSteps.length, 47, 'forty-seven steps in all');
+    R.eq(allSteps.length, 41, 'forty-one steps in all (v1.51.0: manual 6\u21924, menus 6\u21923, earnings 6\u21925)');
     R.ok(allSteps.every((s) => s && s.sel && s.title && s.line), 'every step carries a target, a title and a line');
     // v1.50.0: every walk carries a CONTENT version — the store stamps at
     // it, and bumping one retires its check (and re-invites for main)
     R.ok(Object.keys(w.CA_SPOT_TOURS).every((k) => typeof w.CA_SPOT_TOURS[k].cv === 'string' && w.CA_SPOT_TOURS[k].cv), 'every walk carries a cv (its content version)');
-    R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '1.49.3,1.49.2,1.49.0,1.49.0,1.49.0,1.49.0,1.49.0,1.49.0', 'cvs: main last touched 1.49.3, roster 1.49.2, the rest 1.49.0');
+    R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '1.49.3,1.49.2,1.51.0,1.51.0,1.51.0,1.49.0,1.49.0,1.49.0', 'cvs: main 1.49.3, roster 1.49.2, the three overhauled walks bump to 1.51.0, the rest 1.49.0');
   }
 
   // ---- the copy ships verbatim: every step's title and line, word for word ----
@@ -74,12 +74,19 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
       ['roster', 3, '**Seamless Integration**', 'As well as the allowances from your flights.'],
       ['roster', 4, '**Stay updated**', 'Re-upload your pdf whenever you get a new monthly roster or schedule changes. Your calendar and allowances update seamlessly.'],
       ['roster', 5, '**No Guesswork**', 'If your uploaded file isn\'t recognized as a valid roster, I will let you know immediately rather than guessing your data.'],
-      ['manual', 0, 'No roster? No problem', 'Add a card by hand when the trip isn\u2019t on a PDF.'],
-      ['manual', 3, 'The whole batch', 'Calculate-all totals everything together, grouped by month.'],
-      ['menus', 0, 'Just ask', 'Type a flight and a date \u2014 sq802 menu 17 oct \u2014 and I fetch the menus.'],
-      ['menus', 4, 'Saved on your phone', 'Menus you\u2019ve opened stay readable offline, no signal needed.'],
-      ['earnings', 0, 'This is your money page', 'Every trip you save adds up here, month by month.'],
-      ['earnings', 5, 'Take it with you', 'Export the JSON or the CSV \u2014 your expenses ride along in both.'],
+      // v1.51.0: the three overhauled walks, ALL of their new copy
+      ['manual', 0, '**Just Ask**', 'Type your flights and dates like "cop sq802 17 oct sq807 18 oct" to calculate your allowance instantly.'],
+      ['manual', 1, '**Manual Flight Entry**', 'Add a flight by hand if it is missing from your PDF or if you just need to calculate its allowance.'],
+      ['manual', 2, '**Smart vs Manual Search**', '**Default**: Enter the flight number and date to fill in all the details automatically.\n**Manual**: Key in every detail by hand for full control with zero automation.'],
+      ['manual', 3, '**One-Tap Calculation**', '"Calculate" checks your flight details directly against your rank and rate.'],
+      ['menus', 0, '**Just Ask**', 'Type a flight and date like "sq802 menu 17 oct" to fetch your menus instantly.'],
+      ['menus', 1, '**Manual Flight Entry**', 'Or add a flight by hand to view its menu.'],
+      ['menus', 2, '**Manual Flight Entry**', 'Enter your flight number, select your departure date and cabin class, then tap "Fetch Menu" to bring up the menu.'],
+      ['earnings', 0, '**Track Your Earnings**', 'This dashboard displays your total earnings from every flight month by month.'],
+      ['earnings', 1, '**Monthly View**', 'Each card summarizes your earnings for a single month. Tap it to expand and view the full flight list.'],
+      ['earnings', 2, '**COP vs Salary**', 'Switch between the two pills to alternate between your COP allowance and your calculated take-home salary.'],
+      ['earnings', 3, '**Earnings Breakdown**', 'Track every dollar from your gross pay and CPF down to your overseas expenses (if any) and final net earnings.'],
+      ['earnings', 4, '**Search History**', 'Easily look up your past trips by filtering for specific routes or flight numbers.'],
       ['calendar', 1, 'The tag button', 'Tap it and every flight day shows its station and arrival time.'],
       ['calendar', 2, 'The camera comes out', 'With the tags on, the camera appears \u2014 it turns the month into a picture, ready to share.'],
       ['calendar', 5, 'The records door', 'Your passport and all-time stats live behind this gate.'],
@@ -206,9 +213,9 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     // earnings: the archive sheet opens itself, then closes at the end
     w.caSpotStart('earnings');
     await wait(600);
-    R.ok(tipText(d).indexOf('This is your money page') !== -1, 'earnings step 1 shows');
+    R.ok(tipText(d).indexOf('Track Your Earnings') !== -1, 'earnings step 1 shows (v1.51.0 copy)');
     R.ok(!d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 'the earnings tour opens the archive on its own');
-    R.ok(tipText(d).indexOf('1 of 6') !== -1, 'the earnings walk counts six');
+    R.ok(tipText(d).indexOf('1 of 5') !== -1, 'the earnings walk counts five (v1.51.0)');
     w.caSpotEnd();
     await wait(500);
     R.ok(d.getElementById('ca-arch-backdrop').classList.contains('hidden'), 'v1.50.0: the archive the walk opened closes behind it');
@@ -258,17 +265,29 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     w.closeSettings();
     await wait(500);
 
-    // manual: the tour builds one real calculator card through the app\u2019s own
-    // engine; Settings restores open at the end (the row lives in it)
+    // manual (v1.51.0, owner order): the walk teaches its four doors — the
+    // chat command, the calculate chip, the Settings interface, the card's
+    // Calculate button — and the card still leaves with the veil
     const chatKidsBefore = d.getElementById('chat-container').children.length;
     w.openSettings();
     await wait(450);   // same: the snapshot reads the settled sheet
     w.caSpotStart('manual');
     await wait(600);
-    R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'the manual tour opens Settings for the Manual pill');
+    R.ok(tipText(d).indexOf('Just Ask') !== -1, 'manual step 1 shows (v1.51.0 copy)');
+    R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'the manual walk now opens on the MAIN screen — the world closes Settings');
     d.getElementById('ca-spot-next').click(); await wait(520);
-    R.ok(tipText(d).indexOf('Fill the flight') !== -1, 'manual step 2 shows');
-    R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'the card steps return to the main screen');
+    R.ok(tipText(d).indexOf('Manual Flight Entry') !== -1, 'manual step 2 lights the calculate-my-allowance chip');
+    R.ok(tipText(d).indexOf('missing from your PDF') !== -1, 'step 2 reads its line verbatim');
+    d.getElementById('ca-spot-next').click(); await wait(520);
+    R.ok(tipText(d).indexOf('Smart vs Manual Search') !== -1, 'manual step 3 shows');
+    R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'the interface step opens Settings on its own');
+    R.eq(d.querySelectorAll('#ca-spot-tip b').length, 3, 'step 3 renders its three bolds — the title, Default and Manual');
+    R.eq(d.querySelectorAll('#ca-spot-tip br').length, 1, 'the owner\u2019s (new line) marker renders one real line break');
+    // the Settings sheet scrolled mid-walk rides home at the end (v1.51.0)
+    w.eval('document.getElementById("settings-scroll").scrollTop = 200;');
+    d.getElementById('ca-spot-next').click(); await wait(520);
+    R.ok(tipText(d).indexOf('One-Tap Calculation') !== -1, 'manual step 4 shows');
+    R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'the card step returns to the main screen');
     R.ok(!!w.caSpot.cardId && !!d.getElementById(w.caSpot.cardId + '-btn-calc'), 'the prop is a real calculator card with a Calculate button');
     R.ok(d.getElementById('chat-container').children.length > chatKidsBefore, 'the card lives in the thread while the veil is up');
     w.caSpotEnd();
@@ -279,6 +298,32 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.eq(d.getElementById('chat-container').children.length, chatKidsBefore, 'the thread reads exactly as it did before the walk');
     R.eq(w.caSpot.cardId, null, 'the card reference clears with the walk');
     R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.50.0: Settings restores open after the manual walk too');
+    R.eq(d.getElementById('settings-scroll').scrollTop, 0, 'v1.51.0: the Settings sheet\u2019s scroll rides home with the stage');
+
+    // menus (v1.51.0, owner order): three doors — the chat command, the
+    // menu chip, the Inflight Menu card (flight number, departure date,
+    // cabins, the gold Fetch menu button) — built through the app\u2019s own
+    // engine like the manual walk\u2019s calculator card
+    const chatKidsBeforeMenus = d.getElementById('chat-container').children.length;
+    w.caSpotStart('menus');
+    await wait(600);
+    R.ok(tipText(d).indexOf('Just Ask') !== -1, 'menus step 1 shows (v1.51.0 copy)');
+    R.ok(tipText(d).indexOf('sq802 menu 17 oct') !== -1, 'the step-1 line quotes its example verbatim');
+    d.getElementById('ca-spot-next').click(); await wait(520);
+    R.ok(tipText(d).indexOf('Or add a flight by hand') !== -1, 'menus step 2 lights the what\u2019s-being-served chip');
+    d.getElementById('ca-spot-next').click(); await wait(520);
+    R.ok(tipText(d).indexOf('Fetch Menu') !== -1, 'menus step 3 shows');
+    R.ok(tipText(d).indexOf('tap "Fetch Menu" to bring up the menu') !== -1, 'the step-3 line reads verbatim');
+    R.ok(!!w.caSpot.fvEl && !!d.querySelector('#chat-container [id^="fv-flight-"]'), 'the prop is a real Inflight Menu card — the app\u2019s own engine, flight number field and all');
+    R.ok(d.getElementById('chat-container').children.length > chatKidsBeforeMenus, 'the card lives in the thread while the veil is up');
+    // the chip rail scrolled mid-walk rides home at the end (v1.51.0, the
+    // owner\u2019s roster-walk report)
+    w.eval('document.getElementById("action-chips").scrollLeft = 90;');
+    w.caSpotEnd();
+    await wait(400);
+    R.eq(d.getElementById('action-chips').scrollLeft, 0, 'v1.51.0: a walk never leaves the chip rail scrolled away — the stage revert carries it home');
+    R.ok(!d.querySelector('#chat-container [id^="fv-flight-"]'), 'the Inflight Menu card leaves with the veil');
+    R.eq(d.getElementById('chat-container').children.length, chatKidsBeforeMenus, 'the thread reads exactly as it did before the menus walk');
 
     // supersede: a tour never stacks on a tour — the first walk\u2019s stage is
     // restored (its sheet closed) before the second walk snapshots
@@ -375,10 +420,11 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     const { w: w2 } = await boot(APP, { seed: (x) => {
       x.localStorage.setItem('crewAssist.profile', PROFILE);
       x.localStorage.setItem('crewAssist.wnSeen', '9.9.9');
-      x.localStorage.setItem('crewAssist.spotDone', JSON.stringify({ main: '1.49.2', earnings: '1.49.0' }));
+      x.localStorage.setItem('crewAssist.spotDone', JSON.stringify({ main: '1.49.2', earnings: '1.51.0', menus: '1.49.0' }));
     } });
     R.eq(w2.caSpotWalkDone('main'), false, 'a stale main cv reads not-done \u2014 the walk must walk again');
-    R.eq(w2.caSpotWalkDone('earnings'), true, 'a matching cv still reads done');
+    R.eq(w2.caSpotWalkDone('earnings'), true, 'a matching cv still reads done (earnings at its 1.51.0 content)');
+    R.eq(w2.caSpotWalkDone('menus'), false, 'a cv from before the v1.51.0 overhaul reads not-done \u2014 the check retires with the content');
 
     // non-main Done stamps the store; the legacy mirror stays main-only
     const { w: w3 } = await boot(APP, { seed: (x) => {
@@ -390,7 +436,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     w3.caSpotStart('menus');
     await wait(600);
     for (let i = 0; i < 6; i++) { const n = w3.document.getElementById('ca-spot-next'); if (n) { n.click(); await wait(520); } }
-    R.eq(w3.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ menus: '1.49.0' }), 'a non-main Done stamps its own walk');
+    R.eq(w3.localStorage.getItem('crewAssist.spotDone'), JSON.stringify({ menus: '1.51.0' }), 'a non-main Done stamps its own walk (menus at its 1.51.0 content)');
     R.eq(w3.localStorage.getItem('crewAssist.spotMainDone'), null, 'the legacy mirror stays main-only');
   }
 
@@ -610,6 +656,14 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
     R.ok(src.indexOf("if (caSpot.id && completed === true)") >= 0, 'the store stamp lands only on a completed walk');
     R.ok(src.indexOf("!caSpotWalkDone('main') && !caSpotDeclined()") >= 0, 'the prompt gate reads done AND declined');
     R.ok(src.indexOf('function caSpotSyncRowIcons') >= 0, 'the row icons sync through their own function');
+    // v1.51.0 (owner orders): the scroll-home stage revert + the fv-card prop
+    R.ok(src.indexOf('chips: rail ? rail.scrollLeft : null,') >= 0, 'the stage snapshot carries the chip rail\u2019s scroll (the owner\u2019s roster-walk report)');
+    R.ok(src.indexOf('settingsScroll: sscroll ? sscroll.scrollTop : null') >= 0, 'the stage snapshot carries the Settings sheet\u2019s scroll');
+    R.ok(src.indexOf('if (rail && st.chips !== null && rail.scrollLeft !== st.chips) rail.scrollLeft = st.chips;') >= 0, 'the stage restore scrolls the chip rail home — instant, never a glide');
+    R.ok(src.indexOf('if (sscroll && st.settingsScroll !== null && sscroll.scrollTop !== st.settingsScroll) sscroll.scrollTop = st.settingsScroll;') >= 0, 'the stage restore scrolls the Settings sheet home');
+    R.ok(src.indexOf('function caSpotFvWorld') >= 0, 'the menus walk builds its prop through caSpotFvWorld (the app\u2019s own Inflight Menu card)');
+    R.ok(src.indexOf("renderFlightVerificationCard('menu');") >= 0, 'the fv prop is the app\u2019s own card engine, never a mock');
+    R.ok(src.indexOf("String(step.line || '').split('\\n')") >= 0, 'a step line may carry the owner\u2019s (new line) marker — rendered as real line breaks');
     // v1.50.0 (owner order): the stage reverts with the chat
     R.ok(src.indexOf('function caSpotStageSnap') >= 0 && src.indexOf('function caSpotStageRestore') >= 0, 'the stage snapshot/restore pair exists');
     R.ok(src.indexOf("try { caSpot.stage = (stageOverride !== undefined && stageOverride) ? stageOverride : caSpotStageSnap(); } catch (e) { caSpot.stage = null; }") >= 0, 'the walk snapshots the stage at start (a row-tap hands its PRE-TAP snapshot in)');
@@ -635,7 +689,7 @@ const PROFILE = JSON.stringify({ name: 'Tour Tester', gender: 'M', rank: 'FS' })
 
   // ---- the old tour is gone, root and branch ----
   {
-    ['startCaTour', 'finishCaTour', 'maybeOfferTour', 'caTourInterrupt', 'caTourPace', 'caTourArchiveStore', 'CA_TOUR_STEPS', 'tourDone', 'ca-tour-on', 'ca-tour-glow', 'caTourPulse', 'btn-replay-tour', 'ca-tour-bubble', 'ca-tour-offer', 'caSpotFresh', 'caSpotSeen', 'caSpotMarkSeen'].forEach((dead) => {
+    ['startCaTour', 'finishCaTour', 'maybeOfferTour', 'caTourInterrupt', 'caTourPace', 'caTourArchiveStore', 'CA_TOUR_STEPS', 'tourDone', 'ca-tour-on', 'ca-tour-glow', 'caTourPulse', 'btn-replay-tour', 'ca-tour-bubble', 'ca-tour-offer', 'caSpotFresh', 'caSpotSeen', 'caSpotMarkSeen', 'caSpotMenuWorld', 'The whole batch', 'Save it or undo', 'Saved on your phone', 'Take it with you', 'Two ways to read it', 'This is your money page'].forEach((dead) => {
       R.ok(src.indexOf(dead) === -1, 'no trace of ' + dead + ' remains');
     });
     R.ok(src.indexOf('crewAssist.spotMainDone') >= 0, 'the legacy mirror key is the spotlight\u2019s own');

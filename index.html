@@ -3328,7 +3328,7 @@
             }
         }
 
-        var APP_VERSION = '1.50.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.51.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3350,6 +3350,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.51.0', d: '2026-11-06', items: [
+                { c: 'imp', t: 'The manual, menus and earnings walks read anew \u2014 sharper copy.' },
+                { c: 'fix', t: 'A tour never leaves the chip rail scrolled away.' }
+            ] },
             { v: '1.50.0', d: '2026-11-06', items: [
                 { c: 'new', t: 'A gentle invitation opens the tour \u2014 Next walks, Skip stays quiet.' },
                 { c: 'new', t: 'Feature tour rows show a check when a walk is completed.' },
@@ -22713,7 +22717,7 @@ SLOT|Special Lve others`;
         //    opened stay open when it ends — the crew explores from there.
         // ==========================================
 
-        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, onEnd: null, chatKids: null, chatScroll: 0, stage: null };
+        var caSpot = { on: false, id: null, tour: null, idx: -1, gen: 0, cardId: null, fvEl: null, onEnd: null, chatKids: null, chatScroll: 0, stage: null };
         var caSpotBusy = false;
 
         // --- per-walk completion (v1.50.0, owner order: FULL tracking) ---
@@ -22873,13 +22877,23 @@ SLOT|Special Lve others`;
         }
         function caSpotStageSnap() {
             const tag = document.getElementById('ca-rc-tag');
+            const rail = document.getElementById('action-chips');
+            const sscroll = document.getElementById('settings-scroll');
             return {
                 settings: caSpotSheetOpen('settings-backdrop', 'settings-sheet'),
                 arch: caSpotSheetOpen('ca-arch-backdrop', 'ca-arch-sheet'),
                 cal: caSpotSheetOpen('ca-roster-cal', null),
                 pod: caSpotSheetOpen('ca-rc-podwrap', null),
                 menu: caSpotSheetOpen('menu-backdrop', 'menu-sheet'),
-                tags: tag ? (tag.getAttribute('aria-pressed') === 'true') : null
+                tags: tag ? (tag.getAttribute('aria-pressed') === 'true') : null,
+                // v1.51.0 (owner report: the roster walk's chip step left the
+                // rail scrolled right): the stage revert carries the chip
+                // rail's scroll home — same rule as the v1.48.1 chip-tap
+                // glide, never stranded mid-row — and the Settings sheet's
+                // own scroll (the one sheet that can be open at start and
+                // handed back open).
+                chips: rail ? rail.scrollLeft : null,
+                settingsScroll: sscroll ? sscroll.scrollTop : null
             };
         }
         function caSpotStageRestore(st) {
@@ -22898,6 +22912,16 @@ SLOT|Special Lve others`;
             if (tag && st.tags !== null && (tag.getAttribute('aria-pressed') === 'true') !== st.tags) {
                 try { tag.click(); } catch (e) {}
             }
+            // v1.51.0: the chip rail and the Settings sheet scroll home —
+            // instant sets, never a glide (the engine's own scroll rule)
+            try {
+                const rail = document.getElementById('action-chips');
+                if (rail && st.chips !== null && rail.scrollLeft !== st.chips) rail.scrollLeft = st.chips;
+            } catch (e) {}
+            try {
+                const sscroll = document.getElementById('settings-scroll');
+                if (sscroll && st.settingsScroll !== null && sscroll.scrollTop !== st.settingsScroll) sscroll.scrollTop = st.settingsScroll;
+            } catch (e) {}
         }
 
         // --- the Settings rows' status icons (v1.50.0, owner order): a
@@ -22974,17 +22998,6 @@ SLOT|Special Lve others`;
             const wrap = document.getElementById('ca-rc-podwrap');
             if ((!wrap || wrap.classList.contains('hidden')) && typeof openRcPod === 'function') openRcPod();
         }
-        // Menus: open the first SAVED menu when one exists — the cached
-        // path renders offline, straight from the save (v1.28.2). No saved
-        // menu and the steps fall back to the composer and the chip.
-        function caSpotMenuWorld() {
-            caSpotMainWorld();
-            try {
-                const list = (typeof menuCycleList === 'function') ? menuCycleList() : [];
-                const f = list && list[0];
-                if (f && f.fn && f.ymd && typeof openNextFlightViewer === 'function') openNextFlightViewer(f.fn, f.ymd);
-            } catch (e) {}
-        }
         // Manual cards: one REAL calculator card through the app's own
         // engine — a working prop while the veil is up (Calculate and
         // Confirm are live mid-walk); when the walk ends the chat reverts
@@ -22994,6 +23007,21 @@ SLOT|Special Lve others`;
             if (caSpot.cardId && document.getElementById(caSpot.cardId)) return;
             if (typeof renderCalculatorCard !== 'function') return;
             renderCalculatorCard('both', (id) => { caSpot.cardId = id; });
+        }
+        // v1.51.0: the menus walk's prop — one REAL Inflight Menu card
+        // through the app's own engine (the same card the What's-being-
+        // served? chip renders: flight number, departure date, cabins, the
+        // gold Fetch menu button). Built once per walk; the chat revert
+        // takes it out at the end.
+        function caSpotFvWorld() {
+            caSpotMainWorld();
+            if (caSpot.fvEl && document.body.contains(caSpot.fvEl)) return;
+            if (typeof renderFlightVerificationCard !== 'function') return;
+            try {
+                renderFlightVerificationCard('menu');
+                const cc = document.getElementById('chat-container');
+                caSpot.fvEl = cc ? cc.lastElementChild : null;
+            } catch (e) {}
         }
         // Card root lookup: the bubble itself carries no id — only its
         // fields do — so an empty suffix resolves through the IFA wrap to
@@ -23040,48 +23068,48 @@ SLOT|Special Lve others`;
             },
             manual: {
                 label: 'Manual flight cards',
-                cv: '1.49.0',
-                world: caSpotSettingsWorld,
+                cv: '1.51.0',   // the v1.51.0 overhaul: four steps, the owner's new copy
+                world: caSpotMainWorld,
                 steps: [
-                    { sel: '#calcui-pill-manual', title: 'No roster? No problem', line: 'Add a card by hand when the trip isn\u2019t on a PDF.' },
-                    // v1.49.1: the whole-card rings retired — the ring frames
-                    // the lit PART of the card (the fields, the buttons, the
-                    // masthead), never the 700px bubble itself.
-                    { sel: () => caSpotCardEl('-ifa-fn1') || caSpotCardEl('-ifa-wrap'), title: 'Fill the flight', line: 'Route, date and times — the card matches the roster\u2019s own fields.', before: caSpotCardWorld },
-                    { sel: () => caSpotCardEl('-btn-calc'), title: 'One tap, priced', line: 'Calculate works the card out against your rank and rate.', before: caSpotCardWorld },
-                    { sel: () => { const b = document.querySelector('.roster-calc-all-btn'); return (b && caSpotShown(b)) ? b : null; }, title: 'The whole batch', line: 'Calculate-all totals everything together, grouped by month.', before: caSpotCardWorld },
-                    { sel: () => caSpotCardEl('-ifa-trip-route') || caSpotCardEl('-ifa-wrap'), title: 'Allowances included', line: 'IFA and LMA price out beside the sectors in the trip bar.', before: caSpotCardWorld },
-                    { sel: () => { const w = caSpotCardEl(''); return (w && w.querySelector('.ca-card-header')) || w; }, title: 'Save it or undo', line: 'Confirm files the trip into your earnings — undo takes it right back out.', before: caSpotCardWorld }
+                    // v1.51.0 (owner order, copy VERBATIM): the walk now
+                    // teaches the three doors to a hand-built card — the
+                    // chat command, the chip, the Settings interface — then
+                    // the card's own Calculate button.
+                    { sel: '#chat-input', title: '**Just Ask**', line: 'Type your flights and dates like "cop sq802 17 oct sq807 18 oct" to calculate your allowance instantly.' },
+                    { sel: '#action-chips .action-chip[data-intent="total"]', title: '**Manual Flight Entry**', line: 'Add a flight by hand if it is missing from your PDF or if you just need to calculate its allowance.' },
+                    { sel: () => { const seg = caSpotVis('#calcui-segmented'); if (!seg) return null; const box = seg.closest('.glass-panel'); return (box && box.parentElement) || box || seg; }, title: '**Smart vs Manual Search**', line: '**Default**: Enter the flight number and date to fill in all the details automatically.\n**Manual**: Key in every detail by hand for full control with zero automation.', before: caSpotSettingsWorld },
+                    { sel: () => caSpotCardEl('-btn-calc'), title: '**One-Tap Calculation**', line: '"Calculate" checks your flight details directly against your rank and rate.', before: caSpotCardWorld }
                 ]
             },
             menus: {
                 label: 'Menus & search',
-                cv: '1.49.0',
+                cv: '1.51.0',   // the v1.51.0 overhaul: three steps, the owner's new copy
                 world: caSpotMainWorld,
                 steps: [
-                    { sel: '#chat-input', title: 'Just ask', line: 'Type a flight and a date — sq802 menu 17 oct — and I fetch the menus.' },
-                    // v1.49.1: the whole-sheet targets retired (the ring must
-                    // frame a lit TARGET, not the page) — tight viewer
-                    // elements first, the menus chip as the honest fallback
-                    // on a device with no saved menu.
-                    { sel: () => caSpotVis('#menu-hero-content') || caSpotVis('#btn-menu-cycle') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'The viewer', line: 'Courses in service order, exactly as the galley works them.', before: caSpotMenuWorld },
-                    { sel: () => caSpotVis('#menu-cabin-wrap') || caSpotVis('#menu-cabin-label') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Pick your cabin', line: 'The switcher jumps between the cabins on your flight.', before: caSpotMenuWorld },
-                    { sel: () => caSpotVis('#btn-menu-to-print') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Print-ready', line: 'Full sheet or compact — both lay out for the galley printer.', before: caSpotMenuWorld },
-                    { sel: () => caSpotVis('#btn-menu-cycle') || caSpotVis('#action-chips .action-chip[data-intent="menu"]'), title: 'Saved on your phone', line: 'Menus you\u2019ve opened stay readable offline, no signal needed.', before: caSpotMenuWorld },
-                    { sel: '#chat-input', title: 'Speak naturally', line: 'jcl ycl menu sq802 — name the cabins you want, in your order.' }
+                    // v1.51.0 (owner order, copy VERBATIM): the chat command,
+                    // the chip that opens the manual entry, then the Inflight
+                    // Menu card itself (flight number, departure date, cabins,
+                    // the gold Fetch menu button). The old viewer steps —
+                    // courses, cabins, print, the offline save — left with
+                    // this round.
+                    { sel: '#chat-input', title: '**Just Ask**', line: 'Type a flight and date like "sq802 menu 17 oct" to fetch your menus instantly.' },
+                    { sel: '#action-chips .action-chip[data-intent="menu"]', title: '**Manual Flight Entry**', line: 'Or add a flight by hand to view its menu.' },
+                    { sel: () => { const f = caSpot.fvEl; if (!f || !document.body.contains(f)) return null; return f.querySelector('.glass-bubble .space-y-4') || f.querySelector('.glass-bubble') || f; }, title: '**Manual Flight Entry**', line: 'Enter your flight number, select your departure date and cabin class, then tap "Fetch Menu" to bring up the menu.', before: caSpotFvWorld }
                 ]
             },
             earnings: {
                 label: 'Earnings',
-                cv: '1.49.0',
+                cv: '1.51.0',   // the v1.51.0 overhaul: five steps, the owner's new copy
                 world: caSpotEarningsWorld,
                 steps: [
-                    { sel: () => caSpotVis('#ca-arch-sheet h3') || caSpotVis('#ca-arch-sheet'), title: 'This is your money page', line: 'Every trip you save adds up here, month by month.' },
-                    { sel: () => caSpotVis('.ca-arch-group-head') || caSpotVis('#ca-arch-list'), title: 'One month, one card', line: 'Each card is a month\u2019s earnings — tap it to open the trips.' },
-                    { sel: () => caSpotVis('#ca-arch-summary .ca-arch-segtrack') || caSpotVis('#ca-arch-summary'), title: 'Two ways to read it', line: 'The lens switches between your salary take-home and your COP sectors.' },
-                    { sel: '#ca-arch-summary', title: 'The honest breakdown', line: 'Gross, CPF, your overseas expenses, and what actually lands.' },
-                    { sel: '#ca-arch-search', title: 'Find anything', line: 'Search by route, flight or month to surface old trips fast.' },
-                    { sel: '#ca-arch-export', title: 'Take it with you', line: 'Export the JSON or the CSV — your expenses ride along in both.' }
+                    // v1.51.0 (owner order, copy VERBATIM — the step-3 title
+                    // was blank in the pack and reads COP vs Salary after
+                    // the pills' own labels, proposed for veto)
+                    { sel: () => caSpotVis('#ca-arch-sheet h3') || caSpotVis('#ca-arch-sheet'), title: '**Track Your Earnings**', line: 'This dashboard displays your total earnings from every flight month by month.' },
+                    { sel: () => caSpotVis('.ca-arch-group-head') || caSpotVis('#ca-arch-list'), title: '**Monthly View**', line: 'Each card summarizes your earnings for a single month. Tap it to expand and view the full flight list.' },
+                    { sel: () => caSpotVis('#ca-arch-summary .ca-arch-segtrack') || caSpotVis('#ca-arch-summary'), title: '**COP vs Salary**', line: 'Switch between the two pills to alternate between your COP allowance and your calculated take-home salary.' },
+                    { sel: '#ca-arch-summary', title: '**Earnings Breakdown**', line: 'Track every dollar from your gross pay and CPF down to your overseas expenses (if any) and final net earnings.' },
+                    { sel: '#ca-arch-search', title: '**Search History**', line: 'Easily look up your past trips by filtering for specific routes or flight numbers.' }
                 ]
             },
             calendar: {
@@ -23168,6 +23196,7 @@ SLOT|Special Lve others`;
             caSpot.tour = tour;
             caSpot.idx = 0;
             caSpot.cardId = null;
+            caSpot.fvEl = null;
             caSpot.gen++;
             caSpotDom();
             document.documentElement.classList.add('ca-spot-on');
@@ -23314,8 +23343,13 @@ SLOT|Special Lve others`;
             line.className = 'text-sm leading-relaxed mb-3.5';
             // v1.49.1: the owner's copy pack carries **bold** markers —
             // they render as bold spans, still built by DOM APIs so the
-            // text renders word-for-word, never as markup.
-            caSpotAppendRich(line, step.line);
+            // text renders word-for-word, never as markup. v1.51.0: a line
+            // may carry \n — the owner's two-part lines (the Smart vs
+            // Manual Search step) render on real lines.
+            String(step.line || '').split('\n').forEach((part, i) => {
+                if (i) line.appendChild(document.createElement('br'));
+                caSpotAppendRich(line, part);
+            });
             card.appendChild(line);
 
             const row = document.createElement('div');
@@ -23413,6 +23447,7 @@ SLOT|Special Lve others`;
             } catch (e) {}
             caSpot.chatKids = null;
             caSpot.cardId = null;
+            caSpot.fvEl = null;
             // v1.50.0 (owner order): the STAGE reverts with the chat —
             // sheets slide back, the calendar's tag chip sits as it sat.
             // Runs on EVERY end (Done, Skip, Escape, supersede) and BEFORE

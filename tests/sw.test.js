@@ -13,7 +13,7 @@ const SW = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
 const IX = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 const BASE = 'https://crewassist.test';      // the SW's scope origin (no trailing slash)
 const ORIGIN = BASE + '/';                   // base for relative-URL resolution
-const CACHE = 'crewassist-v311';
+const CACHE = 'crewassist-v312';
 
 // Real CacheStorage keys are absolute URLs — normalise the same way so the
 // install's './index.html' and a navigation to the same document collide.
@@ -80,7 +80,7 @@ function bootSW() {
 
 (async () => {
   // --- source shape: the refactor's own promises ---
-  R.ok(SW.includes("const CACHE_NAME = '" + CACHE + "';"), 'cache name is v311 (the v1.50.0 tour-invitation round bumps the precache)');
+  R.ok(SW.includes("const CACHE_NAME = '" + CACHE + "';"), 'cache name is v312 (the v1.51.0 walk-overhaul round bumps the precache)');
   R.ok(!/v1\.\d/.test(SW) && !SW.includes('hotfix'), 'version-history stamps are gone; the comments describe current behaviour');
   R.eq((SW.match(/function cachePut/g) || []).length, 1, 'exactly one cachePut helper');
   R.ok(SW.includes('return caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});'), 'cachePut returns its promise and swallows cache-write failures (audit fix 3)');
