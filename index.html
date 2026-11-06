@@ -2384,7 +2384,10 @@
                 </div>
 
                 <!-- Data -->
-                <div>
+                <!-- v1.52.0: the whole section (label + house box) carries
+                     its own id — the backup walk's first step lights all of
+                     it, not just the buttons. -->
+                <div id="ca-dm-section">
                     <p class="ca-micro text-gray-500 font-bold uppercase tracking-widest mb-2 px-1">Data Management</p>
                     <!-- v1.42.0 (owner order): the buttons sit inside the house box,
                          so they run the same width as Storage's Clear saved menus. -->
@@ -2696,7 +2699,10 @@
                      data edges — and sit left of the close icon; the chevron
                      collapses the calendar so the timeline below fills the
                      sheet, and expands it back. -->
-                <div class="flex items-center justify-between gap-1 flex-none">
+                <!-- v1.52.0: the header row carries its own id — the
+                     calendar walk's first step lights the header AND the
+                     grid as one union target. -->
+                <div id="ca-rc-head" class="flex items-center justify-between gap-1 flex-none">
                     <div class="flex items-center">
                         <button type="button" id="ca-rc-jump" aria-label="Press and hold the month for today" class="ca-hit -ml-2 pl-1 pr-2 py-1.5 rounded-xl active:scale-95 transition-transform">
                             <h3 id="ca-rc-month" class="font-bold text-lg text-left leading-none"></h3>
@@ -3328,7 +3334,7 @@
             }
         }
 
-        var APP_VERSION = '1.51.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.52.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3350,6 +3356,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.52.0', d: '2026-11-06', items: [
+                { c: 'imp', t: 'The calendar, flight stats and backup walks read anew — sharper copy.' },
+                { c: 'fix', t: 'A tour never leaves your recent searches or saved menus touched.' }
+            ] },
             { v: '1.51.0', d: '2026-11-06', items: [
                 { c: 'imp', t: 'The manual, menus and earnings walks read anew \u2014 sharper copy.' },
                 { c: 'fix', t: 'A tour never leaves the chip rail scrolled away.' }
@@ -22670,7 +22680,11 @@ SLOT|Special Lve others`;
     </script>
     <script>
         // ==========================================
-        // SPOTLIGHT FEATURE TOUR (v1.49.0; firing and completion v1.49.1)
+        // SPOTLIGHT FEATURE TOUR (v1.49.0; firing and completion v1.49.1;
+        // v1.50.0: the invitation prompt, per-walk completion and the stage
+        // revert; v1.51.0: the walk overhauls and the scroll-home stage;
+        // v1.52.0: union targets, the filled Fetch-menu prop and the
+        // storage-safe stage)
         // One lit target, one tooltip, one button at a time. The veil blocks
         // every tap: targets are SHOWN, never pressed — the tooltip is the
         // only interactive surface (Next / Back / Skip). The copy is the
@@ -22680,9 +22694,11 @@ SLOT|Special Lve others`;
         // Design notes:
         //  - The tour is DATA: CA_SPOT_TOURS maps an id to a label, a world
         //    function and an ordered step list ({ sel, title, line, before }).
-        //    `sel` is a selector string or a function returning the element;
-        //    a vanished target (feature renamed or removed in a future
-        //    version) skips itself and the walk carries on.
+        //    `sel` is a selector string, a function returning the element, or
+        //    (v1.52.0, owner order) an ARRAY of either — a union target whose
+        //    ring wraps every member it resolves; a vanished target (feature
+        //    renamed or removed in a future version) skips itself and the
+        //    walk carries on.
         //  - `world`/`before` set the WORLD, idempotently — every step runs
         //    one before the ring is placed, so Back re-runs the prior
         //    step's world and the stage is always right without diffing.
@@ -22708,8 +22724,11 @@ SLOT|Special Lve others`;
         //    style IS its destination, so anything measuring it waits for
         //    the rendered rect to arrive there.
         //  - The chat REVERTS on the walk's end (v1.49.2, owner order):
-        //    children the walk added — the manual tour's calculator card —
-        //    leave with the veil; the thread never keeps tutorial cards.
+        //    children the walk added — the manual tour's calculator card,
+        //    the menus tour's Inflight Menu card — leave with the veil; the
+        //    thread never keeps tutorial cards. v1.52.0: the STORAGE a
+        //    walk's prop writes (the fv fetch's recents list and menu
+        //    caches) rides home with the stage — a tour saves nothing.
         //  - Escape ends the walk (a skip); Tab is trapped in the tooltip.
         //  - Nothing saved is touched. Tours that need a prop build it
         //    through the app's own real paths (the manual-cards tour leaves
@@ -22879,11 +22898,26 @@ SLOT|Special Lve others`;
             const tag = document.getElementById('ca-rc-tag');
             const rail = document.getElementById('action-chips');
             const sscroll = document.getElementById('settings-scroll');
+            // v1.52.0: the menus walk's fetch writes what a real search
+            // writes — the recent-flights list, the cabin/menu caches —
+            // and the prune that follows can tidy older saved menus away.
+            // "Nothing saved is touched": the stage carries those keys
+            // and puts them back at the end.
+            const sq = {};
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (/^SQ\d{1,4}[A-Z]?:\d{4}-\d{2}-\d{2}:/.test(k)) sq[k] = localStorage.getItem(k);
+                }
+            } catch (e) {}
+            let recent = null;
+            try { recent = localStorage.getItem('crewAssist.recentFlights'); } catch (e) {}
             return {
                 settings: caSpotSheetOpen('settings-backdrop', 'settings-sheet'),
                 arch: caSpotSheetOpen('ca-arch-backdrop', 'ca-arch-sheet'),
                 cal: caSpotSheetOpen('ca-roster-cal', null),
                 pod: caSpotSheetOpen('ca-rc-podwrap', null),
+                stat: caSpotSheetOpen('ca-rc-statwrap', null),
                 menu: caSpotSheetOpen('menu-backdrop', 'menu-sheet'),
                 tags: tag ? (tag.getAttribute('aria-pressed') === 'true') : null,
                 // v1.51.0 (owner report: the roster walk's chip step left the
@@ -22893,7 +22927,9 @@ SLOT|Special Lve others`;
                 // own scroll (the one sheet that can be open at start and
                 // handed back open).
                 chips: rail ? rail.scrollLeft : null,
-                settingsScroll: sscroll ? sscroll.scrollTop : null
+                settingsScroll: sscroll ? sscroll.scrollTop : null,
+                recentFlights: recent,
+                sqKeys: sq
             };
         }
         function caSpotStageRestore(st) {
@@ -22905,6 +22941,11 @@ SLOT|Special Lve others`;
             set(st.settings, now.settings, (typeof openSettings === 'function' ? openSettings : null), (typeof closeSettings === 'function' ? closeSettings : null));
             set(st.arch, now.arch, (typeof openArchOverlay === 'function' ? openArchOverlay : null), (typeof closeArchOverlay === 'function' ? closeArchOverlay : null));
             set(st.cal, now.cal, (typeof openRosterCalendar === 'function' ? openRosterCalendar : null), (typeof closeRosterCalendar === 'function' ? closeRosterCalendar : null));
+            // v1.52.0: the stats overlay sits ABOVE its passport — it
+            // restores first, so a closing passport can never drag it
+            // back open (it closes with its passport in the app's own
+            // flow, and that order holds here).
+            set(st.stat, now.stat, (typeof openRcStat === 'function' ? openRcStat : null), (typeof closeRcStat === 'function' ? closeRcStat : null));
             set(st.pod, now.pod, (typeof openRcPod === 'function' ? openRcPod : null), (typeof closeRcPod === 'function' ? closeRcPod : null));
             set(st.menu, now.menu, null, (typeof closeMenuViewer === 'function' ? closeMenuViewer : null));   // the viewer cannot be open at walk-start — restore-close only
             // the calendar's tag chip rides the app's own toggle
@@ -22921,6 +22962,26 @@ SLOT|Special Lve others`;
             try {
                 const sscroll = document.getElementById('settings-scroll');
                 if (sscroll && st.settingsScroll !== null && sscroll.scrollTop !== st.settingsScroll) sscroll.scrollTop = st.settingsScroll;
+            } catch (e) {}
+            // v1.52.0: the storage the walk's fetch touched rides home
+            // with the stage — the recents list and every cabin/menu
+            // cache key snap back (added keys leave, pruned keys return,
+            // changed values restore), so a tour still saves nothing.
+            try {
+                const rf = 'crewAssist.recentFlights';
+                const cur = localStorage.getItem(rf);
+                if (cur !== st.recentFlights) {
+                    if (st.recentFlights === null) localStorage.removeItem(rf);
+                    else localStorage.setItem(rf, st.recentFlights);
+                }
+                const keep = st.sqKeys || {};
+                const drop = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (/^SQ\d{1,4}[A-Z]?:\d{4}-\d{2}-\d{2}:/.test(k) && !(k in keep)) drop.push(k);
+                }
+                drop.forEach((k) => { try { localStorage.removeItem(k); } catch (e) {} });
+                Object.keys(keep).forEach((k) => { if (localStorage.getItem(k) !== keep[k]) { try { localStorage.setItem(k, keep[k]); } catch (e) {} } });
             } catch (e) {}
         }
 
@@ -22951,6 +23012,17 @@ SLOT|Special Lve others`;
         // --- target resolution -------------------------------------------
         function caSpotEl(sel) {
             try {
+                // v1.52.0 (owner order): a step may light a UNION — `sel`
+                // as an array resolves every entry; the first resolvable
+                // member stands in for scrolling and fitting, while the
+                // ring wraps them all (caSpotStepRect).
+                if (Array.isArray(sel)) {
+                    for (let i = 0; i < sel.length; i++) {
+                        const el = caSpotEl(sel[i]);
+                        if (el) return el;
+                    }
+                    return null;
+                }
                 const el = (typeof sel === 'function') ? sel() : (sel ? document.querySelector(sel) : null);
                 return (el && el.nodeType === 1) ? el : null;
             } catch (e) { return null; }
@@ -23013,15 +23085,87 @@ SLOT|Special Lve others`;
         // served? chip renders: flight number, departure date, cabins, the
         // gold Fetch menu button). Built once per walk; the chat revert
         // takes it out at the end.
+        // v1.52.0: the world hands back the PRISTINE card — Back from the
+        // button step re-runs this and the filled flight/date clear away
+        // through checkAutoFetch's own else branch, so the form step
+        // always teaches the empty form.
         function caSpotFvWorld() {
             caSpotMainWorld();
-            if (caSpot.fvEl && document.body.contains(caSpot.fvEl)) return;
+            if (caSpot.fvEl && document.body.contains(caSpot.fvEl)) { caSpotFvReset(); return; }
             if (typeof renderFlightVerificationCard !== 'function') return;
             try {
                 renderFlightVerificationCard('menu');
                 const cc = document.getElementById('chat-container');
                 caSpot.fvEl = cc ? cc.lastElementChild : null;
             } catch (e) {}
+        }
+        // The card's fields cleared the app's own way: the flight input
+        // emptied (its own oninput → checkAutoFetch hides the action area
+        // and the spinner), the hidden date emptied, the gold pill and the
+        // Pick Date label reset through the app's own helpers. The area
+        // and spinner hides are also set directly — checkAutoFetch's own
+        // else-branch mirrored — so the reset never depends on an inline
+        // handler compiling (jsdom runs outside-only).
+        function caSpotFvReset() {
+            const f = caSpot.fvEl;
+            if (!f) return;
+            try {
+                const input = f.querySelector('input[id^="fv-flight-"]');
+                const id = input ? input.id.slice('fv-flight-'.length) : null;
+                if (input) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); }
+                if (id) {
+                    const hid = document.getElementById('fv-selected-date-' + id);
+                    if (hid) hid.value = '';
+                    const area = document.getElementById('fv-action-area-' + id);
+                    if (area) { area.classList.add('hidden'); area.innerHTML = ''; }
+                    const loading = document.getElementById('fv-loading-' + id);
+                    if (loading) loading.classList.add('hidden');
+                    if (typeof clearDatePillSelection === 'function') clearDatePillSelection(id);
+                    if (typeof setPickDateLabel === 'function') setPickDateLabel(id, '');
+                }
+            } catch (e) {}
+        }
+        // v1.52.0 (owner order): the button step's prop — the card filled
+        // the way the crew would fill it: 802 in the flight field, the
+        // TODAY pill tapped, and the app's own fetch path brings the
+        // cabins and the gold Fetch menu button up. The fetch is REAL and
+        // async, so the world waits for the button; if it never lands (no
+        // connection, menus not published) the step's target never
+        // resolves and the walk skips it — no dead ring on a spinner. The
+        // fetch writes what a real search writes (the recents list, the
+        // cabin/menu caches) — the stage snapshot carries those keys and
+        // puts them back at the end, so a tour still touches nothing
+        // saved.
+        function caSpotFvBtnWorld() {
+            caSpotFvWorld();                     // the card exists, pristine
+            const f = caSpot.fvEl;
+            if (!f || !document.body.contains(f)) return Promise.resolve();
+            try {
+                const input = f.querySelector('input[id^="fv-flight-"]');
+                const today = f.querySelector('[data-fv-act=today]');
+                if (!input || !today) return Promise.resolve();
+                input.value = '802';
+                today.click();                    // the app's own pill → setDateAndFetch → fetch
+            } catch (e) {}
+            return new Promise((resolve) => {
+                const t0 = Date.now();
+                const poll = () => {
+                    const el = caSpot.fvEl;
+                    const area = el ? el.querySelector('[id^="fv-action-area-"]') : null;
+                    if ((area && !area.classList.contains('hidden')) || !caSpot.on || (Date.now() - t0) > 8000) { resolve(); return; }
+                    setTimeout(poll, 120);
+                };
+                setTimeout(poll, 120);
+            });
+        }
+        // v1.52.0: the stats walk's last step rides the app's own door —
+        // the passport sheet first (the gate lives at its foot), then the
+        // gate's own openRcStat, so the year-pills step lights the real
+        // records list the crew would reach.
+        function caSpotStatWorld() {
+            caSpotPodWorld();
+            const wrap = document.getElementById('ca-rc-statwrap');
+            if ((!wrap || wrap.classList.contains('hidden')) && typeof openRcStat === 'function') openRcStat();
         }
         // Card root lookup: the bubble itself carries no id — only its
         // fields do — so an empty suffix resolves through the IFA wrap to
@@ -23068,7 +23212,7 @@ SLOT|Special Lve others`;
             },
             manual: {
                 label: 'Manual flight cards',
-                cv: '1.51.0',   // the v1.51.0 overhaul: four steps, the owner's new copy
+                cv: '1.52.0',   // the v1.52.0 polish: the Default sentence reads 'populate' now
                 world: caSpotMainWorld,
                 steps: [
                     // v1.51.0 (owner order, copy VERBATIM): the walk now
@@ -23077,76 +23221,85 @@ SLOT|Special Lve others`;
                     // the card's own Calculate button.
                     { sel: '#chat-input', title: '**Just Ask**', line: 'Type your flights and dates like "cop sq802 17 oct sq807 18 oct" to calculate your allowance instantly.' },
                     { sel: '#action-chips .action-chip[data-intent="total"]', title: '**Manual Flight Entry**', line: 'Add a flight by hand if it is missing from your PDF or if you just need to calculate its allowance.' },
-                    { sel: () => { const seg = caSpotVis('#calcui-segmented'); if (!seg) return null; const box = seg.closest('.glass-panel'); return (box && box.parentElement) || box || seg; }, title: '**Smart vs Manual Search**', line: '**Default**: Enter the flight number and date to fill in all the details automatically.\n**Manual**: Key in every detail by hand for full control with zero automation.', before: caSpotSettingsWorld },
+                    { sel: () => { const seg = caSpotVis('#calcui-segmented'); if (!seg) return null; const box = seg.closest('.glass-panel'); return (box && box.parentElement) || box || seg; }, title: '**Smart vs Manual Search**', line: '**Default**: Enter the flight number and date to populate the details automatically.\n**Manual**: Key in every detail by hand for full control with zero automation.', before: caSpotSettingsWorld },
                     { sel: () => caSpotCardEl('-btn-calc'), title: '**One-Tap Calculation**', line: '"Calculate" checks your flight details directly against your rank and rate.', before: caSpotCardWorld }
                 ]
             },
             menus: {
                 label: 'Menus & search',
-                cv: '1.51.0',   // the v1.51.0 overhaul: three steps, the owner's new copy
+                cv: '1.52.0',   // the v1.52.0 split: the form step and the button step
                 world: caSpotMainWorld,
                 steps: [
-                    // v1.51.0 (owner order, copy VERBATIM): the chat command,
-                    // the chip that opens the manual entry, then the Inflight
-                    // Menu card itself (flight number, departure date, cabins,
-                    // the gold Fetch menu button). The old viewer steps —
-                    // courses, cabins, print, the offline save — left with
-                    // this round.
+                    // v1.52.0 (owner order, copy VERBATIM): the form step
+                    // and the button step come apart — step 3 teaches the
+                    // empty form, step 4 fills it the way the crew would
+                    // (802 in the flight field, the TODAY pill) and the
+                    // app's own fetch brings the gold Fetch menu button up
+                    // for the ring.
                     { sel: '#chat-input', title: '**Just Ask**', line: 'Type a flight and date like "sq802 menu 17 oct" to fetch your menus instantly.' },
                     { sel: '#action-chips .action-chip[data-intent="menu"]', title: '**Manual Flight Entry**', line: 'Or add a flight by hand to view its menu.' },
-                    { sel: () => { const f = caSpot.fvEl; if (!f || !document.body.contains(f)) return null; return f.querySelector('.glass-bubble .space-y-4') || f.querySelector('.glass-bubble') || f; }, title: '**Manual Flight Entry**', line: 'Enter your flight number, select your departure date and cabin class, then tap "Fetch Menu" to bring up the menu.', before: caSpotFvWorld }
+                    { sel: () => { const f = caSpot.fvEl; if (!f || !document.body.contains(f)) return null; return f.querySelector('.glass-bubble .space-y-4') || f.querySelector('.glass-bubble') || f; }, title: '**Manual Flight Entry**', line: 'Enter your flight number and select your departure date and cabin class.', before: caSpotFvWorld },
+                    { sel: () => { const f = caSpot.fvEl; if (!f || !document.body.contains(f)) return null; return f.querySelector('[data-fv-act=menu]'); }, title: '**Manual Flight Entry**', line: 'Tap "Fetch Menu" to bring up the inflight menu.', before: caSpotFvBtnWorld }
                 ]
             },
             earnings: {
                 label: 'Earnings',
-                cv: '1.51.0',   // the v1.51.0 overhaul: five steps, the owner's new copy
+                cv: '1.52.0',   // the v1.52.0 title: the owner's pick, Allowance vs Salary
                 world: caSpotEarningsWorld,
                 steps: [
-                    // v1.51.0 (owner order, copy VERBATIM — the step-3 title
-                    // was blank in the pack and reads COP vs Salary after
-                    // the pills' own labels, proposed for veto)
+                    // v1.52.0 (owner order, copy VERBATIM)
                     { sel: () => caSpotVis('#ca-arch-sheet h3') || caSpotVis('#ca-arch-sheet'), title: '**Track Your Earnings**', line: 'This dashboard displays your total earnings from every flight month by month.' },
                     { sel: () => caSpotVis('.ca-arch-group-head') || caSpotVis('#ca-arch-list'), title: '**Monthly View**', line: 'Each card summarizes your earnings for a single month. Tap it to expand and view the full flight list.' },
-                    { sel: () => caSpotVis('#ca-arch-summary .ca-arch-segtrack') || caSpotVis('#ca-arch-summary'), title: '**COP vs Salary**', line: 'Switch between the two pills to alternate between your COP allowance and your calculated take-home salary.' },
+                    { sel: () => caSpotVis('#ca-arch-summary .ca-arch-segtrack') || caSpotVis('#ca-arch-summary'), title: '**Allowance vs Salary**', line: 'Switch between the two pills to alternate between your COP allowance and your calculated take-home salary.' },
                     { sel: '#ca-arch-summary', title: '**Earnings Breakdown**', line: 'Track every dollar from your gross pay and CPF down to your overseas expenses (if any) and final net earnings.' },
                     { sel: '#ca-arch-search', title: '**Search History**', line: 'Easily look up your past trips by filtering for specific routes or flight numbers.' }
                 ]
             },
             calendar: {
                 label: 'Calendar',
-                cv: '1.49.0',
+                cv: '1.52.0',   // the v1.52.0 overhaul: the owner's new copy, step 1 lights header + grid
                 world: function () { caSpotCalWorld(false); },
                 steps: [
-                    { sel: '#ca-rc-grid', title: 'Here\u2019s your roster', line: 'Every imported flight paints onto its day — duties, standby and all.', before: function () { caSpotCalWorld(false); } },
-                    { sel: '#ca-rc-tag', title: 'The tag button', line: 'Tap it and every flight day shows its station and arrival time.', before: function () { caSpotCalWorld(false); } },
-                    { sel: '#ca-rc-shot', title: 'The camera comes out', line: 'With the tags on, the camera appears — it turns the month into a picture, ready to share.', before: function () { caSpotCalWorld(true); } },
-                    { sel: '#ca-rc-prev', title: 'Walk the months', line: 'Swipe or tap the arrows to move between months.', before: function () { caSpotCalWorld(undefined); } },
-                    { sel: () => caSpotVis('.ca-rc-day.is-today') || (function () { const b = document.querySelector('.ca-rc-day .ca-rc-badge'); return b ? b.closest('.ca-rc-day') : null; })() || caSpotVis('.ca-rc-day'), title: 'Tap a day', line: 'The day opens its flights — times, sectors, and what it earns.', before: function () { caSpotCalWorld(undefined); } },
-                    { sel: () => caSpotVis('#ca-rc-pod') || caSpotVis('#ca-rc-grid'), title: 'The records door', line: 'Your passport and all-time stats live behind this gate.', before: function () { caSpotCalWorld(undefined); } }
+                    // v1.52.0 (owner order, copy VERBATIM): step 1 lights
+                    // the month header AND the calendar grid as one union
+                    // target (the array sel).
+                    { sel: ['#ca-rc-head', '#ca-rc-grid'], title: '**Roster Visualization**', line: 'Your imported flights automatically transforms into an interactive calendar.', before: function () { caSpotCalWorld(false); } },
+                    { sel: '#ca-rc-tag', title: '**Calendar Flight Details**', line: 'Tap the "Tag" button to display station codes and arrival times on the calendar.', before: function () { caSpotCalWorld(false); } },
+                    { sel: '#ca-rc-shot', title: '**Share Your Roster**', line: 'Turn the tags on to reveal the camera icon and instantly convert this month’s roster into a shareable image.', before: function () { caSpotCalWorld(true); } },
+                    { sel: '#ca-rc-prev', title: '**Month Selection**', line: 'Swipe the calendar or tap the arrow buttons to transition between different months.', before: function () { caSpotCalWorld(undefined); } },
+                    { sel: () => caSpotVis('.ca-rc-day.is-today') || (function () { const b = document.querySelector('.ca-rc-day .ca-rc-badge'); return b ? b.closest('.ca-rc-day') : null; })() || caSpotVis('.ca-rc-day'), title: '**Instant Earnings Breakdown**', line: 'Tap any day with flights to check your calculated earnings.', before: function () { caSpotCalWorld(undefined); } },
+                    { sel: () => caSpotVis('#ca-rc-pod') || caSpotVis('#ca-rc-grid'), title: '**Personal Records**', line: 'This section stores your all-time flight history metrics.', before: function () { caSpotCalWorld(undefined); } }
                 ]
             },
             stats: {
                 label: 'Flight Stats',
-                cv: '1.49.0',
+                cv: '1.52.0',   // the v1.52.0 overhaul: four steps, the owner's new copy
                 world: caSpotPodWorld,
                 steps: [
-                    { sel: () => caSpotVis('#ca-rc-pod-sheet h3') || caSpotVis('#ca-rc-pod-sheet'), title: 'Your passport', line: 'The records page tallies everything — flights, hours, stations.' },
-                    { sel: '#ca-rc-pod-herowrap', title: 'The hero card', line: 'Flight time, layover days, top station — your logbook in five rows.' },
-                    { sel: () => caSpotVis('.ca-rc-pod-grid') || caSpotVis('#ca-rc-pod-body'), title: 'The stats podium', line: 'Your most-visited stations and longest flights, ranked.' },
-                    { sel: () => caSpotVis('#ca-rc-pod-years') || caSpotVis('#ca-rc-pod-tabs-wrap') || caSpotVis('#ca-rc-pod-body'), title: 'Slice it your way', line: 'The year pills and duty tabs filter the podium to any slice.' },
-                    { sel: () => caSpotVis('.ca-rc-pod-card') || caSpotVis('.ca-rc-pod-lrow') || caSpotVis('#ca-rc-pod-body'), title: 'Every visit on record', line: 'Tap a station to open its full visit log.' }
+                    // v1.52.0 (owner order, copy VERBATIM): the passport
+                    // title and hero stay; step 3 lights the My Flight
+                    // Stats gate (the door the app's own flow opens), and
+                    // step 4 rides through it into the records list's own
+                    // year pills. The podium and visit-log steps retired.
+                    { sel: () => caSpotVis('#ca-rc-pod-sheet h3') || caSpotVis('#ca-rc-pod-sheet'), title: '**Flight Passport**', line: 'View a complete tally of your lifetime flights, total hours, and unique stations.' },
+                    { sel: '#ca-rc-pod-herowrap', title: '**Highlights**', line: 'This section displays your total flight time, layover days, and top visited station across five organized rows.' },
+                    { sel: '#ca-rc-pod-gate', title: '**Station Leaderboard**', line: 'View your most frequent layover and turnaround stations ranked by frequency.' },
+                    { sel: () => caSpotVis('#ca-rc-pod-listyears') || caSpotVis('#ca-rc-pod-tabs-wrap') || caSpotVis('#ca-rc-pod-body'), title: '**Filter Your Rankings**', line: 'Tap the year pills to filter your top layovers and turnarounds by specific years or view your all-time stats.', before: caSpotStatWorld }
                 ]
             },
             backup: {
                 label: 'Backup & restore',
-                cv: '1.49.0',
+                cv: '1.52.0',   // the v1.52.0 overhaul: four steps, the owner's new copy
                 world: caSpotSettingsWorld,
                 steps: [
-                    { sel: '#ca-dm-box', title: 'Your data, your file', line: 'One backup file carries everything — profile, rates, earnings, history.' },
-                    { sel: '#btn-backup-export', title: 'Export before you switch', line: 'Data Management \u2192 Export backup — the file lands in your downloads.' },
-                    { sel: '#btn-backup-restore', title: 'The new phone', line: 'Install the app, skip onboarding, and Restore backup from the same door.' },
-                    { sel: '#btn-backup-export', title: 'Expenses ride along', line: 'Overseas expenses are inside every backup — they show on any device.' },
-                    { sel: '#ca-dm-box', title: 'Keep it private', line: 'The file holds your pay data — keep it somewhere only you control.' }
+                    // v1.52.0 (owner order, copy VERBATIM): step 1 lights
+                    // the WHOLE Data Management section (label + house
+                    // box); step 4 lights the clear-all-data door. The
+                    // expenses and privacy steps retired.
+                    { sel: '#ca-dm-section', title: '**Your Data, Your File**', line: 'Securely manage your profile, rates, earnings, expenses, and flight history in one place with quick options to export a backup, restore, or clear all data.' },
+                    { sel: '#btn-backup-export', title: '**Secure Your Data**', line: 'Your profile, rates, earnings, expenses, and flight history will be saved straight to your downloads folder as a .json file.' },
+                    { sel: '#btn-backup-restore', title: '**Restore Your Data**', line: 'Select your saved backup .json file to instantly load your profile, rates, earnings, expenses, and flight history back into the app.' },
+                    { sel: '#btn-clear-data', title: '**Reset Your Data**', line: 'Permanently wipes all data from this device.' }
                 ]
             }
         };
@@ -23289,7 +23442,7 @@ SLOT|Special Lve others`;
             try { caSpotFitViewport(el); } catch (e) {}
             el = caSpotVis(step.sel);
             if (!el) { caSpotEnd(); return; }
-            const r = el.getBoundingClientRect();
+            const r = caSpotStepRect(el, step);   // v1.52.0: a union sel wraps every member it resolves
             const p = 6;                        // breathing room around the target
             const rect = { left: r.left - p, top: r.top - p, width: r.width + p * 2, height: r.height + p * 2 };
             caSpotRingTo(rect);
@@ -23478,6 +23631,23 @@ SLOT|Special Lve others`;
         // --- reposition: resize, scroll (capture — sheets scroll inside),
         //     orientation. Re-places ring and tooltip; the world stands. ---
         var caSpotReflowT = null;
+        // v1.52.0 (owner order): the union target's rect — every member
+        // the array resolves contributes its box, and the ring wraps their
+        // shared bounds (the calendar walk's first step lights the month
+        // header AND the grid as one). Hidden members drop out; a union
+        // with no visible member reads as a vanished target and the walk
+        // skips it, exactly like a single one.
+        function caSpotStepRect(el, step) {
+            if (!Array.isArray(step.sel)) return el.getBoundingClientRect();
+            const rs = [];
+            step.sel.forEach((one) => { const n = caSpotVis(one); if (n) rs.push(n.getBoundingClientRect()); });
+            if (!rs.length) return el.getBoundingClientRect();
+            const left = Math.min.apply(null, rs.map((r) => r.left));
+            const top = Math.min.apply(null, rs.map((r) => r.top));
+            const right = Math.max.apply(null, rs.map((r) => r.right));
+            const bottom = Math.max.apply(null, rs.map((r) => r.bottom));
+            return { left: left, top: top, width: right - left, height: bottom - top };
+        }
         function caSpotReflow() {
             if (!caSpot.on) return;
             if (caSpotReflowT) return;
@@ -23488,7 +23658,7 @@ SLOT|Special Lve others`;
                 if (!step) return;
                 const el = caSpotVis(step.sel);
                 if (!el) return;
-                const r = el.getBoundingClientRect();
+                const r = caSpotStepRect(el, step);   // v1.52.0: unions re-place as unions
                 const p = 6;
                 const rect = { left: r.left - p, top: r.top - p, width: r.width + p * 2, height: r.height + p * 2 };
                 caSpotRingTo(rect);

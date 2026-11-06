@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.51.0', 'APP_VERSION is 1.51.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.51.0' && e.d === '2026-11-06' && e.items.length === 2 && e.items.filter((i) => i.c === 'imp').length === 1 && e.items.filter((i) => i.c === 'fix').length === 1; }), 'the changelog carries the 1.51.0 entry — one imp and one fix pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v312'), 'the service-worker cache name is bumped to v312 (the v1.51.0 walk-overhaul round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.52.0', 'APP_VERSION is 1.52.0');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.52.0' && e.d === '2026-11-06' && e.items.length === 2 && e.items.filter((i) => i.c === 'imp').length === 1 && e.items.filter((i) => i.c === 'fix').length === 1; }), 'the changelog carries the 1.52.0 entry — one imp and one fix pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v313'), 'the service-worker cache name is bumped to v313 (the v1.52.0 walk-overhaul round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,9 +166,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.51.0'; }), 'the What\'s New sheet carries the v1.51.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The manual, menus and earnings walks read anew — sharper copy.') !== -1), 'the What\'s New sheet carries the v1.51.0 walk-overhaul pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A tour never leaves the chip rail scrolled away.') !== -1), 'the What\'s New sheet carries the v1.51.0 chip-rail pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.52.0'; }), 'the What\'s New sheet carries the v1.52.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The calendar, flight stats and backup walks read anew — sharper copy.') !== -1), 'the What\'s New sheet carries the v1.52.0 walk-overhaul pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A tour never leaves your recent searches or saved menus touched.') !== -1), 'the What\'s New sheet carries the v1.52.0 storage-safe pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The manual, menus and earnings walks read anew — sharper copy.') !== -1), 'the What\'s New sheet carries the v1.51.0 walk-overhaul pointer in the delta');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A tour never leaves the chip rail scrolled away.') !== -1), 'the What\'s New sheet carries the v1.51.0 chip-rail pointer in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A gentle invitation opens the tour — Next walks, Skip stays quiet.') !== -1), 'the What\'s New sheet carries the v1.50.0 invitation pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Feature tour rows show a check when a walk is completed.') !== -1), 'the What\'s New sheet carries the v1.50.0 row-check pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A walk\u2019s stage reverts when it ends — sheets, tags and all.') !== -1), 'the What\'s New sheet carries the v1.50.0 stage-revert pointer');
@@ -506,8 +508,20 @@ async function calcCard(page, { type, t1, t2, lma }) {
         // v1.49.1 (owner order): ALL highlighted content fits the viewport —
         // every step of every remaining walk carries the ring-in-view and
         // the tooltip-covers-nothing pins, computed in real Chromium.
-        // v1.49.2: the roster walk gains the earnings-chip step — six now
-        const walks = [['roster', 6], ['manual', 4], ['menus', 3], ['earnings', 5], ['calendar', 6], ['stats', 5], ['backup', 5]];   // v1.51.0: manual 4, menus 3, earnings 5
+        // v1.52.0: the menus walk's button step runs the app's own fetch —
+        // the rig's /api/sq 404s, so the app's own saved-schedule fallback
+        // renders the card (the cabin schedule seeded here once; the origin
+        // keeps it across the per-walk reloads). The recents sentinel rides
+        // the stage-revert pin at the menus walk's end.
+        await page.evaluate(() => {
+            const t = new Date(); const off = t.getTimezoneOffset() * 60000;
+            const ymd = (new Date(t.getTime() - off)).toISOString().split('T')[0];
+            localStorage.setItem('SQ802:' + ymd + ':CABINS', JSON.stringify({ timestamp: Date.now(), data: { statusCode: 200, aircraftType: '787', cabinClasses: ['JCL', 'YCL'], legs: [{ flightDetails: { departureAirportCode: 'SIN', arrivalAirportCode: 'HND' } }] } }));
+            localStorage.setItem('crewAssist.recentFlights', JSON.stringify([{ flight: '736', date: '2026-01-05' }]));
+        });
+        // v1.52.0: menus splits its form and button steps (4), stats and
+        // backup trim to four
+        const walks = [['roster', 6], ['manual', 4], ['menus', 4], ['earnings', 5], ['calendar', 6], ['stats', 4], ['backup', 4]];
         for (const w of walks) {
             const tid = w[0], n = w[1];
             // each walk starts from a CLEAN stage — v1.50.0 reverts every
@@ -565,6 +579,14 @@ async function calcCard(page, { type, t1, t2, lma }) {
                     };
                 }, n);
                 g.push(m);
+                if (tid === 'calendar' && m.counter === 1) {
+                    ok(await page.evaluate(() => {
+                        const r = document.getElementById('ca-spot-ring').getBoundingClientRect();
+                        const h = document.getElementById('ca-rc-head').getBoundingClientRect();
+                        const g2 = document.getElementById('ca-rc-grid').getBoundingClientRect();
+                        return r.left <= h.left + 0.5 && r.top <= h.top + 0.5 && r.right >= g2.right - 0.5 && r.bottom >= g2.bottom - 0.5;
+                    }), 'v1.52.0: calendar step 1' + String.fromCharCode(8217) + 's ring wraps the month header AND the calendar grid — the union target, measured');
+                }
                 const clicked = await page.evaluate(() => { const nx = document.getElementById('ca-spot-next'); if (nx) nx.click(); return !!nx; });
                 if (!clicked) break;
             }
@@ -579,11 +601,16 @@ async function calcCard(page, { type, t1, t2, lma }) {
             // v1.50.0 (owner order): the walk's stage reverts — the sheet it
             // opened closes behind it, and Settings (open at every row-start)
             // restores open
-            await page.waitForFunction(() => document.getElementById('ca-arch-backdrop').classList.contains('hidden') && document.getElementById('ca-roster-cal').classList.contains('hidden') && document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('menu-backdrop').classList.contains('hidden'), { timeout: 5000 }).catch(() => {});
-            ok(await page.evaluate(() => document.getElementById('ca-arch-backdrop').classList.contains('hidden') && document.getElementById('ca-roster-cal').classList.contains('hidden') && document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('menu-backdrop').classList.contains('hidden')), 'v1.50.0: the ' + tid + ' walk\u2019s own sheet closes behind it — the stage reverts');
+            await page.waitForFunction(() => document.getElementById('ca-arch-backdrop').classList.contains('hidden') && document.getElementById('ca-roster-cal').classList.contains('hidden') && document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('ca-rc-statwrap').classList.contains('hidden') && document.getElementById('menu-backdrop').classList.contains('hidden'), { timeout: 5000 }).catch(() => {});
+            ok(await page.evaluate(() => document.getElementById('ca-arch-backdrop').classList.contains('hidden') && document.getElementById('ca-roster-cal').classList.contains('hidden') && document.getElementById('ca-rc-podwrap').classList.contains('hidden') && document.getElementById('ca-rc-statwrap').classList.contains('hidden') && document.getElementById('menu-backdrop').classList.contains('hidden')), 'v1.50.0: the ' + tid + ' walk\u2019s own sheet closes behind it — the stage reverts (the records page with it)');
             ok(await page.evaluate(() => !document.getElementById('settings-backdrop').classList.contains('hidden')), 'v1.50.0: Settings restores OPEN after the ' + tid + ' walk — it was open at the row-tap');
             if (tid === 'roster') ok(await page.evaluate(() => document.getElementById('action-chips').scrollLeft === 0), 'v1.51.0 (owner report): the roster walk\u2019s chip step scrolls the rail right — and the stage revert carries it home, never stranded mid-row');
             if (tid === 'manual') ok(await page.evaluate(() => !document.querySelector('#chat-container [id^="calc-"]')), 'v1.49.2 (owner order): the manual walk\u2019s calculator card leaves with the veil — the chat reverts to its pre-tour state');
+            if (tid === 'menus') ok(await page.evaluate(() => {
+                const t = new Date(); const off = t.getTimezoneOffset() * 60000;
+                const ymd = (new Date(t.getTime() - off)).toISOString().split('T')[0];
+                return localStorage.getItem('crewAssist.recentFlights') === JSON.stringify([{ flight: '736', date: '2026-01-05' }]) && !!localStorage.getItem('SQ802:' + ymd + ':CABINS') && !document.querySelector('#chat-container [id^="fv-flight-"]');
+            }), 'v1.52.0: the menus walk' + String.fromCharCode(8217) + 's fetch prop leaves no trace — the recents list and cabin caches ride home with the stage, the card with the veil');
         }
 
         // v1.49.1 (owner order, v1.50.0 prompt-first): the firing doors in
@@ -687,7 +714,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.click('#whatsnew-close');
         await sleep(300);
         // leave the device quiet for the sections below (the do-not-show door)
-        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.51.0'); localStorage.setItem('crewAssist.wnSeen', '1.51.0'); });
+        await page.evaluate(() => { localStorage.setItem('crewAssist.hideWhatsNew', '1.52.0'); localStorage.setItem('crewAssist.wnSeen', '1.52.0'); });
 
         // 7c. v1.45.34 (owner order): the changelog filter chips in the real
         // browser - the compact three-tier framework, and the painted fade.
