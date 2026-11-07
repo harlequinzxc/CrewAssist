@@ -3379,7 +3379,7 @@
             }
         }
 
-        var APP_VERSION = '1.53.3'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.54.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3401,6 +3401,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.54.0', d: '2026-11-07', items: [
+                { c: 'new', t: 'A safety net speaks honestly if anything ever trips.' },
+                { c: 'new', t: 'Empty screens offer their next step as one tap.' }
+            ] },
             { v: '1.53.3', d: '2026-11-07', items: [
                 { c: 'imp', t: 'A tidy-up release: unused code swept out, nothing you see changes.' }
             ] },
@@ -5656,6 +5660,82 @@
             document.documentElement.classList.toggle('chat-busy', !!on);
         }
 
+        // v1.54.0 (owner-approved): the safety net. An honest bubble when
+        // anything trips: the locks release (the stuck-guard's lesson,
+        // generalized to the unknown paths too), the house voice admits
+        // the hiccup, and a copyable one-line note rides along for the
+        // bug-report channel. Once per session — a net never spams.
+        var caSafetyShown = false;
+        var caSafetyNote = '';
+        function caSafetyWhere() {
+            const views = [
+                ['settings-sheet', 'settings'],
+                ['ca-roster-cal', 'calendar'],
+                ['ca-arch-sheet', 'earnings'],
+                ['menu-sheet', 'menus'],
+                ['print-overlay', 'printer']
+            ];
+            for (let i = 0; i < views.length; i++) {
+                const el = document.getElementById(views[i][0]);
+                if (el && !el.classList.contains('translate-y-full') && !el.classList.contains('hidden')) return views[i][1];
+            }
+            return 'chat';
+        }
+        function caSafetyNet(err) {
+            try {
+                setChatBusy(false);
+                hideTypingIndicator();
+                if (caSafetyShown) return;
+                caSafetyShown = true;
+                const name = (err && (err.name || err.message)) ? String(err.name || 'Error') : 'Error';
+                caSafetyNote = 'CrewAssist v' + APP_VERSION + ' · ' + caSafetyWhere() + ' · ' + name;
+                addMessage('bot',
+                    'That tripped over something on our side — your saved data is untouched.' +
+                    '<div class="flex flex-wrap gap-2 mt-2">' +
+                    '<button type="button" data-ca-net="retry" class="h-9 px-4 rounded-full border border-sia-gold/70 bg-sia-gold/10 text-sia-gold text-xs font-bold active:scale-95 transition-all">Try again</button>' +
+                    '<button type="button" data-ca-net="copy" class="h-9 px-4 rounded-full border border-black/10 dark:border-white/15 text-gray-600 dark:text-gray-300 text-xs font-bold active:scale-95 transition-all">Copy note</button>' +
+                    '</div>');
+            } catch (e) { /* the net itself must never throw */ }
+        }
+        window.addEventListener('error', function (ev) {
+            if (ev && ev.message) caSafetyNet(ev.error || { name: 'Error', message: ev.message });
+        });
+        window.addEventListener('unhandledrejection', function (ev) {
+            caSafetyNet(ev && ev.reason);
+        });
+
+        // v1.54.0 (owner-approved): one delegated listener for the safety
+        // net's buttons and every empty-state CTA — the dynamic renderers
+        // never wire their own handlers.
+        document.addEventListener('click', function (ev) {
+            const t = ev.target;
+            const btn = t && t.closest ? t.closest('[data-ca-net],[data-ca-empty-cta]') : null;
+            if (!btn) return;
+            const kind = btn.getAttribute('data-ca-net') || btn.getAttribute('data-ca-empty-cta');
+            if (kind === 'retry') {
+                // the last user bubble, re-sent through the composer's own path
+                let lastText = '';
+                const kids = document.getElementById('chat-container').children;
+                for (let i = kids.length - 1; i >= 0; i--) {
+                    if (kids[i].classList.contains('justify-end')) { lastText = kids[i].textContent.trim(); break; }
+                }
+                if (lastText) processInput(lastText);
+            } else if (kind === 'copy') {
+                const done = () => archToast('Copied — paste it into your report.');
+                const fail = () => archToast(caSafetyNote);
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(caSafetyNote).then(done, fail);
+                    else fail();
+                } catch (e) { fail(); }
+            } else if (kind === 'roster') {
+                closeRosterCalendar();
+                openRosterPicker();
+            } else if (kind === 'calc') {
+                closeArchOverlay();
+                renderCalculatorCard('both', function () {});
+            }
+        });
+
         function noteBubbleShown() {
             lastBubbleReady = new Promise((resolve) => {
                 setTimeout(resolve, CHAT_ANIM_MS + CHAT_FAST_GAP_MS);
@@ -7214,7 +7294,10 @@
             tabsWrap.innerHTML = rcPodTabsHtml(idx);
             const list = stats[rcPodTab] || [];
             if (!stats.flights.length && !stats.lo.length && !stats.ta.length) {
-                body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
+                // v1.54.0: the records' empty state acts — records come from
+                // the roster, so the first-value CTA is the import door.
+                body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>' +
+                    '<div class="flex justify-center pb-3"><button type="button" data-ca-empty-cta="roster" class="h-9 px-4 rounded-full border border-sia-gold/70 bg-sia-gold/10 text-sia-gold text-xs font-bold active:scale-95 transition-all">Attach your roster</button></div>';
             } else if (!list.length) {
                 body.innerHTML = '<p class="text-center text-xs font-bold text-gray-500 dark:text-gray-400 py-3">No records yet</p>';
             } else {
@@ -8017,7 +8100,13 @@
             const emptyEl = document.getElementById('ca-rc-empty');
             if (emptyEl) {
                 const hasAny = Object.keys(rcMonthData(ym)).length > 0;
-                emptyEl.textContent = hasAny ? '' : 'No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.';
+                // v1.54.0: the empty state acts — the first-value CTA only
+                // when NO roster exists at all; a roster-holder staring at
+                // an off month keeps the honest sentence alone.
+                const hasRoster = Object.keys(loadDutyDays() || {}).length > 0;
+                emptyEl.innerHTML = hasAny ? '' :
+                    ('No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.' +
+                    (hasRoster ? '' : ' <button type="button" data-ca-empty-cta="roster" class="h-9 px-4 mt-2 rounded-full border border-sia-gold/70 bg-sia-gold/10 text-sia-gold text-xs font-bold active:scale-95 transition-all">Attach your roster</button>'));
                 emptyEl.classList.toggle('hidden', hasAny);
             }
         }
@@ -17344,7 +17433,10 @@ SLOT|Special Lve others`;
             if (all.length) renderArchInsights(all);
             if (!all.length) {
                 archEl('ca-arch-insights').classList.remove('ca-arch-insopen');
-                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Entries appear when you tap Save on a calculation — or restore a backup in Settings → Data Management.</span></div>';
+                list.innerHTML = '<div class="text-center text-sm font-semibold text-gray-500 py-10">No flights yet.<br><span class="text-xs">Entries appear when you tap Save on a calculation — or restore a backup in Settings → Data Management.</span></div>' +
+                    // v1.54.0: the empty state acts — the first calculation is
+                    // one tap away, not one chat command away.
+                    '<div class="flex justify-center pb-6"><button type="button" data-ca-empty-cta="calc" class="h-9 px-4 rounded-full border border-sia-gold/70 bg-sia-gold/10 text-sia-gold text-xs font-bold active:scale-95 transition-all">Calculate your first flight</button></div>';
                 refreshIcons();
                 return;
             }

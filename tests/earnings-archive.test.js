@@ -100,6 +100,11 @@ const fs = require('fs');
     const listTxt = d.getElementById('ca-arch-list').textContent;
     R.ok(/No flights yet/.test(listTxt), 'empty state heading');
     R.ok(/Entries appear when you tap Save on a calculation/.test(listTxt) && /restore a backup in Settings/.test(listTxt), 'v1.41.0: the empty state names both ways to fill it in mental-model order');
+    R.ok(!!d.querySelector('#ca-arch-list [data-ca-empty-cta="calc"]'), 'v1.54.0: the empty state acts — the first calculation is one tap away');
+    d.querySelector('#ca-arch-list [data-ca-empty-cta="calc"]').click();
+    await wait(400);
+    R.ok(d.getElementById('ca-arch-sheet').classList.contains('translate-y-full'), 'v1.54.0: the CTA closes the earnings sheet');
+    R.ok(!!d.querySelector('[data-calc-card]'), 'v1.54.0: and lands the Default calculator card in the chat');
   }
 
   // tap-through: rows reopen the saved summary; old entries say so honestly
