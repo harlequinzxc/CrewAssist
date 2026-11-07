@@ -10,7 +10,7 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 - [`docs/REPO_RULES.md`](docs/REPO_RULES.md) — how work lands: branch strategy, safe commands, build/test/release mechanics
 - [`docs/LOGIC.md`](docs/LOGIC.md) — the COP/IFA/LMA formulas, coefficients and rules
 - [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) — the SQ inflight-menu API map
-- [`docs/TOUR-BREAKDOWN.md`](docs/TOUR-BREAKDOWN.md) — the feature tour's beat-by-beat script
+- [`docs/FEATURE_TOUR.md`](docs/FEATURE_TOUR.md) — the spotlight feature tour's contract: engine rules, firing doors, every walk's copy verbatim
 - [`tests/README.md`](tests/README.md) — the test-suite contracts and conventions
 
 ## Features
@@ -20,7 +20,7 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 - **Roster PDF import** — the monthly Crew Roster Report PDF read entirely on-device (pdf.js from CDN, nothing uploaded). Trips chained and prefilled (same-day pairs → turnarounds, back-to-back pairs → one 4-sector day, >6h ground → layovers — heuristics in [`docs/LOGIC.md`](docs/LOGIC.md)); one-shot Build, **Calculate all**, multi-month stitching; unreadable input is reported honestly, never guessed.
 - **Roster calendar** — month grid of duty pills (one seamless capsule per multi-day run), today accent, tap-to-select detail timelines; every duty opens its saved or live-priced earnings. The **Passport** page tallies every flown leg (all-time or by year); its camera asks which year to capture and photographs the hero card as a shareable PNG that matches the screen exactly.
 - **Earnings archive** — saved flights grouped by month with totals, averages, projection and vs-last-year context, a twelve-month chart, Best / Low / In-progress badges, insight cards, search and delete-with-undo. A camera captures any year on record as a shareable year card (chart included, both themes, works offline).
-- **Feature tour** — five steps, offered once on first run or via `tour` / `help`, skippable at every step, demo data only (the crew's own data is never touched).
+- **Feature tour** — a spotlight walkthrough system: eight short walks (one per feature) in Settings → Feature tour, each lighting one target at a time; the main walk is offered once on first run or via `tour` / `help`, skippable at every step, and nothing saved is ever touched.
 - **Inflight menu viewer + printer** — live SQ menus via the Vercel proxy, cabin / sector / cuisine filters, editorial course cards with photos; the print sheet offers Elegant / Compact presets (A4 / A6), a page-scaled preview and PNG / JPEG / Word export.
 - **Offline menu archive** — the last successful menus stay viewable offline with an honest offline badge; stale entries pruned, aging backups flagged.
 - **Design system** — SIA Navy, Charcoal and Gold; glassmorphic bubbles and bottom sheets; animated starry sky; Lucide icons throughout — no emoji.
@@ -40,7 +40,7 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 - `rates.json` — default IFA modifiers and LMA region rates (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `icons/` — transparent dart for in-app (`logo-192.png`, `logo-512.png`); navy + gold PWA icons (`app-icon-180/192/512.png`).
-- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `TOUR-BREAKDOWN.md` (tour script), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
+- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `FEATURE_TOUR.md` (the spotlight tour contract), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
 - `tests/` — the jsdom behaviour suite plus `tests/smoke/`, the real-Chromium browser rig (`cd tests && npm install && npm test`; see `tests/README.md`).
 - `README.md` — this overview.
 

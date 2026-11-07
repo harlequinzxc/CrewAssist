@@ -15,8 +15,8 @@ the service-worker stamp. It checks:
 
 - Boot: chat view, shell guard passes (compiled `tw.css` applies), zero page
   errors, zero console errors (sandbox-blocked CDN hosts and rig 404s excluded).
-- Stamps: `APP_VERSION` (currently 1.45.24), the changelog's current entry,
-  the service-worker cache name (v255).
+- Stamps: `APP_VERSION`, the changelog's current entry, the service-worker
+  cache name.
 - What's New: the sheet opens on a fresh profile, carries the current version's
   header exactly ONCE (the duplicate white version line was removed), shows the
   pointers, and closes into the welcome chat.

@@ -1056,7 +1056,6 @@
            departure-board roll (see .ca-rollc above) owns the figure
            change now */
         /* stacked salary bars: salary slice below, flying above */
-        .ca-arch-bar.ca-arch-barstack { background: transparent !important; display: flex; flex-direction: column; justify-content: flex-end; }
         .ca-arch-barsal { width: 100%; background: rgba(146, 94, 14, 0.45); border-radius: 3px 3px 0 0; }
         .ca-arch-barfly { width: 100%; background: var(--ca-arch-bar); }
         .ca-arch-baron .ca-arch-barfly { background: linear-gradient(180deg, var(--sia-goldlt, #e7c860), var(--sia-gold, var(--ca-gold))); }
@@ -2435,7 +2434,7 @@
                         <div class="ca-acc-inner">
                             <!-- v1.42.0 (owner order): the buttons sit inside the house box,
                                  so they run the same width as Storage's Clear saved menus. -->
-                            <div id="ca-dm-box" class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
+                            <div class="glass-panel rounded-2xl p-4 flex flex-col gap-2 shadow-sm border dark:border-white/5">
                                 <!-- v1.41.0: the one-shot backup — every piece of crew data
                                      on this device in a single file, and one import door that
                                      also reads the old earnings/rates exports. -->
@@ -3380,7 +3379,7 @@
             }
         }
 
-        var APP_VERSION = '1.53.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.53.3'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3402,6 +3401,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.53.3', d: '2026-11-07', items: [
+                { c: 'imp', t: 'A tidy-up release: unused code swept out, nothing you see changes.' }
+            ] },
             { v: '1.53.2', d: '2026-11-07', items: [
                 { c: 'imp', t: 'The main walk’s closer reads anew and lights the tours alone.' },
                 { c: 'imp', t: 'Support & Updates carries the changelog now.' }
@@ -5638,7 +5640,6 @@
         let botSpeakQueue = Promise.resolve();
         let lastBubbleReady = Promise.resolve();
         const CHAT_ANIM_MS = 320;
-        const CHAT_GAP_MS = 500;
         // v1.28.4 (owner ruling: universal, not returning-gated): normal chat
         // speaks briskly — short typing dots and a short gap between bubbles.
         // v1.49.0: the old tour's pacing exemption retired with the tour
