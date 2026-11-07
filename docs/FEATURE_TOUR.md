@@ -157,16 +157,19 @@ section itself.
 | 5 | `#btn-theme` | **Theme Toggle** | Tap anytime to switch seamlessly between light and dark theme. |
 | 6 | `#btn-settings` | **Account & Preferences** | Update your profile details, manage your saved data, or replay feature tours whenever you need. |
 | 7 | `#btn-reset` | **Clear Screen** | Double-tap to clear your screen. Your saved data remains untouched. |
-| 8 | `#ca-ft-section` | **You’re All Set** | Head over to the Settings page whenever you want to replay this walkthrough or launch detailed spotlight tours for other in-app features. |
+| 8 | `#ca-ft-section` | **You’re All Set** | Feel free to replay this guide anytime right here in Settings, or jump into walkthroughs for other in-app features. |
 
 Step 8 rides the Settings world — its target is the Feature tour section
 (the tours’ own front door, sitting directly below Motion since the Settings
-reorder), and the world unfolds it first. The four quiet sections (Feature
-tour, Developer Mode, Storage, Data Management) sit FOLDED until their header
-is tapped — one tap opens, and the fold state lives in memory only: a reload
-folds them again, and nothing is ever saved. A fold can never hide a lit
-target: every walk that lights inside Settings opens the folds it needs and
-hands the crew’s own fold state back at its end.
+reorder), and the world unfolds it first. The section holds ONLY the eight
+tour rows: the changelog panel lives in Support & Updates (above, with the
+Telegram row), so the closer’s ring points at the tours alone. The four
+quiet sections (Feature tour, Developer Mode, Storage, Data Management) sit
+FOLDED until their header is tapped — one tap opens, and the fold state
+lives in memory only: a reload folds them again, and nothing is ever saved.
+A fold can never hide a lit target: every walk that lights inside Settings
+opens the folds it needs and hands the crew’s own fold state back at its
+end.
 
 ### Roster import (`roster`, 6 steps)
 

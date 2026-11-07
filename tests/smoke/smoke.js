@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.53.1', 'APP_VERSION is 1.53.1');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.53.1' && e.d === '2026-11-07' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.53.1 entry — one imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v315'), 'the service-worker cache name is bumped to v315 (the v1.53.1 fold-default round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.53.2', 'APP_VERSION is 1.53.2');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.53.2' && e.d === '2026-11-07' && e.items.length === 2 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.53.2 entry — two imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v316'), 'the service-worker cache name is bumped to v316 (the v1.53.2 closer-and-changelog round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,7 +166,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.53.1'; }), 'the What\'s New sheet carries the v1.53.1 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.53.2'; }), 'the What\'s New sheet carries the v1.53.2 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The main walk’s closer reads anew and lights the tours alone.') !== -1), 'the What\'s New sheet carries the v1.53.2 closer pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Support & Updates carries the changelog now.') !== -1), 'the What\'s New sheet carries the v1.53.2 support-section pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The quieter Settings sections start folded — one tap opens them.') !== -1), 'the What\'s New sheet carries the v1.53.1 fold-default pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings folds its quieter sections — tap a header to open one.') !== -1), 'the What\'s New sheet carries the v1.53.0 settings-fold pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The main walk ends pointing at the tours — eight steps now.') !== -1), 'the What\'s New sheet carries the v1.53.0 eighth-step pointer');
@@ -390,7 +392,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             const duty = JSON.parse(localStorage.getItem('crewAssist.dutyDays') || '{}');
             return arch.length === 1 && arch[0].amount === 88 && prof && prof.name === 'Welcome Wo' && duty['2026-10'] && duty['2026-10'].length === 1;
         }), 'the restored phone carries the earnings, profile and duty days');
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'hotfix: a restoring user is not offered the tour — the legacy mirror AND the per-walk store both land (v1.50.0; the store rides main\u2019s current cv, 1.53.0 since the eighth step)');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.2'), 'hotfix: a restoring user is not offered the tour — the legacy mirror AND the per-walk store both land (v1.50.0; the store rides main\u2019s current cv, 1.53.2 since the rewritten closer)');
         // owner ruling 2026-10-08 (round 11): leave the What's New re-offer
         // as is — it returns on every launch until the crew ticks
         // "Do not show again"; closing alone never counts as seen
@@ -509,7 +511,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(geo.every((s) => s.noCover), 'the tooltip never covers the lit target');
         ok(await page.evaluate(() => !document.documentElement.classList.contains('ca-spot-on')), 'Done stands the tour down');
         ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'Done on the main tour keeps the legacy mirror stamped');
-        ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv (bumped with the eighth step)');
+        ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.2'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv (1.53.2 since the rewritten closer)');
         ok(await page.evaluate(() => { const i = document.querySelector('#ca-feature-tours [data-ca-spot="main"] .ca-spot-row-status'); return i && i.getAttribute('data-lucide') === 'circle-check' && i.className.indexOf('text-sia-gold') !== -1; }), 'v1.50.0: the main row flips to the gold circle-check at Done');
 
         // v1.53.0 + v1.53.1 (owner order): the Settings accordions — the
@@ -769,7 +771,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
             await sleep(150);
         }
         await page.waitForFunction(() => !document.documentElement.classList.contains('ca-spot-on'), { timeout: 5000 });
-        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.0'), 'ONLY Done completes — the mirror and the per-walk store both land');
+        ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1' && JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.2'), 'ONLY Done completes — the mirror and the per-walk store both land');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
         await page.click('#whatsnew-close');
         await sleep(300);
