@@ -947,7 +947,7 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(['BKI', 'KCH', 'MYY', 'SBW'].every((k) => tz[k] === 'Asia/Kuching'), 'round 14: East Malaysia carries its own geographically true zone (same UTC+8 clock as Kuala Lumpur)');
     R.eq(w.eval("typeof validateAirportTimezones"), 'function', 'round 14: the load-time zone validator exists page-side');
     R.ok(w.eval("JSON.stringify((function(){ var r = validateAirportTimezones(); return r.valid === true && r.missing.length === 0 && r.orphaned.length === 0; })())") === 'true', 'round 14: the validator passes clean — full coverage, zero orphans, no throw');
-    R.eq(w.eval("typeof TZ_VALIDATION"), 'undefined', 'round 14: the TZ_VALIDATION const stays eval-scoped (never a page global)');
+    R.eq(w.eval("typeof TZ_VALIDATION"), 'undefined', 'round 14: no TZ_VALIDATION global leaks (the v1.57.1 sweep dropped the dead const; the validator runs, its result is not kept)');
     R.ok(w.eval("JSON.stringify((function(){ var a = zonedWallToUtcMs('2027-01-15', '8:25', 'Asia/Makassar'); var b = zonedWallToUtcMs('2027-01-15', '08:25', 'Asia/Makassar'); return isFinite(a) && a === b; })())") === 'true', 'round 14: a single-digit hour pads before Date.parse (the guard always admitted it, the parser never did)');
     R.eq(w.eval("landingSgtPhrase('BKI', '2026-10-20', '10:00')"), '', 'round 14: Kuching shares the SGT clock — the landing phrase stays empty (zone renamed, clock unchanged)');
     R.eq(w.eval("landingSgtPhrase('KUL', '2026-10-20', '8:25')"), '', 'round 16: the same-clock comparison pads single-digit hours — an unpadded KUL time never shows a spurious conversion');

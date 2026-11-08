@@ -102,11 +102,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.57.0', 'APP_VERSION is 1.57.0');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.57.1', 'APP_VERSION is 1.57.1');
         eq(await page.evaluate(() => window.APP_OPS.sq.enabled === true && window.APP_OPS.sq.path === '/api/sq' && window.APP_OPS.notice === null), true, 'the ops config boots with the shipped defaults — SQ on, default path, no notice');
         ok(await page.evaluate(() => fetch('/ops.json').then((r) => r.ok)), 'ops.json is served beside rates.json');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.57.0' && e.d === '2026-11-15' && e.items.length === 1 && e.items.filter((i) => i.c === 'new').length === 1; }), 'the changelog carries the 1.57.0 entry — one new pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v323'), 'the service-worker cache name is bumped to v323 (the v1.57.0 period-correct-pricing round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.57.1' && e.d === '2026-11-16' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.57.1 entry — one imp pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v324'), 'the service-worker cache name is bumped to v324 (the v1.57.1 tidy-up release)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -168,8 +168,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.57.0'; }), 'the What\'s New sheet carries the v1.57.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Old duties price with the agreement of their day.') !== -1), 'the What\'s New sheet carries the v1.57.0 period-pricing pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.57.1'; }), 'the What\'s New sheet carries the v1.57.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Dead code swept out — nothing you see changes.') !== -1), 'the What\'s New sheet carries the v1.57.1 tidy-up pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A quiet ops switch: lookups can be paused or moved remotely.') !== -1), 'the What\'s New sheet carries the v1.55.0 ops-switch pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Both empty months now read the same: No flights yet.') !== -1), 'the What\'s New sheet carries the v1.54.2 empty-calendar pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The empty calendar reads shorter: No rosters yet., one tap below.') !== -1), 'the What\'s New sheet carries the v1.54.1 empty-calendar pointer, still in the delta');
