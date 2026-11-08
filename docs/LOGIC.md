@@ -1,6 +1,6 @@
 # LOGIC.md — Calculation Engine & Business Rules Specification
 
-> **Source of truth for formulas and rules.** Upstream authority: the **Singapore Airlines Staff Members' Agreement 2025 (CA No.058/2025)** — see *The official basis* below. Default coefficients (rank rates, buffers, brackets, LMA B/L/D) ship in `rates.json`; Developer mode can override them on this device (`localStorage`), and publishing a new `rates.json` on GitHub updates every install. If this document and the code disagree on *behaviour*, this document wins. If a live rate disagrees with the tables below, the live `rates.json` / device override wins. If this document disagrees with the Agreement, **the Agreement wins** — file the correction.
+> **Source of truth for formulas and rules.** Upstream authority: the **Singapore Airlines Staff Members' Agreement 2025 (CA No.058/2025)** — see *The official basis* below. Default coefficients (rank rates, buffers, brackets, LMA B/L/D) ship in `rates.json` as a **versioned timeline of period snapshots** (see *The periods* below); Developer mode can override them on this device (`localStorage`), and publishing a new `rates.json` on GitHub updates every install. If this document and the code disagree on *behaviour*, this document wins. If a live rate disagrees with the tables below, the live `rates.json` / device override wins. If this document disagrees with the Agreement, **the Agreement wins** — file the correction.
 
 ---
 
@@ -28,6 +28,24 @@ Two definitions from Clause 34(7) anchor the math:
 | 34(4) | **Deadheading** credited with the full scheduled flight time of the sectors flown | Not modelled — no deadhead input |
 | 34(5) | Positioning for **compassionate reasons or illness** earns nothing | Not modelled — the 0.75 credit applies whenever Paxing is ticked |
 | 34(6) | **Diversions** — hours from actual flight time of every sector operated | Not modelled — scheduled times only |
+
+### 0.1 The periods — which agreement prices a duty (v1.57.0)
+
+**Every duty prices with the agreement in force on its day.** The trip's ruling date is **sector 1's flight date** (the report date — a duty that straddles a boundary belongs to the day it started); an LMA-only card reads its first station's arrival date. `rates.json` is a **v2 timeline** — an array of period snapshots, each `validFrom` its date; the engine picks the latest period whose `validFrom` is on or before the ruling date, applies it for that one calculation, and restores the live globals exactly (nothing outside a calculation ever sees a foreign period).
+
+| Period | Agreement (clauses: IFA / turnaround / meals) | IFA ladder (layover) | Turnaround | Paxing | Direct US | LMA vintage |
+|---|---|---|---|---|---|---|
+| from **2022-01-01** | **CA 057/2022** (35 / 36 / 37) | 1.0× ≤14h · 2.5× ≤18h · 3.0× >18h | flat 1.0× + $90 | **0.5×** | **none** — a flagged sector prices on its bracket | Jan-2024 sheet¹ |
+| from **2025-01-01** | **CA 058/2025** (34 / 35 / 36) | 1.3× ≤14h · 2.5× ≤18h · 3.0× >18h | 1.3× ≤12h · 1.6× ≤14h · 2.5× ≤18h · 3.0× >18h | 0.75× | 3.5× | Jan-2025 sheet |
+| from **2026-01-01** (current) | **CA 058/2025** (34 / 35 / 36) | same as 2025 | same as 2025 | 0.75× | 3.5× | wef 01 Jan 2026 (current) |
+
+¹ Clause 36(5) renegotiates meal rates every January. The owner does not hold the Jan-2022/2023 sheets, so **2022–2024 duties price with the Jan-2024 sheet** (owner ruling; the sheets are recorded verbatim in `docs/LMA_RATE_SHEETS.md`). Before 2022 there is no data at all: those duties price with the **2022 rules** — the earliest known — and the note says so.
+
+**The honest notes.** A result priced with anything other than the current agreement carries a note under the Grand Total — e.g. *"Priced with the 2022–2024 agreement (CA 057/2022) · ULR lump sums not included"* or *"Before 2022 — priced with the 2022–2024 agreement (CA 057/2022)"*. The ULR line is the **owner's ruling 1c**: the 2022 agreement's ULR lump sums ($150/170/190/210 by sector count) are **skipped**, not approximated, and the note says so.
+
+**Overrides win.** A device override (Developer mode → Save) or a flat v1 rates blob is a **single always-current period**: it prices every date and carries no period notes — the standing "device overrides win" rule. Restoring a v2 file through the backup door installs its timeline on that device. Salary modifiers are not period data (defaults fill every period); the dev editor edits the **current** period, and Export keeps the whole timeline (the older periods ride along untouched).
+
+**Not modelled in any period:** the 2022 ULR lump sums above (skipped per ruling 1c) and everything in the exclusions table.
 
 ---
 
@@ -312,6 +330,8 @@ A sector is **incomplete** and excluded when: IFA — `parseDuration(time)` is `
 
 ### 3.6 LMA Region Rate Tiers — Clause 36(5), wef 01 Jan 2026
 
+> Per **§0.1 the periods**, these are the **current** vintage (2026). A duty's meal rates come from the sheet in force on its ruling date — the Jan-2024 sheet for 2022–2024 duties, the Jan-2025 sheet for 2025 duties (both recorded in `docs/LMA_RATE_SHEETS.md`). The windows (§3.7) are identical in every period.
+
 | Region | Breakfast | Lunch | Dinner | Daily total |
 |---|---|---|---|---|
 | Australia / New Zealand | 50 | 86 | 111 | 247 |
@@ -324,7 +344,7 @@ A sector is **incomplete** and excluded when: IFA — `parseDuration(time)` is `
 | South Asia | 36 | 64 | 82 | 182 |
 | Southeast Asia | 31 | 55 | 70 | 156 |
 
-`daily_total = breakfast + lunch + dinner` (informational display only). **Rates are renegotiated every January** — publish a new `rates.json` each year; the 2026 table above is current until 31 Dec 2026.
+`daily_total = breakfast + lunch + dinner` (informational display only). **Rates are renegotiated every January** — when the new sheet lands, append a new period to the `rates.json` timeline (validFrom the first of January, per §0.1); older periods stay as they were, so past duties keep pricing with their own sheet.
 
 ### 3.7 LMA Meal Windows (Station Local Time) — Clause 36(2), all times inclusive
 

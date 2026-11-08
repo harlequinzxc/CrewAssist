@@ -102,11 +102,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.56.0', 'APP_VERSION is 1.56.0');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.57.0', 'APP_VERSION is 1.57.0');
         eq(await page.evaluate(() => window.APP_OPS.sq.enabled === true && window.APP_OPS.sq.path === '/api/sq' && window.APP_OPS.notice === null), true, 'the ops config boots with the shipped defaults — SQ on, default path, no notice');
         ok(await page.evaluate(() => fetch('/ops.json').then((r) => r.ok)), 'ops.json is served beside rates.json');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.56.0' && e.d === '2026-11-10' && e.items.length === 1 && e.items.filter((i) => i.c === 'new').length === 1; }), 'the changelog carries the 1.56.0 entry — one new pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v322'), 'the service-worker cache name is bumped to v322 (the v1.56.0 shared-menu-cache round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.57.0' && e.d === '2026-11-15' && e.items.length === 1 && e.items.filter((i) => i.c === 'new').length === 1; }), 'the changelog carries the 1.57.0 entry — one new pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v323'), 'the service-worker cache name is bumped to v323 (the v1.57.0 period-correct-pricing round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -168,8 +168,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.56.0'; }), 'the What\'s New sheet carries the v1.56.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Repeat menu lookups answer from a shared server-side cache.') !== -1), 'the What\'s New sheet carries the v1.56.0 shared-cache pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.57.0'; }), 'the What\'s New sheet carries the v1.57.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Old duties price with the agreement of their day.') !== -1), 'the What\'s New sheet carries the v1.57.0 period-pricing pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A quiet ops switch: lookups can be paused or moved remotely.') !== -1), 'the What\'s New sheet carries the v1.55.0 ops-switch pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Both empty months now read the same: No flights yet.') !== -1), 'the What\'s New sheet carries the v1.54.2 empty-calendar pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The empty calendar reads shorter: No rosters yet., one tap below.') !== -1), 'the What\'s New sheet carries the v1.54.1 empty-calendar pointer, still in the delta');
@@ -348,6 +348,37 @@ async function calcCard(page, { type, t1, t2, lma }) {
         txt = await (async () => { await page.evaluate(() => { const t = new Date(); appProfile.firstSoloYMD = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0'); }); await calcCard(page, { type: 'Turnaround', t1: '1:30', t2: '1:35', lma: { iata: 'KUL', at: '10:00', dt: '13:59' } }); return resultsText(page); })();
         ok(/\u00d7 \$10 \u00d7/.test(txt), 'a first solo dated yesterday prices the junior $10 tier in a real card');
         await page.evaluate(() => { appProfile.firstSoloYMD = ''; });
+        await closeResults(page);
+
+        // 4b. v1.57.0 (B3, owner-ordered): period-correct pricing in the real
+        // browser — the same layover priced on its 2024 day and on a 2026 day.
+        const b3Card = async (d1, d2) => {
+            await page.evaluate(() => renderCalculatorCard('both'));
+            await page.waitForFunction(() => !!document.querySelector('#chat-container [data-calc-card]'), { timeout: 10000 });
+            await sleep(400);
+            await page.evaluate((d1, d2) => {
+                const card = document.querySelector('#chat-container [data-calc-card]:last-of-type');
+                const id = card.querySelector('input[id$="-ifa-fn1"]').id.slice(0, -'-ifa-fn1'.length);
+                const set = (el, v) => { if (!el) return; el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); el.dispatchEvent(new Event('change', { bubbles: true })); };
+                set(document.getElementById(id + '-flight-type'), 'Layover');
+                set(document.getElementById(id + '-ifa-fn1'), '3'); set(document.getElementById(id + '-ifa-fn2'), '4');
+                set(document.getElementById(id + '-ifa-d1'), d1); set(document.getElementById(id + '-ifa-d2'), d2);
+                set(document.getElementById(id + '-ifa-t1'), '08:00'); set(document.getElementById(id + '-ifa-t2'), '07:30');
+                window.__smokeCardId = id;
+            }, d1, d2);
+            await sleep(300);
+            await page.evaluate(() => document.getElementById(window.__smokeCardId + '-btn-calc').click());
+            await sleep(400);
+            return resultsText(page);
+        };
+        txt = await b3Card('2024-06-03', '2024-06-06');
+        ok(txt.indexOf('Priced with the 2022\u20132024 agreement (CA 057/2022)') !== -1, 'B3: a 2024 duty notes the agreement that priced it');
+        ok(txt.indexOf('ULR lump sums not included') !== -1, 'B3: the honest ULR skip rides the note');
+        ok(txt.indexOf('$209.25') !== -1, 'B3: the 2024 layover pays the 2022 ladder ($209.25)');
+        await closeResults(page);
+        txt = await b3Card('2026-10-05', '2026-10-08');
+        ok(txt.indexOf('Priced with') === -1, 'B3: a current-agreement duty carries no note');
+        ok(txt.indexOf('$272.02') !== -1, 'B3: the same layover in 2026 pays the current ladder ($272.02)');
         await closeResults(page);
 
         // 5. v1.41.0: the one-shot backup round-trips in the real browser.

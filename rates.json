@@ -1,50 +1,345 @@
 {
-  "version": 1,
-  "ifa": {
-    "baseRates": {
-      "Jr. FS": 10,
-      "FS": 13.5,
-      "LS": 16,
-      "CS": 18.5,
-      "IFM": 23,
-      "Jr. FSS": 10,
-      "FSS": 13.5,
-      "LSS": 16,
-      "CSS": 18.5
+  "version": 2,
+  "periods": [
+    {
+      "validFrom": "2022-01-01",
+      "label": "the 2022–2024 agreement (CA 057/2022)",
+      "note": "ULR lump sums not included",
+      "ifa": {
+        "baseRates": {
+          "Jr. FS": 10,
+          "FS": 13.5,
+          "LS": 16,
+          "CS": 18.5,
+          "IFM": 23,
+          "Jr. FSS": 10,
+          "FSS": 13.5,
+          "LSS": 16,
+          "CSS": 18.5
+        },
+        "sgBuffer": 2.5,
+        "stationBuffer": 1.5,
+        "paxingMultiplier": 0.5,
+        "directUSMultiplier": null,
+        "turnaroundBonusAmount": 90,
+        "layoverBrackets": [
+          {
+            "maxHours": 14,
+            "multiplier": 1.0
+          },
+          {
+            "maxHours": 18,
+            "multiplier": 2.5
+          },
+          {
+            "maxHours": null,
+            "multiplier": 3.0
+          }
+        ],
+        "turnaroundBrackets": [
+          {
+            "maxHours": null,
+            "multiplier": 1.0
+          }
+        ]
+      },
+      "lma": {
+        "windows": {
+          "b": {
+            "start": "07:30",
+            "end": "08:30"
+          },
+          "l": {
+            "start": "12:30",
+            "end": "13:30"
+          },
+          "d": {
+            "start": "19:30",
+            "end": "20:30"
+          }
+        },
+        "regions": {
+          "Australia / New Zealand": {
+            "b": 50,
+            "l": 89,
+            "d": 114
+          },
+          "Orient": {
+            "b": 51,
+            "l": 89,
+            "d": 115
+          },
+          "North America": {
+            "b": 48,
+            "l": 84,
+            "d": 109
+          },
+          "Europe": {
+            "b": 46,
+            "l": 80,
+            "d": 103
+          },
+          "Japan": {
+            "b": 54,
+            "l": 94,
+            "d": 121
+          },
+          "Middle East": {
+            "b": 33,
+            "l": 57,
+            "d": 73
+          },
+          "South Africa": {
+            "b": 26,
+            "l": 47,
+            "d": 60
+          },
+          "South Asia": {
+            "b": 35,
+            "l": 61,
+            "d": 79
+          },
+          "Southeast Asia": {
+            "b": 27,
+            "l": 47,
+            "d": 60
+          }
+        }
+      }
     },
-    "sgBuffer": 2.5,
-    "stationBuffer": 1.5,
-    "paxingMultiplier": 0.75,
-    "directUSMultiplier": 3.5,
-    "turnaroundBonusAmount": 90,
-    "layoverBrackets": [
-      { "maxHours": 14, "multiplier": 1.3 },
-      { "maxHours": 18, "multiplier": 2.5 },
-      { "maxHours": null, "multiplier": 3.0 }
-    ],
-    "turnaroundBrackets": [
-      { "maxHours": 12, "multiplier": 1.3 },
-      { "maxHours": 14, "multiplier": 1.6 },
-      { "maxHours": 18, "multiplier": 2.5 },
-      { "maxHours": null, "multiplier": 3.0 }
-    ]
-  },
-  "lma": {
-    "windows": {
-      "b": { "start": "07:30", "end": "08:30" },
-      "l": { "start": "12:30", "end": "13:30" },
-      "d": { "start": "19:30", "end": "20:30" }
+    {
+      "validFrom": "2025-01-01",
+      "label": "the 2025–2027 agreement (CA 058/2025)",
+      "ifa": {
+        "baseRates": {
+          "Jr. FS": 10,
+          "FS": 13.5,
+          "LS": 16,
+          "CS": 18.5,
+          "IFM": 23,
+          "Jr. FSS": 10,
+          "FSS": 13.5,
+          "LSS": 16,
+          "CSS": 18.5
+        },
+        "sgBuffer": 2.5,
+        "stationBuffer": 1.5,
+        "paxingMultiplier": 0.75,
+        "directUSMultiplier": 3.5,
+        "turnaroundBonusAmount": 90,
+        "layoverBrackets": [
+          {
+            "maxHours": 14,
+            "multiplier": 1.3
+          },
+          {
+            "maxHours": 18,
+            "multiplier": 2.5
+          },
+          {
+            "maxHours": null,
+            "multiplier": 3.0
+          }
+        ],
+        "turnaroundBrackets": [
+          {
+            "maxHours": 12,
+            "multiplier": 1.3
+          },
+          {
+            "maxHours": 14,
+            "multiplier": 1.6
+          },
+          {
+            "maxHours": 18,
+            "multiplier": 2.5
+          },
+          {
+            "maxHours": null,
+            "multiplier": 3.0
+          }
+        ]
+      },
+      "lma": {
+        "windows": {
+          "b": {
+            "start": "07:30",
+            "end": "08:30"
+          },
+          "l": {
+            "start": "12:30",
+            "end": "13:30"
+          },
+          "d": {
+            "start": "19:30",
+            "end": "20:30"
+          }
+        },
+        "regions": {
+          "Australia / New Zealand": {
+            "b": 53,
+            "l": 92,
+            "d": 119
+          },
+          "Orient": {
+            "b": 53,
+            "l": 94,
+            "d": 121
+          },
+          "North America": {
+            "b": 50,
+            "l": 88,
+            "d": 113
+          },
+          "Europe": {
+            "b": 51,
+            "l": 89,
+            "d": 115
+          },
+          "Japan": {
+            "b": 55,
+            "l": 97,
+            "d": 125
+          },
+          "Middle East": {
+            "b": 38,
+            "l": 67,
+            "d": 86
+          },
+          "South Africa": {
+            "b": 28,
+            "l": 50,
+            "d": 64
+          },
+          "South Asia": {
+            "b": 36,
+            "l": 64,
+            "d": 82
+          },
+          "Southeast Asia": {
+            "b": 29,
+            "l": 50,
+            "d": 65
+          }
+        }
+      }
     },
-    "regions": {
-      "Australia / New Zealand": { "b": 50, "l": 86, "d": 111 },
-      "Orient": { "b": 57, "l": 100, "d": 128 },
-      "North America": { "b": 51, "l": 90, "d": 115 },
-      "Europe": { "b": 53, "l": 92, "d": 119 },
-      "Japan": { "b": 52, "l": 92, "d": 118 },
-      "Middle East": { "b": 40, "l": 70, "d": 91 },
-      "South Africa": { "b": 28, "l": 50, "d": 64 },
-      "South Asia": { "b": 36, "l": 64, "d": 82 },
-      "Southeast Asia": { "b": 31, "l": 55, "d": 70 }
+    {
+      "validFrom": "2026-01-01",
+      "label": "the 2025–2027 agreement (CA 058/2025)",
+      "ifa": {
+        "baseRates": {
+          "Jr. FS": 10,
+          "FS": 13.5,
+          "LS": 16,
+          "CS": 18.5,
+          "IFM": 23,
+          "Jr. FSS": 10,
+          "FSS": 13.5,
+          "LSS": 16,
+          "CSS": 18.5
+        },
+        "sgBuffer": 2.5,
+        "stationBuffer": 1.5,
+        "paxingMultiplier": 0.75,
+        "directUSMultiplier": 3.5,
+        "turnaroundBonusAmount": 90,
+        "layoverBrackets": [
+          {
+            "maxHours": 14,
+            "multiplier": 1.3
+          },
+          {
+            "maxHours": 18,
+            "multiplier": 2.5
+          },
+          {
+            "maxHours": null,
+            "multiplier": 3.0
+          }
+        ],
+        "turnaroundBrackets": [
+          {
+            "maxHours": 12,
+            "multiplier": 1.3
+          },
+          {
+            "maxHours": 14,
+            "multiplier": 1.6
+          },
+          {
+            "maxHours": 18,
+            "multiplier": 2.5
+          },
+          {
+            "maxHours": null,
+            "multiplier": 3.0
+          }
+        ]
+      },
+      "lma": {
+        "windows": {
+          "b": {
+            "start": "07:30",
+            "end": "08:30"
+          },
+          "l": {
+            "start": "12:30",
+            "end": "13:30"
+          },
+          "d": {
+            "start": "19:30",
+            "end": "20:30"
+          }
+        },
+        "regions": {
+          "Australia / New Zealand": {
+            "b": 50,
+            "l": 86,
+            "d": 111
+          },
+          "Orient": {
+            "b": 57,
+            "l": 100,
+            "d": 128
+          },
+          "North America": {
+            "b": 51,
+            "l": 90,
+            "d": 115
+          },
+          "Europe": {
+            "b": 53,
+            "l": 92,
+            "d": 119
+          },
+          "Japan": {
+            "b": 52,
+            "l": 92,
+            "d": 118
+          },
+          "Middle East": {
+            "b": 40,
+            "l": 70,
+            "d": 91
+          },
+          "South Africa": {
+            "b": 28,
+            "l": 50,
+            "d": 64
+          },
+          "South Asia": {
+            "b": 36,
+            "l": 64,
+            "d": 82
+          },
+          "Southeast Asia": {
+            "b": 31,
+            "l": 55,
+            "d": 70
+          }
+        }
+      }
     }
-  }
+  ]
 }
