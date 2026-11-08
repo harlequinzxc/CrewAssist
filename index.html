@@ -2004,9 +2004,6 @@
     <canvas id="sky-canvas"></canvas>
 
     <div id="app-root" class="relative z-10 w-full h-full flex flex-col min-h-screen">
-        <!-- hotfix 18: stylesheet sentinel — only the compiled Tailwind `hidden`
-             class can hide this, so the shell guard can probe it -->
-        <span id="ca-tw-probe" class="hidden" aria-hidden="true"></span>
         <!-- Onboarding View -->
         <div id="onboarding-view" class="fixed inset-0 z-40 flex flex-col hidden">
             <div class="h-[35%] flex items-center justify-center relative">
@@ -3384,7 +3381,7 @@
             }
         }
 
-        var APP_VERSION = '1.57.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.57.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3406,6 +3403,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.57.1', d: '2026-11-16', items: [
+                { c: 'imp', t: 'Dead code swept out — nothing you see changes.' }
+            ] },
             { v: '1.57.0', d: '2026-11-15', items: [
                 { c: 'new', t: 'Old duties price with the agreement of their day.' }
             ] },
@@ -12982,7 +12982,7 @@ SLOT|Special Lve others`;
         //
         // This does not throw, so a missing timezone cannot crash the
         // entire roster application.
-        const TZ_VALIDATION = validateAirportTimezones();
+        validateAirportTimezones();
 
         // ============================================================
         // CONSOLE DEBUG HELPERS
