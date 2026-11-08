@@ -3384,7 +3384,7 @@
             }
         }
 
-        var APP_VERSION = '1.56.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.57.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3406,6 +3406,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.57.0', d: '2026-11-15', items: [
+                { c: 'new', t: 'Old duties price with the agreement of their day.' }
+            ] },
             { v: '1.56.0', d: '2026-11-10', items: [
                 { c: 'new', t: 'Repeat menu lookups answer from a shared server-side cache.' }
             ] },
@@ -13117,6 +13120,7 @@ SLOT|Special Lve others`;
         };
         let shippedRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
         let activeRates = JSON.parse(JSON.stringify(DEFAULT_RATES));
+        let shippedTimeline = null; // v1.57.0 (B3): the served v2 timeline, for honest resets
 
         // round 22 (F-04): delegate to the one escape table (caEsc above).
         function ratesEsc(s) { return caEsc(s); }
@@ -13150,7 +13154,10 @@ SLOT|Special Lve others`;
                     sgBuffer: numOr(ifaIn.sgBuffer, base.ifa.sgBuffer),
                     stationBuffer: numOr(ifaIn.stationBuffer, base.ifa.stationBuffer),
                     paxingMultiplier: numOr(ifaIn.paxingMultiplier, base.ifa.paxingMultiplier),
-                    directUSMultiplier: numOr(ifaIn.directUSMultiplier, base.ifa.directUSMultiplier),
+                    // v1.57.0 (B3): JSON null must survive parsing — the 2022
+                    // agreement had NO direct-US rate, and numOr(null, x)
+                    // would turn "no rate" into the current default.
+                    directUSMultiplier: (ifaIn.directUSMultiplier === null) ? null : numOr(ifaIn.directUSMultiplier, base.ifa.directUSMultiplier),
                     turnaroundBonusAmount: numOr(ifaIn.turnaroundBonusAmount, base.ifa.turnaroundBonusAmount),
                     layoverBrackets: normalizeBrackets(ifaIn.layoverBrackets, base.ifa.layoverBrackets),
                     turnaroundBrackets: normalizeBrackets(ifaIn.turnaroundBrackets, base.ifa.turnaroundBrackets)
@@ -13191,7 +13198,15 @@ SLOT|Special Lve others`;
 
         function applyRatesToEngine(rates) {
             const parsed = parseRates(rates) || cloneRates(DEFAULT_RATES);
-            activeRates = parsed;
+            applyParsedRatesToEngine(parsed);
+            activeRates = parsed; // v1.57.0 (B3): only the real apply paths own activeRates
+        }
+
+        // v1.57.0 (B3): the engine half, split out so a period lend (see
+        // computeCardResults) can price one call with a foreign agreement
+        // without touching activeRates or anything else outside IFA_CONFIG,
+        // REGION_RATES, LMA_WINDOWS and SALARY_CONFIG.
+        function applyParsedRatesToEngine(parsed) {
             const ifa = parsed.ifa;
             IFA_CONFIG.baseRates = Object.assign({}, ifa.baseRates);
             IFA_CONFIG.sgBuffer = ifa.sgBuffer;
@@ -13217,13 +13232,99 @@ SLOT|Special Lve others`;
             }
         }
 
+        // v1.57.0 (B3, owner-ordered): period-correct pricing. rates.json is
+        // now a v2 timeline — period snapshots, each valid from its date. A
+        // card prices with the agreement in force on its day (sector 1's
+        // flight date rules the trip; an LMA-only card reads its first
+        // station's arrival date). The engine globals are snapshotted, the
+        // period applied, the core computed, and the globals restored —
+        // synchronous, so nothing outside one calculation ever sees a
+        // foreign period. A v1 blob (or a device override) parses as one
+        // always-current period: overrides win for every date, per the
+        // standing rule — and carry no period notes. A duty before the
+        // earliest period prices with the earliest rules, honestly noted.
+        // Salary is not period data (DEFAULT_RATES fills it); the dev
+        // editor edits the CURRENT period, exactly as before.
+        var RATES_TIMELINE = [{ validFrom: '0000-01-01', label: '', note: '', rates: cloneRates(DEFAULT_RATES) }]; // var: tests and the console can read the running timeline
+        function parseRatesTimeline(raw) {
+            if (!raw || typeof raw !== 'object') return null;
+            if (Array.isArray(raw.periods)) {
+                const out = [];
+                raw.periods.forEach((p) => {
+                    if (!p || typeof p !== 'object') return;
+                    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(p.validFrom || ''))) return;
+                    const rates = parseRates(p);
+                    if (!rates) return;
+                    out.push({
+                        validFrom: String(p.validFrom),
+                        label: (typeof p.label === 'string' && p.label.trim()) ? p.label.trim() : '',
+                        note: (typeof p.note === 'string' && p.note.trim()) ? p.note.trim() : '',
+                        rates: rates
+                    });
+                });
+                if (!out.length) return null;
+                out.sort((a, b) => (a.validFrom < b.validFrom ? -1 : 1));
+                return out;
+            }
+            const flat = parseRates(raw);
+            return flat ? [{ validFrom: '0000-01-01', label: '', note: '', rates: flat }] : null;
+        }
+        function ratesPeriodFor(ymd) {
+            const list = RATES_TIMELINE || [];
+            if (!list.length) return null;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(String(ymd || ''))) return list[list.length - 1];
+            for (let i = list.length - 1; i >= 0; i--) {
+                if (String(ymd) >= list[i].validFrom) return list[i];
+            }
+            const first = list[0];
+            return { validFrom: first.validFrom, label: first.label, note: first.note, rates: first.rates, beforeFirst: true };
+        }
+        function periodNoteFor(period) {
+            if (!period) return null;
+            const list = RATES_TIMELINE || [];
+            if (list.length === 1 && list[0].validFrom === '0000-01-01') return null; // override: wins everywhere, notes off
+            if (period === list[list.length - 1] && !period.beforeFirst) return null; // current agreement: nothing to say
+            const label = period.label || 'the earliest known agreement';
+            let text = period.beforeFirst ? ('Before ' + period.validFrom.slice(0, 4) + ' — priced with ' + label) : ('Priced with ' + label);
+            if (period.note) text += ' · ' + period.note;
+            return { text: text };
+        }
+        function cardPeriodYMD(id, mode) {
+            const d1 = document.getElementById(id + '-ifa-d1');
+            if (d1 && /^\d{4}-\d{2}-\d{2}$/.test(String(d1.value || ''))) return String(d1.value);
+            const els = document.querySelectorAll('[id^="' + id + '-lma-a"]');
+            for (let i = 0; i < els.length; i++) {
+                if (/-lma-a\d+$/.test(els[i].id) && /^\d{4}-\d{2}-\d{2}$/.test(String(els[i].value || ''))) return String(els[i].value);
+            }
+            return '';
+        }
+        function snapshotEngineRates() {
+            return JSON.parse(JSON.stringify({ ifa: IFA_CONFIG, regions: REGION_RATES, windows: LMA_WINDOWS, salary: SALARY_CONFIG }));
+        }
+        function restoreEngineRates(save) {
+            if (!save) return;
+            [[save.ifa, IFA_CONFIG], [save.regions, REGION_RATES], [save.windows, LMA_WINDOWS], [save.salary, SALARY_CONFIG]].forEach((pair) => {
+                Object.keys(pair[1]).forEach((k) => { delete pair[1][k]; });
+                Object.assign(pair[1], pair[0]);
+            });
+        }
+        function applyTimelineToEngine(timeline) {
+            const tl = (timeline && timeline.length) ? timeline : [{ validFrom: '0000-01-01', label: '', note: '', rates: cloneRates(DEFAULT_RATES) }];
+            RATES_TIMELINE = tl;
+            applyRatesToEngine(tl[tl.length - 1].rates); // the engine idles on the current period
+        }
+
         function applyRatesFromStorage() {
             try {
                 const raw = localStorage.getItem('crewAssist.rates');
                 if (!raw) return false;
-                const parsed = parseRates(JSON.parse(raw));
-                if (!parsed) return false;
-                applyRatesToEngine(parsed);
+                // v1.57.0 (B3): the stored blob may be a flat override (one
+                // always-current period, wins everywhere, no period notes —
+                // the standing rule) or a restored v2 timeline (periods live
+                // on this device exactly as they do from GitHub).
+                const tl = parseRatesTimeline(JSON.parse(raw));
+                if (!tl) return false;
+                applyTimelineToEngine(tl);
                 return true;
             } catch (e) {
                 return false;
@@ -13495,7 +13596,10 @@ SLOT|Special Lve others`;
             if (!devDirty || devSavedFlash) return;
             const parsed = readRatesFromEditor();
             if (!parsed) { await appAlert('Could not read rates from the tables.'); return; }
-            applyRatesToEngine(parsed);
+            // v1.57.0 (B3): a device save is a flat override — one
+            // always-current period that wins for every date. Publishing a
+            // timeline stays the Export door's job.
+            applyTimelineToEngine([{ validFrom: '0000-01-01', label: '', note: '', rates: parsed }]);
             localStorage.setItem('crewAssist.rates', JSON.stringify(parsed));
             try { localStorage.setItem('crewAssist.ratesUpdatedAt', String(Date.now())); } catch (e) {} // v1.33.0: honest staleness
             devSnapshot = cloneRates(parsed);
@@ -13513,14 +13617,42 @@ SLOT|Special Lve others`;
         async function resetDevRates() {
             const ok = await appConfirm('Reset rates to default? Your device edits will be discarded. Exported files and the GitHub rates.json are not affected.');
             if (!ok) return;
-            activeRates = cloneRates(DEFAULT_RATES);
+            // v1.57.0 (B3): reset now truly discards. The stored override
+            // goes, the freshest known timeline returns — the served one
+            // when it loaded, DEFAULT_RATES otherwise — and the engine
+            // idles on its current period.
+            try { localStorage.removeItem('crewAssist.rates'); localStorage.removeItem('crewAssist.ratesUpdatedAt'); } catch (e) {}
+            const tl = (shippedTimeline && shippedTimeline.length) ? shippedTimeline : [{ validFrom: '0000-01-01', label: '', note: '', rates: cloneRates(DEFAULT_RATES) }];
+            applyTimelineToEngine(tl);
+            devSnapshot = null;
             renderDevRatesEditor();
+        }
+
+        // v1.57.0 (B3): publishing keeps the whole timeline — the editor
+        // edits the CURRENT period, and the older periods ride along
+        // untouched. A device running a flat override (or a v1 file)
+        // exports exactly what it runs.
+        function buildExportRates(parsed) {
+            const tl = RATES_TIMELINE || [];
+            if (!tl.length || tl[tl.length - 1].validFrom === '0000-01-01') return parsed;
+            return {
+                version: 2,
+                periods: tl.map((p, i) => ({
+                    validFrom: p.validFrom,
+                    label: p.label,
+                    note: p.note || undefined,
+                    ifa: (i === tl.length - 1) ? parsed.ifa : p.rates.ifa,
+                    lma: (i === tl.length - 1) ? parsed.lma : p.rates.lma,
+                    salary: (i === tl.length - 1 && parsed && parsed.salary) ? parsed.salary : p.rates.salary
+                }))
+            };
         }
 
         function exportDevRates() {
             const parsed = readRatesFromEditor() || activeRates || DEFAULT_RATES;
+            const exportable = buildExportRates(parsed);
             const doIt = () => {
-                exportFile(new Blob([JSON.stringify(parsed, null, 2)], { type: 'application/json' }), 'crewassist-rates.json').then((res) => { if (res) archToast('Exported ' + res, null); });
+                exportFile(new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' }), 'crewassist-rates.json').then((res) => { if (res) archToast('Exported ' + res, null); });
             };
             if (devDirty) appConfirm('This file includes unsaved edits. Export anyway?').then((ok) => { if (ok) doIt(); });
             else doIt();
@@ -13530,14 +13662,22 @@ SLOT|Special Lve others`;
             try {
                 const res = await fetch('./rates.json', { cache: 'no-store' });
                 if (!res.ok) return;
-                const parsed = parseRates(await res.json());
+                const raw = await res.json();
+                const parsed = parseRates(raw);
                 if (!parsed) return;
-                shippedRates = parsed;
+                // v1.57.0 (B3): the served file may be a v2 timeline. The
+                // engine takes the whole timeline and idles on the current
+                // period; a flat v1 file parses as one always-current
+                // period (same behavior as before B3). The no-override
+                // guard stands: a device override is never clobbered.
+                const timeline = parseRatesTimeline(raw) || [{ validFrom: '0000-01-01', label: '', note: '', rates: parsed }];
+                shippedRates = cloneRates(timeline[timeline.length - 1].rates);
+                shippedTimeline = timeline;
                 try { localStorage.setItem('crewAssist.ratesCheckedAt', String(Date.now())); } catch (e) {}
                 updateNetStatus();
                 if (!localStorage.getItem('crewAssist.rates')) {
                     devSnapshot = null;
-                    applyRatesToEngine(shippedRates);
+                    applyTimelineToEngine(timeline);
                     renderDevRatesEditor();
                 }
             } catch (e) {}
@@ -15745,7 +15885,30 @@ SLOT|Special Lve others`;
             const pt = pi >= 1 ? document.getElementById(`${id}-ifa-t${pi}`) : null;
             return pt ? parseDuration(pt.value) : null;
         }
+        // v1.57.0 (B3, owner-ordered): period-correct pricing. The wrapper
+        // picks the agreement in force on the card's day, prices with it,
+        // and restores the engine exactly — synchronous, so nothing
+        // outside one calculation ever sees a foreign period. The result
+        // carries a period note for the overlay (null on the current
+        // agreement, always null under a device override).
         function computeCardResults(id, mode) {
+            const engSave = snapshotEngineRates();
+            try {
+                const period = ratesPeriodFor(cardPeriodYMD(id, mode));
+                if (period && period.rates) applyParsedRatesToEngine(period.rates);
+                const r = computeCardResultsCore(id, mode);
+                const note = periodNoteFor(period);
+                if (r) {
+                    r.period = note;
+                    if (r.detail) r.detail.period = note;
+                    if (r.archivePayload) r.archivePayload.period = note; // frozen into the archive
+                }
+                return r;
+            } finally {
+                restoreEngineRates(engSave);
+            }
+        }
+        function computeCardResultsCore(id, mode) {
             let ifaTotal = 0;
             let lmaTotal = 0;
             let globalB = 0, globalL = 0, globalD = 0;
@@ -15788,6 +15951,7 @@ SLOT|Special Lve others`;
                 snap.type = isTurnaround ? 'Turnaround' : 'Layover';
                 snap.sectorCount = count;
                 snap.rankRate = rankRate;
+                snap.directUSMultiplier = (IFA_CONFIG.directUSMultiplier == null) ? null : IFA_CONFIG.directUSMultiplier; // v1.57.0 (B3): the overview must speak the period's truth
 
                 // Determine SG logic per 2.1
                 const isSgArr = is4
@@ -15836,7 +16000,10 @@ SLOT|Special Lve others`;
                     } else if (isTurnaround) {
                         mult = sharedTurnMult;
                         logic = `Turnaround Bracket (Total SDP ${formatHoursHM(tripSdp)})`;
-                    } else if (sec.directUs) {
+                    } else if (sec.directUs && IFA_CONFIG.directUSMultiplier != null) {
+                        // v1.57.0 (B3): the 2022 agreement carried no
+                        // direct-US rate — a flagged direct-US sector then
+                        // prices on its layover bracket, honestly.
                         mult = IFA_CONFIG.directUSMultiplier;
                         logic = 'Direct US Override';
                     } else {
@@ -16268,8 +16435,13 @@ SLOT|Special Lve others`;
                 const sameMult = mults.every(m => m === mults[0]);
                 const usTouch = secs.some(x => isUsAirport(x.dep) || isUsAirport(x.arr));
                 const anyDirectUs = secs.some(x => x.directUs);
-                const multPhrase = anyDirectUs
-                    ? 'both under the ' + (typeof IFA_CONFIG !== 'undefined' ? IFA_CONFIG.directUSMultiplier : 3.5) + '× Direct US override — a straight SIN–US–SIN'
+                // v1.57.0 (B3): the trip's own period speaks — under the
+                // 2022 agreement there was no direct-US rate at all, so a
+                // flagged sector prices on its bracket and the overview
+                // must not quote a multiplier that didn't exist.
+                const usMult = (s && s.directUSMultiplier != null) ? s.directUSMultiplier : (typeof IFA_CONFIG !== 'undefined' ? IFA_CONFIG.directUSMultiplier : null);
+                const multPhrase = (anyDirectUs && usMult != null)
+                    ? 'both under the ' + usMult + '× Direct US override — a straight SIN–US–SIN'
                     : (sameMult ? 'both in the ' + mults[0] + '× layover bracket' : 'at ' + mults.join('× and ') + '×');
                 if (secs.length === 2) {
                     const city = st0 ? ovCity(st0.code) : '';
@@ -16296,7 +16468,7 @@ SLOT|Special Lve others`;
                     const stLast = stations[stations.length - 1];
                     if (stLast) txt += fn(secs.length - 1) + ' brings you home' + (stLast.outYmd ? ' on the ' + ovOrdinal((ovYmdDate(stLast.outYmd) || new Date()).getDate()) + ' (out of ' + (ovCity(stLast.code) || 'the last station') + ' ' + ovTime(stLast.outHm) + ')' : '') + '. ';
                     txt += 'The flying pays ' + formatMoney(s.ifaTotal) + ' — SDPs of ' + secs.map(x => x.sdpHm).join(', ') + ', ' + (sameMult ? 'all in the ' + mults[0] + '× bracket' : 'paying across the brackets') + paxNote + '. ';
-                    if (usTouch && !anyDirectUs && typeof IFA_CONFIG !== 'undefined') txt += 'And no, no Direct US on this one — the ' + IFA_CONFIG.directUSMultiplier + '× only applies to a straight SIN–US–SIN, and you went the scenic way. ';
+                    if (usTouch && !anyDirectUs && usMult != null) txt += 'And no, no Direct US on this one — the ' + usMult + '× only applies to a straight SIN–US–SIN, and you went the scenic way. ';
                     if (allStations.length) {
                         const meals = s.meals || { b: 0, l: 0, d: 0 };
                         txt += 'LMA is where this trip earns: ' + ovStationListPhrase(stations) + ' — ' + allStations.map(ovStationStory).join('; ') + ', ' + meals.b + ' breakfast' + (meals.b === 1 ? '' : 's') + ', ' + meals.l + ' lunch' + (meals.l === 1 ? '' : 'es') + ' and ' + meals.d + ' dinner' + (meals.d === 1 ? '' : 's') + ' — ' + formatMoney(s.lmaTotal) + ', for a total of ' + grand + '.';
@@ -16467,6 +16639,11 @@ SLOT|Special Lve others`;
                     <p class="text-4xl font-bold ca-amt">${formatMoney(grandTotal)}</p>
                 </div>
             `;
+            // v1.57.0 (B3): the honest period note — under the total, only
+            // when the trip priced with an agreement other than the current
+            // one (never under a device override).
+            const periodNote = detail && detail.period ? (detail.period.text || '') : '';
+            if (periodNote) html += '<p class="ca-micro text-gray-600 dark:text-gray-300 bg-gray-500/10 border ca-hairline rounded-xl px-3 py-2 mb-6">' + ratesEsc(periodNote) + '</p>';
             if (mode === 'both' && detail) html += overviewBlock(flightOverviewText(detail));
 
             if (ifaDetails.length > 0) {
@@ -18566,10 +18743,12 @@ SLOT|Special Lve others`;
                 if (opts && opts.fromOnboarding) { appAlert('That\u2019s an earnings export \u2014 it carries pay data, not your profile. Finish setting up, then restore it from Settings \u2192 Data Management.'); return; }
                 return restoreEarningsJson(arr);
             }
-            const parsed = parseRates(data);
-            if (parsed) {
+            // v1.57.0 (B3): a rates export may be a v2 timeline — pass the
+            // RAW file through; restoreRatesJson installs periods for v2
+            // and a flat override for v1 (parseRates there fills defaults).
+            if (data && typeof data === 'object' && (Array.isArray(data.periods) || parseRates(data))) {
                 if (opts && opts.fromOnboarding) { appAlert('That\u2019s a rates export \u2014 finish setting up first, then restore it from Settings \u2192 Data Management.'); return; }
-                return restoreRatesJson(parsed);
+                return restoreRatesJson(data);
             }
             appAlert('That file isn’t a CrewAssist backup — expected a full backup, an earnings export or a rates export.');
         }
@@ -18627,9 +18806,12 @@ SLOT|Special Lve others`;
             appConfirm('Rates file — apply these rates to this device? You can review or reset them in Developer mode.').then((ok) => {
                 if (!ok) return;
                 try { localStorage.setItem('crewAssist.rates', JSON.stringify(parsed)); localStorage.setItem('crewAssist.ratesUpdatedAt', String(Date.now())); } catch (e) {}
-                activeRates = cloneRates(parsed);
-                devSnapshot = cloneRates(parsed);
-                applyRatesToEngine(parsed);
+                // v1.57.0 (B3): a v2 file restores as a live timeline; a
+                // flat file restores as this device's override.
+                const tl = parseRatesTimeline(parsed) || [{ validFrom: '0000-01-01', label: '', note: '', rates: cloneRates(DEFAULT_RATES) }];
+                applyTimelineToEngine(tl);
+                activeRates = cloneRates(tl[tl.length - 1].rates);
+                devSnapshot = cloneRates(tl[tl.length - 1].rates);
                 renderDevRatesEditor();
                 try { devRefresh(); } catch (e) {}
                 archToast('Rates restored', null);

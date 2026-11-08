@@ -1,6 +1,6 @@
 # CrewAssist
 
-An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a mobile-first, chatbot-style assistant for inflight and layover allowance calculations, roster reading, and live digital inflight menus. Calculation rules are verified against the Staff Members' Agreement (Clauses 34–36; the full PDF lives in `docs/`).
+An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a mobile-first, chatbot-style assistant for inflight and layover allowance calculations, roster reading, and live digital inflight menus. Calculation rules are verified against the Staff Members' Agreements in force — the 2025 agreement (Clauses 34–36) today, the 2022 agreement for older duties; both PDFs live in `docs/`, and every duty prices with the agreement of its day.
 
 ## Docs
 
@@ -10,6 +10,7 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 - [`docs/REPO_RULES.md`](docs/REPO_RULES.md) — how work lands: branch strategy, safe commands, build/test/release mechanics
 - [`docs/LOGIC.md`](docs/LOGIC.md) — the COP/IFA/LMA formulas, coefficients and rules
 - [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) — the SQ inflight-menu API map
+- [`docs/LMA_RATE_SHEETS.md`](docs/LMA_RATE_SHEETS.md) — the owner-supplied yearly meal-allowance sheets (wef 01 Jan 2024 / 2025) behind the period pricing
 - [`docs/FEATURE_TOUR.md`](docs/FEATURE_TOUR.md) — the spotlight feature tour's contract: engine rules, firing doors, every walk's copy verbatim
 - [`tests/README.md`](tests/README.md) — the test-suite contracts and conventions
 
@@ -28,19 +29,19 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 ## Tech Stack
 
 - **Frontend:** HTML5, CSS3, vanilla JavaScript. Almost all UI and logic is a single `index.html`. Tailwind ships as a **compiled stylesheet** (`tw.css`, rebuilt from `tw.config.cjs` — no CDN runtime); Lucide icons.
-- **Backend / proxy:** one Node.js Vercel serverless function (`api/sq.js`) for SQ `getcabin` and `menu` only. SQ CORS allowlists `inflightmenu.singaporeair.com`, so the browser cannot read the JSON directly; images are plain `<img src>` to that host (not CORS-gated).
-- **Data:** airport IATA list and regions inlined in `index.html`. Default IFA/LMA numbers in `rates.json` (network-first; developer mode can save device overrides and export/import JSON).
-- **Architecture:** installable PWA (service worker, web manifest). The worker precaches the shell, `rates.json` and the CDN runtime deps with retries, and runs network-first for documents and rates. `APP_VERSION` shows on onboarding — a deploy mismatch means cache, not code. `APP_CHANGELOG` (newest first) drives both the What's New overlay and Settings → Changelog, which is the record of what changed and when.
+- **Backend / proxy:** one Node.js Vercel serverless function (`api/sq.js`) for SQ `getcabin` and `menu` only, with a shared server-side cache in front of the upstream (repeat lookups answer fast; a cached copy says how old it is). SQ CORS allowlists `inflightmenu.singaporeair.com`, so the browser cannot read the JSON directly; images are plain `<img src>` to that host (not CORS-gated).
+- **Data:** airport IATA list and regions inlined in `index.html`. `rates.json` is a timeline of period snapshots (network-first) — a duty prices with the agreement in force on its day; developer mode can save device overrides (which win for every date) and export/import JSON.
+- **Architecture:** installable PWA (service worker, web manifest). The worker precaches the shell, `rates.json`, `ops.json` and the CDN runtime deps with retries, and runs network-first for documents, rates and the ops switch. `APP_VERSION` shows on onboarding — a deploy mismatch means cache, not code. `APP_CHANGELOG` (newest first) drives both the What's New overlay and Settings → Changelog, which is the record of what changed and when.
 
 ## File Structure
 
 - `index.html` — UI, chat, calculators, roster import, calendar, earnings, menu overlay, printer, and all app logic.
 - `manifest.json` & `sw.js` — PWA install and cache.
 - `tw.css` & `tw.config.cjs` — the compiled Tailwind stylesheet and the config that rebuilds it (rebuild when class names change; the Tailwind CLI rides `tests/smoke/node_modules` because the repo root stays package-free by convention).
-- `rates.json` — default IFA modifiers and LMA region rates (fetched network-first).
+- `rates.json` — the rates timeline: period snapshots of IFA modifiers and LMA region rates, newest last (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `icons/` — transparent dart for in-app (`logo-192.png`, `logo-512.png`); navy + gold PWA icons (`app-icon-180/192/512.png`).
-- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `FEATURE_TOUR.md` (the spotlight tour contract), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
+- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `FEATURE_TOUR.md` (the spotlight tour contract), `LMA_RATE_SHEETS.md` (the yearly meal sheets), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
 - `tests/` — the jsdom behaviour suite plus `tests/smoke/`, the real-Chromium browser rig (`cd tests && npm install && npm test`; see `tests/README.md`).
 - `README.md` — this overview.
 

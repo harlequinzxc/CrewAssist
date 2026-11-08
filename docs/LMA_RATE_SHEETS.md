@@ -1,9 +1,12 @@
 # LMA Region Rate Tiers — historical sheets (owner-supplied)
 
-Reference data for the **B3 rates-history round**. Recorded from the owner's
-message of November 2026; nothing implemented yet — B3 remains discussion
-until the owner says go. The app's **current** table (rates.json + LOGIC.md
-§3.6) is the **wef 01 Jan 2026** vintage and stays untouched.
+Reference data for the **B3 period-correct-pricing round** (shipped v1.57.0),
+recorded from the owner's message of November 2026. The **wef 01 Jan 2024**
+sheet below prices duties dated 2022–2024 (it also covers 2022/2023 — the
+owner holds no older sheets, so the 2024 sheet stands in with an honest
+on-screen note); the **wef 01 Jan 2025** sheet prices duties dated 2025. The
+app's **current** table (`rates.json` + LOGIC.md §3.6) is the **wef 01 Jan
+2026** vintage.
 
 The Collective Agreements themselves never list meal dollar rates — both the
 2022 CA (Clause 37(5)) and the 2025 CA (Clause 36(5)) defer to a separate

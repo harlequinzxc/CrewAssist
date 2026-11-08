@@ -467,8 +467,8 @@ const MONTH = [
     const trip = {
       type: 'Layover', ok: true, stations: [],
       sectors: [
-        { fn: 'SQ366', dep: 'SIN', arr: 'FCO', stdHm: '23:55', staHm: '06:20+1', ftHm: '', depDate: '2024-10-21', arrDate: '2024-10-22', paxing: true },
-        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30', ftHm: '11h35m', depDate: '2024-10-24', arrDate: '2024-10-25' }
+        { fn: 'SQ366', dep: 'SIN', arr: 'FCO', stdHm: '23:55', staHm: '06:20+1', ftHm: '', depDate: '2026-10-21', arrDate: '2026-10-22', paxing: true },
+        { fn: 'SQ365', dep: 'FCO', arr: 'SIN', stdHm: '23:55', staHm: '18:30', ftHm: '11h35m', depDate: '2026-10-24', arrDate: '2026-10-25' }
       ]
     };
     const { w, d } = await boot(APP);
@@ -488,7 +488,7 @@ const MONTH = [
     const rate = res.detail.rankRate;
     R.ok(sec.paxing === true, 'the computed sector records paxing');
     R.ok(sec.logic === 'Paxing Override (SDP ignored)', 'paxing ignores the SDP brackets');
-    R.eq(sec.mult, 0.75, 'paxing pays the 0.75× multiplier (owner-ratified rate)');
+    R.eq(sec.mult, 0.75, 'paxing pays the 0.75× multiplier (owner-ratified rate; fixture re-dated 2026 — B3 prices 2024 duties at the old 0.5×)');
     R.eq(sec.ftHm, '11H 35M', 'the empty paxing sector shows the borrowed Singapore-leg time (11h35m)');
     R.eq(sec.amount, Math.round(695 / 60 * rate * sec.mult * 100) / 100, 'paxing amount = borrowed 11h35m × rate × 0.75');
     // an own typed time still outranks the borrowed one
@@ -504,10 +504,10 @@ const MONTH = [
     R.eq(sec.amount, Math.round(745 / 60 * rate * sec.mult * 100) / 100, 'the own-time amount prices 12h25m × rate × 0.75');
     // the confirm bubble dates every positioning trip so the crew can find
     // the duty on the paper roster
-    const parsedPx = { monthLabel: 'October 2024', trips: [trip], flights: trip.sectors, skippedDays: 0, flyingDays: 2 };
-    w.renderRosterConfirm(parsedPx, 'Oct 2024.pdf');
+    const parsedPx = { monthLabel: 'October 2026', trips: [trip], flights: trip.sectors, skippedDays: 0, flyingDays: 2 };
+    w.renderRosterConfirm(parsedPx, 'Oct 2026.pdf');
     await wait(200);
-    R.ok(/1 positioning trip is marked paxing \(21 Oct 2024\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip to the day and year');
+    R.ok(/1 positioning trip is marked paxing \(21 Oct 2026\)/.test(d.getElementById('chat-container').textContent), 'the confirm bubble dates the paxing trip to the day and year');
     R.ok(/the Singapore leg\u2019s time is used, or Fetch fills the exact flight\./.test(d.getElementById('chat-container').textContent), 'the confirm bubble explains the v1.40.1 borrow rule');
   }
 

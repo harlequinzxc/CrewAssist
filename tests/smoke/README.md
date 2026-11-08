@@ -8,7 +8,7 @@ about a minute.
 
 ## What it is
 
-The jsdom suite (`tests/`, 14 suites) is the behavioural contract; this rig is
+The jsdom suite (`tests/`, 15 suites since v1.56.0) is the behavioural contract; this rig is
 the **real-browser layer**: it boots the actual app in actual Chromium and holds
 it to things jsdom cannot see — rendering, computed styles, console/page errors,
 the service-worker stamp. It checks:
