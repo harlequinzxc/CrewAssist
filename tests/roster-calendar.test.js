@@ -933,6 +933,10 @@ const synthItems = [].concat(
     await wait(500);
     R.ok(!d.getElementById('ca-roster-cal').classList.contains('hidden'), 'the calendar opens even with no roster');
     R.ok(d.getElementById('ca-rc-empty').textContent.indexOf('No roster for this month') === 0, 'a month without duties says so honestly');
+    R.ok(!!d.querySelector('#ca-rc-empty [data-ca-empty-cta="roster"]'), 'v1.54.0: the empty state acts — the attach CTA rides the sentence on a roster-less device');
+    w.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2099-01-05': { kind: 'fly', code: '', loc: '', fns: [], dkey: '' } }));
+    w.eval('rcApplyMonth()');
+    R.ok(d.getElementById('ca-rc-empty').textContent.indexOf('No roster for this month') === 0 && !d.querySelector('#ca-rc-empty [data-ca-empty-cta="roster"]'), 'v1.54.0: a roster-holder keeps the honest sentence alone — no CTA on an off month');
     R.ok(fs.readFileSync(APP, 'utf8').indexOf('sel: \'#btn-roster-cal\'') >= 0, 'the main spotlight tour walks the calendar button (docs/FEATURE_TOUR.md)');
   }
 
