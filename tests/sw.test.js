@@ -13,7 +13,7 @@ const SW = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
 const IX = fs.readFileSync(path.resolve(__dirname, '..', 'index.html'), 'utf8');
 const BASE = 'https://crewassist.test';      // the SW's scope origin (no trailing slash)
 const ORIGIN = BASE + '/';                   // base for relative-URL resolution
-const CACHE = 'crewassist-v320';
+const CACHE = 'crewassist-v321';
 
 // Real CacheStorage keys are absolute URLs — normalise the same way so the
 // install's './index.html' and a navigation to the same document collide.
@@ -80,13 +80,13 @@ function bootSW() {
 
 (async () => {
   // --- source shape: the refactor's own promises ---
-  R.ok(SW.includes("const CACHE_NAME = '" + CACHE + "';"), 'cache name is v320 (the v1.54.2 empty-calendar copy round bumps the precache)');
+  R.ok(SW.includes("const CACHE_NAME = '" + CACHE + "';"), 'cache name is v321 (the v1.55.0 remote-ops-switch round bumps the precache)');
   R.ok(!/v1\.\d/.test(SW) && !SW.includes('hotfix'), 'version-history stamps are gone; the comments describe current behaviour');
   R.eq((SW.match(/function cachePut/g) || []).length, 1, 'exactly one cachePut helper');
   R.ok(SW.includes('return caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});'), 'cachePut returns its promise and swallows cache-write failures (audit fix 3)');
   R.eq((SW.match(/caches\.open\(CACHE_NAME\)/g) || []).length, 2, 'the cache is opened in install and in cachePut only — both inline put blocks are gone');
   R.ok(SW.includes('keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))'), 'activate states its intent: filter then delete');
-  R.ok(SW.includes('const isNetworkFirst = isAppShell || isRates;'), 'the network-first strategy is named once');
+  R.ok(SW.includes('const isNetworkFirst = isAppShell || isRates || isOps;'), 'the network-first strategy is named once — ops.json joins the lane (v1.55.0)');
 
   // --- install: precache + CDN URL identity with index.html ---
   let fontsUrl, lucideUrl, pdfUrls;
@@ -95,7 +95,7 @@ function bootSW() {
     await fire('install'); await tick();
     const c = cache();
     R.ok(!!c, 'install opens the v302 cache');
-    R.ok(c.addAllCalls.indexOf(ORIGIN + 'index.html') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'tw.css') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'rates.json') !== -1, 'install precaches the shell, the compiled styles and rates');
+    R.ok(c.addAllCalls.indexOf(ORIGIN + 'index.html') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'tw.css') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'rates.json') !== -1 && c.addAllCalls.indexOf(ORIGIN + 'ops.json') !== -1, 'install precaches the shell, the compiled styles, rates and the ops switch');
     R.eq(c.addCalls.length, 4, 'the four CDN assets are fetched individually');
     fontsUrl = c.addCalls.filter((u) => u.indexOf('https://fonts.googleapis.com/css2') === 0)[0];
     lucideUrl = c.addCalls.filter((u) => u.indexOf('https://unpkg.com/') === 0)[0];

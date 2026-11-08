@@ -22,6 +22,7 @@ process.env.TZ = 'Asia/Singapore';
 
 const APP = path.resolve(__dirname, '..', 'index.html');
 const RATES = fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8');
+const OPS = fs.readFileSync(path.resolve(__dirname, '..', 'ops.json'), 'utf8');
 
 let pass = 0, fail = 0, firstFail = null;
 const R = {
@@ -52,7 +53,8 @@ async function boot(appPath, opts) {
     w.fetch = async (u) => {
         const url = typeof u === 'string' ? u : u.url;
         if (url.indexOf('/rates.json') !== -1) return new Response(RATES, { status: 200, headers: { 'Content-Type': 'application/json' } });
-        if (url.indexOf('/api/sq') !== -1 || url.indexOf('crewassist-sandpit') !== -1) return new Response(JSON.stringify({ success: false, message: 'offline in test' }), { status: 500 });
+        if (url.indexOf('/ops.json') !== -1) return new Response((w.__opsOverride != null ? w.__opsOverride : OPS), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        if (url.indexOf('/api/sq') !== -1 || url.indexOf('crewassist-sandpit') !== -1) { (w.__sqFetchUrls = w.__sqFetchUrls || []).push(url); return new Response(JSON.stringify({ success: false, message: 'offline in test' }), { status: 500 }); }
         return origFetch ? origFetch(u) : new Response('{}', { status: 200 });
     };
     w.open = () => null;
@@ -87,6 +89,10 @@ async function boot(appPath, opts) {
     // crew at the chat screen, so every test boot must be a "seen" device
     // (this runs after the scripts eval but before DOMContentLoaded, so the
     // showMain check reads it). tour.test.js removes it deliberately.
+    // v1.55.0 (B1): the ops override — boot({ ops: '<json>' }) serves that
+    // body for ./ops.json (the shipped repo file otherwise), set before the
+    // app's DOMContentLoaded fires loadOpsConfig().
+    if (opts && opts.ops != null) { try { w.__opsOverride = opts.ops; } catch (e) {} }
     try {
         w.localStorage.setItem('crewAssist.installHintDone', '1');
         w.localStorage.setItem('crewAssist.nudgedRoster', '1');

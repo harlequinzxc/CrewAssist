@@ -3379,7 +3379,7 @@
             }
         }
 
-        var APP_VERSION = '1.54.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.55.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3401,6 +3401,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.55.0', d: '2026-11-09', items: [
+                { c: 'new', t: 'A quiet ops switch: lookups can be paused or moved remotely.' }
+            ] },
             { v: '1.54.2', d: '2026-11-08', items: [
                 { c: 'imp', t: 'Both empty months now read the same: No flights yet.' }
             ] },
@@ -4429,6 +4432,7 @@
             initUI();
             bindEvents();
             loadShippedRates();
+            loadOpsConfig(); // v1.55.0: the ops switch loads beside the rates — network-first, silent fallback
             // round 22 (F-03): the v1.36.0 shell guard was born dead — defined,
             // never called, while the changelog promised its repair screen. It
             // is silent whenever the compiled stylesheet loads (caTwLoaded
@@ -11032,6 +11036,7 @@ SLOT|Special Lve others`;
                         ? flights.filter((f) => { const p = pillFor(f); return !(p && p.dataset.state === 'ok'); })
                         : flights;
                     if (!list.length) return;
+                    if (!APP_OPS.sq.enabled) { addBotMessage(rosterEsc(sqOpsLine())); return; }
                     const unfinished = await runSweep(list);
                     if (!unfinished) {
                         // 2026-10-15 (owner order): a fully-saved set makes
@@ -11103,9 +11108,9 @@ SLOT|Special Lve others`;
                 const payload = { carrierId: 'SQ', flightNumber: fn, flightDate: ymd, sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479' };
                 let res = null;
                 try {
-                    res = await fetch('/api/sq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: 'getcabin', payload }) });
+                    res = await sqApiFetch('getcabin', payload);
                     data = await res.json();
-                } catch (e) { return { ok: false, reason: 'error', cabins: 0, saved: 0 }; }
+                } catch (e) { return { ok: false, reason: (e && e.opsOff) ? 'off' : 'error', cabins: 0, saved: 0 }; }
                 if (data && data.statusCode === 101) return { ok: false, reason: 'unpublished', cabins: 0, saved: 0 };
                 if (data && data.error) return { ok: false, reason: 'error', cabins: 0, saved: 0 };
                 if (data && data.statusCode === 200 && Array.isArray(data.cabinClasses) && data.cabinClasses.length) {
@@ -11723,7 +11728,7 @@ SLOT|Special Lve others`;
         async function natResolveOnline(fn, ymd) {
             try {
                 const payload = { carrierId: 'SQ', flightNumber: fn, flightDate: ymd, sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479' };
-                const res = await fetch('/api/sq', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: 'getcabin', payload }) });
+                const res = await sqApiFetch('getcabin', payload);
                 const cab = await res.json();
                 if (!cab || cab.statusCode !== 200 || !Array.isArray(cab.cabinClasses) || !cab.cabinClasses.length) return { unpublished: true };
                 try { localStorage.setItem(sqCabinCacheKey(fn, ymd), JSON.stringify({ timestamp: Date.now(), data: cab })); } catch (e) {}
@@ -11733,7 +11738,7 @@ SLOT|Special Lve others`;
                 const fd = (legs[0].flightDetails || {});
                 const hm = (s) => { const m = String(s || '').match(/(\d{2}:\d{2}):(\d{2})/); return m ? m[1] : ''; };
                 return { dep: fd.departureAirportCode || '', arr: fd.arrivalAirportCode || '', std: hm(fd.departureLocalDate), sta: hm(fd.arrivalLocalDate), staYmd: String(fd.arrivalLocalDate || '').slice(0, 10) || ymd };
-            } catch (e) { return { error: true }; }
+            } catch (e) { return (e && e.opsOff) ? { off: true } : { error: true }; }
         }
         // flight time = STA - STD, rolling past midnight when the clock says so
         function natFtHm(std, sta) {
@@ -11802,11 +11807,14 @@ SLOT|Special Lve others`;
             }
             if (needOnline && navigator.onLine && (cmd.mode !== 'menu')) {
                 addBotMessage('Checking ' + label + ' against the SQ schedule\u2026');
+                let opsOffHit = false;
                 for (let k = 0; k < cmd.pairs.length; k++) {
                     if (infos[k]) continue;
                     const r = await natResolveOnline(cmd.pairs[k].fn, cmd.pairs[k].ymd);
+                    if (r && r.off) opsOffHit = true;
                     if (r && !r.unpublished && !r.error) infos[k] = r;
                 }
+                if (opsOffHit) addBotMessage(rosterEsc(sqOpsLine()));
             }
             const stillMissing = infos.filter(Boolean).length < cmd.pairs.length;
             // --- the LMA turnaround guard needs routes: same-day refusal already ran ---
@@ -13528,6 +13536,42 @@ SLOT|Special Lve others`;
         }
 
 
+        // v1.55.0 (B1, owner-ordered): the remote ops switch. ops.json sits
+        // beside rates.json — network-first, silent fallback to the shipped
+        // defaults — so lookups can be paused, re-pointed or annotated
+        // without shipping a release. sq.enabled=false refuses BEFORE any
+        // network attempt and every SQ surface says the honest line; sq.path
+        // re-points the proxy (same-origin paths only); a set notice
+        // replaces the off line and rides the couldn't-reach message.
+        var APP_OPS = { sq: { enabled: true, path: '/api/sq' }, notice: null }; // var: tests read the merged ops
+        function parseOpsConfig(j) {
+            if (!j || typeof j !== 'object' || Array.isArray(j)) return null;
+            const sq = (j.sq && typeof j.sq === 'object' && !Array.isArray(j.sq)) ? j.sq : {};
+            const enabled = (typeof sq.enabled === 'boolean') ? sq.enabled : true;
+            let p = (typeof sq.path === 'string') ? sq.path : '/api/sq';
+            if (!/^\/[A-Za-z0-9._~\/]*$/.test(p) || p.length > 120 || p.indexOf('//') >= 0 || p === '/') p = '/api/sq';
+            let notice = null;
+            if (typeof j.notice === 'string' && j.notice.trim() && j.notice.trim().length <= 140) notice = j.notice.trim();
+            return { sq: { enabled: enabled, path: p }, notice: notice };
+        }
+        async function loadOpsConfig() {
+            try {
+                const res = await fetch('./ops.json', { cache: 'no-store' });
+                if (!res.ok) return;
+                const parsed = parseOpsConfig(await res.json());
+                if (!parsed) return;
+                APP_OPS = parsed;
+                try { localStorage.setItem('crewAssist.opsCheckedAt', String(Date.now())); } catch (e) {}
+            } catch (e) {}
+        }
+        function sqOpsLine() {
+            return APP_OPS.notice ? APP_OPS.notice : 'SQ lookups are switched off right now \u2014 your saved menus and calculations still work.';
+        }
+        function sqApiFetch(endpoint, payload) {
+            if (!APP_OPS.sq.enabled) return Promise.reject({ opsOff: true });
+            return fetch(APP_OPS.sq.path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: endpoint, payload: payload }) });
+        }
+
         let calcIdCounter = 0;
 
         function pad2(n) {
@@ -13990,14 +14034,15 @@ SLOT|Special Lve others`;
 
         async function fetchSectorSchedule(flightNumber, dateStr) {
             const payloadCabin = { carrierId: 'SQ', flightNumber: flightNumber, flightDate: dateStr, sessionId: sqSessionId() };
-            const sqOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
-            const resCabin = await fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin }) });
+            let resCabin;
+            try { resCabin = await sqApiFetch('getcabin', payloadCabin); } catch (e) { if (e && e.opsOff) return { ok: false, reason: 'off' }; throw e; }
             let cabinData = null;
             try { cabinData = await resCabin.json(); } catch (e) { cabinData = null; }
             if (!cabinData || cabinData.error || cabinData.statusCode === 101) return { ok: false, reason: 'unpublished' };
             const cabins = cabinData.cabinClasses || [];
             const cabinClass = cabins.indexOf('JCL') >= 0 ? 'JCL' : (cabins[0] || 'JCL');
-            const resMenu = await fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'menu', payload: Object.assign({}, payloadCabin, { cabinClass: cabinClass, languageCode: 'en' }) }) });
+            let resMenu;
+            try { resMenu = await sqApiFetch('menu', Object.assign({}, payloadCabin, { cabinClass: cabinClass, languageCode: 'en' })); } catch (e) { if (e && e.opsOff) return { ok: false, reason: 'off' }; throw e; }
             let menu = null;
             try { menu = await resMenu.json(); } catch (e) { menu = null; }
             if (!menu || menu.error || menu.statusCode === 101 || !menu.legs || !menu.legs.length) return { ok: false, reason: 'unpublished' };
@@ -15228,7 +15273,7 @@ SLOT|Special Lve others`;
                             }
                         }
                         if (!result.ok) {
-                            if (!quiet) await appAlert('No published times for that flight/date. You can still type them.');
+                            if (!quiet) await appAlert(result.reason === 'off' ? sqOpsLine() : 'No published times for that flight/date. You can still type them.');
                             ifaSetState(idx, 'error');
                             return false;
                         }
@@ -15362,7 +15407,7 @@ SLOT|Special Lve others`;
                             if (otherD && otherD !== dateStr) result = await fetchSectorSchedule(fn, otherD);
                         }
                         if (!result.ok) {
-                            if (!quiet) await appAlert('No published times for that flight/date. You can still type them.');
+                            if (!quiet) await appAlert(result.reason === 'off' ? sqOpsLine() : 'No published times for that flight/date. You can still type them.');
                             return false;
                         }
                         const iataNow = lmaVal(idx, 'iata');
@@ -19065,10 +19110,9 @@ SLOT|Special Lve others`;
                     };
 
                     const payloadMenuGuess = { ...payloadCabin, cabinClass: guessCabin };
-                    const sqOpts = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
                     const [res, resMenuGuess] = await Promise.all([
-                        fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'getcabin', payload: payloadCabin }) }),
-                        fetch('/api/sq', { ...sqOpts, body: JSON.stringify({ endpoint: 'menu', payload: payloadMenuGuess }) })
+                        sqApiFetch('getcabin', payloadCabin),
+                        sqApiFetch('menu', payloadMenuGuess)
                     ]);
 
                     try {
@@ -19118,11 +19162,7 @@ SLOT|Special Lve others`;
                     const fetchMenuIfNeeded = async () => {
                         if (!menuData || menuCabin !== guessCabin) {
                             const payloadMenu = { ...payloadCabin, cabinClass: menuCabin };
-                            const resMenu = await fetch('/api/sq', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ endpoint: 'menu', payload: payloadMenu })
-                            });
+                            const resMenu = await sqApiFetch('menu', payloadMenu);
                             try {
                                 menuData = await resMenu.json();
                             } catch (e) {
@@ -19232,7 +19272,7 @@ SLOT|Special Lve others`;
                     return executeFetchCabins(id, flightNumber, dateStr, mode, true);
                 }
                 loading.classList.add('hidden');
-                actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Fetch crashed: ' + String(err.message || err) + '</div>';
+                actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">' + ((err && err.opsOff) ? rosterEsc(sqOpsLine()) : 'Fetch crashed: ' + String(err.message || err)) + '</div>';
                 if (err.message === 'UPSTREAM_TIMEOUT') {
                     actionArea.innerHTML = '<div class="text-xs font-bold text-red-500 bg-red-500/10 p-3 rounded-lg border border-red-500/20">Request timed out.</div>';
                 } else {
@@ -19581,9 +19621,11 @@ SLOT|Special Lve others`;
             finally { if (setBusy) setBusy(false); }
             refreshNextFlightUi();
             if (!r.ok) {
-                addBotMessage(r.reason === 'unpublished'
+                addBotMessage(r.reason === 'off'
+                    ? rosterEsc(sqOpsLine())
+                    : r.reason === 'unpublished'
                     ? 'Menus are not published for <b>SQ ' + rosterEsc(fn) + ' &middot; ' + rosterShortDate(ymd) + '</b> yet — try again closer to departure.'
-                    : 'I couldn\u2019t reach the menu service for <b>SQ ' + rosterEsc(fn) + '</b> — check your connection and tap again.');
+                    : 'I couldn\u2019t reach the menu service for <b>SQ ' + rosterEsc(fn) + '</b> — check your connection and tap again.' + (APP_OPS.notice ? ' ' + rosterEsc(APP_OPS.notice) : ''));
                 return;
             }
             openNextFlightViewer(fn, ymd, wantCabins);
@@ -19845,11 +19887,7 @@ SLOT|Special Lve others`;
                     sessionId: (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'f47ac10b-58cc-4372-a567-0e02b2c3d479'
                 };
 
-                const res = await fetch('/api/sq', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ endpoint: 'menu', payload })
-                });
+                const res = await sqApiFetch('menu', payload);
 
                 const data = await res.json();
                 if (!stillMine()) return;
@@ -19870,7 +19908,7 @@ SLOT|Special Lve others`;
                 }
             } catch (err) {
                 if (!stillMine()) return;
-                serveStaleCache(cacheKey, 'Network error while fetching menu. Details: ' + String(err.message || err));
+                serveStaleCache(cacheKey, (err && err.opsOff) ? sqOpsLine() : 'Network error while fetching menu. Details: ' + String(err.message || err));
             }
         }
 
@@ -21144,11 +21182,7 @@ SLOT|Special Lve others`;
             };
 
             try {
-                const res = await fetch('/api/sq', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ endpoint: 'menu', payload })
-                });
+                const res = await sqApiFetch('menu', payload);
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 if (data.statusCode === 200 && data.legs) {

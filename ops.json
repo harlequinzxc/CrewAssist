@@ -1,0 +1,8 @@
+{
+    "version": 1,
+    "sq": {
+        "enabled": true,
+        "path": "/api/sq"
+    },
+    "notice": null
+}

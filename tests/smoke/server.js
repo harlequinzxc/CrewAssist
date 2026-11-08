@@ -1,5 +1,6 @@
 // Static server for the smoke rig: the real app (app.html), its compiled
-// stylesheet, the repo rates.json, and the real sw.js for stamp checks.
+// stylesheet, the repo rates.json, the repo ops.json, and the real sw.js for
+// stamp checks.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -12,6 +13,7 @@ http.createServer((req, res) => {
     const file = (url === '/' || url === '/app.html') ? path.join(__dirname, 'app.html')
         : url === '/tw.css' ? path.join(__dirname, 'tw.css')
         : url === '/rates.json' ? path.join(repo, 'rates.json')
+        : url === '/ops.json' ? path.join(repo, 'ops.json')
         : url === '/sw.js' ? path.join(repo, 'sw.js')
         : url === '/vendor/html2canvas.min.js' ? path.join(repo, 'vendor', 'html2canvas.min.js')
         : /^\/vendor\/fonts\/[a-z0-9-]+\.woff2$/.test(url) ? path.join(repo, 'vendor', 'fonts', url.split('/').pop())
