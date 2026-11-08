@@ -3379,7 +3379,7 @@
             }
         }
 
-        var APP_VERSION = '1.54.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.54.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3401,6 +3401,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.54.1', d: '2026-11-07', items: [
+                { c: 'imp', t: 'The empty calendar reads shorter: No rosters yet., one tap below.' }
+            ] },
             { v: '1.54.0', d: '2026-11-07', items: [
                 { c: 'new', t: 'A safety net speaks honestly if anything ever trips.' },
                 { c: 'new', t: 'Empty screens offer their next step as one tap.' }
@@ -8104,9 +8107,14 @@
                 // when NO roster exists at all; a roster-holder staring at
                 // an off month keeps the honest sentence alone.
                 const hasRoster = Object.keys(loadDutyDays() || {}).length > 0;
+                // v1.54.1 (owner copy): the roster-less calendar reads
+                // "No rosters yet." with the attach button BELOW it; a
+                // roster-holder staring at an off month keeps the honest
+                // month sentence alone.
                 emptyEl.innerHTML = hasAny ? '' :
-                    ('No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.' +
-                    (hasRoster ? '' : ' <button type="button" data-ca-empty-cta="roster" class="h-9 px-4 mt-2 rounded-full border border-sia-gold/70 bg-sia-gold/10 text-sia-gold text-xs font-bold active:scale-95 transition-all">Attach your roster</button>'));
+                    (hasRoster
+                        ? 'No roster for this month \u2014 attach a Crew Roster Report PDF and it fills in.'
+                        : 'No rosters yet.<br><button type="button" data-ca-empty-cta="roster" class="h-9 px-4 mt-2 rounded-full border border-sia-gold/70 bg-sia-gold/10 text-sia-gold text-xs font-bold active:scale-95 transition-all">Attach your roster</button>');
                 emptyEl.classList.toggle('hidden', hasAny);
             }
         }

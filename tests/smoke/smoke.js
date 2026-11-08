@@ -102,9 +102,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.54.0', 'APP_VERSION is 1.54.0');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.54.0' && e.d === '2026-11-07' && e.items.length === 2 && e.items.filter((i) => i.c === 'new').length === 2; }), 'the changelog carries the 1.54.0 entry — two new pointers');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v318'), 'the service-worker cache name is bumped to v318 (the v1.54.0 safety-net round)');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.54.1', 'APP_VERSION is 1.54.1');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.54.1' && e.d === '2026-11-07' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.54.1 entry — one imp pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v319'), 'the service-worker cache name is bumped to v319 (the v1.54.1 empty-calendar copy round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -166,9 +166,9 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.54.0'; }), 'the What\'s New sheet carries the v1.54.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A safety net speaks honestly if anything ever trips.') !== -1), 'the What\'s New sheet carries the v1.54.0 safety-net pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Empty screens offer their next step as one tap.') !== -1), 'the What\'s New sheet carries the v1.54.0 empty-state pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.54.1'; }), 'the What\'s New sheet carries the v1.54.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The empty calendar reads shorter: No rosters yet., one tap below.') !== -1), 'the What\'s New sheet carries the v1.54.1 empty-calendar pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A safety net speaks honestly if anything ever trips.') !== -1), 'the What\'s New sheet carries the v1.54.0 safety-net pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The quieter Settings sections start folded — one tap opens them.') !== -1), 'the What\'s New sheet carries the v1.53.1 fold-default pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Settings folds its quieter sections — tap a header to open one.') !== -1), 'the What\'s New sheet carries the v1.53.0 settings-fold pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The main walk ends pointing at the tours — eight steps now.') !== -1), 'the What\'s New sheet carries the v1.53.0 eighth-step pointer');

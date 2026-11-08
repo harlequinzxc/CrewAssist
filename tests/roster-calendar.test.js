@@ -932,7 +932,7 @@ const synthItems = [].concat(
     w.eval('openRosterCalendar()');
     await wait(500);
     R.ok(!d.getElementById('ca-roster-cal').classList.contains('hidden'), 'the calendar opens even with no roster');
-    R.ok(d.getElementById('ca-rc-empty').textContent.indexOf('No roster for this month') === 0, 'a month without duties says so honestly');
+    R.ok(d.getElementById('ca-rc-empty').textContent.indexOf('No rosters yet.') === 0, 'v1.54.1 (owner copy): a roster-less calendar reads No rosters yet.');
     R.ok(!!d.querySelector('#ca-rc-empty [data-ca-empty-cta="roster"]'), 'v1.54.0: the empty state acts — the attach CTA rides the sentence on a roster-less device');
     w.localStorage.setItem('crewAssist.dutyDays', JSON.stringify({ '2099-01-05': { kind: 'fly', code: '', loc: '', fns: [], dkey: '' } }));
     w.eval('rcApplyMonth()');
