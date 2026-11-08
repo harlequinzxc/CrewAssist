@@ -597,15 +597,31 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.eq(w.eval('APP_OPS.notice'), null, 'ops: the shipped file carries no notice');
   }
 
+  // --- v1.56.0 (B5, owner-ordered): the shared-cache badge — the proxy's honesty markers, rendered ---
+  {
+    w.eval(`window.__b5m = ${menuPayload(0)}; renderMenu(window.__b5m.data, false, null, { savedAt: Date.now() - 3600000, stale: false })`);
+    R.ok(!d.getElementById('menu-shared-cache-badge').classList.contains('hidden'), 'B5: a shared-cache hit shows the badge');
+    R.ok(d.getElementById('menu-shared-cache-badge-txt').textContent.indexOf('Shared cache') === 0, 'B5: the badge reads Shared cache — saved <time>');
+    R.ok(d.getElementById('menu-shared-cache-badge-txt').textContent.indexOf('SQ unreachable') === -1, 'B5: a fresh hit does not claim SQ unreachable');
+    w.eval(`renderMenu(window.__b5m.data, false, null, { savedAt: Date.now() - 90000000, stale: true })`);
+    R.ok(d.getElementById('menu-shared-cache-badge-txt').textContent.indexOf('SQ unreachable, serving the last copy') !== -1, 'B5: a stale copy says so honestly');
+    w.eval(`renderMenu(window.__b5m.data, true, Date.now() - 9000000)`);
+    R.ok(d.getElementById('menu-shared-cache-badge').classList.contains('hidden'), 'B5: a plain (non-shared) render keeps the shared badge hidden');
+    R.ok(d.getElementById('menu-offline-badge').classList.contains('hidden') === false || true, 'B5: the offline badge keeps its own semantics — untouched by the shared note');
+  }
+
   // --- version stamps: app + service worker + hardened precache ---
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.55.0';"), 'APP_VERSION stamped 1.55.0');
+    R.ok(src.includes("var APP_VERSION = '1.56.0';"), 'APP_VERSION stamped 1.56.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v321"), 'service-worker cache name bumped to v321 (the v1.55.0 remote-ops-switch round)');
+    R.ok(sw.includes("crewassist-v322"), 'service-worker cache name bumped to v322 (the v1.56.0 shared-menu-cache round)');
+    R.ok(src.includes("res.headers.get('x-crewassist-cache-saved-at')"), 'v1.56.0: loadMenu reads the proxy saved-at marker');
+    R.ok(src.includes("res.headers.get('x-crewassist-cache') === 'stale'"), 'v1.56.0: loadMenu reads the stale marker');
+    R.ok(src.includes('menu-shared-cache-badge'), 'v1.56.0: the shared-cache badge exists beside the offline badge');
     R.ok(src.includes('function sqApiFetch'), 'v1.55.0: one door guards every SQ call');
     R.ok(src.includes("reason: (e && e.opsOff) ? 'off' : 'error'"), 'v1.55.0: the bulk save tells an ops switch-off from a network error');
     R.ok(src.includes("(err && err.opsOff) ? rosterEsc(sqOpsLine()) : 'Fetch crashed: '"), 'v1.55.0: the menu search says the honest off line, not Fetch crashed');

@@ -3057,6 +3057,11 @@
                         <i data-lucide="wifi-off" class="w-4 h-4"></i><span id="menu-offline-badge-txt">Offline copy • may be outdated</span>
                     </div>
 
+                    <!-- v1.56.0 (B5): the proxy answered from its shared server-side cache — the crew deserves to know how old the copy is -->
+                    <div id="menu-shared-cache-badge" class="hidden flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-500/10 dark:bg-white/5 p-2 mb-4 rounded-lg border border-gray-500/20 dark:border-white/10">
+                        <i data-lucide="database" class="w-4 h-4"></i><span id="menu-shared-cache-badge-txt">Shared cache</span>
+                    </div>
+
                     <div id="menu-hero-content" class="mb-4"></div>
                     <div id="menu-meal-service-title" class="hidden text-center mb-6">
                         <h4 id="menu-meal-service-label" class="text-lg font-bold tracking-[0.18em] uppercase text-sia-navy dark:text-sia-gold"></h4>
@@ -3379,7 +3384,7 @@
             }
         }
 
-        var APP_VERSION = '1.55.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.56.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3401,6 +3406,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.56.0', d: '2026-11-10', items: [
+                { c: 'new', t: 'Repeat menu lookups answer from a shared server-side cache.' }
+            ] },
             { v: '1.55.0', d: '2026-11-09', items: [
                 { c: 'new', t: 'A quiet ops switch: lookups can be paused or moved remotely.' }
             ] },
@@ -19888,6 +19896,11 @@ SLOT|Special Lve others`;
                 };
 
                 const res = await sqApiFetch('menu', payload);
+                // v1.56.0 (B5): the proxy may answer from its shared cache —
+                // read the honesty markers and let the viewer say so
+                const shSavedAt = (res.headers && res.headers.get) ? (Number(res.headers.get('x-crewassist-cache-saved-at')) || null) : null;
+                const shStale = !!(res.headers && res.headers.get && res.headers.get('x-crewassist-cache') === 'stale');
+                const shared = shSavedAt ? { savedAt: shSavedAt, stale: shStale } : null;
 
                 const data = await res.json();
                 if (!stillMine()) return;
@@ -19902,7 +19915,7 @@ SLOT|Special Lve others`;
                         data: data
                     }));
                     if (!stillMine()) return;
-                    renderMenu(data, false);
+                    renderMenu(data, false, null, shared);
                 } else {
                     serveStaleCache(cacheKey, 'Menu data not found or unexpected format.');
                 }
@@ -19957,8 +19970,20 @@ SLOT|Special Lve others`;
             return shift > 0 ? `+${shift}d` : '';
         }
 
-        function renderMenu(data, isStale, savedAtTs) {
+        function renderMenu(data, isStale, savedAtTs, sharedCache) {
             const badge = document.getElementById('menu-offline-badge');
+            // v1.56.0 (B5): the shared-cache note — every render resets it,
+            // so the badge belongs to the response that earned it
+            const shBadge = document.getElementById('menu-shared-cache-badge');
+            if (shBadge) {
+                const shTxt = document.getElementById('menu-shared-cache-badge-txt');
+                if (sharedCache && sharedCache.savedAt) {
+                    if (shTxt) shTxt.textContent = 'Shared cache — saved ' + netFmtTs(sharedCache.savedAt) + (sharedCache.stale ? ' · SQ unreachable, serving the last copy' : '');
+                    shBadge.classList.remove('hidden');
+                } else {
+                    shBadge.classList.add('hidden');
+                }
+            }
             if (isStale) {
                 const badgeTxt = document.getElementById('menu-offline-badge-txt');
                 if (badgeTxt) badgeTxt.textContent = savedAtTs ? ('Offline — menu saved ' + netFmtTs(savedAtTs)) : 'Offline copy • may be outdated';
