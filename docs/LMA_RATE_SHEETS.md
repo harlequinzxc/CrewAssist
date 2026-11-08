@@ -54,6 +54,9 @@ Cross-check: every Daily Total below equals Breakfast + Lunch + Dinner. ✔
 
 ## B3 rulings recorded so far (owner decisions, nothing built yet)
 
+0. **Pre-2022 duties (ruled 2026-11): price them with 2022 rules plus a
+   note** — the 2022-CA ladder and (until older sheets arrive) the Jan-2024
+   meal sheet, with an honest on-screen note. Owner ruling, option (b).
 1. **Period-correct pricing replaces** the earlier "everything uses current
    rates until a new CA lands" ruling: each duty prices with the agreement
    and meal sheet in force on its date; the report date decides for duties
@@ -61,8 +64,10 @@ Cross-check: every Daily Total below equals Breakfast + Lunch + Dinner. ✔
 2. **ULR lump sums (2022 CA only): skipped** — pre-2025 ULR flights price
    hourly-only, with an honest note on screen saying so (owner ruling "1c").
 3. **Meal-rate history:** the 2024 and 2025 sheets above ride their years.
-   The 2022/2023 sheets are still missing (open call), as is the pre-2022
-   duty rule (open call).
+   **The 2022/2023 sheets don't exist (owner, 2026-11): the Jan-2024 sheet
+   covers those years too**, with an honest on-screen note — older sheets
+   slot in later if they ever surface. The pre-2022 ruling follows the same
+   spirit.
 4. IFA ladder switches at **CA boundaries** (1 Jan 2022, 1 Jan 2025); LMA
    rates switch **every January** — so the period timeline must allow
    LMA-only changes in years with no CA change.

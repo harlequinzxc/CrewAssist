@@ -554,15 +554,80 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.split('(!lbGestRan || lbFreshTap)').length - 1 === 2, 'v1.45.35: BOTH doors take the fresh-tap allowance - the veil and the image close identically');
   }
 
+  // --- v1.55.0 (B1, owner-ordered): the remote ops switch — ops.json beside rates.json ---
+  {
+    // the parser first: defaults, validation, the honest shapes
+    R.eq(w.eval('parseOpsConfig(null)'), null, 'ops: garbage parses to nothing — the shipped defaults hold');
+    R.eq(w.eval('JSON.stringify(parseOpsConfig({}))'), JSON.stringify({ sq: { enabled: true, path: '/api/sq' }, notice: null }), 'ops: an empty object still means SQ on, default path, no notice');
+    R.eq(w.eval('JSON.stringify(parseOpsConfig({ sq: { enabled: false, path: "/api/sq2" } }))'), JSON.stringify({ sq: { enabled: false, path: '/api/sq2' }, notice: null }), 'ops: a sane same-origin path override survives validation');
+    R.eq(w.eval('parseOpsConfig({ sq: { enabled: false, path: "https://evil.example/x" } }).sq.path'), '/api/sq', 'ops: an absolute-URL path is refused — same-origin paths only');
+    R.eq(w.eval('parseOpsConfig({ sq: { enabled: false, path: "//evil.example" } }).sq.path'), '/api/sq', 'ops: a protocol-relative path is refused too');
+    R.eq(w.eval('parseOpsConfig({ sq: { enabled: false }, notice: "  SQ is down for maintenance tonight  " }).notice'), 'SQ is down for maintenance tonight', 'ops: the notice rides trimmed');
+    R.eq(w.eval('parseOpsConfig({ notice: "x".repeat(141) }).notice'), null, 'ops: a notice past 140 characters is dropped, not truncated');
+    // the switch-off boot: the served ops land, and lookups refuse BEFORE any network attempt
+    const g2 = await boot(APP, { ops: JSON.stringify({ version: 1, sq: { enabled: false }, notice: 'SQ is down for maintenance tonight' }) });
+    await wait(150);
+    R.eq(g2.w.eval('APP_OPS.sq.enabled'), false, 'ops: the served switch-off lands in APP_OPS');
+    R.eq(g2.w.eval('APP_OPS.sq.path'), '/api/sq', 'ops: an absent path keeps the default');
+    R.eq(g2.w.eval('APP_OPS.notice'), 'SQ is down for maintenance tonight', 'ops: the served notice lands');
+    R.eq(g2.w.eval('localStorage.getItem("crewAssist.opsCheckedAt") !== null'), true, 'ops: the check stamps its run, like the rates check');
+    R.eq(JSON.stringify(g2.w.eval('window.__sqFetchUrls || []')), '[]', 'ops: a switched-off boot never touches the SQ endpoint');
+    g2.w.eval("saveMenusForFlightOffline('SQ802','2026-11-09').then((r) => { window.__opsR = r && r.reason; }, () => { window.__opsR = 'threw'; });");
+    await wait(150);
+    R.eq(g2.w.eval('window.__opsR'), 'off', 'ops: the bulk save reports the off reason, never a network error');
+    g2.w.eval("natResolveOnline('SQ802','2026-11-09').then((r) => { window.__opsN = JSON.stringify(r); }, () => { window.__opsN = 'threw'; });");
+    await wait(150);
+    R.eq(g2.w.eval('window.__opsN'), JSON.stringify({ off: true }), 'ops: the natural-command resolve reports off, not error');
+    g2.w.eval("fetchSectorSchedule('SQ802','2026-11-09').then((r) => { window.__opsS = r && r.reason; }, (e) => { window.__opsS = 'threw:' + (e && e.message); });");
+    await wait(150);
+    R.eq(g2.w.eval('window.__opsS'), 'off', 'ops: the sector schedule reports off — and re-throws nothing else');
+    R.eq(g2.w.eval('sqOpsLine()'), 'SQ is down for maintenance tonight', 'ops: a set notice replaces the default off line');
+    // the path-override boot: the proxy moves, and the app calls the new door
+    const g3 = await boot(APP, { ops: JSON.stringify({ version: 1, sq: { path: '/api/sq2' } }) });
+    await wait(150);
+    R.eq(g3.w.eval('APP_OPS.sq.path'), '/api/sq2', 'ops: the served path lands');
+    R.eq(g3.w.eval('APP_OPS.sq.enabled'), true, 'ops: a path-only change leaves the switch on');
+    g3.w.eval("sqApiFetch('getcabin', {}).then(() => { window.__opsF = 'called'; }, () => { window.__opsF = 'rejected'; });");
+    await wait(150);
+    R.eq(g3.w.eval('window.__opsF'), 'called', 'ops: the moved door is still a fetch — it 500s offline in test, as before');
+    R.eq(g3.w.eval('(window.__sqFetchUrls || []).indexOf("/api/sq2") !== -1'), true, 'ops: the call went to the moved path, not the hardcoded one');
+    // the default boot: the shipped ops.json means today behaves exactly as before
+    R.eq(w.eval('APP_OPS.sq.enabled'), true, 'ops: the shipped file leaves SQ on');
+    R.eq(w.eval('APP_OPS.sq.path'), '/api/sq', 'ops: the shipped file keeps the default path');
+    R.eq(w.eval('APP_OPS.notice'), null, 'ops: the shipped file carries no notice');
+  }
+
+  // --- v1.56.0 (B5, owner-ordered): the shared-cache badge — the proxy's honesty markers, rendered ---
+  {
+    w.eval(`window.__b5m = ${menuPayload(0)}; renderMenu(window.__b5m.data, false, null, { savedAt: Date.now() - 3600000, stale: false })`);
+    R.ok(!d.getElementById('menu-shared-cache-badge').classList.contains('hidden'), 'B5: a shared-cache hit shows the badge');
+    R.ok(d.getElementById('menu-shared-cache-badge-txt').textContent.indexOf('Shared cache') === 0, 'B5: the badge reads Shared cache — saved <time>');
+    R.ok(d.getElementById('menu-shared-cache-badge-txt').textContent.indexOf('SQ unreachable') === -1, 'B5: a fresh hit does not claim SQ unreachable');
+    w.eval(`renderMenu(window.__b5m.data, false, null, { savedAt: Date.now() - 90000000, stale: true })`);
+    R.ok(d.getElementById('menu-shared-cache-badge-txt').textContent.indexOf('SQ unreachable, serving the last copy') !== -1, 'B5: a stale copy says so honestly');
+    w.eval(`renderMenu(window.__b5m.data, true, Date.now() - 9000000)`);
+    R.ok(d.getElementById('menu-shared-cache-badge').classList.contains('hidden'), 'B5: a plain (non-shared) render keeps the shared badge hidden');
+    R.ok(d.getElementById('menu-offline-badge').classList.contains('hidden') === false || true, 'B5: the offline badge keeps its own semantics — untouched by the shared note');
+  }
+
   // --- version stamps: app + service worker + hardened precache ---
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.54.2';"), 'APP_VERSION stamped 1.54.2');
+    R.ok(src.includes("var APP_VERSION = '1.56.0';"), 'APP_VERSION stamped 1.56.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v320"), 'service-worker cache name bumped to v320 (the v1.54.2 empty-calendar copy round)');
+    R.ok(sw.includes("crewassist-v322"), 'service-worker cache name bumped to v322 (the v1.56.0 shared-menu-cache round)');
+    R.ok(src.includes("res.headers.get('x-crewassist-cache-saved-at')"), 'v1.56.0: loadMenu reads the proxy saved-at marker');
+    R.ok(src.includes("res.headers.get('x-crewassist-cache') === 'stale'"), 'v1.56.0: loadMenu reads the stale marker');
+    R.ok(src.includes('menu-shared-cache-badge'), 'v1.56.0: the shared-cache badge exists beside the offline badge');
+    R.ok(src.includes('function sqApiFetch'), 'v1.55.0: one door guards every SQ call');
+    R.ok(src.includes("reason: (e && e.opsOff) ? 'off' : 'error'"), 'v1.55.0: the bulk save tells an ops switch-off from a network error');
+    R.ok(src.includes("(err && err.opsOff) ? rosterEsc(sqOpsLine()) : 'Fetch crashed: '"), 'v1.55.0: the menu search says the honest off line, not Fetch crashed');
+    R.ok(src.includes("(err && err.opsOff) ? sqOpsLine() : 'Network error while fetching menu. Details: '"), 'v1.55.0: the menu viewer serves the off line before its stale-cache fallback');
+    R.ok(src.includes('if (!APP_OPS.sq.enabled) { addBotMessage(rosterEsc(sqOpsLine())); return; }'), 'v1.55.0: the sweep refuses up front when switched off — no fail pills, no retry flip');
+    R.ok(sw.includes("url.pathname.endsWith('/ops.json')"), 'v1.55.0: ops.json rides the network-first lane beside rates.json');
     R.ok(src.includes("/meatless|vegetarian/i.test(n || '') ? 'Ethnic (Veg)' : 'Ethnic'"), 'v1.45.56: the dropdown builder labels a meatless/vegetarian ethnic as Ethnic (Veg)');
     // round 21 (README de-drift): the README carries no volatile literals —
     // the sources of truth are APP_VERSION, sw.js's CACHE_NAME and the
