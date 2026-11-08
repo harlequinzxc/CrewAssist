@@ -64,9 +64,10 @@ Cross-check: every Daily Total below equals Breakfast + Lunch + Dinner. ✔
 2. **ULR lump sums (2022 CA only): skipped** — pre-2025 ULR flights price
    hourly-only, with an honest note on screen saying so (owner ruling "1c").
 3. **Meal-rate history:** the 2024 and 2025 sheets above ride their years.
-   The 2022/2023 sheets are still an open call — proposed default: the
-   Jan-2024 sheet covers those years too, with an honest note, matching the
-   pre-2022 ruling; older sheets slot in later if the owner supplies them.
+   **The 2022/2023 sheets don't exist (owner, 2026-11): the Jan-2024 sheet
+   covers those years too**, with an honest on-screen note — older sheets
+   slot in later if they ever surface. The pre-2022 ruling follows the same
+   spirit.
 4. IFA ladder switches at **CA boundaries** (1 Jan 2022, 1 Jan 2025); LMA
    rates switch **every January** — so the period timeline must allow
    LMA-only changes in years with no CA change.
