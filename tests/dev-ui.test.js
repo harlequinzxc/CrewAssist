@@ -714,94 +714,104 @@ const mkUntil = (d) => async (cond, ms) => {
       // took the head with one new and one imp pointer. 1.59.0 shifted
       // down one; the 1.48.5 pin left the pinned window (floor 1.48.6;
       // its pointers stay in the feed).
-      R.eq(entries[0].v, '1.60.0', 'the v1.60.0 swipe round sits at the head of the changelog');
-      R.eq(entries[0].items.length, 2, 'the 1.60.0 entry carries its new and imp pointers');
+      // v1.60.1 (owner phone review): the flip travels WITH the finger -
+      // the old photo exits ahead of it, the next dish waits on the far
+      // side; and a dismissed photo fades away where the finger left it,
+      // never a snap home first - took the head with two fix pointers.
+      // 1.60.0 shifted down one; the 1.49.0 pin left the pinned window
+      // (floor 1.49.1; its pointers stay in the feed).
+      R.eq(entries[0].v, '1.60.1', 'the v1.60.1 hotfix sits at the head of the changelog');
+      R.eq(entries[0].items.length, 2, 'the 1.60.1 entry carries its two fix pointers');
+      R.ok(src.includes("c: 'fix', t: 'The next dish photo slides in from the far side, with your swipe.' }"), 'the flip-direction pointer reads as approved, inside the release it ships');
+      R.ok(src.includes("c: 'fix', t: 'A dismissed photo fades away right where you let go of it.' }"), 'the dismiss-fade pointer reads as approved, inside the release it ships');
+      R.eq(entries[1].v, '1.60.0', 'the v1.60.0 swipe round sits one rung below the head');
+      R.eq(entries[1].items.length, 2, 'the 1.60.0 entry carries its new and imp pointers');
       R.ok(src.includes("c: 'new', t: 'Swipe a menu photo sideways to see the next dish.' }"), 'the swipe-flip pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Photos shrink and the background dims as you drag them shut.' }"), 'the drag-dim pointer reads as approved, inside the release it ships');
-      R.eq(entries[1].v, '1.59.0', 'the 1.59.0 grab-and-drag round sits one rung below the head');
-      R.eq(entries[1].items.length, 1, 'the 1.59.0 entry carries its single imp pointer');
+      R.eq(entries[2].v, '1.59.0', 'the 1.59.0 grab-and-drag round sits one rung below the head');
+      R.eq(entries[2].items.length, 1, 'the 1.59.0 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'Hold and drag a menu photo to dismiss it; taps do nothing.' }"), 'the grab-and-drag pointer reads as approved, inside the release it ships');
-      R.eq(entries[2].v, '1.58.0', 'the 1.58.0 three-order round sits one rung below the head');
-      R.eq(entries[2].items.length, 3, 'the 1.58.0 entry carries its two imp and one new pointers');
+      R.eq(entries[3].v, '1.58.0', 'the 1.58.0 three-order round sits one rung below the head');
+      R.eq(entries[3].items.length, 3, 'the 1.58.0 entry carries its two imp and one new pointers');
       R.ok(src.includes("c: 'imp', t: 'Finishing the main tour brings you straight home to your chat.' }"), 'the tour-close pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Settings sections always sit folded when you come back to them.' }"), 'the fold-reset pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'new', t: 'Hold a menu photo, then swipe up or down to close it.' }"), 'the hold-swipe pointer reads as approved, inside the release it ships');
       R.ok(src.includes("if (completed === true && caSpot.id === 'main' && stRestore && stRestore.settings) stRestore = Object.assign({}, stRestore, { settings: false, acc: null });"), 'the main walk\u2019s Done overrides the stage \u2014 Settings never hands back on completion (E6 pins the src too)');
       R.ok(src.includes("try { if (typeof caAccCloseAll === 'function') caAccCloseAll(); } catch (e) {}"), 'the round\u2019s fold-close door exists in the src (the lightbox timer constant the pin once shared this line with left at v1.60.0 - the swipe engine replaced it)');
-R.eq(entries[3].v, '1.57.1', 'the 1.57.1 tidy-up release sits one rung below the head');
-      R.eq(entries[3].items.length, 1, 'the 1.57.1 entry carries its single imp pointer');
+R.eq(entries[4].v, '1.57.1', 'the 1.57.1 tidy-up release sits one rung below the head');
+      R.eq(entries[4].items.length, 1, 'the 1.57.1 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'Dead code swept out — nothing you see changes.' }"), 'the tidy-up pointer reads as approved, inside the release it ships');
       R.ok(!src.includes('ca-tw-probe'), 'the retired stylesheet sentinel is gone everywhere (markup, JS and comments)');
-      R.eq(entries[4].v, '1.57.0', 'the 1.57.0 period-correct-pricing round sits one rung below the head');
-      R.eq(entries[4].items.length, 1, 'the 1.57.0 entry carries its single new pointer');
+      R.eq(entries[5].v, '1.57.0', 'the 1.57.0 period-correct-pricing round sits one rung below the head');
+      R.eq(entries[5].items.length, 1, 'the 1.57.0 entry carries its single new pointer');
       R.ok(src.includes("c: 'new', t: 'Old duties price with the agreement of their day.' }"), 'the period-pricing pointer reads as approved, inside the release it ships');
       R.ok(src.includes("'Priced with ' + label"), 'the period note names the agreement that priced the trip (B3)');
       R.ok(src.includes("'Before ' + period.validFrom.slice(0, 4)"), 'a pre-2022 duty says Before, honestly (B3)');
-      R.eq(entries[5].v, '1.56.0', 'the 1.56.0 shared-menu-cache round sits one rung below the head');
-      R.eq(entries[5].items.length, 1, 'the 1.56.0 entry carries its single new pointer');
+      R.eq(entries[6].v, '1.56.0', 'the 1.56.0 shared-menu-cache round sits one rung below the head');
+      R.eq(entries[6].items.length, 1, 'the 1.56.0 entry carries its single new pointer');
       R.ok(src.includes("c: 'new', t: 'Repeat menu lookups answer from a shared server-side cache.' }"), 'the shared-cache pointer reads as approved, inside the release it ships');
-      R.eq(entries[6].v, '1.55.0', 'the 1.55.0 remote-ops-switch round sits two rungs below the head');
-      R.eq(entries[6].items.length, 1, 'the 1.55.0 entry carries its single new pointer');
+      R.eq(entries[7].v, '1.55.0', 'the 1.55.0 remote-ops-switch round sits two rungs below the head');
+      R.eq(entries[7].items.length, 1, 'the 1.55.0 entry carries its single new pointer');
       R.ok(src.includes("c: 'new', t: 'A quiet ops switch: lookups can be paused or moved remotely.' }"), 'the v1.55.0 pointer reads as approved, inside the release it ships');
-      R.eq(entries[7].v, '1.54.2', 'the 1.54.2 empty-calendar copy round sits three rungs below the head');
-      R.eq(entries[7].items.length, 1, 'the 1.54.2 entry carries its single imp pointer');
+      R.eq(entries[8].v, '1.54.2', 'the 1.54.2 empty-calendar copy round sits three rungs below the head');
+      R.eq(entries[8].items.length, 1, 'the 1.54.2 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'Both empty months now read the same: No flights yet.' }"), 'the v1.54.2 pointer reads as approved, inside the release it ships');
-      R.eq(entries[8].v, '1.54.1', 'the 1.54.1 empty-calendar copy round sits four rungs below the head');
-      R.eq(entries[8].items.length, 1, 'the 1.54.1 entry carries its single imp pointer');
+      R.eq(entries[9].v, '1.54.1', 'the 1.54.1 empty-calendar copy round sits four rungs below the head');
+      R.eq(entries[9].items.length, 1, 'the 1.54.1 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'The empty calendar reads shorter: No rosters yet., one tap below.' }"), 'the v1.54.1 pointer reads as approved, inside the release it ships');
-      R.eq(entries[9].v, '1.54.0', 'the 1.54.0 safety-net round sits five rungs below the head');
-      R.eq(entries[9].items.length, 2, 'the 1.54.0 entry carries its two new pointers');
+      R.eq(entries[10].v, '1.54.0', 'the 1.54.0 safety-net round sits five rungs below the head');
+      R.eq(entries[10].items.length, 2, 'the 1.54.0 entry carries its two new pointers');
       R.ok(src.includes("c: 'new', t: 'A safety net speaks honestly if anything ever trips.' }"), 'the safety-net pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'new', t: 'Empty screens offer their next step as one tap.' }"), 'the empty-state pointer reads as approved, inside the release it ships');
-      R.eq(entries[10].v, '1.53.3', 'the 1.53.3 tidy-up release sits one rung below the head');
-      R.eq(entries[10].items.length, 1, 'the 1.53.3 entry carries its single imp pointer');
+      R.eq(entries[11].v, '1.53.3', 'the 1.53.3 tidy-up release sits one rung below the head');
+      R.eq(entries[11].items.length, 1, 'the 1.53.3 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'A tidy-up release: unused code swept out, nothing you see changes.' }"), 'the tidy-up pointer reads as approved, inside the release it ships');
-      R.eq(entries[11].v, '1.53.2', 'the 1.53.2 closer-and-changelog round sits one rung below the head');
-      R.eq(entries[11].items.length, 2, 'the 1.53.2 entry carries its two imp pointers');
+      R.eq(entries[12].v, '1.53.2', 'the 1.53.2 closer-and-changelog round sits one rung below the head');
+      R.eq(entries[12].items.length, 2, 'the 1.53.2 entry carries its two imp pointers');
       R.ok(src.includes("c: 'imp', t: 'The main walk’s closer reads anew and lights the tours alone.' }"), 'the closer pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Support & Updates carries the changelog now.' }"), 'the support-section pointer reads as approved, inside the release it ships');
-      R.eq(entries[12].v, '1.53.1', 'the 1.53.1 fold-default round sits one rung below the head');
+      R.eq(entries[13].v, '1.53.1', 'the 1.53.1 fold-default round sits one rung below the head');
 
-      R.eq(entries[12].items.length, 1, 'the 1.53.1 entry carries its single imp pointer');
+      R.eq(entries[13].items.length, 1, 'the 1.53.1 entry carries its single imp pointer');
       R.ok(src.includes("c: 'imp', t: 'The quieter Settings sections start folded — one tap opens them.' }"), 'the fold-default pointer reads as approved, inside the release it ships');
-      R.eq(entries[13].v, '1.53.0', 'the 1.53.0 settings-fold round sits one rung below the head');
+      R.eq(entries[14].v, '1.53.0', 'the 1.53.0 settings-fold round sits one rung below the head');
 
-      R.eq(entries[13].items.length, 2, 'the 1.53.0 entry carries its new and imp pointers');
+      R.eq(entries[14].items.length, 2, 'the 1.53.0 entry carries its new and imp pointers');
       R.ok(src.includes("c: 'new', t: 'Settings folds its quieter sections — tap a header to open one.' }"), 'the settings-fold pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The main walk ends pointing at the tours — eight steps now.' }"), 'the eighth-step pointer reads as approved, inside the release it ships');
-      R.eq(entries[14].v, '1.52.0', 'the 1.52.0 walk-overhaul round sits one rung below the head');
+      R.eq(entries[15].v, '1.52.0', 'the 1.52.0 walk-overhaul round sits one rung below the head');
 
-      R.eq(entries[14].items.length, 2, 'the 1.52.0 entry carries its imp and fix pointers');
+      R.eq(entries[15].items.length, 2, 'the 1.52.0 entry carries its imp and fix pointers');
       R.ok(src.includes("c: 'imp', t: 'The calendar, flight stats and backup walks read anew — sharper copy.' }"), 'the walk-overhaul pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'fix', t: 'A tour never leaves your recent searches or saved menus touched.' }"), 'the storage-safe pointer reads as approved, inside the release it ships');
-      R.eq(entries[15].v, '1.51.0', 'the 1.51.0 walk-overhaul round sits one rung below the head');
-      R.eq(entries[15].items.length, 2, 'the 1.51.0 entry carries its imp and fix pointers');
+      R.eq(entries[16].v, '1.51.0', 'the 1.51.0 walk-overhaul round sits one rung below the head');
+      R.eq(entries[16].items.length, 2, 'the 1.51.0 entry carries its imp and fix pointers');
       R.ok(src.includes("c: 'imp', t: 'The manual, menus and earnings walks read anew \\u2014 sharper copy.' }"), 'the walk-overhaul pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'fix', t: 'A tour never leaves the chip rail scrolled away.' }"), 'the chip-rail pointer reads as approved, inside the release it ships');
-      R.eq(entries[16].v, '1.50.0', 'the 1.50.0 tour-invitation round sits two rungs below the head');
-      R.eq(entries[16].items.length, 4, 'the 1.50.0 entry carries its two new and two imp pointers');
+      R.eq(entries[17].v, '1.50.0', 'the 1.50.0 tour-invitation round sits two rungs below the head');
+      R.eq(entries[17].items.length, 4, 'the 1.50.0 entry carries its two new and two imp pointers');
       R.ok(src.includes("c: 'new', t: 'A gentle invitation opens the tour \\u2014 Next walks, Skip stays quiet.' }"), 'the invitation pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'new', t: 'Feature tour rows show a check when a walk is completed.' }"), 'the row-check pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'A walk\\u2019s stage reverts when it ends \\u2014 sheets, tags and all.' }"), 'the stage-revert pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'Tour animations run even with reduced motion on.' }"), 'the reduced-motion pointer reads as approved, inside the release it ships');
-      R.eq(entries[17].v, '1.49.3', 'the 1.49.3 tooltip-polish round sits one rung below the head');
-      R.eq(entries[17].items.length, 3, 'the 1.49.3 entry carries its fix and two imp pointers');
+      R.eq(entries[18].v, '1.49.3', 'the 1.49.3 tooltip-polish round sits one rung below the head');
+      R.eq(entries[18].items.length, 3, 'the 1.49.3 entry carries its fix and two imp pointers');
       R.ok(src.includes("c: 'fix', t: 'Skip moves away from Next \\u2014 no accidental taps end the walk.' }"), 'the button-order pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The spotlight veil darkens a little more \\u2014 it reads harder.' }"), 'the veil pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The tour\\u2019s first title reads At Your Service.' }"), 'the title-case pointer reads as approved, inside the release it ships');
-      R.eq(entries[18].v, '1.49.2', 'the 1.49.2 tour round two sits at the head of the changelog');
-      R.eq(entries[18].items.length, 4, 'the 1.49.2 entry carries its fix and three imp pointers');
+      R.eq(entries[19].v, '1.49.2', 'the 1.49.2 tour round two sits at the head of the changelog');
+      R.eq(entries[19].items.length, 4, 'the 1.49.2 entry carries its fix and three imp pointers');
       R.ok(src.includes("c: 'fix', t: 'The walk returns for existing crew \\u2014 the stale once-flag is wiped.' }"), 'the stale-flag pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The gold ring glides between steps \\u2014 even with reduced motion on.' }"), 'the ring-glide pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The first two walks read sharper; the roster gains an earnings step.' }"), 'the copy-pack pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The chat reverts after the walk \\u2014 no tutorial cards left behind.' }"), 'the chat-revert pointer reads as approved, inside the release it ships');
-      R.eq(entries[19].v, '1.49.1', 'the 1.49.1 firing-order round sits at the head of the changelog');
-      R.eq(entries[19].items.length, 3, 'the 1.49.1 entry carries its two fix and one imp pointers');
+      R.eq(entries[20].v, '1.49.1', 'the 1.49.1 firing-order round sits at the head of the changelog');
+      R.eq(entries[20].items.length, 3, 'the 1.49.1 entry carries its two fix and one imp pointers');
       R.ok(src.includes("c: 'fix', t: 'The spotlight fires before What\\u2019s New \\u2014 every crew gets the walk.' }"), 'the firing-order pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'fix', t: 'Only Done finishes it \\u2014 a skipped walk returns next open.' }"), 'the done-only pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'imp', t: 'The spotlight veil darkens; the first two walks\\u2019 copy sharpens.' }"), 'the veil + copy pointer reads as approved, inside the release it ships');
-      R.eq(entries[20].v, '1.49.0', 'the 1.49.0 spotlight-tour release sits one rung below');
-      R.eq(entries[20].items.length, 2, 'the 1.49.0 entry carries its two new pointers');
+      // the 1.49.0 rung left the pinned window at 1.60.1 (floor 1.49.1);
+      // its pointers stay in the feed.
       R.ok(src.includes("c: 'new', t: 'The tour is a spotlight now \\u2014 short, sharp, skippable.' }"), 'the spotlight pointer reads as approved, inside the release it ships');
       R.ok(src.includes("c: 'new', t: 'Settings \\u2192 Feature tour walks eight features, one tap each.' }"), 'the feature-tour door pointer reads as approved, inside the release it ships');
       // the 1.48.5 rung left the pinned window at 1.60.0 (floor 1.48.6);
@@ -1874,7 +1884,7 @@ R.eq(entries[3].v, '1.57.1', 'the 1.57.1 tidy-up release sits one rung below the
     R.ok(!!d.querySelector('[data-ca-net="retry"]') && !!d.querySelector('[data-ca-net="copy"]'), 'the net carries Try again and Copy note');
     w.eval("window.dispatchEvent(new ErrorEvent('error', { message: 'Boom again', error: new Error('Boom again') }))");
     R.eq(d.querySelectorAll('[data-ca-net="retry"]').length, 1, 'a second trip never doubles the bubble - once per session');
-    R.ok(String(w.eval('caSafetyNote')).indexOf('CrewAssist v1.60.0') === 0, 'the copyable note names the running version');
+    R.ok(String(w.eval('caSafetyNote')).indexOf('CrewAssist v1.60.1') === 0, 'the copyable note names the running version');
     R.ok(String(w.eval('caSafetyNote')).indexOf('\u00b7 chat') !== -1, 'the note names the view it tripped in');
     R.ok(require('fs').readFileSync(APP, 'utf8').includes("addEventListener('unhandledrejection'"), 'unhandled promise rejections ride the same net');
   }

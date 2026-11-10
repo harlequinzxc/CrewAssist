@@ -687,7 +687,7 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.indexOf('const LB_TAP_SLOP_PX = 10;') >= 0 && src.indexOf('const LB_CLOSE_PX = 80;') >= 0 && src.indexOf('const LB_DRAG_SCALE = 0.95;') >= 0, 'the swipe constants: the 10px slop, the 80px bar, the 0.95 detach');
     R.ok(src.indexOf("lbDragAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';") >= 0, 'the axis lock: the first clear direction wins, coded once');
     R.ok(src.indexOf('lbDimTrack(Math.max(0, 1 - Math.abs(lbDragTy) / LB_CLOSE_PX));') >= 0, 'the backdrop peels in proportion to the vertical drag');
-    R.ok(src.indexOf("if (axis === 'y' && e.type !== 'pointercancel' && Math.abs(ty) >= LB_CLOSE_PX) { closeMenuLightbox(); return; }") >= 0, 'the vertical release rule: past the bar on a real lift, dismiss');
+    R.ok(src.indexOf("if (axis === 'y' && e.type !== 'pointercancel' && Math.abs(ty) >= LB_CLOSE_PX) { closeMenuLightbox(true); return; }") >= 0, 'the vertical release rule: past the bar on a real lift, dismiss - handing the close the dragged pose (v1.60.1)');
     R.ok(src.indexOf("if (axis === 'x' && e.type !== 'pointercancel' && Math.abs(tx) >= lbFlipPx()) { lbFlip(tx < 0 ? 1 : -1); return; }") >= 0, 'the sideways release rule: past a third of the photo, flip the dish');
     R.ok(src.indexOf('function lbFlip(dir)') >= 0 && src.indexOf('return Math.max(50, Math.round(w / 3));') >= 0, 'the flip exists, floored at 50px so tiny photos still flip');
     R.ok(src.indexOf("document.querySelectorAll('.menu-thumb')].filter(function (t) { return !t.closest('.hidden'); })") >= 0, 'the thumb tap hands the lightbox the sector\u2019s whole photo rail - hidden sections never join it');
@@ -695,6 +695,56 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.indexOf('Math.max(Math.min(1, lbGestFrom.sc), lbGestFrom.sc * (dist / lbGestBase.dist))') >= 0, 'the pair\u2019s scale floor rides the carried pose - from rest it is 1 (unchanged), from a drag it is 0.95');
     R.ok(src.indexOf("img.addEventListener('click'") === -1, 'the image tap door is GONE - no listener binds the photo\u2019s own click');
     R.ok(src.indexOf('Swipe sideways for other dishes \u00b7 up or down to close') >= 0, 'the hint teaches the swipes (the owner\u2019s approved line)');
+  }
+
+  // --- v1.60.1 (owner phone review): the flip must travel WITH the  ---
+  // --- finger - the old photo exits ahead of it, the next waits on  ---
+  // --- the FAR side; and a dismissed photo fades away WHERE the     ---
+  // --- finger left it - never a snap home before the fade           ---
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    const { w, d } = await boot(APP, {});
+    const box = () => d.getElementById('menu-lightbox');
+    const img = () => d.getElementById('menu-lightbox-img');
+    const A = 'data:image/png;base64,x', B = 'data:image/png;base64,y';
+    const rail = "[{ src: 'data:image/png;base64,x', name: 'Herb Chicken' }, { src: 'data:image/png;base64,y', name: 'Seared Salmon' }]";
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
+    await wait(50);
+    const pti = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; img().dispatchEvent(e); };
+    const mv = (id, x, y) => { const e = new w.Event('pointermove', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    const upAt = (id, x, y) => { const e = new w.Event('pointerup', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    // THE FLIP DIRECTION (owner report): a LEFT swipe throws the old photo out the LEFT
+    pti(1, 200, 300);
+    mv(1, 120, 310);
+    upAt(1, 120, 310);
+    R.eq(img().style.transform, 'translate(-614.00px, 0.00px) scale(0.9500)', 'v1.60.1 (owner report): the old photo EXITS CONTINUING the swipe - a left swipe throws it out the left edge');
+    await wait(700);
+    R.ok(img().getAttribute('src') === B && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.60.1: the next dish glides home from the FAR side, with the swipe');
+    // at the last dish, a RIGHT swipe flips BACK - and its exit follows the finger right
+    pti(2, 200, 300);
+    mv(2, 300, 310);
+    upAt(2, 300, 310);
+    R.eq(img().style.transform, 'translate(614.00px, 0.00px) scale(0.9500)', 'v1.60.1: the back-flip exits to the RIGHT too - every exit rides the finger');
+    await wait(700);
+    R.ok(img().getAttribute('src') === A && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.60.1: the previous dish glides home from the far side as well');
+    // THE DISMISS FADE (owner report): the photo dies where the finger left it
+    pti(3, 200, 300);
+    mv(3, 200, 420);
+    upAt(3, 200, 420);
+    R.ok(box().classList.contains('opacity-0') && img().style.transform === 'translate(0.00px, 120.00px) scale(0.9500)', 'v1.60.1 (owner report): a dismissed photo KEEPS its released pose through the fade - no snap home first');
+    await wait(400);
+    R.ok(box().classList.contains('hidden') && img().style.transform === '' && !img().getAttribute('src'), 'v1.60.1: the pose clears under the hidden view - out of sight, with the src');
+    // every other close still resets the photo at once
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
+    await wait(50);
+    d.getElementById('menu-lightbox-dismiss').click();
+    R.ok(box().classList.contains('opacity-0') && img().style.transform === '', 'v1.60.1: the veil close resets the photo immediately - only the drag keeps its pose');
+    await wait(400);
+    // the source shape: the flipped signs, the fromDrag close, the hidden clear
+    R.ok(src.indexOf('lbGestPaint(-dir * slide, 0, LB_DRAG_SCALE);') >= 0, 'phase one of the flip exits CONTINUING the swipe (-dir * slide)');
+    R.ok(src.indexOf('lbGestPaint(dir * slide, 0, LB_DRAG_SCALE);') >= 0, 'phase two parks the next photo off-stage on the FAR side (dir * slide)');
+    R.ok(src.indexOf('function closeMenuLightbox(fromDrag)') >= 0 && src.indexOf("if (!fromDrag) img.style.transform = '';") >= 0, 'the close takes the dragged provenance - a non-drag close wipes the pose at once');
+    R.ok(src.indexOf("if (img) { img.removeAttribute('src'); img.style.transform = ''; }") >= 0, 'the hidden callback clears the pose out of sight - idempotent for every path');
   }
 
   // --- v1.55.0 (B1, owner-ordered): the remote ops switch — ops.json beside rates.json ---
@@ -757,11 +807,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.60.0';"), 'APP_VERSION stamped 1.60.0');
+    R.ok(src.includes("var APP_VERSION = '1.60.1';"), 'APP_VERSION stamped 1.60.1');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v327"), 'service-worker cache name bumped to v327 (the v1.60.0 swipe round)');
+    R.ok(sw.includes("crewassist-v328"), 'service-worker cache name bumped to v328 (the v1.60.1 hotfix)');
     const ratesFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8'));
     R.eq(ratesFile.version, 2, 'B3: the served rates.json is a v2 timeline');
     R.eq(ratesFile.periods.length, 3, 'B3: the timeline carries the 2022, 2025 and 2026 agreements');
