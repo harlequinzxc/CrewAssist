@@ -3401,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.60.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.60.2'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3423,6 +3423,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.60.2', d: '2026-11-19', items: [
+                { c: 'fix', t: 'The dish name comes back when the photo settles unchanged.' }
+            ] },
             { v: '1.60.1', d: '2026-11-19', items: [
                 { c: 'fix', t: 'The next dish photo slides in from the far side, with your swipe.' },
                 { c: 'fix', t: 'A dismissed photo fades away right where you let go of it.' }
@@ -19989,7 +19992,14 @@ SLOT|Special Lve others`;
             img.classList.add('ca-lb-snap');
             lbGestPaint(0, 0, 1);
             clearTimeout(lbGestEaseT);
-            lbGestEaseT = setTimeout(() => { img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); lbGestRan = false; lbGestIds = null; }, 460);   // destroyed when the spring lands
+            lbGestEaseT = setTimeout(() => {
+                img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); lbGestRan = false; lbGestIds = null;
+                // v1.60.2 (owner order): the gesture ended on the SAME dish - the spring
+                // landed, the finger is gone, so the name takes its seat again. A gesture
+                // still live (a fresh drag locked, or a pair riding) keeps it aside, and a
+                // close or a flip clears this timer before it can ever fire
+                if (lbDragAxis === null && !lbGestOn) lbCaptionShow();
+            }, 460);   // destroyed when the spring lands
         }
         function lbFlip(dir) {   // v1.60.0 (owner order): dir 1 flips to the NEXT dish (a left swipe), -1 to the previous
             const img = document.getElementById('menu-lightbox-img');
