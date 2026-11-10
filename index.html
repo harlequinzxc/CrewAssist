@@ -3401,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.60.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.60.1'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3423,6 +3423,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.60.1', d: '2026-11-19', items: [
+                { c: 'fix', t: 'The next dish photo slides in from the far side, with your swipe.' },
+                { c: 'fix', t: 'A dismissed photo fades away right where you let go of it.' }
+            ] },
             { v: '1.60.0', d: '2026-11-19', items: [
                 { c: 'new', t: 'Swipe a menu photo sideways to see the next dish.' },
                 { c: 'imp', t: 'Photos shrink and the background dims as you drag them shut.' }
@@ -19996,14 +20000,14 @@ SLOT|Special Lve others`;
             clearTimeout(lbFlipT);
             const slide = Math.max(240, Math.round((window.innerWidth || 800) * 0.6));
             img.classList.add('ca-lb-flip');
-            lbGestPaint(dir * slide, 0, LB_DRAG_SCALE);   // phase one: the old photo slides off
+            lbGestPaint(-dir * slide, 0, LB_DRAG_SCALE);   // v1.60.1 (owner report): phase one - the old photo EXITS CONTINUING THE SWIPE (a left swipe throws it out the left), never back across the screen
             lbFlipT = setTimeout(() => {
                 lbFlipT = null;
                 lbDishIdx = next;
                 img.src = lbDishes[lbDishIdx].src;
                 img.classList.remove('ca-lb-flip');
                 img.style.transition = 'none';
-                lbGestPaint(-dir * slide, 0, LB_DRAG_SCALE);   // phase two: the new photo waits off-stage...
+                lbGestPaint(dir * slide, 0, LB_DRAG_SCALE);   // v1.60.1: phase two - the new photo waits off-stage on the FAR side...
                 void img.offsetWidth;   // ...the forced reflow lands the pose before the glide arms
                 img.style.transition = '';
                 img.classList.add('ca-lb-flip');
@@ -20106,7 +20110,7 @@ SLOT|Special Lve others`;
                 lbDragReset();
                 if (axis !== null) {
                     lbGestPts.delete(e.pointerId);   // the dragging finger is spent either way
-                    if (axis === 'y' && e.type !== 'pointercancel' && Math.abs(ty) >= LB_CLOSE_PX) { closeMenuLightbox(); return; }
+                    if (axis === 'y' && e.type !== 'pointercancel' && Math.abs(ty) >= LB_CLOSE_PX) { closeMenuLightbox(true); return; }   // v1.60.1: the photo fades away WHERE THE FINGER LEFT IT
                     if (axis === 'x' && e.type !== 'pointercancel' && Math.abs(tx) >= lbFlipPx()) { lbFlip(tx < 0 ? 1 : -1); return; }
                     lbGestSnapBack();   // not far enough - the elastic spring home (clears the slate with it)
                     return;
@@ -20158,7 +20162,7 @@ SLOT|Special Lve others`;
             requestAnimationFrame(() => box.classList.remove('opacity-0'));
         }
 
-        function closeMenuLightbox() {
+        function closeMenuLightbox(fromDrag) {
             const box = document.getElementById('menu-lightbox');
             const img = document.getElementById('menu-lightbox-img');
             const hint = document.getElementById('menu-lightbox-hint');
@@ -20171,11 +20175,15 @@ SLOT|Special Lve others`;
             lbDragReset();   // v1.60.0: the drag state dies with the view too
             clearTimeout(lbFlipT); lbFlipT = null;   // a flip in flight dies with it
             clearTimeout(lbGestEaseT);
-            if (img) { img.style.transform = ''; img.style.transition = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-flip'); img.classList.remove('ca-lb-live'); }
+            // v1.60.1 (owner report): a drag-dismissed photo fades away from its
+            // LAST RELEASED POSITION - it never snaps home first. Every other
+            // close (the veil tap, Escape) still resets at once; the dragged
+            // pose is cleared later, under the hidden view, where nobody sees it
+            if (img) { img.style.transition = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-flip'); img.classList.remove('ca-lb-live'); if (!fromDrag) img.style.transform = ''; }
             box.classList.add('opacity-0');
             setTimeout(() => {
                 box.classList.add('hidden');
-                if (img) img.removeAttribute('src');
+                if (img) { img.removeAttribute('src'); img.style.transform = ''; }
                 const dimEl = document.getElementById('menu-lightbox-dim');   // v1.60.0: the dim rests back at full for the next open - INSTANTLY, under the hidden view, or a drag-dismissed close would glow back up mid-fade
                 if (dimEl) { dimEl.style.transition = 'none'; dimEl.style.opacity = ''; void dimEl.offsetWidth; dimEl.style.transition = ''; }
             }, 280);

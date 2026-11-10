@@ -102,11 +102,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.60.0', 'APP_VERSION is 1.60.0');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.60.1', 'APP_VERSION is 1.60.1');
         eq(await page.evaluate(() => window.APP_OPS.sq.enabled === true && window.APP_OPS.sq.path === '/api/sq' && window.APP_OPS.notice === null), true, 'the ops config boots with the shipped defaults — SQ on, default path, no notice');
         ok(await page.evaluate(() => fetch('/ops.json').then((r) => r.ok)), 'ops.json is served beside rates.json');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.60.0' && e.d === '2026-11-19' && e.items.length === 2 && e.items.filter((i) => i.c === 'new').length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.60.0 entry — one new and one imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v327'), 'the service-worker cache name is bumped to v327 (the v1.60.0 swipe round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.60.1' && e.d === '2026-11-19' && e.items.length === 2 && e.items.filter((i) => i.c === 'fix').length === 2; }), 'the changelog carries the 1.60.1 entry — two fix pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v328'), 'the service-worker cache name is bumped to v328 (the v1.60.1 hotfix)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -168,12 +168,14 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.60.0'; }), 'the What\'s New sheet carries the v1.60.0 header');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.60.1'; }), 'the What\'s New sheet carries the v1.60.1 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The next dish photo slides in from the far side, with your swipe.') !== -1), 'the What\'s New sheet carries the v1.60.1 flip-direction pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A dismissed photo fades away right where you let go of it.') !== -1), 'the What\'s New sheet carries the v1.60.1 dismiss-fade pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Finishing the main tour brings you straight home to your chat.') !== -1), 'the What\'s New sheet carries the v1.58.0 tour-close pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Hold a menu photo, then swipe up or down to close it.') !== -1), 'the What\'s New sheet carries the v1.58.0 hold-swipe pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Hold and drag a menu photo to dismiss it; taps do nothing.') !== -1), 'the What\'s New sheet carries the v1.59.0 grab-and-drag pointer, still in the delta');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swipe a menu photo sideways to see the next dish.') !== -1), 'the What\'s New sheet carries the v1.60.0 swipe-flip pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Photos shrink and the background dims as you drag them shut.') !== -1), 'the What\'s New sheet carries the v1.60.0 drag-dim pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Swipe a menu photo sideways to see the next dish.') !== -1), 'the What\'s New sheet carries the v1.60.0 swipe-flip pointer, still in the delta');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Photos shrink and the background dims as you drag them shut.') !== -1), 'the What\'s New sheet carries the v1.60.0 drag-dim pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Dead code swept out — nothing you see changes.') !== -1), 'the What\'s New sheet carries the v1.57.1 tidy-up pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A quiet ops switch: lookups can be paused or moved remotely.') !== -1), 'the What\'s New sheet carries the v1.55.0 ops-switch pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Both empty months now read the same: No flights yet.') !== -1), 'the What\'s New sheet carries the v1.54.2 empty-calendar pointer, still in the delta');
@@ -3007,7 +3009,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('opacity-0'), { timeout: 5000 });
         ok(true, 'v1.60.0: released past the bar, the view dismisses');
+        const fadePose60 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
+        ok((() => { const m = (fadePose60 || '').match(/translate\(([\d.-]+)px, ([\d.-]+)px\) scale\(([\d.]+)\)/); return !!m && Number(m[1]) === 0 && Number(m[2]) === 100 && Math.abs(Number(m[3]) - 0.95) < 1e-9; })(), 'v1.60.1 (owner report): the dismissed photo KEEPS its released pose through the fade - it dies 100px down where the finger left it, never a snap home first (got ' + fadePose60 + ')');
         await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
+        ok(await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform === ''), 'v1.60.1: the pose clears under the hidden view - out of sight, with the src');
         // THE FLIP: a left swipe (a touch of vertical drift - the axis lock eats it) flips to the next dish, its name above
         const lb60b = await page.evaluate((g) => { openMenuLightbox(g, [{ src: g, name: 'Herb-Crusted Chicken' }, { src: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', name: 'Seared Salmon' }]); const im = document.getElementById('menu-lightbox-img'); im.style.width = '200px'; im.style.height = '200px'; const r = im.getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; }, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
         await sleep(300);
@@ -3018,6 +3023,8 @@ async function calcCard(page, { type, t1, t2, lma }) {
         const side60 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
         ok((() => { const m = (side60 || '').match(/translate\(([\d.-]+)px, ([\d.-]+)px\) scale\(([\d.]+)\)/); return !!m && Number(m[1]) === -100 && Number(m[2]) === 0 && Math.abs(Number(m[3]) - 0.95) < 1e-9; })(), 'v1.60.0: the axis lock - sideways means sideways, the vertical wander never moves it (got ' + side60 + ')');
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        const exit60 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
+        ok((() => { const m = (exit60 || '').match(/translate\((-?[\d.]+)px, ([\d.-]+)px\) scale\(([\d.]+)\)/); return !!m && Number(m[1]) <= -240 && Number(m[2]) === 0 && Math.abs(Number(m[3]) - 0.95) < 1e-9; })(), 'v1.60.1 (owner report): the old photo EXITS CONTINUING the swipe - a left swipe throws it out the LEFT edge, with the finger (got ' + exit60 + ')');
         await sleep(700);
         ok(await page.evaluate((g2) => document.getElementById('menu-lightbox-img').src === g2 && document.getElementById('menu-lightbox-dish').textContent === 'Seared Salmon' && !document.getElementById('menu-lightbox-dish').classList.contains('opacity-0'), 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), 'v1.60.0: the left swipe past a third of the photo flips to the next dish - Seared Salmon, named above');
         ok(await page.evaluate(() => /translate\(0px, 0px\) scale\(1\)/.test(document.getElementById('menu-lightbox-img').style.transform)), 'v1.60.0: the flip glides the new photo home at full size');
