@@ -554,6 +554,73 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.split('(!lbGestRan || lbFreshTap)').length - 1 === 2, 'v1.45.35: BOTH doors take the fresh-tap allowance - the veil and the image close identically');
   }
 
+  // --- v1.58.0 (owner order): the hold-and-swipe exit — press and ---
+  // --- HOLD (300ms within the tap slop), then swipe up or down     ---
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    const { w, d } = await boot(APP, {});
+    const box = () => d.getElementById('menu-lightbox');
+    const img = () => d.getElementById('menu-lightbox-img');
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    const pt = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; box().dispatchEvent(e); };
+    const mv = (id, x, y) => { const e = new w.Event('pointermove', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    const upAt = (id, x, y) => { const e = new w.Event('pointerup', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    // a swipe WITHOUT the hold never exits: the press wanders beyond the
+    // tap slop before its hold arms, and the hold dies for good
+    pt(1, 200, 300);
+    mv(1, 200, 400);
+    await wait(400);
+    mv(1, 200, 500);
+    upAt(1, 200, 500);
+    R.ok(!box().classList.contains('opacity-0'), 'v1.58.0: a press that wanders before its hold arms is a drag — no hold, no swipe exit');
+    // the hold arms, and a DOWNWARD swipe exits
+    pt(2, 200, 300);
+    await wait(380);
+    mv(2, 200, 380);
+    R.ok(box().classList.contains('opacity-0'), 'v1.58.0: hold, then swipe down — the view leaves');
+    upAt(2, 200, 380);
+    await wait(400);
+    R.ok(box().classList.contains('hidden'), 'v1.58.0: the hold-and-swipe close completes');
+    // the hold state died with the view: a reopen exits on a plain tap
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    img().click();
+    await wait(350);
+    R.ok(box().classList.contains('hidden'), 'v1.58.0: the hold state dies with the view — a plain tap exits the reopened view');
+    // the UPWARD swipe exits the same way
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    pt(3, 200, 400);
+    await wait(380);
+    mv(3, 200, 310);
+    R.ok(box().classList.contains('opacity-0'), 'v1.58.0: hold, then swipe UP exits the view the same way');
+    upAt(3, 200, 310);
+    await wait(400);
+    // a HELD press that swipes SIDEWAYS never exits (the exit is vertical)
+    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    await wait(50);
+    pt(4, 200, 300);
+    await wait(380);
+    mv(4, 320, 320);
+    upAt(4, 320, 320);
+    R.ok(!box().classList.contains('opacity-0'), 'v1.58.0: a held sideways swipe stays horizontal — the exit is vertical only');
+    // the pair still owns two-finger play: a second finger landing kills a
+    // pending hold, and the pinch runs instead
+    pt(5, 100, 300);
+    pt(6, 260, 300);
+    mv(5, 60, 260); mv(6, 320, 340);
+    R.ok(img().style.transform !== '', 'v1.58.0: the pair owns the touch — a second finger kills the hold and the pinch paints');
+    upAt(5, 60, 260); upAt(6, 320, 340);
+    await wait(550);
+    R.ok(!box().classList.contains('opacity-0'), 'v1.58.0: a full pinch cycle with a killed hold never exits the view');
+    // the source shape: the constants, the vertical-only test, the state resets
+    R.ok(src.indexOf('const LB_HOLD_MS = 300;') >= 0 && src.indexOf('const LB_SWIPE_PX = 60;') >= 0, 'the hold-and-swipe constants: 300ms to arm, 60px of vertical travel to exit');
+    R.ok(src.indexOf('if (Math.abs(dy) >= LB_SWIPE_PX && Math.abs(dy) >= Math.abs(dx))') >= 0, 'the exit demands vertical-dominant travel — sideways never exits');
+    R.ok(src.indexOf('lbHoldReset();   // v1.58.0: the hold-and-swipe state dies with the view too') >= 0, 'the close path wipes the hold state with the rest');
+    R.ok(src.indexOf('if (lbHoldId !== null && e.pointerId === lbHoldId) lbHoldReset();') >= 0, 'the hold dies with its finger — a lift never leaks the armed state');
+  }
+
   // --- v1.55.0 (B1, owner-ordered): the remote ops switch — ops.json beside rates.json ---
   {
     // the parser first: defaults, validation, the honest shapes
@@ -614,11 +681,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.57.1';"), 'APP_VERSION stamped 1.57.1');
+    R.ok(src.includes("var APP_VERSION = '1.58.0';"), 'APP_VERSION stamped 1.58.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v324"), 'service-worker cache name bumped to v324 (the v1.57.1 tidy-up release)');
+    R.ok(sw.includes("crewassist-v325"), 'service-worker cache name bumped to v325 (the v1.58.0 tour-close, fold-reset and hold-swipe release)');
     const ratesFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8'));
     R.eq(ratesFile.version, 2, 'B3: the served rates.json is a v2 timeline');
     R.eq(ratesFile.periods.length, 3, 'B3: the timeline carries the 2022, 2025 and 2026 agreements');

@@ -523,6 +523,78 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(src.indexOf('function caSpotFitTip(el, rect)') >= 0 && src.indexOf('if (caSpotFitTip(el, rect))') >= 0, 'the tip-aware scroll pass rides every placement — the ring glides, so the fit reads the placement rect, never the transitioning box');
   }
 
+  // ---- v1.58.0 (owner orders): the main walk's Done lands on the chat
+  // screen — step 8's Settings world never hands the sheet back on
+  // completion — and the Settings folds never survive a close: a reopen
+  // always finds them collapsed however they were left ----
+  {
+    const { w, d } = await boot(APP, { seed: (x) => {
+      x.localStorage.setItem('crewAssist.profile', PROFILE);
+      x.localStorage.setItem('crewAssist.spotMainDone', '1');
+    } });
+    R.eq(typeof w.caAccCloseAll, 'function', 'v1.58.0: caAccCloseAll is global — the close door drives it');
+    // the folds never survive a close: open the sheet, expand two sections,
+    // close, reopen — everything sits collapsed
+    w.openSettings();
+    await wait(450);
+    d.querySelector('[data-accordion-target="ca-acc-ft"]').click();
+    d.querySelector('[data-accordion-target="ca-acc-dm"]').click();
+    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed') && !d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'two sections stand open inside the sheet');
+    const keysBefore58 = JSON.stringify(Object.keys(w.localStorage).sort());
+    w.closeSettings();
+    await wait(500);
+    R.ok([...d.querySelectorAll('.ca-acc')].every((el) => el.classList.contains('ca-acc-closed')), 'v1.58.0: the close door folds every section — however they were left');
+    R.ok([...d.querySelectorAll('[data-accordion-target]')].every((b) => b.getAttribute('aria-expanded') === 'false'), 'the heads announce themselves folded after the close');
+    R.eq(JSON.stringify(Object.keys(w.localStorage).sort()), keysBefore58, 'the fold reset never touches localStorage — still in memory only');
+    w.openSettings();
+    await wait(450);
+    R.ok([...d.querySelectorAll('.ca-acc')].every((el) => el.classList.contains('ca-acc-closed')), 'v1.58.0: the reopen finds every section collapsed — the fold state died with the close');
+    // the row-tapped main walk: Done at step 8 CLOSES the Settings sheet
+    d.querySelector('[data-accordion-target="ca-acc-ft"]').click();   // the crew leaves the tours fold open as they tap in
+    d.querySelector('#ca-feature-tours [data-ca-spot="main"]').click();
+    await wait(600);
+    R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'the main row-tap closes Settings for the walk (the v1.49.0 order holds DURING the walk)');
+    for (let i = 0; i < 7; i++) { d.getElementById('ca-spot-next').click(); await wait(520); }
+    R.ok(tipText(d).indexOf('You\u2019re All Set') !== -1, 'the walk stands on step 8 — the closer, in the Settings world');
+    R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'step 8 rides the Settings world — the sheet is open under the closer');
+    d.getElementById('ca-spot-next').click();   // Done
+    await wait(700);
+    R.ok(!d.documentElement.classList.contains('ca-spot-on'), 'Done stands the tour down');
+    R.ok(d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.58.0: the main walk\u2019s Done CLOSES Settings — the crew lands on the chat screen, whatever path started the walk');
+    R.ok([...d.querySelectorAll('.ca-acc')].every((el) => el.classList.contains('ca-acc-closed')), 'v1.58.0: the folds rode the close door down — a reopen finds them collapsed');
+    // Skip keeps the pre-tap contract: the sheet hands back open
+    w.openSettings();
+    await wait(450);
+    d.querySelector('#ca-feature-tours [data-ca-spot="main"]').click();
+    await wait(600);
+    for (let i = 0; i < 7; i++) { d.getElementById('ca-spot-next').click(); await wait(520); }
+    d.getElementById('ca-spot-skip').click();
+    await wait(600);
+    R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.58.0: Skip still hands Settings back open — the pre-tap contract stands for the exits that do not complete');
+    w.closeSettings();
+    await wait(500);
+    // a NON-main walk's Done keeps the row-tap contract: the sheet reopens,
+    // and the stage revert re-puts the crew's own fold state above the
+    // close-fold (the v1.53.0 contract rides the open sheet)
+    w.openSettings();
+    await wait(450);
+    d.querySelector('[data-accordion-target="ca-acc-ft"]').click();   // the crew's own state: FT open, the rest folded
+    d.querySelector('#ca-feature-tours [data-ca-spot="backup"]').click();
+    await wait(600);
+    for (let i = 0; i < 3; i++) { d.getElementById('ca-spot-next').click(); await wait(520); }
+    d.getElementById('ca-spot-next').click();   // Done on the backup walk's fourth step
+    await wait(700);
+    R.ok(!d.getElementById('settings-backdrop').classList.contains('hidden'), 'v1.58.0: a non-main walk\u2019s Done still reopens Settings — only the main walk\u2019s closer sends the crew home');
+    R.ok(!d.getElementById('ca-ft-section').classList.contains('ca-acc-closed'), 'the stage revert re-puts the crew\u2019s own fold state above the close-fold — the section they had open rides home open');
+    R.ok(d.getElementById('ca-dm-section').classList.contains('ca-acc-closed'), 'the untouched sections stay folded through the revert');
+    w.closeSettings();
+    await wait(500);
+    // the src contract: the close door drives the fold, and the main walk's
+    // Done overrides the stage
+    R.ok(src.indexOf("try { if (typeof caAccCloseAll === 'function') caAccCloseAll(); } catch (e) {}") >= 0, 'closeSettings drives the fold-close door');
+    R.ok(src.indexOf("if (completed === true && caSpot.id === 'main' && stRestore && stRestore.settings) stRestore = Object.assign({}, stRestore, { settings: false, acc: null });") >= 0, 'the main walk\u2019s Done overrides the stage — Settings never hands back on completion');
+  }
+
   // ---- v1.50.0: the Settings rows wear their completion state —
   // a gold circle-check for a walk done at its current cv, a quiet
   // hollow circle for one not yet carried to its Done ----
@@ -847,7 +919,7 @@ R.eq(Object.keys(w.CA_SPOT_TOURS).map((k) => w.CA_SPOT_TOURS[k].cv).join(','), '
     R.ok(src.indexOf('function caSpotStageSnap') >= 0 && src.indexOf('function caSpotStageRestore') >= 0, 'the stage snapshot/restore pair exists');
     R.ok(src.indexOf("try { caSpot.stage = (stageOverride !== undefined && stageOverride) ? stageOverride : caSpotStageSnap(); } catch (e) { caSpot.stage = null; }") >= 0, 'the walk snapshots the stage at start (a row-tap hands its PRE-TAP snapshot in)');
     R.ok(src.indexOf('const preStage = (typeof caSpotStageSnap === \'function\') ? caSpotStageSnap() : null;') >= 0, 'the Settings rows snapshot BEFORE the handler closes the sheet — the crew lands where they tapped');
-    R.ok(src.indexOf('try { if (caSpot.stage) caSpotStageRestore(caSpot.stage); } catch (e) {}') >= 0, 'the walk restores the stage on every end');
+    R.ok(src.indexOf('caSpotStageRestore(stRestore);') >= 0 && src.indexOf('let stRestore = caSpot.stage;') >= 0, 'the walk restores the stage on every end (v1.58.0: the restore rides the stRestore hand-off, where the main walk\u2019s Done override lands)');
     // v1.49.2: the once-key migrated — the v1.49.0 key (stamped on ANY end)
     // is wiped on load so every existing crew walks once more
     R.ok(src.indexOf("localStorage.removeItem('crewAssist.spotMainSeen')") >= 0, 'the retired v1.49.0 once-key is wiped at script-eval time');
