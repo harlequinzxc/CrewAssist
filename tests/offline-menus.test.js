@@ -747,6 +747,85 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.indexOf("if (img) { img.removeAttribute('src'); img.style.transform = ''; }") >= 0, 'the hidden callback clears the pose out of sight - idempotent for every path');
   }
 
+  // --- v1.60.2 (owner order): the name steps aside for any gesture, but  ---
+  // --- when the SAME dish settles back the name takes its seat again -   ---
+  // --- only a flip (a new dish) or the dismiss keeps it away             ---
+  {
+    const src = fs.readFileSync(APP, 'utf8');
+    const { w, d } = await boot(APP, {});
+    const box = () => d.getElementById('menu-lightbox');
+    const img = () => d.getElementById('menu-lightbox-img');
+    const cap = () => d.getElementById('menu-lightbox-dish');
+    const A = 'data:image/png;base64,x', B = 'data:image/png;base64,y';
+    const rail = "[{ src: 'data:image/png;base64,x', name: 'Herb Chicken' }, { src: 'data:image/png;base64,y', name: 'Seared Salmon' }]";
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
+    await wait(50);
+    const pti = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; img().dispatchEvent(e); };
+    const pt = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; box().dispatchEvent(e); };
+    const mv = (id, x, y) => { const e = new w.Event('pointermove', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    const upAt = (id, x, y) => { const e = new w.Event('pointerup', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
+    const shown = () => !cap().classList.contains('opacity-0');
+    // the short drag: aside while the finger rules, back once the spring lands
+    pti(1, 200, 300);
+    mv(1, 200, 340);
+    R.ok(!shown() && cap().textContent === 'Herb Chicken', 'v1.60.2 (owner order): the name steps aside the moment the gesture starts - the text kept for its return');
+    upAt(1, 200, 340);
+    await wait(500);
+    R.ok(shown() && cap().textContent === 'Herb Chicken', 'v1.60.2 (owner order): the same dish settles back and the name takes its seat again');
+    // the ends bounce: a 200px finger at the first dish drags heavy (60px) past the bar, but there is no previous dish - the bounce, then the name
+    pti(2, 200, 300);
+    mv(2, 400, 310);
+    R.ok(!shown(), 'the heavy end-drag hides the name like any gesture');
+    upAt(2, 400, 310);
+    await wait(500);
+    R.ok(shown() && cap().textContent === 'Herb Chicken' && img().getAttribute('src') === A, 'v1.60.2: the bounce keeps the dish and brings the name back with it');
+    // a fresh finger resting on the settling photo never leaves the name stuck
+    pti(3, 200, 300);
+    mv(3, 200, 340);
+    upAt(3, 200, 340);
+    pti(4, 200, 300);                       // a new finger lands at once and rests - no drag, no lock
+    await wait(500);                        // the spring timer fires under the resting finger
+    R.ok(shown(), 'v1.60.2: a resting finger (no drag yet) does not hold the name back - a press alone is not a gesture');
+    mv(4, 240, 306);                        // now it drags - the lock hides the name again
+    R.ok(!shown(), 'the new drag hides the name the moment it locks');
+    upAt(4, 240, 306);
+    await wait(500);
+    R.ok(shown(), 'and the name returns with the second spring');
+    // the pinch release: the pair breaking springs home and the name returns
+    pti(5, 150, 300);
+    mv(5, 150, 306);
+    pt(6, 250, 300);
+    mv(5, 160, 306); mv(6, 260, 300);
+    R.ok(!shown(), 'the pinch hides the name too - any gesture');
+    upAt(5, 160, 306); upAt(6, 260, 300);
+    await wait(600);
+    R.ok(shown(), 'v1.60.2: the pair breaking springs home and the name returns with it');
+    // the bare open never grows a name, spring or not
+    w.eval("openMenuLightbox('" + A + "')");
+    await wait(50);
+    pti(7, 200, 300);
+    mv(7, 240, 306);
+    upAt(7, 240, 306);
+    await wait(500);
+    R.ok(!shown(), 'v1.60.2: a bare photo (no rail) stays nameless through its spring');
+    // the flip names the NEW dish - the old spring timer died with the flip
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
+    await wait(50);
+    pti(8, 200, 300);
+    mv(8, 120, 310);
+    upAt(8, 120, 310);
+    await wait(700);
+    R.ok(shown() && cap().textContent === 'Seared Salmon', 'v1.60.2: the flip still names the NEW dish - the same-dish return never fights it');
+    // the dismiss keeps the name gone through the fade
+    pti(9, 200, 300);
+    mv(9, 200, 420);
+    upAt(9, 200, 420);
+    R.ok(box().classList.contains('opacity-0') && !shown(), 'v1.60.2: the dismiss keeps the name gone - the close clears the spring timer before it can fire');
+    await wait(400);
+    // the source shape: the guard rides the spring's landing timer
+    R.ok(src.indexOf('if (lbDragAxis === null && !lbGestOn) lbCaptionShow();') >= 0, 'the name returns on the spring\u2019s landing timer - and only when no gesture is live');
+  }
+
   // --- v1.55.0 (B1, owner-ordered): the remote ops switch — ops.json beside rates.json ---
   {
     // the parser first: defaults, validation, the honest shapes
@@ -807,11 +886,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.60.1';"), 'APP_VERSION stamped 1.60.1');
+    R.ok(src.includes("var APP_VERSION = '1.60.2';"), 'APP_VERSION stamped 1.60.2');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v328"), 'service-worker cache name bumped to v328 (the v1.60.1 hotfix)');
+    R.ok(sw.includes("crewassist-v329"), 'service-worker cache name bumped to v329 (the v1.60.2 name-return round)');
     const ratesFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8'));
     R.eq(ratesFile.version, 2, 'B3: the served rates.json is a v2 timeline');
     R.eq(ratesFile.periods.length, 3, 'B3: the timeline carries the 2022, 2025 and 2026 agreements');
