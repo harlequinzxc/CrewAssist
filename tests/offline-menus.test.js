@@ -452,7 +452,7 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     await wait(50);
     R.ok(!box().classList.contains('hidden'), 'the lightbox mounts over the viewer');
     // the transient micro hint: quiet low-contrast micro text, three seconds
-    R.ok(hint() && hint().textContent === 'Pinch to zoom & pan · Hold and drag to dismiss' && !hint().classList.contains('opacity-0') && hint().className.indexOf('duration-500') !== -1 && hint().className.indexOf('ease-in-out') !== -1 && hint().className.indexOf('pointer-events-none') !== -1, 'v1.45.33: the micro hint mounts visible - ca-micro, muted ink, the 500ms ease-in-out fade armed (v1.59.0: the line teaches the grab-and-drag now)');
+    R.ok(hint() && hint().textContent === 'Swipe sideways for other dishes · up or down to close' && !hint().classList.contains('opacity-0') && hint().className.indexOf('duration-500') !== -1 && hint().className.indexOf('ease-in-out') !== -1 && hint().className.indexOf('pointer-events-none') !== -1, 'v1.45.33: the micro hint mounts visible - ca-micro, muted ink, the 500ms ease-in-out fade armed (v1.60.0: the line teaches the swipes now)');
     R.ok(src.includes('#menu-lightbox img.ca-lb-snap { transition: transform 380ms cubic-bezier(0.22, 1.28, 0.36, 1); }') && src.includes('will-change: transform;') && src.includes('touch-action: none;'), 'v1.45.33: the transform parks on the compositor (will-change), the engine owns every touch (touch-action none), and the snap-back rides the gentle elastic ease-out');
     R.ok(src.includes("setTimeout(() => hint.classList.add('opacity-0'), 3000);"), 'v1.45.33: the hint lifecycle is exactly three seconds, then the fade');
     // the unified engine: two pointers = spread scales around the pair pivot
@@ -561,111 +561,140 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
     R.ok(src.split('(!lbGestRan || lbFreshTap)').length - 1 === 1, 'v1.45.35 + v1.59.0: ONE door takes the fresh-tap allowance now - the veil alone (the photo\u2019s own tap door is gone)');
   }
 
-  // --- v1.59.0 (owner order): the grab-and-drag dismissal — a tap ---
-  // --- on the photo does NOTHING; hold it, it follows the finger, ---
-  // --- and letting go after a far-enough up/down drag dismisses    ---
+  // --- v1.60.0 (owner orders, the swipe round): a finger on the  ---
+  // --- photo takes it INSTANTLY - the first clear direction locks ---
+  // --- the axis; sideways flips dishes, up/down peels the backdrop ---
+  // --- and dismisses past the 80px bar; a plain tap does nothing  ---
   {
     const src = fs.readFileSync(APP, 'utf8');
     const { w, d } = await boot(APP, {});
     const box = () => d.getElementById('menu-lightbox');
     const img = () => d.getElementById('menu-lightbox-img');
-    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    const dim = () => d.getElementById('menu-lightbox-dim');
+    const cap = () => d.getElementById('menu-lightbox-dish');
+    const A = 'data:image/png;base64,x', B = 'data:image/png;base64,y';
+    const rail = "[{ src: 'data:image/png;base64,x', name: 'Herb Chicken' }, { src: 'data:image/png;base64,y', name: 'Seared Salmon' }]";
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
     await wait(50);
     const pt = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; box().dispatchEvent(e); };
-    const pti = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; img().dispatchEvent(e); };   // v1.59.0: only a press ON THE PHOTO can grab
+    const pti = (id, x, y) => { const e = new w.Event('pointerdown', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; img().dispatchEvent(e); };   // only a press ON THE PHOTO can take it
     const mv = (id, x, y) => { const e = new w.Event('pointermove', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
     const upAt = (id, x, y) => { const e = new w.Event('pointerup', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
     const cancelAt = (id, x, y) => { const e = new w.Event('pointercancel', { bubbles: true }); e.pointerId = id; e.clientX = x; e.clientY = y; w.dispatchEvent(e); };
-    // (owner order) a plain TAP on the photo does nothing — down, up,
-    // then a click: the image door is gone, nothing moves, nothing closes
+    // the rail opens with its first dish named above the photo
+    R.ok(!box().classList.contains('hidden') && cap().textContent === 'Herb Chicken' && !cap().classList.contains('opacity-0'), 'v1.60.0: the lightbox opens with the dish\u2019s name above the photo');
+    // (owner order) a plain TAP on the photo does nothing - and leaves the name up
     pti(1, 200, 300);
     upAt(1, 200, 300);
     img().click();
-    R.ok(!box().classList.contains('opacity-0') && !box().classList.contains('hidden') && img().style.transform === '', 'v1.59.0 (owner order): a plain tap on the photo does nothing - the image door is gone');
-    // a press that wanders before its hold completes never grabs: the
-    // photo never follows the finger, and the release never dismisses
+    R.ok(!box().classList.contains('opacity-0') && !box().classList.contains('hidden') && img().style.transform === '' && !cap().classList.contains('opacity-0'), 'v1.60.0 (owner order): a plain tap on the photo does nothing - the image door stays gone, the name stays up');
+    // THE INSTANT DRAG (owner order): the first move past the slop takes the photo - no hold, no wait - and it shrinks a touch as it detaches
     pti(2, 200, 300);
-    mv(2, 200, 400);
-    await wait(400);
-    mv(2, 200, 520);
-    R.ok(img().style.transform === '', 'v1.59.0: a press that wanders beyond the slop before its hold completes never grabs - the photo never follows');
-    upAt(2, 200, 520);
-    R.ok(!box().classList.contains('opacity-0'), 'v1.59.0: the wander release never dismisses - no hold, no grab, no exit');
-    // a HELD press on the VEIL never grabs either - the grab is the
-    // photo's alone; its far lift is the guarded drag the 45.35 block pins
-    pt(3, 20, 500);
-    await wait(380);
-    mv(3, 20, 640);
-    R.ok(img().style.transform === '', 'v1.59.0: a held press on the veil never grabs - only the photo answers the hold');
-    upAt(3, 20, 640);
-    R.ok(!box().classList.contains('opacity-0'), 'v1.59.0: the veil drag-lift stays guarded and open (the veil TAP door is pinned in the 45.35 block)');
-    // THE GRAB: hold the photo ~300ms and it follows the finger freely
+    mv(2, 200, 340);
+    R.eq(img().style.transform, 'translate(0.00px, 40.00px) scale(0.9500)', 'v1.60.0 (owner order): the photo follows the INSTANT the finger moves - no hold, no wait, detached at 0.95');
+    R.ok(img().classList.contains('ca-lb-live') && cap().classList.contains('opacity-0'), 'v1.60.0: the dragged photo rides the compositor and the name steps aside');
+    R.eq(dim().style.opacity, '0.5', 'v1.60.0 (owner order): the backdrop dims with the drag - 40 of the 80px bar is half the veil');
+    // released under the bar: the spring home, backdrop restored
+    upAt(2, 200, 340);
+    R.ok(img().classList.contains('ca-lb-snap') && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.60.0: released under the 80px bar, the photo springs home at full size');
+    R.ok(!box().classList.contains('opacity-0') && dim().style.opacity === '', 'v1.60.0: the short release leaves the view open with the backdrop fully back');
+    await wait(500);
+    R.ok(!img().classList.contains('ca-lb-snap') && !img().classList.contains('ca-lb-live'), 'v1.60.0: the spring retires its classes when it lands (460ms)');
+    // THE AXIS LOCK (owner order): the first clear direction wins - sideways means sideways
+    pti(3, 200, 300);
+    mv(3, 150, 306);
+    R.eq(img().style.transform, 'translate(-50.00px, 0.00px) scale(0.9500)', 'v1.60.0 (owner order): the first clear direction locks the axis - sideways drags along X only');
+    mv(3, 150, 470);
+    R.eq(img().style.transform, 'translate(-50.00px, 0.00px) scale(0.9500)', 'v1.60.0: once locked sideways, up/down wander never moves the photo');
+    R.ok(dim().style.opacity === '', 'v1.60.0: the dim is the dismissal cue alone - sideways never peels it');
+    upAt(3, 150, 470);
+    await wait(700);
+    R.ok(img().getAttribute('src') === B && cap().textContent === 'Seared Salmon' && !cap().classList.contains('opacity-0'), 'v1.60.0 (owner order): the sideways release past a third of the photo flips to the NEXT dish - and its name shows above');
+    R.eq(img().style.transform, 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.60.0: the flip glides the new photo home at full size');
+    // at the LAST dish, the same left swipe drags heavy and never flips
     pti(4, 200, 300);
-    await wait(380);
-    mv(4, 240, 360);
-    R.eq(img().style.transform, 'translate(40.00px, 60.00px) scale(1.0000)', 'v1.59.0: held, the photo follows the finger freely - the transform tracks the drag 1:1');
-    R.ok(img().classList.contains('ca-lb-live'), 'v1.59.0: the grabbed photo rides the compositor (ca-lb-live) while it follows');
-    // released without enough vertical travel: the elastic spring home
-    upAt(4, 240, 340);
-    R.ok(img().classList.contains('ca-lb-snap') && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.59.0: released 60px down, the photo springs home - too little travel to dismiss');
-    R.ok(!box().classList.contains('opacity-0'), 'v1.59.0: the short release leaves the view open');
+    mv(4, 100, 310);
+    R.eq(img().style.transform, 'translate(-30.00px, 0.00px) scale(0.9500)', 'v1.60.0: at the last dish the sideways drag feels stuck-in-mud (100px of finger, 30px of photo)');
+    upAt(4, 100, 310);
     await wait(500);
-    R.ok(!img().classList.contains('ca-lb-snap') && !img().classList.contains('ca-lb-live'), 'v1.59.0: the spring retires its classes when it lands (460ms)');
-    // a SIDEWAYS grab-release springs home too - only up/down dismisses
-    pti(5, 200, 300);
-    await wait(380);
-    mv(5, 350, 320);
-    upAt(5, 350, 320);
-    R.ok(img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)' && !box().classList.contains('opacity-0'), 'v1.59.0: a sideways wander (150px over, 20px down) springs home - the dismissal is vertical only');
-    await wait(500);
-    // THE DISMISS, downward: grab, drag 140px down, let go
-    pti(6, 200, 300);
-    await wait(380);
-    mv(6, 210, 440);
-    upAt(6, 210, 440);
-    R.ok(box().classList.contains('opacity-0'), 'v1.59.0: grab, drag 140px down, let go - the view dismisses');
-    await wait(400);
-    R.ok(box().classList.contains('hidden'), 'v1.59.0: the grab-dismiss close completes (280ms)');
-    // the grab state died with the view: a reopen is clean, and the
-    // UPWARD drag dismisses exactly the same way
-    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    R.ok(img().getAttribute('src') === B && !box().classList.contains('opacity-0'), 'v1.60.0: the ends bounce - no flip past the last dish, no wrap');
+    // at the FIRST dish, the rightward swipe drags heavy the same way
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
     await wait(50);
-    pti(7, 200, 400);
-    await wait(380);
-    mv(7, 200, 270);
-    upAt(7, 200, 270);
-    R.ok(box().classList.contains('opacity-0'), 'v1.59.0: grab, drag 130px UP, let go - the view dismisses the same way');
+    pti(5, 200, 300);
+    mv(5, 260, 306);
+    R.eq(img().style.transform, 'translate(18.00px, 0.00px) scale(0.9500)', 'v1.60.0: at the first dish the rightward drag drags heavy too (60px of finger, 18px of photo)');
+    upAt(5, 260, 306);
+    await wait(500);
+    R.ok(img().getAttribute('src') === A, 'v1.60.0: no flip past the first dish either');
+    // a diagonal tie locks up/down (the dismissal axis takes ties)
+    pti(6, 200, 300);
+    mv(6, 220, 320);
+    R.eq(img().style.transform, 'translate(0.00px, 20.00px) scale(0.9500)', 'v1.60.0: a perfect diagonal tie locks up/down - the dismissal axis takes ties');
+    upAt(6, 220, 320);
+    await wait(500);
+    // THE DISMISS (owner order): drag past the 80px bar and let go
+    pti(7, 200, 300);
+    mv(7, 200, 420);
+    R.eq(dim().style.opacity, '0', 'v1.60.0: at the 80px bar the backdrop is fully peeled');
+    upAt(7, 200, 420);
+    R.ok(box().classList.contains('opacity-0'), 'v1.60.0: released past the bar, the view dismisses');
     await wait(400);
-    // a pointercancel while grabbed springs home - it never dismisses
-    w.eval("openMenuLightbox('data:image/png;base64,x')");
+    R.ok(box().classList.contains('hidden'), 'v1.60.0: the drag-dismiss close completes (280ms)');
+    // a cancelled finger springs home with the backdrop restored - never a dismissal
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
     await wait(50);
     pti(8, 200, 300);
-    await wait(380);
-    mv(8, 200, 450);
-    cancelAt(8, 200, 450);
-    R.ok(!box().classList.contains('opacity-0') && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.59.0: a cancelled pointer springs the photo home - it never dismisses');
+    mv(8, 200, 400);
+    cancelAt(8, 200, 400);
+    R.ok(!box().classList.contains('opacity-0') && img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)' && dim().style.opacity === '', 'v1.60.0: a cancelled pointer springs the photo home - the backdrop restored, never a dismissal');
     await wait(500);
+    // the veil never drags: a held, wandering press off the photo moves nothing
+    pt(9, 20, 500);
+    mv(9, 20, 640);
+    R.ok(img().style.transform === 'translate(0.00px, 0.00px) scale(1.0000)', 'v1.60.0: only the photo answers the finger - a veil press never starts a drag (the resting pose untouched)');
+    upAt(9, 20, 640);
+    R.ok(!box().classList.contains('opacity-0'), 'v1.60.0: the veil drag-lift stays guarded and open (the veil TAP door is pinned in the 45.35 block)');
+    // a BARE open (no rail) keeps every dismissal path and never flips
+    w.eval("openMenuLightbox('" + A + "')");
+    await wait(50);
+    R.ok(cap().classList.contains('opacity-0'), 'v1.60.0: a bare open carries no name');
+    pti(10, 200, 300);
+    mv(10, 320, 305);
+    R.eq(img().style.transform, 'translate(36.00px, 0.00px) scale(0.9500)', 'v1.60.0: with nothing to flip to, sideways drags heavy both ways (120px of finger, 36px of photo)');
+    upAt(10, 320, 305);
+    await wait(500);
+    R.ok(img().getAttribute('src') === A && !box().classList.contains('opacity-0'), 'v1.60.0: the bare sideways release springs home - nothing to flip to');
+    pti(11, 200, 300);
+    mv(11, 200, 440);
+    upAt(11, 200, 440);
+    R.ok(box().classList.contains('opacity-0'), 'v1.60.0: the bare open still dismisses up/down - the list only gates the flip');
+    await wait(400);
     // the pair still owns two-finger play: a second finger landing on a
-    // GRABBED photo kills the grab, and the pinch continues from wherever
-    // the photo sat (the carried offset rides the pinch math)
-    pti(9, 140, 360);
-    await wait(380);
-    mv(9, 180, 420);                        // the photo sits dragged at (40, 60)
-    pt(10, 260, 300);                       // the pair lands - the grab dies, the offset carries
-    mv(9, 190, 420); mv(10, 270, 300);      // equal spread, the midpoint slides 10px right
-    R.eq(img().style.transform, 'translate(50.00px, 60.00px) scale(1.0000)', 'v1.59.0: the pinch continues from wherever the photo sat - the carried offset rides the pair math');
-    upAt(9, 190, 420); upAt(10, 270, 300);
-    R.ok(img().classList.contains('ca-lb-snap') && !box().classList.contains('opacity-0'), 'v1.59.0: the pair breaking on a carried grab springs the photo home - never a dismissal');
+    // DRAGGED photo carries the dragged pose (offset AND the 0.95 detach)
+    w.eval("openMenuLightbox('" + A + "', " + rail + ")");
+    await wait(50);
+    pti(12, 140, 360);
+    mv(12, 140, 420);                        // the photo sits dragged at (0, 60, 0.95)
+    pt(13, 260, 300);                        // the pair lands - the drag dies, the pose carries
+    mv(12, 150, 420); mv(13, 270, 300);      // equal spread, the midpoint slides 10px right
+    R.eq(img().style.transform, 'translate(10.00px, 60.00px) scale(0.9500)', 'v1.60.0: the pinch continues from wherever the photo sat - the carried offset AND the carried 0.95 ride the pair math');
+    upAt(12, 150, 420); upAt(13, 270, 300);
+    R.ok(img().classList.contains('ca-lb-snap') && !box().classList.contains('opacity-0'), 'v1.60.0: the pair breaking on a carried drag springs the photo home - never a dismissal');
     await wait(500);
-    // the source shape: the constants, the grab paint, the release rule,
-    // the carry into the pair baseline, the photo-only arm, the dead door
-    R.ok(src.indexOf('const LB_HOLD_MS = 300;') >= 0 && src.indexOf('const LB_DRAG_CLOSE_PX = 100;') >= 0, 'the grab constants: 300ms to grab, 100px of vertical offset to dismiss');
-    R.ok(src.indexOf('lbGestPaint(lbGrabTx, lbGrabTy, 1);') >= 0, 'the grabbed photo paints its drag through the one transform door');
-    R.ok(src.indexOf("if (e.type !== 'pointercancel' && Math.abs(ty) >= LB_DRAG_CLOSE_PX) { closeMenuLightbox(); return; }") >= 0, 'the release rule: only a far-enough vertical offset on a real lift dismisses');
-    R.ok(src.indexOf('const carryTx = lbGrabTx, carryTy = lbGrabTy;') >= 0 && src.indexOf('lbGestFrom = { tx: carryTx, ty: carryTy, sc: 1 };') >= 0, 'a pinch landing on a grab carries the photo\u2019s offset into the pair baseline');
-    R.ok(src.indexOf('if (lbGestPts.size === 1 && e.target === img) {') >= 0, 'the grab arms only for a lone press ON THE PHOTO - the veil never grabs');
+    // the source shape: the constants, the lock, the dim, the release rules,
+    // the flip, the rail, the caption, the carried clamp floor
+    R.ok(src.indexOf('const LB_TAP_SLOP_PX = 10;') >= 0 && src.indexOf('const LB_CLOSE_PX = 80;') >= 0 && src.indexOf('const LB_DRAG_SCALE = 0.95;') >= 0, 'the swipe constants: the 10px slop, the 80px bar, the 0.95 detach');
+    R.ok(src.indexOf("lbDragAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';") >= 0, 'the axis lock: the first clear direction wins, coded once');
+    R.ok(src.indexOf('lbDimTrack(Math.max(0, 1 - Math.abs(lbDragTy) / LB_CLOSE_PX));') >= 0, 'the backdrop peels in proportion to the vertical drag');
+    R.ok(src.indexOf("if (axis === 'y' && e.type !== 'pointercancel' && Math.abs(ty) >= LB_CLOSE_PX) { closeMenuLightbox(); return; }") >= 0, 'the vertical release rule: past the bar on a real lift, dismiss');
+    R.ok(src.indexOf("if (axis === 'x' && e.type !== 'pointercancel' && Math.abs(tx) >= lbFlipPx()) { lbFlip(tx < 0 ? 1 : -1); return; }") >= 0, 'the sideways release rule: past a third of the photo, flip the dish');
+    R.ok(src.indexOf('function lbFlip(dir)') >= 0 && src.indexOf('return Math.max(50, Math.round(w / 3));') >= 0, 'the flip exists, floored at 50px so tiny photos still flip');
+    R.ok(src.indexOf("document.querySelectorAll('.menu-thumb')].filter(function (t) { return !t.closest('.hidden'); })") >= 0, 'the thumb tap hands the lightbox the sector\u2019s whole photo rail - hidden sections never join it');
+    R.ok(src.indexOf('id="menu-lightbox-dish"') >= 0 && src.indexOf("img.addEventListener('load', () => lbCaptionShow())") >= 0, 'the caption element exists and re-seats on every photo load');
+    R.ok(src.indexOf('Math.max(Math.min(1, lbGestFrom.sc), lbGestFrom.sc * (dist / lbGestBase.dist))') >= 0, 'the pair\u2019s scale floor rides the carried pose - from rest it is 1 (unchanged), from a drag it is 0.95');
     R.ok(src.indexOf("img.addEventListener('click'") === -1, 'the image tap door is GONE - no listener binds the photo\u2019s own click');
-    R.ok(src.indexOf('Pinch to zoom &amp; pan \u00b7 Hold and drag to dismiss') >= 0, 'the hint teaches the grab-and-drag (the owner\u2019s approved short line)');
+    R.ok(src.indexOf('Swipe sideways for other dishes \u00b7 up or down to close') >= 0, 'the hint teaches the swipes (the owner\u2019s approved line)');
   }
 
   // --- v1.55.0 (B1, owner-ordered): the remote ops switch — ops.json beside rates.json ---
@@ -728,11 +757,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.59.0';"), 'APP_VERSION stamped 1.59.0');
+    R.ok(src.includes("var APP_VERSION = '1.60.0';"), 'APP_VERSION stamped 1.60.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v326"), 'service-worker cache name bumped to v326 (the v1.59.0 grab-and-drag dismissal release)');
+    R.ok(sw.includes("crewassist-v327"), 'service-worker cache name bumped to v327 (the v1.60.0 swipe round)');
     const ratesFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8'));
     R.eq(ratesFile.version, 2, 'B3: the served rates.json is a v2 timeline');
     R.eq(ratesFile.periods.length, 3, 'B3: the timeline carries the 2022, 2025 and 2026 agreements');

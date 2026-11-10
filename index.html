@@ -1598,13 +1598,21 @@
             transform: rotate(180deg);
         }
         #menu-lightbox {
-            background: var(--ca-lightbox-veil);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             /* v1.45.33 (owner order): the unified pinch engine owns every
                touch on the whole view - the browser's native page pinch
                never competes with it */
             touch-action: none;
+        }
+        /* v1.60.0 (owner order): the dim layer - the veil the vertical drag
+           peels away. It owns the backdrop paint (moved off the box so the
+           box's own close fade never fights the drag dimming), clicks pass
+           through to the veil button beneath it, and its 380ms ease mirrors
+           the photo's spring on the way back in */
+        #menu-lightbox-dim {
+            background: var(--ca-lightbox-veil);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: opacity 380ms cubic-bezier(0.22, 1, 0.36, 1);
         }
         #menu-lightbox img {
             box-shadow: 0 12px 40px var(--ca-lightbox-shadow);
@@ -1623,6 +1631,9 @@
            faintest overshoot. The pair breaks and the image springs home to
            its baseline centered fit */
         #menu-lightbox img.ca-lb-snap { transition: transform 380ms cubic-bezier(0.22, 1.28, 0.36, 1); }
+        /* v1.60.0: the dish flip's glide - quicker and flatter than the
+           spring, the photo slides out and its successor slides in */
+        #menu-lightbox img.ca-lb-flip { transition: transform 190ms ease-out; }
 
         /* Inflight Menu Printer */
         #print-paper-wrap { transform-origin: top center; }
@@ -2903,12 +2914,21 @@
         <!-- Menu image lightbox -->
         <div id="menu-lightbox" class="fixed inset-0 z-[80] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-6" role="dialog" aria-modal="true">
             <button type="button" id="menu-lightbox-dismiss" class="absolute inset-0 w-full h-full cursor-zoom-out" aria-label="Close image"></button>
+            <!-- v1.60.0 (owner order): the dim layer - the veil paint moved
+                 off the box onto its own layer so the vertical drag can peel
+                 it away without fighting the box's own close fade; clicks
+                 pass straight through to the veil button beneath it -->
+            <div id="menu-lightbox-dim" class="absolute inset-0 pointer-events-none" aria-hidden="true"></div>
             <img id="menu-lightbox-img" alt="" class="relative z-10 max-w-[90vw] max-h-[78vh] object-contain rounded-2xl bg-black/20">
+            <!-- v1.60.0 (owner order): the dish's name rides above the photo -
+                 shown on open and on every sideways flip, hidden the moment a
+                 gesture starts (a plain tap leaves it alone) -->
+            <p id="menu-lightbox-dish" class="absolute inset-x-0 text-center text-sm font-medium px-6 truncate pointer-events-none transition-opacity duration-300 opacity-0" style="color: rgba(255, 255, 255, 0.92); text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55)"></p>
             <!-- v1.45.33 (owner order): the transient micro-instructional
                  hint - quiet low-contrast micro text, centered at the
                  bottom, active exactly three seconds from mount, then a
                  smooth 500ms ease-in-out fade to nothing -->
-            <p id="menu-lightbox-hint" class="ca-micro absolute bottom-6 inset-x-0 text-center pointer-events-none transition-opacity duration-500 ease-in-out" style="color: var(--arch-muted)">Pinch to zoom &amp; pan · Hold and drag to dismiss</p>
+            <p id="menu-lightbox-hint" class="ca-micro absolute bottom-6 inset-x-0 text-center pointer-events-none transition-opacity duration-500 ease-in-out" style="color: var(--arch-muted)">Swipe sideways for other dishes · up or down to close</p>
         </div>
 
         <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true">
@@ -3381,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.59.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.60.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3403,6 +3423,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.60.0', d: '2026-11-19', items: [
+                { c: 'new', t: 'Swipe a menu photo sideways to see the next dish.' },
+                { c: 'imp', t: 'Photos shrink and the background dims as you drag them shut.' }
+            ] },
             { v: '1.59.0', d: '2026-11-18', items: [
                 { c: 'imp', t: 'Hold and drag a menu photo to dismiss it; taps do nothing.' }
             ] },
@@ -19876,8 +19900,8 @@ SLOT|Special Lve others`;
         // lands. The moment the pair breaks - either finger lifts
         // - the image springs back to its baseline centered fit through the
         // gentle elastic ease-out, and a plain tap on the veil still closes
-        // the view (since v1.59.0 a tap on the photo itself does nothing -
-        // hold it to grab, drag, and let go to dismiss; see the grab block).
+        // the view (a tap on the photo itself does nothing - since v1.60.0
+        // the photo answers swipes alone; see the drag block).
         let lbGestPts = new Map();
         let lbGestBase = null;    // { dist, midX, midY } at the pair's landing
         let lbGestFrom = null;    // { tx, ty, sc } at the pair's landing
@@ -19887,25 +19911,67 @@ SLOT|Special Lve others`;
         let lbFreshTap = false;   // a lone pointer went down and up clean, never joining a pair - a deliberate tap
         let lbGestEaseT = null;   // the snap-back class cleanup
         let lbHintT = null;       // the hint's three-second lifetime
-        // v1.59.0 (owner order): the grab-and-drag dismissal — a plain tap
-        // on the photo does NOTHING now. Press and HOLD the photo (300ms
-        // within the tap slop) to grab it; the photo then follows the
-        // finger freely, and letting go with it dragged ~100px up or down
-        // dismisses the view (anything less, or a sideways wander, springs
-        // it home through the same elastic ease-out the pinch uses). A
-        // press that moves before its hold completes never grabs. The pair
-        // engine keeps two-finger play: a second finger kills a pending or
-        // live grab and the pinch continues from wherever the photo sat.
-        let lbHoldT = null;       // the grab's arm timer - pending until it fires
-        let lbGrabId = null;      // the lone pointer arming or holding the grab
-        let lbGrabOn = false;     // the hold fired - the photo follows the finger
-        let lbGrabX = 0, lbGrabY = 0;      // where the finger landed
-        let lbGrabTx = 0, lbGrabTy = 0;    // the photo's dragged offset
-        const LB_HOLD_MS = 300;
-        const LB_DRAG_CLOSE_PX = 100;
-        function lbHoldReset() {
-            if (lbHoldT !== null) { clearTimeout(lbHoldT); lbHoldT = null; }
-            lbGrabId = null; lbGrabOn = false; lbGrabTx = 0; lbGrabTy = 0;
+        // v1.60.0 (owner orders, the swipe round): the single finger rules
+        // now. The MOMENT a finger on the photo moves past the tap slop it
+        // takes the photo - no hold, no wait - and the first clear
+        // direction locks the axis for the whole touch. Sideways: the
+        // photo drags along X only (up/down is ignored), and releasing
+        // past a third of the photo's width flips to the next/previous
+        // dish (the ends drag heavy and bounce - no wrap). Up/down: the
+        // photo drags along Y only while the backdrop dims with the
+        // distance, and releasing past 80px dismisses the view; anything
+        // less springs home through the elastic ease-out, backdrop
+        // restored. While it follows the finger the photo shrinks a touch
+        // - it detaches from the canvas. The pair engine keeps two-finger
+        // play: a second finger kills the drag and the pinch continues
+        // from wherever the photo sat.
+        let lbDragId = null;      // the lone finger that may take the photo (it arms only ON the photo)
+        let lbDragX = 0, lbDragY = 0;      // where that finger landed
+        let lbDragAxis = null;    // 'x' or 'y' once the first clear direction wins - null while it could still be a tap
+        let lbDragTx = 0, lbDragTy = 0;    // the photo's dragged offset - the locked axis alone moves
+        let lbDishes = null;      // the sector's photo-bearing dishes in display order (null: a bare open, nothing to flip)
+        let lbDishIdx = -1;       // which dish is on stage
+        let lbFlipT = null;       // the two-phase flip's pending timer
+        const LB_TAP_SLOP_PX = 10;    // under this a touch is a tap, not a swipe
+        const LB_CLOSE_PX = 80;       // vertical release past this dismisses (owner order)
+        const LB_DRAG_SCALE = 0.95;   // the photo detaches while it follows the finger
+        function lbDragReset() {
+            lbDragId = null; lbDragAxis = null; lbDragTx = 0; lbDragTy = 0;
+        }
+        function lbDimTrack(k) {
+            const dim = document.getElementById('menu-lightbox-dim');
+            if (!dim) return;
+            if (dim.style.transition !== 'none') dim.style.transition = 'none';   // while the finger rules, no transition
+            dim.style.opacity = String(k);
+        }
+        function lbDimRestore() {
+            const dim = document.getElementById('menu-lightbox-dim');
+            if (!dim) return;
+            dim.style.transition = '';   // the stylesheet's 380ms ease fades the veil back in
+            dim.style.opacity = '';
+        }
+        function lbCaptionShow() {
+            const cap = document.getElementById('menu-lightbox-dish');
+            if (!cap) return;
+            const en = (lbDishes && lbDishIdx >= 0) ? lbDishes[lbDishIdx] : null;
+            if (en && en.name) {
+                cap.textContent = en.name;
+                const box = document.getElementById('menu-lightbox');
+                const img = document.getElementById('menu-lightbox-img');
+                if (box && img) cap.style.bottom = Math.max(16, box.clientHeight - img.offsetTop + 14) + 'px';   // offset geometry is transform-immune - the caption rides above the photo wherever it rests
+                cap.classList.remove('opacity-0');
+            } else {
+                cap.classList.add('opacity-0');
+            }
+        }
+        function lbCaptionHide() {
+            const cap = document.getElementById('menu-lightbox-dish');
+            if (cap) cap.classList.add('opacity-0');
+        }
+        function lbFlipPx() {
+            const img = document.getElementById('menu-lightbox-img');
+            const w = (img && img.clientWidth) || 0;
+            return Math.max(50, Math.round(w / 3));   // a third of the photo's width, floored so tiny photos still flip
         }
         function lbGestPaint(tx, ty, sc) {
             const img = document.getElementById('menu-lightbox-img');
@@ -19914,36 +19980,61 @@ SLOT|Special Lve others`;
         function lbGestSnapBack() {
             const img = document.getElementById('menu-lightbox-img');
             lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
+            lbDimRestore();   // v1.60.0: the backdrop fades back in with the spring
             if (!img) return;
             img.classList.add('ca-lb-snap');
             lbGestPaint(0, 0, 1);
             clearTimeout(lbGestEaseT);
             lbGestEaseT = setTimeout(() => { img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); lbGestRan = false; lbGestIds = null; }, 460);   // destroyed when the spring lands
         }
+        function lbFlip(dir) {   // v1.60.0 (owner order): dir 1 flips to the NEXT dish (a left swipe), -1 to the previous
+            const img = document.getElementById('menu-lightbox-img');
+            const next = (lbDishes && lbDishes.length > 1) ? lbDishIdx + dir : -1;
+            if (!img || next < 0 || next >= (lbDishes ? lbDishes.length : 0)) { lbGestSnapBack(); return; }   // nothing to flip to - the bounce
+            lbGestPts = new Map();   // the dragging finger is spent
+            clearTimeout(lbGestEaseT);
+            clearTimeout(lbFlipT);
+            const slide = Math.max(240, Math.round((window.innerWidth || 800) * 0.6));
+            img.classList.add('ca-lb-flip');
+            lbGestPaint(dir * slide, 0, LB_DRAG_SCALE);   // phase one: the old photo slides off
+            lbFlipT = setTimeout(() => {
+                lbFlipT = null;
+                lbDishIdx = next;
+                img.src = lbDishes[lbDishIdx].src;
+                img.classList.remove('ca-lb-flip');
+                img.style.transition = 'none';
+                lbGestPaint(-dir * slide, 0, LB_DRAG_SCALE);   // phase two: the new photo waits off-stage...
+                void img.offsetWidth;   // ...the forced reflow lands the pose before the glide arms
+                img.style.transition = '';
+                img.classList.add('ca-lb-flip');
+                lbGestPaint(0, 0, 1);   // ...then glides home
+                lbCaptionShow();   // the new dish names itself above the arriving photo
+                lbFlipT = setTimeout(() => { lbFlipT = null; img.classList.remove('ca-lb-flip'); img.classList.remove('ca-lb-live'); lbGestRan = false; lbGestIds = null; }, 260);
+            }, 190);
+        }
         (function menuLbGestInit() {
             const box = document.getElementById('menu-lightbox');
             const img = document.getElementById('menu-lightbox-img');
             if (!box || !img) return;
+            img.addEventListener('load', () => lbCaptionShow());   // v1.60.0: each photo's true geometry re-seats its caption as it loads
             box.addEventListener('pointerdown', (e) => {
                 if (lbGestOn) return;
                 lbFreshTap = false;   // a new pointer resets the mark - its own clean lift may set it again
+                if (lbFlipT !== null) { clearTimeout(lbFlipT); lbFlipT = null; }   // v1.60.0: a flip in flight stands down for the new finger
                 img.classList.remove('ca-lb-snap');   // tracking mode: no transition, the fingers rule
+                img.classList.remove('ca-lb-flip');
                 lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY });   // ox/oy: the down origin - a TAP lifts where it landed
                 if (lbGestPts.size === 1 && e.target === img) {
-                    // v1.59.0 (owner order): a press ON THE PHOTO may hold to
-                    // grab it - after 300ms of staying put, the photo follows
-                    lbHoldReset();
-                    lbGrabId = e.pointerId; lbGrabX = e.clientX; lbGrabY = e.clientY;
-                    lbHoldT = setTimeout(() => {
-                        lbHoldT = null;
-                        if (lbGrabId === null || lbGrabOn || lbGestOn || lbGestPts.size !== 1) return;
-                        lbGrabOn = true;
-                        img.classList.add('ca-lb-live');   // the photo rides the compositor while it follows
-                    }, LB_HOLD_MS);
+                    // v1.60.0 (owner order): a finger ON THE PHOTO may take it -
+                    // the instant it moves past the tap slop (the move listener locks the axis)
+                    lbDragReset();
+                    lbDragId = e.pointerId; lbDragX = e.clientX; lbDragY = e.clientY;
                 }
                 if (lbGestPts.size === 2) {
-                    const carryTx = lbGrabTx, carryTy = lbGrabTy;   // v1.59.0: a pinch landing on a grabbed photo continues from where it sat
-                    lbHoldReset();   // the pair owns the touch - the grab dies
+                    const carryTx = (lbDragAxis === 'x') ? lbDragTx : 0, carryTy = (lbDragAxis === 'y') ? lbDragTy : 0;   // v1.59.0+v1.60.0: a pinch landing on a dragged photo continues from where it sat
+                    const carrySc = lbDragAxis ? LB_DRAG_SCALE : 1;
+                    lbDragReset();   // the pair owns the touch - the drag dies
+                    lbDimRestore();   // v1.60.0: the dismiss dimming dies with it - the pinch is play, not exit
                     // v1.45.35: ONLY a real pair may cancel the landing cleanup. The
                     // old blanket clearTimeout here let a lone tap inside the 460ms
                     // guard window eat the only code that ever cleared lbGestRan -
@@ -19953,9 +20044,10 @@ SLOT|Special Lve others`;
                     clearTimeout(lbGestEaseT);
                     const ps = [...lbGestPts.values()];
                     lbGestBase = { dist: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1, midX: (ps[0].x + ps[1].x) / 2, midY: (ps[0].y + ps[1].y) / 2 };
-                    lbGestFrom = { tx: carryTx, ty: carryTy, sc: 1 };
+                    lbGestFrom = { tx: carryTx, ty: carryTy, sc: carrySc };
                     lbGestOn = true; lbGestRan = true;
                     lbGestIds = new Set(lbGestPts.keys());   // these two fingers own the trailing click
+                    lbCaptionHide();   // v1.60.0: a gesture started - the name steps aside
                     img.classList.add('ca-lb-live');   // born with the pair
                 }
             });
@@ -19965,18 +20057,30 @@ SLOT|Special Lve others`;
             // the grab-and-drag is the gesture exit
         })();
         window.addEventListener('pointermove', (e) => {
-            // v1.59.0 (owner order): the grab - a HELD press on the photo
-            // makes it follow the finger freely; a press that wanders beyond
-            // the tap slop before its hold completes never grabs at all.
-            if (lbGrabId !== null && e.pointerId === lbGrabId) {
-                if (!lbGrabOn) {
-                    if (Math.hypot(e.clientX - lbGrabX, e.clientY - lbGrabY) > 10) lbHoldReset();   // a wander, not a hold
-                } else {
-                    lbGrabTx = e.clientX - lbGrabX;
-                    lbGrabTy = e.clientY - lbGrabY;
-                    lbGestPaint(lbGrabTx, lbGrabTy, 1);
+            // v1.60.0 (owner orders): the instant drag - the photo follows the
+            // moment the finger moves past the tap slop, and the first clear
+            // direction locks the axis for the whole touch (up/down takes ties).
+            if (lbDragId !== null && e.pointerId === lbDragId) {
+                const dx = e.clientX - lbDragX, dy = e.clientY - lbDragY;
+                if (lbDragAxis === null && Math.hypot(dx, dy) > LB_TAP_SLOP_PX) {
+                    lbDragAxis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+                    const imgEl = document.getElementById('menu-lightbox-img');
+                    if (imgEl) imgEl.classList.add('ca-lb-live');   // the photo rides the compositor while it follows
+                    lbCaptionHide();   // a gesture started - the name steps aside
+                }
+                if (lbDragAxis !== null) {
+                    if (lbDragAxis === 'x') {
+                        lbDragTx = dx; lbDragTy = 0;   // the lock: sideways means sideways - up/down never moves it
+                        const atLast = !lbDishes || lbDishes.length < 2 || lbDishIdx >= lbDishes.length - 1;
+                        const atFirst = !lbDishes || lbDishes.length < 2 || lbDishIdx <= 0;
+                        if ((lbDragTx < 0 && atLast) || (lbDragTx > 0 && atFirst)) lbDragTx *= 0.3;   // nothing to flip to - the end drags heavy
+                    } else {
+                        lbDragTy = dy; lbDragTx = 0;   // the lock: up/down means up/down
+                        lbDimTrack(Math.max(0, 1 - Math.abs(lbDragTy) / LB_CLOSE_PX));   // the backdrop peels away with the drag
+                    }
+                    lbGestPaint(lbDragTx, lbDragTy, LB_DRAG_SCALE);
                     const o = lbGestPts.get(e.pointerId);
-                    if (o) lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: o.ox, oy: o.oy });   // v1.59.0: the map tracks the grab - a pair landing on it builds its base from where the finger really sits, so the pinch continues without a jump
+                    if (o) lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: o.ox, oy: o.oy });   // v1.59.0: the map tracks the drag - a pair landing on it builds its base from where the finger really sits, so the pinch continues without a jump
                 }
             }
             if (!lbGestOn) return;
@@ -19987,23 +20091,27 @@ SLOT|Special Lve others`;
             const ps = [...lbGestPts.values()];
             const dist = Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1;
             const midX = (ps[0].x + ps[1].x) / 2, midY = (ps[0].y + ps[1].y) / 2;
-            const sc = Math.min(6, Math.max(1, lbGestFrom.sc * (dist / lbGestBase.dist)));
+            const sc = Math.min(6, Math.max(Math.min(1, lbGestFrom.sc), lbGestFrom.sc * (dist / lbGestBase.dist)));   // v1.60.0: the floor rides the carried pose - from rest it is 1 (unchanged), from a dragged photo it is the drag's 0.95, so the pinch continues seamlessly
             const tx = lbGestFrom.tx + (midX - lbGestBase.midX);
             const ty = lbGestFrom.ty + (midY - lbGestBase.midY);
             lbGestPaint(tx, ty, sc);
         });
         function lbGestEnd(e) {
-            // v1.59.0 (owner order): the grab's release - let go with the
-            // photo dragged far enough up or down and the view dismisses;
-            // any other release (or a cancelled pointer) springs it home
-            if (lbGrabId !== null && e.pointerId === lbGrabId) {
-                const wasGrab = lbGrabOn, ty = lbGrabTy;
-                lbHoldReset();
-                if (wasGrab) {
-                    if (e.type !== 'pointercancel' && Math.abs(ty) >= LB_DRAG_CLOSE_PX) { closeMenuLightbox(); return; }
+            // v1.60.0 (owner orders): the release - past the bar, the locked
+            // axis decides: sideways flips the dish, up/down dismisses the
+            // view; anything less (or a cancelled finger) springs home with
+            // the backdrop restored
+            if (lbDragId !== null && e.pointerId === lbDragId) {
+                const axis = lbDragAxis, tx = lbDragTx, ty = lbDragTy;
+                lbDragReset();
+                if (axis !== null) {
+                    lbGestPts.delete(e.pointerId);   // the dragging finger is spent either way
+                    if (axis === 'y' && e.type !== 'pointercancel' && Math.abs(ty) >= LB_CLOSE_PX) { closeMenuLightbox(); return; }
+                    if (axis === 'x' && e.type !== 'pointercancel' && Math.abs(tx) >= lbFlipPx()) { lbFlip(tx < 0 ? 1 : -1); return; }
                     lbGestSnapBack();   // not far enough - the elastic spring home (clears the slate with it)
                     return;
                 }
+                // axis null: a tap-like press on the photo - a tap does nothing; fall through
             }
             if (!lbGestPts.has(e.pointerId)) return;
             const p = lbGestPts.get(e.pointerId);   // captured before the delete - the lift position needs the origin
@@ -20016,18 +20124,25 @@ SLOT|Special Lve others`;
             // window is still armed. A drag lifts far from its origin and
             // never marks (browsers synthesize no click for it anyway).
             if (lbGestOn || lbGestPts.size || (lbGestIds && lbGestIds.has(e.pointerId))) return;
-            if (typeof e.clientX === 'number' && typeof p.ox === 'number' && Math.hypot(e.clientX - p.ox, e.clientY - p.oy) <= 10) lbFreshTap = true;
+            if (typeof e.clientX === 'number' && typeof p.ox === 'number' && Math.hypot(e.clientX - p.ox, e.clientY - p.oy) <= LB_TAP_SLOP_PX) lbFreshTap = true;   // v1.60.0: the slop is named - the drag lock and the tap test share one bar
         }
         window.addEventListener('pointerup', lbGestEnd);
         window.addEventListener('pointercancel', lbGestEnd);
 
-        function openMenuLightbox(url) {
+        function openMenuLightbox(url, dishes) {
             if (!url) return;
             const box = document.getElementById('menu-lightbox');
             const img = document.getElementById('menu-lightbox-img');
             const hint = document.getElementById('menu-lightbox-hint');
             if (!box || !img) return;
             img.src = url;
+            // v1.60.0 (owner order): the flip list - the sector's photo-bearing
+            // dishes in display order; a bare url opens with no list (nothing
+            // to flip, no name to show) so old callers keep working
+            lbDishes = Array.isArray(dishes) && dishes.length ? dishes : null;
+            lbDishIdx = lbDishes ? lbDishes.findIndex(function (en) { return en && en.src === url; }) : -1;
+            if (lbDishIdx < 0) lbDishes = null;
+            lbDimRestore();   // every open starts with the backdrop fully in
             box.classList.remove('hidden');
             // v1.45.33: the hint mounts visible instantly (no fade-in eats
             // into its three seconds), then fades smoothly to nothing
@@ -20039,6 +20154,7 @@ SLOT|Special Lve others`;
                 clearTimeout(lbHintT);
                 lbHintT = setTimeout(() => hint.classList.add('opacity-0'), 3000);
             }
+            lbCaptionShow();   // v1.60.0: the dish names itself above the photo (a bare open leaves it hidden)
             requestAnimationFrame(() => box.classList.remove('opacity-0'));
         }
 
@@ -20049,15 +20165,19 @@ SLOT|Special Lve others`;
             if (!box) return;
             clearTimeout(lbHintT);
             if (hint) hint.classList.add('opacity-0');
+            lbCaptionHide();   // v1.60.0: the name dies with the view
             lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
             lbGestRan = false; lbGestIds = null; lbFreshTap = false;   // v1.45.35: the whole interaction state dies with the view
-            lbHoldReset();   // v1.59.0: the grab state dies with the view too
+            lbDragReset();   // v1.60.0: the drag state dies with the view too
+            clearTimeout(lbFlipT); lbFlipT = null;   // a flip in flight dies with it
             clearTimeout(lbGestEaseT);
-            if (img) { img.style.transform = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); }
+            if (img) { img.style.transform = ''; img.style.transition = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-flip'); img.classList.remove('ca-lb-live'); }
             box.classList.add('opacity-0');
             setTimeout(() => {
                 box.classList.add('hidden');
                 if (img) img.removeAttribute('src');
+                const dimEl = document.getElementById('menu-lightbox-dim');   // v1.60.0: the dim rests back at full for the next open - INSTANTLY, under the hidden view, or a drag-dismissed close would glow back up mid-fade
+                if (dimEl) { dimEl.style.transition = 'none'; dimEl.style.opacity = ''; void dimEl.offsetWidth; dimEl.style.transition = ''; }
             }, 280);
         }
 
@@ -20066,7 +20186,15 @@ SLOT|Special Lve others`;
             if (thumb) {
                 e.preventDefault();
                 e.stopPropagation();
-                openMenuLightbox(thumb.getAttribute('data-full'));
+                // v1.60.0 (owner order): the lightbox opens with the sector's
+                // whole photo rail - the dish list the sideways swipe flips
+                // through, each photo carrying its dish's name (hidden
+                // sections never join the rail)
+                const rail = [...document.querySelectorAll('.menu-thumb')].filter(function (t) { return !t.closest('.hidden'); }).map(function (t) {
+                    const im = t.querySelector('img');
+                    return { src: t.getAttribute('data-full'), name: (im && im.getAttribute('data-dish')) || '' };
+                });
+                openMenuLightbox(thumb.getAttribute('data-full'), rail);
                 return;
             }
             if (e.target && e.target.id === 'menu-lightbox-dismiss' && (!lbGestRan || lbFreshTap)) closeMenuLightbox();
