@@ -2908,7 +2908,7 @@
                  hint - quiet low-contrast micro text, centered at the
                  bottom, active exactly three seconds from mount, then a
                  smooth 500ms ease-in-out fade to nothing -->
-            <p id="menu-lightbox-hint" class="ca-micro absolute bottom-6 inset-x-0 text-center pointer-events-none transition-opacity duration-500 ease-in-out" style="color: var(--arch-muted)">Pinch to zoom &amp; pan</p>
+            <p id="menu-lightbox-hint" class="ca-micro absolute bottom-6 inset-x-0 text-center pointer-events-none transition-opacity duration-500 ease-in-out" style="color: var(--arch-muted)">Pinch to zoom &amp; pan · Hold and drag to dismiss</p>
         </div>
 
         <div id="whatsnew-backdrop" class="fixed inset-0 z-[88] hidden opacity-0 transition-opacity duration-200 bg-black/60 flex items-center justify-center p-6" role="dialog" aria-modal="true">
@@ -3381,7 +3381,7 @@
             }
         }
 
-        var APP_VERSION = '1.58.0'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.59.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3403,6 +3403,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.59.0', d: '2026-11-18', items: [
+                { c: 'imp', t: 'Hold and drag a menu photo to dismiss it; taps do nothing.' }
+            ] },
             { v: '1.58.0', d: '2026-11-17', items: [
                 { c: 'imp', t: 'Finishing the main tour brings you straight home to your chat.' },
                 { c: 'imp', t: 'Settings sections always sit folded when you come back to them.' },
@@ -19872,8 +19875,9 @@ SLOT|Special Lve others`;
         // (ca-lb-live) is born with the pair and destroyed when the spring
         // lands. The moment the pair breaks - either finger lifts
         // - the image springs back to its baseline centered fit through the
-        // gentle elastic ease-out, and a plain tap anywhere (the veil or the
-        // image itself, once no gesture ran) still closes the view.
+        // gentle elastic ease-out, and a plain tap on the veil still closes
+        // the view (since v1.59.0 a tap on the photo itself does nothing -
+        // hold it to grab, drag, and let go to dismiss; see the grab block).
         let lbGestPts = new Map();
         let lbGestBase = null;    // { dist, midX, midY } at the pair's landing
         let lbGestFrom = null;    // { tx, ty, sc } at the pair's landing
@@ -19883,19 +19887,25 @@ SLOT|Special Lve others`;
         let lbFreshTap = false;   // a lone pointer went down and up clean, never joining a pair - a deliberate tap
         let lbGestEaseT = null;   // the snap-back class cleanup
         let lbHintT = null;       // the hint's three-second lifetime
-        // v1.58.0 (owner order): the hold-and-swipe exit — press and HOLD
-        // (300ms within the tap slop), then swipe up or down, and the view
-        // leaves. Single-finger only: the pair engine keeps two-finger play,
-        // and a press that wanders before its hold arms is just a drag.
-        let lbHoldT = null;       // the arm timer - pending until it fires
-        let lbHoldArmed = false;  // the hold lasted - a vertical swipe exits now
-        let lbHoldId = null;      // the lone pointer that holds
-        let lbHoldX = 0, lbHoldY = 0;   // where it landed
+        // v1.59.0 (owner order): the grab-and-drag dismissal — a plain tap
+        // on the photo does NOTHING now. Press and HOLD the photo (300ms
+        // within the tap slop) to grab it; the photo then follows the
+        // finger freely, and letting go with it dragged ~100px up or down
+        // dismisses the view (anything less, or a sideways wander, springs
+        // it home through the same elastic ease-out the pinch uses). A
+        // press that moves before its hold completes never grabs. The pair
+        // engine keeps two-finger play: a second finger kills a pending or
+        // live grab and the pinch continues from wherever the photo sat.
+        let lbHoldT = null;       // the grab's arm timer - pending until it fires
+        let lbGrabId = null;      // the lone pointer arming or holding the grab
+        let lbGrabOn = false;     // the hold fired - the photo follows the finger
+        let lbGrabX = 0, lbGrabY = 0;      // where the finger landed
+        let lbGrabTx = 0, lbGrabTy = 0;    // the photo's dragged offset
         const LB_HOLD_MS = 300;
-        const LB_SWIPE_PX = 60;
+        const LB_DRAG_CLOSE_PX = 100;
         function lbHoldReset() {
             if (lbHoldT !== null) { clearTimeout(lbHoldT); lbHoldT = null; }
-            lbHoldArmed = false; lbHoldId = null;
+            lbGrabId = null; lbGrabOn = false; lbGrabTx = 0; lbGrabTy = 0;
         }
         function lbGestPaint(tx, ty, sc) {
             const img = document.getElementById('menu-lightbox-img');
@@ -19919,15 +19929,21 @@ SLOT|Special Lve others`;
                 lbFreshTap = false;   // a new pointer resets the mark - its own clean lift may set it again
                 img.classList.remove('ca-lb-snap');   // tracking mode: no transition, the fingers rule
                 lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY });   // ox/oy: the down origin - a TAP lifts where it landed
-                if (lbGestPts.size === 1) {
-                    // v1.58.0: a lone press may HOLD - after 300ms of staying
-                    // put, a swipe up or down exits the view
+                if (lbGestPts.size === 1 && e.target === img) {
+                    // v1.59.0 (owner order): a press ON THE PHOTO may hold to
+                    // grab it - after 300ms of staying put, the photo follows
                     lbHoldReset();
-                    lbHoldId = e.pointerId; lbHoldX = e.clientX; lbHoldY = e.clientY;
-                    lbHoldT = setTimeout(() => { lbHoldT = null; lbHoldArmed = true; }, LB_HOLD_MS);
+                    lbGrabId = e.pointerId; lbGrabX = e.clientX; lbGrabY = e.clientY;
+                    lbHoldT = setTimeout(() => {
+                        lbHoldT = null;
+                        if (lbGrabId === null || lbGrabOn || lbGestOn || lbGestPts.size !== 1) return;
+                        lbGrabOn = true;
+                        img.classList.add('ca-lb-live');   // the photo rides the compositor while it follows
+                    }, LB_HOLD_MS);
                 }
                 if (lbGestPts.size === 2) {
-                    lbHoldReset();   // v1.58.0: the pair owns the touch - the hold dies
+                    const carryTx = lbGrabTx, carryTy = lbGrabTy;   // v1.59.0: a pinch landing on a grabbed photo continues from where it sat
+                    lbHoldReset();   // the pair owns the touch - the grab dies
                     // v1.45.35: ONLY a real pair may cancel the landing cleanup. The
                     // old blanket clearTimeout here let a lone tap inside the 460ms
                     // guard window eat the only code that ever cleared lbGestRan -
@@ -19937,28 +19953,30 @@ SLOT|Special Lve others`;
                     clearTimeout(lbGestEaseT);
                     const ps = [...lbGestPts.values()];
                     lbGestBase = { dist: Math.hypot(ps[0].x - ps[1].x, ps[0].y - ps[1].y) || 1, midX: (ps[0].x + ps[1].x) / 2, midY: (ps[0].y + ps[1].y) / 2 };
-                    lbGestFrom = { tx: 0, ty: 0, sc: 1 };
+                    lbGestFrom = { tx: carryTx, ty: carryTy, sc: 1 };
                     lbGestOn = true; lbGestRan = true;
                     lbGestIds = new Set(lbGestPts.keys());   // these two fingers own the trailing click
                     img.classList.add('ca-lb-live');   // born with the pair
                 }
             });
-            // v1.45.35: a fresh tap (a lone pointer that never joined the pair) closes
-            // even inside the guard window - the pinch's own fingers never do
-            img.addEventListener('click', () => { if (!lbGestRan || lbFreshTap) closeMenuLightbox(); });
+            // v1.59.0 (owner order): the photo's own tap door is GONE - a
+            // plain tap on the image does nothing; the veil button (the
+            // document-level listener) and Escape are the tap exits, and
+            // the grab-and-drag is the gesture exit
         })();
         window.addEventListener('pointermove', (e) => {
-            // v1.58.0 (owner order): the hold-and-swipe exit - a HELD press
-            // that travels vertically leaves the view; a press that wanders
-            // beyond the tap slop before its hold arms never becomes one.
-            if (lbHoldId !== null && e.pointerId === lbHoldId) {
-                const dx = e.clientX - lbHoldX, dy = e.clientY - lbHoldY;
-                if (!lbHoldArmed) {
-                    if (Math.hypot(dx, dy) > 10) lbHoldReset();   // a drag, not a hold
-                } else if (Math.abs(dy) >= LB_SWIPE_PX && Math.abs(dy) >= Math.abs(dx)) {
-                    lbHoldReset();
-                    closeMenuLightbox();
-                    return;
+            // v1.59.0 (owner order): the grab - a HELD press on the photo
+            // makes it follow the finger freely; a press that wanders beyond
+            // the tap slop before its hold completes never grabs at all.
+            if (lbGrabId !== null && e.pointerId === lbGrabId) {
+                if (!lbGrabOn) {
+                    if (Math.hypot(e.clientX - lbGrabX, e.clientY - lbGrabY) > 10) lbHoldReset();   // a wander, not a hold
+                } else {
+                    lbGrabTx = e.clientX - lbGrabX;
+                    lbGrabTy = e.clientY - lbGrabY;
+                    lbGestPaint(lbGrabTx, lbGrabTy, 1);
+                    const o = lbGestPts.get(e.pointerId);
+                    if (o) lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: o.ox, oy: o.oy });   // v1.59.0: the map tracks the grab - a pair landing on it builds its base from where the finger really sits, so the pinch continues without a jump
                 }
             }
             if (!lbGestOn) return;
@@ -19975,7 +19993,18 @@ SLOT|Special Lve others`;
             lbGestPaint(tx, ty, sc);
         });
         function lbGestEnd(e) {
-            if (lbHoldId !== null && e.pointerId === lbHoldId) lbHoldReset();   // v1.58.0: the hold dies with its finger
+            // v1.59.0 (owner order): the grab's release - let go with the
+            // photo dragged far enough up or down and the view dismisses;
+            // any other release (or a cancelled pointer) springs it home
+            if (lbGrabId !== null && e.pointerId === lbGrabId) {
+                const wasGrab = lbGrabOn, ty = lbGrabTy;
+                lbHoldReset();
+                if (wasGrab) {
+                    if (e.type !== 'pointercancel' && Math.abs(ty) >= LB_DRAG_CLOSE_PX) { closeMenuLightbox(); return; }
+                    lbGestSnapBack();   // not far enough - the elastic spring home (clears the slate with it)
+                    return;
+                }
+            }
             if (!lbGestPts.has(e.pointerId)) return;
             const p = lbGestPts.get(e.pointerId);   // captured before the delete - the lift position needs the origin
             lbGestPts.delete(e.pointerId);
@@ -20022,7 +20051,7 @@ SLOT|Special Lve others`;
             if (hint) hint.classList.add('opacity-0');
             lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
             lbGestRan = false; lbGestIds = null; lbFreshTap = false;   // v1.45.35: the whole interaction state dies with the view
-            lbHoldReset();   // v1.58.0: the hold-and-swipe state dies with the view too
+            lbHoldReset();   // v1.59.0: the grab state dies with the view too
             clearTimeout(lbGestEaseT);
             if (img) { img.style.transform = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); }
             box.classList.add('opacity-0');

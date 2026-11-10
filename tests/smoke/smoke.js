@@ -102,11 +102,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.58.0', 'APP_VERSION is 1.58.0');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.59.0', 'APP_VERSION is 1.59.0');
         eq(await page.evaluate(() => window.APP_OPS.sq.enabled === true && window.APP_OPS.sq.path === '/api/sq' && window.APP_OPS.notice === null), true, 'the ops config boots with the shipped defaults — SQ on, default path, no notice');
         ok(await page.evaluate(() => fetch('/ops.json').then((r) => r.ok)), 'ops.json is served beside rates.json');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.58.0' && e.d === '2026-11-17' && e.items.length === 3 && e.items.filter((i) => i.c === 'imp').length === 2 && e.items.filter((i) => i.c === 'new').length === 1; }), 'the changelog carries the 1.58.0 entry — two imp pointers and one new');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v325'), 'the service-worker cache name is bumped to v325 (the v1.58.0 tour-close, fold-reset and hold-swipe release)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.59.0' && e.d === '2026-11-18' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.59.0 entry — one imp pointer');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v326'), 'the service-worker cache name is bumped to v326 (the v1.59.0 grab-and-drag dismissal release)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -168,9 +168,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.58.0'; }), 'the What\'s New sheet carries the v1.58.0 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Finishing the main tour brings you straight home to your chat.') !== -1), 'the What\'s New sheet carries the v1.58.0 tour-close pointer');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Hold a menu photo, then swipe up or down to close it.') !== -1), 'the What\'s New sheet carries the v1.58.0 hold-swipe pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.59.0'; }), 'the What\'s New sheet carries the v1.59.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Finishing the main tour brings you straight home to your chat.') !== -1), 'the What\'s New sheet carries the v1.58.0 tour-close pointer, still in the delta');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Hold a menu photo, then swipe up or down to close it.') !== -1), 'the What\'s New sheet carries the v1.58.0 hold-swipe pointer, still in the delta');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Hold and drag a menu photo to dismiss it; taps do nothing.') !== -1), 'the What\'s New sheet carries the v1.59.0 grab-and-drag pointer');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Dead code swept out — nothing you see changes.') !== -1), 'the What\'s New sheet carries the v1.57.1 tidy-up pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A quiet ops switch: lookups can be paused or moved remotely.') !== -1), 'the What\'s New sheet carries the v1.55.0 ops-switch pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Both empty months now read the same: No flights yet.') !== -1), 'the What\'s New sheet carries the v1.54.2 empty-calendar pointer, still in the delta');
@@ -2924,7 +2925,7 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
         await sleep(300);
         const lbOpen33 = Date.now();
-        ok(await page.evaluate(() => { const h = document.getElementById('menu-lightbox-hint'); return h && !h.classList.contains('opacity-0') && h.textContent === 'Pinch to zoom & pan' && getComputedStyle(h).fontSize === '11px'; }), 'v1.45.33: the hint mounts visible - quiet 11px micro text, centered at the bottom');
+        ok(await page.evaluate(() => { const h = document.getElementById('menu-lightbox-hint'); return h && !h.classList.contains('opacity-0') && h.textContent === 'Pinch to zoom & pan · Hold and drag to dismiss' && getComputedStyle(h).fontSize === '11px'; }), 'v1.45.33: the hint mounts visible - quiet 11px micro text, centered at the bottom');
         const cdp33 = await page.createCDPSession();
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 100, y: 300, id: 1 }, { x: 260, y: 300, id: 2 }] });
         await sleep(150);
@@ -2946,7 +2947,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => document.getElementById('menu-lightbox-hint').classList.contains('opacity-0')), 'v1.45.33: exactly three seconds from mount, the hint fades to nothing');
         await page.evaluate(() => document.getElementById('menu-lightbox-img').click());
         await sleep(400);
-        ok(await page.evaluate(() => document.getElementById('menu-lightbox').classList.contains('hidden')), 'v1.45.33: a plain tap on the image exits the view');
+        ok(await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('hidden') && !document.getElementById('menu-lightbox').classList.contains('opacity-0')), 'v1.59.0 (owner order): a plain tap on the photo does nothing - the image door is gone');
+        await page.evaluate(() => document.getElementById('menu-lightbox-dismiss').click());
+        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
+        ok(true, 'v1.59.0: the veil tap still exits the view');
         // v1.45.35 (owner report: "sometimes I cannot exit out of the image
         // by tapping outside of the image"): the old engine's lone-pointer
         // pointerdown cancelled the only timer that ever cleared the exit
@@ -2966,27 +2970,51 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
         ok(true, 'v1.45.35: a quick tap on the veil right after the pinch closes the view - a deliberate tap is never the pinch\u2019s trailing click, and the guard can never stick (the owner bug)');
-        // v1.58.0 (owner order): hold, then swipe up or down exits the image
-        // view - a real held press in real Chromium (CDP touch, one id)
-        await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+        // v1.59.0 (owner order): the grab-and-drag dismissal - a plain tap
+        // on the photo does nothing; a real held press grabs it in real
+        // Chromium (CDP touch, one id). The 1x1 gif renders the img ~1px,
+        // so the rig sizes it first - the grab arms only for a press ON
+        // the photo
+        const lb59 = await page.evaluate((g) => { openMenuLightbox(g); const im = document.getElementById('menu-lightbox-img'); im.style.width = '200px'; im.style.height = '200px'; const r = im.getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; }, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
         await sleep(300);
-        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 180, y: 400, id: 4 }] });
-        await sleep(420);   // past the 300ms hold arm
-        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 180, y: 490, id: 4 }] });
-        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('opacity-0'), { timeout: 5000 });
-        ok(true, 'v1.58.0: a held press that swipes down exits the image view - the owner\u2019s third door');
+        // a plain tap on the photo does nothing - the image door is gone
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: lb59.x, y: lb59.y, id: 4 }] });
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
-        // a swipe without the hold never exits: the press wanders first
-        await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
-        await sleep(300);
-        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 180, y: 400, id: 5 }] });
-        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 180, y: 500, id: 5 }] });   // before the hold arms - a drag
+        await sleep(400);
+        ok(await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('opacity-0') && !document.getElementById('menu-lightbox').classList.contains('hidden')), 'v1.59.0 (owner order): a plain tap on the photo does nothing - the image door is gone');
+        // a press that wanders before its hold completes never grabs: the
+        // photo never follows, and the release never dismisses
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: lb59.x, y: lb59.y, id: 5 }] });
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: lb59.x, y: lb59.y + 100, id: 5 }] });   // before the hold arms - a wander
         await sleep(420);
-        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 180, y: 620, id: 5 }] });
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: lb59.x, y: lb59.y + 140, id: 5 }] });
         await sleep(300);
-        ok(await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('opacity-0')), 'v1.58.0: a press that wanders before its hold arms is a drag - it never exits');
+        const wander59 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
+        ok(wander59 === '' && await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('opacity-0')), 'v1.59.0: a press that wanders before its hold completes never grabs - the photo never follows and the view stays');
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await sleep(300);
+        ok(await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('opacity-0')), 'v1.59.0: the wander release never dismisses');
+        // THE GRAB: hold past 300ms, drag 140px down, and the photo follows
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: lb59.x, y: lb59.y, id: 6 }] });
+        await sleep(420);   // past the 300ms hold arm
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: lb59.x, y: lb59.y + 140, id: 6 }] });
+        await sleep(200);
+        const grab59 = await page.evaluate(() => document.getElementById('menu-lightbox-img').style.transform);
+        ok((() => { const m = (grab59 || '').match(/translate\(([\d.-]+)px, ([\d.-]+)px\) scale\(([\d.]+)\)/); return !!m && Number(m[1]) === 0 && Number(m[2]) === 140 && Number(m[3]) === 1; })() && await page.evaluate(() => document.getElementById('menu-lightbox-img').classList.contains('ca-lb-live')), 'v1.59.0: held, the photo follows the finger freely - the transform tracks the drag (got ' + grab59 + ')');
+        // let go, and the far-enough drag dismisses the view
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('opacity-0'), { timeout: 5000 });
+        ok(true, 'v1.59.0: grab, drag 140px down, let go - the view dismisses');
+        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
+        // a short drag springs home instead: 40px is under the 100px bar
+        const lb59b = await page.evaluate((g) => { openMenuLightbox(g); const im = document.getElementById('menu-lightbox-img'); im.style.width = '200px'; im.style.height = '200px'; const r = im.getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) }; }, 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==');
+        await sleep(300);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: lb59b.x, y: lb59b.y, id: 7 }] });
+        await sleep(420);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: lb59b.x, y: lb59b.y + 40, id: 7 }] });
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await sleep(200);
+        ok(await page.evaluate(() => document.getElementById('menu-lightbox-img').classList.contains('ca-lb-snap') && !document.getElementById('menu-lightbox').classList.contains('opacity-0')), 'v1.59.0: released 40px down, the photo springs home - too little travel to dismiss');
         await page.evaluate(() => closeMenuLightbox());
         await sleep(400);
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
