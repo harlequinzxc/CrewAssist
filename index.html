@@ -3381,7 +3381,7 @@
             }
         }
 
-        var APP_VERSION = '1.57.1'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.58.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3403,6 +3403,11 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.58.0', d: '2026-11-17', items: [
+                { c: 'imp', t: 'Finishing the main tour brings you straight home to your chat.' },
+                { c: 'imp', t: 'Settings sections always sit folded when you come back to them.' },
+                { c: 'new', t: 'Hold a menu photo, then swipe up or down to close it.' }
+            ] },
             { v: '1.57.1', d: '2026-11-16', items: [
                 { c: 'imp', t: 'Dead code swept out — nothing you see changes.' }
             ] },
@@ -12144,6 +12149,9 @@ SLOT|Special Lve others`;
             sheet.classList.add('translate-y-full');
 
             caSheetHideArm(backdrop);   // hotfix 14: arm, never a bare timer
+            // v1.58.0 (owner order): the folds never survive a close —
+            // however the sections were left, a reopen finds them collapsed.
+            try { if (typeof caAccCloseAll === 'function') caAccCloseAll(); } catch (e) {}
         }
 
         // ==========================================
@@ -12158,6 +12166,9 @@ SLOT|Special Lve others`;
         // three door functions below are the app's own API for flows that
         // need a section guaranteed open (the spotlight's Settings worlds)
         // or a state handed back exactly as it stood (the stage revert).
+        // v1.58.0 (owner order): the fold state also dies with every CLOSE —
+        // closeSettings folds the sections, so a reopen always starts
+        // collapsed however they were left (a reload always did).
         // ==========================================
         (function () {
             function setAcc(head, open) {
@@ -12172,6 +12183,14 @@ SLOT|Special Lve others`;
             });
             window.caAccOpenAll = function () {
                 document.querySelectorAll('[data-accordion-target]').forEach((head) => setAcc(head, true));
+            };
+            // v1.58.0 (owner order): the fold's third door — everything
+            // closed. closeSettings() drives it, so a reopen always finds
+            // the sections collapsed however they were left; the tour's
+            // stage revert still re-puts the crew's own fold state by hand
+            // after its own closes, so no walk loses anything.
+            window.caAccCloseAll = function () {
+                document.querySelectorAll('[data-accordion-target]').forEach((head) => setAcc(head, false));
             };
             window.caAccState = function () {
                 const st = {};
@@ -19864,6 +19883,20 @@ SLOT|Special Lve others`;
         let lbFreshTap = false;   // a lone pointer went down and up clean, never joining a pair - a deliberate tap
         let lbGestEaseT = null;   // the snap-back class cleanup
         let lbHintT = null;       // the hint's three-second lifetime
+        // v1.58.0 (owner order): the hold-and-swipe exit — press and HOLD
+        // (300ms within the tap slop), then swipe up or down, and the view
+        // leaves. Single-finger only: the pair engine keeps two-finger play,
+        // and a press that wanders before its hold arms is just a drag.
+        let lbHoldT = null;       // the arm timer - pending until it fires
+        let lbHoldArmed = false;  // the hold lasted - a vertical swipe exits now
+        let lbHoldId = null;      // the lone pointer that holds
+        let lbHoldX = 0, lbHoldY = 0;   // where it landed
+        const LB_HOLD_MS = 300;
+        const LB_SWIPE_PX = 60;
+        function lbHoldReset() {
+            if (lbHoldT !== null) { clearTimeout(lbHoldT); lbHoldT = null; }
+            lbHoldArmed = false; lbHoldId = null;
+        }
         function lbGestPaint(tx, ty, sc) {
             const img = document.getElementById('menu-lightbox-img');
             if (img) img.style.transform = 'translate(' + tx.toFixed(2) + 'px, ' + ty.toFixed(2) + 'px) scale(' + sc.toFixed(4) + ')';
@@ -19886,7 +19919,15 @@ SLOT|Special Lve others`;
                 lbFreshTap = false;   // a new pointer resets the mark - its own clean lift may set it again
                 img.classList.remove('ca-lb-snap');   // tracking mode: no transition, the fingers rule
                 lbGestPts.set(e.pointerId, { x: e.clientX, y: e.clientY, ox: e.clientX, oy: e.clientY });   // ox/oy: the down origin - a TAP lifts where it landed
+                if (lbGestPts.size === 1) {
+                    // v1.58.0: a lone press may HOLD - after 300ms of staying
+                    // put, a swipe up or down exits the view
+                    lbHoldReset();
+                    lbHoldId = e.pointerId; lbHoldX = e.clientX; lbHoldY = e.clientY;
+                    lbHoldT = setTimeout(() => { lbHoldT = null; lbHoldArmed = true; }, LB_HOLD_MS);
+                }
                 if (lbGestPts.size === 2) {
+                    lbHoldReset();   // v1.58.0: the pair owns the touch - the hold dies
                     // v1.45.35: ONLY a real pair may cancel the landing cleanup. The
                     // old blanket clearTimeout here let a lone tap inside the 460ms
                     // guard window eat the only code that ever cleared lbGestRan -
@@ -19907,6 +19948,19 @@ SLOT|Special Lve others`;
             img.addEventListener('click', () => { if (!lbGestRan || lbFreshTap) closeMenuLightbox(); });
         })();
         window.addEventListener('pointermove', (e) => {
+            // v1.58.0 (owner order): the hold-and-swipe exit - a HELD press
+            // that travels vertically leaves the view; a press that wanders
+            // beyond the tap slop before its hold arms never becomes one.
+            if (lbHoldId !== null && e.pointerId === lbHoldId) {
+                const dx = e.clientX - lbHoldX, dy = e.clientY - lbHoldY;
+                if (!lbHoldArmed) {
+                    if (Math.hypot(dx, dy) > 10) lbHoldReset();   // a drag, not a hold
+                } else if (Math.abs(dy) >= LB_SWIPE_PX && Math.abs(dy) >= Math.abs(dx)) {
+                    lbHoldReset();
+                    closeMenuLightbox();
+                    return;
+                }
+            }
             if (!lbGestOn) return;
             if (!lbGestPts.has(e.pointerId)) return;
             const o = lbGestPts.get(e.pointerId);   // v1.45.35: the down origin survives the move - the tap-slop test needs it
@@ -19921,6 +19975,7 @@ SLOT|Special Lve others`;
             lbGestPaint(tx, ty, sc);
         });
         function lbGestEnd(e) {
+            if (lbHoldId !== null && e.pointerId === lbHoldId) lbHoldReset();   // v1.58.0: the hold dies with its finger
             if (!lbGestPts.has(e.pointerId)) return;
             const p = lbGestPts.get(e.pointerId);   // captured before the delete - the lift position needs the origin
             lbGestPts.delete(e.pointerId);
@@ -19967,6 +20022,7 @@ SLOT|Special Lve others`;
             if (hint) hint.classList.add('opacity-0');
             lbGestPts = new Map(); lbGestBase = null; lbGestFrom = null; lbGestOn = false;
             lbGestRan = false; lbGestIds = null; lbFreshTap = false;   // v1.45.35: the whole interaction state dies with the view
+            lbHoldReset();   // v1.58.0: the hold-and-swipe state dies with the view too
             clearTimeout(lbGestEaseT);
             if (img) { img.style.transform = ''; img.classList.remove('ca-lb-snap'); img.classList.remove('ca-lb-live'); }
             box.classList.add('opacity-0');
@@ -24120,7 +24176,20 @@ SLOT|Special Lve others`;
             // the handoff, so the What's-New sheet that follows opens onto
             // a clean stage. Only Settings can be open at walk-start, so
             // restore-open only ever reopens Settings.
-            try { if (caSpot.stage) caSpotStageRestore(caSpot.stage); } catch (e) {}
+            try {
+                if (caSpot.stage) {
+                    let stRestore = caSpot.stage;
+                    // v1.58.0 (owner order): the MAIN walk's Done lands on
+                    // the chat screen — step 8's Settings world never hands
+                    // the sheet back on completion, whatever path started
+                    // the walk (the invitation, the chat command, a Settings
+                    // row-tap). Skip and Escape keep the pre-tap contract;
+                    // the folds ride the close door down, so a reopen finds
+                    // them collapsed.
+                    if (completed === true && caSpot.id === 'main' && stRestore && stRestore.settings) stRestore = Object.assign({}, stRestore, { settings: false, acc: null });
+                    caSpotStageRestore(stRestore);
+                }
+            } catch (e) {}
             caSpot.stage = null;
             // v1.49.1 (owner order): ONLY Done completes the walk. Skip and
             // Escape leave the completion unstamped — the invitation returns

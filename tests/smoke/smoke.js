@@ -102,11 +102,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.57.1', 'APP_VERSION is 1.57.1');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.58.0', 'APP_VERSION is 1.58.0');
         eq(await page.evaluate(() => window.APP_OPS.sq.enabled === true && window.APP_OPS.sq.path === '/api/sq' && window.APP_OPS.notice === null), true, 'the ops config boots with the shipped defaults — SQ on, default path, no notice');
         ok(await page.evaluate(() => fetch('/ops.json').then((r) => r.ok)), 'ops.json is served beside rates.json');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.57.1' && e.d === '2026-11-16' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.57.1 entry — one imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v324'), 'the service-worker cache name is bumped to v324 (the v1.57.1 tidy-up release)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.58.0' && e.d === '2026-11-17' && e.items.length === 3 && e.items.filter((i) => i.c === 'imp').length === 2 && e.items.filter((i) => i.c === 'new').length === 1; }), 'the changelog carries the 1.58.0 entry — two imp pointers and one new');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v325'), 'the service-worker cache name is bumped to v325 (the v1.58.0 tour-close, fold-reset and hold-swipe release)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -168,8 +168,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.57.1'; }), 'the What\'s New sheet carries the v1.57.1 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Dead code swept out — nothing you see changes.') !== -1), 'the What\'s New sheet carries the v1.57.1 tidy-up pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.58.0'; }), 'the What\'s New sheet carries the v1.58.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Finishing the main tour brings you straight home to your chat.') !== -1), 'the What\'s New sheet carries the v1.58.0 tour-close pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Hold a menu photo, then swipe up or down to close it.') !== -1), 'the What\'s New sheet carries the v1.58.0 hold-swipe pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Dead code swept out — nothing you see changes.') !== -1), 'the What\'s New sheet carries the v1.57.1 tidy-up pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('A quiet ops switch: lookups can be paused or moved remotely.') !== -1), 'the What\'s New sheet carries the v1.55.0 ops-switch pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Both empty months now read the same: No flights yet.') !== -1), 'the What\'s New sheet carries the v1.54.2 empty-calendar pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The empty calendar reads shorter: No rosters yet., one tap below.') !== -1), 'the What\'s New sheet carries the v1.54.1 empty-calendar pointer, still in the delta');
@@ -549,6 +551,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => localStorage.getItem('crewAssist.spotMainDone') === '1'), 'Done on the main tour keeps the legacy mirror stamped');
         ok(await page.evaluate(() => JSON.parse(localStorage.getItem('crewAssist.spotDone') || '{}').main === '1.53.2'), 'v1.50.0: Done stamps the per-walk store at main\u2019s current cv (1.53.2 since the rewritten closer)');
         ok(await page.evaluate(() => { const i = document.querySelector('#ca-feature-tours [data-ca-spot="main"] .ca-spot-row-status'); return i && i.getAttribute('data-lucide') === 'circle-check' && i.className.indexOf('text-sia-gold') !== -1; }), 'v1.50.0: the main row flips to the gold circle-check at Done');
+        // v1.58.0 (owner order): the main walk's Done CLOSES the Settings
+        // sheet — the crew lands on the chat screen, never inside the sheet
+        await page.waitForFunction(() => document.getElementById('settings-backdrop').classList.contains('hidden'), { timeout: 5000 }).catch(() => {});
+        ok(await page.evaluate(() => document.getElementById('settings-backdrop').classList.contains('hidden')), 'v1.58.0: the main walk\u2019s Done closes Settings behind it — the closer sends the crew home, whatever path started the walk');
 
         // v1.53.0 + v1.53.1 (owner order): the Settings accordions — the
         // four quieter sections (Feature tour, Developer Mode, Storage,
@@ -605,6 +611,15 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => !document.getElementById('ca-ft-section').classList.contains('ca-acc-closed')), 'the fold the crew tapped open rides home open');
         ok(await page.evaluate(() => !document.getElementById('settings-backdrop').classList.contains('hidden')), 'the pre-tap stage holds — Settings stays open after the skip');
         await page.evaluate(() => { caAccOpenAll(); closeSettings(); });
+        await sleep(500);
+        // v1.58.0 (owner order): the folds never survive a close — the
+        // sheet above left every section OPEN; the reopen must find them
+        await page.evaluate(() => openSettings());
+        await page.waitForFunction(() => !document.getElementById('settings-sheet').classList.contains('translate-y-full'), { timeout: 5000 });
+        await sleep(350);
+        ok(await page.evaluate(() => [...document.querySelectorAll('.ca-acc')].every((el) => el.classList.contains('ca-acc-closed'))), 'v1.58.0: the reopen finds every fold collapsed — however they were left');
+        ok(await page.evaluate(() => getComputedStyle(document.getElementById('ca-acc-ft')).gridTemplateRows === '0px'), 'v1.58.0: the reopened fold body rides grid-template-rows at 0px — the close reset is real geometry, not a class alone');
+        await page.evaluate(() => closeSettings());
         await sleep(500);
 
         // v1.49.1 (owner order): ALL highlighted content fits the viewport —
@@ -2951,6 +2966,29 @@ async function calcCard(page, { type, t1, t2, lma }) {
         await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
         await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
         ok(true, 'v1.45.35: a quick tap on the veil right after the pinch closes the view - a deliberate tap is never the pinch\u2019s trailing click, and the guard can never stick (the owner bug)');
+        // v1.58.0 (owner order): hold, then swipe up or down exits the image
+        // view - a real held press in real Chromium (CDP touch, one id)
+        await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+        await sleep(300);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 180, y: 400, id: 4 }] });
+        await sleep(420);   // past the 300ms hold arm
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 180, y: 490, id: 4 }] });
+        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('opacity-0'), { timeout: 5000 });
+        ok(true, 'v1.58.0: a held press that swipes down exits the image view - the owner\u2019s third door');
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.waitForFunction(() => document.getElementById('menu-lightbox').classList.contains('hidden'), { timeout: 5000 });
+        // a swipe without the hold never exits: the press wanders first
+        await page.evaluate(() => openMenuLightbox('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+        await sleep(300);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 180, y: 400, id: 5 }] });
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 180, y: 500, id: 5 }] });   // before the hold arms - a drag
+        await sleep(420);
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: 180, y: 620, id: 5 }] });
+        await sleep(300);
+        ok(await page.evaluate(() => !document.getElementById('menu-lightbox').classList.contains('opacity-0')), 'v1.58.0: a press that wanders before its hold arms is a drag - it never exits');
+        await cdp33.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.evaluate(() => closeMenuLightbox());
+        await sleep(400);
         await page.setViewport({ width: 390, height: 844, hasTouch: true });
         await sleep(300);
         await page.evaluate((d) => { closeMenuViewer(); localStorage.removeItem('SQ836:' + d + ':CABINS'); localStorage.removeItem('SQ836:' + d + ':JCL'); }, heroDate);

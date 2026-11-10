@@ -120,12 +120,19 @@ Done, Skip, Escape and supersede alike:
   page closes with its passport; Settings — the one sheet that can be open at
   a walk's start (a row-tap) — hands back open. A row-tapped walk restores the
   **pre-tap** stage, so the sheet the crew tapped inside reopens.
+  **(v1.58.0, owner order: the main walk's Done is the one exception — step
+  8's Settings sheet closes on completion, every start path alike, so the
+  closer sends the crew home to the chat screen. Skip, Escape and supersede
+  keep the pre-tap contract.)**
 - **Toggles** revert: the calendar's tag chip sits as it sat.
 - **Scrolls** revert: the chat's chip rail and the Settings sheet's own
   scroll ride home — a walk never leaves either scrolled away.
 - **Folds** revert (v1.53.0): the Settings fold sections sit as the crew
   left them — a walk that opens a fold to light it re-folds it at its end,
-  and an untouched section never moves.
+  and an untouched section never moves. (v1.58.0: the sheet's own close door
+  folds every section — a reopen always finds them collapsed — but a walk
+  that hands Settings back open still re-puts the crew's fold state by hand,
+  so this revert wins wherever the sheet reopens.)
 - **Storage** reverts: a prop's fetch writes what a real search writes (the
   recent-flights list, the cabin and menu caches) — the stage carries those
   keys and puts them back. A tour saves nothing.
@@ -146,7 +153,8 @@ Done, Skip, Escape and supersede alike:
 ### Main screen (`main`, 8 steps)
 
 Runs on the main chat screen; step 8 opens Settings and lights the Feature tour
-section itself.
+section itself. Since v1.58.0, Done on this walk closes the Settings sheet too —
+the crew lands home on the chat screen whatever path started the walk.
 
 | # | Target | Title | Line |
 |---|---|---|---|
@@ -166,7 +174,9 @@ tour rows: the changelog panel lives in Support & Updates (above, with the
 Telegram row), so the closer’s ring points at the tours alone. The four
 quiet sections (Feature tour, Developer Mode, Storage, Data Management) sit
 FOLDED until their header is tapped — one tap opens, and the fold state
-lives in memory only: a reload folds them again, and nothing is ever saved.
+lives in memory only: a reload folds them again, closing the sheet folds them
+again (v1.58.0, owner order — a reopen always finds them collapsed), and
+nothing is ever saved.
 A fold can never hide a lit target: every walk that lights inside Settings
 opens the folds it needs and hands the crew’s own fold state back at its
 end.
