@@ -3145,7 +3145,7 @@
                         <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full ca-inset border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
                     <div id="print-protein-seg" class="flex ca-inset rounded-full p-0.5 shrink-0 border border-black/10 dark:border-white/10" role="group" aria-label="Protein marking style">
-                        <button type="button" id="print-protein-brackets" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein in brackets"><i data-lucide="brackets" class="w-4 h-4"></i></button>
+                        <button type="button" id="print-protein-brackets" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein in diamonds"><i data-lucide="diamond" class="w-4 h-4"></i></button>
                         <button type="button" id="print-protein-square" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein highlighted black"><i data-lucide="square" class="w-4 h-4"></i></button>
                     </div>
                     <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Bounds</span></button>
@@ -3401,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.60.2'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.60.3'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3423,6 +3423,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.60.3', d: '2026-11-19', items: [
+                { c: 'imp', t: 'Proteins print in diamonds instead of brackets.' }
+            ] },
             { v: '1.60.2', d: '2026-11-19', items: [
                 { c: 'fix', t: 'The dish name comes back when the photo settles unchanged.' }
             ] },
@@ -21951,8 +21954,10 @@ SLOT|Special Lve others`;
 
         function printHighlightProteins(name) {
             // v1.34.0 (owner ruling): compact protein marking is a MODE —
-            // [brackets] by default (plain black text, print-safe on every
-            // engine), or the black invert when the crew picks the square.
+            // v1.60.3 (owner order): the default mark is the DIAMOND pair
+            // ◆WORD◆ (solid ink, plain black text, print-safe on every
+            // engine; was [brackets] until 1.60.2), or the black invert when
+            // the crew picks the square. The mode key stays 'brackets'.
             return printMarkProteins(name, printState.proteinMode === 'square' ? 'invert' : 'brackets');
         }
 
@@ -21972,7 +21977,7 @@ SLOT|Special Lve others`;
                 if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
                 if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
-                if (mode === 'brackets') return '[' + inner + ']';
+                if (mode === 'brackets') return '◆' + inner + '◆';   // v1.60.3 (owner order): diamonds - solid ink, they read where thin brackets vanished into the text
                 return '<s>' + inner + '</s>';
             }).join('');
         }
@@ -22305,7 +22310,7 @@ SLOT|Special Lve others`;
             const square = printState.proteinMode === 'square';
             return String(add || '').trim().split(/\s+/).map((w) => (
                 printIsProteinWord(w.replace(/[^a-zA-Z]/g, '').toLowerCase())
-                    ? (square ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>' : '[' + escapePrintHtml(w) + ']')
+                    ? (square ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>' : '◆' + escapePrintHtml(w) + '◆')
                     : escapePrintHtml(w)
             )).join(' ');
         }
@@ -23058,13 +23063,14 @@ SLOT|Special Lve others`;
             return lines.length ? lines : [String(text || '')];
         }
 
-        // v1.34.0: brackets mode renders protein as [WORD] in the item's own
-        // colour — no fill, so every print engine and the canvas export agree.
+        // v1.34.0: the mark mode renders protein in the item's own colour —
+        // no fill, so every print engine and the canvas export agree. v1.60.3:
+        // the mark is the diamond pair ◆WORD◆ (owner order; keyed 'brackets').
         function compactTokRectOn() {
             return printState.proteinMode !== 'brackets';
         }
         function compactTokText(tok) {
-            return (tok.invert && !compactTokRectOn()) ? '[' + tok.text + ']' : tok.text;
+            return (tok.invert && !compactTokRectOn()) ? '◆' + tok.text + '◆' : tok.text;   // v1.60.3: diamonds here too
         }
         function compactTokWidth(ctx, tok, fontPx) {
             const w = ctx.measureText(compactTokText(tok)).width;

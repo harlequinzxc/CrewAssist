@@ -120,18 +120,18 @@ const EMDASH = '\u2014'; // —
   // --- v1.34.0: brackets marking mode + hidden proteins on non-mains (SQ106) ---
   {
     R.eq(w.printState.proteinMode, 'brackets', 'brackets is the default marking mode');
-    R.eq(w.printHighlightProteins('GRILLED CHICKEN BREAST'), 'GRILLED [CHICKEN] BREAST', 'brackets mode wraps the protein word, plain black text');
+    R.eq(w.printHighlightProteins('GRILLED CHICKEN BREAST'), 'GRILLED ◆CHICKEN◆ BREAST', 'v1.60.3 (owner order): the mark mode wraps the protein word in DIAMONDS - solid ink, plain black text');
     // SQ106: the cold refreshment hid its sliced smoked chicken in the description
     const html = w.printCompactItems('COLD REFRESHMENT:', [
       { name: 'Open-Faced Sandwich', desc: 'Topped with sliced smoked chicken and herb mayonnaise' }
     ], false, false);
-    R.ok(html.includes('<span class="pc-add">' + WACUTE + ' SLICED SMOKED [CHICKEN]</span>'), 'SQ106 hidden protein surfaces as a brackets-marked addition');
+    R.ok(html.includes('<span class="pc-add">' + WACUTE + ' SLICED SMOKED ◆CHICKEN◆</span>'), 'SQ106 hidden protein surfaces as a diamond-marked addition (v1.60.3)');
     R.ok(html.indexOf('pc-hl') === -1, 'brackets mode renders no invert spans');
     // a primary-style description reads dash-style, like the sandwich mains
     const html2 = w.printCompactItems('COLD REFRESHMENT:', [
       { name: 'Open-Faced Sandwich', desc: 'Sliced smoked chicken, lettuce, herb mayonnaise' }
     ], false, false);
-    R.ok(html2.includes('<span class="pc-add">\u2014 [CHICKEN]</span>'), 'primary protein on a non-main reads dash-style');
+    R.ok(html2.includes('<span class="pc-add">\u2014 ◆CHICKEN◆</span>'), 'primary protein on a non-main reads dash-style (v1.60.3: the diamond follows)');
     // the square restores the black invert everywhere
     w.printState.proteinMode = 'square';
     const html3 = w.printCompactItems('COLD REFRESHMENT:', [
@@ -142,9 +142,10 @@ const EMDASH = '\u2014'; // —
     // the canvas export carries the same hidden protein
     const toks = w.compactItemTokens('OPEN-FACED SANDWICH', 'Topped with sliced smoked chicken', false);
     R.ok(toks.some((t) => t.add && t.invert && t.text === 'CHICKEN'), 'canvas tokens carry the hidden protein as an invert token');
+    R.ok(toks.some((t) => t.invert && w.compactTokText(t) === '◆CHICKEN◆'), 'v1.60.3: the canvas export draws the diamond pair too');
     // a name that already shows its protein gains no addition
     const html4 = w.printCompactItems('COLD REFRESHMENT:', [{ name: 'Smoked Chicken Sandwich', desc: 'with pickles' }], false, false);
-    R.ok(html4.indexOf('pc-add') === -1 && html4.includes('SMOKED [CHICKEN] SANDWICH'), 'no addition when the name already shows the protein; the name itself brackets');
+    R.ok(html4.indexOf('pc-add') === -1 && html4.includes('SMOKED ◆CHICKEN◆ SANDWICH'), 'no addition when the name already shows the protein; the name itself wears the diamonds (v1.60.3)');
     // starches never surface on non-mains (the dessert ruling stands)
     const html5 = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
     R.ok(html5.indexOf('pc-add') === -1, 'non-main additions stay protein-only (no starch lines on desserts)');
@@ -179,10 +180,13 @@ const EMDASH = '\u2014'; // —
     R.ok(/\.pc-hl\s*{[^}]*-webkit-print-color-adjust:\s*exact/s.test(src) && /\.pc-hl\s*{[^}]*print-color-adjust:\s*exact/s.test(src), 'the protein highlight forces its black fill through every print engine');
     // v1.34.0 (owner ruling): protein marking is a mode — [brackets] default,
     // black square invert opt-in; hidden proteins surface on non-mains too.
+    R.ok(src.includes("'◆' + inner + '◆'"), 'v1.60.3: the sheet path marks proteins in diamonds (source form)');
+    R.ok(src.includes("'◆' + tok.text + '◆'"), 'v1.60.3: the canvas path marks proteins in diamonds (source form)');
+    R.ok(src.includes('aria-label="Protein in diamonds"') && src.includes('data-lucide="diamond"'), 'v1.60.3: the toggle wears the diamond icon and its honest label (the ids and the mode key stay)');
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.60.2';"), 'APP_VERSION stamped 1.60.2');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v329"), 'service-worker cache name bumped to v329 (the v1.60.2 name-return round)');
+    R.ok(src.includes("var APP_VERSION = '1.60.3';"), 'APP_VERSION stamped 1.60.3');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v330"), 'service-worker cache name bumped to v330 (the v1.60.3 diamond round)');
     R.ok(!fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes('html2canvas'), 'v1.47.1: no painter is precached at all — the cameras hand-paint, so captures are offline by construction');
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("'./vendor/fonts/plus-jakarta-sans-700.woff2'"), 'v1.46.1: the house font\u2019s weights are precached — the painter\u2019s clone embeds them as data URLs, offline');
   }
