@@ -2369,3 +2369,648 @@ Vitamin Rich | High Protein | Digestive Support"
 - **Turkish Menemen with Borek, Sauteed Mushrooms and Green Pepper**  *(YCL)*
 - **Vegetable Biryani with Paneer Makhani**  *(YCL)*
 - **Wok-Fried Vegetable Rice Vermicelli with Seafood**  *(JCL)*
+
+---
+
+<!-- Addendum v1.4 cross-checked pair-by-pair against the frozen fixture (tests/menu-extraction.fixture.json entries 1139..1603): 0 mismatches on starch winners and meat lists. -->
+
+## Addendum v1.4 — the adopted corpus (v1.60.5), generated the same way as v1.3
+
+Corpus: 3022 records · 750 unique (name, description) pairs · 465 of them fresh (never in the 2024–2026 archive); the 285 overlapping pairs keep their v1.3 review rows above. The archive stays beside this file — dishes that come back keep their history.
+
+| Section | All 750 | Fresh 465 |
+|---|---|---|
+| A. Proposed STARCH line — connector style | 219 | 124 |
+| B. Proposed STARCH line — plain style | 274 | 175 |
+| F. MEAT/SEAFOOD REVEAL — hidden style | 26 | 13 |
+| G. MEAT/SEAFOOD REVEAL — primary style | 22 | 15 |
+| C. Skipped (name already carries it) | 110 | 74 |
+| D. No line at all | 88 | 54 |
+| E. Empty description | 11 | 10 |
+| …A+B entries that ALSO carry a meat-reveal marker | 162 | |
+
+Reading guide: same as v1.3 — `→` is the proposed second line, `⚠ meat:` marks starch dishes that additionally reveal hidden protein, `⚠ also:` lists alternate starch candidates. The fresh 465, section by section:
+
+### A. Proposed STARCH line — connector style (124 fresh)
+
+- **Ali Nazik Kebab** → `wedges`  ⚠ also: `baked potato`  ⚠ meat: `succulent beef`  *(SCL ×1 flights)*
+- **Assorted Dim Sum** → `rice`  ⚠ also: `dumpling`, `egg white dumpling`  ⚠ meat: `Prawn`, `seared pork`, `duck`  *(JCL ×2 flights)*
+- **Assorted Dim Sum Selection** → `buns`  ⚠ also: `dumpling`, `dumplings`  ⚠ meat: `shrimp`, `chicken`, `pork`  *(FCL ×7 flights)*
+- **Ayam Betutu Bali** → `steamed rice`  ⚠ meat: `chicken`, `shrimp`  *(JCL ×1 flights)*
+- **Baked Chilean Seabass with Piquillo Pepper and Almond Sauce** → `couscous`  ⚠ also: `wedge`  *(JCL ×22 flights)*
+- **Baked Cod Fillet in Superior Soy Sauce** → `egg noodles`  *(FCL ×1 flights)*
+- **Baked Crêpe With Scrambled Eggs And Smoked Salmon** → `potatoes`  *(JCL ×1 flights)*
+- **Baked Halibut with Semidried Tomato Salsa** → `potato`  *(JCL ×5 flights)*
+- **Beaujolais Farmyard Andouillette Sausage** → `penne`  *(JCL ×1 flights)*
+- **Beef Bourguignon** → `potato`  ⚠ also: `gratin`  *(SCL ×2 flights)*
+- **Beef Cacciatore** → `potatoes`  *(SCL ×4 flights)*
+- **Beef Fillet with Mustard Herb Crust** → `roasted potatoes`  *(JCL ×3 flights)*
+- **Beef Hor Fun** → `rice noodles`  *(FCL ×1 flights)*
+- **Beef Pastrami Sandwich** → `quinoa`  ⚠ also: `sourdough`, `bread`  *(JCL ×1 flights)*
+- **Beef Ragout with Capsicum** → `roasted red potatoes`  *(YCL ×1 flights)*
+- **Beef Sukiyaki** → `steamed rice`  *(JCL ×2 flights)*
+- **Braised Beef with Roasted Garlic Thyme Sauce** → `mashed potatoes`  *(YCL ×3 flights)*
+- **Braised Lamb Shank in Lemon Rosemary Sauce** → `couscous`  *(FCL ×1 flights)*
+- **Braised Mediterranean Seafood** → `saffron rice`  *(SCL ×5 flights)*
+- **Braised Pork Nghe An Style** → `brown rice`  *(JCL ×3 flights)*
+- **Braised Three Cup Chicken** → `rice`  ⚠ also: `steamed jasmine rice`  *(SCL ×1 flights)*
+- **Buta Shogayaki** → `rice`  ⚠ meat: `pork`  *(SCL ×1 flights)*
+- **Chanar Dalna, Aloo Gobi Mattar, Sabzi Pulao** → `rice`  ⚠ also: `dumplings`, `potato`  *(YCL ×1 flights)*
+- **Cheese Baked Chicken Breast Stuffed with Mushrooms** → `mashed potatoes`  *(JCL ×2 flights)*
+- **Chicken and Mushroom Ragout** → `pasta`  *(YCL ×1 flights)*
+- **Chicken Confit with chicken jus** → `polenta`  *(JCL ×2 flights)*
+- **Chicken Goulash** → `pasta`  *(YCL ×3 flights)*
+- **Chicken Piccata, Sun-dried Tomato Cream Sauce** → `mashed potatoes`  *(YCL ×1 flights)*
+- **Chicken Satay** → `rice`  *(JCL ×6 flights)*
+- **Chinese Herbal Chicken** → `steamed jasmine rice`  *(FCL ×1 flights)*
+- **Chipotle Carne Guisada** → `roasted potatoes`  ⚠ meat: `braised pork`  *(YCL ×1 flights)*
+- **Corned Beef Hash** → `garlic fried rice`  *(YCL ×1 flights)*
+- **Creamy Spinach Omelette** → `roasted potatoes`  ⚠ meat: `chicken sausage`  *(YCL ×1 flights)*
+- **Dak Bulgogi** → `steamed rice`  ⚠ meat: `marinated chicken`  *(YCL ×4 flights)*
+- **Deep-Fried Prawns with Chilli Jam** → `steamed jasmine rice`  *(JCL ×1 flights)*
+- **European Breakfast** → `bread`  ⚠ meat: `ham`  *(FCL ×1 flights)*
+- **Fresh Eggs** → `potatoes`  ⚠ meat: `bacon`, `pork sausage`, `smoked salmon`  *(FCL ×1 flights)*
+- **Fried Cod and Prawns with Sam Rod Sauce** → `steamed jasmine rice`  *(FCL ×1 flights)*
+- **Fried Fish in Sweet and Sour Sauce** → `steamed jasmine rice`  *(SCL ×3 flights)*
+- **Gaeng Keow Wan Moo** → `steamed Jasmine rice`  ⚠ meat: `pork`  *(JCL ×4 flights)*
+- **Gaeng Kiew Waan Talay** → `steamed jasmine rice`  ⚠ meat: `seafood`  *(JCL ×1 flights)*
+- **Galbi Jjim** → `steamed rice`  ⚠ meat: `Braised beef`  *(JCL ×1 flights)*
+- **Garlic BBQ Pulled Chicken Sandwich** → `wedges`  ⚠ also: `brioche`, `potato`  *(JCL ×1 flights)*
+- **Garlic Braised Chicken** → `rice`  *(YCL ×2 flights)*
+- **Gochujang Chicken** → `steamed rice`  *(YCL ×5 flights)*
+- **Grilled Beef Fillet in Green Peppercorn Sauce** → `potatoes`  *(JCL ×1 flights)*
+- **Grilled Chicken with Barbecue Sauce** → `garlic butter potatoes`  *(YCL ×1 flights)*
+- **Grilled Prawn in Seafood Mousse** → `turmeric rice`  *(JCL ×3 flights)*
+- **Grilled Tuttafett Ham Wrapped Chicken Confit with Creamy Green Peppercorn Sauce** → `mashed`  ⚠ also: `potatoes`  *(FCL ×2 flights)*
+- **Grouper Fillet with Chimichurri Marinade** → `roasted potatoes`  ⚠ meat: `fish`  *(JCL ×2 flights)*
+- **Gulai Kambing Semarang** → `steamed rice`  ⚠ meat: `lamb`  *(JCL ×6 flights)*
+- **Gyu Sukini** → `rice`  ⚠ also: `noodles`  ⚠ meat: `beef`  *(YCL ×3 flights)*
+- **Gyuniku** → `steamed rice`  ⚠ meat: `Braised sliced beef`  *(YCL ×2 flights)*
+- **Herb Crusted Chicken Roulade** → `mash`  ⚠ also: `potato`  *(JCL ×1 flights)*
+- **Hunan Style Minced Chicken with Pickled Beans** → `steamed jasmine rice`  *(YCL ×1 flights)*
+- **Japanese Wagyu Beef Tenderloin** → `gratin`  ⚠ also: `baked potato`  *(FCL ×1 flights)*
+- **Jhangi Champein, Murgh Patyala, Bhein Palak, Rajma Anardana, Zaitooni Pulao** → `rice`  ⚠ meat: `lamb`, `chicken`  *(JCL ×2 flights)*
+- **Jhangi Champein, Murgh Patyala, Bhein Palak, Rajma Anardana, Zaitooni Pulao** → `rice`  ⚠ meat: `lamb`, `chicken`  *(JCL ×2 flights)*
+- **Kadai Jhinga Masala, Langar Ki Dal, Gucchi 
+Gajar Pulao** → `rice`  ⚠ meat: `Prawns`  *(SCL ×1 flights)*
+- **Kai Krapow** → `steamed jasmine rice`  ⚠ meat: `minced chicken`  *(FCL, JCL ×2 flights)*
+- **Kai Yang** → `rice`  ⚠ meat: `grilled chicken`  *(JCL ×5 flights)*
+- **Kambing Bakar Kecap, Orak Arik, Nasi Kuning** → `turmeric rice`  ⚠ meat: `marinated lamb`  *(FCL ×1 flights)*
+- **Kra Pao Gai** → `steamed rice`  ⚠ meat: `chicken`  *(SCL ×4 flights)*
+- **Kra Pow Moo** → `steamed jasmine rice`  ⚠ meat: `sliced pork`  *(JCL ×10 flights)*
+- **Krapow Gai** → `steamed jasmine rice`  ⚠ meat: `stir-fried chicken`  *(YCL ×1 flights)*
+- **Laal Maas, Aloo Bhindi, Tikoni Korma, Zaffrani Pulao** → `potatoes`  ⚠ also: `rice`  ⚠ meat: `lamb`  *(SCL ×2 flights)*
+- **Lamb and Aubergine Kebab with Red Pepper Begendi** → `fragrant butter rice`  *(JCL ×1 flights)*
+- **Maewoon Gwangeo Jorim** → `rice`  ⚠ meat: `Braised halibut`  *(JCL ×3 flights)*
+- **Malabar Thenga Aracha Meen, Vendakkai Thokku, Keerai Poriyal, Chawal** → `rice`  ⚠ meat: `fish`  *(JCL ×1 flights)*
+- **Maya-Maya Fillet with Caper-Lime Sauce** → `wedges`  ⚠ also: `roasted potato`  *(JCL ×3 flights)*
+- **Mustard Chicken Stew** → `roasted potatoes`  *(YCL ×3 flights)*
+- **Nonya Beef Rendang** → `steamed rice`  *(FCL ×4 flights)*
+- **Northern China Braised Chicken with Hazelnut Mushrooms** → `steamed rice`  *(SCL ×1 flights)*
+- **Orange Chicken with Chow Mein** → `fried noodles`  *(YCL ×1 flights)*
+- **Oven Roasted Chicken Thigh with Chicken Jus** → `potatoes`  *(SCL ×2 flights)*
+- **Pacific Ocean Black Cod** → `couscous`  *(FCL ×1 flights)*
+- **Pan Roasted Chicken with Wild Mushrooms** → `saffron polenta`  *(JCL ×2 flights)*
+- **Pan Seared Prawns with Tarragon Shellfish Cream 
+Sauce** → `mashed potatoes`  *(SCL ×2 flights)*
+- **Pan-Fried Chicken Piccata in Tomato Sauce** → `potatoes`  *(YCL ×3 flights)*
+- **Pan-Fried Cod with Tuscan Tomato Sauce** → `potatoes`  *(FCL ×2 flights)*
+- **Pan-Fried Fish with Tomato Sauce** → `pasta`  *(YCL ×2 flights)*
+- **Pan-Fried Sea Bream Fillet with Morel Cream Sauce** → `potato`  *(JCL ×1 flights)*
+- **Pan-Fried Zander Fillet with Vegetable Stew** → `polenta`  *(JCL ×5 flights)*
+- **Pan-Seared Cheese Beef Pork Hamburger Steak In Mushroom Demi-Glace Sauce** → `mashed potato`  *(YCL ×4 flights)*
+- **Pan-seared Seafood with Creamy Lobster Sauce** → `pasta`  *(JCL ×1 flights)*
+- **Panang Nuer** → `rice`  ⚠ meat: `beef`  *(JCL ×5 flights)*
+- **Pork and Beef Hamburg Steak** → `steamed rice`  *(YCL ×1 flights)*
+- **Roast Chicken Thigh with Seasonal Vegetables** → `roasted potatoes`  *(YCL ×4 flights)*
+- **Roasted Chicken Supreme with Thyme Jus** → `potatoes`  *(JCL ×1 flights)*
+- **Roasted Five Spices Duck** → `fried rice`  *(FCL ×1 flights)*
+- **Roasted Garlic Herb-Marinated Chicken** → `pasta`  ⚠ also: `Penne`  *(YCL ×1 flights)*
+- **Roasted Pork Cha Shao** → `egg fried rice`  *(SCL ×2 flights)*
+- **Saengsun Jorim** → `steamed rice`  ⚠ meat: `Braised seabass`  *(JCL ×2 flights)*
+- **Safri Gosht, Makai Kaju Hara Pyaaz, Dal Haveli, Zaffrani Mewa Pulao** → `rice`  ⚠ meat: `Lamb`  *(JCL ×4 flights)*
+- **Seared Beef Fillet in Demi-Glace Sauce** → `mashed potatoes`  *(SCL ×1 flights)*
+- **Seared Prime Beef Fillet** → `potatoes`  *(FCL ×1 flights)*
+- **Selection of Dim Sum** → `dumpling`  ⚠ also: `rice`  ⚠ meat: `chicken`, `pork`, `prawn`  *(JCL ×2 flights)*
+- **Shahi Paneer Korma, Chana Saag, Mattar Pulao** → `rice`  *(YCL ×1 flights)*
+- **Shimla Kukkad, Mutton Karahi, Tadka Singada Matar, Trevti Dal, Chilgoza Pyaaz Pulao** → `rice`  *(JCL ×4 flights)*
+- **Shimla Kukkad, Mutton Karahi, Tadka Singada Matar, Trevti Dal, Chilgoza Pyaaz Pulao** → `rice`  *(JCL ×3 flights)*
+- **Slow Baked Chilean Seabass with Creamy Lemon Caper Sauce** → `roasted potatoes`  *(JCL ×1 flights)*
+- **Slow Roasted Lamb Shoulder with Thyme Garlic Sauce** → `potatoes`  *(JCL ×4 flights)*
+- **Sous Vide Chicken Roulade** → `barley`  *(FCL ×6 flights)*
+- **Spanish Omelette** → `potatoes`  ⚠ meat: `cured pork`  *(JCL ×5 flights)*
+- **Stewed Lamb Goulash** → `pasta`  *(YCL ×1 flights)*
+- **Stir-Fried Chicken in Broad Bean Paste Sauce** → `steamed rice`  *(YCL ×1 flights)*
+- **Stir-Fried Chicken in Ginger and Soya Sauce** → `egg noodles`  *(JCL ×2 flights)*
+- **Stir-Fried Kung Pao Prawns** → `egg fried rice`  *(JCL ×3 flights)*
+- **Stir-Fried Prawns in Sweet and Sour Sauce** → `rice`  *(JCL ×2 flights)*
+- **Stir-Fried Prawns with Ginger and Spring Onion** → `egg noodle`  *(JCL ×2 flights)*
+- **Stir-Fried Seafood** → `noodle`  *(JCL ×1 flights)*
+- **Stir-Fried Seafood with XO Sauce** → `aromatic egg fried rice`  *(FCL ×2 flights)*
+- **Stir-Fried Seafood with XO Sauce** → `aromatic egg fried rice`  *(JCL ×2 flights)*
+- **Stir-Fried Tiger Prawns with Cashew Nuts** → `steamed jasmine rice`  *(JCL ×6 flights)*
+- **Teochew Style Braised Soya Duck** → `rice`  ⚠ also: `yam`  *(JCL ×4 flights)*
+- **Thai Style Prawn in Khao Soi Sauce** → `steamed jasmine rice`  *(SCL ×1 flights)*
+- **Thai Yellow Chicken Curry** → `egg fried rice`  *(YCL ×1 flights)*
+- **Tori Teriyaki** → `steamed rice`  ⚠ meat: `Roasted chicken`  *(JCL ×3 flights)*
+- **Unagi Kabayaki** → `steamed rice`  *(YCL ×1 flights)*
+- **Vegetable and Herb Omelette** → `roasted potato`  ⚠ meat: `chicken`  *(FCL ×1 flights)*
+- **Warm Reuben Sandwich** → `potato`  ⚠ also: `bread`  ⚠ meat: `beef`  *(FCL ×1 flights)*
+- **Wok-Fried Beef and Sweet Peppers in Black Pepper Sauce** → `egg fried rice`  *(YCL ×2 flights)*
+- **Wok-Fried Chicken with Roasted Cashew Nuts and Crisp Celery** → `egg noodles`  *(FCL ×1 flights)*
+- **Wok-Fried Spicy Mala Chicken** → `steamed rice`  *(FCL ×2 flights)*
+
+### B. Proposed STARCH line — plain style (175 fresh)
+
+- **American Breakfast** → `potato`  ⚠ also: `Bread`  ⚠ meat: `chicken`, `sausage`  *(JCL ×1 flights)*
+- **American Breakfast** → `hash brown`  ⚠ also: `potato`, `Bread`  ⚠ meat: `chicken sausage`  *(JCL ×1 flights)*
+- **Anago Futami-Yaki** → `steamed rice`  *(JCL ×2 flights)*
+- **Assorted Dim Sum** → `dumpling`  ⚠ also: `rice`  ⚠ meat: `Prawn`, `spicy pork`, `prawn`, `chicken`, `pork sausage`  *(JCL ×1 flights)*
+- **Australian Beef Tenderloin** → `mashed potato`  *(JCL ×1 flights)*
+- **Awadhi Murgh, Dal Makhani, Matar Pulao** → `rice`  ⚠ meat: `chicken`  *(YCL ×3 flights)*
+- **Ayam Goreng Lengkuas** → `steamed rice`  ⚠ meat: `Tender chicken`, `prawn`  *(FCL ×1 flights)*
+- **Babi Genjol, Urapan Kacang dan Nasi** → `steamed jasmine rice`  ⚠ meat: `braised pork`  *(JCL ×1 flights)*
+- **Baked Cheese-Herb Crusted Halibut Fillet** → `potato`  *(FCL ×1 flights)*
+- **Baked Crepe Filled with Scrambled Eggs** → `hash brown`  ⚠ also: `potato`  ⚠ meat: `chicken sausage`  *(JCL ×1 flights)*
+- **Baked Fish with Mushroom Cream Sauce** → `potato`  ⚠ also: `mash`  *(YCL ×8 flights)*
+- **Bami Goreng** → `egg noodles`  ⚠ meat: `marinated chicken`, `prawns`  *(JCL ×1 flights)*
+- **Beef Hor Fun** → `rice noodles`  *(SCL ×1 flights)*
+- **Beef Machado** → `steamed rice`  *(JCL ×3 flights)*
+- **Black Bean Beef Hor Fun** → `fried rice noodles`  *(SCL ×3 flights)*
+- **Braised Bee Hoon with Prawn and Fish** → `Rice`  ⚠ also: `vermicelli`, `noodles`  *(YCL ×28 flights)*
+- **Braised Beef Cheek in Red Wine Sauce** → `Mashed potato`  *(JCL ×3 flights)*
+- **Braised Beef Cheek in Red Wine Sauce** → `mash`  *(JCL ×2 flights)*
+- **Braised Beef Cheek with Black Truffle Sauce** → `fried polenta cake`  *(JCL ×2 flights)*
+- **Braised Chicken** → `mashed potato`  *(YCL ×3 flights)*
+- **Braised Pork in Aged Vinegar Sauce** → `noodle`  *(FCL ×1 flights)*
+- **Bubur Ayam** → `creamy rice`  ⚠ also: `porridge`  ⚠ meat: `tender shredded chicken`  *(FCL ×1 flights)*
+- **Cantonese Sweet and Sour Cod** → `rice`  *(SCL ×2 flights)*
+- **Chargrilled Australian Black Angus Beef Fillet With Red Wine Sauce** → `Roasted fingerling potatoes`  *(JCL ×2 flights)*
+- **Chargrilled Australian Black Angus Beef Fillet With Red Wine Sauce** → `Mashed potatoes`  *(JCL ×2 flights)*
+- **Cheese and Herb Omelette** → `potato`  ⚠ meat: `Pan-fried pork sausage`  *(JCL ×2 flights)*
+- **Cheese and Parsley Omelette** → `potatoes`  ⚠ meat: `grilled chicken meat`  *(YCL ×1 flights)*
+- **Cheese Omelette** → `potatoes`  ⚠ meat: `pork sausage`  *(JCL ×1 flights)*
+- **Cheese Omelette** → `roasted potatoes`  ⚠ meat: `chicken sausage`  *(YCL ×1 flights)*
+- **Cheese Omelette** → `potato`  ⚠ meat: `pork sausage`  *(JCL ×1 flights)*
+- **Cheese Omelette** → `potato`  ⚠ meat: `chicken`  *(JCL ×3 flights)*
+- **Cheese Omelette** → `potatoes`  ⚠ meat: `chicken`  *(FCL ×1 flights)*
+- **Cheese Omelette with Chicken Sausages** → `potatoes`  *(YCL ×2 flights)*
+- **Chicken Hamburg Teriyaki with Gobo Takikomi Gohan** → `rice`  *(SCL ×2 flights)*
+- **Chicken Hoisin Bao** → `bun`  *(SCL, YCL ×24 flights)*
+- **Chicken Katsu Burger** → `soft bun`  *(FCL ×1 flights)*
+- **Chirashi Sushi** → `seasoned rice`  ⚠ meat: `salmon`, `tuna`, `scallop`, `salmon roe`  *(FCL ×1 flights)*
+- **Citrus French Toast** → `bread`  *(FCL ×3 flights)*
+- **Coq Au Vin Red Wine Chicken** → `mashed potatoes`  *(JCL ×3 flights)*
+- **Coq Au Vin Red Wine Chicken** → `fettuccine`  ⚠ also: `pasta`  *(JCL ×1 flights)*
+- **Dark Beer Braised Pork Ragout** → `creamy polenta`  *(YCL ×1 flights)*
+- **Egg Omelette Filled with Feta, Tomato and Spinach** → `potato`  ⚠ meat: `Pan-fried turkey ham`  *(JCL ×1 flights)*
+- **Egg White Omelette with Cheddar Cheese** → `potatoes`  ⚠ meat: `Pan-fried chicken sausage`  *(JCL ×1 flights)*
+- **Eral Peratal, Keerai Makki Cholam, Thalicha Parupu, Elimchai Sadam** → `rice`  ⚠ meat: `Prawn`  *(JCL ×3 flights)*
+- **Eral Peratal, Vankaya Pachadi, Lauki Dal Masala, Basmati** → `rice`  ⚠ meat: `Prawn`  *(JCL ×4 flights)*
+- **Fish in Hot Bean Sauce** → `noodles`  *(YCL ×1 flights)*
+- **Fish Tandoori, Subz Jhalfrezi, Basanti Pulao** → `rice`  *(SCL ×1 flights)*
+- **French Toast with Blackberry Compote** → `brioche`  *(SCL ×1 flights)*
+- **Fresh Eggs** → `roasted potatoes`  ⚠ meat: `pork sausages`  *(FCL ×1 flights)*
+- **Fresh Eggs** → `potato`  ⚠ meat: `bacon`, `chicken`  *(FCL ×9 flights)*
+- **Fried Yellow Croaker in Bamboo Shoot Potherb Mustard Sauce** → `rice`  ⚠ meat: `prawn`, `prawn roe`  *(JCL ×5 flights)*
+- **Gaeng Oom Nuea** → `steamed white rice`  ⚠ meat: `beef`  *(SCL ×9 flights)*
+- **Gobi Mattar, Dhal Masala, Jeera Pulao** → `rice`  *(YCL ×4 flights)*
+- **Gosht Kalia, Sabzi Punj Ratani, Dal Masala, Jhinga Dum Anari Mughlai Tarkari Pulao** → `rice`  ⚠ meat: `Lamb`, `prawns`  *(JCL ×8 flights)*
+- **Gosht Roganjosh, Masoor Dal Makhani, Subz Jalfrezi, Jeera Pulao** → `rice`  ⚠ meat: `lamb`  *(FCL ×1 flights)*
+- **Grilled Beef Fillet with Bercy Sauce** → `potatoes`  *(JCL ×1 flights)*
+- **Grilled Beef Fillet with Red Wine Veal Jus** → `potatoes`  *(FCL ×2 flights)*
+- **Grilled Seabass with Lemon and Bay Leaf** → `potato`  *(JCL ×1 flights)*
+- **Grilled Wagyu Beef Tenderloin** → `potato`  *(FCL ×1 flights)*
+- **Guinness Braised Lamb Stew** → `roasted potatoes`  *(SCL ×5 flights)*
+- **Herb Omelette** → `potatoes`  ⚠ meat: `grilled veal sausage`  *(JCL ×1 flights)*
+- **Herb-Crusted Lamb Chops** → `creamy mashed potatoes`  *(JCL ×2 flights)*
+- **Herb-Crusted Lamb Chops** → `baked potatoes`  *(JCL ×2 flights)*
+- **Herb-Crusted Lamb Loin with Seeded Mustard Jus** → `polenta cake`  *(FCL ×2 flights)*
+- **Hokkai Ochazuke** → `rice`  ⚠ also: `porridge`  ⚠ meat: `crab meat`, `salmon roe`  *(JCL ×1 flights)*
+- **Japanese Wagyu Beef Tenderloin** → `baked potato`  *(FCL ×1 flights)*
+- **Juk** → `rice`  ⚠ also: `porridge`  ⚠ meat: `shredded chicken`  *(JCL ×3 flights)*
+- **Kadai Gosht, Sabzi Pulao, Gobi Aloo Mattar** → `rice`  ⚠ also: `potato`  ⚠ meat: `Mutton`  *(YCL ×1 flights)*
+- **Kai Yaang** → `fried rice`  ⚠ meat: `marinated chicken`  *(FCL ×3 flights)*
+- **Khao Tom Moo** → `rice`  ⚠ meat: `minced pork`, `pork meat`  *(FCL ×4 flights)*
+- **Khao Tom Talay** → `rice`  ⚠ also: `porridge`  ⚠ meat: `scallop`, `prawns`, `sliced seabass`  *(JCL ×3 flights)*
+- **Lamb Curry with Tempered Beans** → `rice`  *(JCL ×1 flights)*
+- **Lamb Tagine with Dried Apricot** → `couscous`  *(JCL ×2 flights)*
+- **Lamb Tagine with Dried Apricot** → `couscous`  *(JCL ×2 flights)*
+- **Lobster Rigatoni** → `pasta`  *(FCL ×1 flights)*
+- **Locally Sourced Beef Fillet** → `baked potatoes`  *(JCL ×1 flights)*
+- **Locally Sourced Chicken Thigh** → `baked potato`  ⚠ also: `gratin`  *(JCL ×1 flights)*
+- **Locally Sourced Cod Fillet** → `roasted potatoes`  *(JCL ×2 flights)*
+- **Macadamia Nut-Crusted Grouper in Pesto Cream Sauce** → `grilled polenta cake`  *(FCL ×1 flights)*
+- **Macchi Masala, Pulao, Subzi Curry** → `rice`  ⚠ meat: `fish`  *(YCL ×6 flights)*
+- **Mandu** → `dumplings`  ⚠ meat: `pork`  *(JCL ×1 flights)*
+- **Mandu Guk** → `dumplings`  ⚠ meat: `pork`, `beef`  *(JCL ×3 flights)*
+- **Mangshor Kaalia, Murgh Rezala, Aloo Gobi, Gota Sheedho, Vegetable Pulao** → `potato`  ⚠ also: `rice`  ⚠ meat: `lamb`, `Chicken`  *(JCL ×1 flights)*
+- **Mangshor Kaalia, Murgh Rezala, Aloo Gobi, Gota Sheedho, Vegetable Pulao** → `potato`  ⚠ also: `rice`  ⚠ meat: `lamb`, `Chicken`  *(JCL ×1 flights)*
+- **Massaman Moo** → `steamed jasmine rice`  ⚠ meat: `pork`  *(JCL ×1 flights)*
+- **Methi Paneer, Gobhi Moti Mirch, Jeera Chawal** → `rice`  *(YCL ×1 flights)*
+- **Miso Glazed Salmon Trout** → `pasta`  *(JCL ×1 flights)*
+- **Moroccan Spiced Grilled Lamb Chops with Cilantro Sweet-Sour Sauce** → `polenta`  *(FCL ×2 flights)*
+- **Mughlai Masala, Subz Jalfrezi, Zaffrani Pulao** → `rice`  ⚠ meat: `chicken`  *(JCL ×2 flights)*
+- **Mushroom Parsley Omelette** → `potato`  ⚠ meat: `chicken`, `sausages`  *(JCL ×1 flights)*
+- **Nasi Lemak** → `rice`  ⚠ meat: `prawns`, `marinated chicken`, `anchovies`  *(FCL ×3 flights)*
+- **Nasi lemak Serve With Fried Chicken and Sambal Prawn** → `Fragrant coconut rice`  *(FCL ×1 flights)*
+- **Nasi Uduk** → `coconut rice`  ⚠ meat: `beef`, `shrimp`  *(JCL ×3 flights)*
+- **Nasi Uduk** → `Coconut rice`  ⚠ meat: `braised chicken`  *(JCL ×1 flights)*
+- **Navratan Korma, Lobia Masala, Jeera Pulao** → `rice`  *(YCL ×2 flights)*
+- **Niku Kare** → `spiced rice`  ⚠ meat: `beef`  *(SCL ×1 flights)*
+- **Ochazuke** → `steamed rice`  ⚠ meat: `spicy cod roe`, `bream`  *(JCL ×1 flights)*
+- **Omelette with Beef Patties** → `potatoes`  *(JCL ×1 flights)*
+- **Omelette with Cheddar Cheese** → `potatoes`  ⚠ meat: `Pan-fried pork sausage`  *(JCL ×1 flights)*
+- **Oven Roasted Chicken Thigh with Truffle Cream Sauce** → `potatoes`  *(JCL ×5 flights)*
+- **Pad See Ew Gai** → `stir-fried rice noodle`  ⚠ meat: `chicken`  *(YCL ×1 flights)*
+- **Palak Paneer Malai, Veg Kolhapuri, Mattar Kerat Pulao** → `rice`  *(YCL ×1 flights)*
+- **Pan Fried Snapper Fillet with Beurre Blanc** → `Mashed potato`  *(SCL ×2 flights)*
+- **Pan Roasted Chicken** → `mashed potatoes`  *(YCL ×1 flights)*
+- **Pan Roasted Chicken Breast with Chicken Jus** → `mash`  *(JCL ×2 flights)*
+- **Pan Roasted Chicken Thigh** → `baked potato`  *(JCL ×10 flights)*
+- **Pan Roasted Corn-Fed Chicken Supreme** → `truffle mashed potato`  *(JCL ×1 flights)*
+- **Pan Roasted Kurobuta Pork Chop with Brandy Mushroom Sauce** → `Roasted fingerling potatoes`  *(FCL ×1 flights)*
+- **Pan Roasted Salmon with Lemon Butter Sauce** → `quinoa`  *(SCL ×1 flights)*
+- **Pan-Fried Black Angus Beef Fillet with Shredded Oxtail** → `potato`  *(JCL ×5 flights)*
+- **Pan-Fried Chicken** → `roasted potatoes`  *(YCL ×2 flights)*
+- **Pan-Fried Chicken in Thyme Jus** → `roasted potatoes`  *(YCL ×2 flights)*
+- **Pan-Roasted Awaodori Chicken** → `potato`  *(SCL ×1 flights)*
+- **Pan-Roasted Beef Fillet with Cognac-Green Peppercorn Sauce** → `potato`  *(FCL ×1 flights)*
+- **Pan-Roasted Chicken** → `potato`  *(SCL ×1 flights)*
+- **Pan-Roasted Chicken Thigh** → `roasted fingerling potatoes`  *(SCL ×3 flights)*
+- **Pan-Roasted Chilean Seabass Fillet** → `risotto`  *(JCL ×5 flights)*
+- **Pan-Seared Chicken Breast With Cheese And Spinach Filling** → `mashed sweet potato`  *(JCL ×3 flights)*
+- **Paneer Makhani, Bhindi Masala, Jeera Pulao** → `rice`  *(YCL ×1 flights)*
+- **Paneer Methi Malai, Dal Makhani, Matar Pulao** → `rice`  *(YCL ×3 flights)*
+- **Paneer Reshmi, Kastoori Aloo, Dal Kabila, Subzi Panj Rathni,  Mughlai Tarkari Pulao** → `potatoes`  ⚠ also: `rice`  *(JCL ×4 flights)*
+- **Paneer Reshmi, Kastoori Aloo, Dal Kabila, Subzi Panj Rathni, Mughlai Tarkari Pulao** → `potatoes`  ⚠ also: `rice`  *(JCL ×4 flights)*
+- **Poached Maine Lobster with Champagne Sauce** → `roasted sweet potatoes`  *(FCL ×9 flights)*
+- **Pork Belly and Eggplant Kasane-yaki** → `steamed rice`  *(FCL ×1 flights)*
+- **Pork Habanero with Pineapple** → `creamy mashed potatoes`  *(YCL ×2 flights)*
+- **Quesabirria with Guacamole** → `tortilla`  ⚠ meat: `beef`, `spicy beef`  *(FCL ×1 flights)*
+- **Quesadillas** → `Tortilla`  ⚠ meat: `chicken`  *(JCL ×1 flights)*
+- **Roasted Beef Fillet with Red Wine Jus** → `potato`  *(JCL ×1 flights)*
+- **Roasted Chicken** → `mashed potato`  *(SCL ×1 flights)*
+- **Roasted Chicken in Bourguignon Style** → `potatoes`  *(JCL ×1 flights)*
+- **Roasted Fillet of Beef with Morel Mushroom Sauce** → `potato`  *(FCL ×4 flights)*
+- **Roasted Lamb Rack** → `potato`  *(FCL ×1 flights)*
+- **Roasted Lamb Rack with Spiced Lamb Jus** → `potatoes`  *(FCL ×1 flights)*
+- **Roasted Salmon with Lemon Butter Sauce** → `potatoes`  *(FCL ×1 flights)*
+- **Sauteed Seafood** → `roasted potato`  *(JCL ×1 flights)*
+- **Scrambled Egg with Tomato** → `roasted potatoes`  ⚠ meat: `pan-fried chicken sausage`  *(JCL ×7 flights)*
+- **Scrambled Eggs with Feta Cheese** → `potatoes`  ⚠ meat: `chicken sausages`  *(JCL ×1 flights)*
+- **Scrambled Eggs with Smoked Salmon** → `Roasted sweet potatoes`  *(JCL ×11 flights)*
+- **Seafood Bee Hoon** → `rice`  ⚠ also: `vermicelli`  *(JCL ×17 flights)*
+- **Seafood Hor Fun** → `rice noodles`  *(JCL ×13 flights)*
+- **Seared Fillet of Barramundi with Red Capsicum-Almond Puree** → `potatoes`  *(JCL ×3 flights)*
+- **Selection of Dim Sum** → `dumpling`  ⚠ also: `rice`  ⚠ meat: `Prawn`, `spicy pork`, `prawn`, `chicken`, `pork sausage`  *(JCL ×15 flights)*
+- **Selection of Shanghainese Dim Sum** → `dumpling`  ⚠ meat: `pork`, `spicy scallop`  *(JCL ×1 flights)*
+- **Shogayaki** → `rice`  ⚠ meat: `pork`  *(SCL ×1 flights)*
+- **Singapore Nasi Lemak** → `coconut rice`  ⚠ meat: `chicken`, `prawns`  *(JCL ×8 flights)*
+- **Slow Braised Beef Cheek in Red Wine Sauce** → `potatoes`  *(JCL ×1 flights)*
+- **Slow Braised Beef Cheek with Shallot and Herb Crumb** → `butter mashed potato`  *(JCL ×7 flights)*
+- **Slow Braised Soy Pork Belly in Cantonese Style** → `steamed jasmine rice`  *(JCL ×1 flights)*
+- **Slow Cooked Pork with Belgian Pickles Sauce** → `roasted potatoes`  *(JCL ×1 flights)*
+- **Slow-Braised Beef Short Ribs** → `creamy polenta`  *(JCL ×15 flights)*
+- **Spanish Omelette With Beef Patty** → `fried potatoes`  *(YCL ×1 flights)*
+- **Spanish Omelette With Pan-fried Streaky Bacon** → `roasted potatoes`  *(JCL ×1 flights)*
+- **Spring Chicken** → `creamy polenta`  *(FCL ×1 flights)*
+- **Steamed Chilean Seabass with Fried Soybean Crumbs** → `rice`  *(FCL ×2 flights)*
+- **Steamed Fish Fillet with Ginger Spring Onion Sauce** → `steamed jasmine rice`  *(YCL ×1 flights)*
+- **Stir-Fried Chicken in Black Pepper Sauce** → `steamed jasmine rice`  *(YCL ×22 flights)*
+- **Stir-Fried Chicken in Szechuan Sauce** → `rice`  *(YCL ×4 flights)*
+- **Stir-Fried Pork in Yuxiang Sauce** → `steamed jasmine rice`  *(YCL ×1 flights)*
+- **Stir-Fried Sea Scallops and Shrimps with XO Sauce** → `egg white fried rice`  *(JCL ×2 flights)*
+- **Szechuan Pepper Braised Duck Leg** → `fried egg noodle`  *(JCL ×1 flights)*
+- **Thai Style Green Curry Chicken** → `steamed jasmine rice`  *(YCL ×2 flights)*
+- **Tori Teriyaki** → `rice`  ⚠ meat: `chicken`  *(SCL ×1 flights)*
+- **Truffle Crusted Beef Fillet** → `mashed potato`  *(JCL ×2 flights)*
+- **Unagi Donburi** → `steamed rice`  *(JCL ×1 flights)*
+- **US Beef Fillet** → `mash`  *(JCL ×3 flights)*
+- **Vegetable and Herb Omelette** → `sweet potato`  ⚠ meat: `chicken`, `sausage`  *(JCL ×7 flights)*
+- **Vegetable Cheese Frittata with Tomato Sauce** → `roasted potatoes`  ⚠ meat: `Pan-fried veal sausage`  *(YCL ×1 flights)*
+- **Vegetable Frittata** → `potatoes`  ⚠ meat: `Pan-fried chicken sausage`  *(SCL, YCL ×3 flights)*
+- **Vegetable Frittata with Tomato Sauce** → `roasted potatoes`  ⚠ meat: `chicken sausage`  *(YCL ×1 flights)*
+- **Warmed Pastrami Sandwich** → `bread`  ⚠ meat: `beef`  *(JCL ×1 flights)*
+- **Wok-Fried Beef in Oriental Black Pepper Sauce** → `steamed jasmine rice`  *(JCL ×1 flights)*
+- **Yakiniku Donburi** → `steamed rice`  ⚠ meat: `pork`  *(FCL ×1 flights)*
+- **Yakitori, Tsukune, Kinshi Tamago, Kinoko Gohan** → `rice`  ⚠ meat: `Grilled chicken`, `meatball`  *(SCL ×2 flights)*
+- **Yerachi Melagu Varuval, Bean Foogath, Dal Moong, Ghee Bhatt** → `rice`  ⚠ meat: `lamb`  *(JCL ×8 flights)*
+- **Zucchini, Peppers and Cheese Frittata** → `potatoes`  ⚠ meat: `seared chicken sausage`  *(SCL ×1 flights)*
+
+### F. MEAT/SEAFOOD REVEAL — hidden style (13 fresh)
+
+- **Braised Udon Noodle**  ⚠ meat: `pork`  *(JCL ×1 flights)*
+- **Cheese Omelet and Turkish Borek**  ⚠ meat: `beef meatball`  *(JCL ×1 flights)*
+- **Crepe filled with Scrambled Eggs and Cheese**  ⚠ meat: `pork sausages`  *(JCL ×1 flights)*
+- **Dim Sum Delight with Yam Cake**  ⚠ meat: `shrimp`, `chicken`  *(FCL ×4 flights)*
+- **Fishball Noodle Dry Style**  ⚠ meat: `fish`, `pork`  *(JCL ×5 flights)*
+- **Gozleme with Scrambled Eggs**  ⚠ meat: `grilled beef meatball`  *(SCL ×1 flights)*
+- **Pasta Amatriciana**  ⚠ meat: `cured pork`  *(FCL ×1 flights)*
+- **Scrambled Eggs with Cheese**  ⚠ meat: `ham`  *(YCL ×1 flights)*
+- **Spring Onion Oil Noodle**  ⚠ meat: `pork`  *(YCL ×1 flights)*
+- **Stir-Fried Egg Noodle with Oriental Sauce**  ⚠ meat: `marinated chicken`  *(FCL ×3 flights)*
+- **Stir-Fried Egg Noodles with Oriental Sauce**  ⚠ meat: `braised tender chicken`  *(JCL ×1 flights)*
+- **Tonkotsu Ramen**  ⚠ meat: `sliced roasted pork`, `pork`  *(FCL ×1 flights)*
+- **Waffle and Egg**  ⚠ meat: `grilled ham`, `pork sausage`  *(JCL ×1 flights)*
+
+### G. MEAT/SEAFOOD REVEAL — primary style (15 fresh)
+
+- **Aattu Kari Biryani, Ennai Kathrikai**  ⚠ meat: `Lamb`  *(YCL ×2 flights)*
+- **Adana Kebab with Turkish Style Rice**  ⚠ meat: `minced lamb`, `beef`  *(YCL ×1 flights)*
+- **Bak Chor Mee**  ⚠ meat: `pork`, `minced pork`  *(JCL ×10 flights)*
+- **Cheese and Chive Scrambled Eggs**  ⚠ meat: `pork sausages`  *(JCL ×1 flights)*
+- **Fresh Eggs**  ⚠ meat: `bacon`, `chicken sausage`  *(FCL ×3 flights)*
+- **Fresh Eggs**  ⚠ meat: `pan-fried ham`, `pork sausage`  *(FCL ×1 flights)*
+- **Fried Rice With Assorted Dim Sum**  ⚠ meat: `pork`, `seafood`  *(JCL ×1 flights)*
+- **Gosht Kalia, Sabzi Punj Ratani, Dal Masala, Mughlai Tarkari Pulao**  ⚠ meat: `Lamb`  *(JCL ×3 flights)*
+- **Kway Teow Phad See Ew, Moo Ping**  ⚠ meat: `grilled pork`  *(SCL ×5 flights)*
+- **Murgh Tikka Pepper Masala, Aloo Mattar Curry, Moong Masoor Tadka, Ghee Basmati, Laccha Paratha**  ⚠ meat: `Chicken`  *(JCL ×1 flights)*
+- **Okumikawa Dori Ramen**  ⚠ meat: `chicken`  *(JCL ×1 flights)*
+- **Shoyu Buta Kakuni with Vegetables and Steamed Rice**  ⚠ meat: `Braised pork`  *(YCL ×4 flights)*
+- **Sukiyaki Donburi**  ⚠ meat: `sliced beef`  *(YCL ×2 flights)*
+- **Tandoori Murgh, Brinjal Ka Salan, Biryani Pulao**  ⚠ meat: `Succulent chicken`  *(FCL ×3 flights)*
+- **Tori Shogayaki with Steamed Rice and Seasonal Vegetables**  ⚠ meat: `Chicken`  *(YCL ×10 flights)*
+
+### C. Skipped (name already carries it) (74 fresh)
+
+- **Beef Noodle**  *(JCL ×1 flights)*
+  "Braised beef in five spices on egg noodle, Chinese green and braised mushroom"
+- **Beef Noodle Soup**  *(JCL ×5 flights)*
+  "Slow-braised beef brisket, tendons served in a rich, aromatic beef broth with springy noodles, garnished with Asian greens"
+- **Beef Noodles in Black Pepper Sauce**  *(JCL ×25 flights)*
+  "Stir-fried egg noodles topped with tender sliced beef in a gentle spicy black pepper sauce, finished with fresh leafy greens"
+- **Braised Beef Barley Casserole**  *(YCL ×4 flights)*
+  "Slow-braised beef and barley in a rich, savoury casserole, served with roasted kumara, and broccoli florets"
+- **Braised Beef With Puy Lentils And Mashed Potato**  *(YCL ×35 flights)*
+  "Braised beef with French Puy lentils, served with creamy mashed potato and mixed vegetables, including carrots and French beans, finished with a rich sauce"
+- **Braised Chicken in Black Bean Sauce and Egg Noodles with Vegetables**  *(JCL ×2 flights)*
+  "Braised Chinese style chicken in black bean sauce served with egg noodles and Asian style vegetables"
+- **Braised Egg Noodle with Chicken**  *(JCL ×1 flights)*
+  "Chinese greens and Oriental sauce"
+- **Braised Egg Noodles with Pork**  *(JCL ×4 flights)*
+  "Chinese greens, carrots and mushrooms"
+- **Buttered Cavatelli Pasta with Italian Pork Sausage**  *(JCL ×1 flights)*
+  "Broccoli rabe, aubergine basil sauce, buffalo Mozzarella, basil mint crumbs"
+- **Cantonese Rice with Cured Meat**  *(JCL ×2 flights)*
+  "Cured Chinese sausage, duck and bacon mixed with pork lard and steamed rice. Served with dark soy sauce and chilli sauce"
+- **Char Siew with Fried Rice**  *(JCL ×2 flights)*
+  "Succulent pork belly marinated in a sweet-savoury char siew glaze, roasted to caramelised perfection. Served with fragrant fried rice and a side local picked vegetable"
+- **Chicken and Mushroom Congee**  *(JCL ×5 flights)*
+  "Rice porridge with sliced chicken and Chinese mushroom"
+- **Chicken and Mushroom Congee**  *(YCL ×1 flights)*
+  "Rice congee with sliced chicken and Chinese mushroom"
+- **Chicken Biryani**  *(JCL ×2 flights)*
+  "Braised Masala chicken thigh with spices served with saffron and rose water-flavoured biryani rice and raita"
+- **Chicken Curry With Roti Paratha and Masala Aloo Poha**  *(YCL ×4 flights)*
+  "Chicken Curry with Roti Paratha and Masala Aloo Poha"
+- **Chicken Embutido with Steamed Rice**  *(JCL ×1 flights)*
+  "Classic Filipino meatloaf with seasonal vegetables, chicken jus"
+- **Chicken Korma with Basmati Rice and Urulai  Roast**  *(YCL ×5 flights)*
+  "Chicken Korma with Basmati Rice and Urulai  Roast"
+- **Chicken Korma With Basmati Rice And Urulai Roast**  *(YCL ×2 flights)*
+  "Chicken korma with aromatic spices in a creamy sauce, served with basmati rice, urulai roast potatoes and plain paratha"
+- **Chinese Wheat Noodle with Minced Pork**  *(JCL ×1 flights)*
+  "Wheat noodles topped with minced pork, pickled cabbage, and a rich sauce made from Sichuan peppercorns, chilli oil, soy sauce, black vinegar and sesame paste"
+- **Dim Sum Delight with Sakura Dried Shrimps Peanuts Glutinous Rice**  *(SCL ×5 flights)*
+  "An assorted dim sum selection featuring our signature chicken root vegetable beancurd roll - delicately sweet, vibrant, and filled with savoury vegetable. Accompanied by wolfberry pork siew mai and vegetarian dumpling, and served with fragrant Sakura dried shrimps peanuts mushroom glutinous rice for a satisfying taste of local Chinese delights"
+- **Dried Scallop and Pork Congee**  *(FCL ×1 flights)*
+  "Hearty Cantonese style congee with sliced mushroom, fried shallots, and spring onions"
+- **Ee Fu Noodle with Black Garlic Braised Beef Shank**  *(JCL ×2 flights)*
+  "Seved with seasonal vegetable"
+- **Ee Fu Noodles with Braised Chicken and Abalone**  *(FCL ×5 flights)*
+  "Wok-braised Ee Fu noodles paired with tender chicken, simmered small abalone in a rich superior sauce, finished with leafy greens, and shiitake mushrooms"
+- **Egg Noodle with Char Siew and Dumpling**  *(JCL ×7 flights)*
+  "Springy egg noodles in a savoury glaze, topped with honeyed glazed pork, shrimp-pork dumplings and leafy greens"
+- **Egg Noodles with Beef in Oriental Sauce**  *(YCL ×1 flights)*
+  "Tender slices of beef wok-fried in a rich oyster sauce, tossed with springy egg noodles and accompanied by Asian greens"
+- **Egg Noodles with Pork Belly in Black Pepper Sauce**  *(JCL ×1 flights)*
+  "Stir-fried egg noodles with seasonal vegetables, served alongside braised pork belly in a bold black pepper sauce, finished with a fried egg"
+- **Famous Singapore Chicken Rice**  *(JCL ×14 flights)*
+  "A renowned local favourite, fragrant poached chicken with pandan flavoured rice, grated ginger, soya and chilli sauce"
+- **Famous Singapore Chicken Rice**  *(FCL ×1 flights)*
+  "Fragrant poached chicken with pandan flavoured rice, accompanied with grated ginger, chilli and soya sauce. A renowned local favourite"
+- **Fish Molee with Basmati Rice and Carrot Bean**  *(YCL ×3 flights)*
+  "Fish Molee with Basmati Rice and Carrot Bean"
+- **Fish Molee With Basmati Rice and Carrot Bean**  *(YCL ×4 flights)*
+  "Fish Molee with Basmati Rice and Carrot Bean"
+- **Fried Egg Noodles with Prawns**  *(JCL ×1 flights)*
+  "Springy egg noodles tossed in savoury sauce, served with prawns in a fragrant spring onion-ginger sauce, Chinese greens and shiitake mushrooms"
+- **Fried Noodle With Seafood In Black Pepper Sauce**  *(JCL ×1 flights)*
+  "Seasonal Oriental vegetables"
+- **Fried Rice with Fish in Tamarind Sauce**  *(YCL ×3 flights)*
+  "Fried rice with lotus seed, petit pois and carrot, accompanied by fried fish in tamarind sauce, garnished with red chilli and spring onion."
+- **Fried Rice With Lotus Seed, Prawn And Pork Dumplings**  *(YCL ×1 flights)*
+  "Fried rice with chicken and mixed vegetables, lotus seed, fried egg strips, and har gow in bamboo charcoal wrapper."
+- **Frittata With Beef Patties, Roast Potato, Mushroom and Baked Beans**  *(YCL ×2 flights)*
+  "Frittata with Beef Patties, Roast Potato, Mushroom and Baked Beans"
+- **Frittata with Beef Patties, Roasted Potato, Mushroom and Baked Beans**  *(YCL ×24 flights)*
+  "Spinach and egg frittata served with beef patties, roast potatoes, mushrooms, roasted cherry tomatoes and baked beans"
+- **Ginger Spring Onion Beef with stir-fried egg noodles**  *(JCL ×6 flights)*
+  "Beef striploin stir-fried with ginger spring onion sauce, served with egg noodles, blanched Hong Kong chye sim, oriental mushrooms, julienned ginger, and carved carrots in traditional Chinese style"
+- **Halibut Fish Congee**  *(JCL ×1 flights)*
+  "Rice porridge with sliced halibut fillet"
+- **Kori Sukka, Three Mushroom Chettinad, Munakkada Dal, Prawn Thokku, Ponni Rice**  *(JCL ×2 flights)*
+  "Chicken Mangalore style, mushrooms cooked in aromatic chettinad spices, prawn cooked with southern spices, drumstick dal andhra style, ponni rice"
+- **Kori Sukka, Three Mushroom Chettinad, Munakkada Dal, Prawn Thokku, Ponni Rice**  *(JCL ×2 flights)*
+  "Chicken Mangalore style, mushrooms cooked in aromatic Chettinad spices, prawn cooked with southern spices, drumstick dal Andhra style, ponni rice"
+- **Lamb Saag with Aloo Gobi and Lemon-Flavoured 
+Basmati Rice**  *(SCL ×2 flights)*
+  "Tender lamb simmered in a spiced spinach gravy, 
+served with classic potato and cauliflower curry, 
+and fragrant lemon-flavoured basmati rice"
+- **Pomegranate Quinoa and Watermelon Salad with Grilled Atlantic Cod**  *(FCL ×1 flights)*
+  "Salad of compressed watermelon, marinated feta and pomegranate quinoa served with warmed grilled Atlantic cod and lemon vinaigrette. Quinoa is an energizing nutritious gluten free grain rich in essential amino acids."
+- **Pork Shoulder Bistek With Yellow Rice**  *(YCL ×3 flights)*
+  "Sautéed onion rings, green beans, pumpkin"
+- **Prawns and Rice Noodles Poke Bowl**  *(JCL ×1 flights)*
+  "Packed with carrot, green beans, heirloom tomatoes, crisp lettuce, red radish, cucumbers, and dressed with creamy Japanese dressing"
+- **Rice Noodles in Fragrant Pork Broth**  *(FCL ×5 flights)*
+  "Flavourful pork broth with slow-braised tender pork, Chinese greens, and silky rice noodles"
+- **Roasted Miso Black Cod with Hijiki Rice**  *(FCL ×1 flights)*
+  "Miso butter sauce, simmered carrots, yellow zucchini, and green snap peas. Seasoned seaweed rice"
+- **Scialatielli Pasta with Swordfish, Tuna and Salmon**  *(JCL ×1 flights)*
+  "Broccolini, semi-dried tomatoes, and smoked paprika seafood tomato bisque"
+- **Sea Prawn Noodle Soup**  *(FCL ×1 flights)*
+  "A richly flavoured dish of yellow noodles in a rich, aromatic prawn broth, accompanied by poached prawns, fish cake, water spinach, and a hard-boiled egg"
+- **Seafood Congee**  *(FCL ×1 flights)*
+  "A smooth and comforting rice congee topped with succulent prawns 
+and tender snapper, served with a crispy dough cruller and 
+accompanied by sliced ginger, spring onions, and crispy fried 
+shallots for added texture and aromatic flavour."
+- **Seafood Congee**  *(YCL ×2 flights)*
+  "Crueller, sliced ginger, shallot and spring onions"
+- **Seafood Congee**  *(FCL ×3 flights)*
+  "Comforting and savoury rice porridge, tender fish fillets, prawn and delicate scallops, garnished with ginger, spring onion, and Chinese crullers"
+- **Seafood Kway Teow**  *(JCL ×1 flights)*
+  "Stir-fried flat rice noodles with succulent prawns, and fish slices, garnished with leaves greens and carrot in a savoury garlic infused soya-based sauce"
+- **Seafood Kway Teow Soup**  *(FCL ×1 flights)*
+  "Rice noodle in chicken broth garnished with fish, scallop and shrimp"
+- **Seafood Pasta**  *(SCL ×1 flights)*
+  "Sautéed prawns, scallop, and flounder fillet, with herb butter. Served on rigatoni pasta tossed with a arrabbiata mild spicy tomato sauce"
+- **Seafood Pasta**  *(JCL ×3 flights)*
+  "Sautéed linguine pasta tossed with tomato sauce topped with sautéed garlic prawns and scallops and vegetables"
+- **Seafood Rice Noodle Soup**  *(JCL ×1 flights)*
+  "Rice noodles in rich broth, garnished with scallop, prawn, fish and vegetables"
+- **Singapore Beef Noodle Soup**  *(JCL, FCL ×8 flights)*
+  "A popular local dish of rice noodles in rich beef broth with sliced beef and bean sprouts"
+- **Singapore Chicken Rice**  *(JCL ×4 flights)*
+  "Savour Kampong chicken, gently poached and served with fragrant pandan-infused rice. Accompanied with classic dark soy sauce, chilli, and ginger, blanched baby cabbage with shallots, for a comforting taste of Singapore"
+- **Singapore Style Roasted Chicken Rice with Oriental Vegetables**  *(JCL ×17 flights)*
+  "Tender roasted chicken served with aromatic chicken rice, paired with Oriental vegetables, and served with chilli sauce"
+- **Slow Braised Barbecue Beef Ragout with Potato Wedges**  *(YCL ×9 flights)*
+  "Served with seasonal vegetables"
+- **Slow Braised Beef Brisket and Egg Noodles**  *(FCL ×1 flights)*
+  "With mushrooms, carrots, Chinese greens and condiments"
+- **Soy Garlic Chicken with Yellow Noodles**  *(YCL ×15 flights)*
+  "Shiitake mushroom, bok choy, carrots"
+- **Soy Garlic Chicken with Yellow Noodles**  *(YCL ×7 flights)*
+  "Springy yellow noodles served with tender soy garlic chicken, accompanied by shiitake mushroom, Asian greens, and finished with a light savoury garlic sauce and fried shallot for added aroma and texture."
+- **Stir-Fried Egg Noodle with Braised Chicken in Shiitake Mushroom Sauce**  *(JCL ×2 flights)*
+  "Wok-fried egg noodles served with Asian greens, braised chicken and shiitake mushroom in a savoury Oriental sauce"
+- **Stir-Fried Egg Noodle with Seafood and Szechuan Green Peppercorn**  *(JCL ×1 flights)*
+  "Stir-fried vegetable egg noodle with seafood in Szechuan green peppercorn sauce"
+- **Stir-Fried Egg Noodles with Prawns**  *(JCL ×2 flights)*
+  "Flavourful egg noodles stir-fried, tossed with tender prawns, savoury Oriental pepper sauce, and served with Asian greens"
+- **Stir-Fried Egg Noodles with Sliced Chicken**  *(YCL ×1 flights)*
+  "Wok-tossed egg noodles with soy-garlic marinated chicken, Asian greens, leeks in a savoury oyster sauce"
+- **Stir-Fried Noodle with Chicken**  *(SCL ×1 flights)*
+  "Stir-fried egg noodles tossed in a savoury soy-based sauce, chicken in chilli and garlic sauce, served with Asian green, carrot, and red pepper."
+- **Stir-Fried Noodles with Pork in Oriental Sauce**  *(YCL ×1 flights)*
+  "Springy egg noodles fried with tender slices of pork and Asian vegetables, coated in a rich and savoury Oriental sauce, finished with a fragrant garlic-ginger sauce for added depth and aroma."
+- **Stir-Fried Prawns with Sweet Plum Sauce and Egg Fried Rice**  *(SCL ×4 flights)*
+  "Prawns stir-fried in tangy-sweet plum sauce, served with Asian greens, and fragrant jasmine rice wok-fried with eggs"
+- **Stir-Fried Rice Vermicelli with Chicken**  *(JCL ×1 flights)*
+  "Delicate rice vermicelli stir-fried with tender slices of marinated chicken and a colourful medley of fresh vegetable, tossed in a savoury Oriental sauce."
+- **Stir-Fried Shrimp with Shandong Noodle**  *(SCL ×2 flights)*
+  "Succulent shrimps wok-fried with Shandong noodles in a savoury oyster sauce, accompanied by Asian greens and shiitake mushroom"
+- **Thick Egg Noodles with Ground Pork in Black Pepper Sauce**  *(SCL ×2 flights)*
+  "Springy thick egg noodles tossed with savoury black pepper sauce with ground pork and mixed vegetables delivering a bold and aromatic profile"
+- **Whole Grain Bread with Beef Pastrami**  *(JCL ×1 flights)*
+  "Warm pressed sandwich layered with beef pastrami, grain mustard, pickled gherkin, and cheddar cheese"
+
+### D. No line at all (54 fresh)
+
+- **9 Grain Pancake with Poached Orange, Blueberries and Toasted Almonds**  *(FCL ×9 flights)*
+  "Pancake with 9 assorted grains, poached orange in syrup and lemon juice, vanilla bean-infused yoghurt, fresh blueberries and toasted almonds"
+- **Ajwain Paratha, Paneer Khurchan, Subzi Dal**  *(JCL ×4 flights)*
+  "Spiced Flatbread, Paneer cooked with peppers, cracked wheat with vegetables"
+- **Apple Griddle Cakes**  *(JCL ×7 flights)*
+  "Golden pancakes studded with tender apple pieces, served with mixed berries compote and maple syrup infused whipped cream"
+- **Apple Pancakes**  *(FCL ×4 flights)*
+  "With berries compote and mascarpone cream"
+- **Belgian Waffle**  *(JCL ×5 flights)*
+  "Light, golden and deep grid pattern Belgian waffle, served with berry compote, mascarpone cheese, and maple syrup"
+- **Belgian Waffles with Apple Sultana Compote**  *(JCL ×17 flights)*
+  "Golden-baked waffles served warm with apple-sultana compote, accompanied by smooth vanilla yoghurt, offering a balanced finish of gentle sweetness and light acidity"
+- **Belgian Waffles with Maple Caramel**  *(JCL ×1 flights)*
+  "Mixed berry salad, whipped honey mascarpone cheese"
+- **Braised Veal Sucade with Beans Ragout**  *(JCL ×1 flights)*
+  "Grilled baby zucchini, broccolini and veal jus"
+- **Bread and Butter Pudding**  *(JCL ×1 flights)*
+  "Warm, comforting bread and butter pudding paired with apple compote, and finished with light whipped cream"
+- **Buttermilk Pancake**  *(JCL ×1 flights)*
+  "Served with green tea sauce, whipped cream and fresh berries"
+- **Buttermilk Pancakes with Blueberry Compote**  *(JCL ×1 flights)*
+  "Classic and fluffy pancakes, tender in the centre, with a subtle tang from the buttermilk, served with roasted almond flakes and flavoured yoghurt"
+- **Caprese**  *(JCL ×10 flights)*
+  "Burrata cheese and prosciutto garnished with assortment of heirloom tomatoes, basil leaves and arugula lettuce. Served with aged balsamic dressing"
+- **Chicken and Mixed Vegetable Pastie**  *(SCL, YCL ×22 flights)*
+  "Baked buttery, flaky pastie filled tender chicken and medley of vegetables, seasoned for a comforting savory bite."
+- **Chicken Bee Hoon Soup**  *(JCL ×1 flights)*
+  "With sliced chicken, vegetables and mushrooms"
+- **Chicken Thigh With Creamy Mushroom Sauce**  *(YCL ×3 flights)*
+  "Buttered broccoli and carrots, stir-fried baby corn"
+- **Chocolate Chip Pancakes with Berry Compote**  *(FCL ×1 flights)*
+  "Fluffy chocolate chip pancakes served with mixed berry compote, candied walnuts and creamy ricotta cheese."
+- **Chocolate Pancakes with Berry Compote and Vanilla Sauce**  *(JCL ×1 flights)*
+  "Fluffy chocolate pancakes served warm with a vibrant mix berry compote, finished with a smooth and creamy vanilla sauce for a balance of rich chocolate, fruity freshness, and delicate vanilla sweetness."
+- **Crayfish Macaroni and Cheese**  *(FCL ×1 flights)*
+  "Crayfish macaroni gratin with aged cheddar, crisp pangrattato topping, and delicate mesclun herb greens"
+- **Duck Leg Confit with Duck Jus**  *(JCL ×4 flights)*
+  "Slow cooked duck leg confit, served with rich duck jus, accompanied by braised raisin red cabbage, and sauteed Brussels sprouts"
+- **Fluffy Chocolate Chip Pancakes**  *(JCL ×2 flights)*
+  "Mixed berries compote, ricotta cheese, garnished with candied walnuts"
+- **Fried Egg Noodles**  *(JCL ×1 flights)*
+  "With barramundi and vegetables"
+- **Grilled Arctic Char**  *(JCL ×2 flights)*
+  "Aromatic white bean puree, sauteed garden vegetables, arugula with nicoise vinaigrette"
+- **Grilled Australian Wagyu Beef Fillet with Red Wine Sauce**  *(FCL ×2 flights)*
+  "Onion soubise, heirloom carrots, broccolini, and shimeji mushrooms"
+- **Grilled Chicken in Tarragon Jus**  *(JCL ×3 flights)*
+  "With roasted vegetables and sautéed spinach"
+- **Herb Crusted Lamb Confit**  *(JCL ×1 flights)*
+  "Roasted broccoli and cauliflower, parsnip puree, cherry tomatoes, and rosemary lamb sauce"
+- **Locally Sourced Cod**  *(JCL ×2 flights)*
+  "Pan seared Pacific cod, flaky yet firm, paired with a grainy mustard sauce and served alongside a warm spelt and roasted vegetable salad"
+- **Mediterranean Frittata with Chicken Sausage**  *(YCL ×1 flights)*
+  "Baked egg frittata with chicken sausage chipolata, grilled tomato, and tomato sauce."
+- **Mini Maple Waffles with Mixed Berry Compote**  *(YCL ×1 flights)*
+  "Vanilla custard, toasted almonds"
+- **Mini Pancakes**  *(JCL ×1 flights)*
+  "Warm soft, golden pancakes layered with mixed berry compote, roasted peaches and topped with creme fraiche"
+- **Nasi Goreng With Ayam Berempah And Spicy Sambal**  *(YCL ×35 flights)*
+  "Nasi goreng with mixed vegetables, served with ayam berempah and spicy sambal, garnished with spring onion"
+- **Palak Paneer, Kadai Subzi, Jaffrani Pulao**  *(YCL ×2 flights)*
+  "Palak Paneer, Kadai Subzi, Jaffrani Pulao"
+- **Pan Seared Salmon Fillet with Broccolini**  *(JCL ×4 flights)*
+  "Romesco sauce and toasted almonds"
+- **Pan-Fried Barramundi**  *(JCL ×11 flights)*
+  "Locally sourced barramundi, pan-fried to perfection and served with a rich cocoa bean ragout, sunchoke, seasonal vegetables, and a vibrant aromatic tomato salsa"
+- **Pan-Fried Salmon Fillet**  *(JCL ×6 flights)*
+  "Seasonal vegetables, pumpkin-flavoured farro, warm vierge sauce"
+- **Paneer Masala, Aloo Gobi, Turmeric Basmati Rice**  *(YCL ×2 flights)*
+  "Cheese curds cooked in spiced tomato gravy, cauliflower and potatoes, and turmeric infused basmati rice"
+- **Paneer Patiala, Tikoni Korma, Biryani Rice**  *(YCL ×1 flights)*
+  "Paneer in onion tomato masala, trio of beans braised in cashew gravy and aromatic basmati rice flavoured with rose water and
+Screw pine (Kewra) water"
+- **Panini with Pulled Barbecue Pork and Cheddar Cheese**  *(JCL ×1 flights)*
+  "Warm panini filled with slow cooked, smoky pulled barbeque pork layered with cheddar cheese. Served alongside a warm cabbage slaw, enhanced with bacon for added depth and savoury balance"
+- **Pea, Pumpkin, and Chickpea Samosa**  *(SCL, YCL ×22 flights)*
+  "Golden samosa filled filled with a spiced blend of green peas, pumpkin and chickpeas, seasoned with aromatic Indian spices for a warm, savory finish."
+- **Poached Maine Lobster with Lobster Sauce**  *(FCL ×1 flights)*
+  "Served with silky parsley root puree for earthy depth, complemented by crisp celery and fine bean. Finished with a rich lobster sauce that enhances the natural sweetness of the shellfish"
+- **Rice Pudding with Orange Peel and Dulce de Leche**  *(FCL ×1 flights)*
+  "Served with fresh berries and crushed hazelnuts"
+- **Roasted Guinea Fowl with Supreme sauce**  *(JCL ×1 flights)*
+  "Gently roasted poultry served with velvety cream based sauce, paired with brown butter celeriac purée, grilled mini pepper, confit of celeriac, and edamame"
+- **Scrambled Eggs With Cheese, Chicken Sausage**  *(YCL ×2 flights)*
+  "Hash browns, baked beans with onion, sautéed corn and spinach"
+- **Shorshe Bhapa Paneer, Andhra Chow Chow Curry, Tendli Sambharia, Bhuna Babycorn Dil Ki Subzi, Brown Onion Raisin Pulao**  *(JCL ×2 flights)*
+  "Cottage cheese with mustard sauce, spicy chayote with sesame, Baby Corn cooked with mild Indian spice, ivy gourd with coconut and brown onion raisin pilaf"
+- **Slow Cooked Duck Confit**  *(FCL ×1 flights)*
+  "Tender Moulard duck leg, slow cooked in its own fat for rich flavour, served with a smooth celeriac purée,  sautéed heirloom baby carrots, and tangy cherry jus"
+- **Slow-Braised Pork Cheek with a Grain Mustard Sauce**  *(JCL ×18 flights)*
+  "Succulent pork cheek braised till tender, paired with celeriac puree, roasted baby zucchini, carrots, finished with a rich, whole-grain mustard sauce."
+- **Stuffed Chicken Scallopini with Spinach and Cheese**  *(FCL ×1 flights)*
+  "Roasted heirloom baby carrots, shallots, sauteed brussels sprouts, sunchoke and parsnip puree"
+- **Stuffed Guinea Fowl with Alp Cheese and Tyrolean Ham**  *(JCL ×1 flights)*
+  "Parsley root vegetables, herb spatzle, morel mushroom, chicken jus"
+- **Teochew Style Pomfret Porridge**  *(FCL ×9 flights)*
+  "Rice porridge cooked with sliced pomfret fillet and ginger garnished with fried shallot, dried sole and spring onion"
+- **Veal Cheek Blanquette with Chardonnay and Tarragon**  *(JCL ×5 flights)*
+  "Slow-braised veal cheek finished in a Chardonnay and tarragon blanquette sauce, delivering a silky texture and refine aromatic depth. Accompanied by sautéed button mushrooms, vegetable medley, and white bean ragout"
+- **Vegetable Shahi Korma, Aloo Jeera, Tadka Pulao**  *(YCL ×3 flights)*
+  "Vegetable Shahi Korma, Aloo Jeera, Tadka Pulao"
+- **Ven Pongal, Kanjeevaram Idli, Medu Wadai, Sambar**  *(YCL ×2 flights)*
+  "Ven Pongal, Kanchipuram Idli, Medu Wadai, Sambar"
+- **Waffles**  *(JCL ×1 flights)*
+  "Served with chocolate sauce, maple syrup, and raspberry compote."
+- **Warm Banana Bread with Vanilla Sauce**  *(JCL ×1 flights)*
+  "A delicious loaf of banana bread served with mixed berry ragout, and vanilla sauce"
+- **Warm Chocolate Chip Croissant Bread and Butter Pudding**  *(FCL ×3 flights)*
+  "Buttery chocolate chip croissants soak up a rich vanilla custard, crisp on top and soft, custardy underneath, served with vanilla sauce, and fresh berries"
+
+### E. Empty description (10 fresh)
+
+- **Braised Vegetable Egg Noodle with Stir-Fried Chicken and Preserved Potherb Mustard**  *(YCL ×1 flights)*
+- **Chicken Keema Baida, Masala Potato Wedges, Spinach Potato Roll**  *(YCL ×1 flights)*
+- **Chole Paneer, Aloo Stuffed Paratha and Vegetable Croquette**  *(YCL ×1 flights)*
+- **Hoisin Chicken with Stir-Fried Noodles, Vegetables and Pak Choy**  *(JCL ×1 flights)*
+- **Mirchi Ka Salan, Yam Varuval and Vegetable Brinji**  *(YCL ×2 flights)*
+- **Paneer Tikka Masala, Bhuna Onion Pulao, Dal Hariyali**  *(YCL ×2 flights)*
+- **Pistachio-Crusted Barramundi with Steamed Potatoes, Ratatouille and Lemon Buttercream Sauce**  *(JCL ×1 flights)*
+- **South Indian Fish Curry Mixed Vegetables Basmati Rice**  *(YCL ×2 flights)*
+- **Southern Style Fish Curry, Tempered Beans, Steamed Rice**  *(YCL ×1 flights)*
+- **Vegetarian Sambar and Potato Curry with Chappati**  *(YCL ×2 flights)*
+
