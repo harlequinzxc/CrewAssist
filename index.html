@@ -3401,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.60.4'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.60.5'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3423,6 +3423,9 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.60.5', d: '2026-11-19', items: [
+                { c: 'imp', t: 'Protein marks drop sausages and add zander and garoupa.' }
+            ] },
             { v: '1.60.4', d: '2026-11-19', items: [
                 { c: 'imp', t: 'Proteins print in bold brackets instead of diamonds.' }
             ] },
@@ -21467,7 +21470,12 @@ SLOT|Special Lve others`;
         // ==========================================
 
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
-        const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'grouper', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
+        // v1.60.5 (owner audit ruling): sausage steps OUT of the bracket marks
+        // (it still rides the extraction's own EX_PALT detection, so addition
+        // lines still READ 'AND PORK SAUSAGES...' - only the mark drops);
+        // zander and garoupa join (garoupa as archive insurance - it is
+        // grouper's local name and the archived corpus carries 4 of its dishes).
+        const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'zander', 'grouper', 'garoupa', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
         let lastPrintStale = false;
         var printState = { // var: the marking mode is state the tests (and window) can reach
             layout: 'elegant',

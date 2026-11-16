@@ -18,8 +18,9 @@
 // SALMON). Fixture regenerated in the same commit: 43 composed lines changed,
 // starch/meat axes untouched.
 // The fixture (tests/menu-extraction.fixture.json) freezes the extractor's
-// output for all 1,139 unique (name, description) pairs harvested from the
-// official SQ main-course corpus (docs/_reference_rosters/menu/sq_main_courses.json). It was
+// output for all 1,604 unique (name, description) pairs: the original 1,139
+// from the archived 2024-2026 corpus (kept building on, in case dishes come
+// back) plus the 465 fresh pairs from the v1.60.5 corpus adoption. It was
 // validated pair-by-pair against the reviewed digest v1.3. If a vocabulary or
 // rule change is ever deliberate, regenerate the fixture in the same commit
 // and say so — a mismatch here means extraction drifted.
@@ -49,7 +50,7 @@ const EMDASH = '\u2014'; // —
       const c = w.compactComposeAddition(f.n, f.d);
       if (c !== f.c) { badC++; if (!first) first = `compose ${f.n}: got ${JSON.stringify(c)}, want ${JSON.stringify(f.c)}`; }
     });
-    R.eq(FIX.length, 1139, 'fixture carries all 1,139 unique pairs');
+    R.eq(FIX.length, 1604, 'fixture carries all 1,604 unique pairs - the 1,139 archived plus the 465 from the v1.60.5 corpus adoption, building on');
     R.eq(badS, 0, `starch winners match on all pairs${first ? ' — ' + first : ''}`);
     R.eq(badM, 0, `meat lists (phrase + hidden/primary) match on all pairs${first ? ' — ' + first : ''}`);
     R.eq(badC, 0, `composed additions match on all pairs${first ? ' — ' + first : ''}`);
@@ -108,7 +109,7 @@ const EMDASH = '\u2014'; // —
     const itemChunks = html.split('<div class="pc-item"').slice(1);
     R.ok(itemChunks.length === 2 && itemChunks[1].indexOf('pc-add') === -1, 'starch-in-name dish gains no addition span');
     R.ok(html.includes('<span class="pc-add">'), 'addition wrapped in grey .pc-add');
-    R.ok(html.includes(`<span class="pc-add">AND <span class="pc-hl">PORK</span> <span class="pc-hl">SAUSAGES</span> AND POTATOES</span>`), 'protein words inverted inside the addition');
+    R.ok(html.includes(`<span class="pc-add">AND <span class="pc-hl">PORK</span> SAUSAGES AND POTATOES</span>`), 'protein words inverted inside the addition (v1.60.5: sausage lost its mark by the owner\u2019s audit ruling - the word rides on, unmarked)');
     R.ok(!/<span class="pc-hl">POTATOES<\/span>/.test(html), 'starch words stay grey in the addition');
     // mains-only: a dessert keeps its WITH and never gains an addition
     const dessert = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
@@ -183,10 +184,16 @@ const EMDASH = '\u2014'; // —
     R.ok(src.includes("'【' + inner + '】'"), 'v1.60.4: the sheet path marks proteins in the heavy brackets (source form)');
     R.ok(src.includes("'【' + tok.text + '】'"), 'v1.60.4: the canvas path marks proteins in the heavy brackets (source form)');
     R.ok(src.includes('aria-label="Protein in brackets"') && src.includes('data-lucide="brackets"'), 'v1.60.4: the toggle wears the brackets icon and label again - key, icon, label and print all agree');
+    // v1.60.5 (owner audit ruling): sausage steps out of the marks; zander and garoupa join
+    R.ok(src.includes("'snapper', 'zander', 'grouper', 'garoupa', 'seabass'") && !src.includes("'bacon', 'sausage', 'veal'"), 'v1.60.5 (owner audit): sausage leaves PRINT_ALLERGENS, zander and garoupa join it - while the extraction\u2019s own EX_PALT keeps its sausages (the addition lines still read AND PORK SAUSAGES)');
+    R.eq(w.printHighlightProteins('PORK SAUSAGE ROLL'), '【PORK】 SAUSAGE ROLL', 'v1.60.5: the pork marks, the sausage never does');
+    R.eq(w.printHighlightProteins('GRILLED ZANDER FILLET'), 'GRILLED 【ZANDER】 FILLET', 'v1.60.5: the zander marks - the corpus\u2019s one true fish miss, closed');
+    R.eq(w.printHighlightProteins('DEEP FRIED GAROUPA WITH BLACK BEAN SAUCE'), 'DEEP FRIED 【GAROUPA】 WITH BLACK BEAN SAUCE', 'v1.60.5: the garoupa marks - archive insurance for grouper\u2019s local name');
+    R.eq(w.compactComposeAddition('Egg Omelette Stuffed with Mushrooms', 'Served with creamy onion sauce, pork sausages, roasted tomato and potatoes'), 'AND PORK SAUSAGES AND POTATOES', 'v1.60.5: the composed line keeps its sausages - only the mark dropped');
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.60.4';"), 'APP_VERSION stamped 1.60.4');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v331"), 'service-worker cache name bumped to v331 (the v1.60.4 heavy-bracket round)');
+    R.ok(src.includes("var APP_VERSION = '1.60.5';"), 'APP_VERSION stamped 1.60.5');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v332"), 'service-worker cache name bumped to v332 (the v1.60.5 corpus + audit round)');
     R.ok(!fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes('html2canvas'), 'v1.47.1: no painter is precached at all — the cameras hand-paint, so captures are offline by construction');
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("'./vendor/fonts/plus-jakarta-sans-700.woff2'"), 'v1.46.1: the house font\u2019s weights are precached — the painter\u2019s clone embeds them as data URLs, offline');
   }
