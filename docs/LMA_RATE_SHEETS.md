@@ -55,7 +55,7 @@ Cross-check: every Daily Total below equals Breakfast + Lunch + Dinner. ✔
 | Jan 2025 | supplied (this doc) | 2025 duties |
 | Jan 2026 | in the app today (LOGIC.md §3.6) | 2026 duties — current |
 
-## B3 rulings recorded so far (owner decisions, nothing built yet)
+## B3 rulings (the decision log — every ruling below shipped in v1.57.0)
 
 0. **Pre-2022 duties (ruled 2026-11): price them with 2022 rules plus a
    note** — the 2022-CA ladder and (until older sheets arrive) the Jan-2024

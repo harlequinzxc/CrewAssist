@@ -18,8 +18,9 @@
 // SALMON). Fixture regenerated in the same commit: 43 composed lines changed,
 // starch/meat axes untouched.
 // The fixture (tests/menu-extraction.fixture.json) freezes the extractor's
-// output for all 1,139 unique (name, description) pairs harvested from the
-// official SQ main-course corpus (docs/_reference_rosters/menu/sq_main_courses.json). It was
+// output for all 1,604 unique (name, description) pairs: the original 1,139
+// from the archived 2024-2026 corpus (kept building on, in case dishes come
+// back) plus the 465 fresh pairs from the v1.60.5 corpus adoption. It was
 // validated pair-by-pair against the reviewed digest v1.3. If a vocabulary or
 // rule change is ever deliberate, regenerate the fixture in the same commit
 // and say so — a mismatch here means extraction drifted.
@@ -49,7 +50,7 @@ const EMDASH = '\u2014'; // —
       const c = w.compactComposeAddition(f.n, f.d);
       if (c !== f.c) { badC++; if (!first) first = `compose ${f.n}: got ${JSON.stringify(c)}, want ${JSON.stringify(f.c)}`; }
     });
-    R.eq(FIX.length, 1139, 'fixture carries all 1,139 unique pairs');
+    R.eq(FIX.length, 1604, 'fixture carries all 1,604 unique pairs - the 1,139 archived plus the 465 from the v1.60.5 corpus adoption, building on');
     R.eq(badS, 0, `starch winners match on all pairs${first ? ' — ' + first : ''}`);
     R.eq(badM, 0, `meat lists (phrase + hidden/primary) match on all pairs${first ? ' — ' + first : ''}`);
     R.eq(badC, 0, `composed additions match on all pairs${first ? ' — ' + first : ''}`);
@@ -108,7 +109,7 @@ const EMDASH = '\u2014'; // —
     const itemChunks = html.split('<div class="pc-item"').slice(1);
     R.ok(itemChunks.length === 2 && itemChunks[1].indexOf('pc-add') === -1, 'starch-in-name dish gains no addition span');
     R.ok(html.includes('<span class="pc-add">'), 'addition wrapped in grey .pc-add');
-    R.ok(html.includes(`<span class="pc-add">AND <span class="pc-hl">PORK</span> <span class="pc-hl">SAUSAGES</span> AND POTATOES</span>`), 'protein words inverted inside the addition');
+    R.ok(html.includes(`<span class="pc-add">AND <span class="pc-hl">PORK</span> SAUSAGES AND POTATOES</span>`), 'protein words inverted inside the addition (v1.60.5: sausage lost its mark by the owner\u2019s audit ruling - the word rides on, unmarked)');
     R.ok(!/<span class="pc-hl">POTATOES<\/span>/.test(html), 'starch words stay grey in the addition');
     // mains-only: a dessert keeps its WITH and never gains an addition
     const dessert = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
@@ -120,18 +121,18 @@ const EMDASH = '\u2014'; // —
   // --- v1.34.0: brackets marking mode + hidden proteins on non-mains (SQ106) ---
   {
     R.eq(w.printState.proteinMode, 'brackets', 'brackets is the default marking mode');
-    R.eq(w.printHighlightProteins('GRILLED CHICKEN BREAST'), 'GRILLED ◆CHICKEN◆ BREAST', 'v1.60.3 (owner order): the mark mode wraps the protein word in DIAMONDS - solid ink, plain black text');
+    R.eq(w.printHighlightProteins('GRILLED CHICKEN BREAST'), 'GRILLED 【CHICKEN】 BREAST', 'v1.60.4 (owner order): the mark mode wraps the protein word in the HEAVY BRACKETS - solid ink, a true open/close pair');
     // SQ106: the cold refreshment hid its sliced smoked chicken in the description
     const html = w.printCompactItems('COLD REFRESHMENT:', [
       { name: 'Open-Faced Sandwich', desc: 'Topped with sliced smoked chicken and herb mayonnaise' }
     ], false, false);
-    R.ok(html.includes('<span class="pc-add">' + WACUTE + ' SLICED SMOKED ◆CHICKEN◆</span>'), 'SQ106 hidden protein surfaces as a diamond-marked addition (v1.60.3)');
+    R.ok(html.includes('<span class="pc-add">' + WACUTE + ' SLICED SMOKED 【CHICKEN】</span>'), 'SQ106 hidden protein surfaces as a heavy-bracket-marked addition (v1.60.4)');
     R.ok(html.indexOf('pc-hl') === -1, 'brackets mode renders no invert spans');
     // a primary-style description reads dash-style, like the sandwich mains
     const html2 = w.printCompactItems('COLD REFRESHMENT:', [
       { name: 'Open-Faced Sandwich', desc: 'Sliced smoked chicken, lettuce, herb mayonnaise' }
     ], false, false);
-    R.ok(html2.includes('<span class="pc-add">\u2014 ◆CHICKEN◆</span>'), 'primary protein on a non-main reads dash-style (v1.60.3: the diamond follows)');
+    R.ok(html2.includes('<span class="pc-add">\u2014 【CHICKEN】</span>'), 'primary protein on a non-main reads dash-style (v1.60.4: the heavy brackets follow)');
     // the square restores the black invert everywhere
     w.printState.proteinMode = 'square';
     const html3 = w.printCompactItems('COLD REFRESHMENT:', [
@@ -142,10 +143,10 @@ const EMDASH = '\u2014'; // —
     // the canvas export carries the same hidden protein
     const toks = w.compactItemTokens('OPEN-FACED SANDWICH', 'Topped with sliced smoked chicken', false);
     R.ok(toks.some((t) => t.add && t.invert && t.text === 'CHICKEN'), 'canvas tokens carry the hidden protein as an invert token');
-    R.ok(toks.some((t) => t.invert && w.compactTokText(t) === '◆CHICKEN◆'), 'v1.60.3: the canvas export draws the diamond pair too');
+    R.ok(toks.some((t) => t.invert && w.compactTokText(t) === '【CHICKEN】'), 'v1.60.4: the canvas export draws the heavy bracket pair too');
     // a name that already shows its protein gains no addition
     const html4 = w.printCompactItems('COLD REFRESHMENT:', [{ name: 'Smoked Chicken Sandwich', desc: 'with pickles' }], false, false);
-    R.ok(html4.indexOf('pc-add') === -1 && html4.includes('SMOKED ◆CHICKEN◆ SANDWICH'), 'no addition when the name already shows the protein; the name itself wears the diamonds (v1.60.3)');
+    R.ok(html4.indexOf('pc-add') === -1 && html4.includes('SMOKED 【CHICKEN】 SANDWICH'), 'no addition when the name already shows the protein; the name itself wears the heavy brackets (v1.60.4)');
     // starches never surface on non-mains (the dessert ruling stands)
     const html5 = w.printCompactItems('DESSERT:', [{ name: 'Cake with Cream', desc: 'served with steamed jasmine rice' }], false, false);
     R.ok(html5.indexOf('pc-add') === -1, 'non-main additions stay protein-only (no starch lines on desserts)');
@@ -180,13 +181,36 @@ const EMDASH = '\u2014'; // —
     R.ok(/\.pc-hl\s*{[^}]*-webkit-print-color-adjust:\s*exact/s.test(src) && /\.pc-hl\s*{[^}]*print-color-adjust:\s*exact/s.test(src), 'the protein highlight forces its black fill through every print engine');
     // v1.34.0 (owner ruling): protein marking is a mode — [brackets] default,
     // black square invert opt-in; hidden proteins surface on non-mains too.
-    R.ok(src.includes("'◆' + inner + '◆'"), 'v1.60.3: the sheet path marks proteins in diamonds (source form)');
-    R.ok(src.includes("'◆' + tok.text + '◆'"), 'v1.60.3: the canvas path marks proteins in diamonds (source form)');
-    R.ok(src.includes('aria-label="Protein in diamonds"') && src.includes('data-lucide="diamond"'), 'v1.60.3: the toggle wears the diamond icon and its honest label (the ids and the mode key stay)');
+    R.ok(src.includes("'【' + inner + '】'"), 'v1.60.4: the sheet path marks proteins in the heavy brackets (source form)');
+    R.ok(src.includes("'【' + tok.text + '】'"), 'v1.60.4: the canvas path marks proteins in the heavy brackets (source form)');
+    R.ok(src.includes('aria-label="Protein in brackets"') && src.includes('data-lucide="brackets"'), 'v1.60.4: the toggle wears the brackets icon and label again - key, icon, label and print all agree');
+    // v1.60.5 (owner audit ruling): sausage steps out of the marks; zander and garoupa join
+    R.ok(src.includes("'snapper', 'zander', 'grouper', 'garoupa', 'seabass'") && !src.includes("'bacon', 'sausage', 'veal'"), 'v1.60.5 (owner audit): sausage leaves PRINT_ALLERGENS, zander and garoupa join it - while the extraction\u2019s own EX_PALT keeps its sausages (the addition lines still read AND PORK SAUSAGES)');
+    R.eq(w.printHighlightProteins('PORK SAUSAGE ROLL'), '【PORK】 SAUSAGE ROLL', 'v1.60.5: the pork marks, the sausage never does');
+    R.eq(w.printHighlightProteins('GRILLED ZANDER FILLET'), 'GRILLED 【ZANDER】 FILLET', 'v1.60.5: the zander marks - the corpus\u2019s one true fish miss, closed');
+    R.eq(w.printHighlightProteins('DEEP FRIED GAROUPA WITH BLACK BEAN SAUCE'), 'DEEP FRIED 【GAROUPA】 WITH BLACK BEAN SAUCE', 'v1.60.5: the garoupa marks - archive insurance for grouper\u2019s local name');
+    R.eq(w.compactComposeAddition('Egg Omelette Stuffed with Mushrooms', 'Served with creamy onion sauce, pork sausages, roasted tomato and potatoes'), 'AND PORK SAUSAGES AND POTATOES', 'v1.60.5: the composed line keeps its sausages - only the mark dropped');
+    // --- v1.61.0: light bites join the non-main protein surfacing (owner order) ---
+    {
+        const items = [
+            { name: 'Open-Faced Sandwich', desc: 'Topped with sliced smoked chicken and herb mayonnaise' },
+            { name: 'Satay Chicken Skewers', desc: 'Served with peanut sauce' },
+            { name: 'Fruit Plate', desc: 'Seasonal fruits' }
+        ];
+        const bites = w.eval('printCompactItems(' + JSON.stringify('LIGHT BITES') + ', ' + JSON.stringify(items) + ', true, false)');
+        R.ok(bites.includes('OPEN-FACED SANDWICH <span class="pc-add">' + WACUTE + ' SLICED SMOKED 【CHICKEN】</span>, SATAY 【CHICKEN】 SKEWERS, FRUIT PLATE'), 'v1.61.0: a light bite that hides its protein in the description carries the same inline addition, riding before its comma');
+        R.eq(bites.split('pc-add').length, 2, 'v1.61.0: exactly one addition on the line - the name-protein bite and the clean bite stay plain');
+        const toks = JSON.parse(w.eval('JSON.stringify(compactBitesTokens(' + JSON.stringify(items.slice(0, 2)) + '))'));
+        const chick = toks.find((t) => t.add && t.text === 'CHICKEN');
+        R.ok(!!chick && chick.invert === true, 'v1.61.0: the canvas bites tokens carry the hidden protein as a marked addition token');
+        R.ok(toks.some((t) => t.text === ', ' && !t.add), 'v1.61.0: the bites comma separator survives the addition tokens');
+        R.ok(src.includes("const add = compactNonMainProtein(it.name, it.desc || '');"), 'v1.61.0 src: the bites branch routes through the non-main surfacing');
+        R.ok(src.includes("const add = compactNonMainProtein(nm, isObj ? (it.desc || '') : '');"), 'v1.61.0 src: the canvas bites tokens route through it too');
+    }
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.60.3';"), 'APP_VERSION stamped 1.60.3');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v330"), 'service-worker cache name bumped to v330 (the v1.60.3 diamond round)');
+    R.ok(src.includes("var APP_VERSION = '1.61.0';"), 'APP_VERSION stamped 1.61.0');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v333"), 'service-worker cache name bumped to v333 (the v1.61.0 light-bites + sweep round)');
     R.ok(!fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes('html2canvas'), 'v1.47.1: no painter is precached at all — the cameras hand-paint, so captures are offline by construction');
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("'./vendor/fonts/plus-jakarta-sans-700.woff2'"), 'v1.46.1: the house font\u2019s weights are precached — the painter\u2019s clone embeds them as data URLs, offline');
   }

@@ -3145,7 +3145,7 @@
                         <button type="button" id="print-zoom-in" class="w-9 h-9 rounded-full ca-inset border border-black/10 dark:border-white/10 disabled:opacity-40 disabled:grayscale disabled:pointer-events-none">A+</button>
                     </div>
                     <div id="print-protein-seg" class="flex ca-inset rounded-full p-0.5 shrink-0 border border-black/10 dark:border-white/10" role="group" aria-label="Protein marking style">
-                        <button type="button" id="print-protein-brackets" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein in diamonds"><i data-lucide="diamond" class="w-4 h-4"></i></button>
+                        <button type="button" id="print-protein-brackets" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein in brackets"><i data-lucide="brackets" class="w-4 h-4"></i></button>
                         <button type="button" id="print-protein-square" class="w-9 h-9 rounded-full inline-flex items-center justify-center" aria-label="Protein highlighted black"><i data-lucide="square" class="w-4 h-4"></i></button>
                     </div>
                     <button type="button" id="print-opt-bounds" class="h-9 px-3 rounded-full text-xs font-bold border border-sia-gold bg-sia-gold text-black shrink-0 inline-flex items-center gap-1.5"><i data-lucide="check" class="opt-tick w-3.5 h-3.5"></i><span class="opt-txt">Bounds</span></button>
@@ -3401,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.60.3'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.61.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3423,6 +3423,16 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.61.0', d: '2026-11-19', items: [
+                { c: 'imp', t: 'Light bites print their hidden proteins.' },
+                { c: 'imp', t: 'Unused code swept out; nothing you see changes.' }
+            ] },
+            { v: '1.60.5', d: '2026-11-19', items: [
+                { c: 'imp', t: 'Protein marks drop sausages and add zander and garoupa.' }
+            ] },
+            { v: '1.60.4', d: '2026-11-19', items: [
+                { c: 'imp', t: 'Proteins print in bold brackets instead of diamonds.' }
+            ] },
             { v: '1.60.3', d: '2026-11-19', items: [
                 { c: 'imp', t: 'Proteins print in diamonds instead of brackets.' }
             ] },
@@ -10905,14 +10915,12 @@ SLOT|Special Lve others`;
             requestAnimationFrame(() => { card.style.opacity = '0'; card.style.maxHeight = '0'; });
             setTimeout(() => card.remove(), 280);
         }
-        // one copy source for the render, the prune re-count and the sweep's
-        // done swap — modes: plain | saved (single, already offline) | done
-        function nfNudgeCopyHtml(flights, mode) {
-            if (mode === 'done') return 'Menus saved for <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> — tap one to open.';
+        // one copy source for the render and the prune re-count (v1.61.0:
+        // the done and saved modes left with the all-saved gate that made
+        // them unreachable - a fully-saved set never shows the card)
+        function nfNudgeCopyHtml(flights) {
             const f = flights[0];
-            if (flights.length === 1) return mode === 'saved'
-                ? '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — menus saved, available offline for the flight.'
-                : '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.';
+            if (flights.length === 1) return '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.';
             return 'You have <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> coming up — save all menus for offline view.';
         }
         // the surgical path: landed lines leave, the card itself stays as-is
@@ -10924,7 +10932,7 @@ SLOT|Special Lve others`;
             if (!flights.length) { nfNudgeCardAway(card); return; }
             card.dataset.nfFlights = flights.map((f) => f.fn + '|' + f.ymd).join(',');
             const copy = card.querySelector('.ca-nf-copy');
-            if (copy) copy.innerHTML = nfNudgeCopyHtml(flights, card.dataset.nfDone === '1' ? 'done' : 'plain');
+            if (copy) copy.innerHTML = nfNudgeCopyHtml(flights);
         }
         function renderMenuNudge() {
             const old = document.getElementById('ca-menunudge-card');
@@ -10981,15 +10989,14 @@ SLOT|Special Lve others`;
             // this stamp instead of rebuilding under the crew's thumbs
             el.dataset.nfFlights = stamp;
             el.dataset.nfSaved = savedMark;
-            // round 32: saved flights ride as Saved pills; an all-saved multi
-            // set renders straight into the done form (a reload keeps the
-            // launcher alive — the What's New logic the owner ordered). A
-            // saved SINGLE keeps its live Open-menus door: it opens from the
-            // cache instantly, offline included.
+            // round 32: saved flights ride as Saved pills in the rows. The
+            // v1.45.2 all-saved gate above supersedes the round-32 done and
+            // saved launcher forms (v1.61.0 swept them out of the copy and
+            // the CTA): a fully-saved set never renders - partial sets keep
+            // their Ready reminders, a single unsaved flight keeps its live
+            // Open-menus door.
             const savedFlags = flights.map((f) => menusSavedFor(f.fn, f.ymd));
-            const done = !one && savedFlags.every(Boolean);
-            if (done) el.dataset.nfDone = '1';
-            const copy = nfNudgeCopyHtml(flights, done ? 'done' : (one && savedFlags[0] ? 'saved' : 'plain'));
+            const copy = nfNudgeCopyHtml(flights);
             const rows = one ? '' : flights.map((f, i) =>
                 '<button type="button" class="ca-menunudge-row w-full flex items-center gap-2 py-1.5 text-left" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '">'
                 + '<span class="text-xs font-bold whitespace-nowrap">SQ ' + rosterEsc(f.fn) + '</span>'
@@ -11007,9 +11014,7 @@ SLOT|Special Lve others`;
                 + '<p class="ca-nf-copy text-sm leading-relaxed">' + copy + '</p>'
                 + '</div></div>'
                 + (one ? '' : '<div class="mt-2">' + rows + '</div>')
-                + '<button type="button" id="ca-menunudge-go" class="' + (done
-                    ? 'mt-2.5 w-full h-10 rounded-full bg-emerald-600 text-white ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5'
-                    : 'mt-2.5 w-full h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5') + '">' + (done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i> Saved' : (one ? 'Open menus' : 'Save all menus')) + '</button>'
+                + '<button type="button" id="ca-menunudge-go" class="mt-2.5 w-full h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
                 + '</div>';
             nfInsertAtSlot(el, 2);
             refreshIcons();
@@ -11023,9 +11028,6 @@ SLOT|Special Lve others`;
             });
             const goBtn = document.getElementById('ca-menunudge-go');
             const goHtml = goBtn.innerHTML;
-            // round 32: an all-saved reload renders straight into the done
-            // form — its CTA is the inert green receipt, rows stay tappable
-            if (done) { goBtn.disabled = true; goBtn.style.pointerEvents = 'none'; }
             // round 31: rows are live from the start — tapping one opens
             // (and saves) that flight’s menus directly
             el.querySelectorAll('.ca-menunudge-row').forEach((row) => {
@@ -21464,7 +21466,12 @@ SLOT|Special Lve others`;
         // ==========================================
 
         const PRINT_CABIN_ORDER = ['FCL', 'JCL', 'SCL', 'YCL'];
-        const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'sausage', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'grouper', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
+        // v1.60.5 (owner audit ruling): sausage steps OUT of the bracket marks
+        // (it still rides the extraction's own EX_PALT detection, so addition
+        // lines still READ 'AND PORK SAUSAGES...' - only the mark drops);
+        // zander and garoupa join (garoupa as archive insurance - it is
+        // grouper's local name and the archived corpus carries 4 of its dishes).
+        const PRINT_ALLERGENS = ['salmon', 'tuna', 'beef', 'pork', 'chicken', 'ham', 'prawn', 'shrimp', 'lamb', 'duck', 'turkey', 'bacon', 'veal', 'crab', 'lobster', 'scallop', 'squid', 'octopus', 'clam', 'mussel', 'oyster', 'fish', 'cod', 'snapper', 'zander', 'grouper', 'garoupa', 'seabass', 'bass', 'mackerel', 'trout', 'anchovy', 'sardine', 'eel', 'calamari', 'abalone', 'crayfish', 'langoustine', 'wagyu', 'venison', 'mutton', 'goat', 'goose', 'quail', 'pigeon', 'squab', 'rabbit', 'swordfish', 'halibut', 'sole', 'perch', 'tilapia', 'barramundi', 'kingfish', 'yellowtail', 'hamachi', 'seafood', 'cuttlefish', 'scampi', 'foie'];
         let lastPrintStale = false;
         var printState = { // var: the marking mode is state the tests (and window) can reach
             layout: 'elegant',
@@ -21954,10 +21961,13 @@ SLOT|Special Lve others`;
 
         function printHighlightProteins(name) {
             // v1.34.0 (owner ruling): compact protein marking is a MODE —
-            // v1.60.3 (owner order): the default mark is the DIAMOND pair
-            // ◆WORD◆ (solid ink, plain black text, print-safe on every
-            // engine; was [brackets] until 1.60.2), or the black invert when
-            // the crew picks the square. The mode key stays 'brackets'.
+            // v1.60.4 (owner order): the default mark is the HEAVY LENTICULAR
+            // bracket pair 【WORD】 (solid ink, a true open/close span; was thin
+            // [brackets] until 1.60.2 and ◆diamonds◆ in 1.60.3), or the black
+            // invert when the crew picks the square. The mode key 'brackets'
+            // is literal again. Full-width CJK glyphs: they ride the phone's
+            // CJK fallback font and carry an em of advance each — wider, and
+            // the canvas measures the real fallback, so the export agrees.
             return printMarkProteins(name, printState.proteinMode === 'square' ? 'invert' : 'brackets');
         }
 
@@ -21977,7 +21987,7 @@ SLOT|Special Lve others`;
                 if (!printIsProteinWord(core)) return escapePrintHtml(w);
                 const inner = escapePrintHtml(w);
                 if (mode === 'invert') return '<span class="pc-hl">' + inner + '</span>';
-                if (mode === 'brackets') return '◆' + inner + '◆';   // v1.60.3 (owner order): diamonds - solid ink, they read where thin brackets vanished into the text
+                if (mode === 'brackets') return '【' + inner + '】';   // v1.60.4 (owner order): the heavy lenticular brackets - solid ink AND a true open/close pair, so marked spans stay unambiguous where a diamond pair clumps
                 return '<s>' + inner + '</s>';
             }).join('');
         }
@@ -22310,7 +22320,7 @@ SLOT|Special Lve others`;
             const square = printState.proteinMode === 'square';
             return String(add || '').trim().split(/\s+/).map((w) => (
                 printIsProteinWord(w.replace(/[^a-zA-Z]/g, '').toLowerCase())
-                    ? (square ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>' : '◆' + escapePrintHtml(w) + '◆')
+                    ? (square ? '<span class="pc-hl">' + escapePrintHtml(w) + '</span>' : '【' + escapePrintHtml(w) + '】')
                     : escapePrintHtml(w)
             )).join(' ');
         }
@@ -22318,7 +22328,17 @@ SLOT|Special Lve others`;
         function printCompactItems(key, items, asBites, isMain) {
             if (!items || !items.length) return '';
             if (asBites) {
-                const line = items.map((it) => printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase())).join(', ');
+                // v1.61.0 (owner order): light bites join the non-main
+                // protein surfacing - a bite that hides its protein in the
+                // description carries the same inline addition every other
+                // non-main course gets (proteins only, never starch, only
+                // when the name itself shows none).
+                const line = items.map((it) => {
+                    let l = printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase());
+                    const add = compactNonMainProtein(it.name, it.desc || '');
+                    if (add) l += ' <span class="pc-add">' + exAdditionHtml(add) + '</span>';
+                    return l;
+                }).join(', ');
                 return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-bites">' + line + '</td></tr></table>';
             }
             let list = '';
@@ -23045,7 +23065,19 @@ SLOT|Special Lve others`;
             const tokens = [];
             (items || []).forEach((it, i) => {
                 if (i) tokens.push({ text: ', ', invert: false });
-                compactNameTokens(it && typeof it === 'object' ? it.name : it).forEach((t) => tokens.push(t));
+                const isObj = it && typeof it === 'object';
+                const nm = isObj ? it.name : it;
+                compactNameTokens(nm).forEach((t) => tokens.push(t));
+                // v1.61.0: light bites surface hidden proteins too (the same
+                // rule as every non-main) - the canvas draws the addition
+                // grey with its protein words marked, like the DOM sheet.
+                const add = compactNonMainProtein(nm, isObj ? (it.desc || '') : '');
+                if (add) {
+                    String(add).split(/\s+/).forEach((wd) => {
+                        tokens.push({ text: ' ', invert: false, add: true });
+                        tokens.push({ text: wd, invert: printIsProteinWord(wd.replace(/[^a-zA-Z]/g, '').toLowerCase()), add: true });
+                    });
+                }
             });
             return tokens;
         }
@@ -23064,13 +23096,13 @@ SLOT|Special Lve others`;
         }
 
         // v1.34.0: the mark mode renders protein in the item's own colour —
-        // no fill, so every print engine and the canvas export agree. v1.60.3:
-        // the mark is the diamond pair ◆WORD◆ (owner order; keyed 'brackets').
+        // no fill, so every print engine and the canvas export agree. v1.60.4:
+        // the mark is the heavy bracket pair 【WORD】 (owner order; keyed 'brackets').
         function compactTokRectOn() {
             return printState.proteinMode !== 'brackets';
         }
         function compactTokText(tok) {
-            return (tok.invert && !compactTokRectOn()) ? '◆' + tok.text + '◆' : tok.text;   // v1.60.3: diamonds here too
+            return (tok.invert && !compactTokRectOn()) ? '【' + tok.text + '】' : tok.text;   // v1.60.4: the heavy brackets here too
         }
         function compactTokWidth(ctx, tok, fontPx) {
             const w = ctx.measureText(compactTokText(tok)).width;
