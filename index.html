@@ -3401,7 +3401,7 @@
             }
         }
 
-        var APP_VERSION = '1.60.5'; // var: tests and the console can read the running version
+        var APP_VERSION = '1.61.0'; // var: tests and the console can read the running version
         // v1.35.0 (owner ruling, supersedes the flat list): the app keeps a
         // full versioned CHANGELOG, newest first. What's New shows only the
         // delta — every version NEWER than the last one the crew saw
@@ -3423,6 +3423,10 @@
         // twenty "Hotfix:" rows read as noise. Each line keeps one
         // sentence; the substance survives the fold.
         const APP_CHANGELOG = [
+            { v: '1.61.0', d: '2026-11-19', items: [
+                { c: 'imp', t: 'Light bites print their hidden proteins.' },
+                { c: 'imp', t: 'Unused code swept out; nothing you see changes.' }
+            ] },
             { v: '1.60.5', d: '2026-11-19', items: [
                 { c: 'imp', t: 'Protein marks drop sausages and add zander and garoupa.' }
             ] },
@@ -10911,14 +10915,12 @@ SLOT|Special Lve others`;
             requestAnimationFrame(() => { card.style.opacity = '0'; card.style.maxHeight = '0'; });
             setTimeout(() => card.remove(), 280);
         }
-        // one copy source for the render, the prune re-count and the sweep's
-        // done swap — modes: plain | saved (single, already offline) | done
-        function nfNudgeCopyHtml(flights, mode) {
-            if (mode === 'done') return 'Menus saved for <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> — tap one to open.';
+        // one copy source for the render and the prune re-count (v1.61.0:
+        // the done and saved modes left with the all-saved gate that made
+        // them unreachable - a fully-saved set never shows the card)
+        function nfNudgeCopyHtml(flights) {
             const f = flights[0];
-            if (flights.length === 1) return mode === 'saved'
-                ? '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — menus saved, available offline for the flight.'
-                : '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.';
+            if (flights.length === 1) return '<b class="text-sia-gold">SQ ' + rosterEsc(f.fn) + '</b> to ' + rosterEsc(f.arr) + ' departs <b>' + nextFlightRel(f.ymd) + '</b> — open its menus now so they&rsquo;re saved for the flight.';
             return 'You have <b class="text-sia-gold">' + flights.length + ' flight' + (flights.length === 1 ? '' : 's') + '</b> coming up — save all menus for offline view.';
         }
         // the surgical path: landed lines leave, the card itself stays as-is
@@ -10930,7 +10932,7 @@ SLOT|Special Lve others`;
             if (!flights.length) { nfNudgeCardAway(card); return; }
             card.dataset.nfFlights = flights.map((f) => f.fn + '|' + f.ymd).join(',');
             const copy = card.querySelector('.ca-nf-copy');
-            if (copy) copy.innerHTML = nfNudgeCopyHtml(flights, card.dataset.nfDone === '1' ? 'done' : 'plain');
+            if (copy) copy.innerHTML = nfNudgeCopyHtml(flights);
         }
         function renderMenuNudge() {
             const old = document.getElementById('ca-menunudge-card');
@@ -10987,15 +10989,14 @@ SLOT|Special Lve others`;
             // this stamp instead of rebuilding under the crew's thumbs
             el.dataset.nfFlights = stamp;
             el.dataset.nfSaved = savedMark;
-            // round 32: saved flights ride as Saved pills; an all-saved multi
-            // set renders straight into the done form (a reload keeps the
-            // launcher alive — the What's New logic the owner ordered). A
-            // saved SINGLE keeps its live Open-menus door: it opens from the
-            // cache instantly, offline included.
+            // round 32: saved flights ride as Saved pills in the rows. The
+            // v1.45.2 all-saved gate above supersedes the round-32 done and
+            // saved launcher forms (v1.61.0 swept them out of the copy and
+            // the CTA): a fully-saved set never renders - partial sets keep
+            // their Ready reminders, a single unsaved flight keeps its live
+            // Open-menus door.
             const savedFlags = flights.map((f) => menusSavedFor(f.fn, f.ymd));
-            const done = !one && savedFlags.every(Boolean);
-            if (done) el.dataset.nfDone = '1';
-            const copy = nfNudgeCopyHtml(flights, done ? 'done' : (one && savedFlags[0] ? 'saved' : 'plain'));
+            const copy = nfNudgeCopyHtml(flights);
             const rows = one ? '' : flights.map((f, i) =>
                 '<button type="button" class="ca-menunudge-row w-full flex items-center gap-2 py-1.5 text-left" data-nf="' + rosterEsc(f.fn) + '|' + rosterEsc(f.ymd) + '">'
                 + '<span class="text-xs font-bold whitespace-nowrap">SQ ' + rosterEsc(f.fn) + '</span>'
@@ -11013,9 +11014,7 @@ SLOT|Special Lve others`;
                 + '<p class="ca-nf-copy text-sm leading-relaxed">' + copy + '</p>'
                 + '</div></div>'
                 + (one ? '' : '<div class="mt-2">' + rows + '</div>')
-                + '<button type="button" id="ca-menunudge-go" class="' + (done
-                    ? 'mt-2.5 w-full h-10 rounded-full bg-emerald-600 text-white ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5'
-                    : 'mt-2.5 w-full h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5') + '">' + (done ? '<i data-lucide="check" class="w-3.5 h-3.5"></i> Saved' : (one ? 'Open menus' : 'Save all menus')) + '</button>'
+                + '<button type="button" id="ca-menunudge-go" class="mt-2.5 w-full h-10 rounded-full bg-gradient-to-r from-sia-goldlt to-sia-gold text-black ca-micro font-bold uppercase tracking-wider inline-flex items-center justify-center gap-1.5">' + (one ? 'Open menus' : 'Save all menus') + '</button>'
                 + '</div>';
             nfInsertAtSlot(el, 2);
             refreshIcons();
@@ -11029,9 +11028,6 @@ SLOT|Special Lve others`;
             });
             const goBtn = document.getElementById('ca-menunudge-go');
             const goHtml = goBtn.innerHTML;
-            // round 32: an all-saved reload renders straight into the done
-            // form — its CTA is the inert green receipt, rows stay tappable
-            if (done) { goBtn.disabled = true; goBtn.style.pointerEvents = 'none'; }
             // round 31: rows are live from the start — tapping one opens
             // (and saves) that flight’s menus directly
             el.querySelectorAll('.ca-menunudge-row').forEach((row) => {
@@ -22332,7 +22328,17 @@ SLOT|Special Lve others`;
         function printCompactItems(key, items, asBites, isMain) {
             if (!items || !items.length) return '';
             if (asBites) {
-                const line = items.map((it) => printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase())).join(', ');
+                // v1.61.0 (owner order): light bites join the non-main
+                // protein surfacing - a bite that hides its protein in the
+                // description carries the same inline addition every other
+                // non-main course gets (proteins only, never starch, only
+                // when the name itself shows none).
+                const line = items.map((it) => {
+                    let l = printHighlightProteins(String(printDisplayName(it.name) || '').toUpperCase());
+                    const add = compactNonMainProtein(it.name, it.desc || '');
+                    if (add) l += ' <span class="pc-add">' + exAdditionHtml(add) + '</span>';
+                    return l;
+                }).join(', ');
                 return '<table class="pc-course"><tr><td class="pc-key">' + escapePrintHtml(key) + ':</td><td class="pc-bites">' + line + '</td></tr></table>';
             }
             let list = '';
@@ -23059,7 +23065,19 @@ SLOT|Special Lve others`;
             const tokens = [];
             (items || []).forEach((it, i) => {
                 if (i) tokens.push({ text: ', ', invert: false });
-                compactNameTokens(it && typeof it === 'object' ? it.name : it).forEach((t) => tokens.push(t));
+                const isObj = it && typeof it === 'object';
+                const nm = isObj ? it.name : it;
+                compactNameTokens(nm).forEach((t) => tokens.push(t));
+                // v1.61.0: light bites surface hidden proteins too (the same
+                // rule as every non-main) - the canvas draws the addition
+                // grey with its protein words marked, like the DOM sheet.
+                const add = compactNonMainProtein(nm, isObj ? (it.desc || '') : '');
+                if (add) {
+                    String(add).split(/\s+/).forEach((wd) => {
+                        tokens.push({ text: ' ', invert: false, add: true });
+                        tokens.push({ text: wd, invert: printIsProteinWord(wd.replace(/[^a-zA-Z]/g, '').toLowerCase()), add: true });
+                    });
+                }
             });
             return tokens;
         }

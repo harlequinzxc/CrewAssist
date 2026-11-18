@@ -350,6 +350,16 @@ function rosterItems(flight, sector, dateTok, opts) {
     R.ok(nfcard && /Menus saved/.test(nfcard.textContent), 'next-flight card now carries the saved badge');
   }
   {
+    // v1.61.0 (the sweep): the done and saved copy modes and the done-flag
+    // CTA left the nudge - unreachable since the v1.45.2 all-saved gate
+    const swpSrc = fs.readFileSync(APP, 'utf8');
+    R.ok(swpSrc.includes('function nfNudgeCopyHtml(flights) {') && (swpSrc.match(/nfNudgeCopyHtml\(flights\)/g) || []).length === 3, 'v1.61.0: the copy helper is mode-less - one declaration plus the two call sites');
+    R.ok(!swpSrc.includes('dataset.nfDone'), 'v1.61.0: the done flag no longer exists anywhere in the nudge');
+    R.ok(!swpSrc.includes("'Menus saved for <b"), 'v1.61.0: the done receipt copy is gone');
+    R.ok(!swpSrc.includes('menus saved, available offline'), 'v1.61.0: the saved-single copy is gone');
+    R.ok(!swpSrc.includes('bg-emerald-600 text-white ca-micro'), 'v1.61.0: the inert green receipt CTA is gone - the gold CTA is the only form');
+  }
+  {
     // v1.45.5 (owner order): the nudge covers the WHOLE duty — a return leg
     // beyond the 2-day window joins while the crew is still home on wifi
     const { w, d } = await boot(APP, { seed: (x) => {

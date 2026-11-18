@@ -886,11 +886,11 @@ const richMenuPayload = (ts) => JSON.stringify({ timestamp: ts, data: {
   {
     const src = fs.readFileSync(APP, 'utf8');
     const sw = fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8');
-    R.ok(src.includes("var APP_VERSION = '1.60.5';"), 'APP_VERSION stamped 1.60.5');
+    R.ok(src.includes("var APP_VERSION = '1.61.0';"), 'APP_VERSION stamped 1.61.0');
     R.ok(src.includes('Offline — menu saved'), 'viewer badge copy stays "Offline — menu saved"');
     R.ok(src.includes('Settings opens the full changelog.'), 'the changelog carries this release\'s promise (offline installs included)');
     R.ok(src.includes('glass-sheet border border-black/10 dark:border-white/10 rounded-xl p-3 shadow-xl text-left transition-all'), 'popover uses the solid sheet surface, animated');
-    R.ok(sw.includes("crewassist-v332"), 'service-worker cache name bumped to v332 (the v1.60.5 corpus + audit round)');
+    R.ok(sw.includes("crewassist-v333"), 'service-worker cache name bumped to v333 (the v1.61.0 light-bites + sweep round)');
     const ratesFile = JSON.parse(fs.readFileSync(path.resolve(__dirname, '..', 'rates.json'), 'utf8'));
     R.eq(ratesFile.version, 2, 'B3: the served rates.json is a v2 timeline');
     R.eq(ratesFile.periods.length, 3, 'B3: the timeline carries the 2022, 2025 and 2026 agreements');

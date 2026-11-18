@@ -1,6 +1,6 @@
 # Main-course extraction — full review digest (v1.3 — rulings applied: G-class English protein hints KEPT, sauce-level traces IGNORED)
 
-Corpus: 5,531 records · 1,139 unique (name, description) pairs · from `_inbox/menu/sq_main_courses.json`.
+Corpus: 5,531 records · 1,139 unique (name, description) pairs · the 2024–2026 corpus — archived since v1.60.5 as `sq_main_courses_archive_2024-2026.json` beside this digest (the canonical `sq_main_courses.json` is the adopted snapshot; its fresh pairs live in the v1.4 addendum below).
 
 | Section | Unique dishes | Share |
 |---|---|---|

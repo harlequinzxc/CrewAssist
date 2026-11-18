@@ -190,10 +190,27 @@ const EMDASH = '\u2014'; // —
     R.eq(w.printHighlightProteins('GRILLED ZANDER FILLET'), 'GRILLED 【ZANDER】 FILLET', 'v1.60.5: the zander marks - the corpus\u2019s one true fish miss, closed');
     R.eq(w.printHighlightProteins('DEEP FRIED GAROUPA WITH BLACK BEAN SAUCE'), 'DEEP FRIED 【GAROUPA】 WITH BLACK BEAN SAUCE', 'v1.60.5: the garoupa marks - archive insurance for grouper\u2019s local name');
     R.eq(w.compactComposeAddition('Egg Omelette Stuffed with Mushrooms', 'Served with creamy onion sauce, pork sausages, roasted tomato and potatoes'), 'AND PORK SAUSAGES AND POTATOES', 'v1.60.5: the composed line keeps its sausages - only the mark dropped');
+    // --- v1.61.0: light bites join the non-main protein surfacing (owner order) ---
+    {
+        const items = [
+            { name: 'Open-Faced Sandwich', desc: 'Topped with sliced smoked chicken and herb mayonnaise' },
+            { name: 'Satay Chicken Skewers', desc: 'Served with peanut sauce' },
+            { name: 'Fruit Plate', desc: 'Seasonal fruits' }
+        ];
+        const bites = w.eval('printCompactItems(' + JSON.stringify('LIGHT BITES') + ', ' + JSON.stringify(items) + ', true, false)');
+        R.ok(bites.includes('OPEN-FACED SANDWICH <span class="pc-add">' + WACUTE + ' SLICED SMOKED 【CHICKEN】</span>, SATAY 【CHICKEN】 SKEWERS, FRUIT PLATE'), 'v1.61.0: a light bite that hides its protein in the description carries the same inline addition, riding before its comma');
+        R.eq(bites.split('pc-add').length, 2, 'v1.61.0: exactly one addition on the line - the name-protein bite and the clean bite stay plain');
+        const toks = JSON.parse(w.eval('JSON.stringify(compactBitesTokens(' + JSON.stringify(items.slice(0, 2)) + '))'));
+        const chick = toks.find((t) => t.add && t.text === 'CHICKEN');
+        R.ok(!!chick && chick.invert === true, 'v1.61.0: the canvas bites tokens carry the hidden protein as a marked addition token');
+        R.ok(toks.some((t) => t.text === ', ' && !t.add), 'v1.61.0: the bites comma separator survives the addition tokens');
+        R.ok(src.includes("const add = compactNonMainProtein(it.name, it.desc || '');"), 'v1.61.0 src: the bites branch routes through the non-main surfacing');
+        R.ok(src.includes("const add = compactNonMainProtein(nm, isObj ? (it.desc || '') : '');"), 'v1.61.0 src: the canvas bites tokens route through it too');
+    }
     R.ok(src.includes('id="print-protein-brackets"') && src.includes('id="print-protein-square"'), 'the brackets/square pill sits in the compact toolbar');
     R.ok(src.includes("proteinMode: 'brackets'"), 'brackets is the in-memory default');
-    R.ok(src.includes("var APP_VERSION = '1.60.5';"), 'APP_VERSION stamped 1.60.5');
-    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v332"), 'service-worker cache name bumped to v332 (the v1.60.5 corpus + audit round)');
+    R.ok(src.includes("var APP_VERSION = '1.61.0';"), 'APP_VERSION stamped 1.61.0');
+    R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("crewassist-v333"), 'service-worker cache name bumped to v333 (the v1.61.0 light-bites + sweep round)');
     R.ok(!fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes('html2canvas'), 'v1.47.1: no painter is precached at all — the cameras hand-paint, so captures are offline by construction');
     R.ok(fs.readFileSync(path.resolve(__dirname, '..', 'sw.js'), 'utf8').includes("'./vendor/fonts/plus-jakarta-sans-700.woff2'"), 'v1.46.1: the house font\u2019s weights are precached — the painter\u2019s clone embeds them as data URLs, offline');
   }

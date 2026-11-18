@@ -1,13 +1,15 @@
-// Compact browser smoke for CrewAssist v1.40.0 (the transit-meals release).
+// CrewAssist browser smoke rig — the real-browser layer.
 //
-// The full behavioural contract lives in the jsdom suite (12 suites); this rig
-// is the real-browser layer: boots the actual app in actual Chromium, holds it
-// to zero page errors / zero console errors, checks the release stamps, the
-// What's New sheet, and drives the headline v1.40.0 behaviours (the 3-hour
-// transit gate and the report-time window boundary) through the real UI.
+// The full behavioural contract lives in the jsdom suite (15 suites in
+// tests/); this rig boots the actual app in actual Chromium, holds it to
+// zero page errors / zero console errors, checks the release stamps and the
+// What's New sheet, and drives the current release's headline behaviours
+// through the real UI. The check tally prints in the run itself and moves
+// every release — it is never pinned here.
 //
-// Rebuilt from scratch on 2026-10-07 after the workspace restore wiped the
-// original 89-check rig; kept deliberately compact (~20 checks).
+// Rebuilt from scratch on 2026-10-07 after a workspace restore wiped the
+// original rig; it moved into the repo the same day (owner order) so a
+// restore can never wipe it again.
 const puppeteer = require('puppeteer-core');
 // The sparticuz chromium build ships its own NSS/nspr libs (al2023.tar.br,
 // extracted to /tmp/chr-libs/lib by the run script) — put them on the loader
@@ -102,11 +104,11 @@ async function calcCard(page, { type, t1, t2, lma }) {
         ok(await page.evaluate(() => { const h = document.documentElement; const wasDark = h.classList.contains('dark'); h.classList.remove('dark'); const s = document.createElement('span'); s.className = 'text-sia-gold'; s.textContent = '.'; document.body.appendChild(s); const c = getComputedStyle(s).color; s.remove(); if (wasDark) h.classList.add('dark'); return c; }) === 'rgb(125, 101, 15)', 'light-mode gold text computes to the measured #7d650f ink (divergence #3b: the rule rides the var token)');
 
         console.log('— release stamps —');
-        eq(await page.evaluate(() => window.APP_VERSION), '1.60.5', 'APP_VERSION is 1.60.5');
+        eq(await page.evaluate(() => window.APP_VERSION), '1.61.0', 'APP_VERSION is 1.61.0');
         eq(await page.evaluate(() => window.APP_OPS.sq.enabled === true && window.APP_OPS.sq.path === '/api/sq' && window.APP_OPS.notice === null), true, 'the ops config boots with the shipped defaults — SQ on, default path, no notice');
         ok(await page.evaluate(() => fetch('/ops.json').then((r) => r.ok)), 'ops.json is served beside rates.json');
-        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.60.5' && e.d === '2026-11-19' && e.items.length === 1 && e.items.filter((i) => i.c === 'imp').length === 1; }), 'the changelog carries the 1.60.5 entry — one imp pointer');
-        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v332'), 'the service-worker cache name is bumped to v332 (the v1.60.5 corpus + audit round)');
+        ok(await page.evaluate(() => { const e = APP_CHANGELOG[0]; return e && e.v === '1.61.0' && e.d === '2026-11-19' && e.items.length === 2 && e.items.filter((i) => i.c === 'imp').length === 2; }), 'the changelog carries the 1.61.0 entry — two imp pointers');
+        ok((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('crewassist-v333'), 'the service-worker cache name is bumped to v333 (the v1.61.0 light-bites + sweep round)');
         ok(!((await page.evaluate(() => fetch('/sw.js').then((r) => r.text()))).includes('html2canvas')), 'v1.47.1: the service worker precaches no painter at all — the cameras hand-paint, so captures are offline by construction');
         ok(await page.evaluate(() => Promise.all([400, 500, 600, 700].map((w) => fetch('/vendor/fonts/plus-jakarta-sans-' + w + '.woff2').then((r) => r.ok))).then((xs) => xs.every(Boolean))), 'v1.46.1: all four house-font weights are served locally — the capture arms them in the live document and the painter\u2019s clone inherits true metrics (no fallback widths, no wrapping, no clipped descenders)');
         ok(await page.evaluate(async () => {
@@ -168,8 +170,10 @@ async function calcCard(page, { type, t1, t2, lma }) {
 
         console.log('— what\'s new —');
         await page.waitForFunction(() => { const b = document.getElementById('whatsnew-backdrop'); return b && !b.classList.contains('hidden'); }, { timeout: 15000 });
-        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.60.5'; }), 'the What\'s New sheet carries the v1.60.5 header');
-        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Protein marks drop sausages and add zander and garoupa.') !== -1), 'the What\'s New sheet carries the v1.60.5 audit pointer');
+        ok(await page.evaluate(() => { const heads = document.querySelectorAll('#whatsnew-list .ca-micro'); return heads[0].textContent === 'v1.61.0'; }), 'the What\'s New sheet carries the v1.61.0 header');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Light bites print their hidden proteins.') !== -1), 'the What\'s New sheet carries the v1.61.0 light-bites pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Unused code swept out; nothing you see changes.') !== -1), 'the What\'s New sheet carries the v1.61.0 sweep pointer');
+        ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Protein marks drop sausages and add zander and garoupa.') !== -1), 'the What\'s New sheet carries the v1.60.5 audit pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Proteins print in bold brackets instead of diamonds.') !== -1), 'the What\'s New sheet carries the v1.60.4 heavy-bracket pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('Proteins print in diamonds instead of brackets.') !== -1), 'the What\'s New sheet carries the v1.60.3 diamond pointer, still in the delta');
         ok(await page.evaluate(() => document.getElementById('whatsnew-list').innerText.indexOf('The dish name comes back when the photo settles unchanged.') !== -1), 'the What\'s New sheet carries the v1.60.2 name-return pointer, still in the delta');

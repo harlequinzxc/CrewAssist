@@ -41,7 +41,7 @@ An **unofficial** Progressive Web App for Singapore Airlines (SIA) cabin crew: a
 - `rates.json` — the rates timeline: period snapshots of IFA modifiers and LMA region rates, newest last (fetched network-first).
 - `api/sq.js` — JSON proxy to SQ `POST …/api/getcabin` and `…/api/menu` (avoids CORS / WAF issues).
 - `icons/` — transparent dart for in-app (`logo-192.png`, `logo-512.png`); navy + gold PWA icons (`app-icon-180/192/512.png`).
-- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `FEATURE_TOUR.md` (the spotlight tour contract), `LMA_RATE_SHEETS.md` (the yearly meal sheets), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDF — Clauses 34–36 are the ones this app implements.
+- `docs/` — all written matter: `LOGIC.md` (formulas), `HANDOVER.md` (agent handoff), `STANDING_RULES.md` (universal agent conduct), `UI_UX_DISCIPLINE.md` (binding UI rules), `REPO_RULES.md` (branch/commit/test/ship mechanics), `API_REFERENCE.md` (SQ API), `FEATURE_TOUR.md` (the spotlight tour contract), `LMA_RATE_SHEETS.md` (the yearly meal sheets), `_reference_rosters/` (the owner's real roster/menu PDFs the regression suite reads), and the full Staff Members' Agreement PDFs (CA 057/2022, CA 058/2025) plus `ROSTER_CODES.pdf` — Clauses 34–36 are the ones this app implements.
 - `tests/` — the jsdom behaviour suite plus `tests/smoke/`, the real-Chromium browser rig (`cd tests && npm install && npm test`; see `tests/README.md`).
 - `README.md` — this overview.
 
